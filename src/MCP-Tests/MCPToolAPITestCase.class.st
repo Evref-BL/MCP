@@ -4,9 +4,8 @@ Common base class for tests that exercise MCP tools through their public API.
 Class {
 	#name : 'MCPToolAPITestCase',
 	#superclass : 'MCPTestCase',
-	#category : 'MCP-Tests-Tools',
-	#package : 'MCP-Tests',
-	#tag : 'Tools'
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
 }
 
 { #category : 'testing' }

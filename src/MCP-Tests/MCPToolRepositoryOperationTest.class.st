@@ -4,9 +4,8 @@ Tests for repository operation behavior. These tests execute the internal dispat
 Class {
 	#name : 'MCPToolRepositoryOperationTest',
 	#superclass : 'MCPToolTestCase',
-	#category : 'MCP-Tests-Tools',
-	#package : 'MCP-Tests',
-	#tag : 'Tools'
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
 }
 
 { #category : 'private - calling' }

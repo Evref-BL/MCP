@@ -4,9 +4,8 @@ Tests critique_run against temporary fixture code so results do not depend on un
 Class {
 	#name : 'MCPToolRunCritiquesTest',
 	#superclass : 'MCPToolAPITestCase',
-	#category : 'MCP-Tests-Tools',
-	#package : 'MCP-Tests',
-	#tag : 'Tools'
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
 }
 
 { #category : 'running' }

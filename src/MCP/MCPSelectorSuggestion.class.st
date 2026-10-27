@@ -6,9 +6,9 @@ Prefix matches come first: a wrong guess usually keeps the prefix of the right s
 Class {
 	#name : 'MCPSelectorSuggestion',
 	#superclass : 'Object',
-	#category : 'MCP-Tools',
+	#category : 'MCP-Utilities',
 	#package : 'MCP',
-	#tag : 'Tools'
+	#tag : 'Utilities'
 }
 
 { #category : 'accessing' }

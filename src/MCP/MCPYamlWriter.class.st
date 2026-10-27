@@ -6,9 +6,9 @@ Plain lines are compact but cannot say whether a value is a number or the text o
 Class {
 	#name : 'MCPYamlWriter',
 	#superclass : 'Object',
-	#category : 'MCP-Structure',
+	#category : 'MCP-Utilities',
 	#package : 'MCP',
-	#tag : 'Structure'
+	#tag : 'Utilities'
 }
 
 { #category : 'writing' }

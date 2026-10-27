@@ -6,9 +6,9 @@ It maps dictionary parameters to the target method argument order and sends the 
 Class {
 	#name : 'MCPMessageSendHandler',
 	#superclass : 'JRPCMessageSendHandler',
-	#category : 'MCP-Server',
+	#category : 'MCP-Transport',
 	#package : 'MCP',
-	#tag : 'Server'
+	#tag : 'Transport'
 }
 
 { #category : 'accessing' }

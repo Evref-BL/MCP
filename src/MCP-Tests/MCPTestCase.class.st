@@ -4,9 +4,8 @@ Common base class for MCP SUnit tests.
 Class {
 	#name : 'MCPTestCase',
 	#superclass : 'TestCase',
-	#category : 'MCP-Tests-Internal',
-	#package : 'MCP-Tests',
-	#tag : 'Internal'
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
 }
 
 { #category : 'testing' }

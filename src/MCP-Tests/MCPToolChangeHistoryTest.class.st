@@ -10,9 +10,8 @@ Class {
 		'memoryDirectory',
 		'originalMonitorWasEnabled'
 	],
-	#category : 'MCP-Tests-Tools',
-	#package : 'MCP-Tests',
-	#tag : 'Tools'
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
 }
 
 { #category : 'testing' }

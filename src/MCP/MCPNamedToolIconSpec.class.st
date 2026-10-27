@@ -9,9 +9,9 @@ Class {
 	#instVars : [
 		'iconSymbol'
 	],
-	#category : 'MCP-Structure',
+	#category : 'MCP-Icons',
 	#package : 'MCP',
-	#tag : 'Structure'
+	#tag : 'Icons'
 }
 
 { #category : 'instance creation' }

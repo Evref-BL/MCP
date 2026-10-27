@@ -4,9 +4,8 @@ Create tests exercise class creation tool requests. Update tests exercise class 
 Class {
 	#name : 'MCPToolClassMutationTest',
 	#superclass : 'MCPToolTestCase',
-	#category : 'MCP-Tests-Tools',
-	#package : 'MCP-Tests',
-	#tag : 'Tools'
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
 }
 
 { #category : 'private - calling' }

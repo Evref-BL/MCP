@@ -4,9 +4,8 @@ Tests completion/complete: the two reference types, the hundred-value cap, and t
 Class {
 	#name : 'MCPCompletionTest',
 	#superclass : 'MCPTestCase',
-	#category : 'MCP-Tests-Internal',
-	#package : 'MCP-Tests',
-	#tag : 'Internal'
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
 }
 
 { #category : 'private' }

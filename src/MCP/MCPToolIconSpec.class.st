@@ -6,9 +6,9 @@ Subclasses describe how an icon should be rendered without forcing MCPTool insta
 Class {
 	#name : 'MCPToolIconSpec',
 	#superclass : 'Object',
-	#category : 'MCP-Structure',
+	#category : 'MCP-Icons',
 	#package : 'MCP',
-	#tag : 'Structure'
+	#tag : 'Icons'
 }
 
 { #category : 'private - mapping' }

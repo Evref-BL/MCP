@@ -6,9 +6,8 @@ A legacy request opens with initialize and names no version of its own. A modern
 Class {
 	#name : 'MCPProtocolEraTest',
 	#superclass : 'MCPTestCase',
-	#category : 'MCP-Tests-Internal',
-	#package : 'MCP-Tests',
-	#tag : 'Internal'
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
 }
 
 { #category : 'private' }
@@ -18,9 +17,81 @@ MCPProtocolEraTest >> handleJSON: aJSONString [
 ]
 
 { #category : 'private' }
+MCPProtocolEraTest >> listenStreamFor: aFilterFragment [
+
+	| server body |
+	server := MCPHTTPServer new.
+	body := STONJSON fromString:
+		        '{"jsonrpc":"2.0","id":7,"method":"subscriptions/listen","params":{"notifications":{' , aFilterFragment , '},'
+		        , (self metaWithVersion: MCP latestProtocolVersion) , '}}'.
+	server answerSubscriptionsListen: body with: ZnResponse new.
+	^ server eventStreams last
+]
+
+{ #category : 'private' }
 MCPProtocolEraTest >> metaWithVersion: aVersion [
 
 	^ '"_meta":{"io.modelcontextprotocol/protocolVersion":"' , aVersion , '"}'
+]
+
+{ #category : 'private' }
+MCPProtocolEraTest >> modernResultFor: aMethod params: aParamsFragment [
+
+	| response |
+	response := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"' , aMethod , '","params":{' , aParamsFragment
+		            , (self metaWithVersion: MCP latestProtocolVersion) , '}}'.
+	^ (STONJSON fromString: response) at: 'result'
+]
+
+{ #category : 'tests' }
+MCPProtocolEraTest >> testACatalogSaysHowLongItStaysGood [
+
+	| result |
+	result := self modernResultFor: 'tools/list' params: ''.
+	self assert: (result at: 'ttlMs') equals: MCP catalogCacheMilliseconds.
+	self assert: (result at: 'cacheScope') equals: 'public'
+]
+
+{ #category : 'tests' }
+MCPProtocolEraTest >> testALegacyCatalogCarriesNoCachingHints [
+	"Caching hints belong to a revision a legacy client never asked for."
+
+	| response |
+	response := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'.
+	self deny: (response includesSubstring: 'ttlMs').
+	self deny: (response includesSubstring: 'cacheScope')
+]
+
+{ #category : 'tests' }
+MCPProtocolEraTest >> testALegacyRequestIsUnaffectedByTheVersionCheck [
+	"A legacy client names its version once, in initialize, and nothing per request."
+
+	| response |
+	response := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'.
+	self assert: (response includesSubstring: '"result"').
+	self deny: (response includesSubstring: '-32022')
+]
+
+{ #category : 'tests' }
+MCPProtocolEraTest >> testALegacyResultCarriesNoResultType [
+	"resultType belongs to a revision a legacy client never asked for."
+
+	| response |
+	response := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'.
+	self assert: (response includesSubstring: '"result"').
+	self deny: (response includesSubstring: 'resultType')
+]
+
+{ #category : 'tests' }
+MCPProtocolEraTest >> testALegacyStreamCarriesEverythingAndNamesNoSubscription [
+	"A GET stream was opened without a filter, so it agreed to everything and belongs to no subscription."
+
+	| stream notification |
+	stream := MCPEventStream new.
+	self assert: (stream accepts: 'notifications/tools/list_changed').
+	stream writeNotification: 'notifications/tools/list_changed' parameters: nil.
+	notification := STONJSON fromString: stream pendingEvents last.
+	self deny: (notification includesKey: 'params')
 ]
 
 { #category : 'tests' }
@@ -47,26 +118,69 @@ MCPProtocolEraTest >> testAModernRequestNamingAnUnsupportedVersionIsRefused [
 ]
 
 { #category : 'tests' }
-MCPProtocolEraTest >> testALegacyRequestIsUnaffectedByTheVersionCheck [
-	"A legacy client names its version once, in initialize, and nothing per request."
+MCPProtocolEraTest >> testAModernResultSaysItIsComplete [
+	"Every result in the modern era declares its kind, so a client can tell an ordinary result from an interim one."
 
 	| response |
-	response := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'.
-	self assert: (response includesSubstring: '"result"').
-	self deny: (response includesSubstring: '-32022')
+	response := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{'
+		            , (self metaWithVersion: MCP latestProtocolVersion) , '}}'.
+	self assert: (response includesSubstring: '"resultType":"complete"')
 ]
 
 { #category : 'tests' }
-MCPProtocolEraTest >> testInitializeStillNegotiatesTheOldWay [
-	"Legacy semantics are untouched: the server answers a version it supports rather than refusing, and never a modern one, which a client opening with initialize could not speak."
+MCPProtocolEraTest >> testAcknowledgementOmitsWhatTheServerCannotDo [
+	"resourceSubscriptions promises notifications/resources/updated, and no resource here can say it changed."
+
+	| stream acknowledged |
+	stream := self listenStreamFor: '"toolsListChanged":true,"resourceSubscriptions":["pharo://image/metadata"]'.
+	acknowledged := ((STONJSON fromString: stream pendingEvents first) at: 'params') at: 'notifications'.
+	self assert: (acknowledged at: 'toolsListChanged').
+	self deny: (acknowledged includesKey: 'resourceSubscriptions')
+]
+
+{ #category : 'tests' }
+MCPProtocolEraTest >> testAnErrorWithNoModernCodeIsUnchanged [
+	"Only the conditions the revision renumbered move; everything else answers the same code in both eras."
+
+	| modern |
+	modern := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"prompts/get","params":{"name":"no_such_prompt",'
+		          , (self metaWithVersion: MCP latestProtocolVersion) , '}}'.
+	self assert: (modern includesSubstring: '"code":-32602')
+]
+
+{ #category : 'tests' }
+MCPProtocolEraTest >> testAnOperationThatIsNotCacheableCarriesNoHints [
+
+	| result |
+	result := self modernResultFor: 'ping' params: ''.
+	self assert: (result at: 'resultType') equals: 'complete'.
+	self deny: (result includesKey: 'ttlMs')
+]
+
+{ #category : 'tests' }
+MCPProtocolEraTest >> testDeclaringALegacyVersionIsAnsweredTheLegacyWay [
+	"A request naming a legacy version gets what that version defines, even though it named it the modern way."
 
 	| response |
-	response := self handleJSON:
-		            '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"1900-01-01","capabilities":{},"clientInfo":{},"websiteUrl":null}}'.
+	response := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{'
+		            , (self metaWithVersion: MCP latestLegacyProtocolVersion) , '}}'.
 	self assert: (response includesSubstring: '"result"').
-	self assert: (response includesSubstring: MCP latestLegacyProtocolVersion).
-	self deny: (response includesSubstring: MCP modernProtocolVersions first).
-	self deny: (response includesSubstring: '-32022')
+	self deny: (response includesSubstring: 'resultType')
+]
+
+{ #category : 'tests' }
+MCPProtocolEraTest >> testDiscoverAndInitializeAgreeOnWhoTheServerIs [
+	"One identity, so a client cannot be told two different things depending on which era it speaks."
+
+	| mcp discovered initialized |
+	mcp := self mcpWithoutObservabilityExport.
+	discovered := (mcp rpcServerDiscover at: #_meta) at: 'io.modelcontextprotocol/serverInfo'.
+	initialized := (mcp
+		               onInitialize: nil
+		               capabilities: nil
+		               clientInfo: nil
+		               websiteUrl: nil) serverInfo asJRPCJSON.
+	self assert: discovered equals: initialized
 ]
 
 { #category : 'tests' }
@@ -92,73 +206,28 @@ MCPProtocolEraTest >> testDiscoverCarriesVersionsCapabilitiesAndIdentity [
 ]
 
 { #category : 'tests' }
-MCPProtocolEraTest >> testDiscoverAndInitializeAgreeOnWhoTheServerIs [
-	"One identity, so a client cannot be told two different things depending on which era it speaks."
+MCPProtocolEraTest >> testEveryCacheableOperationCarriesHints [
+	"The revision names six operations that must carry them."
 
-	| mcp discovered initialized |
-	mcp := self mcpWithoutObservabilityExport.
-	discovered := (mcp rpcServerDiscover at: #_meta) at: 'io.modelcontextprotocol/serverInfo'.
-	initialized := (mcp
-		               onInitialize: nil
-		               capabilities: nil
-		               clientInfo: nil
-		               websiteUrl: nil) serverInfo asJRPCJSON.
-	self assert: discovered equals: initialized
+	#( 'server/discover' 'tools/list' 'prompts/list' 'resources/list' 'resources/templates/list' ) do: [ :each |
+			| result |
+			result := self modernResultFor: each params: ''.
+			self assert: (result includesKey: 'ttlMs') description: each , ' carries no ttlMs'.
+			self assert: (result at: 'ttlMs') >= 0 description: each , ' has a negative ttlMs'.
+			self assert: (result includesKey: 'cacheScope') description: each , ' carries no cacheScope' ]
 ]
 
 { #category : 'tests' }
-MCPProtocolEraTest >> testAModernResultSaysItIsComplete [
-	"Every result in the modern era declares its kind, so a client can tell an ordinary result from an interim one."
+MCPProtocolEraTest >> testInitializeStillNegotiatesTheOldWay [
+	"Legacy semantics are untouched: the server answers a version it supports rather than refusing, and never a modern one, which a client opening with initialize could not speak."
 
 	| response |
-	response := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{'
-		            , (self metaWithVersion: MCP latestProtocolVersion) , '}}'.
-	self assert: (response includesSubstring: '"resultType":"complete"')
-]
-
-{ #category : 'tests' }
-MCPProtocolEraTest >> testALegacyResultCarriesNoResultType [
-	"resultType belongs to a revision a legacy client never asked for."
-
-	| response |
-	response := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'.
+	response := self handleJSON:
+		            '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"1900-01-01","capabilities":{},"clientInfo":{},"websiteUrl":null}}'.
 	self assert: (response includesSubstring: '"result"').
-	self deny: (response includesSubstring: 'resultType')
-]
-
-{ #category : 'tests' }
-MCPProtocolEraTest >> testResourceNotFoundIsRenumberedForModernRequests [
-	"The revision folds resource-not-found into invalid params; earlier revisions give it a code of its own."
-
-	| legacy modern |
-	legacy := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"resources/read","params":{"uri":"pharo://missing"}}'.
-	modern := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"resources/read","params":{"uri":"pharo://missing",'
-		          , (self metaWithVersion: MCP latestProtocolVersion) , '}}'.
-	self assert: (legacy includesSubstring: '"code":-32002').
-	self assert: (modern includesSubstring: '"code":-32602').
-	self assert: (modern includesSubstring: '"uri":"pharo://missing"')
-]
-
-{ #category : 'tests' }
-MCPProtocolEraTest >> testAnErrorWithNoModernCodeIsUnchanged [
-	"Only the conditions the revision renumbered move; everything else answers the same code in both eras."
-
-	| modern |
-	modern := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"prompts/get","params":{"name":"no_such_prompt",'
-		          , (self metaWithVersion: MCP latestProtocolVersion) , '}}'.
-	self assert: (modern includesSubstring: '"code":-32602')
-]
-
-{ #category : 'private' }
-MCPProtocolEraTest >> listenStreamFor: aFilterFragment [
-
-	| server body |
-	server := MCPHTTPServer new.
-	body := STONJSON fromString:
-		        '{"jsonrpc":"2.0","id":7,"method":"subscriptions/listen","params":{"notifications":{' , aFilterFragment , '},'
-		        , (self metaWithVersion: MCP latestProtocolVersion) , '}}'.
-	server answerSubscriptionsListen: body with: ZnResponse new.
-	^ server eventStreams last
+	self assert: (response includesSubstring: MCP latestLegacyProtocolVersion).
+	self deny: (response includesSubstring: MCP modernProtocolVersions first).
+	self deny: (response includesSubstring: '-32022')
 ]
 
 { #category : 'tests' }
@@ -183,17 +252,6 @@ MCPProtocolEraTest >> testListenCarriesOnlyWhatWasAskedFor [
 ]
 
 { #category : 'tests' }
-MCPProtocolEraTest >> testAcknowledgementOmitsWhatTheServerCannotDo [
-	"resourceSubscriptions promises notifications/resources/updated, and no resource here can say it changed."
-
-	| stream acknowledged |
-	stream := self listenStreamFor: '"toolsListChanged":true,"resourceSubscriptions":["pharo://image/metadata"]'.
-	acknowledged := ((STONJSON fromString: stream pendingEvents first) at: 'params') at: 'notifications'.
-	self assert: (acknowledged at: 'toolsListChanged').
-	self deny: (acknowledged includesKey: 'resourceSubscriptions')
-]
-
-{ #category : 'tests' }
 MCPProtocolEraTest >> testNotificationsOnASubscriptionCarryItsId [
 
 	| stream notification |
@@ -205,33 +263,15 @@ MCPProtocolEraTest >> testNotificationsOnASubscriptionCarryItsId [
 ]
 
 { #category : 'tests' }
-MCPProtocolEraTest >> testALegacyStreamCarriesEverythingAndNamesNoSubscription [
-	"A GET stream was opened without a filter, so it agreed to everything and belongs to no subscription."
+MCPProtocolEraTest >> testReadingTheDeclaredVersion [
 
-	| stream notification |
-	stream := MCPEventStream new.
-	self assert: (stream accepts: 'notifications/tools/list_changed').
-	stream writeNotification: 'notifications/tools/list_changed' parameters: nil.
-	notification := STONJSON fromString: stream pendingEvents last.
-	self deny: (notification includesKey: 'params')
-]
-
-{ #category : 'private' }
-MCPProtocolEraTest >> modernResultFor: aMethod params: aParamsFragment [
-
-	| response |
-	response := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"' , aMethod , '","params":{' , aParamsFragment
-		            , (self metaWithVersion: MCP latestProtocolVersion) , '}}'.
-	^ (STONJSON fromString: response) at: 'result'
-]
-
-{ #category : 'tests' }
-MCPProtocolEraTest >> testACatalogSaysHowLongItStaysGood [
-
-	| result |
-	result := self modernResultFor: 'tools/list' params: ''.
-	self assert: (result at: 'ttlMs') equals: MCP catalogCacheMilliseconds.
-	self assert: (result at: 'cacheScope') equals: 'public'
+	self assert: (MCP requestedProtocolVersionIn: nil) isNil.
+	self assert: (MCP requestedProtocolVersionIn: Dictionary new) isNil.
+	self assert: (MCP requestedProtocolVersionIn: { ('_meta' -> Dictionary new) } asDictionary) isNil.
+	self
+		assert: (MCP requestedProtocolVersionIn:
+				 { ('_meta' -> { ('io.modelcontextprotocol/protocolVersion' -> '2026-07-28') } asDictionary) } asDictionary)
+		equals: '2026-07-28'
 ]
 
 { #category : 'tests' }
@@ -245,34 +285,16 @@ MCPProtocolEraTest >> testResourceContentsAreCachedPrivatelyAndBriefly [
 ]
 
 { #category : 'tests' }
-MCPProtocolEraTest >> testEveryCacheableOperationCarriesHints [
-	"The revision names six operations that must carry them."
+MCPProtocolEraTest >> testResourceNotFoundIsRenumberedForModernRequests [
+	"The revision folds resource-not-found into invalid params; earlier revisions give it a code of its own."
 
-	#( 'server/discover' 'tools/list' 'prompts/list' 'resources/list' 'resources/templates/list' ) do: [ :each |
-			| result |
-			result := self modernResultFor: each params: ''.
-			self assert: (result includesKey: 'ttlMs') description: each , ' carries no ttlMs'.
-			self assert: (result at: 'ttlMs') >= 0 description: each , ' has a negative ttlMs'.
-			self assert: (result includesKey: 'cacheScope') description: each , ' carries no cacheScope' ]
-]
-
-{ #category : 'tests' }
-MCPProtocolEraTest >> testAnOperationThatIsNotCacheableCarriesNoHints [
-
-	| result |
-	result := self modernResultFor: 'ping' params: ''.
-	self assert: (result at: 'resultType') equals: 'complete'.
-	self deny: (result includesKey: 'ttlMs')
-]
-
-{ #category : 'tests' }
-MCPProtocolEraTest >> testALegacyCatalogCarriesNoCachingHints [
-	"Caching hints belong to a revision a legacy client never asked for."
-
-	| response |
-	response := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'.
-	self deny: (response includesSubstring: 'ttlMs').
-	self deny: (response includesSubstring: 'cacheScope')
+	| legacy modern |
+	legacy := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"resources/read","params":{"uri":"pharo://missing"}}'.
+	modern := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"resources/read","params":{"uri":"pharo://missing",'
+		          , (self metaWithVersion: MCP latestProtocolVersion) , '}}'.
+	self assert: (legacy includesSubstring: '"code":-32002').
+	self assert: (modern includesSubstring: '"code":-32602').
+	self assert: (modern includesSubstring: '"uri":"pharo://missing"')
 ]
 
 { #category : 'tests' }
@@ -281,27 +303,4 @@ MCPProtocolEraTest >> testTheModernVersionIsAdvertised [
 	self assert: (MCP supportedProtocolVersions includes: '2026-07-28').
 	self assert: MCP latestProtocolVersion equals: '2026-07-28'.
 	self assert: (self mcpWithoutObservabilityExport rpcServerDiscover at: #supportedVersions) equals: MCP supportedProtocolVersions
-]
-
-{ #category : 'tests' }
-MCPProtocolEraTest >> testDeclaringALegacyVersionIsAnsweredTheLegacyWay [
-	"A request naming a legacy version gets what that version defines, even though it named it the modern way."
-
-	| response |
-	response := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{'
-		            , (self metaWithVersion: MCP latestLegacyProtocolVersion) , '}}'.
-	self assert: (response includesSubstring: '"result"').
-	self deny: (response includesSubstring: 'resultType')
-]
-
-{ #category : 'tests' }
-MCPProtocolEraTest >> testReadingTheDeclaredVersion [
-
-	self assert: (MCP requestedProtocolVersionIn: nil) isNil.
-	self assert: (MCP requestedProtocolVersionIn: Dictionary new) isNil.
-	self assert: (MCP requestedProtocolVersionIn: { ('_meta' -> Dictionary new) } asDictionary) isNil.
-	self
-		assert: (MCP requestedProtocolVersionIn:
-				 { ('_meta' -> { ('io.modelcontextprotocol/protocolVersion' -> '2026-07-28') } asDictionary) } asDictionary)
-		equals: '2026-07-28'
 ]

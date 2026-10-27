@@ -4,9 +4,8 @@ Tests for repository tools split from the broad repository operation surface.
 Class {
 	#name : 'MCPToolRepositoryToolsTest',
 	#superclass : 'MCPToolAPITestCase',
-	#category : 'MCP-Tests-Tools',
-	#package : 'MCP-Tests',
-	#tag : 'Tools'
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
 }
 
 { #category : 'private' }

@@ -4,9 +4,8 @@ Tests change-history tool metadata, schemas, and result shapes.
 Class {
 	#name : 'MCPToolChangeHistoryToolsTest',
 	#superclass : 'MCPToolAPITestCase',
-	#category : 'MCP-Tests-Tools',
-	#package : 'MCP-Tests',
-	#tag : 'Tools'
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
 }
 
 { #category : 'private' }

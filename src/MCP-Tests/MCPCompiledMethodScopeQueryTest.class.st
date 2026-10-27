@@ -4,9 +4,8 @@ Tests method scope query behavior for classes, packages, and sides.
 Class {
 	#name : 'MCPCompiledMethodScopeQueryTest',
 	#superclass : 'MCPTestCase',
-	#category : 'MCP-Tests-Internal',
-	#package : 'MCP-Tests',
-	#tag : 'Internal'
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
 }
 
 { #category : 'private' }

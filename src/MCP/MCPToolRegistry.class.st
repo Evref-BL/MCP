@@ -11,9 +11,9 @@ Class {
 	#instVars : [
 		'advertisedToolNames'
 	],
-	#category : 'MCP-Tools',
+	#category : 'MCP-Registries',
 	#package : 'MCP',
-	#tag : 'Tools'
+	#tag : 'Registries'
 }
 
 { #category : 'tools' }

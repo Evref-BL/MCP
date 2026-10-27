@@ -4,9 +4,8 @@ Tests package metadata snapshots returned by MCPPackageInfo.
 Class {
 	#name : 'MCPPackageInfoTest',
 	#superclass : 'MCPTestCase',
-	#category : 'MCP-Tests-Internal',
-	#package : 'MCP-Tests',
-	#tag : 'Internal'
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
 }
 
 { #category : 'tests' }

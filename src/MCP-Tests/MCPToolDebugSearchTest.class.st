@@ -4,9 +4,8 @@ Tests debug_search: what it reports about the debuggers open in the image, and t
 Class {
 	#name : 'MCPToolDebugSearchTest',
 	#superclass : 'MCPToolAPITestCase',
-	#category : 'MCP-Tests-Tools',
-	#package : 'MCP-Tests',
-	#tag : 'Tools'
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
 }
 
 { #category : 'private' }

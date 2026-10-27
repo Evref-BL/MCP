@@ -4,9 +4,8 @@ Tests command-level class comment updates.
 Class {
 	#name : 'MCPChangeClassCommentCommandTest',
 	#superclass : 'MCPCommandTestCase',
-	#category : 'MCP-Tests-Internal',
-	#package : 'MCP-Tests',
-	#tag : 'Internal'
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
 }
 
 { #category : 'private' }

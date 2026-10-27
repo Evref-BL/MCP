@@ -4,9 +4,8 @@ Tests MCPToolRequest validation and typed argument access.
 Class {
 	#name : 'MCPToolRequestTest',
 	#superclass : 'MCPTestCase',
-	#category : 'MCP-Tests-Internal',
-	#package : 'MCP-Tests',
-	#tag : 'Internal'
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
 }
 
 { #category : 'tests' }

@@ -4,9 +4,8 @@ Tests method lookup tools for senders, implementors, and references.
 Class {
 	#name : 'MCPToolMethodLookupTest',
 	#superclass : 'MCPToolAPITestCase',
-	#category : 'MCP-Tests-Tools',
-	#package : 'MCP-Tests',
-	#tag : 'Tools'
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
 }
 
 { #category : 'private' }

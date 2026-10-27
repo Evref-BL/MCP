@@ -4,9 +4,8 @@ Tests MCP HTTP server lifecycle behavior that must survive image save and restar
 Class {
 	#name : 'MCPServerLifecycleTest',
 	#superclass : 'MCPTestCase',
-	#category : 'MCP-Tests-Server',
-	#package : 'MCP-Tests',
-	#tag : 'Server'
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
 }
 
 { #category : 'private' }

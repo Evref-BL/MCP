@@ -6,9 +6,8 @@ A registry outlives the classes it found, so loading or removing tool classes in
 Class {
 	#name : 'MCPToolRegistryTest',
 	#superclass : 'MCPTestCase',
-	#category : 'MCP-Tests-Internal',
-	#package : 'MCP-Tests',
-	#tag : 'Internal'
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
 }
 
 { #category : 'private' }

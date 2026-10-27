@@ -4,9 +4,8 @@ Tests compiled-method metadata extraction.
 Class {
 	#name : 'MCPCompiledMethodInfoTest',
 	#superclass : 'MCPTestCase',
-	#category : 'MCP-Tests-Internal',
-	#package : 'MCP-Tests',
-	#tag : 'Internal'
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
 }
 
 { #category : 'private' }
