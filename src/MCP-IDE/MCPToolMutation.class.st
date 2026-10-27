@@ -286,11 +286,11 @@ MCPToolMutation >> mutationActionForErrorFromParsedRequest: mutationRequest rawR
 	^ 'mutation'
 ]
 
-{ #category : 'private - errors' }
+{ #category : 'private - mutation failures' }
 MCPToolMutation >> mutationFailureCauseFor: anError [
 
 	^ anError mcpSyntaxNotice
-		  ifNil: [ anError mcpMutationFailureNotice ]
+		  ifNil: [ anError ]
 		  ifNotNil: [ :syntaxNotice | anError mcpMutationFailureCauseForSyntaxNotice: syntaxNotice ]
 ]
 
@@ -521,13 +521,10 @@ MCPToolMutation >> undeclaredVariableNodeFrom: anError [
 	^ anError mcpNoticeNode
 ]
 
-{ #category : 'private - errors' }
+{ #category : 'private - mutation failures' }
 MCPToolMutation >> undeclaredVariableNoticeFrom: anError [
 
-	| notice |
-	notice := anError mcpMutationFailureNotice.
-	(self undeclaredVariableNodeFrom: notice) ifNotNil: [ ^ notice ].
-	^ nil
+	^ (self undeclaredVariableNodeFrom: anError) ifNotNil: [ anError ]
 ]
 
 { #category : 'private - refactoring' }

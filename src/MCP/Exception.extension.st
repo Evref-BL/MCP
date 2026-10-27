@@ -62,57 +62,9 @@ Exception >> mcpCommandErrorDo: commandBlock otherwise: fallbackBlock [
 ]
 
 { #category : '*MCP' }
-Exception >> mcpDebugCapturedReason [
-
-	^ 'testError'
-]
-
-{ #category : '*MCP' }
-Exception >> mcpDebugMethodUpdateKind [
-
-	^ 'recompile'
-]
-
-{ #category : '*MCP' }
-Exception >> mcpDebugRepairActionsFor: aRepairAnalyzer [
-
-	^ #(  )
-]
-
-{ #category : '*MCP' }
-Exception >> mcpDebugStartContext [
-
-	^ self signalerContext
-]
-
-{ #category : '*MCP' }
 Exception >> mcpIsJRPCError [
 
 	^ false
-]
-
-{ #category : '*MCP' }
-Exception >> mcpPrepareForProceed [
-
-	^ self
-]
-
-{ #category : '*MCP' }
-Exception >> mcpRepairContextForMethodImplementation: aCompiledMethod [
-
-	^ nil
-]
-
-{ #category : '*MCP' }
-Exception >> mcpRepairMessageForContext: aContext [
-
-	^ nil
-]
-
-{ #category : '*MCP' }
-Exception >> mcpSelectorForContextLookup [
-
-	^ nil
 ]
 
 { #category : '*MCP' }
