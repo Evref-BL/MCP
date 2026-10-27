@@ -1,5 +1,7 @@
 "
 Compact pagination result shared by list and search tools. It keeps MCP payloads small by carrying the current page entries and, only when another page exists, the offset to request the next page.
+
+It sits with the server rather than with MCP's own tools: a tool from any package answers a page the same way, and `fromEntries:limit:offset:` with `asDictionaryWithEntriesKey:` is how it gets the shape every other paged answer has.
 "
 Class {
 	#name : 'MCPPaginationResult',
@@ -9,8 +11,8 @@ Class {
 		'nextOffset',
 		'totalCount'
 	],
-	#category : 'MCP-IDE-Results',
-	#package : 'MCP-IDE',
+	#category : 'MCP-Results',
+	#package : 'MCP',
 	#tag : 'Results'
 }
 

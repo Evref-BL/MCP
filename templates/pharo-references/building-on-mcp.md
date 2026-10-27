@@ -203,7 +203,9 @@ structured half carries your text as `summary` and your dictionary as `data`.
 ### Answering a page
 
 A tool that answers a list answers one page of it, so a long result never
-arrives as one block a model has to read through. Three parts:
+arrives as one block a model has to read through. Three parts: the shared
+`offset` argument, how big a page is, and the slicing. The listing tool
+again, now that the list can be long:
 
 ```smalltalk
 MyProjectToolListWidgets >> buildInputSchema
@@ -217,18 +219,29 @@ MyProjectToolListWidgets >> buildInputSchema
 MyProjectToolListWidgets >> defaultPageLimit
 
 	^ 25
+
+MyProjectToolListWidgets >> executeWithRequest: request
+
+	| page |
+	page := MCPPaginationResult
+		        fromEntries: MyProject widgetNames asArray sorted
+		        limit: self defaultPageLimit
+		        offset: (request nonNegativeIntegerArgumentNamed: 'offset' default: 0).
+	^ self
+		  successResultText: page returnedCount asString , ' widget(s).'
+		  data: (page asDictionaryWithEntriesKey: #widgets)
 ```
 
 `offsetInputProperty` is the same `offset` argument every paging tool takes,
-declared once so they all describe it the same way. Read it with
-`request nonNegativeIntegerArgumentNamed: 'offset' default: 0`, answer at most
-`self defaultPageLimit` entries from there, and put `nextOffset` in the data
-when entries remain — a caller asks again with that offset until it stops
+declared once so they all describe it the same way. `MCPPaginationResult`
+cuts the page and answers the shape MCP's own tools answer: your entries
+under the key you name, a `pagination` summary beside them, and `nextOffset`
+while entries remain — a caller asks again with that offset until it stops
 coming.
 
 Answering `defaultPageLimit` is what puts `pageSize` in your contract, so
-`tool_get` can tell a caller how large a page is before it asks for one. A
-tool that answers whole results rather than pages leaves it alone.
+`tool_get` can tell a caller how large a page is before asking for one. A
+tool that answers a whole result rather than pages leaves it alone.
 
 ## Groups and icons
 
