@@ -78,6 +78,7 @@ TMCPMethodTool >> methodScopeQueryFromRequest: request [
 	^ MCPCompiledMethodScopeQuery new
 		  packageNames: (self searchScopeStringCollectionNamed: 'packages' fromRequest: request);
 		  classNames: (self searchScopeStringCollectionNamed: 'classes' fromRequest: request);
+		  hierarchyClassNames: (self searchScopeStringCollectionNamed: 'hierarchyOf' fromRequest: request);
 		  subclassClassNames: (self searchScopeStringCollectionNamed: 'subclassesOf' fromRequest: request);
 		  parentClassNames: (self searchScopeStringCollectionNamed: 'superclassesOf' fromRequest: request);
 		  side: (self searchScopeSideFromRequest: request);

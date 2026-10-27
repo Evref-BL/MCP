@@ -84,10 +84,7 @@ MCPToolRewriteMethods >> rewriteInputProperties [
 	^ {
 		  self rewriteRulesSchemaProperty.
 		  self rewriteRuleClassesSchemaProperty.
-		  (self
-			   booleanSchemaPropertyNamed: 'apply'
-			   description: 'Carry the rewrites out. False lists what would change and changes nothing.'
-			   default: false).
+		  (self booleanSchemaPropertyNamed: 'confirm' description: 'False previews; true performs.' default: false).
 		  (self methodSearchScopeSchemaProperty
 			   description:
 				   'What to rewrite. Give several entries and everything any of them selects is covered. Required: there is no rewriting the whole image.';

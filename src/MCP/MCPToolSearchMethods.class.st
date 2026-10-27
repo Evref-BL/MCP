@@ -59,11 +59,11 @@ MCPToolSearchMethods >> metadataFilterInputProperties [
 		  (self
 			   schemaPropertyNamed: 'selector'
 			   type: 'string'
-			   description: 'Keep methods whose selector contains this text, ignoring case.').
+			   description: 'Keep methods whose selector contains this text. Case matters, as it does in a selector.').
 		  (self
 			   schemaPropertyNamed: 'protocol'
 			   type: 'string'
-			   description: 'Keep methods whose protocol contains this text, ignoring case.') }
+			   description: 'Keep methods whose protocol contains this text. Case matters.') }
 ]
 
 { #category : 'private - template' }

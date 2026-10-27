@@ -23,7 +23,7 @@ MCPChangeHistoryListEntriesRequest class >> fromRequest: request tool: aTool [
 	^ self new
 		  directoryPath: (request stringArgumentNamed: 'directoryPath');
 		  historyFileName: (request stringArgumentNamed: 'historyFile');
-		  limit: (request nonNegativeIntegerArgumentNamed: 'limit' default: aTool defaultEntryLimit);
+		  limit: aTool defaultEntryLimit;
 		  offset: (request nonNegativeIntegerArgumentNamed: 'offset' default: 0);
 		  newestFirst: (request booleanArgumentNamed: 'newestFirst' default: false);
 		  codeChangesOnly: (request booleanArgumentNamed: 'codeChangesOnly' default: false);

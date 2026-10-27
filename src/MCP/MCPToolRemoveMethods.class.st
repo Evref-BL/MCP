@@ -36,15 +36,15 @@ MCPToolRemoveMethods >> buildInputSchema [
 					   yourself).
 				  (self targetSideSchemaPropertyDescribedAs: 'Which side to remove from.').
 				  ((MCPStructureProperties new
-					    name: 'selectors';
-					    type: 'array';
-					    description: 'The selectors to remove. They go in one batch, and senders are not checked.')
+					    name: 'selector';
+					    type: #( 'string' 'array' );
+					    description: 'The selector to remove, or several removed together as one change. Senders are not checked.')
 					   items: (MCPStructureProperties new
 							    type: 'string';
 							    description: 'A selector to remove.';
 							    yourself);
 					   yourself) };
-		  required: #( 'class' 'selectors' );
+		  required: #( 'class' 'selector' );
 		  yourself
 ]
 
@@ -159,15 +159,15 @@ MCPToolRemoveMethods >> parsedRequestFromToolRequest: request [
 MCPToolRemoveMethods >> selectorsForErrorFromParsedRequest: removeRequest rawRequest: rawRequest [
 
 	removeRequest ifNotNil: [ ^ removeRequest selectors ].
-	^ rawRequest stringCollectionArgumentNamed: 'selectors'
+	^ rawRequest stringCollectionArgumentNamed: 'selector'
 ]
 
 { #category : 'private' }
 MCPToolRemoveMethods >> selectorsFromRequest: request [
 
 	| selectors |
-	selectors := request uniqueStringCollectionArgumentNamed: 'selectors'.
-	selectors ifEmpty: [ Error signal: 'selectors must contain at least one selector.' ].
+	selectors := request uniqueStringCollectionArgumentNamed: 'selector'.
+	selectors ifEmpty: [ Error signal: 'selector must hold at least one selector.' ].
 	^ selectors
 ]
 

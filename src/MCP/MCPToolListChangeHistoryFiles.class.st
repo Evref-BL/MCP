@@ -55,12 +55,6 @@ MCPToolListChangeHistoryFiles >> description [
 	^ 'List Pharo image change history .ombu files. Use history_entry_list to inspect entries. Use apply/revert only for recovery previews or changes.'
 ]
 
-{ #category : 'defaults' }
-MCPToolListChangeHistoryFiles >> maximumFileLimit [
-
-	^ 100
-]
-
 { #category : 'private - request' }
 MCPToolListChangeHistoryFiles >> parsedRequestFromToolRequest: request [
 

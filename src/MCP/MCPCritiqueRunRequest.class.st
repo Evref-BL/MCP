@@ -21,7 +21,7 @@ MCPCritiqueRunRequest class >> fromRequest: request tool: aTool [
 	^ self new
 		  scopeQuery: (aTool methodScopeQueryFromRequest: request);
 		  ruleClasses: (aTool ruleClassesFromRequest: request);
-		  limit: (request nonNegativeIntegerArgumentNamed: 'limit' default: aTool defaultPageLimit);
+		  limit: aTool defaultPageLimit;
 		  offset: (request nonNegativeIntegerArgumentNamed: 'offset' default: 0);
 		  yourself
 ]

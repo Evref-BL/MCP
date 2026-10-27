@@ -72,7 +72,7 @@ MCPToolContractsTest >> assertUsesSupportedSchemaDialect: aValue [
 		aValue do: [ :nestedValue | self assertUsesSupportedSchemaDialect: nestedValue ] ]
 ]
 
-{ #category : 'support' }
+{ #category : 'private' }
 MCPToolContractsTest >> baseToolFlowSpecs [
 
 	^ {
@@ -98,7 +98,7 @@ MCPToolContractsTest >> baseToolFlowSpecs [
 			  (#commandClass -> MCPGetClassCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolRemoveClasses).
-			  (#arguments -> { (#classes -> #( 'Object' )) } asDictionary).
+			  (#arguments -> { (#name -> #( 'Object' )) } asDictionary).
 			  (#requestClass -> MCPRemoveClassesRequest).
 			  (#commandClass -> MCPRemoveClassesCommand) } asDictionary.
 		  {
@@ -126,7 +126,7 @@ MCPToolContractsTest >> baseToolFlowSpecs [
 			  (#toolClass -> MCPToolRemoveMethods).
 			  (#arguments -> {
 				   (#class -> 'Object').
-				   (#selectors -> #( 'class' )) } asDictionary).
+				   (#selector -> #( 'class' )) } asDictionary).
 			  (#requestClass -> MCPRemoveMethodsRequest).
 			  (#commandClass -> MCPRemoveMethodsCommand) } asDictionary.
 		  {
@@ -1322,7 +1322,9 @@ MCPToolContractsTest >> testMethodMetadataSearchHasAccurateNameAndSchema [
 	self assert: schema required equals: #(  ).
 	self assert: propertyNames asSet equals: #( 'scope' 'selector' 'protocol' 'offset' ) asSet.
 	self assert: (scopeProperty extraProperties at: #additionalProperties) equals: false.
-	self assert: scopePropertyNames asSet equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' 'hierarchy' 'side' ) asSet
+	self
+		assert: scopePropertyNames asSet
+		equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' 'hierarchyOf' 'side' ) asSet
 ]
 
 { #category : 'tests' }
@@ -1498,7 +1500,7 @@ MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable 
 		equals: false.
 	self assert: ((self inputPropertyNamed: 'side' inTool: updateMethodTool) extraProperties at: #default) equals: 'instance'.
 	self assert: ((self inputPropertyNamed: 'force' inTool: updateMethodTool) extraProperties at: #default) equals: false.
-	self assert: ((self inputPropertyNamed: 'apply' inTool: rewriteMethodsTool) extraProperties at: #default) equals: false.
+	self assert: ((self inputPropertyNamed: 'confirm' inTool: rewriteMethodsTool) extraProperties at: #default) equals: false.
 	self assert: ((self scopePropertyNamed: 'side' inTool: rewriteMethodsTool) extraProperties at: #default) equals: 'both'.
 	self assert: ((self inputPropertyNamed: 'force' inTool: removeClassesTool) extraProperties at: #default) equals: false.
 	self assert: ((self inputPropertyNamed: 'side' inTool: removeMethodsTool) extraProperties at: #default) equals: 'instance'
@@ -1589,7 +1591,7 @@ MCPToolContractsTest >> testQueryScopeDescriptionsExplainScopeSemantics [
 	self assert: (classScope description includesSubstring: 'Omitted').
 	self assert: (classScope extraProperties at: #additionalProperties) equals: false.
 	self assert: (methodScope extraProperties at: #additionalProperties) equals: false.
-	self assert: scopePropertyNames asSet equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' 'hierarchy' ) asSet.
+	self assert: scopePropertyNames asSet equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' 'hierarchyOf' ) asSet.
 	self
 		assert: ((methodScope extraProperties at: #properties) collect: [ :each | each name ]) asSet
 		equals: scopePropertyNames asSet , #( 'side' ) asSet.
@@ -1638,11 +1640,10 @@ MCPToolContractsTest >> testRPCRefreshesCachedToolMetadata [
 	toolDefinitions := mcp rpcToolsList at: #tools.
 	toolDefinition := toolDefinitions detect: [ :each | (each at: #name) = 'class_search' ].
 	propertyNames := ((toolDefinition at: #inputSchema) at: #properties) keys asSet.
-	self assert: propertyNames equals: #( 'scope' 'name' 'tag' 'offset' ) asSet.
-	result := mcp rpcToolCall: 'class_search' withParams: {
-			          (self searchScope: {
-					           (#classes -> #( 'MCPToolContractsTest' )).
-					           (#packages -> #( 'MCP-Tests' )) }) } asDictionary.
+	self assert: propertyNames equals: #( 'scope' 'name' 'package' 'tag' 'offset' ) asSet.
+	result := mcp rpcToolCall: 'class_search' withParams: { (self searchScope: {
+				           (#classes -> #( 'MCPToolContractsTest' )).
+				           (#packages -> #( 'MCP-Tests' )) }) } asDictionary.
 	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
@@ -1664,14 +1665,14 @@ MCPToolContractsTest >> testReadScreenHasAccurateNameAndSchemas [
 MCPToolContractsTest >> testRemoveClassHasAccurateNameAndRequiredArguments [
 
 	self assert: MCPToolRemoveClasses new name equals: 'class_remove'.
-	self assert: MCPToolRemoveClasses new inputSchema required asSet equals: #( 'classes' ) asSet
+	self assert: MCPToolRemoveClasses new inputSchema required asSet equals: #( 'name' ) asSet
 ]
 
 { #category : 'tests' }
 MCPToolContractsTest >> testRemoveMethodsHasAccurateNameAndRequiredArguments [
 
 	self assert: MCPToolRemoveMethods new name equals: 'method_remove'.
-	self assert: MCPToolRemoveMethods new inputSchema required asSet equals: #( 'class' 'selectors' ) asSet
+	self assert: MCPToolRemoveMethods new inputSchema required asSet equals: #( 'class' 'selector' ) asSet
 ]
 
 { #category : 'tests' }
@@ -1969,8 +1970,8 @@ MCPToolContractsTest >> testSearchClassesHasAccurateNameAndSchema [
 	scopePropertyNames := (scopeProperty extraProperties at: #properties) collect: [ :each | each name ].
 	self assert: MCPToolSearchClasses new name equals: 'class_search'.
 	self assert: schema required equals: #(  ).
-	self assert: propertyNames asSet equals: #( 'scope' 'name' 'tag' 'offset' ) asSet.
-	self assert: scopePropertyNames asSet equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' 'hierarchy' ) asSet
+	self assert: propertyNames asSet equals: #( 'scope' 'name' 'package' 'tag' 'offset' ) asSet.
+	self assert: scopePropertyNames asSet equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' 'hierarchyOf' ) asSet
 ]
 
 { #category : 'tests' }
@@ -2089,11 +2090,11 @@ MCPToolContractsTest >> testSearchToolSchemasAdvertiseGroupedScopeProperties [
 			scopePropertyNames := (scopeProperty extraProperties at: #properties) collect: [ :each | each name ].
 			self assert: (propertyNames includes: 'scope').
 			oldScopePropertyNames do: [ :each | self deny: (propertyNames includes: each) ].
-			self assert: scopePropertyNames asSet
-				equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' 'hierarchy' ) asSet
-					, (tool class = MCPToolSearchClasses
-							 ifTrue: [ Set new ]
-							 ifFalse: [ #( 'side' ) asSet ]) ]
+			self
+				assert: scopePropertyNames asSet
+				equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' 'hierarchyOf' ) asSet , (tool class = MCPToolSearchClasses
+						 ifTrue: [ Set new ]
+						 ifFalse: [ #( 'side' ) asSet ]) ]
 ]
 
 { #category : 'tests' }

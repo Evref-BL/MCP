@@ -425,7 +425,7 @@ MCPToolMutation >> refactoringScopeSpecFromRequest: request [
 	| classNames hierarchyClassNames packageNames |
 	packageNames := self searchScopeStringCollectionNamed: 'packages' fromRequest: request.
 	classNames := self searchScopeStringCollectionNamed: 'classes' fromRequest: request.
-	hierarchyClassNames := self searchScopeStringCollectionNamed: 'hierarchy' fromRequest: request.
+	hierarchyClassNames := self searchScopeStringCollectionNamed: 'hierarchyOf' fromRequest: request.
 	self validateRefactoringScopePackageNamesExist: packageNames.
 	^ MCPRefactoringScopeSpec packageNames: packageNames classNames: classNames hierarchyClassNames: hierarchyClassNames
 ]

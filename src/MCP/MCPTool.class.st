@@ -975,8 +975,8 @@ MCPTool >> searchScopeSchemaProperties [
 			   description: 'Every descendant of these classes, the classes themselves excluded.'
 			   itemDescription: 'Class name.').
 		  (self
-			   stringArraySchemaNamed: 'hierarchy'
-			   description: 'Whole hierarchies of these classes, superclasses and subclasses alike.'
+			   stringArraySchemaNamed: 'hierarchyOf'
+			   description: 'Whole hierarchies of these classes, superclasses and subclasses alike, the classes themselves included.'
 			   itemDescription: 'Class name.') }
 ]
 

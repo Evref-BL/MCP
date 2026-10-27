@@ -302,9 +302,7 @@ MCPToolStructuredOutputTest >> testRecordListsCarryTheirLabel [
 MCPToolStructuredOutputTest >> testRemoveClassReturnsStructuredError [
 
 	| result structured error |
-	result := self
-		          callToolNamed: 'class_remove'
-		          withArguments: { (#classes -> { 'MCPToolRemoveClassDefinitelyMissing' }) } asDictionary.
+	result := self callToolNamed: 'class_remove' withArguments: { (#name -> { 'MCPToolRemoveClassDefinitelyMissing' }) } asDictionary.
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
@@ -337,6 +335,18 @@ MCPToolStructuredOutputTest >> testRunTestClassReturnsStructuredIssues [
 	self assert: ((error at: #message) includesSubstring: 'boom error').
 	self deny: (data includesKey: #results).
 	self deny: (data includesKey: #issues)
+]
+
+{ #category : 'tests' }
+MCPToolStructuredOutputTest >> testRunTestCoverageLetsNotificationsUseTheirDefaultAction [
+
+	| data result |
+	result := self callToolNamed: 'test_coverage_run' withArguments: {
+			  (#classes -> { MCPToolNotificationTargetTest name }).
+			  (#coverage -> { (#scope -> { (#classes -> { MCPToolCoverageTarget name }) } asDictionary) } asDictionary) } asDictionary.
+	data := self dataFrom: result.
+	self assert: (data at: #runCount) equals: 1.
+	self assert: (data at: #passedCount) equals: 1
 ]
 
 { #category : 'tests' }
@@ -463,6 +473,16 @@ MCPToolStructuredOutputTest >> testRunTestsDeduplicatesUnrunCasesAcrossSelection
 ]
 
 { #category : 'tests' }
+MCPToolStructuredOutputTest >> testRunTestsLetsNotificationsUseTheirDefaultAction [
+
+	| data result |
+	result := self callToolNamed: 'test_run' withArguments: { (#classes -> { MCPToolNotificationTargetTest name }) } asDictionary.
+	data := self dataFrom: result.
+	self assert: (data at: #runCount) equals: 1.
+	self assert: (data at: #passedCount) equals: 1
+]
+
+{ #category : 'tests' }
 MCPToolStructuredOutputTest >> testRunTestsParameterizedMethodFailureIncludesCaseDetails [
 
 	| data issue result |
@@ -493,28 +513,6 @@ MCPToolStructuredOutputTest >> testRunTestsParseErrorReturnsStructuredToolError 
 	self assert: (error at: #errorClass) equals: #Error.
 	self deny: (error includesKey: #tests).
 	self assert: ((error at: #message) includesSubstring: 'Class>>#selector')
-]
-
-{ #category : 'tests' }
-MCPToolStructuredOutputTest >> testRunTestsLetsNotificationsUseTheirDefaultAction [
-
-	| data result |
-	result := self callToolNamed: 'test_run' withArguments: { (#classes -> { MCPToolNotificationTargetTest name }) } asDictionary.
-	data := self dataFrom: result.
-	self assert: (data at: #runCount) equals: 1.
-	self assert: (data at: #passedCount) equals: 1
-]
-
-{ #category : 'tests' }
-MCPToolStructuredOutputTest >> testRunTestCoverageLetsNotificationsUseTheirDefaultAction [
-
-	| data result |
-	result := self callToolNamed: 'test_coverage_run' withArguments: {
-			  (#classes -> { MCPToolNotificationTargetTest name }).
-			  (#coverage -> { (#scope -> { (#classes -> { MCPToolCoverageTarget name }) } asDictionary) } asDictionary) } asDictionary.
-	data := self dataFrom: result.
-	self assert: (data at: #runCount) equals: 1.
-	self assert: (data at: #passedCount) equals: 1
 ]
 
 { #category : 'tests' }

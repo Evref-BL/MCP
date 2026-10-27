@@ -49,6 +49,7 @@ MCPToolSearch >> classAndMethodScopeSummaryForScopeQuery: scopeQuery [
 	^ self classAndMethodScopeSummaryFromAssociations: {
 			  ('packages' -> scopeQuery packageNames).
 			  ('classes' -> scopeQuery classNames).
+			  ('hierarchies' -> scopeQuery hierarchyClassNames).
 			  ('subclasses' -> scopeQuery subclassClassNames).
 			  ('superclasses' -> scopeQuery parentClassNames) }
 ]
@@ -69,6 +70,7 @@ MCPToolSearch >> classAndMethodScopeSummaryFromRequest: request [
 	^ self classAndMethodScopeSummaryFromAssociations: {
 			  ('packages' -> (self searchScopeStringCollectionNamed: 'packages' fromRequest: request)).
 			  ('classes' -> (self searchScopeStringCollectionNamed: 'classes' fromRequest: request)).
+			  ('hierarchies' -> (self searchScopeStringCollectionNamed: 'hierarchyOf' fromRequest: request)).
 			  ('subclasses' -> (self searchScopeStringCollectionNamed: 'subclassesOf' fromRequest: request)).
 			  ('superclasses' -> (self searchScopeStringCollectionNamed: 'superclassesOf' fromRequest: request)) }
 ]
@@ -85,6 +87,7 @@ MCPToolSearch >> classScopeQueryFromRequest: request [
 	^ MCPClassScopeQuery new
 		  packageNames: (self searchScopeStringCollectionNamed: 'packages' fromRequest: request);
 		  classNames: (self searchScopeStringCollectionNamed: 'classes' fromRequest: request);
+		  hierarchyClassNames: (self searchScopeStringCollectionNamed: 'hierarchyOf' fromRequest: request);
 		  subclassClassNames: (self searchScopeStringCollectionNamed: 'subclassesOf' fromRequest: request);
 		  parentClassNames: (self searchScopeStringCollectionNamed: 'superclassesOf' fromRequest: request);
 		  yourself
