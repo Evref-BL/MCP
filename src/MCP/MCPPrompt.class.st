@@ -5,7 +5,7 @@ Prompts are user-controlled where tools are model-controlled. A client typically
 
 Subclasses answer a `promptName`, which is also their key in the registry, declare the arguments they take, and build their messages from the arguments supplied. Only `name` is required of a prompt; `title`, `description` and `arguments` are there for clients that display a picker.
 
-Concrete subclasses in the MCP package register themselves, the way tools and resources do. Override `shouldAutoRegister` to opt a prompt of your own in.
+A prompt is served because its package is loaded, the way a tool is: a concrete subclass that can already answer its name is in the catalog. One that must stay out answers false to `shouldAutoRegister`.
 "
 Class {
 	#name : 'MCPPrompt',
@@ -27,12 +27,6 @@ MCPPrompt class >> isAbstract [
 	^ self = MCPPrompt
 ]
 
-{ #category : 'testing' }
-MCPPrompt class >> isBuiltIn [
-
-	^ self package = MCPPrompt package
-]
-
 { #category : 'instance creation' }
 MCPPrompt class >> newForRegistry: aRegistry [
 
@@ -47,8 +41,11 @@ MCPPrompt class >> promptName [
 
 { #category : 'testing' }
 MCPPrompt class >> shouldAutoRegister [
+	"A prompt names itself, and naming itself is what gets it served, the way it is for tools. One that must stay out of every catalog answers false.
 
-	^ self isBuiltIn
+	Its own name, not an inherited one: a subclass would otherwise claim the key its superclass already holds, and a class being compiled in a live image has its methods added after it exists."
+
+	^ self class includesSelector: #promptName
 ]
 
 { #category : 'metadata' }

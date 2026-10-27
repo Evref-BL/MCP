@@ -32,6 +32,13 @@ MCPResourceTemplate class >> resourceUriTemplate [
 	^ self subclassResponsibility
 ]
 
+{ #category : 'testing' }
+MCPResourceTemplate class >> shouldAutoRegister [
+	"A template names itself with the URI template it answers for, which is where its URI comes from."
+
+	^ self class includesSelector: #resourceUriTemplate
+]
+
 { #category : 'converting' }
 MCPResourceTemplate >> asJRPCJSON [
 	"Templates carry uriTemplate where a resource carries uri."

@@ -43,10 +43,10 @@ mcp useContentAndStructuredContentToolResponses.
 ## Compact Paging
 
 List and search tools are optimized for low token usage. A page is the tool's
-own size, chosen for what one of its entries costs to read: fifty classes,
-twenty-five methods or packages, twenty critique hits, ten repositories. When
-another page exists, `data` includes `nextOffset`; call the same tool again
-with that `offset` to continue.
+own size, chosen for what one of its entries costs to read, so a page of
+classes is longer than a page of repositories. The number is not something to
+know in advance: when another page exists, `data` includes `nextOffset`; call
+the same tool again with that `offset` to continue.
 
 A search answers what identifies each hit, not everything known about it.
 `repository_search` says how many packages a repository holds rather than
@@ -55,7 +55,7 @@ rather than restating its documentation on every hit.
 
 ## Naming Several Targets
 
-Four tools act on several targets in one call. The argument that names the
+Some tools act on several targets in one call. The argument that names the
 target holds either one value or a list of them, and every other argument
 applies to all of them:
 
@@ -124,7 +124,7 @@ attempted.
 
 ## The Advertised Surface
 
-Fifteen tools are advertised directly: `tool_search`, `tool_get`, `tool_call`, `class_search`, `class_get`, `class_create`, `class_remove`, `method_search`, `method_source_search`, `method_reference_search`, `method_get`, `method_compile`, `method_remove`, `test_run` and `image_evaluate`. Every other tool is found with `tool_search` and called by name like any other; `tool_call` does the same for a client that will only send a name its own list holds.
+What a client is shown up front is the advertised surface: the catalog tools, the everyday class and method operations, `test_run` and `image_evaluate`. Which ones exactly is what `tools/list` answers, and the client already holds that list, so read it there rather than from here. Every other tool is found with `tool_search` and called by name like any other; `tool_call` does the same for a client that will only send a name its own list holds.
 
 A server chooses its own surface before `start`:
 

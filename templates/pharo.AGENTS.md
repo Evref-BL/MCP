@@ -31,6 +31,8 @@ guessing from source.
   `skills/pharo-mcp-recovery/SKILL.md`.
 - Before debugger sessions or repairs: read the local
   [debugging guide](pharo-references/debugging.md).
+- Before giving a project MCP tools, resources or prompts of its own: read
+  [building on MCP](pharo-references/building-on-mcp.md).
 
 ## Workflow
 

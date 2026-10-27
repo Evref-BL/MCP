@@ -13,7 +13,7 @@ Class {
 
 { #category : 'private' }
 MCPToolRegistryTest >> createProbeToolClass [
-	"A tool class outside the MCP package that asks to be auto-registered, so discovery sees it without touching the shipped surface."
+	"A tool class outside the MCP packages, with nothing but the metadata any tool has. Loading it is the whole opt-in, so discovery sees it without touching the shipped surface."
 
 	| probeClass |
 	probeClass := self
@@ -21,38 +21,53 @@ MCPToolRegistryTest >> createProbeToolClass [
 		              superclassName: #MCPTool
 		              slots: #(  )
 		              classSlots: #(  ).
-	self ensureMethodSource: 'shouldAutoRegister
+	self
+		ensureMethodSource: 'toolName
 
-	^ true' protocol: 'testing' on: probeClass class.
-	self ensureMethodSource: 'toolName
+	^ ''registry_probe_tool'''
+		protocol: 'metadata'
+		on: probeClass class.
+	self
+		ensureMethodSource: 'groupName
 
-	^ ''registry_probe_tool''' protocol: 'metadata' on: probeClass class.
-	self ensureMethodSource: 'groupName
+	^ ''registry-probes'''
+		protocol: 'metadata'
+		on: probeClass class.
+	self
+		ensureMethodSource: 'title
 
-	^ ''registry-probes''' protocol: 'metadata' on: probeClass class.
-	self ensureMethodSource: 'title
+	^ ''Registry Probe Tool'''
+		protocol: 'metadata'
+		on: probeClass.
+	self
+		ensureMethodSource: 'description
 
-	^ ''Registry Probe Tool''' protocol: 'metadata' on: probeClass.
-	self ensureMethodSource: 'description
-
-	^ ''Test fixture for tool class discovery.''' protocol: 'metadata' on: probeClass.
+	^ ''Test fixture for tool class discovery.'''
+		protocol: 'metadata'
+		on: probeClass.
 	self
 		ensureMethodSource: 'shouldRecordObservability
 
 	^ false'
 		protocol: 'testing'
 		on: probeClass.
-	self ensureMethodSource: 'buildInputSchema
+	self
+		ensureMethodSource: 'buildInputSchema
 
 	^ MCPStructureInputSchema new
 		  type: ''object'';
 		  properties: #(  );
 		  required: #(  );
 		  additionalProperties: false;
-		  yourself' protocol: 'metadata' on: probeClass.
-	self ensureMethodSource: 'executeWithRequest: aRequest
+		  yourself'
+		protocol: 'metadata'
+		on: probeClass.
+	self
+		ensureMethodSource: 'executeWithRequest: aRequest
 
-	^ self successResultText: ''Probe executed.'' data: Dictionary new' protocol: 'executing' on: probeClass.
+	^ self successResultText: ''Probe executed.'' data: Dictionary new'
+		protocol: 'executing'
+		on: probeClass.
 	^ probeClass
 ]
 
@@ -103,12 +118,6 @@ MCPToolRegistryTest >> testAToolClassIsNotDiscoveredUntilItCanNameItself [
 		              superclassName: #MCPTool
 		              slots: #(  )
 		              classSlots: #(  ).
-	self
-		ensureMethodSource: 'isBuiltIn
-
-	^ true'
-		protocol: 'testing'
-		on: probeClass class.
 	self deny: probeClass shouldAutoRegister.
 	registry := MCPToolRegistry default.
 	self deny: (registry toolNames includes: self probeToolName).

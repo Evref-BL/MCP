@@ -32,6 +32,24 @@ Metacello new
    load.
 ```
 
+The baseline groups are:
+
+- `Core`: the server, its transport and schema machinery, and the catalog
+  tools it dispatches through
+- `IDE`: the image tools — classes, methods, packages, tests, critiques,
+  repositories, change history, debugging
+- `UI`: the world-menu server list
+- `Telemetry`: the OpenTelemetry backend
+- `default`: `Core`, `IDE`, `UI` and their tests
+
+A project embedding the server and serving tools of its own loads `Core` alone,
+which leaves out the image tools and everything behind them. Loading its package
+is all its tools need: a tool that names itself is in the catalog, the way the
+`pifs_` tools are in
+[pharo-image-fs](https://github.com/Evref-BL/pharo-image-fs).
+[Building on MCP](templates/pharo-references/building-on-mcp.md) walks through
+a tool, a resource and a prompt of your own.
+
 Start the Streamable HTTP server:
 
 ```smalltalk
@@ -51,6 +69,7 @@ and first calls.
 - [Documentation index](docs/README.md)
 - [Getting started](templates/pharo-references/getting-started.md)
 - [Using MCP from an agent](templates/pharo-references/using-pharo-mcp.md)
+- [Building on MCP](templates/pharo-references/building-on-mcp.md)
 - [Tool reference](templates/pharo-references/tool-reference.md)
 - [Safety and ecosystem integration](templates/pharo-references/safety-and-ecosystem.md)
 - [Troubleshooting](templates/pharo-references/troubleshooting.md)

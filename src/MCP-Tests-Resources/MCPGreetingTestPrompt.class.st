@@ -1,7 +1,7 @@
 "
 Prompt fixture: greets a name, with an optional greeting word.
 
-It lives outside the MCP package so it does not register itself into every server.
+It answers false to shouldAutoRegister so it does not register itself into every server.
 "
 Class {
 	#name : 'MCPGreetingTestPrompt',
@@ -14,6 +14,13 @@ Class {
 MCPGreetingTestPrompt class >> promptName [
 
 	^ 'greet'
+]
+
+{ #category : 'testing' }
+MCPGreetingTestPrompt class >> shouldAutoRegister [
+	"A fixture is not a prompt anyone asked for, and MCP's default group loads its own tests, so every fixture says so itself rather than relying on the package it sits in."
+
+	^ false
 ]
 
 { #category : 'metadata' }

@@ -1,7 +1,7 @@
 "
 Resource template fixture: pharo://greeting/{name} answers a greeting for the name in the URI.
 
-It lives outside the MCP package so it does not register itself into every server.
+It answers false to shouldAutoRegister so it does not register itself into every server.
 "
 Class {
 	#name : 'MCPResourceTemplateTestFixture',
@@ -22,16 +22,17 @@ MCPResourceTemplateTestFixture class >> resourceUriTemplate [
 	^ 'pharo://greeting/{name}'
 ]
 
+{ #category : 'testing' }
+MCPResourceTemplateTestFixture class >> shouldAutoRegister [
+	"A fixture is not a resource anyone asked for, and MCP's default group loads its own tests, so every fixture says so itself rather than relying on the package it sits in."
+
+	^ false
+]
+
 { #category : 'metadata' }
 MCPResourceTemplateTestFixture class >> uriPrefix [
 
 	^ 'pharo://greeting/'
-]
-
-{ #category : 'metadata' }
-MCPResourceTemplateTestFixture >> description [
-
-	^ 'Greets the name in the URI.'
 ]
 
 { #category : 'completing' }
@@ -39,6 +40,12 @@ MCPResourceTemplateTestFixture >> completionsFor: aVariableName value: aPrefix c
 
 	aVariableName = 'name' ifFalse: [ ^ #(  ) ].
 	^ #( 'world' 'pharo' 'moon' ) select: [ :each | each beginsWith: aPrefix ]
+]
+
+{ #category : 'metadata' }
+MCPResourceTemplateTestFixture >> description [
+
+	^ 'Greets the name in the URI.'
 ]
 
 { #category : 'resolving' }

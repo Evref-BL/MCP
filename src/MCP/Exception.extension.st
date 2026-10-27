@@ -86,46 +86,9 @@ Exception >> mcpDebugStartContext [
 ]
 
 { #category : '*MCP' }
-Exception >> mcpErrorResultForMutationTool: aTool action: action requestedContext: requestedContext summary: summary [
-
-	^ aTool
-		  errorResultForCommandError: (aTool
-				   normalizedCommandErrorForActionFailure: self
-				   action: action
-				   requestedContext: requestedContext
-				   summary: summary)
-		  action: action
-		  requestedContext: requestedContext
-]
-
-{ #category : '*MCP' }
 Exception >> mcpIsJRPCError [
 
 	^ false
-]
-
-{ #category : '*MCP' }
-Exception >> mcpMutationFailureCauseForSyntaxNotice: aSyntaxNotice [
-
-	^ aSyntaxNotice
-]
-
-{ #category : '*MCP' }
-Exception >> mcpMutationFailureErrorCodeSuffix [
-
-	^ 'ExecutionError'
-]
-
-{ #category : '*MCP' }
-Exception >> mcpNoticeNode [
-
-	^ nil
-]
-
-{ #category : '*MCP' }
-Exception >> mcpSyntaxNotice [
-
-	^ nil
 ]
 
 { #category : '*MCP' }
