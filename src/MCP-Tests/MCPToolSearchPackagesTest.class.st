@@ -67,14 +67,15 @@ MCPToolSearchPackagesTest >> testImageScopeCanPaginateFilteredPackages [
 
 	| data expected packageNames pagination result summary |
 	result := self callToolWith: {
-		          (#name -> 'MCP-').
-		          (#offset -> 1) } asDictionary.
+			          (#name -> 'MCP-').
+			          (#offset -> 1) } asDictionary.
 	data := self dataFrom: result.
 	pagination := data at: #pagination.
 	summary := self summaryFrom: result.
 	packageNames := (data at: #packages) collect: [ :each | each at: #package ].
+	"The filter keeps a package whose name holds the text anywhere, so the expectation has to read it the same way: a package such as PharoImageFS-MCP-Tests is one of them."
 	expected := (PackageOrganizer default packages
-		             select: [ :each | each name asString beginsWith: 'MCP-' ]
+		             select: [ :each | each name asString includesSubstring: 'MCP-' ]
 		             thenCollect: [ :each | each name asString ]) asArray sort.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: packageNames size equals: expected size - 1.
@@ -83,7 +84,7 @@ MCPToolSearchPackagesTest >> testImageScopeCanPaginateFilteredPackages [
 	self assert: (pagination at: #totalCount) equals: expected size.
 	self deny: (pagination at: #truncated).
 	self assert: (summary includesSubstring: 'Showing ').
-	self assert: packageNames equals: (expected allButFirst) asArray
+	self assert: packageNames equals: expected allButFirst asArray
 ]
 
 { #category : 'tests' }

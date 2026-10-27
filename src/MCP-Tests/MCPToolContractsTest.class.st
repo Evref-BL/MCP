@@ -996,11 +996,11 @@ MCPToolContractsTest >> testEvaluateToolPointsAtTheToolCatalog [
 
 { #category : 'tests' }
 MCPToolContractsTest >> testEveryToolHasAnIconOfItsOwn [
-	"An icon two tools share marks neither of them."
+	"An icon two tools share marks neither of them. Another project's tools are its own to keep apart, and loading one must not fail this."
 
 	| byIcon shared |
 	byIcon := Dictionary new.
-	MCPToolRegistry default toolClasses do: [ :each |
+	self builtInToolClasses do: [ :each |
 		(byIcon at: each toolIconSpec cacheKey ifAbsentPut: [ OrderedCollection new ]) add: each toolName ].
 	shared := byIcon values select: [ :each | each size > 1 ] thenCollect: [ :each | each sorted ].
 
@@ -1009,10 +1009,10 @@ MCPToolContractsTest >> testEveryToolHasAnIconOfItsOwn [
 
 { #category : 'tests' }
 MCPToolContractsTest >> testEveryToolNameMapsToAKnownDomainAndAction [
-	"A name that misses the maps gets the generic tools-and-arrow icon, which says nothing. A new tool either reuses a word the maps know or adds one."
+	"A name that misses the maps gets the generic tools-and-arrow icon, which says nothing. A new tool either reuses a word the maps know or adds one. This is MCP's own vocabulary: a tool another project ships cannot be spelled out of it, and says what it looks like itself."
 
 	| unmapped |
-	unmapped := MCPToolRegistry default toolClasses
+	unmapped := self builtInToolClasses
 		            reject: [ :each |
 				            | parts |
 				            parts := each toolName substrings: '_'.
@@ -2436,8 +2436,11 @@ MCPToolContractsTest >> testToolFlowSelectorNamesSeparateTransportAndParsedInput
 
 { #category : 'tests' }
 MCPToolContractsTest >> testToolIconSpecsAreDerivedFromToolNames [
+	"Among MCP's own tools, an icon is read from the name and never picked by hand, so the forty of them stay consistent without anyone choosing. A tool from another package cannot be spelled out of MCP's vocabulary, so it is left to declare its own."
 
-	self assert: (MCPTool withAllSubclasses count: [ :each | each class includesSelector: #toolIconSpec ]) equals: 1.
+	| builtIn |
+	builtIn := MCPTool withAllSubclasses select: [ :each | each isBuiltIn ].
+	self assert: (builtIn count: [ :each | each class includesSelector: #toolIconSpec ]) equals: 1.
 	self assert: (MCPTool class includesSelector: #toolIconSpec)
 ]
 
