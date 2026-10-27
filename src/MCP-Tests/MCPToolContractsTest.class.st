@@ -2432,7 +2432,7 @@ MCPToolContractsTest >> testStringArrayItemDescriptionsStayUseful [
 
 { #category : 'tests' }
 MCPToolContractsTest >> testTheServerDoesNotReachIntoTheImageTools [
-	"MCP has to load without MCP-IDE, which is the whole point of the split: a project that wants the server and its own tools should not drag in forty it will never call. One reference from here to there, and a core-only load breaks. Its extensions to other projects' classes count too, which is where such a reference would hide."
+	"MCP has to load without MCP-IDE, which is the whole point of the split: a project that wants the server and its own tools should not drag in the image tools it will never call. One reference from here to there, and a core-only load breaks. Its extensions to other projects' classes count too, which is where such a reference would hide."
 
 	| imageTools offenders check |
 	imageTools := ('MCP-IDE' asPackage definedClasses collect: [ :each | each instanceSide ]) asSet.
@@ -2496,7 +2496,7 @@ MCPToolContractsTest >> testToolFlowSelectorNamesSeparateTransportAndParsedInput
 
 { #category : 'tests' }
 MCPToolContractsTest >> testToolIconSpecsAreDerivedFromToolNames [
-	"Among MCP's own tools, an icon is read from the name and never picked by hand, so the forty of them stay consistent without anyone choosing. A tool from another package cannot be spelled out of MCP's vocabulary, so it is left to declare its own."
+	"Among MCP's own tools, an icon is read from the name and never picked by hand, so they stay consistent without anyone choosing. A tool from another package cannot be spelled out of MCP's vocabulary, so it is left to declare its own."
 
 	| builtIn |
 	builtIn := MCPTool withAllSubclasses select: [ :each | each isBuiltIn ].

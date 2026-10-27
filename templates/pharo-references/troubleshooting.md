@@ -37,7 +37,7 @@ http://127.0.0.1:4000
 
 If you changed the port in Pharo, update the MCP client configuration.
 
-MCP currently handles MCP calls over HTTP POST. Unsupported HTTP methods
+MCP handles MCP calls over HTTP POST. Unsupported HTTP methods
 return method-not-allowed instead of hanging.
 
 ## `tools/list` Is Empty Or Stale

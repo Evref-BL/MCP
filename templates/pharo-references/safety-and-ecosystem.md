@@ -275,7 +275,8 @@ makes one only when the image has none there. Starting a second server on a
 taken port fails after a couple of seconds, and the error now says when the
 port is held by another MCP in the same image.
 
-An inspected `MCP` object has two Spec tabs. The dashboard runs the server:
+An inspected `MCP` object has a dashboard tab and an observability tab. The
+dashboard runs the server:
 
 - server status, endpoint and port
 - debug mode

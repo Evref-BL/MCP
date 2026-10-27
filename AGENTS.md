@@ -37,6 +37,12 @@ template package.
   ships, and `templates/pharo-skills/` the workflows with their own triggers:
   project loading, version compatibility, image-to-Git handoff, CI reproduction,
   code profiling.
+- That guidance and `README.md` describe behavior, not the implementation as it
+  stands. Counting the classes in a group, the tools in a package or the
+  entries in a page, and listing the advertised tools, all go stale without
+  failing anything. Name what answers the question — the baseline group,
+  `tools/list`, the tool's own contract through `tool_get` — and leave the
+  number to whoever asks. A number is fine in a test whose assertion states it.
 
 ## Project Facts
 

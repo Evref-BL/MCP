@@ -34,7 +34,7 @@ Metacello new
 
 The baseline groups are:
 
-- `Core`: the server, its transport and schema machinery, and the three catalog
+- `Core`: the server, its transport and schema machinery, and the catalog
   tools it dispatches through
 - `IDE`: the image tools — classes, methods, packages, tests, critiques,
   repositories, change history, debugging
@@ -43,8 +43,8 @@ The baseline groups are:
 - `default`: `Core`, `IDE`, `UI` and their tests
 
 A project embedding the server and serving tools of its own loads `Core` alone,
-which is about seventy classes rather than three hundred. Loading its package is
-all its tools need: a tool that names itself is in the catalog, the way the
+which leaves out the image tools and everything behind them. Loading its package
+is all its tools need: a tool that names itself is in the catalog, the way the
 `pifs_` tools are in
 [pharo-image-fs](https://github.com/Evref-BL/pharo-image-fs).
 [Building on MCP](templates/pharo-references/building-on-mcp.md) walks through

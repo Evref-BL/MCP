@@ -2,9 +2,8 @@
 
 MCP is a server you can embed. Loading `Core` gives you the Streamable HTTP
 transport, the JSON-RPC and schema machinery and the catalog tools, and
-nothing that knows about Pharo code: about seventy classes rather than three
-hundred. Everything the server then offers a client — tools, resources,
-prompts — you write in a package of your own.
+nothing that knows about Pharo code. Everything the server then offers a
+client — tools, resources, prompts — you write in a package of your own.
 
 [pharo-image-fs](https://github.com/Evref-BL/pharo-image-fs) does exactly
 that. It serves its filesystem projections as `pifs_start`, `pifs_stop` and
@@ -33,8 +32,8 @@ Two things there are worth copying. The group is named `Tools` rather than
 And it is left out of `default`: your project is useful without a server, and
 an image that does not serve MCP has no use for tools it cannot register.
 
-The other groups are `IDE`, MCP's own forty-odd image tools for classes,
-methods, packages, tests, repositories, change history and debugging; `UI`,
+The other groups are `IDE`, MCP's own image tools for classes, methods,
+packages, tests, repositories, change history and debugging; `UI`,
 the world-menu server list; `Telemetry`, the OpenTelemetry backend; and
 `default`, which is `Core`, `IDE`, `UI` and their tests.
 
@@ -202,7 +201,7 @@ structured half carries your text as `summary` and your dictionary as `data`.
 tools. Pick one for your project and answer it on the shared superclass.
 
 MCP reads an icon out of a tool name whose words it recognises — `class`,
-`method`, `search`, `create` — which is how its own forty stay consistent
+`method`, `search`, `create` — which is how its own tools stay consistent
 without anyone choosing. Your words are not in that vocabulary, so declare an
 icon:
 
