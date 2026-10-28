@@ -28,8 +28,7 @@ for developing MCP itself; users of a released server should start with
 - Before MCP source, tests, schemas, packaging, or developer docs: read
   `docs/developing-mcp.md`, and `docs/mcp-verification.md` before verifying.
 - Before Pharo source changes: read
-  `templates/pharo-references/pharo-coding-rules.md` and
-  `templates/pharo-references/pharo-coding-style.md`.
+  `templates/pharo-references/pharo-coding.md`.
 - For a tool's own contract, ask the server with `tool_search` and `tool_get`.
 - `templates/pharo-references/` holds the guidance this repository installs
   into other projects, and `templates/pharo-skills/` the workflows with their

@@ -452,6 +452,10 @@ MCPToolMethodMutationTest >> testCollectionStyleCritiquesProvideAutomaticChanges
 			           'nilOnlyConditionalProbe: value ^ value ifNil: [ nil ] ifNotNil: [ :present | present asString ]'.
 			           MCPNilOnlyConditionalRule }.
 		           {
+			           #booleanNilOnlyProbe:.
+			           'booleanNilOnlyProbe: aBoolean ^ aBoolean ifTrue: [ 42 ] ifFalse: [ nil ]'.
+			           MCPNilOnlyConditionalRule }.
+		           {
 			           #dictionaryAtIfPresentProbe:.
 			           'dictionaryAtIfPresentProbe: dictionary | result | result := OrderedCollection new. (dictionary at: #name ifAbsent: [ nil ]) ifNotNil: [ :value | result add: value ]. ^ result'.
 			           MCPDictionaryAtIfPresentRule }.
@@ -471,6 +475,10 @@ MCPToolMethodMutationTest >> testCollectionStyleCritiquesProvideAutomaticChanges
 			           #collectionThenDoProbe:.
 			           'collectionThenDoProbe: collection | sum | sum := 0. (collection select: [ :each | each odd ]) do: [ :each | sum := sum + each ]. ^ sum'.
 			           MCPCollectionThenDoRule }.
+		           {
+			           #collectConversionProbe:.
+			           'collectConversionProbe: collection ^ (collection collect: [ :each | each asString ]) asArray'.
+			           MCPCollectConversionRule }.
 		           {
 			           #sortedCollectionConversionProbe:.
 			           'sortedCollectionConversionProbe: collection ^ collection asSortedCollection asArray'.

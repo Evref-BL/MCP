@@ -19,8 +19,7 @@ rather than letting source stand in for it.
 
 - Before Pharo source changes: read the project's Pharo coding and testing
   guidance. If none exists, use the local
-  [coding rules](pharo-references/pharo-coding-rules.md) and
-  [coding style](pharo-references/pharo-coding-style.md).
+  [Pharo coding](pharo-references/pharo-coding.md) reference.
 - Before reading an answer closely, rewriting methods, or acting on a warning a
   call came back with: read
   [tool reference](pharo-references/tool-reference.md).

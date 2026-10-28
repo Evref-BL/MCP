@@ -7,8 +7,7 @@ Read after:
 
 - `templates/pharo.AGENTS.md`
 - `templates/pharo-references/tool-reference.md`
-- `templates/pharo-references/pharo-coding-rules.md`
-- `templates/pharo-references/pharo-coding-style.md`
+- `templates/pharo-references/pharo-coding.md`
 
 ## Goal
 
@@ -39,10 +38,8 @@ Rules:
 
 ## Implementation Rules
 
-- Follow `templates/pharo-references/pharo-coding-rules.md` for Pharo object design and
-  correctness rules.
-- Follow `templates/pharo-references/pharo-coding-style.md` for readability heuristics around
-  expression shape, guards, temporaries, and conditions.
+- Follow `templates/pharo-references/pharo-coding.md` for what is particular to
+  Pharo, and the critiques a compile reports for the rest.
 - Keep tool APIs explicit and testable through request, command, and result
   objects.
 - Prefer dedicated query/edit command objects over broad evaluation hooks.
@@ -94,9 +91,8 @@ workflow-oriented:
 - code profiling and performance optimization.
 
 A generic Pharo clean-code skill can be useful if shared across repositories,
-but for MCP development the coding rules and style heuristics should remain in
-`templates/pharo-references/pharo-coding-rules.md` and
-`templates/pharo-references/pharo-coding-style.md` and be loaded by context
+but for MCP development the Pharo coding guidance should remain in
+`templates/pharo-references/pharo-coding.md` and be loaded by context
 routing. Add a specialized skill only when a workflow needs
 procedural steps, scripts, or tool-specific checks beyond ordinary reading.
 

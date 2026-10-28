@@ -71,6 +71,7 @@ MCPToolMethodMutation >> additionalKeywords [
 MCPToolMethodMutation >> allowedNonErrorCritiqueRuleClasses [
 
 	^ {
+		  MCPCollectConversionRule.
 		  MCPCollectionThenDoRule.
 		  MCPDictionaryAtIfPresentRule.
 		  MCPFilteredEmptinessRule.

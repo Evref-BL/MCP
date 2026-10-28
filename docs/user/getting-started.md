@@ -152,5 +152,4 @@ The guidance installed into a project covers the rest, and is published under
 `templates/pharo-references/`:
 
 - [Tool reference](../../templates/pharo-references/tool-reference.md)
-- [Pharo coding rules](../../templates/pharo-references/pharo-coding-rules.md)
-- [Pharo coding style](../../templates/pharo-references/pharo-coding-style.md)
+- [Pharo coding](../../templates/pharo-references/pharo-coding.md)

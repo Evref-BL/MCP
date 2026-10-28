@@ -22,8 +22,7 @@ const hosts = {
 };
 
 const installedReferences = [
-  "pharo-coding-rules.md",
-  "pharo-coding-style.md",
+  "pharo-coding.md",
   "tool-reference.md",
 ];
 
