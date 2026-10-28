@@ -320,4 +320,17 @@ mcp useOpenTelemetryObservability
 The core baseline loads PharoBackwardCompatibility, JRPC, and PCRE2.
 OpenTelemetry is loaded only by the optional `Telemetry` group. CI covers
 Pharo 12, 13, 14, and 15. Code should target the Pharo 14 API;
-PharoBackwardCompatibility backports supported APIs to older images.
+PharoBackwardCompatibility backports supported APIs to older images. It has no
+surface groups, so its default baseline is the whole of it:
+
+```smalltalk
+spec
+   baseline: 'PharoBackwardCompatibility'
+   with: [ spec repository: 'github://jecisc/PharoBackwardCompatibility:v1.x.x/src' ]
+```
+
+A difference it does not cover belongs in a package the baseline loads only
+where it applies, the way `MCP-Compatibility-From13` is loaded when
+`SystemVersion current major >= 13`. Offer a general difference upstream
+instead of keeping it local, and verify on every version in the matrix: a shim
+that loads is not a shim that works.

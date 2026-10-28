@@ -20,7 +20,8 @@ guessing from source.
   [coding rules](pharo-references/pharo-coding-rules.md) and
   [coding style](pharo-references/pharo-coding-style.md).
 - Before loading a project: use `skills/pharo-project-load/SKILL.md`.
-- Before cross-version work: use `skills/pharo-version-compat/SKILL.md`.
+- Before cross-version work: read the version compatibility section of
+  [safety and ecosystem](pharo-references/safety-and-ecosystem.md).
 - Before exporting image changes or changing Git state: use
   `skills/pharo-image-git-handoff/SKILL.md`.
 - Before reproducing smalltalkCI or GitHub failures: use

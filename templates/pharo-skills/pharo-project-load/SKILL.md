@@ -37,7 +37,7 @@ For local Tonel, use an absolute `tonel:///.../src` URL.
 
 - Baseline/package not found: verify branch and source directory.
 - Missing global/class/selector: compare the project API surface with the
-  target Pharo version; use `pharo-version-compat` when appropriate.
+  target Pharo version, and check what PharoBackwardCompatibility backports.
 - Metacello conflict: reproduce the project's documented or CI conflict policy.
 - Native or CI-only failure: reproduce once, then use `pharo-ci-repro`.
 
