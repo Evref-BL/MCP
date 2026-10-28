@@ -45,7 +45,7 @@ The baseline groups are:
 A project embedding the server and serving tools of its own loads `Core` alone,
 which leaves out the image tools and everything behind them. Loading its package
 is all its tools need: a tool that names itself is in the catalog.
-[Building on MCP](templates/pharo-references/building-on-mcp.md) walks through
+[Building on MCP](docs/user/building-on-mcp.md) walks through
 a tool, a resource and a prompt of your own.
 
 Start the Streamable HTTP server:
@@ -59,17 +59,18 @@ again after a restart is safe. `MCP allServers` lists what the image holds, and
 `Library → MCP Servers` in the world menu shows the same list.
 
 Connect a local MCP client to `http://127.0.0.1:4000`. Client configuration
-formats differ; see [Getting started](templates/pharo-references/getting-started.md) for setup
+formats differ; see [Getting started](docs/user/getting-started.md) for setup
 and first calls.
 
 ## Documentation
 
 - [Documentation index](docs/README.md)
-- [Getting started](templates/pharo-references/getting-started.md)
+- [Getting started](docs/user/getting-started.md)
 - [Using MCP from an agent](templates/pharo-references/using-pharo-mcp.md)
-- [Building on MCP](templates/pharo-references/building-on-mcp.md)
+- [Building on MCP](docs/user/building-on-mcp.md)
+- [Observability and UI](docs/user/observability.md)
 - [Tool reference](templates/pharo-references/tool-reference.md)
-- [Safety and ecosystem integration](templates/pharo-references/safety-and-ecosystem.md)
+- [Tool safety](templates/pharo-references/tool-safety.md)
 - [Troubleshooting](templates/pharo-references/troubleshooting.md)
 - [Developing MCP](docs/developing-mcp.md)
 

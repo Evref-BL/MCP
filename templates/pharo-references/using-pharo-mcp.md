@@ -1,7 +1,7 @@
 # Using The Pharo MCP Server
 
 Applies when an agent or user interacts with a running Pharo image through MCP.
-Follow [Getting started](getting-started.md) to load, start, and connect first.
+Load, start and connect the server as the project serving it documents.
 
 ## Source Of Truth
 
@@ -35,8 +35,7 @@ class-reference, or variable-reference search matching the question.
 
 For repository work, inspect with `repository_search`, verify identity before
 mutation, and inspect `repository_change_list` before export or commit. Read
-[Safety and ecosystem integration](safety-and-ecosystem.md) for mutation
-boundaries.
+[Tool safety](tool-safety.md) for mutation boundaries.
 
 `method_get` and `class_get` read several targets in one call when their
 `selector` or `name` holds a list, and `method_compile` and `class_create`
@@ -71,16 +70,18 @@ code; the server's own frames are left out. For `image_evaluate` a compilation
 failure also names the line and shows it, and a `MessageNotUnderstood` suggests
 selectors the receiver does understand.
 
+When a call, a connection, or the image itself behaves unexpectedly, read
+[Troubleshooting](troubleshooting.md).
+
 ## Reusable Workflows
 
 Run `npx @evref-bl/pharo-mcp install --host <host>` in the target project to
-install context-routed skills for project loading, version compatibility,
-image-to-Git handoff, CI reproduction, and standalone MCP recovery.
+install context-routed skills for project loading, image-to-Git handoff, CI
+reproduction, code profiling, and standalone MCP recovery.
 
 ## Serving Your Own
 
 An image can serve tools, resources and prompts a project defines itself,
-from that project's own package and without changing MCP. Read
-[Building on MCP](building-on-mcp.md) for the server-only load, what a tool,
-a resource and a prompt each need, and how the surface a client sees is
-shaped.
+from that project's own package and without changing the server. The server's
+own documentation describes the server-only load, what a tool, a resource and
+a prompt each need, and how the surface a client sees is shaped.
