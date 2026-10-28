@@ -83,11 +83,7 @@ over clients branching on concrete classes or internal fields.
 
 ## Initialization
 
-- Instance-side `initialize` starts with `super initialize`.
 - Initialize sensible defaults.
-- Methods without an explicit return answer `self`. Do not add a trailing
-  `^ self` to initializers or mutators only to return the receiver; keep
-  explicit returns for early exits or non-self results.
 - Do not redefine class-side `new` just to call `initialize`.
 - Use class-side creation messages such as `on:`, `with:`, or domain-specific
   constructors when required data exists.
@@ -127,21 +123,3 @@ over clients branching on concrete classes or internal fields.
 - Use memory filesystems, fakes, or injected collaborators for unit tests when
   possible.
 - Keep live-image and external-state tests separate from source-only checks.
-
-## Review Checklist
-
-Before finishing a Pharo source change, scan for:
-
-- class checks or reflection used as ordinary dispatch;
-- `perform:` selector registries;
-- normal control flow through `nil`;
-- repeated client-side extraction from an object;
-- long methods or blocks hiding named domain steps;
-- project-specific extensions on broad system classes that only defend
-  hypothetical collaborators;
-- missing `super initialize`;
-- stream/file cleanup without `ensure:`;
-- string concatenation in loops;
-- overridden `=` without `hash`;
-- broad exception handlers that hide failures;
-- missing tests for changed public behavior.

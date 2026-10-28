@@ -83,6 +83,7 @@ MCPToolMethodMutation >> allowedNonErrorCritiqueRuleClasses [
 		  MCPRespondsToUsageRule.
 		  MCPSelectSizeCountRule.
 		  MCPSortedCollectionConversionRule.
+		  MCPStreamWriteCascadeRule.
 		  ReAssignmentInBlockRule.
 		  ReEquivalentSuperclassMethodsRule.
 		  ReExcessiveArgumentsRule.

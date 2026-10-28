@@ -476,6 +476,10 @@ MCPToolMethodMutationTest >> testCollectionStyleCritiquesProvideAutomaticChanges
 			           'sortedCollectionConversionProbe: collection ^ collection asSortedCollection asArray'.
 			           MCPSortedCollectionConversionRule }.
 		           {
+			           #streamWriteCascadeProbe:.
+			           'streamWriteCascadeProbe: aStream aStream << ''first''; << ''second'''.
+			           MCPStreamWriteCascadeRule }.
+		           {
 			           #isNotEmptyProbe:.
 			           'isNotEmptyProbe: collection ^ collection notEmpty'.
 			           MCPIsNotEmptyRule }.
