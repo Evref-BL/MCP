@@ -54,6 +54,14 @@ MCPUserInterfaceToolTest >> testScreenReadDescribesWhatAMorphHolds [
 ]
 
 { #category : 'tests' }
+MCPUserInterfaceToolTest >> testScreenReadNamesAPlainWindow [
+
+	| result |
+	result := (self readScreenCommandFor: (SystemWindow labelled: 'Plain Window') depth: 0) execute.
+	self assert: (result tree at: #title) equals: 'Plain Window'
+]
+
+{ #category : 'tests' }
 MCPUserInterfaceToolTest >> testScreenReadStopsAtTheRequestedDepth [
 
 	| parent result |
@@ -73,4 +81,11 @@ MCPUserInterfaceToolTest >> testScreenshotNamesTheWindowItCaptured [
 		           request: (MCPScreenshotRequest new initializeWindow: 'Playground')
 		           morph: (self morphOfExtent: 40 @ 30)) execute.
 	self assert: result target equals: 'Playground'
+]
+
+{ #category : 'tests' }
+MCPUserInterfaceToolTest >> testWindowTitleIsTheLabelOfAPlainWindow [
+	"A plain SystemWindow answers no #title, so the tools read the label every window carries."
+
+	self assert: (MCPToolReadScreen new titleOf: (SystemWindow labelled: 'Plain Window')) equals: 'Plain Window'
 ]
