@@ -1120,6 +1120,8 @@ MCPToolContractsTest >> testHandleJSONReturnsInternalErrorForUnhandledHalt [
 
 	| handler processor response |
 	processor := MCPMessageProcessor new.
+	"What the answer says about the image is withheld unless a server asks for it, and this test is about what it says."
+	processor includesErrorData: true.
 	handler := MCPMessageSendHandler new
 		           receiver: self;
 		           methodName: 'mcp/test-halt';
