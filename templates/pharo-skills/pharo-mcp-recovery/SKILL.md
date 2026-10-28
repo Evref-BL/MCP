@@ -19,7 +19,7 @@ standalone image without a safer environment-specific recovery surface.
 4. Create a replacement image only after preserving the original. Use
    `pharo-project-load` to restore MCP and the target project.
 5. Recover changes by inspecting Epicea history before confirmed application.
-   Use `pharo-image-git-handoff` before repository attachment or Tonel export.
+   Use `pharo-image-sync` before repository attachment or Tonel export.
 6. Verify the recovered behavior with focused inspection or tests.
 
 ## Stop And Ask

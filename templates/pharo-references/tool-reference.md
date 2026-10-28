@@ -1,193 +1,113 @@
 # Tool Reference
 
-MCP exposes tools through `tools/list` and `tools/call`. Common tools can be
-advertised directly; less common tools can be found through the catalog tools.
-Tool names use `snake_case` names that generally put the domain before the
-action.
+How this server answers, and what it does when a call is not simply a success.
+What a tool takes is in its own schema: read that with `tool_get`, not from
+here.
 
-Every tool returns MCP call `content` as the canonical response for LLMs, in
-plain text: the summary first, then any warnings, then the payload as lines.
-The fields that identify one record share a line as `key=value` pairs, and a
-value carrying spaces is quoted, as in `protocol="private - results"`. A record
-that names a method opens with the method, written the way Pharo writes it:
-`MCPTool>>batchSummaryNoun`, or `MCPTool class>>toolName` on the class side. A
-list of plain values is bracketed, as in `required: [name, slotName]`, and a
-list of records is named before its entries. Text with its own lines, such as
-method source, follows under its own label. `tool_get` answers a tool's
-contract as YAML.
+## Reading An Answer
+
+A call answers text: the summary first, then any warnings, then the payload as
+lines. The fields that identify one record share a line as `key=value` pairs,
+and a value carrying spaces is quoted, as in `protocol="private - results"`. A
+record that names a method opens with the method, written the way Pharo writes
+it: `MCPTool>>batchSummaryNoun`, or `MCPTool class>>toolName` on the class side.
+A list of plain values is bracketed, as in `required: [name, slotName]`, and
+text with its own lines follows under its own label.
 
 A result does not repeat itself: what the summary states in prose, and what a
 record already says another way, is left out of the lines.
 
-The same payload is also carried as `structuredContent`:
+The same payload is carried as `structuredContent` where the server is
+configured to send it, with `data` on success and `error` on failure, the call
+then also carrying the protocol's own `isError`.
 
-```text
-summary: human-readable summary
-warnings: array of warning strings
-data: structured success payload
-error: structured error payload
-```
+## Paging
 
-`data` is present on success. `error` is present on failure, where the call is
-also flagged with the protocol's own `isError`.
-
-For clients or integrations that need programmatic payloads, configure the
-server response fields before `start`:
-
-```smalltalk
-mcp useContentOnlyToolResponses. "default"
-mcp useStructuredContentOnlyToolResponses.
-mcp useContentAndStructuredContentToolResponses.
-```
-
-## Compact Paging
-
-List and search tools are optimized for low token usage. A page is the tool's
-own size, chosen for what one of its entries costs to read, so a page of
-classes is longer than a page of repositories. The number is not something to
-know in advance: when another page exists, `data` includes `nextOffset`; call
-the same tool again with that `offset` to continue.
+A page is the tool's own size, chosen for what one of its entries costs to
+read, so a page of classes is shorter than a page of repositories. When another
+page exists, `data` carries `nextOffset`; call the same tool again with that
+`offset`.
 
 A search answers what identifies each hit, not everything known about it.
 `repository_search` says how many packages a repository holds rather than
-naming them, which `package_search` answers; `critique_run` names the rule
-rather than restating its documentation on every hit.
+naming them, which `package_search` answers.
 
-## Naming Several Targets
+## Several Targets At Once
 
-Some tools act on several targets in one call. The argument that names the
-target holds either one value or a list of them, and every other argument
-applies to all of them:
+Some tools take either one value or a list where they name their target, and
+every other argument then applies to all of them: `method_get` and
+`method_compile` by `selector` and `source`, `class_get` and `class_create` by
+`name`.
 
-| Tool | Argument | One call covers |
-| --- | --- | --- |
-| `method_get` | `selector` | Methods of one class, on one side. |
-| `method_compile` | `source` | Sources compiled into one class, under one protocol. |
-| `class_get` | `name` | Classes read with the same options. |
-| `class_create` | `name` | Classes sharing a superclass, package and slots. |
+Every target is attempted. The summary says how many succeeded, `data` carries
+one entry per target under `results` in request order, and an entry that failed
+carries its own `error`. The call is flagged `isError` only when every target
+failed.
 
-Every target is attempted. The summary states how many succeeded, each target
-then reads as it would have read on its own, and `data` carries one entry per
-target under `results`, in request order. An entry that failed carries its
-`error`. The call is flagged `isError` only when every target failed.
+`class_update` and `method_update` are the opposite case: they take the whole
+change to one target and stop at the first part that fails, rather than leaving
+half a definition nobody asked for.
 
-A call naming one target answers exactly what it answers when the argument
-holds a single value.
+## Warnings Are Not Failures
 
-## Changing A Class Or A Method
+Pharo signals a notification for a remark rather than a fault, and every
+`Warning` is one. The tool boundary resumes them with the value the image would
+have produced and the call proceeds, so a deprecated send, or an undeclared
+variable during a load, does not fail it.
 
-`class_update` and `method_update` take the whole change rather than one
-property each. Every property is optional and at least one is required;
-omitted ones are left alone.
+`RBRefactoringWarning` is the exception. It reports a change that breaks
+something, so it stops the call, and the error carries `impactMessages`,
+`howToProceed` and `forceSupported`. Read the impact, then send the same request
+with `force=true` only when the warning is acceptable; forced warnings come back
+in the normal `warnings` array.
 
-Scalar properties are replaced by value, and so are the collections that hold
-no state:
+A method can compile and still answer critiques. They are review evidence about
+code that now exists, not a transport failure.
 
-```text
-class_update   name, and any of newName, superclass, package, tag, comment,
-               layout, traits, classTraits, sharedVariables, sharedPools
+## Rewriting
+
+`method_rewrite` takes Smalltalk AST patterns, not regex, and a scope is
+required: rewriting everything is something a caller asks for by naming the
+packages, not by leaving an argument out.
+
+A metavariable starts with a backquote and stands for whatever is in its place,
+however big, so one rule rewrites `anObject notNil` and `(anObject foo) notNil`
+alike. The names must be the same on both sides; a name that appears only in
+the replacement is bound to nothing. `confirm` is false by default, and the
+preview carries the old and new source of every change.
+
+```json
+{
+  "rules": [{ "match": "`@receiver notNil", "replacement": "`@receiver isNotNil" }],
+  "scope": { "packages": ["MyPackage"] }
+}
 ```
 
-Slots are patched instead, through `slots` and `classSlots`, because they hold
-the instance's values. A replacement list cannot tell a rename from a
-remove-plus-add, and the two differ in whether the value survives; it also has
-to be complete, so a stale one silently drops a slot the caller did not know
-about.
-
-```text
-slots: { add:      [names]
-         remove:   [names]
-         rename:   { current: new }
-         pullUp:   [names]      moves them to the superclass
-         pushDown: [names]      moves them to every direct subclass
-         replace:  [names] }    the whole list; prefer add and remove
-```
-
-`method_update` takes `class` and `selector`, then `protocol`, `newSelector`
-or both. A selector change is classified by arity, so the one argument renames,
-adds or removes arguments and updates senders. Name the new argument list in
-`arguments` and the index map is worked out: names that match the current ones
-are kept, new names are added arguments needing `argumentValueExpressions`, and
-current names left out are removed. `permutation` is only for reordering, which
-names cannot express.
-
-The changes are applied in dependency order, not the order they were written:
-a superclass change first, because it decides what the rest validates against,
-slots added before anything refers to them and removed last, and a rename last,
-because every other change resolves the target by the name the caller wrote.
-
-A change that fails stops the ones after it. This is the opposite of a batch
-over several targets, and deliberately so: these all land on one class or one
-method, so carrying on would leave half a definition nobody asked for. The
-error names the change that failed, the ones already applied, and the ones not
-attempted.
-
-## The Advertised Surface
-
-What a client is shown up front is the advertised surface: the catalog tools, the everyday class and method operations, `test_run` and `image_evaluate`. Which ones exactly is what `tools/list` answers, and the client already holds that list, so read it there rather than from here. Every other tool is found with `tool_search` and called by name like any other; `tool_call` does the same for a client that will only send a name its own list holds.
-
-A server chooses its own surface before `start`:
-
-```smalltalk
-mcp advertiseTools: #( 'tool_search' 'tool_get' 'tool_call' 'method_get' ).
-```
-
-## Finding A Tool
-
-The server answers for its own catalogue. `tool_search` ranks it by keyword,
-best match first, and answers the closest tools even when none matches every
-word; add words to narrow the ranking. With no query it answers the catalogue's
-size and its groups. `tool_get` returns one tool's metadata and input schema,
-and `tool_call` invokes a tool by nesting its arguments, for a client that cannot
-send a name outside its own list.
-
-Search before calling anything less common or high-risk, and read the schema
-before invoking it.
-
-Tools are named `domain_action`, and the domains are:
-
-| Group | Covers |
-| --- | --- |
-| `classes` | Defining classes and changing their slots, traits, shared variables, pools, layout, package and comment, including the slot refactorings. |
-| `methods` | Compiling, reading, removing and rewriting methods, renaming selectors and protocols, and searching by source, metadata, senders, implementors, references or equivalence. |
-| `repositories` | What the image knows about its Iceberg repositories: identity, package membership, working-copy changes, export, commit, and reloading the image from the files. Branches, remotes and transfers are git's, and belong in a shell. |
-| `debugging` | Reading the debuggers a person opened, with their exceptions and nearest frames, and watching what variables hold while an expression runs. Neither attaches to a debugger or leaves a session behind. |
-| `history` | Epicea change history: locating files, listing entries, and applying or reverting them. |
-| `tests` | Running tests and running them under coverage. |
-| `packages` | Searching packages. |
-| `runtime` | `image_evaluate`, the escape hatch. |
-| `ui` | Reading what is on screen, as a tree of windows and the presenters or morphs inside them, or as a screenshot. Either one can take a single window instead of the whole world, for a fraction of the cost. |
-| `tool-catalog` | `tool_search`, `tool_get` and `tool_call`. |
-
-## Scripting
-
-Use `image_evaluate` only when no dedicated tool fits. A successful evaluation
-can mutate the running image.
+Any rewrite rule stands for its own patterns, Pharo's own included, so
+`ruleClasses` can name one instead of writing its patterns out. A rule that
+reports a critique is never applied by the tool that compiles: reporting is
+that tool's job, changing it is this one's, and the caller asks.
 
 ## Mutation And Saving
 
 No tool saves the image. Mutating tools change the running image only, so
 closing it discards every change since its last save, and a mistake costs the
-session rather than the image file. Saving is the caller's responsibility:
-evaluate `Smalltalk saveSession` when a change should survive, or leave it to
-whoever owns the image lifecycle.
+session rather than the image file. Evaluate `Smalltalk saveSession` when a
+change should survive, or leave it to whoever owns the image lifecycle.
 
-Use `history_entry_list` to see what changed and `history_entry_revert` to undo
-a change in the running image; both preview first and perform with
-`confirm=true`.
+`history_entry_list` shows what changed and `history_entry_revert` undoes it in
+the running image; both preview, and perform with `confirm=true`.
 
-`repository_identity_verify` and `repository_change_list` are read-only.
+## The Escape Hatch
 
-## Refactoring Warnings
+`image_evaluate` runs arbitrary Smalltalk. Prefer a dedicated tool when one
+exists: it validates its input and answers structured data.
 
-For edit tools that use refactoring operations, `force=false` is the default.
-When Pharo raises `RBRefactoringWarning`, the tool returns an error with:
+Compiling is the case that bites. Method source separates lines with CR, and
+`method_compile` normalizes what it is given, while a bare `compile:` from
+`image_evaluate` stores whatever it receives, so source written with LF compares
+unequal to every other method in the image.
 
-```text
-impactMessages
-howToProceed
-forceSupported: true
-```
-
-Rerun with `force=true` only after reviewing the impact. Forced warnings are
-returned as normal warnings in the successful result.
+A debugger somebody opened is theirs. Read it, act on what it shows with the
+ordinary class and method tools, and leave stepping, resuming and terminating
+to the person at the debugger.

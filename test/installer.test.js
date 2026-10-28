@@ -21,14 +21,10 @@ const hosts = {
   opencode: { directory: ".opencode", guide: "AGENTS.md", configuration: "opencode.json" },
 };
 
-const userReferences = [
-  "building-on-mcp.md",
-  "getting-started.md",
-  "safety-and-ecosystem.md",
-  "source-vs-live-image.md",
+const installedReferences = [
+  "pharo-coding-rules.md",
+  "pharo-coding-style.md",
   "tool-reference.md",
-  "troubleshooting.md",
-  "using-pharo-mcp.md",
 ];
 
 for (const [host, { directory, guide }] of Object.entries(hosts)) {
@@ -41,15 +37,14 @@ for (const [host, { directory, guide }] of Object.entries(hosts)) {
 
       assert.equal(result.host, host);
       assert.ok(fs.existsSync(path.join(project, directory, "pharo.AGENTS.md")));
-      assert.ok(fs.existsSync(path.join(project, directory, "skills", "pharo-project-load", "SKILL.md")));
+      assert.ok(fs.existsSync(path.join(project, directory, "skills", "pharo-image-sync", "SKILL.md")));
       for (const skill of fs.readdirSync(path.join(project, directory, "skills"))) {
         assert.equal(
           fs.existsSync(path.join(project, directory, "skills", skill, "agents", "openai.yaml")),
           host === "codex",
         );
       }
-      assert.ok(fs.existsSync(path.join(project, directory, "pharo-references", "pharo-coding-rules.md")));
-      for (const reference of userReferences) {
+      for (const reference of installedReferences) {
         assert.ok(fs.existsSync(path.join(project, directory, "pharo-references", reference)));
       }
       assert.doesNotMatch(fs.readFileSync(path.join(project, directory, "pharo.AGENTS.md"), "utf8"), /https?:\/\//);

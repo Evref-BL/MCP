@@ -1,4 +1,0 @@
-interface:
-  display_name: "Pharo Version Compatibility"
-  short_description: "Use PharoBackwardCompatibility backports"
-  default_prompt: "Use $pharo-version-compat to make this Pharo project compatible across supported Pharo versions with PharoBackwardCompatibility."

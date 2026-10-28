@@ -145,7 +145,12 @@ tools, and `test_run` over `image_evaluate`.
 
 Continue with:
 
-- [Using MCP from an agent](using-pharo-mcp.md)
-- [Tool reference](tool-reference.md)
-- [Safety and ecosystem integration](safety-and-ecosystem.md)
-- [Troubleshooting](troubleshooting.md)
+- [Building on MCP](building-on-mcp.md)
+- [Observability and UI](observability.md)
+
+The guidance installed into a project covers the rest, and is published under
+`templates/pharo-references/`:
+
+- [Tool reference](../../templates/pharo-references/tool-reference.md)
+- [Pharo coding rules](../../templates/pharo-references/pharo-coding-rules.md)
+- [Pharo coding style](../../templates/pharo-references/pharo-coding-style.md)

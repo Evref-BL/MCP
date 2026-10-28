@@ -1,0 +1,4 @@
+interface:
+  display_name: "Pharo Image Sync"
+  short_description: "Move code between image and files"
+  default_prompt: "Use $pharo-image-sync to move these changes between the Pharo image and its Tonel files."
