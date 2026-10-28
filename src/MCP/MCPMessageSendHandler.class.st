@@ -1,7 +1,9 @@
 "
 JSON-RPC handler that invokes a Smalltalk message on a receiver.
 
-It maps dictionary parameters to the target method argument order and sends the configured selector to the configured receiver. MCPMessageProcessor creates these handlers from jrpc pragmas.
+It is a JRPCMessageSendHandler that takes its arguments by name only: an MCP client always sends a parameters object, never a list, so a request that sends a list is invalid parameters rather than a call that happened to have the right arity. Placing the named parameters, and leaving the absent ones nil, is JRPC's own behaviour.
+
+MCPMessageProcessor creates these handlers from jrpc pragmas.
 "
 Class {
 	#name : 'MCPMessageSendHandler',
@@ -17,14 +19,6 @@ MCPMessageSendHandler class >> defaultMethodName [
 	^ self shouldNotImplement
 ]
 
-{ #category : 'private' }
-MCPMessageSendHandler >> argumentsFromParameters: parameters [
-
-	parameters ifNil: [ ^ #(  ) ].
-	parameters isDictionary ifFalse: [ ^ parameters ].
-	^ (self parametersNames collect: [ :name | parameters at: name ifAbsent: [ nil ] ]) asArray
-]
-
 { #category : 'parameters-checking' }
 MCPMessageSendHandler >> checkParametersForRequest: aJRPCRequestObject [
 
@@ -34,16 +28,4 @@ MCPMessageSendHandler >> checkParametersForRequest: aJRPCRequestObject [
 			self parametersCount = 0 ifFalse: [ JRPCInvalidParameters signal ].
 			^ self ].
 	params isDictionary ifFalse: [ JRPCInvalidParameters signal ]
-]
-
-{ #category : 'evaluation' }
-MCPMessageSendHandler >> executeWithArguments: parameters [
-
-	^ self send: self messageSelector to: self receiver with: (self argumentsFromParameters: parameters)
-]
-
-{ #category : 'accessing' }
-MCPMessageSendHandler >> parametersNames [
-
-	^ (self receiver class lookupSelector: self messageSelector) argumentNames
 ]
