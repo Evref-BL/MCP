@@ -27,7 +27,7 @@ MCPMethodReference class >> fromString: aString [
 	separatorIndex isZero ifTrue: [ ^ nil ].
 	head := (text first: separatorIndex - 1) trimBoth.
 	tail := (text allButFirst: separatorIndex - 1) trimBoth.
-	[ tail notEmpty and: [ '>#' includes: tail first ] ] whileTrue: [ tail := tail allButFirst trimBoth ].
+	[ tail isNotEmpty and: [ '>#' includes: tail first ] ] whileTrue: [ tail := tail allButFirst trimBoth ].
 	side := head asLowercase endsWith: ' class'.
 	name := side
 		        ifTrue: [ (head first: head size - 6) trimBoth ]
@@ -58,7 +58,7 @@ MCPMethodReference class >> looksLikeAReference: aString [
 { #category : 'testing' }
 MCPMethodReference class >> namesAClass: aString [
 
-	^ aString notEmpty and: [
+	^ aString isNotEmpty and: [
 		  aString first isUppercase and: [ aString allSatisfy: [ :character | character isAlphaNumeric or: [ character = $_ ] ] ] ]
 ]
 

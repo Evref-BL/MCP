@@ -104,7 +104,7 @@ MCPYamlWriter >> writeValue: value on: stream indent: indent [
 								space;
 								nextPutAll: (self scalarFor: each) ]
 					ifFalse: [
-							(each isDictionary and: [ each notEmpty ])
+							(each isDictionary and: [ each isNotEmpty ])
 								ifTrue: [
 										stream nextPut: Character lf.
 										self writeValue: each on: stream indent: indent , '  ' ]

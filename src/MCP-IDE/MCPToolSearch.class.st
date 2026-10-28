@@ -60,7 +60,7 @@ MCPToolSearch >> classAndMethodScopeSummaryFromAssociations: scopeAssociations [
 	| labels |
 	labels := OrderedCollection new.
 	scopeAssociations do: [ :eachAssociation |
-		eachAssociation value notEmpty ifTrue: [ self addScopeLabel: eachAssociation key to: labels ] ].
+		eachAssociation value isNotEmpty ifTrue: [ self addScopeLabel: eachAssociation key to: labels ] ].
 	^ self scopeSummaryFromLabels: labels
 ]
 
@@ -304,8 +304,8 @@ MCPToolSearch >> packageScopeSummaryForProjectNames: projectNames packageNames: 
 
 	| labels |
 	labels := OrderedCollection new.
-	projectNames notEmpty ifTrue: [ self addScopeLabel: 'projects' to: labels ].
-	packageNames notEmpty ifTrue: [ self addScopeLabel: 'packages' to: labels ].
+	projectNames isNotEmpty ifTrue: [ self addScopeLabel: 'projects' to: labels ].
+	packageNames isNotEmpty ifTrue: [ self addScopeLabel: 'packages' to: labels ].
 	^ self scopeSummaryFromLabels: labels
 ]
 

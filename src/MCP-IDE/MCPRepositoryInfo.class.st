@@ -145,7 +145,7 @@ MCPRepositoryInfo >> initializeCommitResultRepository: aRepository packageNames:
 	headCommitId := aHeadCommitId ifNil: [ '' ].
 	isDetachedHead := false.
 	isMissing := false.
-	isModified := repositoryModifiedPackageNames notEmpty.
+	isModified := repositoryModifiedPackageNames isNotEmpty.
 	packageNames := repositoryPackageNames ifNil: [ #(  ) ].
 	modifiedPackageNames := repositoryModifiedPackageNames ifNil: [ #(  ) ].
 	remotes := #(  ).

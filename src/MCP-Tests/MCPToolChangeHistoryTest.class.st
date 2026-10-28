@@ -249,7 +249,7 @@ MCPToolChangeHistoryTest >> testListEntriesReturnsGranularCodeChangeData [
 			data := self dataFrom: result.
 			entries := data at: #entries.
 			self deny: (result at: #isError ifAbsent: [ false ]).
-			self assert: entries notEmpty.
+			self assert: entries isNotEmpty.
 			firstEntry := entries first.
 			self assert: (firstEntry includesKey: #index).
 			self assert: (firstEntry includesKey: #eventClass).
@@ -323,7 +323,7 @@ MCPToolChangeHistoryTest >> testListFilesReturnsCurrentHistoryFile [
 	files := data at: #files.
 	allowedFileKeys := #( file exists fileSize modificationTime isCurrent ) asSet.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: files notEmpty.
+	self assert: files isNotEmpty.
 	self assert: (files anySatisfy: [ :each | each at: #isCurrent ifAbsent: [ false ] ]).
 	self assert: (files allSatisfy: [ :each |
 			 (each includesKey: #file) and: [ each keys allSatisfy: [ :key | allowedFileKeys includes: key ] ] ])
@@ -342,7 +342,7 @@ MCPToolChangeHistoryTest >> testListFilesSupportsDirectoryPath [
 	files := data at: #files.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self deny: (data includesKey: #action).
-	self assert: files notEmpty.
+	self assert: files isNotEmpty.
 	self assert: (files anySatisfy: [ :each | each at: #isCurrent ifAbsent: [ false ] ])
 ]
 

@@ -36,7 +36,7 @@ MCPTestRunRequest class >> fromMethodReference: aString [
 	delimiterIndex isZero ifTrue: [ Error signal: 'methods must use Class>>#selector references.' ].
 	className := (aString copyFrom: 1 to: delimiterIndex - 1) trimBoth.
 	selector := (aString copyFrom: delimiterIndex + 2 to: aString size) trimBoth.
-	(selector notEmpty and: [ selector first = $# ]) ifTrue: [ selector := selector allButFirst ].
+	(selector isNotEmpty and: [ selector first = $# ]) ifTrue: [ selector := selector allButFirst ].
 	(className isEmpty or: [ selector isEmpty ]) ifTrue: [ Error signal: 'methods must use Class>>#selector references.' ].
 	^ self className: className testMethodName: selector
 ]

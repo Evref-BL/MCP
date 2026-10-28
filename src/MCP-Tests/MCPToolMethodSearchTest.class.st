@@ -419,7 +419,7 @@ MCPToolMethodSearchTest >> testMultipleScopesAreUnioned [
 	data := self dataFrom: result.
 	methods := data at: #methods.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: methods notEmpty.
+	self assert: methods isNotEmpty.
 	self entryForReference: self targetClassName , '>>alphaNeedleSelector' in: methods.
 	self entryForReference: 'MCPToolMethodSearchReferenceTarget>>extensionProbe' in: methods
 ]
@@ -663,7 +663,7 @@ MCPToolMethodSearchTest >> testSourceSearchShowsTheLineThatMatched [
 			          (self searchScope: { (#classes -> #( 'MCPToolGetMethodTestTarget' )) }) } asDictionary.
 	data := self dataFrom: result.
 	self deny: (self resultIndicatesError: result).
-	self assert: (data at: #methods) notEmpty.
+	self assert: (data at: #methods) isNotEmpty.
 	self assert: ((data at: #methods) allSatisfy: [ :each | (each at: #line) includesSubstring: 'instanceCounter' ]).
 	self assert: ((data at: #methods) allSatisfy: [ :each | (each at: #lineNumber) > 0 ]).
 	self deny: ((data at: #methods) anySatisfy: [ :each | each includesKey: #source ])

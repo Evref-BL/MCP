@@ -43,7 +43,7 @@ MCPTestRepositoryWorkingCopy >> discardChanges [
 { #category : 'testing' }
 MCPTestRepositoryWorkingCopy >> isModified [
 
-	^ self modifiedPackages notEmpty
+	^ self modifiedPackages isNotEmpty
 ]
 
 { #category : 'accessing' }

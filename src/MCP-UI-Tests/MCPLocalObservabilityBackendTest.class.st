@@ -25,7 +25,7 @@ MCPLocalObservabilityBackendTest >> testEnabledByDefaultRecords [
 	self assert: state enabled.
 	self assert: record isNotNil.
 	self assert: state totalCallCount equals: 0.
-	self assert: state logs notEmpty
+	self assert: state logs isNotEmpty
 ]
 
 { #category : 'tests' }
@@ -143,7 +143,7 @@ MCPLocalObservabilityBackendTest >> testMCPRecordsToolCallsWhenObservabilityIsEn
 		self assert: record inputSnapshot isNil.
 		self assert: record outputSnapshot isNil.
 		self assert: record inputObject isNil.
-		self assert: mcp observabilityLogs notEmpty.
+		self assert: mcp observabilityLogs isNotEmpty.
 		self assert: mcp observability logFileReference exists.
 		self assert: mcp observability metricsFileReference exists ] ensure: [ directory exists ifTrue: [ directory deleteAll ] ]
 ]

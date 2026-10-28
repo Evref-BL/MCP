@@ -63,7 +63,7 @@ MCPRepositoryExportResult >> initializeRepository: aRepository changedPackageNam
 	self initializeSnapshotFromRepository: aRepository.
 	changedPackageNames := packageNames ifNil: [ #(  ) ].
 	modifiedPaths := paths ifNil: [ #(  ) ].
-	didChange := changedPackageNames notEmpty or: [ modifiedPaths notEmpty ]
+	didChange := changedPackageNames isNotEmpty or: [ modifiedPaths isNotEmpty ]
 ]
 
 { #category : 'accessing' }

@@ -593,7 +593,7 @@ MCPToolContractsTest >> testBuiltInToolsProvideCatalogMetadata [
 			self assert: tool groupName equals: tool class groupName.
 			self assert: (validExposures includes: tool defaultExposure).
 			self assert: (#( true nil ) includes: tool annotations readOnlyHint).
-			self assert: tool keywords notEmpty ]
+			self assert: tool keywords isNotEmpty ]
 ]
 
 { #category : 'tests' }
@@ -607,7 +607,7 @@ MCPToolContractsTest >> testCallToolInvokesDiscoverableToolAfterStaticConfigurat
 			          (#arguments -> {
 				           (#name -> 'MCP') } asDictionary) } asDictionary.
 	data := self dataFrom: result.
-	self assert: (data at: #packages) notEmpty.
+	self assert: (data at: #packages) isNotEmpty.
 	self assert: ((data at: #packages) allSatisfy: [ :each | (each at: #package) includesSubstring: 'MCP' ])
 ]
 
@@ -620,7 +620,7 @@ MCPToolContractsTest >> testCallToolInvokesTargetToolThroughServerPath [
 			          (#arguments -> {
 				           (#name -> 'MCP') } asDictionary) } asDictionary.
 	data := self dataFrom: result.
-	self assert: (data at: #packages) notEmpty.
+	self assert: (data at: #packages) isNotEmpty.
 	self assert: ((data at: #packages) allSatisfy: [ :each | (each at: #package) includesSubstring: 'MCP' ])
 ]
 
@@ -1398,7 +1398,7 @@ MCPToolContractsTest >> testMethodMetadataSearchListsMethodsForExistingClassScop
 	methods := data at: #methods.
 	selectors := methods collect: [ :each | each at: #selector ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: methods notEmpty.
+	self assert: methods isNotEmpty.
 	self assert: (selectors includes: 'alphaNeedleSelector').
 	self assert: (selectors includes: 'classNeedleSelector')
 ]
@@ -1574,7 +1574,7 @@ MCPToolContractsTest >> testOutputDtoClassesUseResultInfoOrReportSuffixes [
 	dtoClasses := dtoClasses reject: [ :each | each isAbstract ].
 	suffixes := #( 'Result' 'Info' 'Report' ).
 	invalidNames := dtoClasses reject: [ :each | suffixes anySatisfy: [ :suffix | each name asString endsWith: suffix ] ].
-	self assert: dtoClasses notEmpty.
+	self assert: dtoClasses isNotEmpty.
 	self assert: invalidNames isEmpty
 ]
 
@@ -1586,7 +1586,7 @@ MCPToolContractsTest >> testParsedInputClassesUseRequestOrSpecSuffixes [
 	suffixes := #( 'Request' 'Spec' 'Delta' ).
 	invalidNames := parsedInputClasses reject: [ :each | suffixes anySatisfy: [ :suffix | each name asString endsWith: suffix ] ].
 	self assert: ((self mcpClassesInPackageTagNamed: 'Requests') includes: MCPToolRequest).
-	self assert: parsedInputClasses notEmpty.
+	self assert: parsedInputClasses isNotEmpty.
 	self assert: invalidNames isEmpty
 ]
 
@@ -1946,7 +1946,7 @@ MCPToolContractsTest >> testRunTestsKeepsPackagesAsPackageSelections [
 	validatedRequests := command validatedRequestsFrom: testRequests.
 	self assert: validatedRequests first isPackageRequest.
 	testCases := command testCasesForValidatedRequest: validatedRequests first.
-	self assert: testCases notEmpty.
+	self assert: testCases isNotEmpty.
 	self assert: (testCases noneSatisfy: [ :each | each class isAbstract ])
 ]
 
@@ -2015,7 +2015,7 @@ MCPToolContractsTest >> testScreenshotCommandPackagesCapturedFormAsImageContent 
 	self assert: result width equals: 2.
 	self assert: result height equals: 3.
 	self assert: result imageContent mimeType equals: 'image/png'.
-	self assert: result imageContent data notEmpty.
+	self assert: result imageContent data isNotEmpty.
 	self assert: (imageJSON at: #type) equals: 'image'.
 	self assert: (imageJSON at: #mimeType) equals: 'image/png'
 ]
@@ -2044,7 +2044,7 @@ MCPToolContractsTest >> testSearchClassesListsClassesForExistingPackage [
 	classes := data at: #classes.
 	classNames := classes collect: [ :each | each at: #class ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: classes notEmpty.
+	self assert: classes isNotEmpty.
 	self assert: (classNames includes: 'MCPToolMethodMutationTest')
 ]
 
@@ -2085,7 +2085,7 @@ MCPToolContractsTest >> testSearchPackagesListsPackagesForExistingProject [
 	| entries packageNames |
 	entries := self packageSearchFixtureEntriesLoadedInImage: false.
 	packageNames := entries collect: [ :each | each at: #package ].
-	self assert: entries notEmpty.
+	self assert: entries isNotEmpty.
 	self assert: packageNames equals: self packageSearchFixturePackageNames.
 	self assert: (entries allSatisfy: [ :each | (each at: #projects) = { self packageSearchFixtureProjectName } ])
 ]

@@ -30,6 +30,8 @@ MCPFilteredEmptinessRule >> initialize [
 	self
 		replace: '(`@collection select: `@block) isEmpty' with: '`@collection noneSatisfy: `@block';
 		replace: '(`@collection select: `@block) notEmpty' with: '`@collection anySatisfy: `@block';
+		replace: '(`@collection select: `@block) isNotEmpty' with: '`@collection anySatisfy: `@block';
 		replace: '(`@collection reject: `@block) isEmpty' with: '`@collection allSatisfy: `@block';
-		replace: '(`@collection reject: `@block) notEmpty' with: '(`@collection allSatisfy: `@block) not'
+		replace: '(`@collection reject: `@block) notEmpty' with: '(`@collection allSatisfy: `@block) not';
+		replace: '(`@collection reject: `@block) isNotEmpty' with: '(`@collection allSatisfy: `@block) not'
 ]
