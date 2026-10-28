@@ -1,11 +1,11 @@
 # Pharo Coding
 
-Applies when using MCP to inspect, write, review, or refactor Pharo source in
-any project.
+What is particular to Pharo, for writing, reviewing or refactoring its code
+with whatever tool is at hand: through MCP, through a source projection, or in
+the files themselves.
 
-This is what is particular to Pharo. General programming practice is not
-repeated here, and neither are the smells a rule recognises: compiling a method
-reports the critiques the image already owns.
+General programming practice is not repeated here, and neither are the smells a
+rule recognises: Pharo's own critiques report those.
 
 ## Dispatch Over Inspection
 
@@ -13,17 +13,20 @@ Pharo code communicates through messages and protocols. Send a domain message
 to the receiver, or add the protocol to the object that owns the behavior,
 rather than asking what the receiver is.
 
-Avoid in application behavior:
+The reflective escapes are not equally defensible:
 
-- `class = ...`;
-- `isKindOf:` and `isMemberOf:`;
-- `respondsTo:` as control flow;
-- `perform:` as a disguised switch;
-- method dictionary or instance-variable reflection.
+- `respondsTo:` as control flow is almost never right. It asks whether a send
+  would work instead of sending it. Keep it for genuinely reflexive code that
+  reads a protocol as data.
+- `isKindOf:` and `isMemberOf:` are fine where a type really must be checked
+  and nothing else can say it, such as a boundary receiving foreign objects.
+- `perform:` is fine where the selector is data rather than a disguised
+  switch, such as turning a transport message into a send.
+- `class = ...`, method dictionary and instance-variable reflection belong to
+  tools, proxies and compatibility shims.
 
-Reflection is acceptable for tools, proxies, compatibility shims, and explicit
-framework boundaries. Keep it isolated and named as tooling or boundary
-behavior; do not spread it through ordinary domain logic.
+Keep reflective behavior isolated and named as tooling or boundary behavior;
+do not spread it through ordinary domain logic.
 
 ## The Main Send
 
@@ -47,6 +50,20 @@ nested expressions.
   boolean. Do not rewrite them into `ifNil:`/`ifNotNil:` only to return a
   boolean literal from one branch.
 
+## Intermediate Objects
+
+A step that builds a collection or a string only to hand it to the next step
+allocates something nobody asked for. Pharo's fused messages exist for that:
+`collect:as:` rather than `collect:` and a conversion, `select:thenDo:` rather
+than a filtered copy to iterate over, `String streamContents:` rather than a
+chain of `,`, where every comma copies everything to its left.
+
+Sorting is the usual case. `sorted` and `sorted:` answer a sorted copy as an
+Array; `sort` and `sort:` sort a `SequenceableCollection` in place and answer
+it. So `values sorted` says what `values asSortedCollection asArray` says, with
+no `SortedCollection` in between. One earns its keep when a collection must
+*stay* sorted as things are added to it — not for sorting something once.
+
 ## Initialization
 
 - Initialize sensible defaults in `initialize`.
@@ -63,7 +80,7 @@ nested expressions.
 - Action selectors use verbs: `parseRequest:`, `addTool:`, `writeResponseOn:`.
 - Conversion selectors start with `as`.
 
-## Collections And Streams
+## Collections
 
 - Prefer collection protocol such as `collect:`, `select:`, `reject:`,
   `detect:ifNone:`, `inject:into:`, `anySatisfy:`, and `allSatisfy:`.
@@ -71,10 +88,6 @@ nested expressions.
   intentional.
 - Do not rely on `add:` answering the collection; use a variable, or cascade
   with `yourself`.
-- Override `hash` when overriding `=`.
-- Use `String streamContents:` or `Array streamContents:` when code
-  conditionally appends values, or would otherwise need a temporary
-  `OrderedCollection`. Do not concatenate with `,` in loops or recursive code.
 
 ## Class Extensions
 

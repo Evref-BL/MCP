@@ -484,6 +484,10 @@ MCPToolMethodMutationTest >> testCollectionStyleCritiquesProvideAutomaticChanges
 			           'sortedCollectionConversionProbe: collection ^ collection asSortedCollection asArray'.
 			           MCPSortedCollectionConversionRule }.
 		           {
+			           #stringConcatenationProbe:.
+			           'stringConcatenationProbe: aName ^ ''before '' , aName , '' after'''.
+			           MCPStringConcatenationRule }.
+		           {
 			           #streamWriteCascadeProbe:.
 			           'streamWriteCascadeProbe: aStream aStream << ''first''; << ''second'''.
 			           MCPStreamWriteCascadeRule }.

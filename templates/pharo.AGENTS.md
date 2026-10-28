@@ -13,6 +13,9 @@ rather than letting source stand in for it.
   dedicated tool fits.
 - Treat image, Tonel, Iceberg, and Git state as separate. None of them proves
   anything about the others.
+- The image is one workspace. It has no branches and no worktrees, so two
+  agents working in it at once share every edit, and one export writes both
+  their changes into one diff. One writer at a time.
 - Tools change the running image but never save it; use a safe image boundary.
 
 ## Context Loading
