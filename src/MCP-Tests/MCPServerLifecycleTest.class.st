@@ -87,7 +87,7 @@ MCPServerLifecycleTest >> testAbruptClientDisconnectReleasesConnection [
 		server start.
 		self assert: (self waitUntil: [ server isListening ] forMilliseconds: 3000).
 		clientStream := SocketStream openConnectionToHost: #[ 127 0 0 1 ] port: server port.
-		self assert: (self waitUntil: [ server connections notEmpty ] forMilliseconds: 3000).
+		self assert: (self waitUntil: [ server connections isNotEmpty ] forMilliseconds: 3000).
 		clientStream close.
 		clientStream := nil.
 		self assert: (self waitUntil: [ server connections isEmpty ] forMilliseconds: 3000) ] ensure: [
@@ -386,7 +386,7 @@ MCPServerLifecycleTest >> testStoppingServerClosesActiveConnections [
 		server start.
 		self assert: (self waitUntil: [ server isListening ] forMilliseconds: 3000).
 		clientStream := SocketStream openConnectionToHost: #[ 127 0 0 1 ] port: server port.
-		self assert: (self waitUntil: [ server connections notEmpty ] forMilliseconds: 3000).
+		self assert: (self waitUntil: [ server connections isNotEmpty ] forMilliseconds: 3000).
 		server stop: false.
 		self deny: server isRunning.
 		self assert: server connections isEmpty ] ensure: [

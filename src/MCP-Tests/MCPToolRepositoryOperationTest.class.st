@@ -466,9 +466,9 @@ MCPToolRepositoryOperationTest >> testCommitCreatesCommitAndReturnsResult [
 					self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
 					self assert: data keys asSet equals: #( changedPackages commitDescription commitId headDescription ) asSet.
 					self assert: (data at: #changedPackages) equals: { packageName }.
-					self assert: (data at: #commitId) notEmpty.
+					self assert: (data at: #commitId) isNotEmpty.
 					self assert: (data at: #commitDescription) equals: 'Initial commit MCP test'.
-					self assert: (data at: #headDescription) notEmpty ] ]
+					self assert: (data at: #headDescription) isNotEmpty ] ]
 ]
 
 { #category : 'tests' }
@@ -777,7 +777,7 @@ MCPToolRepositoryOperationTest >> testExportUpdatesDiskAndIndexWithoutCommitting
 					self assert: data keys asSet equals: #( changedPackages didChange modifiedPaths ) asSet.
 					self assert: (data at: #didChange) equals: true.
 					self assert: (data at: #changedPackages) equals: { packageName }.
-					self assert: (data at: #modifiedPaths) notEmpty.
+					self assert: (data at: #modifiedPaths) isNotEmpty.
 					self assert: (childNames anySatisfy: [ :each | each includesSubstring: packageName ]) ] ]
 ]
 

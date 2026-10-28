@@ -20,7 +20,7 @@ MCPRepositoryWorkingCopyCommand class >> isAbstract [
 { #category : 'private - diff' }
 MCPRepositoryWorkingCopyCommand >> addModifiedPathsFromNode: aNode to: paths [
 
-	(aNode hasChanges and: [ aNode path segments notEmpty ]) ifTrue: [ paths add: aNode path pathString ].
+	(aNode hasChanges and: [ aNode path segments isNotEmpty ]) ifTrue: [ paths add: aNode path pathString ].
 	aNode children do: [ :each | self addModifiedPathsFromNode: each to: paths ]
 ]
 
@@ -119,7 +119,7 @@ MCPRepositoryWorkingCopyCommand >> modifiedPathsFromGitStatusIn: aRepository [
 	^ self sortedStringsFrom:
 		  ((self gitStatusLinesFor: aRepository)
 			   collect: [ :line | self pathFromGitStatusLine: line ]
-			   thenSelect: [ :path | path notEmpty ])
+			   thenSelect: [ :path | path isNotEmpty ])
 ]
 
 { #category : 'private - diff' }
@@ -154,7 +154,7 @@ MCPRepositoryWorkingCopyCommand >> packageNamesFromModifiedPaths: paths in: aRep
 	writerClass := self sourceWriterClassFor: aRepository.
 	^ self sortedStringsFrom: (paths
 			   collect: [ :path | self packageNameFromPath: path in: aRepository writer: writerClass ]
-			   thenSelect: [ :name | name notEmpty ])
+			   thenSelect: [ :name | name isNotEmpty ])
 ]
 
 { #category : 'private - diff' }

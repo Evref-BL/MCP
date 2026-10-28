@@ -93,7 +93,7 @@ MCPMethodSearchRequest >> filterPattern: aString [
 { #category : 'testing' }
 MCPMethodSearchRequest >> hasFieldFilters [
 
-	^ self fieldFilters notEmpty
+	^ self fieldFilters isNotEmpty
 ]
 
 { #category : 'testing' }

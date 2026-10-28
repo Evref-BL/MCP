@@ -241,7 +241,7 @@ MCPToolStructuredOutputTest >> testMethodMetadataSearchReturnsStructuredArrayDat
 	methods := data at: #methods.
 	selectors := methods collect: [ :each | each at: #selector ].
 	self deny: (self resultIndicatesError: result).
-	self assert: methods notEmpty.
+	self assert: methods isNotEmpty.
 	self assert: (methods allSatisfy: [ :each |
 			 (each includesKey: #selector) and: [ (each includesKey: #class) and: [ each includesKey: #package ] ] ]).
 	self assert: (selectors includes: 'alphaNeedleSelector')
@@ -660,6 +660,6 @@ MCPToolStructuredOutputTest >> testToolsListAdvertisesToolContracts [
 
 	| tools |
 	tools := MCP new rpcToolsList at: #tools.
-	self assert: tools notEmpty.
+	self assert: tools isNotEmpty.
 	tools do: [ :tool | self assert: tool keys asSet equals: #( name title description annotations inputSchema ) asSet ]
 ]

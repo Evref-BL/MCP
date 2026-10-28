@@ -441,7 +441,7 @@ MCP >> handlersCount [
 MCP >> hasCompletableReferences [
 	"Nothing can be completed without a prompt or a resource template to complete it for."
 
-	^ self promptRegistry entries notEmpty or: [ self resourceRegistry resourceTemplates notEmpty ]
+	^ self promptRegistry entries isNotEmpty or: [ self resourceRegistry resourceTemplates isNotEmpty ]
 ]
 
 { #category : 'initialization' }

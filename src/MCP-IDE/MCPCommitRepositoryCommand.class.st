@@ -124,7 +124,7 @@ MCPCommitRepositoryCommand >> repositoryHasConfiguredGitIdentity: aRepository [
 { #category : 'private - diff' }
 MCPCommitRepositoryCommand >> repositoryHasModifiedPackages: aRepository [
 
-	^ aRepository modifiedPackages notEmpty
+	^ aRepository modifiedPackages isNotEmpty
 ]
 
 { #category : 'private - diff' }

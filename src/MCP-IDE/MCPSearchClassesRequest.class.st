@@ -69,7 +69,7 @@ MCPSearchClassesRequest >> filterMode: anObject [
 { #category : 'testing' }
 MCPSearchClassesRequest >> hasFieldFilters [
 
-	^ self fieldFilters notEmpty
+	^ self fieldFilters isNotEmpty
 ]
 
 { #category : 'accessing' }

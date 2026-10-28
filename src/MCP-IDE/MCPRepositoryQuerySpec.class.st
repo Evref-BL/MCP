@@ -66,7 +66,7 @@ MCPRepositoryQuerySpec >> filterMode: aString [
 { #category : 'testing' }
 MCPRepositoryQuerySpec >> hasFieldFilters [
 
-	^ self fieldFilters notEmpty
+	^ self fieldFilters isNotEmpty
 ]
 
 { #category : 'accessing' }

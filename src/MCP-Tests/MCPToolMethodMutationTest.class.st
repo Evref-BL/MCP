@@ -476,6 +476,10 @@ MCPToolMethodMutationTest >> testCollectionStyleCritiquesProvideAutomaticChanges
 			           'sortedCollectionConversionProbe: collection ^ collection asSortedCollection asArray'.
 			           MCPSortedCollectionConversionRule }.
 		           {
+			           #isNotEmptyProbe:.
+			           'isNotEmptyProbe: collection ^ collection notEmpty'.
+			           MCPIsNotEmptyRule }.
+		           {
 			           #isNotNilProbe:.
 			           'isNotNilProbe: anObject ^ anObject notNil'.
 			           MCPIsNotNilRule } }.

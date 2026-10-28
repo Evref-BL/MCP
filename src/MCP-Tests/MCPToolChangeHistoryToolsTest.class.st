@@ -81,7 +81,7 @@ MCPToolChangeHistoryToolsTest >> testListChangeHistoryFilesReturnsFiles [
 	data := self toolNamed: 'history_file_list' dataFromArguments: Dictionary new.
 	files := data at: #files.
 	allowedFileKeys := #( file exists fileSize modificationTime isCurrent ) asSet.
-	self assert: files notEmpty.
+	self assert: files isNotEmpty.
 	self assert: (files allSatisfy: [ :each |
 			 (each includesKey: #file) and: [ each keys allSatisfy: [ :key | allowedFileKeys includes: key ] ] ])
 ]

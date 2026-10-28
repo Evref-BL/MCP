@@ -179,7 +179,7 @@ MCPRunTestsCommand >> shouldIncludeTestResult: aResult selectedTestCount: select
 	timedOutIndex ifNil: [ ^ true ].
 	aResult runCount > 0 ifTrue: [ ^ true ].
 	aResult skippedCount > 0 ifTrue: [ ^ true ].
-	^ aResult issueDetails notEmpty
+	^ aResult issueDetails isNotEmpty
 ]
 
 { #category : 'private' }

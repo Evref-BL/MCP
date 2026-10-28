@@ -108,7 +108,7 @@ MCPToolRemoveClasses >> executeWithRequest: request [
 							   successSummaryForClassNames: removeRequest classNames
 							   removedClasses: result removedClasses
 							   removedPackageNames: result removedPackageNames
-							   forced: result warningMessages notEmpty)
+							   forced: result warningMessages isNotEmpty)
 					  data: result asDictionary
 					  warnings: result warningMessages ]
 		  onError: [ :error :removeRequest |

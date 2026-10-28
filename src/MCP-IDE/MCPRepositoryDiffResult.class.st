@@ -65,7 +65,7 @@ MCPRepositoryDiffResult >> changedPackageNames: aCollection [
 { #category : 'private' }
 MCPRepositoryDiffResult >> derivedChangeCount [
 
-	self modifiedPaths notEmpty ifTrue: [ ^ self modifiedPaths size ].
+	self modifiedPaths isNotEmpty ifTrue: [ ^ self modifiedPaths size ].
 	^ self changedPackageNames size
 ]
 
