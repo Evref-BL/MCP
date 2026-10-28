@@ -72,7 +72,7 @@ MCPReadScreenCommand >> nodeFor: aMorph depth: remaining [
 	| node children |
 	node := Dictionary new.
 	node at: #class put: aMorph class name asString.
-	(aMorph isKindOf: SystemWindow) ifTrue: [ node at: #title put: aMorph title asString ].
+	(aMorph isKindOf: SystemWindow) ifTrue: [ node at: #title put: (tool titleOf: aMorph) ].
 	node at: #bounds put: (self boundsTextFor: aMorph).
 	aMorph visible ifFalse: [ node at: #visible put: false ].
 	remaining isZero ifFalse: [

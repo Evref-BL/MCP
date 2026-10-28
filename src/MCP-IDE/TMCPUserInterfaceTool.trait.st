@@ -13,7 +13,7 @@ Trait {
 { #category : 'private - user interface' }
 TMCPUserInterfaceTool >> openWindowTitles [
 
-	^ (self openWindows collect: [ :each | each title asString ]) asArray
+	^ self openWindows collect: [ :each | self titleOf: each ] as: Array
 ]
 
 { #category : 'private - user interface' }
@@ -36,7 +36,7 @@ TMCPUserInterfaceTool >> targetMorphNamed: aTitle [
 					  signalErrorCode: #NoMorphicWorld
 					  message: 'No Morphic world is available to look at.'
 					  details: Dictionary new ] ].
-	matches := self openWindows select: [ :each | each title asString = aTitle ].
+	matches := self openWindows select: [ :each | (self titleOf: each) = aTitle ].
 	matches size = 1 ifTrue: [ ^ matches first ].
 	^ MCPCommandError
 		  signalErrorCode: (matches isEmpty
@@ -48,6 +48,13 @@ TMCPUserInterfaceTool >> targetMorphNamed: aTitle [
 		  details: {
 				  (#window -> aTitle).
 				  (#open -> self openWindowTitles) } asDictionary
+]
+
+{ #category : 'private - user interface' }
+TMCPUserInterfaceTool >> titleOf: aWindow [
+	"What a window is called. Its label is the one name every window answers: #title is understood from StandardWindow down, and a plain SystemWindow does not answer it."
+
+	^ aWindow label asString
 ]
 
 { #category : 'private - user interface' }
