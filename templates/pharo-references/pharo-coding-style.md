@@ -88,6 +88,9 @@ Collection
 - Avoid assignment inside boolean conditions. Conditions should decide control
   flow, not also mutate state.
 - Keep questions pure: predicates should answer questions, not mutate state.
+- Ask the is-prefixed question. Prefer `isNotNil` to `notNil` and
+  `isNotEmpty` to `notEmpty`: every other test of this kind reads
+  is-something, and Pharo's own comment on `notEmpty` says the same.
 - When the fallback value is `nil`, prefer a one-arm conditional. In Pharo,
   `ifTrue:` answers `nil` when the condition is false, and `ifFalse:` answers
   `nil` when the condition is true.
@@ -98,7 +101,7 @@ Collection
   present case local; add `ifAbsent: [ ]` when absence should be an explicit
   no-op.
 - Keep simple boolean predicates simple. Expressions such as
-  `value notNil and: [ value isReady ]` are idiomatic when the result is a
+  `value isNotNil and: [ value isReady ]` are idiomatic when the result is a
   boolean. Do not rewrite them into `ifNil:/ifNotNil:` only to return a
   boolean literal from one branch.
 - Remove nil-only branches from nil traversal. Both `receiver ifNil: [ nil ]
