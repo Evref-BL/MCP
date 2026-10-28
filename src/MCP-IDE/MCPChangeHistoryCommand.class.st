@@ -70,12 +70,14 @@ MCPChangeHistoryCommand >> logAndFileNameFromDirectoryPath: directoryPath fileNa
 	directory exists ifFalse: [
 			MCPCommandError
 				signalErrorCode: #ChangeHistoryDirectoryNotFound
-				message: 'Change history directory ' , directory fullName , ' does not exist.'
+				message:
+				(String streamContents: [ :stream | stream << 'Change history directory ' << directory fullName << ' does not exist.' ])
 				details: { (#directoryPath -> directory fullName) } asDictionary ].
 	directory isDirectory ifFalse: [
 			MCPCommandError
 				signalErrorCode: #ChangeHistoryPathNotDirectory
-				message: 'Change history path ' , directory fullName , ' is not a directory.'
+				message:
+				(String streamContents: [ :stream | stream << 'Change history path ' << directory fullName << ' is not a directory.' ])
 				details: { (#directoryPath -> directory fullName) } asDictionary ].
 	file := directory / fileName.
 	^ self logAndFileNameFromFileReference: file
@@ -88,14 +90,16 @@ MCPChangeHistoryCommand >> logAndFileNameFromFileReference: aFileReference [
 	aFileReference exists ifFalse: [
 			MCPCommandError
 				signalErrorCode: #ChangeHistoryFileNotFound
-				message: 'Change history file ' , aFileReference fullName , ' does not exist.'
+				message:
+				(String streamContents: [ :stream | stream << 'Change history file ' << aFileReference fullName << ' does not exist.' ])
 				details: {
 						(#directoryPath -> aFileReference parent fullName).
 						(#historyFile -> aFileReference basename) } asDictionary ].
 	aFileReference isFile ifFalse: [
 			MCPCommandError
 				signalErrorCode: #ChangeHistoryPathNotFile
-				message: 'Change history path ' , aFileReference fullName , ' is not a file.'
+				message:
+				(String streamContents: [ :stream | stream << 'Change history path ' << aFileReference fullName << ' is not a file.' ])
 				details: {
 						(#directoryPath -> aFileReference parent fullName).
 						(#historyFile -> aFileReference basename) } asDictionary ].
@@ -108,7 +112,9 @@ MCPChangeHistoryCommand >> logAndFileNameFromFileReference: aFileReference [
 		       do: [ :error |
 				       MCPCommandError
 					       signalErrorCode: #ChangeHistoryFileUnreadable
-					       message: 'Change history file ' , aFileReference fullName , ' could not be loaded.'
+					       message:
+					       (String streamContents: [ :stream |
+						        stream << 'Change history file ' << aFileReference fullName << ' could not be loaded.' ])
 					       details: {
 							       (#directoryPath -> aFileReference parent fullName).
 							       (#historyFile -> aFileReference basename).

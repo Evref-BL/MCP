@@ -27,7 +27,8 @@ MCPRepositoryDiffCommand >> execute [
 					            isEmpty: isEmpty ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText: 'Computed repository diff for ' , result repositoryInfo name , '.'
+					  successResultText:
+					  (String streamContents: [ :stream | stream << 'Computed repository diff for ' << result repositoryInfo name << '.' ])
 					  data: (self tool dataForRepositoryResult: result)
 					  warnings: warningMessages ]
 		  failureSummary: [ :error | 'Failed repository diff: ' , (error messageText ifNil: [ error asString ]) ]

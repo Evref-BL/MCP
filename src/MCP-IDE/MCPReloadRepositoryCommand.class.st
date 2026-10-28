@@ -22,7 +22,8 @@ MCPReloadRepositoryCommand >> execute [
 				  result := MCPRepositoryReloadResult repositoryBefore: beforeInfo after: repository ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText: 'Reloaded repository ' , result repositoryInfo name , ' from its files.'
+					  successResultText:
+					  (String streamContents: [ :stream | stream << 'Reloaded repository ' << result repositoryInfo name << ' from its files.' ])
 					  data: (self tool dataForRepositoryResult: result)
 					  warnings: warningMessages ]
 		  failureSummary: [ :error | 'Failed to reload repository: ' , (error messageText ifNil: [ error asString ]) ]

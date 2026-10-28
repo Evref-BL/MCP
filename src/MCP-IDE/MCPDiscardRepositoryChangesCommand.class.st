@@ -36,7 +36,8 @@ MCPDiscardRepositoryChangesCommand >> execute [
 				  self assertRepositoryCleanAfterDiscard: repository ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText: 'Discarded repository changes for ' , repository name , '.'
+					  successResultText:
+					  (String streamContents: [ :stream | stream << 'Discarded repository changes for ' << repository name << '.' ])
 					  data: (self tool dataForRepositoryResult: result)
 					  warnings: warningMessages ]
 		  failureSummary: [ :error | 'Failed repository discard: ' , (error messageText ifNil: [ error asString ]) ]

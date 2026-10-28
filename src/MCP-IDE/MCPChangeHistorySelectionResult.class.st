@@ -70,7 +70,7 @@ MCPChangeHistorySelectionResult >> asDictionary [
 { #category : 'converting' }
 MCPChangeHistorySelectionResult >> entryDictionariesFrom: entryInfos [
 
-	^ (entryInfos collect: [ :each | each asDictionary ]) asArray
+	^ entryInfos collect: [ :each | each asDictionary ] as: Array
 ]
 
 { #category : 'accessing' }

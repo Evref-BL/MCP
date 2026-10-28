@@ -21,16 +21,17 @@ MCPDebugWatchRequest class >> fromRequest: aRequest tool: aTool [
 
 	| references |
 	references := (aRequest stringCollectionArgumentNamed: 'method') collect: [ :each |
-		              (MCPMethodReference fromString: each) ifNil: [
-			              MCPCommandError
-				              signalErrorCode: #MethodReferenceUnreadable
-				              message: 'Could not read ' , each printString , ' as a method. ' , MCPMethodReference helpText
-				              details: { (#method -> each) } asDictionary ] ].
+			              (MCPMethodReference fromString: each) ifNil: [
+					              MCPCommandError
+						              signalErrorCode: #MethodReferenceUnreadable
+						              message: (String streamContents: [ :stream |
+								               stream << 'Could not read ' << each printString << ' as a method. ' << MCPMethodReference helpText ])
+						              details: { (#method -> each) } asDictionary ] ].
 	references ifEmpty: [
-		MCPCommandError
-			signalErrorCode: #DebugWatchTargetMissing
-			message: 'debug_watch needs at least one method to probe.'
-			details: Dictionary new ].
+			MCPCommandError
+				signalErrorCode: #DebugWatchTargetMissing
+				message: 'debug_watch needs at least one method to probe.'
+				details: Dictionary new ].
 	^ self new
 		  methodReferences: references;
 		  variableNames: (aRequest stringCollectionArgumentNamed: 'variable');

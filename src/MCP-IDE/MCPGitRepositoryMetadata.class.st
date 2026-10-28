@@ -232,7 +232,7 @@ MCPGitRepositoryMetadata >> sectionNameFromLine: aString [
 	quoteEnd <= quoteStart ifTrue: [ ^ header ].
 	sectionName := (header copyFrom: 1 to: quoteStart - 1) trimBoth.
 	sectionName isEmpty ifTrue: [ ^ (header copyFrom: quoteStart + 1 to: quoteEnd - 1) trimBoth ].
-	^ sectionName , '.' , (header copyFrom: quoteStart + 1 to: quoteEnd - 1) trimBoth
+	^ String streamContents: [ :stream | stream << sectionName << '.' << (header copyFrom: quoteStart + 1 to: quoteEnd - 1) trimBoth ]
 ]
 
 { #category : 'private - parsing' }

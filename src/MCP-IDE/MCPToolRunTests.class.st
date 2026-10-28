@@ -223,7 +223,7 @@ MCPToolRunTests >> rawStringCollectionNamed: argumentName fromRequest: rawReques
 	| value |
 	value := rawRequest argumentNamed: argumentName ifAbsent: [ ^ #(  ) ].
 	value isArray ifFalse: [ ^ #(  ) ].
-	^ (value collect: [ :each | each asString ]) asArray
+	^ value collect: [ :each | each asString ] as: Array
 ]
 
 { #category : 'private - errors' }
@@ -291,7 +291,7 @@ MCPToolRunTests >> testNamesForErrorFromParsedRequest: runTestsRequest rawReques
 { #category : 'private - errors' }
 MCPToolRunTests >> testNamesFromRequests: testRequests [
 
-	^ (testRequests collect: [ :each | each displayName ]) asArray
+	^ testRequests collect: [ :each | each displayName ] as: Array
 ]
 
 { #category : 'private - tests' }

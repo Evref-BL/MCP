@@ -190,7 +190,7 @@ MCPServerLifecycleTest >> testServersAreListedByPort [
 				           yourself ].
 	[
 		created do: [ :each | each start ].
-		ports := (MCP allServers collect: [ :each | each port ]) asArray.
+		ports := MCP allServers collect: [ :each | each port ] as: Array.
 		self assert: ports equals: ports sorted ] ensure: [ created do: [ :each | each stop ] ]
 ]
 

@@ -114,7 +114,7 @@ MCPTestCoverageResult >> methodDictionariesFor: methods [
 	limited := self methodLimit = 0
 		           ifTrue: [ #(  ) ]
 		           ifFalse: [ sorted first: (self methodLimit min: sorted size) ].
-	^ (limited collect: [ :each | self methodDictionaryFor: each ]) asArray
+	^ limited collect: [ :each | self methodDictionaryFor: each ] as: Array
 ]
 
 { #category : 'private - methods' }

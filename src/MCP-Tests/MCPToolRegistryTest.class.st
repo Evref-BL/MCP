@@ -197,5 +197,5 @@ MCPToolRegistryTest >> testServerAnswersNewToolClassesWithoutAManualReset [
 	self deny: (mcp toolRegistry toolNames includes: self probeToolName).
 	self createProbeToolClass.
 	mcp advertiseTools: { self probeToolName }.
-	self assert: ((mcp rpcToolsList at: #tools) collect: [ :each | each at: #name ]) asArray equals: { self probeToolName }
+	self assert: ((mcp rpcToolsList at: #tools) collect: [ :each | each at: #name ] as: Array) equals: { self probeToolName }
 ]

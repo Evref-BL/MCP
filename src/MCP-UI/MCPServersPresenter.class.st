@@ -86,7 +86,7 @@ MCPServersPresenter >> copySelectedEndpoint [
 
 	serversTable selectedItem ifNotNil: [ :server |
 			Clipboard clipboardText: server localUrlString.
-			self showMessage: 'Copied ' , server localUrlString , '.' ]
+			self showMessage: (String streamContents: [ :stream | stream << 'Copied ' << server localUrlString << '.' ]) ]
 ]
 
 { #category : 'actions' }
@@ -104,7 +104,7 @@ MCPServersPresenter >> createServer [
 				^ self showMessage: error messageText ].
 	self refreshView.
 	serversTable selectItem: server.
-	self showMessage: 'Started a server on port ' , server port asString , '.'
+	self showMessage: (String streamContents: [ :stream | stream << 'Started a server on port ' << server port asString << '.' ])
 ]
 
 { #category : 'layout' }

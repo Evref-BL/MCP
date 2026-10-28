@@ -29,17 +29,17 @@ MCPListChangeHistoryLogsCommand >> directoryForRequestWithCurrentFile: currentFi
 			(self sameFileReference: directory as: currentFile) ifTrue: [
 					MCPCommandError
 						signalErrorCode: #ChangeHistoryPathNotDirectory
-						message: 'Change history path ' , directoryPath , ' is not a directory.'
+						message: (String streamContents: [ :stream | stream << 'Change history path ' << directoryPath << ' is not a directory.' ])
 						details: { (#directoryPath -> directoryPath) } asDictionary ] ].
 	directory exists ifFalse: [
 			MCPCommandError
 				signalErrorCode: #ChangeHistoryDirectoryNotFound
-				message: 'Change history directory ' , directoryPath , ' does not exist.'
+				message: (String streamContents: [ :stream | stream << 'Change history directory ' << directoryPath << ' does not exist.' ])
 				details: { (#directoryPath -> directoryPath) } asDictionary ].
 	directory isDirectory ifFalse: [
 			MCPCommandError
 				signalErrorCode: #ChangeHistoryPathNotDirectory
-				message: 'Change history path ' , directoryPath , ' is not a directory.'
+				message: (String streamContents: [ :stream | stream << 'Change history path ' << directoryPath << ' is not a directory.' ])
 				details: { (#directoryPath -> directoryPath) } asDictionary ].
 	^ directory
 ]

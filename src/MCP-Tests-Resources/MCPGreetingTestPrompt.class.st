@@ -49,7 +49,7 @@ MCPGreetingTestPrompt >> messagesFor: anArgumentDictionary [
 
 	| greeting |
 	greeting := anArgumentDictionary at: 'greeting' ifAbsent: [ 'Hello' ].
-	^ self userMessage: greeting , ', ' , (anArgumentDictionary at: 'who') , '!'
+	^ self userMessage: (String streamContents: [ :stream | stream << greeting << ', ' << (anArgumentDictionary at: 'who') << '!' ])
 ]
 
 { #category : 'metadata' }

@@ -452,6 +452,10 @@ MCPToolMethodMutationTest >> testCollectionStyleCritiquesProvideAutomaticChanges
 			           'nilOnlyConditionalProbe: value ^ value ifNil: [ nil ] ifNotNil: [ :present | present asString ]'.
 			           MCPNilOnlyConditionalRule }.
 		           {
+			           #booleanNilOnlyProbe:.
+			           'booleanNilOnlyProbe: aBoolean ^ aBoolean ifTrue: [ 42 ] ifFalse: [ nil ]'.
+			           MCPNilOnlyConditionalRule }.
+		           {
 			           #dictionaryAtIfPresentProbe:.
 			           'dictionaryAtIfPresentProbe: dictionary | result | result := OrderedCollection new. (dictionary at: #name ifAbsent: [ nil ]) ifNotNil: [ :value | result add: value ]. ^ result'.
 			           MCPDictionaryAtIfPresentRule }.
@@ -472,9 +476,21 @@ MCPToolMethodMutationTest >> testCollectionStyleCritiquesProvideAutomaticChanges
 			           'collectionThenDoProbe: collection | sum | sum := 0. (collection select: [ :each | each odd ]) do: [ :each | sum := sum + each ]. ^ sum'.
 			           MCPCollectionThenDoRule }.
 		           {
+			           #collectConversionProbe:.
+			           'collectConversionProbe: collection ^ (collection collect: [ :each | each asString ]) asArray'.
+			           MCPCollectConversionRule }.
+		           {
 			           #sortedCollectionConversionProbe:.
 			           'sortedCollectionConversionProbe: collection ^ collection asSortedCollection asArray'.
 			           MCPSortedCollectionConversionRule }.
+		           {
+			           #stringConcatenationProbe:.
+			           'stringConcatenationProbe: aName ^ ''before '' , aName , '' after'''.
+			           MCPStringConcatenationRule }.
+		           {
+			           #streamWriteCascadeProbe:.
+			           'streamWriteCascadeProbe: aStream aStream << ''first''; << ''second'''.
+			           MCPStreamWriteCascadeRule }.
 		           {
 			           #isNotEmptyProbe:.
 			           'isNotEmptyProbe: collection ^ collection notEmpty'.
@@ -1073,7 +1089,8 @@ MCPToolMethodMutationTest >> testMethodToolSchemasDeclareExpectedInputs [
 MCPToolMethodMutationTest >> testNormalizesLineEndingsBeforeCompilation [
 
 	| normalizedSource source |
-	source := 'multilineAnswer' , String lf , '| value |' , String lf , 'value := 41.' , String lf , '^ value + 1'.
+	source := String streamContents: [ :stream |
+		          stream << 'multilineAnswer' << String lf << '| value |' << String lf << 'value := 41.' << String lf << '^ value + 1' ].
 	self callToolWith: (self
 			 compileArgumentsForClass: MCPToolMethodMutationTestTarget
 			 classSide: false
@@ -1089,7 +1106,8 @@ MCPToolMethodMutationTest >> testNormalizesLineEndingsBeforeCompilation [
 MCPToolMethodMutationTest >> testNormalizesLineFeedStringLiteralBeforeCompilation [
 
 	| literal normalizedSource source |
-	source := 'multilineStringAnswer' , String lf , '^ ''line one' , String lf , 'line two'''.
+	source := String streamContents: [ :stream |
+		          stream << 'multilineStringAnswer' << String lf << '^ ''line one' << String lf << 'line two''' ].
 	[
 		self callToolWith: (self
 				 compileArgumentsForClass: MCPToolMethodMutationTestTarget
@@ -1102,7 +1120,7 @@ MCPToolMethodMutationTest >> testNormalizesLineFeedStringLiteralBeforeCompilatio
 		self deny: (literal includes: Character lf).
 		self assert: (normalizedSource includes: Character cr).
 		self assert: (literal includes: Character cr).
-		self assert: literal equals: 'line one' , String cr , 'line two' ] ensure: [
+		self assert: literal equals: (String streamContents: [ :stream | stream << 'line one' << String cr << 'line two' ]) ] ensure: [
 		self removeSelector: #multilineStringAnswer from: MCPToolMethodMutationTestTarget ]
 ]
 
@@ -1414,7 +1432,7 @@ MCPToolMethodMutationTest >> testUpdateChangesProtocolAndSelectorInOneCall [
 	self deny: (MCPToolMethodMutationTestTarget includesSelector: self instanceProtocolSelector).
 	self assert: (MCPToolMethodMutationTestTarget includesSelector: renamed).
 	self assert: (MCPToolMethodMutationTestTarget >> renamed) protocol name asString equals: 'accessing'.
-	self assert: ((data at: #updates) collect: [ :each | each at: #action ]) asArray equals: #( 'changeProtocol' 'rename' )
+	self assert: ((data at: #updates) collect: [ :each | each at: #action ] as: Array) equals: #( 'changeProtocol' 'rename' )
 ]
 
 { #category : 'private - calling' }

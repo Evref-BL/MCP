@@ -65,8 +65,9 @@ MCPUpdateClassCommand >> executeAddSlotWithPlan: plan [
 		  result := (MCPAddSlotCommand className: self classRequest className slotName: plan slotName classSide: plan classSide) execute ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText: 'Added ' , (self tool slotDescriptionForClassSide: plan classSide) , ' ' , plan slotName , ' to class '
-						  , self classRequest className , '.'
+					  successResultText: (String streamContents: [ :stream |
+								   stream << 'Added ' << (self tool slotDescriptionForClassSide: plan classSide) << ' ' << plan slotName << ' to class '
+								   << self classRequest className << '.' ])
 					  data: (self tool dataForAppliedUpdateResult: (self appliedUpdateResultFor: result plan: plan))
 					  warnings: warningMessages ]
 		  failureSummary: [ :error |
@@ -140,7 +141,8 @@ MCPUpdateClassCommand >> executeMoveWithPlan: plan [
 				            execute ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText: 'Moved class ' , self classRequest className , ' to package ' , packageName , '.'
+					  successResultText: (String streamContents: [ :stream |
+							   stream << 'Moved class ' << self classRequest className << ' to package ' << packageName << '.' ])
 					  data: (self tool dataForAppliedUpdateResult: (self appliedUpdateResultFor: result plan: plan))
 					  warnings: warningMessages ]
 		  failureSummary: [ :error |
@@ -192,9 +194,9 @@ MCPUpdateClassCommand >> executeRemoveSlotWithPlan: plan [
 				            execute ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText:
-						  'Removed ' , (self tool slotDescriptionForClassSide: plan classSide) , ' ' , plan slotName , ' from class '
-						  , self classRequest className , '.'
+					  successResultText: (String streamContents: [ :stream |
+								   stream << 'Removed ' << (self tool slotDescriptionForClassSide: plan classSide) << ' ' << plan slotName
+								   << ' from class ' << self classRequest className << '.' ])
 					  data: (self tool dataForAppliedUpdateResult: (self appliedUpdateResultFor: result plan: plan))
 					  warnings: warningMessages ]
 		  failureSummary: [ :error |
@@ -221,8 +223,9 @@ MCPUpdateClassCommand >> executeRenameSlotWithPlan: plan [
 					             classSide: plan classSide) execute ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText:
-					  'Renamed slot ' , plan slotName , ' to ' , plan newSlotName , ' in class ' , self classRequest className , '.'
+					  successResultText: (String streamContents: [ :stream |
+							   stream << 'Renamed slot ' << plan slotName << ' to ' << plan newSlotName << ' in class ' << self classRequest className
+							   << '.' ])
 					  data: (self tool dataForAppliedUpdateResult: (self appliedUpdateResultFor: result plan: plan))
 					  warnings: warningMessages ]
 		  failureSummary: [ :error |
@@ -248,7 +251,8 @@ MCPUpdateClassCommand >> executeRenameWithPlan: plan [
 					            execute ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText: 'Renamed class ' , self classRequest className , ' to ' , self classRequest newClassName , '.'
+					  successResultText: (String streamContents: [ :stream |
+							   stream << 'Renamed class ' << self classRequest className << ' to ' << self classRequest newClassName << '.' ])
 					  data: (self tool dataForAppliedUpdateResult: (self appliedUpdateResultFor: result plan: plan))
 					  warnings: warningMessages ]
 		  failureSummary: [ :error |
@@ -268,8 +272,9 @@ MCPUpdateClassCommand >> executeReparentWithPlan: plan [
 					            execute ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText:
-					  'Reparented class ' , self classRequest className , ' to superclass ' , self classRequest superclassName , '.'
+					  successResultText: (String streamContents: [ :stream |
+							   stream << 'Reparented class ' << self classRequest className << ' to superclass ' << self classRequest superclassName
+							   << '.' ])
 					  data: (self tool dataForAppliedUpdateResult: (self appliedUpdateResultFor: result plan: plan))
 					  warnings: warningMessages ]
 		  failureSummary: [ :error |
@@ -293,7 +298,9 @@ MCPUpdateClassCommand >> executeReplaceClassTraitsWithPlan: plan [
 					             classTraitNames: self classRequest classTraits) execute ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText: 'Replaced class-side traits for class ' , self classRequest className , '.'
+					  successResultText:
+					  (String streamContents: [ :stream |
+						   stream << 'Replaced class-side traits for class ' << self classRequest className << '.' ])
 					  data: (self tool dataForAppliedUpdateResult: (self appliedUpdateResultFor: result plan: plan))
 					  warnings: warningMessages ]
 		  failureSummary: [ :error |
@@ -320,7 +327,8 @@ MCPUpdateClassCommand >> executeReplaceDefinitionWithPlan: plan [
 		  work: [ result := command execute ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText: 'Replaced slot definition for class ' , self classRequest className , '.'
+					  successResultText:
+					  (String streamContents: [ :stream | stream << 'Replaced slot definition for class ' << self classRequest className << '.' ])
 					  data: (self tool dataForAppliedUpdateResult: (self appliedUpdateResultFor: result plan: plan))
 					  warnings: warningMessages ]
 		  failureSummary: [ :error | self tool failureMessageForReplaceDefinitionOnClassNamed: self classRequest className error: error ]
@@ -338,7 +346,8 @@ MCPUpdateClassCommand >> executeReplaceLayoutWithPlan: plan [
 		  result := (MCPReplaceClassLayoutCommand className: self classRequest className layout: self classRequest layout) execute ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText: 'Replaced layout for class ' , self classRequest className , '.'
+					  successResultText:
+					  (String streamContents: [ :stream | stream << 'Replaced layout for class ' << self classRequest className << '.' ])
 					  data: (self tool dataForAppliedUpdateResult: (self appliedUpdateResultFor: result plan: plan))
 					  warnings: warningMessages ]
 		  failureSummary: [ :error | self tool failureMessageForReplaceLayoutOnClassNamed: self classRequest className error: error ]
@@ -358,7 +367,8 @@ MCPUpdateClassCommand >> executeReplaceSharedPoolsWithPlan: plan [
 					             sharedPoolNames: self classRequest sharedPools) execute ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText: 'Replaced shared pools for class ' , self classRequest className , '.'
+					  successResultText:
+					  (String streamContents: [ :stream | stream << 'Replaced shared pools for class ' << self classRequest className << '.' ])
 					  data: (self tool dataForAppliedUpdateResult: (self appliedUpdateResultFor: result plan: plan))
 					  warnings: warningMessages ]
 		  failureSummary: [ :error |
@@ -379,7 +389,8 @@ MCPUpdateClassCommand >> executeReplaceSharedVariablesWithPlan: plan [
 					             sharedVariableNames: self classRequest sharedVariables) execute ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText: 'Replaced shared variables for class ' , self classRequest className , '.'
+					  successResultText:
+					  (String streamContents: [ :stream | stream << 'Replaced shared variables for class ' << self classRequest className << '.' ])
 					  data: (self tool dataForAppliedUpdateResult: (self appliedUpdateResultFor: result plan: plan))
 					  warnings: warningMessages ]
 		  failureSummary: [ :error |
@@ -398,7 +409,8 @@ MCPUpdateClassCommand >> executeReplaceTraitsWithPlan: plan [
 		  result := (MCPReplaceClassTraitsCommand className: self classRequest className traitNames: self classRequest traits) execute ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText: 'Replaced traits for class ' , self classRequest className , '.'
+					  successResultText:
+					  (String streamContents: [ :stream | stream << 'Replaced traits for class ' << self classRequest className << '.' ])
 					  data: (self tool dataForAppliedUpdateResult: (self appliedUpdateResultFor: result plan: plan))
 					  warnings: warningMessages ]
 		  failureSummary: [ :error | self tool failureMessageForReplaceTraitsOnClassNamed: self classRequest className error: error ]
@@ -417,7 +429,8 @@ MCPUpdateClassCommand >> executeSetCommentWithPlan: plan [
 					            execute ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText: 'Set comment for class ' , self classRequest className , '.'
+					  successResultText:
+					  (String streamContents: [ :stream | stream << 'Set comment for class ' << self classRequest className << '.' ])
 					  data: (self tool dataForAppliedUpdateResult: (self appliedUpdateResultFor: result plan: plan))
 					  warnings: warningMessages ]
 		  failureSummary: [ :error | self tool failureMessageForSetCommentOnClassNamed: self classRequest className error: error ]
@@ -553,8 +566,12 @@ MCPUpdateClassCommand >> successMessageForMoveSlotAction: operation [
 	| slotDescription |
 	slotDescription := self tool slotDescriptionForClassSide: self classRequest classSide.
 	operation = 'pullUpSlot' ifTrue: [
-		^ 'Pulled up ' , slotDescription , ' ' , self classRequest slotName , ' to class ' , self classRequest className , '.' ].
-	^ 'Pushed down ' , slotDescription , ' ' , self classRequest slotName , ' from class ' , self classRequest className , '.'
+			^ String streamContents: [ :stream |
+					  stream << 'Pulled up ' << slotDescription << ' ' << self classRequest slotName << ' to class '
+					  << self classRequest className << '.' ] ].
+	^ String streamContents: [ :stream |
+			  stream << 'Pushed down ' << slotDescription << ' ' << self classRequest slotName << ' from class '
+			  << self classRequest className << '.' ]
 ]
 
 { #category : 'private - slots' }
@@ -563,8 +580,10 @@ MCPUpdateClassCommand >> successMessageForMoveSlotAction: operation plan: plan [
 	| slotDescription |
 	slotDescription := self tool slotDescriptionForClassSide: plan classSide.
 	operation = 'pullUpSlot' ifTrue: [
-		^ 'Pulled up ' , slotDescription , ' ' , plan slotName , ' to class ' , self classRequest className , '.' ].
-	^ 'Pushed down ' , slotDescription , ' ' , plan slotName , ' from class ' , self classRequest className , '.'
+			^ String streamContents: [ :stream |
+				  stream << 'Pulled up ' << slotDescription << ' ' << plan slotName << ' to class ' << self classRequest className << '.' ] ].
+	^ String streamContents: [ :stream |
+		  stream << 'Pushed down ' << slotDescription << ' ' << plan slotName << ' from class ' << self classRequest className << '.' ]
 ]
 
 { #category : 'accessing' }

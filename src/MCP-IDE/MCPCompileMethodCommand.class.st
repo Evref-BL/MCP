@@ -47,7 +47,9 @@ MCPCompileMethodCommand >> execute [
 					            changeKind: changeKind ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText: (self changeSummaryVerbFor: result changeKind) , ' ' , methodReference , '.'
+					  successResultText:
+					  (String streamContents: [ :stream |
+						   stream << (self changeSummaryVerbFor: result changeKind) << ' ' << methodReference << '.' ])
 					  data: result asDictionary
 					  warnings: warningMessages ]
 		  failureSummary: [ :error |

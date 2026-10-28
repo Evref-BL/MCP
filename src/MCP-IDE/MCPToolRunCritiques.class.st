@@ -80,7 +80,7 @@ MCPToolRunCritiques >> addIntervalFromAnchor: sourceAnchor toHitData: data [
 	(sourceAnchor class canUnderstand: #interval) ifFalse: [ ^ self ].
 	interval := sourceAnchor interval.
 	interval ifNil: [ ^ self ].
-	data at: #interval put: interval first asString , '-' , interval last asString
+	data at: #interval put: (String streamContents: [ :stream | stream << interval first asString << '-' << interval last asString ])
 ]
 
 { #category : 'private - running' }
@@ -158,7 +158,7 @@ MCPToolRunCritiques >> additionalKeywords [
 { #category : 'private - rules' }
 MCPToolRunCritiques >> allRuleClasses [
 
-	^ (ReRuleManager uniqueInstance allRules collect: [ :each | each class ]) asSet asArray sort: [ :left :right |
+	^ (ReRuleManager uniqueInstance allRules collect: [ :each | each class ] as: Set) asArray sort: [ :left :right |
 		  left name <= right name ]
 ]
 

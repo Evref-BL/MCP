@@ -69,7 +69,7 @@ MCPReplaceClassSideTraitsCommand >> resolvedClassTraitNamed: aClassTraitName [
 	behavior := Smalltalk globals at: classTraitName asSymbol ifAbsent: [
 			            MCPCommandError
 				            signalErrorCode: #ClassTraitNotFound
-				            message: 'Class trait ' , originalName , ' does not exist.'
+				            message: (String streamContents: [ :stream | stream << 'Class trait ' << originalName << ' does not exist.' ])
 				            details: {
 						            (#class -> self className).
 						            (#classTrait -> originalName).

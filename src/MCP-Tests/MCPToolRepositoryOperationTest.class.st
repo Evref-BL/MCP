@@ -45,10 +45,11 @@ MCPToolRepositoryOperationTest >> callToolWith: someArguments [
 { #category : 'private' }
 MCPToolRepositoryOperationTest >> commitAllIn: aRepositoryLocation message: aMessage [
 
-	self shellCommand: 'git -C ' , (self shellQuote: aRepositoryLocation pathString) , ' add .'.
 	self shellCommand:
-		'git -C ' , (self shellQuote: aRepositoryLocation pathString) , ' -c user.name=' , (self shellQuote: 'MCP Test')
-		, ' -c user.email=' , (self shellQuote: 'mcp-test@example.com') , ' commit -m ' , (self shellQuote: aMessage)
+		(String streamContents: [ :stream | stream << 'git -C ' << (self shellQuote: aRepositoryLocation pathString) << ' add .' ]).
+	self shellCommand: (String streamContents: [ :stream |
+				 stream << 'git -C ' << (self shellQuote: aRepositoryLocation pathString) << ' -c user.name=' << (self shellQuote: 'MCP Test')
+				 << ' -c user.email=' << (self shellQuote: 'mcp-test@example.com') << ' commit -m ' << (self shellQuote: aMessage) ])
 ]
 
 { #category : 'private - classes' }
@@ -151,8 +152,10 @@ MCPToolRepositoryOperationTest >> shellCommand: aCommandString [
 MCPToolRepositoryOperationTest >> shellOutput: aCommandString [
 
 	| command output outputFile status |
-	outputFile := FileLocator temp asFileReference / ('mcp-test-shell-command-' , UUID new asString , '.log').
-	command := aCommandString , ' > ' , (self shellQuote: outputFile pathString) , ' 2>&1'.
+	outputFile := FileLocator temp asFileReference
+	              / (String streamContents: [ :stream | stream << 'mcp-test-shell-command-' << UUID new asString << '.log' ]).
+	command := String streamContents: [ :stream |
+		           stream << aCommandString << ' > ' << (self shellQuote: outputFile pathString) << ' 2>&1' ].
 	status := LibC uniqueInstance system: command.
 	output := outputFile exists
 		          ifTrue: [ outputFile contents ]
@@ -165,7 +168,7 @@ MCPToolRepositoryOperationTest >> shellOutput: aCommandString [
 { #category : 'private' }
 MCPToolRepositoryOperationTest >> shellQuote: aString [
 
-	^ '''' , (aString copyReplaceAll: '''' with: '''"''"''') , ''''
+	^ String streamContents: [ :stream | stream << '''' << (aString copyReplaceAll: '''' with: '''"''"''') << '''' ]
 ]
 
 { #category : 'private' }
@@ -342,8 +345,9 @@ MCPToolRepositoryOperationTest >> testAttachRegistersLinkedGitWorktreeCheckout [
 								(#action -> 'commit').
 								(#name -> repositoryName).
 								(#message -> 'Prepare linked checkout for attach test') } asDictionary.
-						self shellCommand: 'git -C ' , (self shellQuote: location pathString) , ' worktree add -b attach-linked-test '
-							, (self shellQuote: linkedLocation pathString).
+						self shellCommand: (String streamContents: [ :stream |
+									 stream << 'git -C ' << (self shellQuote: location pathString) << ' worktree add -b attach-linked-test '
+									 << (self shellQuote: linkedLocation pathString) ]).
 						self removeRegisteredRepositoriesNamed: repositoryName.
 						result := self callToolWith: {
 								          (#action -> 'attach').
@@ -358,9 +362,9 @@ MCPToolRepositoryOperationTest >> testAttachRegistersLinkedGitWorktreeCheckout [
 						self assert: (self packageNamesIn: repository) equals: { packageName } ] ensure: [
 							self removeRegisteredRepositoriesNamed: repositoryName.
 							linkedLocation exists ifTrue: [
-									LibC uniqueInstance system:
-										'git -C ' , (self shellQuote: location pathString) , ' worktree remove --force '
-										, (self shellQuote: linkedLocation pathString).
+									LibC uniqueInstance system: (String streamContents: [ :stream |
+												 stream << 'git -C ' << (self shellQuote: location pathString) << ' worktree remove --force '
+												 << (self shellQuote: linkedLocation pathString) ]).
 									self deleteDirectoryIfExists: linkedLocation ] ] ] ]
 ]
 
@@ -423,7 +427,8 @@ MCPToolRepositoryOperationTest >> testCheckoutBranchLoadsTargetBranchSnapshot [
 					self commitAllIn: location message: 'Prepare checkout base branch'.
 					repository := IceRepository repositories detect: [ :each | each name asString = repositoryName ].
 					baseBranch := repository branchName.
-					self shellCommand: 'git -C ' , (self shellQuote: location pathString) , ' checkout -b ' , (self shellQuote: featureBranch).
+					self shellCommand: (String streamContents: [ :stream |
+							 stream << 'git -C ' << (self shellQuote: location pathString) << ' checkout -b ' << (self shellQuote: featureBranch) ]).
 					(Smalltalk at: className asSymbol) compile: 'staleBranchOnlyValue ^ 42' classified: 'tests'.
 					self callToolWith: {
 							(#action -> 'export').
@@ -436,7 +441,8 @@ MCPToolRepositoryOperationTest >> testCheckoutBranchLoadsTargetBranchSnapshot [
 							(#location -> location pathString).
 							(#packages -> { packageName }) } asDictionary.
 					self assert: ((Smalltalk at: className asSymbol) includesSelector: extraSelector).
-					self shellCommand: 'git -C ' , (self shellQuote: location pathString) , ' checkout ' , (self shellQuote: baseBranch).
+					self shellCommand: (String streamContents: [ :stream |
+							 stream << 'git -C ' << (self shellQuote: location pathString) << ' checkout ' << (self shellQuote: baseBranch) ]).
 					checkoutResult := self callToolWith: {
 							                  (#action -> 'reload').
 							                  (#name -> repositoryName) } asDictionary.
@@ -529,8 +535,10 @@ MCPToolRepositoryOperationTest >> testCommitUsesFallbackGitIdentityWhenGitSignat
 							(#name -> repositoryName).
 							(#location -> location pathString).
 							(#packages -> { packageName }) } asDictionary.
-					self shellCommand: 'git -C ' , (self shellQuote: location pathString) , ' config user.name ' , (self shellQuote: '').
-					self shellCommand: 'git -C ' , (self shellQuote: location pathString) , ' config user.email ' , (self shellQuote: '').
+					self shellCommand: (String streamContents: [ :stream |
+							 stream << 'git -C ' << (self shellQuote: location pathString) << ' config user.name ' << (self shellQuote: '') ]).
+					self shellCommand: (String streamContents: [ :stream |
+							 stream << 'git -C ' << (self shellQuote: location pathString) << ' config user.email ' << (self shellQuote: '') ]).
 					result := self callToolWith: {
 							          (#action -> 'commit').
 							          (#name -> repositoryName).
@@ -538,7 +546,9 @@ MCPToolRepositoryOperationTest >> testCommitUsesFallbackGitIdentityWhenGitSignat
 					data := self dataFrom: result.
 					self assert: (data at: #commitDescription) equals: message.
 					self
-						assert: (self shellOutput: 'git -C ' , (self shellQuote: location pathString) , ' log -1 --format=%an') trimBoth
+						assert: (self shellOutput:
+								 (String streamContents: [ :stream |
+									  stream << 'git -C ' << (self shellQuote: location pathString) << ' log -1 --format=%an' ])) trimBoth
 						equals: 'MCP' ] ]
 ]
 
@@ -832,15 +842,18 @@ MCPToolRepositoryOperationTest >> testLinkedWorktreeAttachExportsOnLinkedBranch 
 							                (#name -> repositoryName).
 							                (#message -> 'Prepare linked checkout contract test') } asDictionary.
 					self deny: (self resultIndicatesError: commitResult) description: (self summaryFrom: commitResult).
-					self shellCommand: 'git -C ' , (self shellQuote: location pathString) , ' remote add origin https://example.com/worktree.git'.
-					self shellCommand: 'git -C ' , (self shellQuote: location pathString) , ' worktree add -b ' , branchName , ' '
-						, (self shellQuote: linkedLocation pathString).
+					self shellCommand: (String streamContents: [ :stream |
+							 stream << 'git -C ' << (self shellQuote: location pathString) << ' remote add origin https://example.com/worktree.git' ]).
+					self shellCommand: (String streamContents: [ :stream |
+								 stream << 'git -C ' << (self shellQuote: location pathString) << ' worktree add -b ' << branchName << ' '
+								 << (self shellQuote: linkedLocation pathString) ]).
 					[
-						self shellCommand:
-							'git -C ' , (self shellQuote: linkedLocation pathString) , ' config branch.' , branchName , '.remote origin'.
-						self shellCommand:
-							'git -C ' , (self shellQuote: linkedLocation pathString) , ' config branch.' , branchName , '.merge refs/heads/'
-							, branchName.
+						self shellCommand: (String streamContents: [ :stream |
+								 stream << 'git -C ' << (self shellQuote: linkedLocation pathString) << ' config branch.' << branchName
+								 << '.remote origin' ]).
+						self shellCommand: (String streamContents: [ :stream |
+									 stream << 'git -C ' << (self shellQuote: linkedLocation pathString) << ' config branch.' << branchName
+									 << '.merge refs/heads/' << branchName ]).
 						self removeRegisteredRepositoriesNamed: repositoryName.
 						attachResult := self callToolWith: {
 								                (#action -> 'attach').
@@ -849,8 +862,7 @@ MCPToolRepositoryOperationTest >> testLinkedWorktreeAttachExportsOnLinkedBranch 
 								                (#subdirectory -> 'src').
 								                (#packages -> { packageName }) } asDictionary.
 						self deny: (self resultIndicatesError: attachResult) description: (self summaryFrom: attachResult).
-						searchResult := self searchRepositoriesWith: {
-								                (#name -> repositoryName) } asDictionary.
+						searchResult := self searchRepositoriesWith: { (#name -> repositoryName) } asDictionary.
 						self deny: (self resultIndicatesError: searchResult) description: (self summaryFrom: searchResult).
 						searchData := self dataFrom: searchResult.
 						entry := (searchData at: #repositories) anyOne.
@@ -864,9 +876,9 @@ MCPToolRepositoryOperationTest >> testLinkedWorktreeAttachExportsOnLinkedBranch 
 						self deny: (self resultIndicatesError: exportResult) description: (self summaryFrom: exportResult).
 						self assert: exportedClassFile exists ] ensure: [
 							self removeClassNamed: exportedClassName.
-							self shellCommand:
-								'git -C ' , (self shellQuote: location pathString) , ' worktree remove --force '
-								, (self shellQuote: linkedLocation pathString).
+							self shellCommand: (String streamContents: [ :stream |
+										 stream << 'git -C ' << (self shellQuote: location pathString) << ' worktree remove --force '
+										 << (self shellQuote: linkedLocation pathString) ]).
 							linkedLocation exists ifTrue: [ linkedLocation deleteAll ] ] ] ]
 ]
 
@@ -943,12 +955,10 @@ MCPToolRepositoryOperationTest >> testSourceFormatSupportsEveryFormatIcebergWrit
 
 	| command icebergFormats |
 	command := MCPRepositoryCommand new.
-	icebergFormats := (TIceRepositoryWriter users collect: [ :each | each id asString ]) asArray sort.
-	self
-		assert: command supportedSourceFormatIds = icebergFormats
-		description:
-			'Every format Iceberg writes must be one this reads back, but it writes ' , icebergFormats printString , ' and this reads '
-			, command supportedSourceFormatIds printString.
+	icebergFormats := (TIceRepositoryWriter users collect: [ :each | each id asString ] as: Array) sort.
+	self assert: command supportedSourceFormatIds = icebergFormats description: (String streamContents: [ :stream |
+				 stream << 'Every format Iceberg writes must be one this reads back, but it writes ' << icebergFormats printString
+				 << ' and this reads ' << command supportedSourceFormatIds printString ]).
 	self assert: command supportedSourceFormatIds equals: #( 'filetree' 'tonel' )
 ]
 
@@ -1210,7 +1220,7 @@ MCPToolRepositoryOperationTest >> tonelClassSourceWithMethods: methodSelectors [
 				nextPut: Character lf;
 				nextPutAll: '[';
 				nextPut: Character lf;
-				nextPutAll: String tab , '^ #' , selector;
+				nextPutAll: (String streamContents: [ :stream | stream << String tab << '^ #' << selector ]);
 				nextPut: Character lf;
 				nextPutAll: ']';
 				nextPut: Character lf ].

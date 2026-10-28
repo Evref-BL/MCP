@@ -223,7 +223,7 @@ MCPDashboardPresenterTest >> testToolRowsHoldEveryToolTheServerCouldRun [
 
 	self assert: rows size equals: mcp toolRegistry tools size.
 	self assert: rows size > mcp advertisedToolNames size.
-	self assert: (rows collect: [ :each | each name ]) asArray equals: (rows collect: [ :each | each name ]) asArray sorted
+	self assert: (rows collect: [ :each | each name ] as: Array) equals: (rows collect: [ :each | each name ] as: Array) sorted
 ]
 
 { #category : 'tests' }

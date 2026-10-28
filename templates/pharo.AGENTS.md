@@ -13,14 +13,16 @@ rather than letting source stand in for it.
   dedicated tool fits.
 - Treat image, Tonel, Iceberg, and Git state as separate. None of them proves
   anything about the others.
+- The image is one workspace. It has no branches and no worktrees, so two
+  agents working in it at once share every edit, and one export writes both
+  their changes into one diff. One writer at a time.
 - Tools change the running image but never save it; use a safe image boundary.
 
 ## Context Loading
 
 - Before Pharo source changes: read the project's Pharo coding and testing
   guidance. If none exists, use the local
-  [coding rules](pharo-references/pharo-coding-rules.md) and
-  [coding style](pharo-references/pharo-coding-style.md).
+  [Pharo coding](pharo-references/pharo-coding.md) reference.
 - Before reading an answer closely, rewriting methods, or acting on a warning a
   call came back with: read
   [tool reference](pharo-references/tool-reference.md).

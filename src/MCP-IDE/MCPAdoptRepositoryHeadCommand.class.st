@@ -32,7 +32,8 @@ MCPAdoptRepositoryHeadCommand >> execute [
 					            didAdopt: didAdopt ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText: 'Adopted repository HEAD for ' , result repositoryInfo name , '.'
+					  successResultText:
+					  (String streamContents: [ :stream | stream << 'Adopted repository HEAD for ' << result repositoryInfo name << '.' ])
 					  data: (self tool dataForRepositoryResult: result)
 					  warnings: warningMessages ]
 		  failureSummary: [ :error | 'Failed adopt repository HEAD: ' , (error messageText ifNil: [ error asString ]) ]
@@ -59,7 +60,8 @@ MCPAdoptRepositoryHeadCommand >> validateExpectedBranchFor: aRepository [
 	actualBranchName = expectedBranchName ifTrue: [ ^ self ].
 	MCPCommandError
 		signalErrorCode: #RepositoryBranchMismatch
-		message: 'Repository branch mismatch. Expected ' , expectedBranchName , ' but found ' , actualBranchName , '.'
+		message: (String streamContents: [ :stream |
+				 stream << 'Repository branch mismatch. Expected ' << expectedBranchName << ' but found ' << actualBranchName << '.' ])
 		details: (self request requestedContext copy
 				 at: #actualBranch put: actualBranchName;
 				 at: #expectedBranch put: expectedBranchName;

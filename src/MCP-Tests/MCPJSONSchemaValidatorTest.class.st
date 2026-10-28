@@ -149,7 +149,9 @@ MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasAcceptRepresentativeArg
 			| arguments violations |
 			arguments := argumentsByTool at: toolClass ifAbsent: [ self fail: 'Missing representative arguments for ' , toolClass name ].
 			violations := self violationsFor: arguments schema: toolClass new inputSchema.
-			violations ifNotEmpty: [ self fail: toolClass name , ' schema rejected representative arguments: ' , violations printString ] ]
+			violations ifNotEmpty: [
+					self fail: (String streamContents: [ :stream |
+							 stream << toolClass name << ' schema rejected representative arguments: ' << violations printString ]) ] ]
 ]
 
 { #category : 'tests' }
@@ -162,8 +164,8 @@ MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasAdvertiseGroupedSearchS
 		                        :each | each name ].
 	methodScopeProperties := ((methodProperties detect: [ :each | each name = 'scope' ]) extraProperties at: #properties) collect: [
 		                         :each | each name ].
-	self assert: (classProperties collect: [ :each | each name ]) asSet equals: #( 'scope' 'name' 'package' 'tag' 'offset' ) asSet.
-	self assert: (methodProperties collect: [ :each | each name ]) asSet equals: #( 'scope' 'selector' 'protocol' 'offset' ) asSet.
+	self assert: (classProperties collect: [ :each | each name ] as: Set) equals: #( 'scope' 'name' 'package' 'tag' 'offset' ) asSet.
+	self assert: (methodProperties collect: [ :each | each name ] as: Set) equals: #( 'scope' 'selector' 'protocol' 'offset' ) asSet.
 	self assert: classScopeProperties asSet equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' 'hierarchyOf' ) asSet.
 	self assert: methodScopeProperties asSet equals: classScopeProperties asSet , #( 'side' ) asSet
 ]

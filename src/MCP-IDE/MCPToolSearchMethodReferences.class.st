@@ -166,10 +166,11 @@ MCPToolSearchMethodReferences >> signalUnknownName: aName failures: failures [
 
 	MCPCommandError
 		signalErrorCode: #ReferenceSubjectNotFound
-		message: 'There is no class, variable or selector named ' , aName , ' in the requested scope.'
+		message: (String streamContents: [ :stream |
+				 stream << 'There is no class, variable or selector named ' << aName << ' in the requested scope.' ])
 		details: {
 				(#name -> aName).
-				(#attempted -> ((failures collect: [ :each | each messageText ]) asArray)) } asDictionary
+				(#attempted -> (failures collect: [ :each | each messageText ] as: Array)) } asDictionary
 ]
 
 { #category : 'metadata' }

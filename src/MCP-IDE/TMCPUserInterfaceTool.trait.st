@@ -43,8 +43,9 @@ TMCPUserInterfaceTool >> targetMorphNamed: aTitle [
 				   ifTrue: [ #WindowNotFound ]
 				   ifFalse: [ #AmbiguousWindow ])
 		  message: (matches isEmpty
-				   ifTrue: [ 'There is no open window titled ' , aTitle , '.' ]
-				   ifFalse: [ matches size printString , ' open windows are titled ' , aTitle , '.' ])
+				   ifTrue: [ String streamContents: [ :stream | stream << 'There is no open window titled ' << aTitle << '.' ] ]
+				   ifFalse: [
+				   String streamContents: [ :stream | stream << matches size printString << ' open windows are titled ' << aTitle << '.' ] ])
 		  details: {
 				  (#window -> aTitle).
 				  (#open -> self openWindowTitles) } asDictionary

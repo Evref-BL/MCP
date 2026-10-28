@@ -154,7 +154,8 @@ MCPToolMethodSearch >> matchingClassReferencesForClassNamed: aClassName inMethod
 
 	| classBinding |
 	classBinding := self classBindingForClassName: aClassName.
-	classBinding ifNil: [ Error signal: 'There is no class named ' , aClassName , '.' ].
+	classBinding ifNil: [
+		Error signal: (String streamContents: [ :stream | stream << 'There is no class named ' << aClassName << '.' ]) ].
 	^ (compiledMethods select: [ :eachMethod | self method: eachMethod referencesAnyVariable: { classBinding } ]) asArray
 ]
 
@@ -172,7 +173,10 @@ MCPToolMethodSearch >> matchingVariableReferencesNamed: aVariableName scopeQuery
 
 	| variables |
 	variables := self variableBindingsNamed: aVariableName inBehaviors: query behaviors.
-	variables ifEmpty: [ Error signal: 'No variable named ' , aVariableName , ' is accessible in the requested scope.' ].
+	variables ifEmpty: [
+			Error signal:
+				(String streamContents: [ :stream |
+					 stream << 'No variable named ' << aVariableName << ' is accessible in the requested scope.' ]) ].
 	^ (compiledMethods select: [ :eachMethod | self method: eachMethod referencesAnyVariable: variables ]) asArray
 ]
 

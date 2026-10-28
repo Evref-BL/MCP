@@ -61,7 +61,7 @@ MCPGreetingTestResource >> name [
 { #category : 'reading' }
 MCPGreetingTestResource >> readContents [
 
-	^ self textContents: 'Hello, ' , self greetedName , '!'
+	^ self textContents: (String streamContents: [ :stream | stream << 'Hello, ' << self greetedName << '!' ])
 ]
 
 { #category : 'metadata' }

@@ -19,8 +19,9 @@ MCPModernHeaderTest >> mismatchFor: aBody headers: someAssociations [
 { #category : 'private' }
 MCPModernHeaderTest >> modernBodyFor: aMethod params: aParamsFragment [
 
-	^ '{"jsonrpc":"2.0","id":1,"method":"' , aMethod , '","params":{' , aParamsFragment
-	  , '"_meta":{"io.modelcontextprotocol/protocolVersion":"' , MCP latestProtocolVersion , '"}}}'
+	^ String streamContents: [ :stream |
+			  stream << '{"jsonrpc":"2.0","id":1,"method":"' << aMethod << '","params":{' << aParamsFragment
+			  << '"_meta":{"io.modelcontextprotocol/protocolVersion":"' << MCP latestProtocolVersion << '"}}}' ]
 ]
 
 { #category : 'private' }
@@ -127,5 +128,5 @@ MCPModernHeaderTest >> testTheNameHeaderMirrorsTheUriForAResourceRead [
 				 ('Mcp-Name' -> 'pharo://image/metadata') }) isNil.
 	self assert: ((self mismatchFor: body headers: {
 				  ('MCP-Protocol-Version' -> MCP latestProtocolVersion).
-				  ('Mcp-Method' -> 'resources/read') }) at: 'error') notNil
+				  ('Mcp-Method' -> 'resources/read') }) at: 'error') isNotNil
 ]

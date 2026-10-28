@@ -33,9 +33,9 @@ MCPDebugSearchCommand >> exceptionTextFor: anException [
 
 	anException ifNil: [ ^ 'none' ].
 	^ [
-	  anException messageText
-		  ifNil: [ anException printString ]
-		  ifNotNil: [ :text | anException class name , ': ' , text ] ]
+		  anException messageText
+			  ifNil: [ anException printString ]
+			  ifNotNil: [ :text | String streamContents: [ :stream | stream << anException class name << ': ' << text ] ] ]
 		  on: Error
 		  do: [ :error | anException class name ]
 ]
@@ -58,7 +58,8 @@ MCPDebugSearchCommand >> openDebuggers [
 	entries := OrderedCollection new.
 	StDebugger allInstancesDo: [ :debugger |
 			(self descriptionOf: debugger) ifNotNil: [ :description |
-					(request matches: (description at: #debugger) , ' ' , (description at: #exception)) ifTrue: [
-						entries add: description ] ] ].
+					(request matches:
+						 (String streamContents: [ :stream | stream << (description at: #debugger) << ' ' << (description at: #exception) ]))
+						ifTrue: [ entries add: description ] ] ].
 	^ entries asArray
 ]

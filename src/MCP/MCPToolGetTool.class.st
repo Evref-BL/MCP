@@ -92,7 +92,9 @@ MCPToolGetTool >> executeWithRequest: request [
 				  | contract data |
 				  data := (self commandForRequest: getRequest) execute.
 				  contract := data at: #tool.
-				  self successResultText: 'Tool ' , (contract at: #name) , ' found.' data: data ]
+				  self
+					  successResultText: (String streamContents: [ :stream | stream << 'Tool ' << (contract at: #name) << ' found.' ])
+					  data: data ]
 		  onError: [ :error :parsedRequest | self errorResultFor: error ]
 ]
 

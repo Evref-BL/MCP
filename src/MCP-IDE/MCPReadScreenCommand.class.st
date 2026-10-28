@@ -40,7 +40,7 @@ MCPReadScreenCommand >> boundsTextFor: aMorph [
 MCPReadScreenCommand >> childNodesOf: aMorph depth: remaining [
 
 	^ (self presenterOf: aMorph)
-		  ifNil: [ (aMorph submorphs collect: [ :each | self nodeFor: each depth: remaining ]) asArray ]
+		  ifNil: [ aMorph submorphs collect: [ :each | self nodeFor: each depth: remaining ] as: Array ]
 		  ifNotNil: [ :presenter | { (self presenterNodeFor: presenter depth: remaining) } ]
 ]
 
@@ -88,7 +88,7 @@ MCPReadScreenCommand >> presenterNodeFor: aPresenter depth: remaining [
 	node := Dictionary new.
 	node at: #class put: aPresenter class name asString.
 	remaining isZero ifFalse: [
-			children := (aPresenter presenters collect: [ :each | self presenterNodeFor: each depth: remaining - 1 ]) asArray.
+			children := aPresenter presenters collect: [ :each | self presenterNodeFor: each depth: remaining - 1 ] as: Array.
 			children ifNotEmpty: [ node at: #children put: children ] ].
 	^ node
 ]

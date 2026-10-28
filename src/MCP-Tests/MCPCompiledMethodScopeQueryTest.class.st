@@ -11,13 +11,15 @@ Class {
 { #category : 'private' }
 MCPCompiledMethodScopeQueryTest >> methodIdentitiesFor: compiledMethods [
 
-	^ (compiledMethods collect: [ :each |
-			   String streamContents: [ :stream |
-					   stream nextPutAll: each methodClass instanceSide name asString.
-					   each methodClass isMeta ifTrue: [ stream nextPutAll: ' class' ].
-					   stream
-						   nextPutAll: '>>';
-						   nextPutAll: each selector asString ] ]) asSet
+	^ compiledMethods
+		  collect: [ :each |
+				  String streamContents: [ :stream |
+						  stream nextPutAll: each methodClass instanceSide name asString.
+						  each methodClass isMeta ifTrue: [ stream nextPutAll: ' class' ].
+						  stream
+							  nextPutAll: '>>';
+							  nextPutAll: each selector asString ] ]
+		  as: Set
 ]
 
 { #category : 'tests' }

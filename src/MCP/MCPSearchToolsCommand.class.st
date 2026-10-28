@@ -51,7 +51,7 @@ MCPSearchToolsCommand >> execute [
 	| data |
 	matchingTools := self toolRegistry toolsMatchingQuery: request query.
 	data := Dictionary new.
-	data at: #tools put: (self visibleTools collect: [ :each | each searchMetadata ]) asArray.
+	data at: #tools put: (self visibleTools collect: [ :each | each searchMetadata ] as: Array).
 	^ data
 ]
 
@@ -67,12 +67,14 @@ MCPSearchToolsCommand >> summaryText [
 
 	| shown |
 	matchingTools ifEmpty: [
-		^ request query isEmptyOrNil
-			  ifTrue: [ self catalogOverviewText ]
-			  ifFalse: [ 'No tool matched. ' , self catalogOverviewText ] ].
+			^ request query isEmptyOrNil
+				  ifTrue: [ self catalogOverviewText ]
+				  ifFalse: [ 'No tool matched. ' , self catalogOverviewText ] ].
 	shown := self visibleTools size.
 	shown = matchingTools size ifTrue: [ ^ shown asString , ' tools matched, best first.' ].
-	^ shown asString , ' of ' , matchingTools size asString , ' matching tools, best first. Add words to narrow the search.'
+	^ String streamContents: [ :stream |
+			  stream << shown asString << ' of ' << matchingTools size asString
+			  << ' matching tools, best first. Add words to narrow the search.' ]
 ]
 
 { #category : 'private' }

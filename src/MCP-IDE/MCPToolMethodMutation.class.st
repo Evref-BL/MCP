@@ -71,6 +71,7 @@ MCPToolMethodMutation >> additionalKeywords [
 MCPToolMethodMutation >> allowedNonErrorCritiqueRuleClasses [
 
 	^ {
+		  MCPCollectConversionRule.
 		  MCPCollectionThenDoRule.
 		  MCPDictionaryAtIfPresentRule.
 		  MCPFilteredEmptinessRule.
@@ -83,6 +84,8 @@ MCPToolMethodMutation >> allowedNonErrorCritiqueRuleClasses [
 		  MCPRespondsToUsageRule.
 		  MCPSelectSizeCountRule.
 		  MCPSortedCollectionConversionRule.
+		  MCPStreamWriteCascadeRule.
+		  MCPStringConcatenationRule.
 		  ReAssignmentInBlockRule.
 		  ReEquivalentSuperclassMethodsRule.
 		  ReExcessiveArgumentsRule.

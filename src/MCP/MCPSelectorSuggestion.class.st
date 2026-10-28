@@ -31,12 +31,11 @@ MCPSelectorSuggestion class >> namesLike: aName among: names [
 
 	| missed candidates suggestions |
 	missed := aName asString.
-	candidates := (names collect: [ :each | each asString ]) asSet.
+	candidates := names collect: [ :each | each asString ] as: Set.
 	suggestions := (self prefixMatchesIn: candidates for: missed) asOrderedCollection.
 	suggestions size < self suggestionLimit ifTrue: [
-		(self correctionsIn: candidates for: missed) do: [ :each |
-			(suggestions size < self suggestionLimit and: [ (suggestions includes: each) not ]) ifTrue: [
-				suggestions add: each ] ] ].
+			(self correctionsIn: candidates for: missed) do: [ :each |
+				(suggestions size < self suggestionLimit and: [ (suggestions includes: each) not ]) ifTrue: [ suggestions add: each ] ] ].
 	^ suggestions asArray
 ]
 

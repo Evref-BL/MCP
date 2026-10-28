@@ -136,7 +136,7 @@ MCPStructureIcon class >> pngIconNamed: anIconSymbol [
 { #category : 'instance creation' }
 MCPStructureIcon class >> pngSizeStringForForm: aForm [
 
-	^ aForm width asString , 'x' , aForm height asString
+	^ String streamContents: [ :stream | stream << aForm width asString << 'x' << aForm height asString ]
 ]
 
 { #category : 'cache' }

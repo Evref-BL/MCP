@@ -28,7 +28,8 @@ MCPToolRemoveMethodsTest >> classBatchSelectors [
 { #category : 'private' }
 MCPToolRemoveMethodsTest >> firstClassBatchMethodSource [
 
-	^ self firstClassBatchSelectorString , ' ^ self ' , self secondClassBatchSelectorString , ' + 1'
+	^ String streamContents: [ :stream |
+		  stream << self firstClassBatchSelectorString << ' ^ self ' << self secondClassBatchSelectorString << ' + 1' ]
 ]
 
 { #category : 'private' }
@@ -40,13 +41,14 @@ MCPToolRemoveMethodsTest >> firstClassBatchSelector [
 { #category : 'private' }
 MCPToolRemoveMethodsTest >> firstClassBatchSelectorString [
 
-	^ 'first' , 'Class' , 'Batch' , 'Removal'
+	^ String streamContents: [ :stream | stream << 'first' << 'Class' << 'Batch' << 'Removal' ]
 ]
 
 { #category : 'private' }
 MCPToolRemoveMethodsTest >> firstInstanceBatchMethodSource [
 
-	^ self firstInstanceBatchSelectorString , ' ^ self ' , self secondInstanceBatchSelectorString , ' + 1'
+	^ String streamContents: [ :stream |
+		  stream << self firstInstanceBatchSelectorString << ' ^ self ' << self secondInstanceBatchSelectorString << ' + 1' ]
 ]
 
 { #category : 'private' }
@@ -58,7 +60,7 @@ MCPToolRemoveMethodsTest >> firstInstanceBatchSelector [
 { #category : 'private' }
 MCPToolRemoveMethodsTest >> firstInstanceBatchSelectorString [
 
-	^ 'first' , 'Batch' , 'Removal'
+	^ String streamContents: [ :stream | stream << 'first' << 'Batch' << 'Removal' ]
 ]
 
 { #category : 'private' }
@@ -87,7 +89,7 @@ MCPToolRemoveMethodsTest >> instanceBatchSelectors [
 { #category : 'private' }
 MCPToolRemoveMethodsTest >> missingSelectorString [
 
-	^ 'definitely' , 'Missing' , 'Selector'
+	^ String streamContents: [ :stream | stream << 'definitely' << 'Missing' << 'Selector' ]
 ]
 
 { #category : 'private' }
@@ -105,7 +107,7 @@ MCPToolRemoveMethodsTest >> protectedSelector [
 { #category : 'private' }
 MCPToolRemoveMethodsTest >> protectedSelectorString [
 
-	^ 'externally' , 'Referenced' , 'Batch' , 'Removal'
+	^ String streamContents: [ :stream | stream << 'externally' << 'Referenced' << 'Batch' << 'Removal' ]
 ]
 
 { #category : 'private' }
@@ -145,7 +147,7 @@ MCPToolRemoveMethodsTest >> secondClassBatchSelector [
 { #category : 'private' }
 MCPToolRemoveMethodsTest >> secondClassBatchSelectorString [
 
-	^ 'second' , 'Class' , 'Batch' , 'Removal'
+	^ String streamContents: [ :stream | stream << 'second' << 'Class' << 'Batch' << 'Removal' ]
 ]
 
 { #category : 'private' }
@@ -163,7 +165,7 @@ MCPToolRemoveMethodsTest >> secondInstanceBatchSelector [
 { #category : 'private' }
 MCPToolRemoveMethodsTest >> secondInstanceBatchSelectorString [
 
-	^ 'second' , 'Batch' , 'Removal'
+	^ String streamContents: [ :stream | stream << 'second' << 'Batch' << 'Removal' ]
 ]
 
 { #category : 'private' }

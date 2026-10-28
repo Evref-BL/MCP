@@ -73,7 +73,8 @@ MCPChangeHistorySelectionCommand >> entryAtIndex: anIndex inLog: aLog [
 	(anIndex between: 1 and: aLog entries size) ifFalse: [
 			MCPCommandError
 				signalErrorCode: #ChangeHistoryEntryNotFound
-				message: 'Change history entry index ' , anIndex asString , ' does not exist.'
+				message:
+				(String streamContents: [ :stream | stream << 'Change history entry index ' << anIndex asString << ' does not exist.' ])
 				details: {
 						(#index -> anIndex).
 						(#entryCount -> aLog entries size) } asDictionary ].

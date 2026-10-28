@@ -16,8 +16,9 @@ Class {
 { #category : 'private - probes' }
 MCPDebugWatchCommand >> assignmentIntervalsIn: anAst forVariableNamed: aName [
 
-	^ (anAst allChildren select: [ :each | each isAssignment and: [ each variable name = aName ] ]) collect: [ :each |
-		  each sourceInterval ]
+	^ anAst allChildren
+		  select: [ :each | each isAssignment and: [ each variable name = aName ] ]
+		  thenCollect: [ :each | each sourceInterval ]
 ]
 
 { #category : 'private - data' }
@@ -33,23 +34,23 @@ MCPDebugWatchCommand >> dataForHits: recordedHits targets: targets result: resul
 			label := target at: #label.
 			(groups includesKey: label) ifFalse: [
 					order add: label.
-					groups
-						at: label
-						put: {
-								(#method -> (target at: #method)).
-								(#watching -> (target at: #watching)).
-								(#values -> OrderedCollection new) } asDictionary ] ].
+					groups at: label put: {
+							(#method -> (target at: #method)).
+							(#watching -> (target at: #watching)).
+							(#values -> OrderedCollection new) } asDictionary ] ].
 	recordedHits do: [ :hit |
 			| label |
 			label := (targets at: hit key) at: #label.
 			((groups at: label) at: #values) add: hit value ].
 	^ {
 		  (#result -> resultText).
-		  (#watched -> ((order collect: [ :label |
-				     | group |
-				     group := groups at: label.
-				     group at: #values put: (group at: #values) asArray.
-				     group ]) asArray)) } asDictionary
+		  (#watched -> (order
+			    collect: [ :label |
+					    | group |
+					    group := groups at: label.
+					    group at: #values put: (group at: #values) asArray.
+					    group ]
+			    as: Array)) } asDictionary
 ]
 
 { #category : 'private - probes' }
@@ -75,7 +76,11 @@ MCPDebugWatchCommand >> evaluateExpression [
 
 	^ [ (Smalltalk compiler evaluate: request expression) printString ]
 		  on: Error
-		  do: [ :error | error class name , ': ' , ([ error messageText ] on: Error do: [ :ignored | '' ]) asString ]
+		  do: [ :error |
+				  String streamContents: [ :stream |
+						  stream << error class name << ': ' << ([ error messageText ]
+							   on: Error
+							   do: [ :ignored | '' ]) asString ] ]
 ]
 
 { #category : 'executing' }
@@ -144,13 +149,15 @@ MCPDebugWatchCommand >> probeForTarget: aTarget index: anIndex [
 MCPDebugWatchCommand >> resultForHits: recordedHits targets: targets result: resultText [
 
 	| summary |
-	summary := (self tool textForCount: recordedHits size noun: 'value') , ' recorded from '
-	           , (self tool textForCount: targets size noun: 'probe') , '.'.
+	summary := String streamContents: [ :stream |
+			           stream << (self tool textForCount: recordedHits size noun: 'value') << ' recorded from '
+			           << (self tool textForCount: targets size noun: 'probe') << '.' ].
 	^ MCPDebugToolResult
 		  okSummary: summary
 		  data: (self dataForHits: recordedHits targets: targets result: resultText)
 		  warnings: (recordedHits size >= self hitLimit
-				   ifTrue: [ { 'Recording stopped at ' , self hitLimit printString , ' values.' } ]
+				   ifTrue: [
+				   { (String streamContents: [ :stream | stream << 'Recording stopped at ' << self hitLimit printString << ' values.' ]) } ]
 				   ifFalse: [ #(  ) ])
 ]
 
@@ -159,7 +166,8 @@ MCPDebugWatchCommand >> scriptForTarget: aTarget index: anIndex [
 	"The script is compiled against the frame it fires in, so it can name the variable directly and
 	let the compiler resolve it as a temporary, an argument or an instance variable."
 
-	^ 'MCPDebugWatchRecorder record: ' , anIndex printString , ' value: ' , (aTarget at: #expression)
+	^ String streamContents: [ :stream |
+		  stream << 'MCPDebugWatchRecorder record: ' << anIndex printString << ' value: ' << (aTarget at: #expression) ]
 ]
 
 { #category : 'private - errors' }
@@ -169,12 +177,9 @@ MCPDebugWatchCommand >> signalNoTargets [
 	message := request watchesVariables
 		           ifTrue: [ 'None of the named variables are assigned in the named methods.' ]
 		           ifFalse: [ 'None of the named methods has a statement to probe.' ].
-	^ MCPCommandError
-		  signalErrorCode: #DebugWatchNothingToProbe
-		  message: message
-		  details: {
-				  (#method -> (request methodReferences collect: [ :each | each printString ]) asArray).
-				  (#variable -> request variableNames asArray) } asDictionary
+	^ MCPCommandError signalErrorCode: #DebugWatchNothingToProbe message: message details: {
+			  (#method -> (request methodReferences collect: [ :each | each printString ] as: Array)).
+			  (#variable -> request variableNames asArray) } asDictionary
 ]
 
 { #category : 'private - probes' }
@@ -196,7 +201,7 @@ MCPDebugWatchCommand >> targets [
 												(#method -> label).
 												(#compiledMethod -> method).
 												(#watching -> variableName).
-												(#label -> (label , ' ' , variableName)).
+												(#label -> (String streamContents: [ :stream | stream << label << ' ' << variableName ])).
 												(#expression -> variableName).
 												(#interval -> interval).
 												(#isAssignment -> true) } asDictionary ] ] ]
@@ -207,7 +212,7 @@ MCPDebugWatchCommand >> targets [
 												(#method -> label).
 												(#compiledMethod -> method).
 												(#watching -> name).
-												(#label -> (label , ' ' , name)).
+												(#label -> (String streamContents: [ :stream | stream << label << ' ' << name ])).
 												(#expression -> name).
 												(#interval -> entryNode sourceInterval).
 												(#isAssignment -> entryNode isAssignment) } asDictionary ] ] ] ].

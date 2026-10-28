@@ -170,7 +170,7 @@ MCPToolStructuredOutputTest >> testGetClassReturnsStructuredSuccess [
 	structured := self structuredContentFrom: result.
 	data := self dataFrom: result.
 	contentText := (result at: #content) first at: #text.
-	expectedSharedVariableNames := (MCPToolGetMethodTestTarget classVarNames collect: [ :each | each asString ]) asArray.
+	expectedSharedVariableNames := MCPToolGetMethodTestTarget classVarNames collect: [ :each | each asString ] as: Array.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self deny: (structured includesKey: #warnings).
 	self assert: (contentText includesSubstring: (structured at: #summary)).

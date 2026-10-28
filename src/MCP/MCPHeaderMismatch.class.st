@@ -23,14 +23,16 @@ MCPHeaderMismatch class >> errorCode [
 { #category : 'instance creation' }
 MCPHeaderMismatch class >> signalMissing: aHeaderName [
 
-	^ self signalWithDetail: 'Header mismatch: ' , aHeaderName , ' is required and was not sent.'
+	^ self signalWithDetail:
+		  (String streamContents: [ :stream | stream << 'Header mismatch: ' << aHeaderName << ' is required and was not sent.' ])
 ]
 
 { #category : 'instance creation' }
 MCPHeaderMismatch class >> signalName: aHeaderName header: aHeaderValue doesNotMatch: aBodyValue [
 
-	^ self signalWithDetail: 'Header mismatch: ' , aHeaderName , ' header value ' , aHeaderValue printString
-		  , ' does not match body value ' , aBodyValue printString , '.'
+	^ self signalWithDetail: (String streamContents: [ :stream |
+				   stream << 'Header mismatch: ' << aHeaderName << ' header value ' << aHeaderValue printString
+				   << ' does not match body value ' << aBodyValue printString << '.' ])
 ]
 
 { #category : 'instance creation' }

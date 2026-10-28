@@ -69,7 +69,7 @@ MCPTestRunResult >> timedOut [
 { #category : 'converting' }
 MCPTestRunResult >> unrunTestDictionaries [
 
-	^ (self unrunTestRequests collect: [ :each | each asDictionary ]) asArray
+	^ self unrunTestRequests collect: [ :each | each asDictionary ] as: Array
 ]
 
 { #category : 'accessing' }

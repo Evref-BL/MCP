@@ -222,7 +222,8 @@ MCPToolChangeHistoryTest >> testListEntriesReportsDirectoryPathAsNotFile [
 MCPToolChangeHistoryTest >> testListEntriesReportsUnreadableHistoryFile [
 
 	| error file result |
-	file := FileLocator temp asFileReference / ('mcp-unreadable-change-history-' , UUID new asString , '.ombu').
+	file := FileLocator temp asFileReference
+	        / (String streamContents: [ :stream | stream << 'mcp-unreadable-change-history-' << UUID new asString << '.ombu' ]).
 	[
 		file writeStreamDo: [ :stream | stream nextPutAll: 'not an ombu history file' ].
 		result := self callToolWith: {

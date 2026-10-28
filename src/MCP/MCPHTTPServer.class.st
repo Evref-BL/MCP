@@ -338,10 +338,7 @@ MCPHTTPServer >> nameHeaderSourceIn: body [
 	params isDictionary ifFalse: [ ^ nil ].
 	^ (#( 'tools/call' 'prompts/get' ) includes: (body at: 'method' ifAbsent: [ '' ]))
 		  ifTrue: [ params at: 'name' ifAbsent: [ nil ] ]
-		  ifFalse: [
-			  (body at: 'method' ifAbsent: [ '' ]) = 'resources/read'
-				  ifTrue: [ params at: 'uri' ifAbsent: [ nil ] ]
-				  ifFalse: [ nil ] ]
+		  ifFalse: [ (body at: 'method' ifAbsent: [ '' ]) = 'resources/read' ifTrue: [ params at: 'uri' ifAbsent: [ nil ] ] ]
 ]
 
 { #category : 'private - validation' }

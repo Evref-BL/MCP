@@ -40,7 +40,7 @@ MCPToolsCatalogPresenter class >> open [
 MCPToolsCatalogPresenter >> allTools [
 	"Every tool class the image has, not the surface one server advertises, which is what makes this the image's catalog rather than a server's."
 
-	^ (MCPTool toolGroups flatCollect: [ :group | group value ]) asArray collect: [ :toolClass | toolClass new ]
+	^ (MCPTool toolGroups flatCollect: [ :group | group value ] as: Array) collect: [ :toolClass | toolClass new ]
 ]
 
 { #category : 'private' }
@@ -66,7 +66,8 @@ MCPToolsCatalogPresenter >> countLabelFor: shownCount of: totalCount [
 
 	^ shownCount = totalCount
 		  ifTrue: [ totalCount printString , ' tools' ]
-		  ifFalse: [ shownCount printString , ' of ' , totalCount printString , ' tools' ]
+		  ifFalse: [
+		  String streamContents: [ :stream | stream << shownCount printString << ' of ' << totalCount printString << ' tools' ] ]
 ]
 
 { #category : 'layout' }
