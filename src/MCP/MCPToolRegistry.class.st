@@ -56,7 +56,8 @@ MCPToolRegistry >> advertiseTools: toolsOrToolClassesOrNames [
 	names := toolsOrToolClassesOrNames collect: [ :each | self advertisedNameFor: each ].
 	unknown := names reject: [ :each | self includesToolNamed: each ].
 	unknown ifNotEmpty: [
-		Error signal: 'Unknown MCP tool(s): ' , unknown asArray printString , '. Known tools: ' , self toolNames printString ].
+			Error signal: (String streamContents: [ :stream |
+					 stream << 'Unknown MCP tool(s): ' << unknown asArray printString << '. Known tools: ' << self toolNames printString ]) ].
 	advertisedToolNames := names asSet
 ]
 
@@ -76,7 +77,7 @@ MCPToolRegistry >> advertisedNameFor: aToolOrToolClassOrName [
 { #category : 'advertising' }
 MCPToolRegistry >> advertisedToolNames [
 
-	^ (self advertisedTools collect: [ :each | each name ]) asArray
+	^ self advertisedTools collect: [ :each | each name ] as: Array
 ]
 
 { #category : 'advertising' }
@@ -271,7 +272,7 @@ MCPToolRegistry >> toolGroups [
 					         groups add: tool groupName -> OrderedCollection new.
 					         groups last ].
 			group value add: tool class ].
-	^ (groups collect: [ :each | each key -> each value asArray ]) asArray
+	^ groups collect: [ :each | each key -> each value asArray ] as: Array
 ]
 
 { #category : 'tools' }
@@ -308,7 +309,7 @@ MCPToolRegistry >> toolsMatchingQuery: queryString [
 			left key = right key
 				ifTrue: [ self isTool: left value rankedBefore: right value ]
 				ifFalse: [ left key > right key ] ].
-	^ (scoredTools collect: [ :each | each value ]) asArray
+	^ scoredTools collect: [ :each | each value ] as: Array
 ]
 
 { #category : 'advertising' }

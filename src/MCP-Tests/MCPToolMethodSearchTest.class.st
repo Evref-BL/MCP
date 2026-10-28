@@ -388,8 +388,13 @@ MCPToolMethodSearchTest >> testImageScopeReturnsInstanceAndClassImplementors [
 	tool := MCPToolSearchMethods new.
 	entries := tool queryEntriesForQueryRequest: queryRequest.
 	self assert: entries size equals: 2.
-	self entryForReference: MCPToolMethodSearchReferenceFixture name , '>>' , selector in: entries.
-	self entryForReference: MCPToolMethodSearchReferenceFixture name , ' class>>' , selector in: entries
+	self
+		entryForReference: (String streamContents: [ :stream | stream << MCPToolMethodSearchReferenceFixture name << '>>' << selector ])
+		in: entries.
+	self
+		entryForReference:
+		(String streamContents: [ :stream | stream << MCPToolMethodSearchReferenceFixture name << ' class>>' << selector ])
+		in: entries
 ]
 
 { #category : 'tests' }

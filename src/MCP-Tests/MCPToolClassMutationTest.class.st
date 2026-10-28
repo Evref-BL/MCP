@@ -517,7 +517,7 @@ MCPToolClassMutationTest >> testUpdateAppliesSeveralChangesInOneCall [
 	self assert: target superclass name equals: #ProtoObject.
 	self assert: target instVarNames asArray equals: #( 'kept' 'added' ).
 	self assert: target comment equals: 'fused comment'.
-	self assert: ((data at: #updates) collect: [ :each | each at: #action ]) asArray equals: #( 'reparent' 'addSlot' 'setComment' )
+	self assert: ((data at: #updates) collect: [ :each | each at: #action ] as: Array) equals: #( 'reparent' 'addSlot' 'setComment' )
 ]
 
 { #category : 'tests - update' }

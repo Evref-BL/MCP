@@ -100,10 +100,10 @@ MCPEventStreamTest >> testEachEventIsOneSseFrameEndedByABlankLine [
 	text := self
 		        text: stream
 		        whileDoing: [
-			        stream write: '{"a":1}'.
-			        stream write: '{"b":2}' ]
+				        stream write: '{"a":1}'.
+				        stream write: '{"b":2}' ]
 		        untilItIncludes: 'data: {"b":2}'.
-	self assert: (text includesSubstring: 'data: {"a":1}' , String lf , String lf)
+	self assert: (text includesSubstring: (String streamContents: [ :stream | stream << 'data: {"a":1}' << String lf << String lf ]))
 ]
 
 { #category : 'private' }

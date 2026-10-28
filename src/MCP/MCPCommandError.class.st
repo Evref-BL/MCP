@@ -112,7 +112,7 @@ MCPCommandError class >> oppositeSideMethodSuggestionForClass: targetClass class
 MCPCommandError class >> signalClassAlreadyExistsNamed: aClassName [
 
 	| details message |
-	message := 'Class ' , aClassName , ' already exists.'.
+	message := String streamContents: [ :stream | stream << 'Class ' << aClassName << ' already exists.' ].
 	details := {
 		           (#class -> aClassName).
 		           (#guidance
@@ -170,24 +170,32 @@ MCPCommandError class >> signalMissingMethodInClassName: aClassName classSide: a
 	| details message selectorSymbol suggestions targetClass |
 	selectorSymbol := aSelectorString asSymbol.
 	targetClass := Smalltalk globals at: aClassName asSymbol ifAbsent: [
-			               message := 'Class ' , aClassName , ' does not exist; cannot look up method '
-			                          , (self methodReferenceForClassName: aClassName selector: aSelectorString classSide: aBoolean) , '.'.
+			               message := String streamContents: [ :stream |
+					                          stream << 'Class ' << aClassName << ' does not exist; cannot look up method '
+					                          << (self methodReferenceForClassName: aClassName selector: aSelectorString classSide: aBoolean)
+					                          << '.' ].
 			               ^ self signalErrorCode: #ClassNotFound message: message details: {
 					                 (#class -> aClassName).
-					                 (#side -> (aBoolean ifTrue: [ 'class' ] ifFalse: [ 'instance' ])).
+					                 (#side -> (aBoolean
+						                   ifTrue: [ 'class' ]
+						                   ifFalse: [ 'instance' ])).
 					                 (#selector -> aSelectorString) } asDictionary ].
 	suggestions := self methodSuggestionsForClass: targetClass classSide: aBoolean selector: selectorSymbol.
-	message := 'Method ' , (self methodReferenceForClassName: aClassName selector: aSelectorString classSide: aBoolean)
-	           , ' does not exist.'.
+	message := String streamContents: [ :stream |
+			           stream << 'Method ' << (self methodReferenceForClassName: aClassName selector: aSelectorString classSide: aBoolean)
+			           << ' does not exist.' ].
 	suggestions ifNotEmpty: [
-			message := message , ' Exact matches: ' , (', ' join: (suggestions collect: [ :each |
-					             self
-						             methodReferenceForClassName: (each at: #class)
-						             selector: (each at: #selector)
-						             classSide: ((each at: #side ifAbsent: [ 'instance' ]) = 'class') ])) , '.' ].
+			message := String streamContents: [ :stream |
+					           stream << message << ' Exact matches: ' << (', ' join: (suggestions collect: [ :each |
+								             self
+									             methodReferenceForClassName: (each at: #class)
+									             selector: (each at: #selector)
+									             classSide: (each at: #side ifAbsent: [ 'instance' ]) = 'class' ])) << '.' ] ].
 	details := {
 		           (#class -> aClassName).
-		           (#side -> (aBoolean ifTrue: [ 'class' ] ifFalse: [ 'instance' ])).
+		           (#side -> (aBoolean
+			             ifTrue: [ 'class' ]
+			             ifFalse: [ 'instance' ])).
 		           (#selector -> aSelectorString) } asDictionary.
 	suggestions ifNotEmpty: [ :matches | details at: #suggestions put: matches ].
 	^ self signalErrorCode: #MethodNotFound message: message details: details
@@ -245,7 +253,7 @@ MCPCommandError class >> signalMissingPackageNamed: aPackageName scopeName: scop
 MCPCommandError class >> signalMissingProjectNamed: aProjectName [
 
 	| message |
-	message := 'Project ' , aProjectName , ' does not exist.'.
+	message := String streamContents: [ :stream | stream << 'Project ' << aProjectName << ' does not exist.' ].
 	^ self signalErrorCode: #ProjectNotFound message: message details: { (#project -> aProjectName) } asDictionary
 ]
 
@@ -253,7 +261,7 @@ MCPCommandError class >> signalMissingProjectNamed: aProjectName [
 MCPCommandError class >> signalMissingSuperclassNamed: aSuperclassName forClassNamed: aClassName [
 
 	| message |
-	message := 'Superclass ' , aSuperclassName , ' does not exist.'.
+	message := String streamContents: [ :stream | stream << 'Superclass ' << aSuperclassName << ' does not exist.' ].
 	^ self signalErrorCode: #SuperclassNotFound message: message details: {
 			  (#class -> aClassName).
 			  (#superclass -> aSuperclassName) } asDictionary
@@ -263,7 +271,8 @@ MCPCommandError class >> signalMissingSuperclassNamed: aSuperclassName forClassN
 MCPCommandError class >> signalMissingTag: aTag packageName: aPackageName [
 
 	| message |
-	message := 'Package ' , aPackageName , ' does not have a tag named ' , aTag , '.'.
+	message := String streamContents: [ :stream |
+		           stream << 'Package ' << aPackageName << ' does not have a tag named ' << aTag << '.' ].
 	^ self signalErrorCode: #TagNotFound message: message details: {
 			  (#package -> aPackageName).
 			  (#tag -> aTag) } asDictionary
@@ -273,7 +282,8 @@ MCPCommandError class >> signalMissingTag: aTag packageName: aPackageName [
 MCPCommandError class >> signalMissingTag: aTag packageName: aPackageName forClassNamed: aClassName [
 
 	| message |
-	message := 'Package ' , aPackageName , ' does not have a tag named ' , aTag , '.'.
+	message := String streamContents: [ :stream |
+		           stream << 'Package ' << aPackageName << ' does not have a tag named ' << aTag << '.' ].
 	^ self signalErrorCode: #TagNotFound message: message details: {
 			  (#class -> aClassName).
 			  (#package -> aPackageName).

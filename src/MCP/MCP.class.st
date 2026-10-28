@@ -507,7 +507,9 @@ MCP >> notListeningDescription [
 MCP >> notifyListChangedFor: aDomainName [
 	"Not guarded: a client that has gone is handled where the write happens, so anything raising here is a fault in the server rather than a condition to absorb. An earlier guard here hid exactly that for a whole round."
 
-	server broadcastNotification: 'notifications/' , aDomainName , '/list_changed' parameters: nil
+	server
+		broadcastNotification: (String streamContents: [ :stream | stream << 'notifications/' << aDomainName << '/list_changed' ])
+		parameters: nil
 ]
 
 { #category : 'accessing' }
@@ -894,8 +896,10 @@ MCP >> signalMissingToolNamed: aToolName [
 	suggestions ifNotEmpty: [ details at: #suggestedTools put: suggestions ].
 	MCPCommandError
 		signalErrorCode: #ToolNotFound
-		message: 'No MCP tool named ' , aToolName , '.'
-			, (suggestions ifEmpty: [ ' Use tool_search to find one.' ] ifNotEmpty: [ ' Did you mean: ' , (', ' join: suggestions) , '?' ])
+		message: (String streamContents: [ :stream |
+					 stream << 'No MCP tool named ' << aToolName << '.' << (suggestions
+						  ifEmpty: [ ' Use tool_search to find one.' ]
+						  ifNotEmpty: [ String streamContents: [ :stream | stream << ' Did you mean: ' << (', ' join: suggestions) << '?' ] ]) ])
 		details: details
 ]
 

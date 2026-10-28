@@ -19,7 +19,8 @@ MCPUnknownPrompt class >> signalNamed: aName known: knownNames [
 
 	^ self new
 		  promptName: aName;
-		  signal: 'Unknown MCP prompt: ' , aName asString , '. Known prompts: ' , knownNames asArray printString
+		  signal: (String streamContents: [ :stream |
+					   stream << 'Unknown MCP prompt: ' << aName asString << '. Known prompts: ' << knownNames asArray printString ])
 ]
 
 { #category : 'converting' }

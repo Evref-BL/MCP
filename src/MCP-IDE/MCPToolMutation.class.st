@@ -411,9 +411,10 @@ MCPToolMutation >> refactoringModelForScopeSpec: scopeSpec anchoredAtBehavior: a
 			aBehavior isMeta ifTrue: [ details at: #side put: 'class' ].
 			MCPCommandError
 				signalErrorCode: #RefactoringScopeExcludesTargetClass
-				message: 'Refactoring scope does not include ' , (aBehavior isMeta
-						 ifTrue: [ 'the class side of ' ]
-						 ifFalse: [ 'class ' ]) , aBehavior instanceSide name asString , '.'
+				message: (String streamContents: [ :stream |
+							 stream << 'Refactoring scope does not include ' << (aBehavior isMeta
+								  ifTrue: [ 'the class side of ' ]
+								  ifFalse: [ 'class ' ]) << aBehavior instanceSide name asString << '.' ])
 				details: details ].
 	^ RBNamespace onEnvironment: environment
 ]

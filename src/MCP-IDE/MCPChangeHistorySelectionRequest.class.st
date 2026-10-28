@@ -154,12 +154,14 @@ MCPChangeHistorySelectionRequest >> positiveIntegerCollectionArgumentNamed: argu
 
 	| values |
 	values := aRequest arrayArgumentNamed: argumentName.
-	^ (values collect: [ :each |
-			   (each isInteger and: [ each > 0 ]) ifFalse: [
-					   self signalInvalidSelection: argumentName , ' must contain only positive integers.' details: {
-							   (#argumentName -> argumentName).
-							   (#actualValue -> each) } asDictionary ].
-			   each ]) asArray
+	^ values
+		  collect: [ :each |
+				  (each isInteger and: [ each > 0 ]) ifFalse: [
+						  self signalInvalidSelection: argumentName , ' must contain only positive integers.' details: {
+								  (#argumentName -> argumentName).
+								  (#actualValue -> each) } asDictionary ].
+				  each ]
+		  as: Array
 ]
 
 { #category : 'converting' }

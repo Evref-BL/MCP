@@ -123,7 +123,9 @@ MCPRepositoryVerifyIdentityCommand >> execute [
 				  result := MCPRepositoryVerifyIdentityResult repository: repository checkedFields: (validation at: #checkedFields) ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText: 'Repository identity verification passed for ' , result repositoryInfo name , '.'
+					  successResultText:
+					  (String streamContents: [ :stream |
+						   stream << 'Repository identity verification passed for ' << result repositoryInfo name << '.' ])
 					  data: (self tool dataForRepositoryResult: result)
 					  warnings: warningMessages ]
 		  failureSummary: [ :error | 'Failed verify repository identity: ' , (error messageText ifNil: [ error asString ]) ]
@@ -152,7 +154,8 @@ MCPRepositoryVerifyIdentityCommand >> signalIdentityMismatchFor: repositoryInfo 
 
 	MCPCommandError
 		signalErrorCode: #RepositoryIdentityMismatch
-		message: 'Repository identity verification failed for ' , repositoryInfo name , '.'
+		message:
+		(String streamContents: [ :stream | stream << 'Repository identity verification failed for ' << repositoryInfo name << '.' ])
 		details: (self request requestedContext copy
 				 at: #repository put: repositoryInfo asDictionary;
 				 at: #mismatches put: mismatches;

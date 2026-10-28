@@ -29,14 +29,16 @@ MCPGetMethodRequest class >> fromRequest: aRequest tool: aTool [
 				  includeVariableDetails: (aRequest booleanArgumentNamed: 'includeVariableDetails' default: false) ].
 	className := aRequest stringArgumentNamed: 'class'.
 	((MCPMethodReference looksLikeAReference: text) or: [ className isNil ]) ifTrue: [
-		MCPCommandError
-			signalErrorCode: #MethodReferenceUnreadable
-			message: (text ifNil: [ 'A method' ] ifNotNil: [ :each | each ]) , ' does not name a method. ' , MCPMethodReference helpText
-			details: { (#selector -> text) } asDictionary ].
+			MCPCommandError
+				signalErrorCode: #MethodReferenceUnreadable
+				message: (String streamContents: [ :stream |
+						 stream << (text ifNil: [ 'A method' ] ifNotNil: [ :each | each ]) << ' does not name a method. '
+						 << MCPMethodReference helpText ])
+				details: { (#selector -> text) } asDictionary ].
 	^ self new
 		  initializeClassName: className
 		  selectorString: text
-		  classSide: ((aRequest stringArgumentNamed: 'side' default: 'instance') = 'class')
+		  classSide: (aRequest stringArgumentNamed: 'side' default: 'instance') = 'class'
 		  includeVariableDetails: (aRequest booleanArgumentNamed: 'includeVariableDetails' default: false)
 ]
 

@@ -44,7 +44,8 @@ MCPCommitRepositoryCommand >> execute [
 					            commitDescription: commitDescription ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText: 'Committed repository ' , result repositoryInfo name , '.'
+					  successResultText:
+					  (String streamContents: [ :stream | stream << 'Committed repository ' << result repositoryInfo name << '.' ])
 					  data: (self tool dataForRepositoryResult: result)
 					  warnings: warningMessages ]
 		  failureSummary: [ :error | 'Failed to commit repository: ' , (error messageText ifNil: [ error asString ]) ]

@@ -45,7 +45,8 @@ MCPRegistry >> add: aClassOrEntry [
 	| entry key |
 	entry := self newEntryFrom: aClassOrEntry.
 	key := self keyFor: entry.
-	(self includesKey: key) ifTrue: [ Error signal: self registeredClass name , ' already registered: ' , key ].
+	(self includesKey: key) ifTrue: [
+		Error signal: (String streamContents: [ :stream | stream << self registeredClass name << ' already registered: ' << key ]) ].
 	self entriesByKey at: key put: entry.
 	self noteChanged.
 	^ entry
@@ -54,7 +55,7 @@ MCPRegistry >> add: aClassOrEntry [
 { #category : 'entries' }
 MCPRegistry >> addAll: classesOrEntries [
 
-	^ (classesOrEntries collect: [ :each | self add: each ]) asArray
+	^ classesOrEntries collect: [ :each | self add: each ] as: Array
 ]
 
 { #category : 'entries' }
@@ -69,19 +70,19 @@ MCPRegistry >> autoRegisteringClasses [
 	^ (self registeredClass concreteSubclasses select: [ :each | each shouldAutoRegister ]) asSet
 ]
 
+{ #category : 'change notification' }
+MCPRegistry >> changeListener: aBlock [
+	"Called with no arguments whenever what this registry holds changes. The server uses it to tell listening clients their cached list is stale."
+
+	changeListener := aBlock
+]
+
 { #category : 'discovery' }
 MCPRegistry >> defaultEntries [
 	"Answer the entries a fresh registry starts with, in the order they should be listed."
 
 	^ (self autoRegisteringClasses collect: [ :each | self newEntryFrom: each ]) asSortedCollection: [ :left :right |
 		  (self keyFor: left) <= (self keyFor: right) ]
-]
-
-{ #category : 'change notification' }
-MCPRegistry >> changeListener: aBlock [
-	"Called with no arguments whenever what this registry holds changes. The server uses it to tell listening clients their cached list is stale."
-
-	changeListener := aBlock
 ]
 
 { #category : 'entries' }
@@ -100,7 +101,7 @@ MCPRegistry >> entriesByKey [
 { #category : 'entries' }
 MCPRegistry >> entryClasses [
 
-	^ (self entries collect: [ :each | each class ]) asArray
+	^ self entries collect: [ :each | each class ] as: Array
 ]
 
 { #category : 'testing' }
@@ -129,20 +130,20 @@ MCPRegistry >> keys [
 	^ self entriesByKey keys asArray
 ]
 
-{ #category : 'change notification' }
-MCPRegistry >> noteChanged [
-	"A listener that raises must not take the change with it, so it is the listener's business to be safe."
-
-	changeListener ifNil: [ ^ self ].
-	changeListener value
-]
-
 { #category : 'private' }
 MCPRegistry >> newEntryFrom: aClassOrEntry [
 
 	^ aClassOrEntry isBehavior
 		  ifTrue: [ aClassOrEntry newForRegistry: self ]
 		  ifFalse: [ aClassOrEntry ]
+]
+
+{ #category : 'change notification' }
+MCPRegistry >> noteChanged [
+	"A listener that raises must not take the change with it, so it is the listener's business to be safe."
+
+	changeListener ifNil: [ ^ self ].
+	changeListener value
 ]
 
 { #category : 'discovery' }
@@ -159,7 +160,7 @@ MCPRegistry >> rediscoverClassesIfChanged [
 	discovered = discoveredClasses ifTrue: [ ^ self ].
 	vanished := discoveredClasses difference: discovered.
 	appeared := discovered difference: discoveredClasses.
-	(entries keys select: [ :each | vanished includes: (entries at: each) class ]) do: [ :each | entries removeKey: each ].
+	entries keys select: [ :each | vanished includes: (entries at: each) class ] thenDo: [ :each | entries removeKey: each ].
 	((appeared collect: [ :each | self newEntryFrom: each ]) asSortedCollection: [ :left :right |
 		 (self keyFor: left) <= (self keyFor: right) ]) do: [ :entry |
 			| key |

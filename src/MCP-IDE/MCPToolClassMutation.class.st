@@ -82,8 +82,9 @@ MCPToolClassMutation >> description [
 { #category : 'private' }
 MCPToolClassMutation >> failureMessageForAddSlotNamed: slotName onClassNamed: className classSide: classSide error: anError [
 
-	^ 'Failed to add ' , (self slotDescriptionForClassSide: classSide) , ' ' , slotName , ' to class ' , className , ': '
-	  , (self normalizedCauseMessageForMutationError: anError)
+	^ String streamContents: [ :stream |
+			  stream << 'Failed to add ' << (self slotDescriptionForClassSide: classSide) << ' ' << slotName << ' to class ' << className
+			  << ': ' << (self normalizedCauseMessageForMutationError: anError) ]
 ]
 
 { #category : 'private' }
@@ -123,17 +124,20 @@ MCPToolClassMutation >> failureMessageForMoveClassNamed: className packageName: 
 MCPToolClassMutation >> failureMessageForMoveSlotNamed: slotName onClassNamed: className classSide: classSide operation: operation error: anError [
 
 	operation = 'pullUpSlot' ifTrue: [
-			^ 'Failed to pull up ' , (self slotDescriptionForClassSide: classSide) , ' ' , slotName , ' to class ' , className , ': '
-			  , (self normalizedCauseMessageForMutationError: anError) ].
-	^ 'Failed to push down ' , (self slotDescriptionForClassSide: classSide) , ' ' , slotName , ' from class ' , className , ': '
-	  , (self normalizedCauseMessageForMutationError: anError)
+			^ String streamContents: [ :stream |
+					  stream << 'Failed to pull up ' << (self slotDescriptionForClassSide: classSide) << ' ' << slotName << ' to class '
+					  << className << ': ' << (self normalizedCauseMessageForMutationError: anError) ] ].
+	^ String streamContents: [ :stream |
+			  stream << 'Failed to push down ' << (self slotDescriptionForClassSide: classSide) << ' ' << slotName << ' from class '
+			  << className << ': ' << (self normalizedCauseMessageForMutationError: anError) ]
 ]
 
 { #category : 'private' }
 MCPToolClassMutation >> failureMessageForRemoveSlotNamed: slotName onClassNamed: className classSide: classSide error: anError [
 
-	^ 'Failed to remove ' , (self slotDescriptionForClassSide: classSide) , ' ' , slotName , ' from class ' , className , ': '
-	  , (self normalizedCauseMessageForMutationError: anError)
+	^ String streamContents: [ :stream |
+			  stream << 'Failed to remove ' << (self slotDescriptionForClassSide: classSide) << ' ' << slotName << ' from class '
+			  << className << ': ' << (self normalizedCauseMessageForMutationError: anError) ]
 ]
 
 { #category : 'private' }
@@ -152,8 +156,9 @@ MCPToolClassMutation >> failureMessageForRenameClassNamed: className to: newClas
 { #category : 'private' }
 MCPToolClassMutation >> failureMessageForRenameSlotNamed: slotName to: newSlotName onClassNamed: className classSide: classSide error: anError [
 
-	^ 'Failed to rename ' , (self slotDescriptionForClassSide: classSide) , ' ' , slotName , ' to ' , newSlotName , ' in class '
-	  , className , ': ' , (self normalizedCauseMessageForMutationError: anError)
+	^ String streamContents: [ :stream |
+			  stream << 'Failed to rename ' << (self slotDescriptionForClassSide: classSide) << ' ' << slotName << ' to ' << newSlotName
+			  << ' in class ' << className << ': ' << (self normalizedCauseMessageForMutationError: anError) ]
 ]
 
 { #category : 'private' }

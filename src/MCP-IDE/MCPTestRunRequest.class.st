@@ -70,7 +70,9 @@ MCPTestRunRequest >> className [
 MCPTestRunRequest >> displayName [
 
 	self isPackageRequest ifTrue: [ ^ self packageName ].
-	^ self testMethodName ifNil: [ self className ] ifNotNil: [ :methodName | self className , '>>#' , methodName ]
+	^ self testMethodName
+		  ifNil: [ self className ]
+		  ifNotNil: [ :methodName | String streamContents: [ :stream | stream << self className << '>>#' << methodName ] ]
 ]
 
 { #category : 'testing' }

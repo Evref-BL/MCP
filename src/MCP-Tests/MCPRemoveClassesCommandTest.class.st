@@ -105,7 +105,7 @@ MCPRemoveClassesCommandTest >> packageCleanupPackageName [
 { #category : 'private' }
 MCPRemoveClassesCommandTest >> referenceSenderMethodSource [
 
-	^ 'useReferencedClass ^ ' , self referencedClassName , ' new'
+	^ String streamContents: [ :stream | stream << 'useReferencedClass ^ ' << self referencedClassName << ' new' ]
 ]
 
 { #category : 'private' }

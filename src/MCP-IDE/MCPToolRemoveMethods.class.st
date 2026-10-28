@@ -178,7 +178,9 @@ MCPToolRemoveMethods >> successSummaryForClassName: className classSide: classSi
 	targetName := classSide
 		              ifTrue: [ className , ' class' ]
 		              ifFalse: [ className ].
-	^ 'Force-removed ' , selectors size asString , ' methods from ' , targetName , ': ' , (', ' join: selectors) , '.'
+	^ String streamContents: [ :stream |
+		  stream << 'Force-removed ' << selectors size asString << ' methods from ' << targetName << ': ' << (', ' join: selectors)
+		  << '.' ]
 ]
 
 { #category : 'metadata' }

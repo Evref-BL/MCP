@@ -41,10 +41,13 @@ MCPReplaceClassTraitsCommand >> resolvedTraitNamed: aTraitName [
 	traitName := aTraitName.
 	(traitName endsWith: ' classTrait') ifTrue: [ traitName := traitName copyFrom: 1 to: traitName size - ' classTrait' size ].
 	behavior := Smalltalk globals at: traitName asSymbol ifAbsent: [
-			            MCPCommandError signalErrorCode: #TraitNotFound message: 'Trait ' , traitName , ' does not exist.' details: {
-					            (#class -> self className).
-					            (#trait -> traitName).
-					            (#traits -> self traitNames) } asDictionary ].
+			            MCPCommandError
+				            signalErrorCode: #TraitNotFound
+				            message: (String streamContents: [ :stream | stream << 'Trait ' << traitName << ' does not exist.' ])
+				            details: {
+						            (#class -> self className).
+						            (#trait -> traitName).
+						            (#traits -> self traitNames) } asDictionary ].
 	behavior isTrait ifFalse: [
 			MCPCommandError signalErrorCode: #InvalidTrait message: traitName , ' is not a trait.' details: {
 					(#class -> self className).

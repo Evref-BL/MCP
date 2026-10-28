@@ -54,7 +54,7 @@ TMCPSequencedUpdate >> executeActions: plans [
 					^ self
 						  resultForFailure: result
 						  at: plan
-						  applied: (applied collect: [ :each | each key ]) asArray
+						  applied: (applied collect: [ :each | each key ] as: Array)
 						  skipped: ((plans copyFrom: index + 1 to: plans size) collect: [ :each | each updateAction ]) ].
 			applied add: plan updateAction -> result ].
 	^ self resultForAppliedUpdates: applied

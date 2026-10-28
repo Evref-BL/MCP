@@ -46,7 +46,7 @@ MCPClassCommand >> resolvedLayoutClassNamed: layoutName [
 	behavior := Smalltalk globals at: layoutName asSymbol ifAbsent: [
 			            MCPCommandError
 				            signalErrorCode: #LayoutClassNotFound
-				            message: 'Layout class ' , layoutName , ' does not exist.'
+				            message: (String streamContents: [ :stream | stream << 'Layout class ' << layoutName << ' does not exist.' ])
 				            details: {
 						            (#class -> self className).
 						            (#layout -> layoutName) } asDictionary ].
@@ -65,7 +65,7 @@ MCPClassCommand >> resolvedSharedPoolNamed: aSharedPoolName [
 	behavior := Smalltalk globals at: sharedPoolName asSymbol ifAbsent: [
 			            MCPCommandError
 				            signalErrorCode: #SharedPoolNotFound
-				            message: 'Shared pool ' , sharedPoolName , ' does not exist.'
+				            message: (String streamContents: [ :stream | stream << 'Shared pool ' << sharedPoolName << ' does not exist.' ])
 				            details: {
 						            (#class -> self className).
 						            (#sharedPool -> sharedPoolName) } asDictionary ].

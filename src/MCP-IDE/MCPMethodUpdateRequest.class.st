@@ -118,7 +118,7 @@ MCPMethodUpdateRequest >> defaultPermutationFromSelector: oldSelector toSelector
 	newArgumentCount := newSelector numArgs.
 	oldArgumentCount = newArgumentCount ifTrue: [ ^ self identityPermutationForSelector: oldSelector ].
 	newArgumentCount = 0 ifTrue: [ ^ #(  ) ].
-	oldArgumentCount = 0 ifTrue: [ ^ ((1 to: newArgumentCount) collect: [ :index | index negated ]) asArray ].
+	oldArgumentCount = 0 ifTrue: [ ^ (1 to: newArgumentCount) collect: [ :index | index negated ] as: Array ].
 	^ self keywordPermutationFromSelector: oldSelector toSelector: newSelector
 ]
 
@@ -196,16 +196,18 @@ MCPMethodUpdateRequest >> keywordPermutationFromSelector: oldSelector toSelector
 	oldKeywords := oldSelector keywords.
 	usedOldIndexes := Set new.
 	nextNewArgument := 0.
-	^ (newSelector keywords collect: [ :keyword |
-			   | oldIndex |
-			   oldIndex := self unusedIndexOf: keyword in: oldKeywords excluding: usedOldIndexes.
-			   oldIndex = 0
-				   ifTrue: [
-						   nextNewArgument := nextNewArgument + 1.
-						   nextNewArgument negated ]
-				   ifFalse: [
-						   usedOldIndexes add: oldIndex.
-						   oldIndex ] ]) asArray
+	^ newSelector keywords
+		  collect: [ :keyword |
+				  | oldIndex |
+				  oldIndex := self unusedIndexOf: keyword in: oldKeywords excluding: usedOldIndexes.
+				  oldIndex = 0
+					  ifTrue: [
+							  nextNewArgument := nextNewArgument + 1.
+							  nextNewArgument negated ]
+					  ifFalse: [
+							  usedOldIndexes add: oldIndex.
+							  oldIndex ] ]
+		  as: Array
 ]
 
 { #category : 'converting' }
@@ -265,7 +267,7 @@ MCPMethodUpdateRequest >> permutationForBehavior: aBehavior [
 	newNames ifEmpty: [ ^ self permutationWithoutArgumentNamesFrom: oldNames ].
 	"Same arity means the names rename in place; a reorder has to say so with permutation."
 	newNames size = oldNames size ifTrue: [ ^ (1 to: newNames size) asArray ].
-	^ (newNames collect: [ :each | oldNames indexOf: each ]) asArray
+	^ newNames collect: [ :each | oldNames indexOf: each ] as: Array
 ]
 
 { #category : 'private - request' }

@@ -70,9 +70,9 @@ MCPUpdateMethodCommand >> executeAddArgumentsWithPlan: plan [
 					                  yourself ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText:
-						  'Added arguments to ' , oldMethodReference , ' as '
-						  , (self tool methodReferenceForBehavior: behavior selector: newSelectorSymbol) , '.'
+					  successResultText: (String streamContents: [ :stream |
+								   stream << 'Added arguments to ' << oldMethodReference << ' as '
+								   << (self tool methodReferenceForBehavior: behavior selector: newSelectorSymbol) << '.' ])
 					  data: (self appliedUpdateResultFor: changeResult plan: plan) asDictionary
 					  warnings: warningMessages ]
 		  failureSummary: [ :error |
@@ -123,8 +123,8 @@ MCPUpdateMethodCommand >> executeChangeProtocolWithPlan: plan [
 					                  yourself ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText:
-					  'Changed protocol for ' , (self tool methodReferenceForBehavior: behavior selector: selectorSymbol) , '.'
+					  successResultText: (String streamContents: [ :stream |
+							   stream << 'Changed protocol for ' << (self tool methodReferenceForBehavior: behavior selector: selectorSymbol) << '.' ])
 					  data: (self appliedUpdateResultFor: changeResult plan: plan) asDictionary
 					  warnings: warningMessages ]
 		  failureSummary: [ :error |
@@ -195,8 +195,9 @@ MCPUpdateMethodCommand >> executeRemoveArgumentsWithPlan: plan [
 					                  yourself ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText: 'Removed arguments from ' , oldMethodReference , ' as '
-						  , (self tool methodReferenceForBehavior: behavior selector: newSelectorSymbol) , '.'
+					  successResultText: (String streamContents: [ :stream |
+								   stream << 'Removed arguments from ' << oldMethodReference << ' as '
+								   << (self tool methodReferenceForBehavior: behavior selector: newSelectorSymbol) << '.' ])
 					  data: (self appliedUpdateResultFor: changeResult plan: plan) asDictionary
 					  warnings: warningMessages ]
 		  failureSummary: [ :error |
@@ -244,9 +245,9 @@ MCPUpdateMethodCommand >> executeRenameWithPlan: plan [
 					                  yourself ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText:
-					  'Renamed ' , oldMethodReference , ' to ' , (self tool methodReferenceForBehavior: behavior selector: newSelectorSymbol)
-					  , '.'
+					  successResultText: (String streamContents: [ :stream |
+								   stream << 'Renamed ' << oldMethodReference << ' to '
+								   << (self tool methodReferenceForBehavior: behavior selector: newSelectorSymbol) << '.' ])
 					  data: (self appliedUpdateResultFor: changeResult plan: plan) asDictionary
 					  warnings: warningMessages ]
 		  failureSummary: [ :error |
@@ -329,5 +330,5 @@ MCPUpdateMethodCommand >> updatePlan [
 { #category : 'private - results' }
 MCPUpdateMethodCommand >> updateSubjectDescription [
 
-	^ 'method ' , self request className , '>>' , self request selector
+	^ String streamContents: [ :stream | stream << 'method ' << self request className << '>>' << self request selector ]
 ]

@@ -110,14 +110,13 @@ MCPToolChangeHistory >> successSummaryForData: data operation: operation [
 
 	| action selectedCount performedCount previewCount |
 	operation = 'listFiles' ifTrue: [
-		^ 'Listed ' , (self textForCount: (data at: #files ifAbsent: [ #(  ) ]) size noun: 'change history file') , '.' ].
+			^ String streamContents: [ :stream |
+				  stream << 'Listed ' << (self textForCount: (data at: #files ifAbsent: [ #(  ) ]) size noun: 'change history file') << '.' ] ].
 	operation = 'listEntries' ifTrue: [
 			^ String streamContents: [ :stream |
 					  stream
 						  nextPutAll: 'Listed ';
-						  nextPutAll: (self
-								   textForCount: (data at: #entries ifAbsent: [ #(  ) ]) size
-								   noun: 'change history entry').
+						  nextPutAll: (self textForCount: (data at: #entries ifAbsent: [ #(  ) ]) size noun: 'change history entry').
 					  data at: #nextOffset ifPresent: [ :offset |
 							  stream
 								  nextPutAll: '. More available at offset ';
@@ -129,11 +128,13 @@ MCPToolChangeHistory >> successSummaryForData: data operation: operation [
 			(data at: #performed ifAbsent: [ false ])
 				ifTrue: [
 						performedCount := data at: #performedCount ifAbsent: [ 0 ].
-						^ 'Performed ' , action , ' for ' , (self textForCount: performedCount noun: 'previewed change') , ' from '
-						  , (self textForCount: selectedCount noun: 'selected history entry') , '.' ]
+						^ String streamContents: [ :stream |
+								  stream << 'Performed ' << action << ' for ' << (self textForCount: performedCount noun: 'previewed change') << ' from '
+								  << (self textForCount: selectedCount noun: 'selected history entry') << '.' ] ]
 				ifFalse: [
 						previewCount := data at: #previewCount ifAbsent: [ 0 ].
-						^ 'Previewed ' , action , ' for ' , (self textForCount: previewCount noun: 'applicable change') , ' from '
-						  , (self textForCount: selectedCount noun: 'selected history entry') , '.' ] ].
+						^ String streamContents: [ :stream |
+								  stream << 'Previewed ' << action << ' for ' << (self textForCount: previewCount noun: 'applicable change') << ' from '
+								  << (self textForCount: selectedCount noun: 'selected history entry') << '.' ] ] ].
 	^ 'Change history operation completed.'
 ]

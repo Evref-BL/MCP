@@ -94,9 +94,10 @@ MCPHTTPServerTest >> testHandlesConcurrentPostRequests [
 					| client payload |
 					client := ZnClient new.
 					[
-						payload := '{"jsonrpc":"2.0","id":' , index asString
-						           ,
-						           ',"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{},"websiteUrl":null}}'.
+						payload := String streamContents: [ :stream |
+								           stream << '{"jsonrpc":"2.0","id":' << index asString
+								           <<
+								           ',"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{},"websiteUrl":null}}' ].
 						client
 							url: server localUrl;
 							headerAt: 'Accept' put: 'application/json, text/event-stream';
@@ -109,10 +110,16 @@ MCPHTTPServerTest >> testHandlesConcurrentPostRequests [
 		responses size timesRepeat: [ self deny: (completed waitTimeoutSeconds: 10) description: 'Concurrent HTTP request timed out.' ].
 		responses doWithIndex: [ :response :index |
 				self assert: response isNotNil description: 'No response at index ' , index asString.
-				self assert: response code = 200 description: 'Unexpected response at index ' , index asString , ': ' , response printString.
+				self
+					assert: response code = 200
+					description:
+					(String streamContents: [ :stream |
+						 stream << 'Unexpected response at index ' << index asString << ': ' << response printString ]).
 				self
 					assert: (response contents includesSubstring: '"result"')
-					description: 'Unexpected body at index ' , index asString , ': ' , response contents ] ] ensure: [ server stop ]
+					description:
+					(String streamContents: [ :stream | stream << 'Unexpected body at index ' << index asString << ': ' << response contents ]) ] ]
+		ensure: [ server stop ]
 ]
 
 { #category : 'tests' }

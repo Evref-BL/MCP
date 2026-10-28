@@ -39,7 +39,8 @@ MCPTestCoverageRequest class >> nonNegativeIntegerNamed: argumentName in: rawVal
 	value := toolRequest valueNamed: argumentName in: rawValue ifAbsent: [ ^ defaultValue ].
 	value ifNil: [ ^ defaultValue ].
 	(value isInteger and: [ value >= 0 ]) ifTrue: [ ^ value ].
-	Error signal: 'coverage.' , argumentName asString , ' must be a non-negative integer.'
+	Error signal:
+		(String streamContents: [ :stream | stream << 'coverage.' << argumentName asString << ' must be a non-negative integer.' ])
 ]
 
 { #category : 'private - parsing' }

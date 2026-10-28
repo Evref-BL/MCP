@@ -234,14 +234,14 @@ MCPToolRewriteMethodsTest >> testNamingARuleClassStandsForItsPatterns [
 	| specs |
 	specs := MCPMethodRewriteRuleSpec specsForRuleClassNamed: 'MCPCollectionThenDoRule' startingAt: 1.
 	self assert: specs size equals: 3.
-	self assert: (specs collect: [ :each | each name ]) asSet equals: (Set with: 'MCPCollectionThenDoRule').
+	self assert: (specs collect: [ :each | each name ] as: Set) equals: (Set with: 'MCPCollectionThenDoRule').
 	self assert: ((specs collect: [ :each | each match ]) anySatisfy: [ :each | each includesSubstring: 'collect:' ]).
 	self assert: ((specs collect: [ :each | each replacement ]) allSatisfy: [ :each | each includesSubstring: 'thenDo:' ]).
 	"One rule always expands the same way, even though Renraku does not keep the declared order."
 	self
 		assert: (specs collect: [ :each | each match ])
-		equals: ((MCPMethodRewriteRuleSpec specsForRuleClassNamed: 'MCPCollectionThenDoRule' startingAt: 1) collect: [ :each |
-				 each match ])
+		equals:
+		((MCPMethodRewriteRuleSpec specsForRuleClassNamed: 'MCPCollectionThenDoRule' startingAt: 1) collect: [ :each | each match ])
 ]
 
 { #category : 'tests' }
@@ -251,7 +251,7 @@ MCPToolRewriteMethodsTest >> testNamingARuleThatIsNotMCPsOwn [
 	| specs |
 	specs := MCPMethodRewriteRuleSpec specsForRuleClassNamed: 'ReEqualNilRule' startingAt: 1.
 	self deny: specs isEmpty.
-	self assert: (specs collect: [ :each | each name ]) asSet equals: (Set with: 'ReEqualNilRule')
+	self assert: (specs collect: [ :each | each name ] as: Set) equals: (Set with: 'ReEqualNilRule')
 ]
 
 { #category : 'tests' }
@@ -328,7 +328,7 @@ MCPToolRewriteMethodsTest >> testPreviewReturnsChangesWithoutMutatingMethod [
 MCPToolRewriteMethodsTest >> testRewriteRuleNormalizesLineFeedsInPatterns [
 
 	| parsedRequest rule source tool |
-	source := '''line one' , String lf , 'line two'''.
+	source := String streamContents: [ :stream | stream << '''line one' << String lf << 'line two''' ].
 	tool := MCPToolRewriteMethods new.
 	parsedRequest := self parsedRequestForTool: tool arguments: {
 			                 (#rules -> { {

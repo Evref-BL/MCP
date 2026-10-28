@@ -29,7 +29,8 @@ MCPRenameSlotCommand >> classSideAccessorMessageRewriter [
 	| rewriter |
 	rewriter := RBParseTreeRewriter new.
 	rewriter
-		replace: '`@receiver ' , self slotName , ': `@value' with: '`@receiver ' , self newSlotName , ': `@value';
+		replace: (String streamContents: [ :stream | stream << '`@receiver ' << self slotName << ': `@value' ])
+		with: (String streamContents: [ :stream | stream << '`@receiver ' << self newSlotName << ': `@value' ]);
 		replace: '`@receiver ' , self slotName with: '`@receiver ' , self newSlotName.
 	^ rewriter
 ]
@@ -78,7 +79,7 @@ MCPRenameSlotCommand >> execute [
 { #category : 'private' }
 MCPRenameSlotCommand >> getterSourceForNewSlot [
 
-	^ self newSlotName , String cr , String cr , '^ ' , self newSlotName
+	^ String streamContents: [ :stream | stream << self newSlotName << String cr << String cr << '^ ' << self newSlotName ]
 ]
 
 { #category : 'private' }
@@ -147,9 +148,9 @@ MCPRenameSlotCommand >> renameClassSideAccessor: oldSelector to: newSelector sou
 	(aBehavior includesLocalSelector: oldSelector) ifFalse: [ ^ self ].
 	protocol := (aBehavior >> oldSelector) protocol.
 	(aBehavior includesLocalSelector: newSelector) ifTrue: [
-			RBRefactoringError signal:
-				'Cannot rename accessor ' , oldSelector asString , ' to ' , newSelector asString
-				, ' because the target selector already exists.' ].
+			RBRefactoringError signal: (String streamContents: [ :stream |
+						 stream << 'Cannot rename accessor ' << oldSelector asString << ' to ' << newSelector asString
+						 << ' because the target selector already exists.' ]) ].
 	aBehavior compile: sourceString withInternalLineEndings classified: protocol.
 	aBehavior removeSelector: oldSelector
 ]
@@ -283,7 +284,8 @@ MCPRenameSlotCommand >> rewriteInstanceSideReferencesInBehavior: aBehavior [
 { #category : 'private' }
 MCPRenameSlotCommand >> setterSourceForNewSlot [
 
-	^ self newSlotName , ': anObject' , String cr , String cr , self newSlotName , ' := anObject'
+	^ String streamContents: [ :stream |
+		  stream << self newSlotName << ': anObject' << String cr << String cr << self newSlotName << ' := anObject' ]
 ]
 
 { #category : 'private' }
@@ -296,28 +298,33 @@ MCPRenameSlotCommand >> slotNamed: aSlotName isDefinedIn: aBehavior [
 MCPRenameSlotCommand >> validateClassSideSlotRenameInBehavior: aBehavior [
 
 	(self slotNamed: self slotName isDefinedIn: aBehavior) ifFalse: [
-			RBApplicabilityChecksFailedError signal:
-				'The variable ' , self slotName , ' is not directly defined in the class ' , (self normalizedBehaviorNameFor: aBehavior) ].
+			RBApplicabilityChecksFailedError signal: (String streamContents: [ :stream |
+						 stream << 'The variable ' << self slotName << ' is not directly defined in the class '
+						 << (self normalizedBehaviorNameFor: aBehavior) ]) ].
 	(self hierarchyDefinesSlotNamed: self newSlotName inBehavior: aBehavior) ifTrue: [
-			RBApplicabilityChecksFailedError signal:
-				self newSlotName , ' is already defined in the class ' , (self normalizedBehaviorNameFor: aBehavior) , ' or its hierarchy.' ]
+			RBApplicabilityChecksFailedError signal: (String streamContents: [ :stream |
+						 stream << self newSlotName << ' is already defined in the class ' << (self normalizedBehaviorNameFor: aBehavior)
+						 << ' or its hierarchy.' ]) ]
 ]
 
 { #category : 'private' }
 MCPRenameSlotCommand >> validateInstanceSideSlotRenameInBehavior: aBehavior [
 
 	(self slotNamed: self slotName isDefinedIn: aBehavior) ifFalse: [
-			RBApplicabilityChecksFailedError signal:
-				'The variable ' , self slotName , ' is not directly defined in the class ' , (self normalizedBehaviorNameFor: aBehavior) ].
+			RBApplicabilityChecksFailedError signal: (String streamContents: [ :stream |
+						 stream << 'The variable ' << self slotName << ' is not directly defined in the class '
+						 << (self normalizedBehaviorNameFor: aBehavior) ]) ].
 	(self hierarchyDefinesSlotNamed: self newSlotName inBehavior: aBehavior) ifTrue: [
-			RBApplicabilityChecksFailedError signal:
-				self newSlotName , ' is already defined in the class ' , (self normalizedBehaviorNameFor: aBehavior) , ' or its hierarchy.' ]
+			RBApplicabilityChecksFailedError signal: (String streamContents: [ :stream |
+						 stream << self newSlotName << ' is already defined in the class ' << (self normalizedBehaviorNameFor: aBehavior)
+						 << ' or its hierarchy.' ]) ]
 ]
 
 { #category : 'private' }
 MCPRenameSlotCommand >> variableReferenceRewriterForSelector: aSelector [
 
 	^ RBParseTreeRewriter rename: self slotName to: self newSlotName handler: [
-			  RBRefactoringError signal:
-				  self newSlotName , ' is already defined as a method or block temporary variable while rewriting ' , aSelector asString ]
+			  RBRefactoringError signal: (String streamContents: [ :stream |
+					   stream << self newSlotName << ' is already defined as a method or block temporary variable while rewriting '
+					   << aSelector asString ]) ]
 ]

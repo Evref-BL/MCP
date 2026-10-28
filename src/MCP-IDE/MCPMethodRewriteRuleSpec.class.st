@@ -47,16 +47,17 @@ MCPMethodRewriteRuleSpec class >> rewritePairsOf: aRuleClass named: aName [
 	sorted, which at least makes one rule always expand the same way."
 
 	| matches pairs |
-	matches := [ aRuleClass new instVarNamed: 'matches' ] on: Error do: [ :error | nil ].
+	matches := [ aRuleClass new instVarNamed: 'matches' ]
+		           on: Error
+		           do: [ :error | nil ].
 	matches ifNil: [
 			MCPCommandError
 				signalErrorCode: #RewriteRuleHasNoReadablePatterns
-				message: 'Could not read the rewrite patterns of ' , aName asString , '.'
+				message: (String streamContents: [ :stream | stream << 'Could not read the rewrite patterns of ' << aName asString << '.' ])
 				details: { (#ruleClass -> aName) } asDictionary ].
 	pairs := OrderedCollection new.
-	matches keysAndValuesDo: [ :matcher :rewriter |
-		pairs add: (self rewritePairFor: matcher rewriter: rewriter ruleNamed: aName) ].
-	^ (pairs asSortedCollection: [ :left :right | (left at: #match) <= (right at: #match) ]) asArray
+	matches keysAndValuesDo: [ :matcher :rewriter | pairs add: (self rewritePairFor: matcher rewriter: rewriter ruleNamed: aName) ].
+	^ pairs sorted: [ :left :right | (left at: #match) <= (right at: #match) ]
 ]
 
 { #category : 'instance creation' }
@@ -167,8 +168,9 @@ MCPMethodRewriteRuleSpec >> signalInvalidPatternError: anError [
 	details := self diagnosticDetails.
 	details at: #backendErrorClass put: anError class name asString.
 	details at: #backendMessage put: anError messageText.
-	message := 'Rewrite rule ' , self ruleIndex asString , ' has an invalid pattern.'.
-	anError messageText ifNotNil: [ :errorMessage | message := message , ' ' , errorMessage ].
+	message := String streamContents: [ :stream | stream << 'Rewrite rule ' << self ruleIndex asString << ' has an invalid pattern.' ].
+	anError messageText ifNotNil: [ :errorMessage |
+		message := String streamContents: [ :stream | stream << message << ' ' << errorMessage ] ].
 	MCPCommandError signalErrorCode: #RewriteRuleInvalidPattern message: message details: details
 ]
 
@@ -178,12 +180,12 @@ MCPMethodRewriteRuleSpec >> validateAtIndex: index [
 	match ifNil: [
 			MCPCommandError
 				signalErrorCode: #RewriteRuleMissingLhs
-				message: 'Rewrite rule ' , index asString , ' is missing match.'
+				message: (String streamContents: [ :stream | stream << 'Rewrite rule ' << index asString << ' is missing match.' ])
 				details: self diagnosticDetails ].
 	replacement ifNil: [
 			MCPCommandError
 				signalErrorCode: #RewriteRuleMissingRhs
-				message: 'Rewrite rule ' , index asString , ' is missing replacement.'
+				message: (String streamContents: [ :stream | stream << 'Rewrite rule ' << index asString << ' is missing replacement.' ])
 				details: self diagnosticDetails ]
 ]
 

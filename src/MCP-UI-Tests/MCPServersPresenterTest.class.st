@@ -11,7 +11,7 @@ Class {
 { #category : 'private' }
 MCPServersPresenterTest >> pragmaNamesOf: aCompiledMethod [
 
-	^ (aCompiledMethod pragmas collect: [ :each | each selector ]) asArray
+	^ aCompiledMethod pragmas collect: [ :each | each selector ] as: Array
 ]
 
 { #category : 'private' }

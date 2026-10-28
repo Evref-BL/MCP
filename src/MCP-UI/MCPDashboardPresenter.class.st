@@ -369,7 +369,8 @@ MCPDashboardPresenter >> toolsLabelFor: someTools [
 
 	| listed |
 	listed := someTools count: [ :each | self isToolListed: each ].
-	^ 'Tools (' , someTools size printString , ', ' , listed printString , ' listed)'
+	^ String streamContents: [ :stream |
+		  stream << 'Tools (' << someTools size printString << ', ' << listed printString << ' listed)' ]
 ]
 
 { #category : 'layout' }

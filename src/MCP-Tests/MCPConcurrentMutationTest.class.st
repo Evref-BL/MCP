@@ -107,10 +107,13 @@ MCPConcurrentMutationTest >> testConcurrentClassCreationsAllLand [
 				count timesRepeat: [ self deny: (completed waitTimeoutSeconds: 30) description: 'A concurrent class creation never answered.' ] ].
 
 		responses doWithIndex: [ :response :index |
-				self assert: (response isKindOf: ZnResponse) description: 'Call ' , index asString , ' failed: ' , response printString.
+				self
+					assert: (response isKindOf: ZnResponse)
+					description:
+					(String streamContents: [ :stream | stream << 'Call ' << index asString << ' failed: ' << response printString ]).
 				self
 					assert: (response contents includesSubstring: '"result"')
-					description: 'Call ' , index asString , ' answered ' , response contents ].
+					description: (String streamContents: [ :stream | stream << 'Call ' << index asString << ' answered ' << response contents ]) ].
 		1 to: count do: [ :index |
 				self
 					assert: (self classNamed: (self generatedClassNameFor: index)) isNotNil
@@ -144,17 +147,19 @@ MCPConcurrentMutationTest >> testConcurrentCompilesAllLand [
 		assert: (self anyOverlapBetween: startedAt and: finishedAt)
 		description: 'The calls did not overlap, so this proves nothing about concurrency.'.
 	responses doWithIndex: [ :response :index |
-			self assert: (response isKindOf: ZnResponse) description: 'Call ' , index asString , ' failed: ' , response printString.
+			self
+				assert: (response isKindOf: ZnResponse)
+				description: (String streamContents: [ :stream | stream << 'Call ' << index asString << ' failed: ' << response printString ]).
 			self assert: response code equals: 200.
 			self
 				assert: (response contents includesSubstring: '"result"')
-				description: 'Call ' , index asString , ' answered ' , response contents ].
+				description: (String streamContents: [ :stream | stream << 'Call ' << index asString << ' answered ' << response contents ]) ].
 
 	target := self classNamed: self scratchClassName.
 	1 to: count do: [ :index |
 			self
 				assert: (target includesSelector: ('answer' , index asString) asSymbol)
-				description: 'answer' , index asString , ' was not compiled' ]
+				description: (String streamContents: [ :stream | stream << 'answer' << index asString << ' was not compiled' ]) ]
 ]
 
 { #category : 'private' }

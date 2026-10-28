@@ -180,7 +180,7 @@ MCPToolMethodLookupTest >> testSelectorNameAnswersImplementorsAndSendersLabelled
 
 	| data kinds |
 	data := self toolNamed: 'method_reference_search' dataFromArguments: { (#name -> 'sharedTarget') } asDictionary.
-	kinds := ((data at: #methods) collect: [ :each | each at: #reference ]) asSet.
+	kinds := (data at: #methods) collect: [ :each | each at: #reference ] as: Set.
 	self assert: kinds equals: #( 'implementors' 'senders' ) asSet
 ]
 

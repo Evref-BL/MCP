@@ -39,12 +39,11 @@ MCPToolRunTestCoverage >> dataTextOn: stream for: data [
 
 	| coverage rest |
 	rest := data copy.
-	(rest at: #coverage ifAbsent: [ nil ]) ifNotNil: [ :measured |
+	rest at: #coverage ifPresent: [ :measured |
 			coverage := measured copy.
 			coverage removeKey: #percentage ifAbsent: [ nil ].
 			coverage keys do: [ :key |
-				((key asString endsWith: 'Truncated') and: [ (coverage at: key) = false ]) ifTrue: [
-					coverage removeKey: key ] ].
+				((key asString endsWith: 'Truncated') and: [ (coverage at: key) = false ]) ifTrue: [ coverage removeKey: key ] ].
 			rest at: #coverage put: coverage ].
 	super dataTextOn: stream for: rest
 ]

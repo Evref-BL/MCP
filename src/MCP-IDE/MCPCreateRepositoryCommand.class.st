@@ -39,9 +39,10 @@ MCPCreateRepositoryCommand >> execute [
 				  result := MCPRepositoryCreateResult fromRepository: repository ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText: 'Created repository ' , self request name , '.'
+					  successResultText: (String streamContents: [ :stream | stream << 'Created repository ' << self request name << '.' ])
 					  data: (self tool dataForRepositoryResult: result)
 					  warnings: warningMessages ]
 		  failureSummary: [ :error |
-		  'Failed create repository ' , self request name , ': ' , (error messageText ifNil: [ error asString ]) ]
+				  String streamContents: [ :stream |
+					  stream << 'Failed create repository ' << self request name << ': ' << (error messageText ifNil: [ error asString ]) ] ]
 ]

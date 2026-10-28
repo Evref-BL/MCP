@@ -147,7 +147,7 @@ MCPCreateClassCommand >> resolvedClassTraitNamed: aClassTraitName [
 	behavior := Smalltalk globals at: classTraitName asSymbol ifAbsent: [
 			            MCPCommandError
 				            signalErrorCode: #ClassTraitNotFound
-				            message: 'Class trait ' , originalName , ' does not exist.'
+				            message: (String streamContents: [ :stream | stream << 'Class trait ' << originalName << ' does not exist.' ])
 				            details: {
 						            (#class -> self className).
 						            (#classTrait -> originalName) } asDictionary ].
@@ -177,9 +177,12 @@ MCPCreateClassCommand >> resolvedTraitNamed: aTraitName [
 	traitName := aTraitName.
 	(traitName endsWith: ' classTrait') ifTrue: [ traitName := traitName copyFrom: 1 to: traitName size - ' classTrait' size ].
 	behavior := Smalltalk globals at: traitName asSymbol ifAbsent: [
-			            MCPCommandError signalErrorCode: #TraitNotFound message: 'Trait ' , traitName , ' does not exist.' details: {
-					            (#class -> self className).
-					            (#trait -> traitName) } asDictionary ].
+			            MCPCommandError
+				            signalErrorCode: #TraitNotFound
+				            message: (String streamContents: [ :stream | stream << 'Trait ' << traitName << ' does not exist.' ])
+				            details: {
+						            (#class -> self className).
+						            (#trait -> traitName) } asDictionary ].
 	behavior isTrait ifFalse: [
 			MCPCommandError signalErrorCode: #InvalidTrait message: traitName , ' is not a trait.' details: {
 					(#class -> self className).

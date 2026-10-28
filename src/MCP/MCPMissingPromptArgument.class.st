@@ -21,7 +21,8 @@ MCPMissingPromptArgument class >> signalForPrompt: aPrompt named: argumentNames 
 	^ self new
 		  promptName: aPrompt name;
 		  missingArguments: argumentNames asArray;
-		  signal: 'Prompt ' , aPrompt name , ' is missing required argument(s): ' , argumentNames asArray printString
+		  signal: (String streamContents: [ :stream |
+					   stream << 'Prompt ' << aPrompt name << ' is missing required argument(s): ' << argumentNames asArray printString ])
 ]
 
 { #category : 'converting' }

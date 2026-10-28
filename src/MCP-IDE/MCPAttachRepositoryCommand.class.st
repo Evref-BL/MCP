@@ -40,11 +40,12 @@ MCPAttachRepositoryCommand >> execute [
 				  result := MCPRepositoryCreateResult fromRepository: repository ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText: 'Attached repository ' , self request name , '.'
+					  successResultText: (String streamContents: [ :stream | stream << 'Attached repository ' << self request name << '.' ])
 					  data: (self tool dataForRepositoryResult: result)
 					  warnings: warningMessages ]
 		  failureSummary: [ :error |
-		  'Failed to attach repository ' , self request name , ': ' , (error messageText ifNil: [ error asString ]) ]
+				  String streamContents: [ :stream |
+					  stream << 'Failed to attach repository ' << self request name << ': ' << (error messageText ifNil: [ error asString ]) ] ]
 ]
 
 { #category : 'private' }

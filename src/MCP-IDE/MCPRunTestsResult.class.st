@@ -112,7 +112,7 @@ MCPRunTestsResult >> passedCount [
 { #category : 'converting' }
 MCPRunTestsResult >> resultDictionaries [
 
-	^ (self results collect: [ :each | each asDictionary ]) asArray
+	^ self results collect: [ :each | each asDictionary ] as: Array
 ]
 
 { #category : 'accessing' }
@@ -136,7 +136,7 @@ MCPRunTestsResult >> skippedTestReferences [
 { #category : 'converting' }
 MCPRunTestsResult >> testReferenceForIssue: issue [
 
-	^ (issue at: #class) asString , '>>#' , (issue at: #testMethod) asString
+	^ String streamContents: [ :stream | stream << (issue at: #class) asString << '>>#' << (issue at: #testMethod) asString ]
 ]
 
 { #category : 'accessing' }
@@ -182,7 +182,7 @@ MCPRunTestsResult >> unrunPackageNames [
 { #category : 'converting' }
 MCPRunTestsResult >> unrunTestDictionaries [
 
-	^ (self unrunTests collect: [ :each | each asDictionary ]) asArray
+	^ self unrunTests collect: [ :each | each asDictionary ] as: Array
 ]
 
 { #category : 'accessing' }

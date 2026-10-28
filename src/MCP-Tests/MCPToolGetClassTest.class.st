@@ -150,16 +150,15 @@ MCPToolGetClassTest >> testClassFieldsReadInOrderAndAreNotRepeated [
 	"The summary already names the class, so a class: field would say it twice, and a reader wants what the class is before how big it is."
 
 	| labels text |
-	text := ((self callToolNamed: 'class_get' withArguments: { (#name -> self baseClassName) } asDictionary) at: #content)
-		        first at: #text.
-	labels := (text lines allButFirst
-		           select: [ :each | each includesSubstring: ': ' ]
-		           thenCollect: [ :each | each copyUpTo: $: ]) asArray.
-	self assert: text lines first equals: 'Got class ' , self baseClassName , '.'.
+	text := ((self callToolNamed: 'class_get' withArguments: { (#name -> self baseClassName) } asDictionary) at: #content) first at:
+		        #text.
+	labels := (text lines allButFirst select: [ :each | each includesSubstring: ': ' ] thenCollect: [ :each | each copyUpTo: $: ])
+		          asArray.
+	self assert: text lines first equals: (String streamContents: [ :stream | stream << 'Got class ' << self baseClassName << '.' ]).
 	self deny: (labels includes: 'class').
 	self assert: (labels copyFrom: 1 to: 2) equals: #( 'superclass' 'layout' ).
 	self assert: ((labels indexOf: 'package') between: 1 and: (labels indexOf: 'classMethods')).
-	self assert: ((labels indexOf: 'classMethods') < (labels indexOf: 'methods'))
+	self assert: (labels indexOf: 'classMethods') < (labels indexOf: 'methods')
 ]
 
 { #category : 'tests' }
@@ -169,7 +168,9 @@ MCPToolGetClassTest >> testDescribesATraitAndNamesTheClassesUsingIt [
 	result := self callToolWith: { (#name -> TMCPToolMethodSearchFixture name) } asDictionary.
 	data := self dataFrom: result.
 	text := (result at: #content) first at: #text.
-	self assert: text lines first equals: 'Got trait ' , TMCPToolMethodSearchFixture name , '.'.
+	self
+		assert: text lines first
+		equals: (String streamContents: [ :stream | stream << 'Got trait ' << TMCPToolMethodSearchFixture name << '.' ]).
 	self assert: (data at: #isTrait).
 	self deny: (data includesKey: #superclass).
 	self assert: (data at: #users) equals: {

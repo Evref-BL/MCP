@@ -244,9 +244,8 @@ MCPTool >> batchEntryForResult: aResult [
 	aResult isError
 		ifTrue: [ entry at: #error put: (structured at: #error ifAbsent: [ Dictionary new ]) ]
 		ifFalse: [
-				(structured at: #data ifAbsent: [ nil ]) ifNotNil: [ :data |
-						data keysAndValuesDo: [ :key :value | entry at: key put: value ] ].
-				(structured at: #warnings ifAbsent: [ nil ]) ifNotNil: [ :warnings | entry at: #warnings put: warnings ] ].
+				structured at: #data ifPresent: [ :data | data keysAndValuesDo: [ :key :value | entry at: key put: value ] ].
+				structured at: #warnings ifPresent: [ :warnings | entry at: #warnings put: warnings ] ].
 	^ entry
 ]
 
@@ -257,7 +256,7 @@ MCPTool >> batchResultForResults: results [
 	failedCount := results count: [ :each | each isError ].
 	summary := self batchSummaryForSucceeded: results size - failedCount total: results size.
 	data := Dictionary new
-		        at: #results put: (results collect: [ :each | self batchEntryForResult: each ]) asArray;
+		        at: #results put: (results collect: [ :each | self batchEntryForResult: each ] as: Array);
 		        yourself.
 	structuredContent := Dictionary new
 		                     at: #summary put: summary;
@@ -458,8 +457,8 @@ MCPTool >> entryTextOn: stream for: entry indent: indent [
 	pairs := OrderedCollection new.
 	reference ifNotNil: [ pairs add: reference ].
 	keys do: [ :key |
-		(self isInlineValue: (entry at: key)) ifTrue: [
-			pairs add: key asString , '=' , (self inlineValueTextFor: (entry at: key)) ] ].
+			(self isInlineValue: (entry at: key)) ifTrue: [
+				pairs add: (String streamContents: [ :stream | stream << key asString << '=' << (self inlineValueTextFor: (entry at: key)) ]) ] ].
 	stream
 		nextPut: Character lf;
 		nextPutAll: indent;
@@ -669,9 +668,12 @@ MCPTool >> frameVariableTextsFor: aContext [
 	texts := OrderedCollection new.
 	"A nil receiver is already stated by the frame, which names UndefinedObject."
 	aContext receiver ifNotNil: [ texts add: 'self=' , (self errorValueTextFor: [ aContext receiver ]) ].
-	([ aContext temporaryVariableNames ] on: Error do: [ :error | #(  ) ]) do: [ :name |
+	([ aContext temporaryVariableNames ]
+		 on: Error
+		 do: [ :error | #(  ) ]) do: [ :name |
 			texts size >= self errorStackTraceVariableLimit ifTrue: [ ^ texts asArray ].
-			texts add: name asString , '=' , (self errorValueTextFor: [ aContext tempNamed: name ]) ].
+			texts add:
+				(String streamContents: [ :stream | stream << name asString << '=' << (self errorValueTextFor: [ aContext tempNamed: name ]) ]) ].
 	^ texts asArray
 ]
 
@@ -782,7 +784,7 @@ MCPTool >> keywords [
 	keywords addAll: self additionalKeywords.
 	normalizedKeywords := OrderedCollection new.
 	keywords do: [ :each | normalizedKeywords addAll: (each asString findTokens: '-_ ') ].
-	^ (normalizedKeywords collect: [ :each | each asLowercase ]) asSet asArray
+	^ (normalizedKeywords collect: [ :each | each asLowercase ] as: Set) asArray
 ]
 
 { #category : 'metadata' }
@@ -812,9 +814,10 @@ MCPTool >> methodReferenceTextFor: aDictionary [
 	selector ifNil: [ ^ nil ].
 	behaviorName := (self valueIn: aDictionary at: #class) ifNil: [ self valueIn: aDictionary at: #behavior ].
 	behaviorName ifNil: [ ^ nil ].
-	^ ((self valueIn: aDictionary at: #side) = 'class'
-		   ifTrue: [ behaviorName asString , ' class' ]
-		   ifFalse: [ behaviorName asString ]) , '>>' , selector asString
+	^ String streamContents: [ :stream |
+			  stream << ((self valueIn: aDictionary at: #side) = 'class'
+				   ifTrue: [ behaviorName asString , ' class' ]
+				   ifFalse: [ behaviorName asString ]) << '>>' << selector asString ]
 ]
 
 { #category : 'private - schema' }
@@ -842,7 +845,7 @@ MCPTool >> mismatchValueText: value [
 	value ifNil: [ ^ 'none' ].
 	(value isCollection and: [ value isString not ]) ifTrue: [
 			value ifEmpty: [ ^ 'none' ].
-			^ '(' , (', ' join: (value collect: [ :each | each asString ])) , ')' ].
+			^ String streamContents: [ :stream | stream << '(' << (', ' join: (value collect: [ :each | each asString ])) << ')' ] ].
 	^ value asString
 ]
 
@@ -932,7 +935,7 @@ MCPTool >> pngIconNamed: anIconSymbol [
 { #category : 'private - icons' }
 MCPTool >> pngSizeStringForForm: aForm [
 
-	^ aForm width asString , 'x' , aForm height asString
+	^ String streamContents: [ :stream | stream << aForm width asString << 'x' << aForm height asString ]
 ]
 
 { #category : 'private - results' }
@@ -1104,7 +1107,7 @@ MCPTool >> successResultText: aSummary data: aDictionary warnings: warningString
 
 	| normalizedSummary structuredContent warnings |
 	normalizedSummary := aSummary ifNil: [ '' ] ifNotNil: [ aSummary asString ].
-	warnings := warningStrings ifNil: [ #(  ) ] ifNotNil: [ (warningStrings collect: [ :each | each asString ]) asArray ].
+	warnings := warningStrings ifNil: [ #(  ) ] ifNotNil: [ warningStrings collect: [ :each | each asString ] as: Array ].
 	structuredContent := Dictionary new
 		                     at: #summary put: normalizedSummary;
 		                     at: #data put: aDictionary;

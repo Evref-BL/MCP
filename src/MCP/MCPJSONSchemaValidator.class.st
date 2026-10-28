@@ -78,7 +78,7 @@ MCPJSONSchemaValidator >> propertyNamesIn: schema [
 
 	| properties |
 	properties := self keywordNamed: #properties in: schema ifAbsent: [ ^ Set new ].
-	^ (properties keys collect: [ :each | each asString ]) asSet
+	^ properties keys collect: [ :each | each asString ] as: Set
 ]
 
 { #category : 'private - object validation' }

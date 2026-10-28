@@ -1239,7 +1239,7 @@ MCPToolContractsTest >> testInputSchemaJSONHasCompactTopLevelShape [
 
 	| schema |
 	schema := MCPToolSearchMethods new inputSchema asJRPCJSON.
-	self assert: (schema keys collect: [ :key | key asString ]) asSet equals: #( 'type' 'properties' 'additionalProperties' ) asSet.
+	self assert: (schema keys collect: [ :key | key asString ] as: Set) equals: #( 'type' 'properties' 'additionalProperties' ) asSet.
 	self assert: (schema at: #additionalProperties) equals: false
 ]
 
@@ -1514,7 +1514,9 @@ MCPToolContractsTest >> testNoDescriptionNamesAnArgumentThatDoesNotExist [
 			tool description ifNotNil: [ :each | texts add: each ].
 			self collectSchemaNames: names descriptions: texts from: tool inputSchema asJRPCJSON.
 			texts do: [ :text |
-				(self camelCaseWordsIn: text) do: [ :word | (names includes: word) ifFalse: [ offenders add: tool name , ' names ' , word ] ] ] ].
+					(self camelCaseWordsIn: text) do: [ :word |
+						(names includes: word) ifFalse: [
+							offenders add: (String streamContents: [ :stream | stream << tool name << ' names ' << word ]) ] ] ] ].
 	self assertEmpty: offenders
 ]
 
@@ -1599,7 +1601,7 @@ MCPToolContractsTest >> testProjectMethodsDoNotHandleMessageNotUnderstoodAsContr
 	offendingMethods := methods select: [ :method |
 		                    method sendNodes anySatisfy: [ :sendNode | rule isMessageNotUnderstoodHandlerSend: sendNode ] ].
 	self assert: offendingMethods isEmpty description: ('Methods handling MessageNotUnderstood: {1}' format:
-			 { (offendingMethods collect: [ :method | method printString ]) asArray printString })
+			 { (offendingMethods collect: [ :method | method printString ] as: Array) printString })
 ]
 
 { #category : 'tests' }
@@ -1612,7 +1614,7 @@ MCPToolContractsTest >> testProjectMethodsDoNotSendReflectiveProtocolChecks [
 		                    method sendNodes anySatisfy: [ :sendNode | sendNode selector = forbiddenSelector ] ].
 	self assert: offendingMethods isEmpty description: ('Methods sending {1}: {2}' format: {
 				 forbiddenSelector.
-				 (offendingMethods collect: [ :method | method printString ]) asArray printString })
+				 (offendingMethods collect: [ :method | method printString ] as: Array) printString })
 ]
 
 { #category : 'tests' }
@@ -1653,7 +1655,7 @@ MCPToolContractsTest >> testQueryScopeDescriptionsExplainScopeSemantics [
 	self assert: (methodScope extraProperties at: #additionalProperties) equals: false.
 	self assert: scopePropertyNames asSet equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' 'hierarchyOf' ) asSet.
 	self
-		assert: ((methodScope extraProperties at: #properties) collect: [ :each | each name ]) asSet
+		assert: ((methodScope extraProperties at: #properties) collect: [ :each | each name ] as: Set)
 		equals: scopePropertyNames asSet , #( 'side' ) asSet.
 	"Every entry says what it selects, since a scope nobody can read is a scope nobody narrows."
 	selectedNames := (methodScope extraProperties at: #properties) select: [ :each | each description isEmptyOrNil ].
@@ -2123,7 +2125,7 @@ MCPToolContractsTest >> testSearchToolPaginationSchemasAdvertiseBounds [
 	MCPToolSearch concreteSubclasses do: [ :toolClass |
 			| offsetProperty propertyNames tool |
 			tool := toolClass new.
-			propertyNames := (tool inputSchema properties collect: [ :each | each name ]) asSet.
+			propertyNames := tool inputSchema properties collect: [ :each | each name ] as: Set.
 			offsetProperty := self inputPropertyNamed: 'offset' inTool: tool.
 			self deny: (propertyNames includes: 'limit').
 			self assert: (offsetProperty extraProperties at: #minimum) equals: 0.
@@ -2456,15 +2458,17 @@ MCPToolContractsTest >> testTheServerDoesNotReachIntoTheImageTools [
 	"MCP has to load without MCP-IDE, which is the whole point of the split: a project that wants the server and its own tools should not drag in the image tools it will never call. One reference from here to there, and a core-only load breaks. Its extensions to other projects' classes count too, which is where such a reference would hide."
 
 	| imageTools offenders check |
-	imageTools := ('MCP-IDE' asPackage definedClasses collect: [ :each | each instanceSide ]) asSet.
+	imageTools := 'MCP-IDE' asPackage definedClasses collect: [ :each | each instanceSide ] as: Set.
 	offenders := OrderedCollection new.
 	check := [ :method |
 		         method literals do: [ :literal |
 				         (literal isVariableBinding and: [ literal value isBehavior and: [ imageTools includes: literal value instanceSide ] ])
-					         ifTrue: [ offenders add: method methodClass name , '>>' , method selector , ' names ' , literal value name ] ] ].
+					         ifTrue: [
+							         offenders add: (String streamContents: [ :stream |
+									          stream << method methodClass name << '>>' << method selector << ' names ' << literal value name ]) ] ] ].
 	'MCP' asPackage definedClasses do: [ :each |
 			(each superclass ifNil: [ false ] ifNotNil: [ :superclass | imageTools includes: superclass instanceSide ]) ifTrue: [
-				offenders add: each name , ' inherits from ' , each superclass name ].
+				offenders add: (String streamContents: [ :stream | stream << each name << ' inherits from ' << each superclass name ]) ].
 			{
 				each.
 				each class } do: [ :side | side methods do: [ :method | check value: method ] ] ].

@@ -219,7 +219,8 @@ MCPRepositoryCommand >> repositorySourceDirectoryFor: aRepository [
 MCPRepositoryCommand >> runGitArguments: arguments in: aRepository [
 
 	| command output outputFile status |
-	outputFile := FileLocator temp asFileReference / ('mcp-git-command-' , UUID new asString , '.log').
+	outputFile := FileLocator temp asFileReference
+	              / (String streamContents: [ :stream | stream << 'mcp-git-command-' << UUID new asString << '.log' ]).
 	command := self gitCommandStringFor: arguments in: aRepository outputFile: outputFile.
 	status := self normalizedSystemStatusFrom: (LibC uniqueInstance system: command).
 	output := outputFile exists
@@ -267,7 +268,8 @@ MCPRepositoryCommand >> signalGitCommandFailed: gitResult action: actionName [
 	| output status |
 	status := gitResult at: #status.
 	output := (gitResult at: #output) trimBoth.
-	output isEmpty ifTrue: [ output := 'git ' , actionName , ' failed with status ' , status asString ].
+	output isEmpty ifTrue: [
+		output := String streamContents: [ :stream | stream << 'git ' << actionName << ' failed with status ' << status asString ] ].
 	MCPCommandError signalErrorCode: actionName , 'GitCommandFailed' message: output details: {
 			(#exitStatus -> status).
 			(#output -> output) } asDictionary
@@ -278,8 +280,9 @@ MCPRepositoryCommand >> signalMissingSourceForPackageNames: packageNames in: aRe
 
 	MCPCommandError
 		signalErrorCode: #RepositorySourceMissing
-		message: 'Repository ' , aRepository name , ' has no source on disk for ' , (', ' join: packageNames)
-			, '. Reloading would drop what the image holds without restoring anything in its place.'
+		message: (String streamContents: [ :stream |
+					 stream << 'Repository ' << aRepository name << ' has no source on disk for ' << (', ' join: packageNames)
+					 << '. Reloading would drop what the image holds without restoring anything in its place.' ])
 		details: {
 				(#repository -> aRepository name).
 				(#packages -> packageNames).
@@ -303,8 +306,9 @@ MCPRepositoryCommand >> signalUnsupportedSourceFormat: formatId for: aRepository
 
 	MCPCommandError
 		signalErrorCode: #RepositorySourceFormatUnsupported
-		message:
-		'Repository ' , aRepository name , ' keeps its source as ' , formatId asString , ', which this neither reads nor writes.'
+		message: (String streamContents: [ :stream |
+					 stream << 'Repository ' << aRepository name << ' keeps its source as ' << formatId asString
+					 << ', which this neither reads nor writes.' ])
 		details: {
 				(#repository -> aRepository name).
 				(#format -> formatId asString).
@@ -314,7 +318,7 @@ MCPRepositoryCommand >> signalUnsupportedSourceFormat: formatId for: aRepository
 { #category : 'private' }
 MCPRepositoryCommand >> sortedStringsFrom: aCollection [
 
-	^ (aCollection collect: [ :each | each asString ]) asSet asArray sort
+	^ (aCollection collect: [ :each | each asString ] as: Set) asArray sort
 ]
 
 { #category : 'private - source format' }
@@ -390,9 +394,7 @@ MCPRepositoryCommand >> versionIn: sourceRepository for: anIcePackage writer: aW
 
 	| directoryName |
 	directoryName := (aWriterClass directoryNameFor: anIcePackage) asString.
-	^ (sourceRepository directory / directoryName) exists
-		  ifTrue: [ sourceRepository versionFromFileNamed: directoryName ]
-		  ifFalse: [ nil ]
+	^ (sourceRepository directory / directoryName) exists ifTrue: [ sourceRepository versionFromFileNamed: directoryName ]
 ]
 
 { #category : 'private - source format' }

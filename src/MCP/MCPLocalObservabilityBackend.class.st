@@ -610,7 +610,8 @@ MCPLocalObservabilityBackend >> recordToolCallStart: aToolName input: inputObjec
 	record inputByteCount: (inputObject ifNil: [ 0 ] ifNotNil: [ self approximateOutputBytesForObject: inputObject ]).
 	record dispatchPath: dispatchPath asString.
 	lastActivityAt := startTimestamp.
-	self recordLog: 'Begin tool ' , aToolName asString , ' #' , record id asString.
+	self recordLog:
+		(String streamContents: [ :stream | stream << 'Begin tool ' << aToolName asString << ' #' << record id asString ]).
 	^ record
 ]
 
@@ -828,7 +829,9 @@ MCPLocalObservabilityBackend >> traceSnapshotForCollection: aCollection depth: d
 	limit := array size min: self maxTraceCollectionItems.
 	overflow := array size - limit.
 	snapshot := (1 to: limit) collect: [ :index | self traceSnapshotFor: (array at: index) depth: depth + 1 ].
-	overflow positive ifTrue: [ snapshot := snapshot copyWith: 'truncated ' , overflow asString , ' items omitted' ].
+	overflow positive ifTrue: [
+			snapshot := snapshot copyWith:
+				            (String streamContents: [ :stream | stream << 'truncated ' << overflow asString << ' items omitted' ]) ].
 	^ snapshot asArray
 ]
 
@@ -871,7 +874,8 @@ MCPLocalObservabilityBackend >> writeJSON: aDictionary to: aFileReference [
 
 	| temporaryFile |
 	aFileReference parent ensureCreateDirectory.
-	temporaryFile := aFileReference parent / (aFileReference basename , '.' , UUID new asString , '.tmp').
+	temporaryFile := aFileReference parent
+	                 / (String streamContents: [ :stream | stream << aFileReference basename << '.' << UUID new asString << '.tmp' ]).
 	[
 		temporaryFile writeStreamDo: [ :stream | stream nextPutAll: (STONJSON toString: aDictionary) ].
 		aFileReference exists ifTrue: [ aFileReference delete ].

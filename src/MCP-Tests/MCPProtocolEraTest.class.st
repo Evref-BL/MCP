@@ -21,9 +21,9 @@ MCPProtocolEraTest >> listenStreamFor: aFilterFragment [
 
 	| server body |
 	server := MCPHTTPServer new.
-	body := STONJSON fromString:
-		        '{"jsonrpc":"2.0","id":7,"method":"subscriptions/listen","params":{"notifications":{' , aFilterFragment , '},'
-		        , (self metaWithVersion: MCP latestProtocolVersion) , '}}'.
+	body := STONJSON fromString: (String streamContents: [ :stream |
+				         stream << '{"jsonrpc":"2.0","id":7,"method":"subscriptions/listen","params":{"notifications":{' << aFilterFragment
+				         << '},' << (self metaWithVersion: MCP latestProtocolVersion) << '}}' ]).
 	server answerSubscriptionsListen: body with: ZnResponse new.
 	^ server eventStreams last
 ]
@@ -31,15 +31,16 @@ MCPProtocolEraTest >> listenStreamFor: aFilterFragment [
 { #category : 'private' }
 MCPProtocolEraTest >> metaWithVersion: aVersion [
 
-	^ '"_meta":{"io.modelcontextprotocol/protocolVersion":"' , aVersion , '"}'
+	^ String streamContents: [ :stream | stream << '"_meta":{"io.modelcontextprotocol/protocolVersion":"' << aVersion << '"}' ]
 ]
 
 { #category : 'private' }
 MCPProtocolEraTest >> modernResultFor: aMethod params: aParamsFragment [
 
 	| response |
-	response := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"' , aMethod , '","params":{' , aParamsFragment
-		            , (self metaWithVersion: MCP latestProtocolVersion) , '}}'.
+	response := self handleJSON: (String streamContents: [ :stream |
+				             stream << '{"jsonrpc":"2.0","id":1,"method":"' << aMethod << '","params":{' << aParamsFragment
+				             << (self metaWithVersion: MCP latestProtocolVersion) << '}}' ]).
 	^ (STONJSON fromString: response) at: 'result'
 ]
 
@@ -98,8 +99,9 @@ MCPProtocolEraTest >> testALegacyStreamCarriesEverythingAndNamesNoSubscription [
 MCPProtocolEraTest >> testAModernRequestNamingASupportedVersionIsAnswered [
 
 	| response |
-	response := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{'
-		            , (self metaWithVersion: MCP latestProtocolVersion) , '}}'.
+	response := self handleJSON: (String streamContents: [ :stream |
+			             stream << '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{'
+			             << (self metaWithVersion: MCP latestProtocolVersion) << '}}' ]).
 	self assert: (response includesSubstring: '"result"').
 	self deny: (response includesSubstring: '"error"')
 ]
@@ -109,8 +111,9 @@ MCPProtocolEraTest >> testAModernRequestNamingAnUnsupportedVersionIsRefused [
 	"There is no handshake to fall back on, so the request itself is refused and told what would work."
 
 	| response |
-	response := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{'
-		            , (self metaWithVersion: '1900-01-01') , '}}'.
+	response := self handleJSON: (String streamContents: [ :stream |
+			             stream << '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{' << (self metaWithVersion: '1900-01-01')
+			             << '}}' ]).
 	self assert: (response includesSubstring: '"code":-32022').
 	self assert: (response includesSubstring: '"message":"Unsupported protocol version"').
 	self assert: (response includesSubstring: '"requested":"1900-01-01"').
@@ -122,8 +125,9 @@ MCPProtocolEraTest >> testAModernResultSaysItIsComplete [
 	"Every result in the modern era declares its kind, so a client can tell an ordinary result from an interim one."
 
 	| response |
-	response := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{'
-		            , (self metaWithVersion: MCP latestProtocolVersion) , '}}'.
+	response := self handleJSON: (String streamContents: [ :stream |
+			             stream << '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{'
+			             << (self metaWithVersion: MCP latestProtocolVersion) << '}}' ]).
 	self assert: (response includesSubstring: '"resultType":"complete"')
 ]
 
@@ -143,8 +147,9 @@ MCPProtocolEraTest >> testAnErrorWithNoModernCodeIsUnchanged [
 	"Only the conditions the revision renumbered move; everything else answers the same code in both eras."
 
 	| modern |
-	modern := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"prompts/get","params":{"name":"no_such_prompt",'
-		          , (self metaWithVersion: MCP latestProtocolVersion) , '}}'.
+	modern := self handleJSON: (String streamContents: [ :stream |
+				           stream << '{"jsonrpc":"2.0","id":1,"method":"prompts/get","params":{"name":"no_such_prompt",'
+				           << (self metaWithVersion: MCP latestProtocolVersion) << '}}' ]).
 	self assert: (modern includesSubstring: '"code":-32602')
 ]
 
@@ -162,8 +167,9 @@ MCPProtocolEraTest >> testDeclaringALegacyVersionIsAnsweredTheLegacyWay [
 	"A request naming a legacy version gets what that version defines, even though it named it the modern way."
 
 	| response |
-	response := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{'
-		            , (self metaWithVersion: MCP latestLegacyProtocolVersion) , '}}'.
+	response := self handleJSON: (String streamContents: [ :stream |
+				             stream << '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{'
+				             << (self metaWithVersion: MCP latestLegacyProtocolVersion) << '}}' ]).
 	self assert: (response includesSubstring: '"result"').
 	self deny: (response includesSubstring: 'resultType')
 ]
@@ -188,8 +194,9 @@ MCPProtocolEraTest >> testDiscoverAnswersEvenForAVersionTheServerRefuses [
 	"Discovery is how a client learns which versions would work, so refusing it would leave nothing to retry with."
 
 	| response |
-	response := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"server/discover","params":{'
-		            , (self metaWithVersion: '1900-01-01') , '}}'.
+	response := self handleJSON: (String streamContents: [ :stream |
+			             stream << '{"jsonrpc":"2.0","id":1,"method":"server/discover","params":{' << (self metaWithVersion: '1900-01-01')
+			             << '}}' ]).
 	self assert: (response includesSubstring: '"supportedVersions"').
 	self deny: (response includesSubstring: '-32022')
 ]
@@ -201,7 +208,7 @@ MCPProtocolEraTest >> testDiscoverCarriesVersionsCapabilitiesAndIdentity [
 	result := self mcpWithoutObservabilityExport rpcServerDiscover.
 	self assert: (result at: #supportedVersions) equals: MCP supportedProtocolVersions.
 	self assert: ((result at: #capabilities) includesKey: #tools).
-	self assert: ((result at: #_meta) at: 'io.modelcontextprotocol/serverInfo') notNil.
+	self assert: ((result at: #_meta) at: 'io.modelcontextprotocol/serverInfo') isNotNil.
 	self deny: (result at: #instructions) isEmpty
 ]
 
@@ -290,8 +297,9 @@ MCPProtocolEraTest >> testResourceNotFoundIsRenumberedForModernRequests [
 
 	| legacy modern |
 	legacy := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"resources/read","params":{"uri":"pharo://missing"}}'.
-	modern := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"resources/read","params":{"uri":"pharo://missing",'
-		          , (self metaWithVersion: MCP latestProtocolVersion) , '}}'.
+	modern := self handleJSON: (String streamContents: [ :stream |
+				           stream << '{"jsonrpc":"2.0","id":1,"method":"resources/read","params":{"uri":"pharo://missing",'
+				           << (self metaWithVersion: MCP latestProtocolVersion) << '}}' ]).
 	self assert: (legacy includesSubstring: '"code":-32002').
 	self assert: (modern includesSubstring: '"code":-32602').
 	self assert: (modern includesSubstring: '"uri":"pharo://missing"')
