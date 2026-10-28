@@ -66,12 +66,9 @@ and first calls.
 
 - [Documentation index](docs/README.md)
 - [Getting started](docs/user/getting-started.md)
-- [Using MCP from an agent](templates/pharo-references/using-pharo-mcp.md)
 - [Building on MCP](docs/user/building-on-mcp.md)
 - [Observability and UI](docs/user/observability.md)
 - [Tool reference](templates/pharo-references/tool-reference.md)
-- [Tool safety](templates/pharo-references/tool-safety.md)
-- [Troubleshooting](templates/pharo-references/troubleshooting.md)
 - [Developing MCP](docs/developing-mcp.md)
 
 ## Agent Templates

@@ -22,14 +22,9 @@ const hosts = {
 };
 
 const installedReferences = [
-  "debugging.md",
   "pharo-coding-rules.md",
   "pharo-coding-style.md",
-  "source-vs-live-image.md",
   "tool-reference.md",
-  "tool-safety.md",
-  "troubleshooting.md",
-  "using-pharo-mcp.md",
 ];
 
 for (const [host, { directory, guide }] of Object.entries(hosts)) {
@@ -42,7 +37,7 @@ for (const [host, { directory, guide }] of Object.entries(hosts)) {
 
       assert.equal(result.host, host);
       assert.ok(fs.existsSync(path.join(project, directory, "pharo.AGENTS.md")));
-      assert.ok(fs.existsSync(path.join(project, directory, "skills", "pharo-project-load", "SKILL.md")));
+      assert.ok(fs.existsSync(path.join(project, directory, "skills", "pharo-image-sync", "SKILL.md")));
       for (const skill of fs.readdirSync(path.join(project, directory, "skills"))) {
         assert.equal(
           fs.existsSync(path.join(project, directory, "skills", skill, "agents", "openai.yaml")),

@@ -2,8 +2,7 @@
 
 This repository implements the image-side MCP server for Pharo. These rules are
 for developing MCP itself; users of a released server should start with
-`templates/pharo-references/using-pharo-mcp.md` or install the published
-template package.
+`docs/user/getting-started.md` or install the published template package.
 
 ## Read First
 
@@ -31,12 +30,11 @@ template package.
 - Before Pharo source changes: read
   `templates/pharo-references/pharo-coding-rules.md` and
   `templates/pharo-references/pharo-coding-style.md`.
-- Before debugger work: read `templates/pharo-references/debugging.md`.
 - For a tool's own contract, ask the server with `tool_search` and `tool_get`.
-- `templates/pharo-references/` holds the user-facing guidance this repository
-  ships, and `templates/pharo-skills/` the workflows with their own triggers:
-  project loading, version compatibility, image-to-Git handoff, CI reproduction,
-  code profiling.
+- `templates/pharo-references/` holds the guidance this repository installs
+  into other projects, and `templates/pharo-skills/` the workflows with their
+  own triggers: project loading, image sync, CI reproduction, code profiling,
+  standalone recovery. Neither says anything about this project in particular.
 - That guidance and `README.md` describe behavior, not the implementation as it
   stands. Counting the classes in a group, the tools in a package or the
   entries in a page, and listing the advertised tools, all go stale without

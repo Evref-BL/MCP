@@ -4,7 +4,7 @@ Applies when verifying changes to this MCP repository.
 
 Read after:
 
-- `templates/pharo-references/source-vs-live-image.md`
+- `templates/pharo.AGENTS.md`
 - `docs/developing-mcp.md`
 
 ## Goal

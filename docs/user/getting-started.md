@@ -151,7 +151,6 @@ Continue with:
 The guidance installed into a project covers the rest, and is published under
 `templates/pharo-references/`:
 
-- [Using MCP from an agent](../../templates/pharo-references/using-pharo-mcp.md)
 - [Tool reference](../../templates/pharo-references/tool-reference.md)
-- [Tool safety](../../templates/pharo-references/tool-safety.md)
-- [Troubleshooting](../../templates/pharo-references/troubleshooting.md)
+- [Pharo coding rules](../../templates/pharo-references/pharo-coding-rules.md)
+- [Pharo coding style](../../templates/pharo-references/pharo-coding-style.md)

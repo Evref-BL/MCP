@@ -52,10 +52,9 @@ String streamContents: [ :stream | tally report: stream cutoff: 2 ]
 ## Choosing The Cutoff
 
 The cutoff is the percentage of all samples a node must hold to be printed, in
-the tree and in the leaves alike. Use 2 and read the report once. Over a
-2400-sample run of the same workload it printed 79 lines where 5% printed 52
-and 1% printed 84, so it is close enough to the whole tree that a second look
-rarely pays, and still under a thousand tokens.
+the tree and in the leaves alike. Use 2 and read the report once: over a 2400-sample
+run it printed 79 lines where 1% printed 84, close enough to the whole tree
+that a second look rarely pays.
 
 Raise it when the report is larger than the question. Rendering again costs no
 new run, because the tally is still in hand:
@@ -74,10 +73,9 @@ The one that decides the report is on `report:cutoff:`.
 
 ## Profiling A Workload Longer Than The Call
 
-Fork the run, write the report to a file, and come back for it. The fork
-returns the call immediately and leaves the image answering, so the profile can
-take as long as the workload needs. Keep the report out of a global: a file
-survives, is readable from outside the image, and needs no cleanup inside it.
+Fork the run and write the report to a file. The fork returns the call at
+once and leaves the image answering, so the profile can take as long as the
+workload needs.
 
 ```smalltalk
 | path |
@@ -99,26 +97,13 @@ path writeStreamDo: [ :out |
 path fullName
 ```
 
-The file is written only once the run ends, so `path exists` answers whether it
-is done. To tell a slow run from a dead one, look for the process by the name
-it was forked under:
-
-```smalltalk
-Process allInstances anySatisfy: [ :each |
-	each name = 'pharo-profile' and: [ each isTerminated not ] ]
-```
-
-Pharo writes CR line endings, so convert to LF as above, or the report arrives
-as a single line everywhere outside the image.
-
-The tally dies with the fork, so this report is written once and cannot be
-rendered again at another cutoff. The file costs nothing to keep, and it can be
-read in parts rather than whole.
-
-Forking at `userBackgroundPriority` keeps the image answering calls while the
-profile runs. The samples it loses to those calls are charged to another
-process and dropped from the report, which lowers every percentage by the same
-factor: read the proportions between nodes, not their absolute values.
+The file appears only when the run ends, so `path exists` answers whether it
+is done; a forked process that is still alive is found by the name it was
+forked under. Convert CR to LF as above, or the report arrives as a single
+line outside the image. The tally dies with the fork, so this report cannot
+be rendered again at another cutoff. Forking at `userBackgroundPriority`
+keeps the image answering, and the samples lost to those calls lower every
+percentage by the same factor: read the proportions, not the values.
 
 ## Reading The Report
 
@@ -145,8 +130,6 @@ Process: (60) ...
   defined on `SequenceableCollection`.
 - `primitives` is not a method. It is the part of the parent's time no child
   accounts for: its own work, primitives and inlined code included.
-- The `|` bars are tree drawing. A node gets one when a sibling follows it at
-  that level, and carries it down its subtree. They mean nothing else.
 - `**Leaves**` ranks by own time and is usually what to act on. The tree says
   who is responsible, the leaves say what is expensive.
 - `**Memory**` is the allocation delta over the run and `**GCs**` the
@@ -167,11 +150,9 @@ String streamContents: [ :stream | profiler report: stream cutoff: 2 ]
 ```
 
 Never send `spyOn:` to the class: it ends in `doReport`, which opens a window.
-The instance-side `spyOn:` is the headless path.
-
-Its tree is rooted at the image, so a report taken through MCP opens with the
-frames of the server handling the call. Find the workload's entry method and
-read the percentages from that node down.
+Its tree is rooted at the image, so a report taken through a tool call opens
+with the frames of the server handling it; read from the workload's entry
+method down.
 
 ## Measuring Instead Of Profiling
 
@@ -200,6 +181,6 @@ mean: the minimum is the run least disturbed by GC and scheduling.
 
 ## Report
 
-Report the workload and how long it ran, the sampler and cutoff, the top tree
-nodes and leaves with their percentages, the change made, the before-and-after
-comparison, and the tests that showed behavior unchanged.
+Report the workload, the sampler and cutoff, the top tree nodes and leaves with
+their percentages, the change made, the before-and-after comparison, and the
+tests that showed behavior unchanged.

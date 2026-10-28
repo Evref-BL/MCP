@@ -5,13 +5,10 @@ developer documentation.
 
 Read after:
 
-- `templates/pharo-references/using-pharo-mcp.md`
-- `templates/pharo-references/source-vs-live-image.md`
+- `templates/pharo.AGENTS.md`
+- `templates/pharo-references/tool-reference.md`
 - `templates/pharo-references/pharo-coding-rules.md`
 - `templates/pharo-references/pharo-coding-style.md`
-
-Also read `templates/pharo-references/debugging.md` when changing debugger
-tools, debug-session state, breakpoints, or debugger-driven repair behavior.
 
 ## Goal
 

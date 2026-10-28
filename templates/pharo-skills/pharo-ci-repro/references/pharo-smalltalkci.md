@@ -56,30 +56,6 @@ SmalltalkCISpec {
 
 Adjust the baseline, directory, and class for the project under test.
 
-## Pharo 13 / Iceberg / libgit2 Pattern
-
-In a Pharo MCP investigation on 2026-05-16, a P13 flaky CI crash reproduced
-locally inside Docker. It was not a dependency download issue: loading
-completed and testing had started.
-
-Crash signatures included:
-
-- C stack in `libgit2.so.1.4.4`
-- `git_repository_head_unborn`
-- `git_commit_lookup`
-- Smalltalk frames through `IceLibgitRepository`, `IceRepository>>headCommit`,
-  or `IceRepository>>validateCanCommit`
-- Test frames in a repository-management test
-
-The practical mitigation was to avoid unnecessary test-side `repository
-headCommit` reads and skip a P13 test that deliberately forced empty libgit2
-config values for a P12-only fallback path.
-
-General lesson: if a Pharo 13 Linux CI segfault points into libgit2 while
-testing fresh temporary repositories, treat it as a native stability surface.
-Avoid poking Iceberg head/commit metadata in tests unless the assertion is
-essential.
-
 ## Interpreting Common Noise
 
 - `fatal: not a git repository`: often harmless when running smalltalkCI from a
@@ -95,8 +71,8 @@ essential.
 
 After a fix:
 
-- Run the failing Pharo platform full suite.
-- Run adjacent supported platforms, usually P12 and P13 for MCP.
-- Run focused repeats for the flaky class/method if the original failure was
-  intermittent.
+- Run the failing Pharo platform's full suite.
+- Run the adjacent versions in the project's matrix.
+- Run focused repeats for the flaky class or method when the original failure
+  was intermittent.
 - Keep the captured failing log path in the report.

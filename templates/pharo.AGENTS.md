@@ -1,16 +1,18 @@
 # Pharo MCP Agent Guide
 
 Use the configured `pharo` MCP server whenever a task depends on the running
-image. Preserve unrelated changes and report unavailable live checks instead of
-guessing from source.
+image. Preserve unrelated changes, and say which live check you could not run
+rather than letting source stand in for it.
 
 ## Read First
 
 - Inspect the tools and schemas exposed by the current client; do not rely on
-  remembered names.
+  remembered names. `tool_search` finds what is not advertised, and `tool_get`
+  answers one tool's schema.
 - Prefer the least-mutating dedicated tool. Use `image_evaluate` only when no
   dedicated tool fits.
-- Treat image, Tonel, Iceberg, and Git state as separate.
+- Treat image, Tonel, Iceberg, and Git state as separate. None of them proves
+  anything about the others.
 - Tools change the running image but never save it; use a safe image boundary.
 
 ## Context Loading
@@ -19,21 +21,18 @@ guessing from source.
   guidance. If none exists, use the local
   [coding rules](pharo-references/pharo-coding-rules.md) and
   [coding style](pharo-references/pharo-coding-style.md).
-- Before working through the server: read
-  [using the Pharo MCP server](pharo-references/using-pharo-mcp.md), which
-  leads on to the tool reference, the mutation boundaries, and the guide to
-  the state layers.
+- Before reading an answer closely, rewriting methods, or acting on a warning a
+  call came back with: read
+  [tool reference](pharo-references/tool-reference.md).
 - Before loading a project: use `skills/pharo-project-load/SKILL.md`.
-- Before exporting image changes or changing Git state: use
-  `skills/pharo-image-git-handoff/SKILL.md`.
+- Before moving code between the image and its files: use
+  `skills/pharo-image-sync/SKILL.md`.
 - Before reproducing smalltalkCI or GitHub failures: use
   `skills/pharo-ci-repro/SKILL.md`.
 - Before profiling or optimizing Pharo code: use
   `skills/pharo-code-profiling/SKILL.md`.
 - Before recovering a stopped standalone image: use
   `skills/pharo-mcp-recovery/SKILL.md`.
-- Before debugger sessions or repairs: read the local
-  [debugging guide](pharo-references/debugging.md).
 
 ## Workflow
 
@@ -41,7 +40,7 @@ guessing from source.
 2. Preview or verify identity before risky mutation.
 3. Make the narrowest image-side change.
 4. Run focused SUnit tests and inspect the result.
-5. Use the handoff skill before exporting or committing Tonel changes.
+5. Use the image-sync skill before exporting or committing Tonel changes.
 
 For repository work, verify repository identity before mutation and inspect the
 image-side diff before export or commit.
