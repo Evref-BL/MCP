@@ -1,5 +1,5 @@
 "
-Test tool that models an unavailable native PCRE2 library.
+Test tool that models an image with no PCRE2 engine loaded.
 "
 Class {
 	#name : 'MCPToolSearchWithoutPCRE2TestStub',

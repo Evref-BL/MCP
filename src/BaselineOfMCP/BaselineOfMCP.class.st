@@ -23,10 +23,7 @@ BaselineOfMCP >> defineDependencies: spec [
 				spec
 					repository: 'github://Evref-BL/JRPC:v4.0.1/src';
 					loads: #( 'Deployment' ) ];
-		baseline: 'PCRE2' with: [
-			spec
-				repository: 'github://Gabriel-Darbord/pharo-pcre2:v1.0.1/src';
-				loads: #( 'Core' ) ];
+		baseline: 'PCRE2' with: [ spec repository: 'github://Gabriel-Darbord/pharo-pcre2:v2.0.0/src' ];
 		baseline: 'OpenTelemetry' with: [
 			spec
 				repository: 'github://Gabriel-Darbord/opentelemetry-pharo:v1.1.0/src';

@@ -317,9 +317,9 @@ MCPToolSearch >> parsedRequestFromToolRequest: request [
 
 { #category : 'private - filtering' }
 MCPToolSearch >> pcre2RegexLibraryAvailable [
-	"PCRE2 is an optional native runtime dependency: the Smalltalk package can be loaded while the host library is missing."
+	"PCRE2 is an optional dependency: answer whether there is an engine to compile a pattern with."
 
-	^ LibPCRE2UTF8 isNativeLibraryAvailable
+	^ PCRE2Compiler nativeLibraryAvailable
 ]
 
 { #category : 'private - filtering' }
