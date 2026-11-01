@@ -45,7 +45,7 @@ MCPUpdateMethodCommand >> executeAddArgumentsWithPlan: plan [
 		  force: self request force
 		  requestedContext: plan requestedContext
 		  work: [
-				  behavior := self tool behaviorNamed: self request className classSide: self request classSide.
+				  behavior := self updateTargetBehavior.
 				  behavior compiledMethodAt: oldSelectorSymbol ifAbsent: [
 						  MCPCommandError
 							  signalMissingMethodInClassName: self request className
@@ -105,7 +105,7 @@ MCPUpdateMethodCommand >> executeChangeProtocolWithPlan: plan [
 		  force: false
 		  requestedContext: plan requestedContext
 		  work: [
-				  behavior := self tool behaviorNamed: self request className classSide: self request classSide.
+				  behavior := self updateTargetBehavior.
 				  oldCompiledMethod := behavior compiledMethodAt: selectorSymbol ifAbsent: [
 						                       MCPCommandError
 							                       signalMissingMethodInClassName: self request className
@@ -163,7 +163,7 @@ MCPUpdateMethodCommand >> executeRemoveArgumentsWithPlan: plan [
 		  force: self request force
 		  requestedContext: plan requestedContext
 		  work: [
-				  behavior := self tool behaviorNamed: self request className classSide: self request classSide.
+				  behavior := self updateTargetBehavior.
 				  behavior compiledMethodAt: oldSelectorSymbol ifAbsent: [
 						  MCPCommandError
 							  signalMissingMethodInClassName: self request className
@@ -221,7 +221,7 @@ MCPUpdateMethodCommand >> executeRenameWithPlan: plan [
 		  force: self request force
 		  requestedContext: plan requestedContext
 		  work: [
-				  behavior := self tool behaviorNamed: self request className classSide: self request classSide.
+				  behavior := self updateTargetBehavior.
 				  behavior compiledMethodAt: oldSelectorSymbol ifAbsent: [
 						  MCPCommandError
 							  signalMissingMethodInClassName: self request className
@@ -331,4 +331,14 @@ MCPUpdateMethodCommand >> updatePlan [
 MCPUpdateMethodCommand >> updateSubjectDescription [
 
 	^ String streamContents: [ :stream | stream << 'method ' << self request className << '>>' << self request selector ]
+]
+
+{ #category : 'private - planning' }
+MCPUpdateMethodCommand >> updateTargetBehavior [
+	"The behaviour every update action works on. A method the class got from a trait is the trait's to rename, recategorize or re-argument, so the four actions stop here rather than each learning what a trait is."
+
+	| behavior |
+	behavior := self tool behaviorNamed: self request className classSide: self request classSide.
+	self tool signalTraitOriginBeforeUpdating: self request selector in: behavior.
+	^ behavior
 ]

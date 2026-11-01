@@ -40,15 +40,18 @@ MCPRewriteMethodsCommand >> classNameForChange: aChange [
 { #category : 'executing' }
 MCPRewriteMethodsCommand >> execute [
 
-	| appliedCount changeInfos changes report |
+	| appliedCount changeInfos changes methods report |
 	self request apply ifTrue: [ self validateExplicitApplyScope ].
-	changes := self sortedChanges: self rewriteChanges.
+	methods := self request scopeQuery methods.
+	changes := self sortedChanges: (self rewriteChangesFor: (self rewritableMethodsIn: methods)).
 	changeInfos := self changeInfosForChanges: changes.
 	appliedCount := 0.
 	self request apply ifTrue: [
 			self applyChanges: changes.
 			appliedCount := changes size ].
-	report := MCPMethodRewriteReport request: self request changeInfos: changeInfos appliedCount: appliedCount.
+	report := (MCPMethodRewriteReport request: self request changeInfos: changeInfos appliedCount: appliedCount)
+		          skippedTraitMethods: (self skippedTraitMethodReferencesFor: methods);
+		          yourself.
 	^ self tool successResultText: (self successSummaryForReport: report) data: report asDictionary
 ]
 
@@ -59,10 +62,16 @@ MCPRewriteMethodsCommand >> refactoringChangeManager [
 ]
 
 { #category : 'private - rewriting' }
-MCPRewriteMethodsCommand >> rewriteChanges [
+MCPRewriteMethodsCommand >> rewritableMethodsIn: methods [
+	"A trait's method is installed in every class that uses the trait, so a scope naming those classes holds the copies too. Rewriting a copy would write a changed method into that class alone, shadowing the trait, so the copies are left out and the method is rewritten where it is defined."
 
-	| methods transformationRule |
-	methods := self request scopeQuery methods.
+	^ methods reject: [ :each | each isFromTrait ]
+]
+
+{ #category : 'private - rewriting' }
+MCPRewriteMethodsCommand >> rewriteChangesFor: methods [
+
+	| transformationRule |
 	methods ifEmpty: [ ^ #(  ) ].
 	transformationRule := RBTransformationRule new
 		                      rewriteRule: self rewriteRule;
@@ -82,6 +91,15 @@ MCPRewriteMethodsCommand >> rewriteRule [
 MCPRewriteMethodsCommand >> ruleHolders [
 
 	^ self request rules collect: [ :each | each asStRewriterRuleHolder ] as: Array
+]
+
+{ #category : 'private - rewriting' }
+MCPRewriteMethodsCommand >> skippedTraitMethodReferencesFor: methods [
+	"What this rewrite would have changed had the copies in scope been theirs to change, named by the trait that defines it. A scope naming the users of a trait and not the trait itself reports no change at all otherwise, and nothing would say where the method lives. Only the methods the rules actually match are named, since every traited class carries copies of Pharo's own trait methods and they are nobody's business here."
+
+	^ ((self rewriteChangesFor: (self traitOriginMethodsFor: methods))
+		   collect: [ :each | self tool methodReferenceForBehavior: each changeClass selector: each selector ]
+		   as: Set) asArray sort
 ]
 
 { #category : 'private - rewriting' }
@@ -111,14 +129,33 @@ MCPRewriteMethodsCommand >> successSummaryForReport: report [
 		         ifTrue: [ report appliedCount ]
 		         ifFalse: [ report changeCount ].
 	^ String streamContents: [ :stream |
-		  stream
-			  nextPutAll: (report apply
-					   ifTrue: [ 'Applied ' ]
-					   ifFalse: [ 'Previewed ' ]);
-			  print: count;
-			  nextPutAll: ' method rewrite change'.
-		  count = 1 ifFalse: [ stream nextPut: $s ].
-		  stream nextPut: $. ]
+			  stream
+				  nextPutAll: (report apply
+						   ifTrue: [ 'Applied ' ]
+						   ifFalse: [ 'Previewed ' ]);
+				  print: count;
+				  nextPutAll: ' method rewrite change'.
+			  count = 1 ifFalse: [ stream nextPut: $s ].
+			  stream nextPut: $..
+			  report skippedTraitMethods ifNotEmpty: [ :skipped |
+					  skipped size = 1
+						  ifTrue: [ stream nextPutAll: ' Skipped 1 method installed from a trait.' ]
+						  ifFalse: [
+								  stream
+									  nextPutAll: ' Skipped ';
+									  print: skipped size;
+									  nextPutAll: ' methods installed from traits.' ] ] ]
+]
+
+{ #category : 'private - rewriting' }
+MCPRewriteMethodsCommand >> traitOriginMethodsFor: methods [
+	"The trait methods behind the copies in scope, less the ones the scope holds anyway: those are rewritten like any other method. An alias installs a copy under a selector its trait does not answer, so it has no origin to name here."
+
+	| inScope |
+	inScope := methods asIdentitySet.
+	^ ((methods
+		    select: [ :each | each isFromTrait and: [ each origin includesSelector: each selector ] ]
+		    thenCollect: [ :each | each origin >> each selector ]) asIdentitySet reject: [ :each | inScope includes: each ]) asArray
 ]
 
 { #category : 'private - validation' }

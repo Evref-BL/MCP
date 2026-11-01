@@ -264,6 +264,22 @@ MCPToolRemoveMethodsTest >> testRemovesBatchOfInstanceMethods [
 ]
 
 { #category : 'tests' }
+MCPToolRemoveMethodsTest >> testRemovingAMethodInstalledFromATraitStopsAndNamesTheTrait [
+
+	| error result |
+	result := self callToolWith: {
+			          (#class -> 'MCPToolMethodSearchTraitUser').
+			          (#selector -> #( 'mcpTraitFixtureValue' )) } asDictionary.
+	error := self errorFrom: result.
+	self assert: (self resultIndicatesError: result).
+	self assert: (error at: #errorCode) equals: 'MethodInstalledFromTrait'.
+	self assert: (error at: #trait) equals: 'TMCPToolMethodSearchFixture'.
+	self assert: (error at: #origin) equals: 'TMCPToolMethodSearchFixture>>mcpTraitFixtureValue'.
+	self assert: ((error at: #howToProceed) includesSubstring: 'has no method of its own to remove').
+	self assert: (MCPToolMethodSearchTraitUser >> #mcpTraitFixtureValue) isFromTrait
+]
+
+{ #category : 'tests' }
 MCPToolRemoveMethodsTest >> testReturnsStructuredErrorWhenAnyMethodIsMissing [
 
 	| error result structured |

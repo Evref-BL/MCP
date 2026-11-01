@@ -302,13 +302,26 @@ MCPToolMethodMutationTest >> restoreFixtureMethods [
 		on: MCPToolMethodMutationTestSender
 ]
 
+{ #category : 'private' }
+MCPToolMethodMutationTest >> restoreTraitFixtureMethods [
+	"The force test installs a method of its own over the copy MCPToolMethodSearchTraitUser got from its trait. Removing that one and setting the composition again installs the copy."
+
+	| user |
+	user := MCPToolMethodSearchTraitUser.
+	((user includesSelector: #mcpTraitFixtureValue) and: [ (user >> #mcpTraitFixtureValue) isFromTrait ]) ifTrue: [ ^ self ].
+	self withoutEpiceaDuring: [
+			user removeSelector: #mcpTraitFixtureValue.
+			user setTraitComposition: user traitComposition ]
+]
+
 { #category : 'running' }
 MCPToolMethodMutationTest >> setUp [
 
 	super setUp.
 	self removeSelector: #combine:with:separator: from: MCPToolMethodMutationTestTarget.
 	self removeSelector: #buildValue:prefix: from: MCPToolMethodMutationTestTarget classSide.
-	self restoreFixtureMethods
+	self restoreFixtureMethods.
+	self restoreTraitFixtureMethods
 ]
 
 { #category : 'running' }
@@ -317,6 +330,7 @@ MCPToolMethodMutationTest >> tearDown [
 	self removeSelector: #combine:with:separator: from: MCPToolMethodMutationTestTarget.
 	self removeSelector: #buildValue:prefix: from: MCPToolMethodMutationTestTarget classSide.
 	self restoreFixtureMethods.
+	self restoreTraitFixtureMethods.
 	self removeSelector: self extensionProtocolSelector from: MCPToolMethodMutationTestTarget.
 	self removeGeneratedPackagesIfEmpty.
 	super tearDown
@@ -1077,6 +1091,55 @@ MCPToolMethodMutationTest >> testCompilesInstanceSideMethod [
 ]
 
 { #category : 'tests' }
+MCPToolMethodMutationTest >> testCompilingOverAMethodInstalledFromATraitStopsAndNamesTheTrait [
+
+	| error result |
+	result := self callToolNamed: 'method_compile' withArguments: {
+			          (#class -> 'MCPToolMethodSearchTraitUser').
+			          (#protocol -> 'accessing').
+			          (#source -> 'mcpTraitFixtureValue ^ ''from the user''') } asDictionary.
+	error := self errorFrom: result.
+	self assert: (self resultIndicatesError: result).
+	self assert: (error at: #errorCode) equals: 'MethodInstalledFromTrait'.
+	self assert: (error at: #trait) equals: 'TMCPToolMethodSearchFixture'.
+	self assert: (error at: #origin) equals: 'TMCPToolMethodSearchFixture>>mcpTraitFixtureValue'.
+	self assert: ((error at: #howToProceed) includesSubstring: 'resend with force').
+	self assert: (MCPToolMethodSearchTraitUser >> #mcpTraitFixtureValue) isFromTrait
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testForceCompilesOverAMethodInstalledFromATrait [
+
+	| data result |
+	result := self callToolNamed: 'method_compile' withArguments: {
+			          (#class -> 'MCPToolMethodSearchTraitUser').
+			          (#protocol -> 'accessing').
+			          (#force -> true).
+			          (#source -> 'mcpTraitFixtureValue ^ ''from the user''') } asDictionary.
+	data := self dataFrom: result.
+	self assert: (data at: #changeKind) equals: 'replaced'.
+	self deny: (MCPToolMethodSearchTraitUser >> #mcpTraitFixtureValue) isFromTrait.
+	self assert: MCPToolMethodSearchTraitUser new mcpTraitFixtureValue equals: 'from the user'
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testForceDoesNotUpdateAMethodInstalledFromATrait [
+	"Compiling over a copy is an override Pharo supports, so force carries it through. Renaming one lands in no source file at all, so nothing carries that through."
+
+	| error result |
+	result := self callToolNamed: 'method_update' withArguments: {
+			          (#class -> 'MCPToolMethodSearchTraitUser').
+			          (#selector -> 'mcpTraitFixtureValue').
+			          (#newSelector -> 'mcpTraitFixtureValueRenamed').
+			          (#force -> true) } asDictionary.
+	error := self errorFrom: result.
+	self assert: (self resultIndicatesError: result).
+	self assert: (error at: #errorCode) equals: 'MethodInstalledFromTrait'.
+	self assert: (MCPToolMethodSearchTraitUser includesSelector: #mcpTraitFixtureValue).
+	self deny: (MCPToolMethodSearchTraitUser includesSelector: #mcpTraitFixtureValueRenamed)
+]
+
+{ #category : 'tests' }
 MCPToolMethodMutationTest >> testMCPPackageMethodSourcesDoNotContainLineFeeds [
 
 	| offenders |
@@ -1091,7 +1154,7 @@ MCPToolMethodMutationTest >> testMethodToolSchemasDeclareExpectedInputs [
 	createPropertyNames := MCPToolCompileMethod new inputSchema properties collect: [ :each | each name ].
 	updatePropertyNames := MCPToolUpdateMethod new inputSchema properties collect: [ :each | each name ].
 	classSideProperty := MCPToolCompileMethod new inputSchema properties detect: [ :each | each name = 'side' ].
-	self assert: createPropertyNames asArray equals: #( 'class' 'side' 'source' 'protocol' ).
+	self assert: createPropertyNames asArray equals: #( 'class' 'side' 'source' 'protocol' 'force' ).
 	self
 		assert: updatePropertyNames asArray
 		equals:
@@ -1449,6 +1512,23 @@ MCPToolMethodMutationTest >> testUpdateChangesProtocolAndSelectorInOneCall [
 	self assert: (MCPToolMethodMutationTestTarget includesSelector: renamed).
 	self assert: (MCPToolMethodMutationTestTarget >> renamed) protocol name asString equals: 'accessing'.
 	self assert: ((data at: #updates) collect: [ :each | each at: #action ] as: Array) equals: #( 'changeProtocol' 'rename' )
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testUpdatingAMethodInstalledFromATraitStopsAndNamesTheTrait [
+	"Changing the protocol of a copy recompiles it into the class as a method of its own, which the next export writes to the file of a class that never had it."
+
+	| error result |
+	result := self callToolNamed: 'method_update' withArguments: {
+			          (#class -> 'MCPToolMethodSearchTraitUser').
+			          (#selector -> 'mcpTraitFixtureValue').
+			          (#protocol -> 'private') } asDictionary.
+	error := self errorFrom: result.
+	self assert: (self resultIndicatesError: result).
+	self assert: (error at: #errorCode) equals: 'MethodInstalledFromTrait'.
+	self assert: ((error at: #howToProceed) includesSubstring: 'Update TMCPToolMethodSearchFixture>>mcpTraitFixtureValue instead').
+	self assert: (MCPToolMethodSearchTraitUser >> #mcpTraitFixtureValue) isFromTrait.
+	self assert: (MCPToolMethodSearchTraitUser >> #mcpTraitFixtureValue) protocol name asString equals: 'accessing'
 ]
 
 { #category : 'private - calling' }

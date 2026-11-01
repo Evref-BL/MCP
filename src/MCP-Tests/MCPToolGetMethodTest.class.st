@@ -122,6 +122,31 @@ MCPToolGetMethodTest >> testGetMethodSupportsClassSideContext [
 ]
 
 { #category : 'tests' }
+MCPToolGetMethodTest >> testNamesNoTraitForAMethodTheClassOverrides [
+
+	| data result |
+	result := self callToolWith: {
+			          (#class -> 'MCPToolMethodSearchTraitOverrider').
+			          (#selector -> 'mcpTraitFixtureValue') } asDictionary.
+	data := self dataFrom: result.
+	self assert: ((data at: #source) includesSubstring: 'overridden').
+	self deny: (data includesKey: #trait)
+]
+
+{ #category : 'tests' }
+MCPToolGetMethodTest >> testNamesTheTraitAMethodIsInstalledFrom [
+
+	| data result text |
+	result := self callToolWith: {
+			          (#class -> 'MCPToolMethodSearchTraitUser').
+			          (#selector -> 'mcpTraitFixtureValue') } asDictionary.
+	data := self dataFrom: result.
+	text := (result at: #content) first at: #text.
+	self assert: (data at: #trait) equals: 'TMCPToolMethodSearchFixture'.
+	self assert: (text includesSubstring: 'trait: TMCPToolMethodSearchFixture')
+]
+
+{ #category : 'tests' }
 MCPToolGetMethodTest >> testToolRequiresClassNameAndSelectorInSchema [
 
 	self assert: MCPToolGetMethod new inputSchema required asSet equals: #( 'selector' ) asSet

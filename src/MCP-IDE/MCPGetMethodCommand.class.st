@@ -18,6 +18,7 @@ MCPGetMethodCommand >> execute [
 	data := {
 		        (#protocol -> protocolName).
 		        (#source -> (compiledMethod sourceCode ifNil: [ '' ])) } asDictionary.
+	(MCPCompiledMethodInfo fromMethod: compiledMethod) traitName ifNotNil: [ :traitName | data at: #trait put: traitName ].
 	request includeVariableDetails ifTrue: [
 			methodBehavior := tool behaviorNamed: request className classSide: request classSide.
 			variableReferences := tool variableSummariesForMethod: compiledMethod methodBehavior: methodBehavior.
