@@ -229,6 +229,19 @@ MCPToolRewriteMethodsTest >> testMissingClassScopeRejectsRewriteBeforePartialPre
 ]
 
 { #category : 'tests' }
+MCPToolRewriteMethodsTest >> testNamingARuleClassKeepsItsConditions [
+	"A rule that leaves some matches alone says so in its pattern, so applying it leaves them alone too."
+
+	| changes |
+	self ensureMethodSource: 'classReceiverTarget ^ OrderedCollection notEmpty' protocol: 'tests' on: self targetClass.
+	self ensureMethodSource: 'collectionReceiverTarget: aCollection ^ aCollection notEmpty' protocol: 'tests' on: self targetClass.
+	changes := (self dataFrom: (self callToolWith: {
+				             (#ruleClasses -> { MCPIsNotEmptyRule name }).
+				             (#scope -> { (#classes -> { self targetClassName }) } asDictionary) } asDictionary)) at: #changes.
+	self assert: (changes collect: [ :each | each at: #selector ] as: Array) equals: #( 'collectionReceiverTarget:' )
+]
+
+{ #category : 'tests' }
 MCPToolRewriteMethodsTest >> testNamingARuleClassStandsForItsPatterns [
 
 	| specs |
@@ -352,6 +365,45 @@ MCPToolRewriteMethodsTest >> testRuleClassWithoutPatternsIsRejected [
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: ((error at: #message) includesSubstring: 'ReNodeRewriteRule')
+]
+
+{ #category : 'tests' }
+MCPToolRewriteMethodsTest >> testRuleClassesRewriteToWhatTheyRecommend [
+	"Each rule's patterns are read back from the rule and parsed again, conditions included."
+
+	{
+		{
+			MCPDenyRule.
+			'probe: aTest aTest assert: aTest isEmpty not'.
+			'aTest deny: aTest isEmpty' }.
+		{
+			MCPLiftCommonSendRule.
+			'probe: aBoolean aBoolean ifTrue: [ self inform: ''yes'' ] ifFalse: [ self inform: ''no'' ]'.
+			'self inform: (aBoolean' }.
+		{
+			MCPLiftCommonSendRule.
+			'probe: aBoolean aBoolean ifTrue: [ ^ 1 ] ifFalse: [ ^ 2 ]'.
+			'^ aBoolean' }.
+		{
+			MCPPrintOnStreamRule.
+			'probe: aStream aStream nextPutAll: 42 printString; cr'.
+			'print: 42;' }.
+		{
+			MCPIncludesKeyRule.
+			'probe: aDictionary ^ aDictionary keys includes: #name'.
+			'^ aDictionary includesKey: #name' }.
+		{
+			MCPDetectIfFoundRule.
+			'probe: aCollection (aCollection detect: [ :each | each odd ] ifNone: [ nil ]) ifNotNil: [ :found | found printString ]'.
+			'ifFound: [ :found | found printString ]' } } do: [ :sample |
+			| changes |
+			self ensureMethodSource: sample second protocol: 'tests' on: self targetClass.
+			changes := (self dataFrom: (self callToolWith: {
+						             (#ruleClasses -> { sample first name }).
+						             (#scope -> { (#classes -> { self targetClassName }) } asDictionary) } asDictionary)) at: #changes.
+			self
+				assert: (changes collect: [ :each | each at: #selector ] as: Array) equals: #( 'probe:' );
+				assert: ((changes first at: #newSource) includesSubstring: sample third) description: sample first name ]
 ]
 
 { #category : 'tests' }

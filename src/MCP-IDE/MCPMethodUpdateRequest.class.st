@@ -27,10 +27,9 @@ MCPMethodUpdateRequest class >> fromRequest: request tool: aTool [
 
 	| parsedRequest |
 	parsedRequest := self new initializeFromRequest: request.
-	parsedRequest hasRenameUpdate
-		ifTrue: [ parsedRequest refactoringScopeSpec: (aTool refactoringScopeSpecFromRequest: request) ]
-		ifFalse: [
-		parsedRequest refactoringScopeSpec: (MCPRefactoringScopeSpec packageNames: #(  ) classNames: #(  ) hierarchyClassNames: #(  )) ].
+	parsedRequest refactoringScopeSpec: (parsedRequest hasRenameUpdate
+			 ifTrue: [ aTool refactoringScopeSpecFromRequest: request ]
+			 ifFalse: [ MCPRefactoringScopeSpec packageNames: #(  ) classNames: #(  ) hierarchyClassNames: #(  ) ]).
 	^ parsedRequest
 ]
 

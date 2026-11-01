@@ -2,6 +2,8 @@
 Renraku rule that warns when code asks notEmpty instead of isNotEmpty.
 
 Both answer the same thing, but every other test of this kind reads is-something: isEmpty, isNil, isString. Pharo's own comment on notEmpty says to prefer isNotEmpty for consistency with isEmpty, yet nothing in the image flags it.
+
+A receiver the source shows does not understand isNotEmpty is left alone: a class answering notEmpty is not a collection, and neither is everything else that implements notEmpty.
 "
 Class {
 	#name : 'MCPIsNotEmptyRule',
@@ -27,5 +29,5 @@ MCPIsNotEmptyRule class >> ruleName [
 MCPIsNotEmptyRule >> initialize [
 
 	super initialize.
-	self replace: '`@receiver notEmpty' with: '`@receiver isNotEmpty'
+	self replace: '`@receiver `{ :node | MCPMethodStyleRule canSend: #isNotEmpty to: node } notEmpty' with: '`@receiver isNotEmpty'
 ]

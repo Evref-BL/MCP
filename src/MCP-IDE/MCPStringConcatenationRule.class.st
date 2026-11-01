@@ -32,8 +32,11 @@ MCPStringConcatenationRule >> initialize [
 
 	super initialize.
 	self
-		replace: '`#first , `@second , `@third' with: 'String streamContents: [ :stream | stream << `#first << `@second << `@third ]';
-		replace: '`@first , `#second , `@third' with: 'String streamContents: [ :stream | stream << `@first << `#second << `@third ]';
-		replace: '`@first , `@second , `#third' with: 'String streamContents: [ :stream | stream << `@first << `@second << `#third ]';
+		replace: '`#first `{ :node | node value isString } , `@second , `@third'
+		with: 'String streamContents: [ :stream | stream << `#first << `@second << `@third ]';
+		replace: '`@first , `#second `{ :node | node value isString } , `@third'
+		with: 'String streamContents: [ :stream | stream << `@first << `#second << `@third ]';
+		replace: '`@first , `@second , `#third `{ :node | node value isString }'
+		with: 'String streamContents: [ :stream | stream << `@first << `@second << `#third ]';
 		replace: '`@stream << (`@first , `@second)' with: '`@stream << `@first << `@second'
 ]

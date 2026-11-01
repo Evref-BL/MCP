@@ -1,7 +1,7 @@
 "
-Renraku rule that warns when a conditional has a nil-only branch that can be removed.
+Renraku rule that warns when an ifNil:ifNotNil: conditional has a nil-only branch that can be removed.
 
-When one case only answers nil and the other computes a value, the one-armed form keeps the code direct without changing behavior: ifNotNil: for nil traversal, and ifTrue: or ifFalse: for a boolean condition, since both answer nil when they do not run.
+When the nil case only answers nil, ifNotNil: alone says the same, since it answers nil when it does not run. Pharo's ReNilBranchRule already says it of ifTrue:ifFalse:.
 "
 Class {
 	#name : 'MCPNilOnlyConditionalRule',
@@ -29,7 +29,5 @@ MCPNilOnlyConditionalRule >> initialize [
 	super initialize.
 	self
 		replace: '`@receiver ifNil: [ nil ] ifNotNil: `@block' with: '`@receiver ifNotNil: `@block';
-		replace: '`@receiver ifNotNil: `@block ifNil: [ nil ]' with: '`@receiver ifNotNil: `@block';
-		replace: '`@condition ifTrue: [ `@body ] ifFalse: [ nil ]' with: '`@condition ifTrue: [ `@body ]';
-		replace: '`@condition ifFalse: [ `@body ] ifTrue: [ nil ]' with: '`@condition ifFalse: [ `@body ]'
+		replace: '`@receiver ifNotNil: `@block ifNil: [ nil ]' with: '`@receiver ifNotNil: `@block'
 ]

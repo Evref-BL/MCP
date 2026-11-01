@@ -104,7 +104,7 @@ MCPClassMutationRequestTest >> testUpdateRequestParsesSlotArguments [
 	self deny: delta isEmpty.
 	self assert: (delta renamed at: 'oldName') equals: 'newName'.
 	self assert: delta added isEmpty.
-	self assert: delta hasReplacement not.
+	self deny: delta hasReplacement.
 	self assert: (request requestedContext at: #classSlots) equals: (Dictionary with: #rename -> delta renamed)
 ]
 
