@@ -1,7 +1,7 @@
 "
 Command that calculates and optionally applies method rewrite changes.
 
-It resolves the method scope, delegates pattern matching to the NewTools rewrite backend, enforces apply guardrails, and returns an MCPMethodRewriteReport.
+It resolves the method scope, delegates pattern matching to the NewTools rewrite backend through an MCPSettlingRewriter, so each method is rewritten until nothing more matches, enforces apply guardrails, and returns an MCPMethodRewriteReport.
 "
 Class {
 	#name : 'MCPRewriteMethodsCommand',
@@ -75,7 +75,7 @@ MCPRewriteMethodsCommand >> rewriteChanges [
 MCPRewriteMethodsCommand >> rewriteRule [
 
 	self validateRewriteRules.
-	^ StRewriterRBApplier rewriter: self ruleHolders
+	^ MCPSettlingRewriter on: (StRewriterRBApplier rewriter: self ruleHolders)
 ]
 
 { #category : 'private - rewriting' }

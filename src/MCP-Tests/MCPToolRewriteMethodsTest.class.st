@@ -356,6 +356,22 @@ MCPToolRewriteMethodsTest >> testRewriteRuleNormalizesLineFeedsInPatterns [
 ]
 
 { #category : 'tests' }
+MCPToolRewriteMethodsTest >> testRewriteThatKeepsMatchingIsRefused [
+	"A replacement holding its own match would grow forever, so nothing is applied."
+
+	| error result |
+	result := self callToolWith: {
+			          (#rules -> { (self rewriteRuleFrom: 'self oldValue' to: '(self oldValue) yourself') }).
+			          (#scope -> { (#classes -> { self targetClassName }) } asDictionary).
+			          (#confirm -> true) } asDictionary.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (error at: #errorCode) equals: 'RewriteDoesNotSettle'.
+	self assert: (error at: #method) equals: self targetClassName , '>>previewTarget'.
+	self deny: ((self sourceForSelector: #previewTarget) includesSubstring: 'yourself')
+]
+
+{ #category : 'tests' }
 MCPToolRewriteMethodsTest >> testRuleClassWithoutPatternsIsRejected [
 
 	| error result |
@@ -417,6 +433,27 @@ MCPToolRewriteMethodsTest >> testRuleThatComputesItsReplacementIsRejected [
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: ((error at: #message) includesSubstring: 'computes its replacement')
+]
+
+{ #category : 'tests' }
+MCPToolRewriteMethodsTest >> testRulesApplyUntilNothingMatches [
+	"The concatenation rule absorbs one operand per pass. One call ends where the rule is going, not one step towards it."
+
+	| source |
+	self
+		ensureMethodSource: 'chainTarget: a with: b with: c ^ ''one '' , a , '' two '' , b , '' three '' , c , ''.'''
+		protocol: 'tests'
+		on: self targetClass.
+	self dataFrom: (self callToolWith: {
+				 (#ruleClasses -> { MCPStringConcatenationRule name }).
+				 (#scope -> { (#classes -> { self targetClassName }) } asDictionary).
+				 (#confirm -> true) } asDictionary).
+	source := self sourceForSelector: #chainTarget:with:with:.
+	self deny: (source includesSubstring: ' , ').
+	self assert: (source allRangesOfSubstring: 'streamContents:') size equals: 1.
+	self assert:
+		(((source substrings: '<<') collect: [ :each | each trimBoth ]) includesAll:
+			 #( '''one ''' 'a' ''' two ''' 'b' ''' three ''' 'c' ))
 ]
 
 { #category : 'tests' }
