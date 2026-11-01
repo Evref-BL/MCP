@@ -23,6 +23,18 @@ Class {
 	#package : 'MCP-UI'
 }
 
+{ #category : 'defaults' }
+MCPObservabilityPresenter class >> defaultPreferredExtent [
+
+	^ 1000 @ 700
+]
+
+{ #category : 'instance creation' }
+MCPObservabilityPresenter class >> openOn: anMCP [
+
+	^ (self on: anMCP) open
+]
+
 { #category : 'auto-refresh' }
 MCPObservabilityPresenter >> autoRefreshChangedTo: enabled [
 
@@ -86,12 +98,6 @@ MCPObservabilityPresenter >> defaultLayout [
 		  yourself
 ]
 
-{ #category : 'api' }
-MCPObservabilityPresenter >> initialExtent [
-
-	^ 1000 @ 700
-]
-
 { #category : 'initialization' }
 MCPObservabilityPresenter >> initializePresenters [
 
@@ -108,8 +114,12 @@ MCPObservabilityPresenter >> initializePresenters [
 
 	observabilityCheckBox label: 'Enable observability'.
 	autoRefreshCheckBox label: 'Auto-refresh'.
-	refreshButton label: 'Refresh'.
-	clearButton label: 'Clear'.
+	refreshButton
+		label: 'Refresh';
+		icon: (self iconNamed: #refreshCircling).
+	clearButton
+		label: 'Clear';
+		icon: (self iconNamed: #trash).
 	self initializeTables
 ]
 
@@ -145,7 +155,6 @@ MCPObservabilityPresenter >> initializeWindow: aWindowPresenter [
 	super initializeWindow: aWindowPresenter.
 	aWindowPresenter
 		title: 'MCP Observability';
-		initialExtent: self initialExtent;
 		whenClosedDo: [ self stopAutoRefresh ]
 ]
 

@@ -1,9 +1,9 @@
 "
 Spec presenter listing the MCP servers an image holds, with their port, state, endpoint and tool count.
 
-It answers the question an image cannot otherwise be asked: is anything running, on which port, and is the port a client is configured for held by a server that was forgotten. Selecting a server starts or stops it, or opens its dashboard; the port field creates and starts a new one, defaulting to 0 so the operating system picks a free port instead of colliding.
+It answers the question an image cannot otherwise be asked: is anything running, on which port, and is the port a client is configured for held by a server that was forgotten. Selecting a server starts, stops or removes it, or opens its dashboard or its observability; the port field creates and starts a new one, defaulting to 0 so the operating system picks a free port instead of colliding.
 
-The list comes from `MCP allServers`, so nothing registers servers and nothing retains them. While the window is open it holds the servers it listed, and lets go of them when it closes.
+The list comes from `MCP allServers`, so nothing registers servers and nothing retains them. While the window is open it holds the servers it listed, and lets go of them when it closes. Removing a server is therefore stopping it and letting go of it: it leaves the list once nothing else refers to it, and the window says so when something does.
 "
 Class {
 	#name : 'MCPServersPresenter',
@@ -16,14 +16,20 @@ Class {
 		'newButton',
 		'startButton',
 		'stopButton',
-		'dashboardButton',
 		'refreshButton',
 		'messageLabel',
-		'portLabel'
+		'portLabel',
+		'removeButton'
 	],
 	#category : 'MCP-UI',
 	#package : 'MCP-UI'
 }
+
+{ #category : 'defaults' }
+MCPServersPresenter class >> defaultPreferredExtent [
+
+	^ 760 @ 420
+]
 
 { #category : 'world menu' }
 MCPServersPresenter class >> menuCommandOn: aBuilder [
@@ -45,13 +51,13 @@ MCPServersPresenter class >> open [
 
 { #category : 'layout' }
 MCPServersPresenter >> actionsLayout [
-	"No width constraint on a button: one makes Spec draw it without its label."
+	"No width constraint on a button: one makes Spec draw it without its label. Opening a server's windows is on its row, by double-click or the context menu."
 
 	^ SpBoxLayout newLeftToRight
 		  spacing: 6;
 		  add: startButton expand: false;
 		  add: stopButton expand: false;
-		  add: dashboardButton expand: false;
+		  add: removeButton expand: false;
 		  add: refreshButton expand: false;
 		  yourself
 ]
@@ -76,7 +82,7 @@ MCPServersPresenter >> connectPresenters [
 	newButton action: [ self createServer ].
 	startButton action: [ self startSelectedServer ].
 	stopButton action: [ self stopSelectedServer ].
-	dashboardButton action: [ self openDashboard ].
+	removeButton action: [ self removeSelectedServer ].
 	refreshButton action: [ self refreshView ].
 	self refreshView
 ]
@@ -138,12 +144,6 @@ MCPServersPresenter >> hasSelectedServer [
 	^ serversTable selectedItem isNotNil
 ]
 
-{ #category : 'api' }
-MCPServersPresenter >> initialExtent [
-
-	^ 760 @ 420
-]
-
 { #category : 'initialization' }
 MCPServersPresenter >> initializePresenters [
 
@@ -153,7 +153,7 @@ MCPServersPresenter >> initializePresenters [
 	newButton := self newButton.
 	startButton := self newButton.
 	stopButton := self newButton.
-	dashboardButton := self newButton.
+	removeButton := self newButton.
 	refreshButton := self newButton.
 	messageLabel := self newLabel.
 
@@ -163,11 +163,21 @@ MCPServersPresenter >> initializePresenters [
 		help: self portHelpText.
 	newButton
 		label: 'New server';
+		icon: (self iconNamed: #add);
 		help: self portHelpText.
-	startButton label: 'Start'.
-	stopButton label: 'Stop'.
-	dashboardButton label: 'Dashboard'.
-	refreshButton label: 'Refresh'.
+	startButton
+		label: 'Start';
+		icon: (self iconNamed: #go).
+	stopButton
+		label: 'Stop';
+		icon: self serverStopIcon.
+	removeButton
+		label: 'Remove';
+		icon: (self iconNamed: #trash);
+		help: self removeHelpText.
+	refreshButton
+		label: 'Refresh';
+		icon: (self iconNamed: #refreshCircling).
 	self initializeServersTable
 ]
 
@@ -182,17 +192,18 @@ MCPServersPresenter >> initializeServersTable [
 		addColumn: (SpStringTableColumn title: 'Port' evaluated: [ :server | server port asString ]);
 		addColumn: (SpStringTableColumn title: 'Endpoint' evaluated: [ :server | server localUrlString ]);
 		addColumn: (SpStringTableColumn title: 'Tools' evaluated: [ :server | server sortedTools size asString ]);
-		contextMenu: self serversContextMenu;
+		contextMenu: [ self serversContextMenu ];
 		beResizable
 ]
 
 { #category : 'initialization' }
 MCPServersPresenter >> initializeWindow: aWindowPresenter [
+	"A closed window can still be referenced, by the hand's keyboard focus among others, so it lets go of its servers rather than wait to be collected."
 
 	super initializeWindow: aWindowPresenter.
 	aWindowPresenter
 		title: 'MCP Servers';
-		initialExtent: self initialExtent
+		whenClosedDo: [ serversTable items: #(  ) ]
 ]
 
 { #category : 'actions' }
@@ -222,6 +233,12 @@ MCPServersPresenter >> openDashboard [
 	serversTable selectedItem ifNotNil: [ :server | MCPDashboardPresenter openOn: server ]
 ]
 
+{ #category : 'actions' }
+MCPServersPresenter >> openObservability [
+
+	serversTable selectedItem ifNotNil: [ :server | MCPObservabilityPresenter openOn: server ]
+]
+
 { #category : 'private' }
 MCPServersPresenter >> portHelpText [
 
@@ -236,14 +253,36 @@ MCPServersPresenter >> portInput [
 
 { #category : 'updating' }
 MCPServersPresenter >> refreshView [
-	"Reselect by identity: the list is rebuilt from the heap, so the previous selection is the same object or it is gone."
+	"Every running server, and the stopped ones this window already shows, so that stopping a server does not take its row away; removing it does. Reselect by identity, since the rows are the servers themselves."
 
 	| selected servers |
 	selected := serversTable selectedItem.
-	servers := MCP allServers.
+	servers := (serversTable items reject: [ :each | each isRunning ]) asArray , MCP runningServers sort: [ :left :right |
+		           left port <= right port ].
 	serversTable items: servers.
 	selected ifNotNil: [ :previous | (servers identityIncludes: previous) ifTrue: [ serversTable selectItem: previous ] ].
 	self updateActionButtons
+]
+
+{ #category : 'private' }
+MCPServersPresenter >> removeHelpText [
+
+	^ 'Stop the selected server and take it off the list.'
+]
+
+{ #category : 'actions' }
+MCPServersPresenter >> removeSelectedServer [
+	"Stop it and drop its row. Only running servers are picked up, so it stays gone whatever else still refers to it."
+
+	| server |
+	server := serversTable selectedItem ifNil: [ ^ self ].
+	self showMessage: ''.
+	[ server stop ]
+		on: Error
+		do: [ :error | ^ self showMessage: error messageText ].
+	serversTable items: (serversTable items copyWithout: server).
+	self refreshView.
+	self showMessage: (String streamContents: [ :stream | stream << 'Removed the server on port ' << server port asString << '.' ])
 ]
 
 { #category : 'private' }
@@ -251,6 +290,17 @@ MCPServersPresenter >> requestedPort [
 	"Answer the port the field asks for, or nil when it is not a port at all. 0 is valid and means a free one."
 
 	^ (portInput text ifNil: [ '' ]) trimBoth asInteger ifNotNil: [ :port | (port between: 0 and: 65535) ifTrue: [ port ] ]
+]
+
+{ #category : 'actions' }
+MCPServersPresenter >> restartSelectedServer [
+
+	self showMessage: ''.
+	serversTable selectedItem ifNotNil: [ :server |
+			[ server restart ]
+				on: Error
+				do: [ :error | self showMessage: error messageText ] ].
+	self refreshView
 ]
 
 { #category : 'private' }
@@ -261,15 +311,52 @@ MCPServersPresenter >> serversContextMenu [
 				  group
 					  addItem: [ :item |
 							  item
+								  name: 'Dashboard';
+								  description: 'Open the dashboard of the selected server';
+								  enabled: [ self hasSelectedServer ];
+								  action: [ self openDashboard ] ];
+					  addItem: [ :item |
+							  item
+								  name: 'Observability';
+								  description: 'Open what the selected server recorded about its tool calls';
+								  enabled: [ self hasSelectedServer ];
+								  action: [ self openObservability ] ] ];
+		  addGroup: [ :group |
+				  group
+					  addItem: [ :item |
+							  item
+								  name: 'Start';
+								  enabled: [ self canStartSelectedServer ];
+								  action: [ self startSelectedServer ] ];
+					  addItem: [ :item |
+							  item
+								  name: 'Stop';
+								  enabled: [ self canStopSelectedServer ];
+								  action: [ self stopSelectedServer ] ];
+					  addItem: [ :item |
+							  item
+								  name: 'Restart';
+								  enabled: [ self canStopSelectedServer ];
+								  action: [ self restartSelectedServer ] ];
+					  addItem: [ :item |
+							  item
+								  name: 'Remove';
+								  description: self removeHelpText;
+								  enabled: [ self hasSelectedServer ];
+								  action: [ self removeSelectedServer ] ] ];
+		  addGroup: [ :group |
+				  group
+					  addItem: [ :item |
+							  item
 								  name: 'Inspect';
 								  description: 'Inspect the selected server';
-								  enabled: [ serversTable selectedItem isNotNil ];
+								  enabled: [ self hasSelectedServer ];
 								  action: [ self inspectSelectedServer ] ];
 					  addItem: [ :item |
 							  item
 								  name: 'Copy endpoint';
 								  description: 'Copy the endpoint of the selected server to the clipboard';
-								  enabled: [ serversTable selectedItem isNotNil ];
+								  enabled: [ self hasSelectedServer ];
 								  action: [ self copySelectedEndpoint ] ] ];
 		  yourself
 ]
@@ -313,5 +400,5 @@ MCPServersPresenter >> updateActionButtons [
 
 	startButton enabled: self canStartSelectedServer.
 	stopButton enabled: self canStopSelectedServer.
-	dashboardButton enabled: self hasSelectedServer
+	removeButton enabled: self hasSelectedServer
 ]

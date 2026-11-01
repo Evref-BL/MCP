@@ -47,6 +47,7 @@ BaselineOfMCP >> defineGroups: spec [
 		group: 'default' with: #( 'Core' 'IDE' 'UI' 'Tests' 'UI Tests' );
 		group: 'all' with: #( 'default' 'Telemetry' 'Telemetry Tests' ).
 
+	SystemVersion current major < 13 ifTrue: [ spec group: 'UI' with: #( 'MCP-UI' 'MCP-UI-Compatibility-Before13' ) ].
 	SystemVersion current major >= 13 ifTrue: [ spec group: 'Core' with: #( 'MCP' 'MCP-Compatibility-From13' ) ].
 	SystemVersion current major >= 14 ifTrue: [
 		spec group: 'Core' with: #( 'MCP' 'MCP-Compatibility-From13' 'MCP-Compatibility-From14' ) ]
@@ -67,6 +68,7 @@ BaselineOfMCP >> definePackages: spec [
 	spec package: 'MCP-Tests-Resources-Extensions' with: [ spec requires: #( 'MCP-Tests-Resources' ) ].
 	spec package: 'MCP-UI-Tests' with: [ spec requires: #( 'MCP-UI' 'MCP-Tests' ) ].
 
+	SystemVersion current major < 13 ifTrue: [ spec package: 'MCP-UI-Compatibility-Before13' with: [ spec requires: #( 'MCP-UI' ) ] ].
 	SystemVersion current major >= 13 ifTrue: [ spec package: 'MCP-Compatibility-From13' with: [ spec requires: #( 'MCP' ) ] ].
 	SystemVersion current major >= 14 ifTrue: [ spec package: 'MCP-Compatibility-From14' with: [ spec requires: #( 'MCP' ) ] ]
 ]

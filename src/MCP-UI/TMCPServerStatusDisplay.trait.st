@@ -50,3 +50,14 @@ TMCPServerStatusDisplay >> serverStatusValueForRunning: isRunning listening: isL
 		  ifTrue: [ 'running' ]
 		  ifFalse: [ 'running, socket not listening' ]
 ]
+
+{ #category : 'server status' }
+TMCPServerStatusDisplay >> serverStopIcon [
+	"The icon set has no stop square, only a cross that reads as delete, so it is drawn."
+
+	| form |
+	form := Form extent: 16 @ 16 depth: 32.
+	form fillColor: Color transparent.
+	form getCanvas fillRectangle: (3 @ 3 extent: 10 @ 10) color: (Color r: 0.85 g: 0.25 b: 0.2).
+	^ form
+]

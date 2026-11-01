@@ -125,6 +125,15 @@ MCP class >> resourceContentsCacheMilliseconds [
 	^ 5000
 ]
 
+{ #category : 'servers' }
+MCP class >> runningServers [
+	"Answer the MCP servers this image is running, ordered by port.
+
+	Unlike allServers this needs no garbage collection: a running server is held by its own process and socket, so it is never garbage, and the unstarted corpses a collection would remove are not running."
+
+	^ (self allSubInstances select: [ :each | each isRunning ]) asArray sort: [ :left :right | left port <= right port ]
+]
+
 { #category : 'private - servers' }
 MCP class >> startNewOnPort: aPortNumber [
 

@@ -133,15 +133,43 @@ MCPDashboardPresenterTest >> testHeaderLayoutUsesStatusAndEndpointRows [
 ]
 
 { #category : 'tests' }
-MCPDashboardPresenterTest >> testLifecycleActionsOnlyContainServerControls [
+MCPDashboardPresenterTest >> testHoveringAToolShowsItsDescription [
 
-	| layout |
-	layout := MCPDashboardPresenter new lifecycleActionsLayout.
+	| presenter widget tool cell |
+	presenter := MCPDashboardPresenter on: self mcpWithoutObservabilityExport.
+	presenter build.
+	widget := presenter toolsTable adapter widget.
+	tool := presenter toolsTable items first.
 
-	self assert: layout children size equals: 3.
-	self assert: layout children first label equals: 'Start'.
-	self assert: layout children second label equals: 'Stop'.
-	self assert: layout children third label equals: 'Restart'
+	cell := widget dataSource cellColumn: (widget columns at: 2) row: 1.
+
+	self assert: (cell balloonText asString copyReplaceAll: String cr with: ' ') equals: tool description
+]
+
+{ #category : 'tests' }
+MCPDashboardPresenterTest >> testLifecycleRowHoldsServerControlsThenRefresh [
+
+	self
+		assert: (MCPDashboardPresenter new lifecycleActionsLayout children collect: [ :each | each label ] as: Array)
+		equals: #( 'Start' 'Stop' 'Restart' 'Refresh' )
+]
+
+{ #category : 'tests' }
+MCPDashboardPresenterTest >> testOnlyWhatTheServerStateAllowsIsEnabled [
+
+	| server presenter |
+	server := self mcpWithoutObservabilityExport port: 0.
+	presenter := MCPDashboardPresenter on: server.
+	self assert: (presenter instVarNamed: #startButton) isEnabled.
+	self deny: (presenter instVarNamed: #stopButton) isEnabled.
+	self deny: (presenter instVarNamed: #restartButton) isEnabled.
+
+	[
+		presenter startServer.
+
+		self deny: (presenter instVarNamed: #startButton) isEnabled.
+		self assert: (presenter instVarNamed: #stopButton) isEnabled.
+		self assert: (presenter instVarNamed: #restartButton) isEnabled ] ensure: [ server stop ]
 ]
 
 { #category : 'tests' }
@@ -176,6 +204,17 @@ MCPDashboardPresenterTest >> testRefreshViewUsesSingleServerStatus [
 ]
 
 { #category : 'tests' }
+MCPDashboardPresenterTest >> testRightClickingAToolOffersToBrowseInspectOrCopyIt [
+
+	| menu |
+	menu := (MCPDashboardPresenter on: self mcpWithoutObservabilityExport) toolsContextMenu.
+
+	self
+		assert: (menu menuGroups flatCollect: [ :group | group menuItems collect: [ :item | item name ] ] as: Array)
+		equals: #( 'Browse class' 'Inspect' 'Copy name' )
+]
+
+{ #category : 'tests' }
 MCPDashboardPresenterTest >> testServerStatusIconUsesTestIcons [
 
 	| presenter |
@@ -197,6 +236,25 @@ MCPDashboardPresenterTest >> testServerStatusLabelShowsListenerOnlyWhenAnomalous
 	self assert: (presenter serverStatusLabelForRunning: true listening: true) equals: 'Status: running'.
 	self assert: (presenter serverStatusLabelForRunning: true listening: false) equals: 'Status: running, socket not listening'.
 	self assert: (presenter serverStatusLabelForRunning: false listening: true) equals: 'Status: stopped, socket still listening'
+]
+
+{ #category : 'tests' }
+MCPDashboardPresenterTest >> testToolColumnsAreAsWideAsWhatTheyHold [
+	"Spec shares the width out evenly otherwise, which made every column too wide but the description."
+
+	| presenter columns widestName |
+	presenter := MCPDashboardPresenter on: self mcpWithoutObservabilityExport.
+	columns := presenter toolsTable columns.
+	widestName := presenter toolRows
+		              inject: 0
+		              into: [ :widest :tool | widest max: (StandardFonts defaultFont widthOfString: tool name) ].
+
+	self
+		assert: (columns detect: [ :each | each title = 'Tool' ]) width
+		equals: (widestName + presenter toolsColumnPadding min: presenter toolsColumnMaximumWidth).
+	self assert: (columns detect: [ :each | each title = 'Enabled' ]) width < widestName.
+	self assert: columns last title equals: 'Description'.
+	self assert: columns last width isNil
 ]
 
 { #category : 'tests' }

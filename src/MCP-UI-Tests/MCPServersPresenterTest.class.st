@@ -61,13 +61,29 @@ MCPServersPresenterTest >> testAStoppedServerCanBeStartedAndNotStopped [
 
 	| server presenter |
 	server := self startedServer.
-	server stop.
 	presenter := MCPServersPresenter new.
 	presenter serversTable selectItem: server.
+	presenter stopSelectedServer.
 
 	self assert: presenter hasSelectedServer.
 	self assert: presenter canStartSelectedServer.
 	self deny: presenter canStopSelectedServer
+]
+
+{ #category : 'tests' }
+MCPServersPresenterTest >> testAStoppedServerStaysListedUntilRemoved [
+
+	| server presenter |
+	server := self startedServer.
+	[
+		presenter := MCPServersPresenter new.
+		presenter serversTable selectItem: server.
+
+		presenter stopSelectedServer.
+		presenter refreshView.
+
+		self deny: server isRunning.
+		self assert: presenter serversTable selectedItem identicalTo: server ] ensure: [ server stop ]
 ]
 
 { #category : 'tests' }
@@ -82,6 +98,19 @@ MCPServersPresenterTest >> testAnUnusablePortIsReportedInsteadOfCreatingAServer 
 
 	self assert: (presenter messageText includesSubstring: '65535').
 	self assert: presenter serversTable items size equals: listed
+]
+
+{ #category : 'tests' }
+MCPServersPresenterTest >> testClosingTheWindowLetsGoOfItsServers [
+	"A closed window can stay referenced, by the hand's keyboard focus among others, and would keep every server it listed alive."
+
+	| server presenter |
+	server := self startedServer.
+	[
+		presenter := MCPServersPresenter new.
+		presenter open close.
+
+		self assert: presenter serversTable items isEmpty ] ensure: [ server stop ]
 ]
 
 { #category : 'tests' }
@@ -120,11 +149,49 @@ MCPServersPresenterTest >> testInspectingTheMCPClassOffersAServersTab [
 ]
 
 { #category : 'tests' }
+MCPServersPresenterTest >> testOnlyRunningServersArePickedUp [
+	"A stopped server holds no port, so a new window has nothing to say about it, whatever still refers to it."
+
+	| server |
+	server := self startedServer.
+	server stop.
+
+	self deny: (MCPServersPresenter new serversTable items identityIncludes: server)
+]
+
+{ #category : 'tests' }
+MCPServersPresenterTest >> testRemovingAServerTakesItOffTheListWhateverHoldsIt [
+
+	| server presenter |
+	server := self startedServer.
+	[
+		presenter := MCPServersPresenter new.
+		presenter serversTable selectItem: server.
+
+		presenter removeSelectedServer.
+
+		self deny: server isRunning.
+		self deny: (presenter serversTable items identityIncludes: server).
+		self assert: (presenter messageText beginsWith: 'Removed') ] ensure: [ server stop ]
+]
+
+{ #category : 'tests' }
 MCPServersPresenterTest >> testTheListShowsTheServersTheImageHolds [
 
 	| server |
 	server := self startedServer.
 	[ self assert: (MCPServersPresenter new serversTable items identityIncludes: server) ] ensure: [ server stop ]
+]
+
+{ #category : 'tests' }
+MCPServersPresenterTest >> testTheMenuOffersEveryServerAction [
+
+	| menu |
+	menu := MCPServersPresenter new serversContextMenu.
+
+	self
+		assert: (menu menuGroups flatCollect: [ :group | group menuItems collect: [ :item | item name ] ] as: Array)
+		equals: #( 'Dashboard' 'Observability' 'Start' 'Stop' 'Restart' 'Remove' 'Inspect' 'Copy endpoint' )
 ]
 
 { #category : 'tests' }

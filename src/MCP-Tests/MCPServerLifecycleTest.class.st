@@ -181,6 +181,20 @@ MCPServerLifecycleTest >> testRetryDelayDoublesUpToItsMaximum [
 ]
 
 { #category : 'tests' }
+MCPServerLifecycleTest >> testRunningServersAreTheStartedOnes [
+
+	| server |
+	server := self mcpWithoutObservabilityExport
+		          port: 0;
+		          start;
+		          yourself.
+	[
+		self assert: (MCP runningServers identityIncludes: server).
+		server stop.
+		self deny: (MCP runningServers identityIncludes: server) ] ensure: [ server stop ]
+]
+
+{ #category : 'tests' }
 MCPServerLifecycleTest >> testServersAreListedByPort [
 
 	| created ports |

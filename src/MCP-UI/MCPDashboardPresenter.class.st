@@ -4,8 +4,8 @@ Spec presenter used by the inspector for an MCP server object. It shows server s
 Class {
 	#name : 'MCPDashboardPresenter',
 	#superclass : 'SpPresenterWithModel',
-	#traits : 'TMCPServerStatusDisplay + TMCPToolRowIcon',
-	#classTraits : 'TMCPServerStatusDisplay classTrait + TMCPToolRowIcon classTrait',
+	#traits : 'TMCPServerStatusDisplay + TMCPToolRowIcon + TMCPToolTable',
+	#classTraits : 'TMCPServerStatusDisplay classTrait + TMCPToolRowIcon classTrait + TMCPToolTable classTrait',
 	#instVars : [
 		'statusIcon',
 		'statusLabel',
@@ -26,6 +26,12 @@ Class {
 	#category : 'MCP-UI',
 	#package : 'MCP-UI'
 }
+
+{ #category : 'defaults' }
+MCPDashboardPresenter class >> defaultPreferredExtent [
+
+	^ 1080 @ 760
+]
 
 { #category : 'instance creation' }
 MCPDashboardPresenter class >> on: anMCP [
@@ -132,12 +138,6 @@ MCPDashboardPresenter >> headerLayout [
 		  yourself
 ]
 
-{ #category : 'api' }
-MCPDashboardPresenter >> initialExtent [
-
-	^ 1080 @ 760
-]
-
 { #category : 'initialization' }
 MCPDashboardPresenter >> initializePresenters [
 
@@ -165,11 +165,20 @@ MCPDashboardPresenter >> initializePresenters [
 		help: self debugModeHelpText.
 	applyButton
 		label: 'Apply';
+		icon: (self iconNamed: #accept);
 		enabled: false.
-	refreshButton label: 'Refresh'.
-	startButton label: 'Start'.
-	stopButton label: 'Stop'.
-	restartButton label: 'Restart'.
+	refreshButton
+		label: 'Refresh';
+		icon: (self iconNamed: #refreshCircling).
+	startButton
+		label: 'Start';
+		icon: (self iconNamed: #go).
+	stopButton
+		label: 'Stop';
+		icon: self serverStopIcon.
+	restartButton
+		label: 'Restart';
+		icon: (self iconNamed: #restart).
 	self initializeToolsTable
 ]
 
@@ -185,27 +194,24 @@ MCPDashboardPresenter >> initializeToolsTable [
 		addColumn: ((SpCheckBoxTableColumn title: 'Enabled' evaluated: [ :tool | self isToolEnabled: tool ])
 				 onActivation: [ :tool | self enableTool: tool ];
 				 onDeactivation: [ :tool | self disableTool: tool ];
-				 width: 70;
 				 yourself);
 		addColumn: ((SpCheckBoxTableColumn title: 'Listed' evaluated: [ :tool | self isToolListed: tool ])
 				 onActivation: [ :tool | self listTool: tool ];
 				 onDeactivation: [ :tool | self unlistTool: tool ];
-				 width: 70;
 				 yourself);
 		addColumn: ((SpStringTableColumn title: 'Title' evaluated: [ :tool | tool title ifNil: [ '' ] ])
 				 beSortable;
 				 yourself);
 		addColumn: (SpStringTableColumn title: 'Description' evaluated: [ :tool | tool description ifNil: [ '' ] ]);
-		beResizable
+		beResizable.
+	self connectToolsTable
 ]
 
 { #category : 'initialization' }
 MCPDashboardPresenter >> initializeWindow: aWindowPresenter [
 
 	super initializeWindow: aWindowPresenter.
-	aWindowPresenter
-		title: self title;
-		initialExtent: self initialExtent
+	aWindowPresenter title: self title
 ]
 
 { #category : 'updating' }
@@ -240,6 +246,7 @@ MCPDashboardPresenter >> lifecycleActionsLayout [
 		  add: startButton expand: false;
 		  add: stopButton expand: false;
 		  add: restartButton expand: false;
+		  add: refreshButton expand: false;
 		  yourself
 ]
 
@@ -291,7 +298,9 @@ MCPDashboardPresenter >> refreshView [
 	portInput text: mcp port asString.
 	debugCheckBox state: mcp debugMode.
 	self updateApplyButton.
+	self updateLifecycleButtonsForRunning: isRunning.
 	toolsLabel label: (self toolsLabelFor: tools).
+	self fitToolsColumnsTo: tools.
 	toolsTable items: tools
 ]
 
@@ -383,6 +392,12 @@ MCPDashboardPresenter >> toolsLayout [
 		  yourself
 ]
 
+{ #category : 'accessing' }
+MCPDashboardPresenter >> toolsTable [
+
+	^ toolsTable
+]
+
 { #category : 'tools' }
 MCPDashboardPresenter >> unlistTool: aTool [
 
@@ -394,4 +409,12 @@ MCPDashboardPresenter >> unlistTool: aTool [
 MCPDashboardPresenter >> updateApplyButton [
 
 	applyButton enabled: self isPortChangePending
+]
+
+{ #category : 'updating' }
+MCPDashboardPresenter >> updateLifecycleButtonsForRunning: isRunning [
+
+	startButton enabled: isRunning not.
+	stopButton enabled: isRunning.
+	restartButton enabled: isRunning
 ]
