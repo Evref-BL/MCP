@@ -16,7 +16,6 @@ BaselineOfMCP >> baseline: spec [
 
 { #category : 'baselines' }
 BaselineOfMCP >> defineDependencies: spec [
-	"PCRE2 takes no group, so it loads the default one: the shared API and the engine written in Pharo, which needs no library on the host. Up to 1.0.1 the whole binding was the PCRE2 package and 'Core' was that package; since 2.0 'Core' is the API with no engine behind it and raises on the first pattern compiled."
 
 	spec
 		baseline: 'PharoBackwardCompatibility' with: [ spec repository: 'github://jecisc/PharoBackwardCompatibility:v1.x.x/src' ];

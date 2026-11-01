@@ -317,9 +317,7 @@ MCPToolSearch >> parsedRequestFromToolRequest: request [
 
 { #category : 'private - filtering' }
 MCPToolSearch >> pcre2RegexLibraryAvailable [
-	"Answer whether there is a PCRE2 engine to compile a pattern with.
-
-	PCRE2 is an optional dependency, and since pharo-pcre2 2.0 it is not necessarily a native one: a plain install is the engine written in Pharo, which runs in the image and needs nothing on the host. Naming LibPCRE2UTF8 here asked about the C binding in particular, and that class lives in a package this image need not have loaded at all, so the question could not even be put. PCRE2Compiler answers for whichever engine it would actually use."
+	"PCRE2 is an optional dependency: answer whether there is an engine to compile a pattern with."
 
 	^ PCRE2Compiler nativeLibraryAvailable
 ]
