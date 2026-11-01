@@ -16,6 +16,7 @@ BaselineOfMCP >> baseline: spec [
 
 { #category : 'baselines' }
 BaselineOfMCP >> defineDependencies: spec [
+	"PCRE2 takes no group, so it loads the default one: the shared API and the engine written in Pharo, which needs no library on the host. Up to 1.0.1 the whole binding was the PCRE2 package and 'Core' was that package; since 2.0 'Core' is the API with no engine behind it and raises on the first pattern compiled."
 
 	spec
 		baseline: 'PharoBackwardCompatibility' with: [ spec repository: 'github://jecisc/PharoBackwardCompatibility:v1.x.x/src' ];
@@ -23,10 +24,7 @@ BaselineOfMCP >> defineDependencies: spec [
 				spec
 					repository: 'github://Evref-BL/JRPC:v4.0.1/src';
 					loads: #( 'Deployment' ) ];
-		baseline: 'PCRE2' with: [
-			spec
-				repository: 'github://Gabriel-Darbord/pharo-pcre2:v1.0.1/src';
-				loads: #( 'Core' ) ];
+		baseline: 'PCRE2' with: [ spec repository: 'github://Gabriel-Darbord/pharo-pcre2:v2.0.0/src' ];
 		baseline: 'OpenTelemetry' with: [
 			spec
 				repository: 'github://Gabriel-Darbord/opentelemetry-pharo:v1.1.0/src';
