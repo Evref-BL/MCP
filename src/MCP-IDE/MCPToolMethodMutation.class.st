@@ -73,13 +73,18 @@ MCPToolMethodMutation >> allowedNonErrorCritiqueRuleClasses [
 	^ {
 		  MCPCollectConversionRule.
 		  MCPCollectionThenDoRule.
+		  MCPDenyRule.
+		  MCPDetectIfFoundRule.
 		  MCPDictionaryAtIfPresentRule.
 		  MCPFilteredEmptinessRule.
 		  MCPFilterThenCollectRule.
+		  MCPIncludesKeyRule.
 		  MCPIsNotEmptyRule.
 		  MCPIsNotNilRule.
+		  MCPLiftCommonSendRule.
 		  MCPMessageNotUnderstoodHandlerRule.
 		  MCPNilOnlyConditionalRule.
+		  MCPPrintOnStreamRule.
 		  MCPRedundantExplicitSelfReturnRule.
 		  MCPRespondsToUsageRule.
 		  MCPSelectSizeCountRule.

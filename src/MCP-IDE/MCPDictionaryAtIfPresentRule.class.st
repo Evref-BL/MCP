@@ -1,5 +1,7 @@
 "
 Renraku rule: lookup-to-nil followed by ifNotNil:. Prefer at:ifPresent: when absence does nothing; present value stays local.
+
+A sequenceable collection has no at:ifPresent:, so a number key, or a receiver the source shows does not understand it, is left alone.
 "
 Class {
 	#name : 'MCPDictionaryAtIfPresentRule',
@@ -23,9 +25,11 @@ MCPDictionaryAtIfPresentRule class >> ruleName [
 
 { #category : 'initialization' }
 MCPDictionaryAtIfPresentRule >> initialize [
+	"A number key is an index, and a sequenceable collection has no at:ifPresent:."
 
 	super initialize.
 	self
-		replace: '(`@dictionary at: `@key ifAbsent: [ nil ]) ifNotNil: `@presentBlock'
+		replace:
+		'(`@dictionary `{ :node | MCPMethodStyleRule canSend: #at:ifPresent: to: node } at: `@key `{ :node | (node isLiteralNode and: [ node value isNumber ]) not } ifAbsent: [ nil ]) ifNotNil: `@presentBlock'
 		with: '`@dictionary at: `@key ifPresent: `@presentBlock'
 ]

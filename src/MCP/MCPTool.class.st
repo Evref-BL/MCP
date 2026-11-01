@@ -531,15 +531,13 @@ MCPTool >> errorStackTraceForContext: aContext [
 	| frames |
 	frames := self framesUpToCallerIn: (aContext stackOfSize: self errorStackTraceLimit).
 	^ (frames withIndexCollect: [ :each :index |
-		   | variableTexts |
-		   variableTexts := index <= self errorStackTraceVariableFrameLimit
-			                    ifTrue: [ self frameVariableTextsFor: each ]
-			                    ifFalse: [ #(  ) ].
-		   variableTexts
-			   ifEmpty: [ each printString ]
-			   ifNotEmpty: [
+			   | variableTexts |
+			   variableTexts := index <= self errorStackTraceVariableFrameLimit
+				                    ifTrue: [ self frameVariableTextsFor: each ]
+				                    ifFalse: [ #(  ) ].
+			   variableTexts ifEmpty: [ each printString ] ifNotEmpty: [
 					   String streamContents: [ :stream |
-							   stream nextPutAll: each printString.
+							   stream print: each.
 							   variableTexts do: [ :text |
 									   stream
 										   nextPut: Character lf;

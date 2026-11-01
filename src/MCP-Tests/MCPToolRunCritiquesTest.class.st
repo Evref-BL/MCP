@@ -51,6 +51,18 @@ MCPToolRunCritiquesTest >> ruleClassNamesFromData: data [
 ]
 
 { #category : 'running' }
+MCPToolRunCritiquesTest >> selectorsHitBy: aRuleClass [
+
+	| data |
+	data := self dataForArguments: {
+			        (#scope -> { (#classes -> { self fixtureClassName }) } asDictionary).
+			        (#ruleClasses -> { aRuleClass name }) } asDictionary.
+	^ ((data at: #rules) flatCollect: [ :each | each at: #hits ])
+		  collect: [ :each | ((each at: #method) copyAfterLast: $>) asSymbol ]
+		  as: Set
+]
+
+{ #category : 'running' }
 MCPToolRunCritiquesTest >> setUp [
 
 	super setUp.
@@ -80,6 +92,37 @@ MCPToolRunCritiquesTest >> tearDown [
 ]
 
 { #category : 'tests' }
+MCPToolRunCritiquesTest >> testDeniesOnlyWhereDenyIsUnderstood [
+	"Object answers assert: and has no deny:."
+
+	self compileFixtureMethodSource: 'objectAssertProbe: aBoolean
+
+	self assert: aBoolean not'.
+	self compileFixtureMethodSource: 'testAssertProbe: aTest
+
+	aTest assert: aTest isEmpty not'.
+
+	self assert: (self selectorsHitBy: MCPDenyRule) equals: (Set with: #testAssertProbe:)
+]
+
+{ #category : 'tests' }
+MCPToolRunCritiquesTest >> testDetectIfFoundOnlyWhereNothingReadsTheAnswer [
+	"detect:ifFound: answers the collection, not what its block answers."
+
+	self compileFixtureMethodSource: 'unusedAnswerProbe: aCollection
+
+	(aCollection detect: [ :each | each odd ] ifNone: [ nil ]) ifNotNil: [ :found | found printString ]'.
+	self compileFixtureMethodSource: 'returnedAnswerProbe: aCollection
+
+	^ (aCollection detect: [ :each | each odd ] ifNone: [ nil ]) ifNotNil: [ :found | found printString ]'.
+	self compileFixtureMethodSource: 'bothBranchesProbe: aCollection
+
+	^ (aCollection detect: [ :each | each odd ] ifNone: [ nil ]) ifNil: [ 0 ] ifNotNil: [ :found | found ]'.
+
+	self assert: (self selectorsHitBy: MCPDetectIfFoundRule) equals: (Set with: #unusedAnswerProbe: with: #bothBranchesProbe:)
+]
+
+{ #category : 'tests' }
 MCPToolRunCritiquesTest >> testFlagsCascadedStreamWrites [
 	"<< answers the stream, so a cascade of writes says the same thing with more punctuation."
 
@@ -102,6 +145,20 @@ MCPToolRunCritiquesTest >> testFlagsCascadedStreamWrites [
 ]
 
 { #category : 'tests' }
+MCPToolRunCritiquesTest >> testLeavesBooleanNilBranchesToPharo [
+	"ReNilBranchRule says it of ifTrue:ifFalse: already."
+
+	self compileFixtureMethodSource: 'booleanNilBranchProbe: aBoolean
+
+	^ aBoolean ifTrue: [ 42 ] ifFalse: [ nil ]'.
+	self compileFixtureMethodSource: 'nilBranchProbe: anObject
+
+	^ anObject ifNil: [ nil ] ifNotNil: [ :present | present printString ]'.
+
+	self assert: (self selectorsHitBy: MCPNilOnlyConditionalRule) equals: (Set with: #nilBranchProbe:)
+]
+
+{ #category : 'tests' }
 MCPToolRunCritiquesTest >> testLeavesChainedStreamWritesAlone [
 
 	| data |
@@ -116,6 +173,73 @@ MCPToolRunCritiquesTest >> testLeavesChainedStreamWritesAlone [
 	self
 		assert: ((data at: #rules) allSatisfy: [ :each | (each at: #hits) isEmpty ])
 		description: 'A chained write is not a cascade.'
+]
+
+{ #category : 'tests' }
+MCPToolRunCritiquesTest >> testLeavesConcatenatedArraysAlone [
+	"A literal array is a literal too, and a stream would turn its concatenation into a string."
+
+	self compileFixtureMethodSource: 'arrayConcatenationProbe: aCollection
+
+	^ #( 1 ) , aCollection , #( 2 )'.
+	self compileFixtureMethodSource: 'stringConcatenationProbe: aString
+
+	^ ''before '' , aString , '' after'''.
+
+	self assert: (self selectorsHitBy: MCPStringConcatenationRule) equals: (Set with: #stringConcatenationProbe:)
+]
+
+{ #category : 'tests' }
+MCPToolRunCritiquesTest >> testLeavesIndexedLookupAlone [
+	"A sequenceable collection has no at:ifPresent:."
+
+	self compileFixtureMethodSource: 'indexedLookupProbe: aCollection
+
+	(aCollection at: 1 ifAbsent: [ nil ]) ifNotNil: [ :first | first printString ]'.
+	self compileFixtureMethodSource: 'keyedLookupProbe: aDictionary
+
+	(aDictionary at: #name ifAbsent: [ nil ]) ifNotNil: [ :name | name printString ]'.
+
+	self assert: (self selectorsHitBy: MCPDictionaryAtIfPresentRule) equals: (Set with: #keyedLookupProbe:)
+]
+
+{ #category : 'tests' }
+MCPToolRunCritiquesTest >> testLeavesNotEmptySentToAClassAlone [
+	"notEmpty is a collection test. A class answering it is something else, and isNotEmpty is not what it means."
+
+	self compileFixtureMethodSource: 'classReceiverProbe
+
+	^ OrderedCollection notEmpty'.
+	self compileFixtureMethodSource: 'selfReceiverProbe
+
+	^ self notEmpty'.
+	self compileFixtureMethodSource: 'collectionReceiverProbe: aCollection
+
+	^ aCollection notEmpty'.
+
+	self assert: (self selectorsHitBy: MCPIsNotEmptyRule) equals: (Set with: #collectionReceiverProbe:)
+]
+
+{ #category : 'tests' }
+MCPToolRunCritiquesTest >> testLiftsOnlyWhatStaysReadable [
+	"Lifting a send whose arguments are blocks leaves blocks inside a conditional, and lifting a return out of an assignment does not parse."
+
+	self compileFixtureMethodSource: 'commonSendProbe: aBoolean
+
+	aBoolean ifTrue: [ self inform: ''yes'' ] ifFalse: [ self inform: ''no'' ]'.
+	self compileFixtureMethodSource: 'commonReturnProbe: aBoolean
+
+	aBoolean ifTrue: [ ^ 1 ] ifFalse: [ ^ 2 ]'.
+	self compileFixtureMethodSource: 'blockArgumentProbe: aBoolean
+
+	aBoolean ifTrue: [ self in: [ :me | me ] ] ifFalse: [ self in: [ :me | me printString ] ]'.
+	self compileFixtureMethodSource: 'assignedReturnProbe: aBoolean
+
+	| value |
+	value := aBoolean ifTrue: [ ^ 1 ] ifFalse: [ ^ 2 ].
+	^ value'.
+
+	self assert: (self selectorsHitBy: MCPLiftCommonSendRule) equals: (Set with: #commonSendProbe: with: #commonReturnProbe:)
 ]
 
 { #category : 'tests' }
@@ -152,6 +276,28 @@ MCPToolRunCritiquesTest >> testPaginatesIndividualCritiqueHits [
 	secondRule := (secondData at: #rules) first.
 	self assert: (secondRule at: #hits) size equals: 1.
 	self assert: ((secondRule at: #hits) first at: #method) equals: self fixtureClassName , '>>secondAssignmentInBlockProbe'
+]
+
+{ #category : 'tests' }
+MCPToolRunCritiquesTest >> testPrintsOnlyWhereNothingReadsTheWrite [
+	"nextPutAll: answers what it wrote and print: the stream, and a print: inside a chain of << needs parentheses."
+
+	self compileFixtureMethodSource: 'statementProbe: aStream
+
+	aStream nextPutAll: 42 printString'.
+	self compileFixtureMethodSource: 'cascadeProbe: aStream
+
+	aStream
+		nextPutAll: 42 printString;
+		cr'.
+	self compileFixtureMethodSource: 'chainProbe: aStream
+
+	aStream << ''answer: '' << 42 printString'.
+	self compileFixtureMethodSource: 'answeredProbe: aStream
+
+	^ aStream nextPutAll: 42 printString'.
+
+	self assert: (self selectorsHitBy: MCPPrintOnStreamRule) equals: (Set with: #statementProbe: with: #cascadeProbe:)
 ]
 
 { #category : 'tests' }

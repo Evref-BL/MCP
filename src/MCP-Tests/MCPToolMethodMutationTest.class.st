@@ -452,10 +452,6 @@ MCPToolMethodMutationTest >> testCollectionStyleCritiquesProvideAutomaticChanges
 			           'nilOnlyConditionalProbe: value ^ value ifNil: [ nil ] ifNotNil: [ :present | present asString ]'.
 			           MCPNilOnlyConditionalRule }.
 		           {
-			           #booleanNilOnlyProbe:.
-			           'booleanNilOnlyProbe: aBoolean ^ aBoolean ifTrue: [ 42 ] ifFalse: [ nil ]'.
-			           MCPNilOnlyConditionalRule }.
-		           {
 			           #dictionaryAtIfPresentProbe:.
 			           'dictionaryAtIfPresentProbe: dictionary | result | result := OrderedCollection new. (dictionary at: #name ifAbsent: [ nil ]) ifNotNil: [ :value | result add: value ]. ^ result'.
 			           MCPDictionaryAtIfPresentRule }.
@@ -498,7 +494,27 @@ MCPToolMethodMutationTest >> testCollectionStyleCritiquesProvideAutomaticChanges
 		           {
 			           #isNotNilProbe:.
 			           'isNotNilProbe: anObject ^ anObject notNil'.
-			           MCPIsNotNilRule } }.
+			           MCPIsNotNilRule }.
+		           {
+			           #denyProbe:.
+			           'denyProbe: aTest aTest assert: aTest isEmpty not'.
+			           MCPDenyRule }.
+		           {
+			           #liftCommonSendProbe:.
+			           'liftCommonSendProbe: aBoolean aBoolean ifTrue: [ self inform: ''yes'' ] ifFalse: [ self inform: ''no'' ]'.
+			           MCPLiftCommonSendRule }.
+		           {
+			           #printOnStreamProbe:.
+			           'printOnStreamProbe: aStream aStream nextPutAll: 42 printString'.
+			           MCPPrintOnStreamRule }.
+		           {
+			           #includesKeyProbe:.
+			           'includesKeyProbe: dictionary ^ dictionary keys includes: #name'.
+			           MCPIncludesKeyRule }.
+		           {
+			           #detectIfFoundProbe:.
+			           'detectIfFoundProbe: collection (collection detect: [ :each | each odd ] ifNone: [ nil ]) ifNotNil: [ :found | found printString ]'.
+			           MCPDetectIfFoundRule } }.
 	samples do: [ :sample |
 			| change critique method ruleClass selector source |
 			selector := sample first.

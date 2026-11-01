@@ -58,11 +58,11 @@ allocates something nobody asked for. Pharo's fused messages exist for that:
 than a filtered copy to iterate over, `String streamContents:` rather than a
 chain of `,`, where every comma copies everything to its left.
 
-Sorting is the usual case. `sorted` and `sorted:` answer a sorted copy as an
-Array; `sort` and `sort:` sort a `SequenceableCollection` in place and answer
-it. So `values sorted` says what `values asSortedCollection asArray` says, with
-no `SortedCollection` in between. One earns its keep when a collection must
-*stay* sorted as things are added to it — not for sorting something once.
+Sorting is the usual case. `sort` and `sort:` sort a `SequenceableCollection`
+in place; `sorted` and `sorted:` leave the receiver alone and answer a sorted
+copy. Neither needs a `SortedCollection`, which earns its keep only when a
+collection must *stay* sorted as things are added to it — not for sorting
+something once.
 
 ## Initialization
 
