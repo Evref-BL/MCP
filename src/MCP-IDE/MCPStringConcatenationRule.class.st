@@ -3,7 +3,7 @@ Renraku rule that warns when a string is built by chaining three or more concate
 
 A stream writes the parts once. The patterns only match a chain holding a string literal, so concatenation of other sequenceable collections is left alone.
 
-The patterns take three parts at a time, and the last of them absorbs a concatenation left inside a stream write, which is the intermediate the stream was reached for. A longer chain therefore flattens over several passes: apply the rule again while it still reports a hit.
+The patterns take three parts at a time, and the last of them absorbs a concatenation left inside a stream write, which is the intermediate the stream was reached for. A longer chain therefore flattens over several passes, which method_rewrite runs until nothing matches; the critique's own change takes one step.
 "
 Class {
 	#name : 'MCPStringConcatenationRule',

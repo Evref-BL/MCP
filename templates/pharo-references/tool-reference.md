@@ -76,6 +76,11 @@ alike. The names must be the same on both sides; a name that appears only in
 the replacement is bound to nothing. `confirm` is false by default, and the
 preview carries the old and new source of every change.
 
+The rules are applied again to what they produced until nothing more matches,
+so a rule that takes one step at a time, such as flattening a chain of
+concatenations, previews where it ends. A rewrite that keeps matching its own
+output is refused.
+
 ```json
 {
   "rules": [{ "match": "`@receiver notNil", "replacement": "`@receiver isNotNil" }],
