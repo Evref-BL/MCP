@@ -16,12 +16,10 @@ Class {
 		'newButton',
 		'startButton',
 		'stopButton',
-		'dashboardButton',
 		'refreshButton',
 		'messageLabel',
 		'portLabel',
-		'removeButton',
-		'observabilityButton'
+		'removeButton'
 	],
 	#category : 'MCP-UI',
 	#package : 'MCP-UI'
@@ -53,15 +51,13 @@ MCPServersPresenter class >> open [
 
 { #category : 'layout' }
 MCPServersPresenter >> actionsLayout [
-	"No width constraint on a button: one makes Spec draw it without its label."
+	"No width constraint on a button: one makes Spec draw it without its label. Opening a server's windows is on its row, by double-click or the context menu."
 
 	^ SpBoxLayout newLeftToRight
 		  spacing: 6;
 		  add: startButton expand: false;
 		  add: stopButton expand: false;
 		  add: removeButton expand: false;
-		  add: dashboardButton expand: false;
-		  add: observabilityButton expand: false;
 		  add: refreshButton expand: false;
 		  yourself
 ]
@@ -87,8 +83,6 @@ MCPServersPresenter >> connectPresenters [
 	startButton action: [ self startSelectedServer ].
 	stopButton action: [ self stopSelectedServer ].
 	removeButton action: [ self removeSelectedServer ].
-	dashboardButton action: [ self openDashboard ].
-	observabilityButton action: [ self openObservability ].
 	refreshButton action: [ self refreshView ].
 	self refreshView
 ]
@@ -160,8 +154,6 @@ MCPServersPresenter >> initializePresenters [
 	startButton := self newButton.
 	stopButton := self newButton.
 	removeButton := self newButton.
-	dashboardButton := self newButton.
-	observabilityButton := self newButton.
 	refreshButton := self newButton.
 	messageLabel := self newLabel.
 
@@ -171,15 +163,21 @@ MCPServersPresenter >> initializePresenters [
 		help: self portHelpText.
 	newButton
 		label: 'New server';
+		icon: (self iconNamed: #add);
 		help: self portHelpText.
-	startButton label: 'Start'.
-	stopButton label: 'Stop'.
+	startButton
+		label: 'Start';
+		icon: (self iconNamed: #glamorousGo).
+	stopButton
+		label: 'Stop';
+		icon: self stopIcon.
 	removeButton
 		label: 'Remove';
+		icon: (self iconNamed: #glamorousTrash);
 		help: self removeHelpText.
-	dashboardButton label: 'Dashboard'.
-	observabilityButton label: 'Observability'.
-	refreshButton label: 'Refresh'.
+	refreshButton
+		label: 'Refresh';
+		icon: (self iconNamed: #glamorousRefresh).
 	self initializeServersTable
 ]
 
@@ -386,6 +384,17 @@ MCPServersPresenter >> startSelectedServer [
 	self refreshView
 ]
 
+{ #category : 'private' }
+MCPServersPresenter >> stopIcon [
+	"The icon set has no stop square, only a cross that reads as delete, so it is drawn."
+
+	| form |
+	form := Form extent: 16 @ 16 depth: 32.
+	form fillColor: Color transparent.
+	form getCanvas fillRectangle: (3 @ 3 extent: 10 @ 10) color: (Color r: 0.85 g: 0.25 b: 0.2).
+	^ form
+]
+
 { #category : 'actions' }
 MCPServersPresenter >> stopSelectedServer [
 
@@ -402,7 +411,5 @@ MCPServersPresenter >> updateActionButtons [
 
 	startButton enabled: self canStartSelectedServer.
 	stopButton enabled: self canStopSelectedServer.
-	removeButton enabled: self hasSelectedServer.
-	dashboardButton enabled: self hasSelectedServer.
-	observabilityButton enabled: self hasSelectedServer
+	removeButton enabled: self hasSelectedServer
 ]
