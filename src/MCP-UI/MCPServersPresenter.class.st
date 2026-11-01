@@ -167,17 +167,17 @@ MCPServersPresenter >> initializePresenters [
 		help: self portHelpText.
 	startButton
 		label: 'Start';
-		icon: (self iconNamed: #glamorousGo).
+		icon: (self iconNamed: #go).
 	stopButton
 		label: 'Stop';
-		icon: self stopIcon.
+		icon: self serverStopIcon.
 	removeButton
 		label: 'Remove';
-		icon: (self iconNamed: #glamorousTrash);
+		icon: (self iconNamed: #trash);
 		help: self removeHelpText.
 	refreshButton
 		label: 'Refresh';
-		icon: (self iconNamed: #glamorousRefresh).
+		icon: (self iconNamed: #refreshCircling).
 	self initializeServersTable
 ]
 
@@ -382,17 +382,6 @@ MCPServersPresenter >> startSelectedServer [
 				on: Error
 				do: [ :error | self showMessage: error messageText ] ].
 	self refreshView
-]
-
-{ #category : 'private' }
-MCPServersPresenter >> stopIcon [
-	"The icon set has no stop square, only a cross that reads as delete, so it is drawn."
-
-	| form |
-	form := Form extent: 16 @ 16 depth: 32.
-	form fillColor: Color transparent.
-	form getCanvas fillRectangle: (3 @ 3 extent: 10 @ 10) color: (Color r: 0.85 g: 0.25 b: 0.2).
-	^ form
 ]
 
 { #category : 'actions' }

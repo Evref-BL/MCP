@@ -114,8 +114,12 @@ MCPObservabilityPresenter >> initializePresenters [
 
 	observabilityCheckBox label: 'Enable observability'.
 	autoRefreshCheckBox label: 'Auto-refresh'.
-	refreshButton label: 'Refresh'.
-	clearButton label: 'Clear'.
+	refreshButton
+		label: 'Refresh';
+		icon: (self iconNamed: #refreshCircling).
+	clearButton
+		label: 'Clear';
+		icon: (self iconNamed: #trash).
 	self initializeTables
 ]
 

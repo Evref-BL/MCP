@@ -165,11 +165,20 @@ MCPDashboardPresenter >> initializePresenters [
 		help: self debugModeHelpText.
 	applyButton
 		label: 'Apply';
+		icon: (self iconNamed: #accept);
 		enabled: false.
-	refreshButton label: 'Refresh'.
-	startButton label: 'Start'.
-	stopButton label: 'Stop'.
-	restartButton label: 'Restart'.
+	refreshButton
+		label: 'Refresh';
+		icon: (self iconNamed: #refreshCircling).
+	startButton
+		label: 'Start';
+		icon: (self iconNamed: #go).
+	stopButton
+		label: 'Stop';
+		icon: self serverStopIcon.
+	restartButton
+		label: 'Restart';
+		icon: (self iconNamed: #restart).
 	self initializeToolsTable
 ]
 
