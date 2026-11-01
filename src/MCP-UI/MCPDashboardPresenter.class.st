@@ -246,6 +246,7 @@ MCPDashboardPresenter >> lifecycleActionsLayout [
 		  add: startButton expand: false;
 		  add: stopButton expand: false;
 		  add: restartButton expand: false;
+		  add: refreshButton expand: false;
 		  yourself
 ]
 
@@ -297,6 +298,7 @@ MCPDashboardPresenter >> refreshView [
 	portInput text: mcp port asString.
 	debugCheckBox state: mcp debugMode.
 	self updateApplyButton.
+	self updateLifecycleButtonsForRunning: isRunning.
 	toolsLabel label: (self toolsLabelFor: tools).
 	self fitToolsColumnsTo: tools.
 	toolsTable items: tools
@@ -407,4 +409,12 @@ MCPDashboardPresenter >> unlistTool: aTool [
 MCPDashboardPresenter >> updateApplyButton [
 
 	applyButton enabled: self isPortChangePending
+]
+
+{ #category : 'updating' }
+MCPDashboardPresenter >> updateLifecycleButtonsForRunning: isRunning [
+
+	startButton enabled: isRunning not.
+	stopButton enabled: isRunning.
+	restartButton enabled: isRunning
 ]

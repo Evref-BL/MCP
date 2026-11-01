@@ -147,15 +147,29 @@ MCPDashboardPresenterTest >> testHoveringAToolShowsItsDescription [
 ]
 
 { #category : 'tests' }
-MCPDashboardPresenterTest >> testLifecycleActionsOnlyContainServerControls [
+MCPDashboardPresenterTest >> testLifecycleRowHoldsServerControlsThenRefresh [
 
-	| layout |
-	layout := MCPDashboardPresenter new lifecycleActionsLayout.
+	self
+		assert: (MCPDashboardPresenter new lifecycleActionsLayout children collect: [ :each | each label ] as: Array)
+		equals: #( 'Start' 'Stop' 'Restart' 'Refresh' )
+]
 
-	self assert: layout children size equals: 3.
-	self assert: layout children first label equals: 'Start'.
-	self assert: layout children second label equals: 'Stop'.
-	self assert: layout children third label equals: 'Restart'
+{ #category : 'tests' }
+MCPDashboardPresenterTest >> testOnlyWhatTheServerStateAllowsIsEnabled [
+
+	| server presenter |
+	server := self mcpWithoutObservabilityExport port: 0.
+	presenter := MCPDashboardPresenter on: server.
+	self assert: (presenter instVarNamed: #startButton) isEnabled.
+	self deny: (presenter instVarNamed: #stopButton) isEnabled.
+	self deny: (presenter instVarNamed: #restartButton) isEnabled.
+
+	[
+		presenter startServer.
+
+		self deny: (presenter instVarNamed: #startButton) isEnabled.
+		self assert: (presenter instVarNamed: #stopButton) isEnabled.
+		self assert: (presenter instVarNamed: #restartButton) isEnabled ] ensure: [ server stop ]
 ]
 
 { #category : 'tests' }
