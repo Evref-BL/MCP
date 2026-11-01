@@ -236,9 +236,9 @@ MCPDashboardPresenterTest >> testToolColumnsAreAsWideAsWhatTheyHold [
 		              into: [ :widest :tool | widest max: (StandardFonts defaultFont widthOfString: tool name) ].
 
 	self
-		assert: (columns detect: [ :each | each hasTitle and: [ each title = 'Tool' ] ]) width
+		assert: (columns detect: [ :each | each title = 'Tool' ]) width
 		equals: (widestName + presenter toolsColumnPadding min: presenter toolsColumnMaximumWidth).
-	self assert: (columns detect: [ :each | each hasTitle and: [ each title = 'Enabled' ] ]) width < widestName.
+	self assert: (columns detect: [ :each | each title = 'Enabled' ]) width < widestName.
 	self assert: columns last title equals: 'Description'.
 	self assert: columns last width isNil
 ]

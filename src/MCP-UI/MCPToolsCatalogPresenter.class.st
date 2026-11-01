@@ -18,6 +18,12 @@ Class {
 	#package : 'MCP-UI'
 }
 
+{ #category : 'defaults' }
+MCPToolsCatalogPresenter class >> defaultPreferredExtent [
+
+	^ 1000 @ 700
+]
+
 { #category : 'world menu' }
 MCPToolsCatalogPresenter class >> menuCommandOn: aBuilder [
 
@@ -86,12 +92,6 @@ MCPToolsCatalogPresenter >> filterLayout [
 		  yourself
 ]
 
-{ #category : 'api' }
-MCPToolsCatalogPresenter >> initialExtent [
-
-	^ 1000 @ 700
-]
-
 { #category : 'initialization' }
 MCPToolsCatalogPresenter >> initializePresenters [
 
@@ -130,9 +130,7 @@ MCPToolsCatalogPresenter >> initializeToolsTable [
 MCPToolsCatalogPresenter >> initializeWindow: aWindowPresenter [
 
 	super initializeWindow: aWindowPresenter.
-	aWindowPresenter
-		title: 'MCP Tool Catalog';
-		initialExtent: self initialExtent
+	aWindowPresenter title: 'MCP Tool Catalog'
 ]
 
 { #category : 'updating' }

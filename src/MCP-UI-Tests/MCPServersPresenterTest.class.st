@@ -61,13 +61,29 @@ MCPServersPresenterTest >> testAStoppedServerCanBeStartedAndNotStopped [
 
 	| server presenter |
 	server := self startedServer.
-	server stop.
 	presenter := MCPServersPresenter new.
 	presenter serversTable selectItem: server.
+	presenter stopSelectedServer.
 
 	self assert: presenter hasSelectedServer.
 	self assert: presenter canStartSelectedServer.
 	self deny: presenter canStopSelectedServer
+]
+
+{ #category : 'tests' }
+MCPServersPresenterTest >> testAStoppedServerStaysListedUntilRemoved [
+
+	| server presenter |
+	server := self startedServer.
+	[
+		presenter := MCPServersPresenter new.
+		presenter serversTable selectItem: server.
+
+		presenter stopSelectedServer.
+		presenter refreshView.
+
+		self deny: server isRunning.
+		self assert: presenter serversTable selectedItem identicalTo: server ] ensure: [ server stop ]
 ]
 
 { #category : 'tests' }
@@ -82,6 +98,19 @@ MCPServersPresenterTest >> testAnUnusablePortIsReportedInsteadOfCreatingAServer 
 
 	self assert: (presenter messageText includesSubstring: '65535').
 	self assert: presenter serversTable items size equals: listed
+]
+
+{ #category : 'tests' }
+MCPServersPresenterTest >> testClosingTheWindowLetsGoOfItsServers [
+	"A closed window can stay referenced, by the hand's keyboard focus among others, and would keep every server it listed alive."
+
+	| server presenter |
+	server := self startedServer.
+	[
+		presenter := MCPServersPresenter new.
+		presenter open close.
+
+		self assert: presenter serversTable items isEmpty ] ensure: [ server stop ]
 ]
 
 { #category : 'tests' }
@@ -120,24 +149,18 @@ MCPServersPresenterTest >> testInspectingTheMCPClassOffersAServersTab [
 ]
 
 { #category : 'tests' }
-MCPServersPresenterTest >> testRemovingAServerNothingElseHoldsTakesItOffTheList [
-	"Only weakly held here, so the window letting go is all it takes. The table is built, since a widget is one more place that could keep it."
+MCPServersPresenterTest >> testOnlyRunningServersArePickedUp [
+	"A stopped server holds no port, so a new window has nothing to say about it, whatever still refers to it."
 
-	| removed presenter |
-	removed := WeakArray with: self startedServer.
-	[
-		presenter := MCPServersPresenter new.
-		presenter build.
-		presenter serversTable selectItem: removed first.
+	| server |
+	server := self startedServer.
+	server stop.
 
-		presenter removeSelectedServer.
-
-		self assert: removed first isNil.
-		self assert: (presenter messageText beginsWith: 'Removed') ] ensure: [ removed first ifNotNil: [ :server | server stop ] ]
+	self deny: (MCPServersPresenter new serversTable items identityIncludes: server)
 ]
 
 { #category : 'tests' }
-MCPServersPresenterTest >> testRemovingAServerSomethingElseHoldsStopsItAndSaysWhyItStays [
+MCPServersPresenterTest >> testRemovingAServerTakesItOffTheListWhateverHoldsIt [
 
 	| server presenter |
 	server := self startedServer.
@@ -148,8 +171,8 @@ MCPServersPresenterTest >> testRemovingAServerSomethingElseHoldsStopsItAndSaysWh
 		presenter removeSelectedServer.
 
 		self deny: server isRunning.
-		self assert: presenter serversTable selectedItem identicalTo: server.
-		self assert: (presenter messageText includesSubstring: 'still refers to it') ] ensure: [ server stop ]
+		self deny: (presenter serversTable items identityIncludes: server).
+		self assert: (presenter messageText beginsWith: 'Removed') ] ensure: [ server stop ]
 ]
 
 { #category : 'tests' }

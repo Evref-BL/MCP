@@ -27,6 +27,12 @@ Class {
 	#package : 'MCP-UI'
 }
 
+{ #category : 'defaults' }
+MCPDashboardPresenter class >> defaultPreferredExtent [
+
+	^ 1080 @ 760
+]
+
 { #category : 'instance creation' }
 MCPDashboardPresenter class >> on: anMCP [
 
@@ -132,12 +138,6 @@ MCPDashboardPresenter >> headerLayout [
 		  yourself
 ]
 
-{ #category : 'api' }
-MCPDashboardPresenter >> initialExtent [
-
-	^ 1080 @ 760
-]
-
 { #category : 'initialization' }
 MCPDashboardPresenter >> initializePresenters [
 
@@ -202,9 +202,7 @@ MCPDashboardPresenter >> initializeToolsTable [
 MCPDashboardPresenter >> initializeWindow: aWindowPresenter [
 
 	super initializeWindow: aWindowPresenter.
-	aWindowPresenter
-		title: self title;
-		initialExtent: self initialExtent
+	aWindowPresenter title: self title
 ]
 
 { #category : 'updating' }

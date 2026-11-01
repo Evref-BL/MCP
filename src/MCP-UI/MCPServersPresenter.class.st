@@ -27,6 +27,12 @@ Class {
 	#package : 'MCP-UI'
 }
 
+{ #category : 'defaults' }
+MCPServersPresenter class >> defaultPreferredExtent [
+
+	^ 760 @ 420
+]
+
 { #category : 'world menu' }
 MCPServersPresenter class >> menuCommandOn: aBuilder [
 
@@ -144,12 +150,6 @@ MCPServersPresenter >> hasSelectedServer [
 	^ serversTable selectedItem isNotNil
 ]
 
-{ #category : 'api' }
-MCPServersPresenter >> initialExtent [
-
-	^ 760 @ 420
-]
-
 { #category : 'initialization' }
 MCPServersPresenter >> initializePresenters [
 
@@ -200,11 +200,12 @@ MCPServersPresenter >> initializeServersTable [
 
 { #category : 'initialization' }
 MCPServersPresenter >> initializeWindow: aWindowPresenter [
+	"A closed window can still be referenced, by the hand's keyboard focus among others, so it lets go of its servers rather than wait to be collected."
 
 	super initializeWindow: aWindowPresenter.
 	aWindowPresenter
 		title: 'MCP Servers';
-		initialExtent: self initialExtent
+		whenClosedDo: [ serversTable items: #(  ) ]
 ]
 
 { #category : 'actions' }
@@ -254,11 +255,12 @@ MCPServersPresenter >> portInput [
 
 { #category : 'updating' }
 MCPServersPresenter >> refreshView [
-	"Reselect by identity: the list is rebuilt from the heap, so the previous selection is the same object or it is gone."
+	"Every running server, and the stopped ones this window already shows, so that stopping a server does not take its row away; removing it does. Reselect by identity, since the rows are the servers themselves."
 
 	| selected servers |
 	selected := serversTable selectedItem.
-	servers := MCP allServers.
+	servers := (serversTable items reject: [ :each | each isRunning ]) asArray , MCP runningServers sort: [ :left :right |
+		           left port <= right port ].
 	serversTable items: servers.
 	selected ifNotNil: [ :previous | (servers identityIncludes: previous) ifTrue: [ serversTable selectItem: previous ] ].
 	self updateActionButtons
@@ -267,32 +269,22 @@ MCPServersPresenter >> refreshView [
 { #category : 'private' }
 MCPServersPresenter >> removeHelpText [
 
-	^ 'Stop the selected server and let go of it. It leaves the list once nothing else refers to it.'
+	^ 'Stop the selected server and take it off the list.'
 ]
 
 { #category : 'actions' }
 MCPServersPresenter >> removeSelectedServer [
-	"Removing is stopping and letting go. The list is the heap, so the server leaves it once nothing refers to it; this window is let go of here, and only weakly remembers the server to tell whether something else still holds it."
+	"Stop it and drop its row. Only running servers are picked up, so it stays gone whatever else still refers to it."
 
-	| removed port |
-	removed := WeakArray with: (serversTable selectedItem ifNil: [ ^ self ]).
-	port := removed first port.
+	| server |
+	server := serversTable selectedItem ifNil: [ ^ self ].
 	self showMessage: ''.
-	[ removed first stop ]
+	[ server stop ]
 		on: Error
 		do: [ :error | ^ self showMessage: error messageText ].
-	serversTable
-		unselectAll;
-		items: #(  ).
+	serversTable items: (serversTable items copyWithout: server).
 	self refreshView.
-	removed first
-		ifNil: [
-		self showMessage: (String streamContents: [ :stream | stream << 'Removed the server on port ' << port asString << '.' ]) ]
-		ifNotNil: [ :server |
-				serversTable selectItem: server.
-				self showMessage: (String streamContents: [ :stream |
-							 stream << 'Stopped the server on port ' << port asString
-							 << ', but something else still refers to it, such as a dashboard or an inspector open on it, so it stays listed.' ]) ]
+	self showMessage: (String streamContents: [ :stream | stream << 'Removed the server on port ' << server port asString << '.' ])
 ]
 
 { #category : 'private' }

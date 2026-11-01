@@ -23,6 +23,12 @@ Class {
 	#package : 'MCP-UI'
 }
 
+{ #category : 'defaults' }
+MCPObservabilityPresenter class >> defaultPreferredExtent [
+
+	^ 1000 @ 700
+]
+
 { #category : 'instance creation' }
 MCPObservabilityPresenter class >> openOn: anMCP [
 
@@ -92,12 +98,6 @@ MCPObservabilityPresenter >> defaultLayout [
 		  yourself
 ]
 
-{ #category : 'api' }
-MCPObservabilityPresenter >> initialExtent [
-
-	^ 1000 @ 700
-]
-
 { #category : 'initialization' }
 MCPObservabilityPresenter >> initializePresenters [
 
@@ -151,7 +151,6 @@ MCPObservabilityPresenter >> initializeWindow: aWindowPresenter [
 	super initializeWindow: aWindowPresenter.
 	aWindowPresenter
 		title: 'MCP Observability';
-		initialExtent: self initialExtent;
 		whenClosedDo: [ self stopAutoRefresh ]
 ]
 

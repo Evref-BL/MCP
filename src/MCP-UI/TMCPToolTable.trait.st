@@ -35,7 +35,7 @@ TMCPToolTable >> fitToolsColumnsTo: someTools [
 	"Every column but the last, which takes what is left. A column without a title is an icon and has a width of its own."
 
 	self toolsTable columns allButLast do: [ :column |
-		column hasTitle ifTrue: [ column width: (self fittedWidthOf: column for: someTools) ] ]
+		column title ifNotNil: [ column width: (self fittedWidthOf: column for: someTools) ] ]
 ]
 
 { #category : 'tool table' }
