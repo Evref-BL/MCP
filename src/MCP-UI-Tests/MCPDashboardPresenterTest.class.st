@@ -133,6 +133,20 @@ MCPDashboardPresenterTest >> testHeaderLayoutUsesStatusAndEndpointRows [
 ]
 
 { #category : 'tests' }
+MCPDashboardPresenterTest >> testHoveringAToolShowsItsDescription [
+
+	| presenter widget tool cell |
+	presenter := MCPDashboardPresenter on: self mcpWithoutObservabilityExport.
+	presenter build.
+	widget := presenter toolsTable adapter widget.
+	tool := presenter toolsTable items first.
+
+	cell := widget dataSource cellColumn: (widget columns at: 2) row: 1.
+
+	self assert: (cell balloonText asString copyReplaceAll: String cr with: ' ') equals: tool description
+]
+
+{ #category : 'tests' }
 MCPDashboardPresenterTest >> testLifecycleActionsOnlyContainServerControls [
 
 	| layout |
@@ -176,6 +190,17 @@ MCPDashboardPresenterTest >> testRefreshViewUsesSingleServerStatus [
 ]
 
 { #category : 'tests' }
+MCPDashboardPresenterTest >> testRightClickingAToolOffersToBrowseInspectOrCopyIt [
+
+	| menu |
+	menu := (MCPDashboardPresenter on: self mcpWithoutObservabilityExport) toolsContextMenu.
+
+	self
+		assert: (menu menuGroups flatCollect: [ :group | group menuItems collect: [ :item | item name ] ] as: Array)
+		equals: #( 'Browse class' 'Inspect' 'Copy name' )
+]
+
+{ #category : 'tests' }
 MCPDashboardPresenterTest >> testServerStatusIconUsesTestIcons [
 
 	| presenter |
@@ -197,6 +222,25 @@ MCPDashboardPresenterTest >> testServerStatusLabelShowsListenerOnlyWhenAnomalous
 	self assert: (presenter serverStatusLabelForRunning: true listening: true) equals: 'Status: running'.
 	self assert: (presenter serverStatusLabelForRunning: true listening: false) equals: 'Status: running, socket not listening'.
 	self assert: (presenter serverStatusLabelForRunning: false listening: true) equals: 'Status: stopped, socket still listening'
+]
+
+{ #category : 'tests' }
+MCPDashboardPresenterTest >> testToolColumnsAreAsWideAsWhatTheyHold [
+	"Spec shares the width out evenly otherwise, which made every column too wide but the description."
+
+	| presenter columns widestName |
+	presenter := MCPDashboardPresenter on: self mcpWithoutObservabilityExport.
+	columns := presenter toolsTable columns.
+	widestName := presenter toolRows
+		              inject: 0
+		              into: [ :widest :tool | widest max: (StandardFonts defaultFont widthOfString: tool name) ].
+
+	self
+		assert: (columns detect: [ :each | each hasTitle and: [ each title = 'Tool' ] ]) width
+		equals: (widestName + presenter toolsColumnPadding min: presenter toolsColumnMaximumWidth).
+	self assert: (columns detect: [ :each | each hasTitle and: [ each title = 'Enabled' ] ]) width < widestName.
+	self assert: columns last title equals: 'Description'.
+	self assert: columns last width isNil
 ]
 
 { #category : 'tests' }

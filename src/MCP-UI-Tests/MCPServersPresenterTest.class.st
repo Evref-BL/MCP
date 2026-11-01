@@ -120,11 +120,55 @@ MCPServersPresenterTest >> testInspectingTheMCPClassOffersAServersTab [
 ]
 
 { #category : 'tests' }
+MCPServersPresenterTest >> testRemovingAServerNothingElseHoldsTakesItOffTheList [
+	"Only weakly held here, so the window letting go is all it takes. The table is built, since a widget is one more place that could keep it."
+
+	| removed presenter |
+	removed := WeakArray with: self startedServer.
+	[
+		presenter := MCPServersPresenter new.
+		presenter build.
+		presenter serversTable selectItem: removed first.
+
+		presenter removeSelectedServer.
+
+		self assert: removed first isNil.
+		self assert: (presenter messageText beginsWith: 'Removed') ] ensure: [ removed first ifNotNil: [ :server | server stop ] ]
+]
+
+{ #category : 'tests' }
+MCPServersPresenterTest >> testRemovingAServerSomethingElseHoldsStopsItAndSaysWhyItStays [
+
+	| server presenter |
+	server := self startedServer.
+	[
+		presenter := MCPServersPresenter new.
+		presenter serversTable selectItem: server.
+
+		presenter removeSelectedServer.
+
+		self deny: server isRunning.
+		self assert: presenter serversTable selectedItem identicalTo: server.
+		self assert: (presenter messageText includesSubstring: 'still refers to it') ] ensure: [ server stop ]
+]
+
+{ #category : 'tests' }
 MCPServersPresenterTest >> testTheListShowsTheServersTheImageHolds [
 
 	| server |
 	server := self startedServer.
 	[ self assert: (MCPServersPresenter new serversTable items identityIncludes: server) ] ensure: [ server stop ]
+]
+
+{ #category : 'tests' }
+MCPServersPresenterTest >> testTheMenuOffersEveryServerAction [
+
+	| menu |
+	menu := MCPServersPresenter new serversContextMenu.
+
+	self
+		assert: (menu menuGroups flatCollect: [ :group | group menuItems collect: [ :item | item name ] ] as: Array)
+		equals: #( 'Dashboard' 'Observability' 'Start' 'Stop' 'Restart' 'Remove' 'Inspect' 'Copy endpoint' )
 ]
 
 { #category : 'tests' }

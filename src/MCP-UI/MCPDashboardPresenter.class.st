@@ -4,8 +4,8 @@ Spec presenter used by the inspector for an MCP server object. It shows server s
 Class {
 	#name : 'MCPDashboardPresenter',
 	#superclass : 'SpPresenterWithModel',
-	#traits : 'TMCPServerStatusDisplay + TMCPToolRowIcon',
-	#classTraits : 'TMCPServerStatusDisplay classTrait + TMCPToolRowIcon classTrait',
+	#traits : 'TMCPServerStatusDisplay + TMCPToolRowIcon + TMCPToolTable',
+	#classTraits : 'TMCPServerStatusDisplay classTrait + TMCPToolRowIcon classTrait + TMCPToolTable classTrait',
 	#instVars : [
 		'statusIcon',
 		'statusLabel',
@@ -185,18 +185,17 @@ MCPDashboardPresenter >> initializeToolsTable [
 		addColumn: ((SpCheckBoxTableColumn title: 'Enabled' evaluated: [ :tool | self isToolEnabled: tool ])
 				 onActivation: [ :tool | self enableTool: tool ];
 				 onDeactivation: [ :tool | self disableTool: tool ];
-				 width: 70;
 				 yourself);
 		addColumn: ((SpCheckBoxTableColumn title: 'Listed' evaluated: [ :tool | self isToolListed: tool ])
 				 onActivation: [ :tool | self listTool: tool ];
 				 onDeactivation: [ :tool | self unlistTool: tool ];
-				 width: 70;
 				 yourself);
 		addColumn: ((SpStringTableColumn title: 'Title' evaluated: [ :tool | tool title ifNil: [ '' ] ])
 				 beSortable;
 				 yourself);
 		addColumn: (SpStringTableColumn title: 'Description' evaluated: [ :tool | tool description ifNil: [ '' ] ]);
-		beResizable
+		beResizable.
+	self connectToolsTable
 ]
 
 { #category : 'initialization' }
@@ -292,6 +291,7 @@ MCPDashboardPresenter >> refreshView [
 	debugCheckBox state: mcp debugMode.
 	self updateApplyButton.
 	toolsLabel label: (self toolsLabelFor: tools).
+	self fitToolsColumnsTo: tools.
 	toolsTable items: tools
 ]
 
@@ -381,6 +381,12 @@ MCPDashboardPresenter >> toolsLayout [
 		  add: toolsLabel expand: false;
 		  add: toolsTable;
 		  yourself
+]
+
+{ #category : 'accessing' }
+MCPDashboardPresenter >> toolsTable [
+
+	^ toolsTable
 ]
 
 { #category : 'tools' }

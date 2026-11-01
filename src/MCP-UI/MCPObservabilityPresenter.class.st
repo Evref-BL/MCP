@@ -23,6 +23,12 @@ Class {
 	#package : 'MCP-UI'
 }
 
+{ #category : 'instance creation' }
+MCPObservabilityPresenter class >> openOn: anMCP [
+
+	^ (self on: anMCP) open
+]
+
 { #category : 'auto-refresh' }
 MCPObservabilityPresenter >> autoRefreshChangedTo: enabled [
 

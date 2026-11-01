@@ -6,8 +6,8 @@ Each row shows a compact tool identity cell with icon, title, and tool name, plu
 Class {
 	#name : 'MCPToolsCatalogPresenter',
 	#superclass : 'SpPresenter',
-	#traits : 'TMCPToolRowIcon',
-	#classTraits : 'TMCPToolRowIcon classTrait',
+	#traits : 'TMCPToolRowIcon + TMCPToolTable',
+	#classTraits : 'TMCPToolRowIcon classTrait + TMCPToolTable classTrait',
 	#instVars : [
 		'filterInput',
 		'countLabel',
@@ -43,22 +43,10 @@ MCPToolsCatalogPresenter >> allTools [
 	^ (MCPTool toolGroups flatCollect: [ :group | group value ] as: Array) collect: [ :toolClass | toolClass new ]
 ]
 
-{ #category : 'private' }
-MCPToolsCatalogPresenter >> browseSelectedTool [
-
-	toolsTable selectedItem ifNotNil: [ :tool | tool class browse ]
-]
-
 { #category : 'initialization' }
 MCPToolsCatalogPresenter >> connectPresenters [
 
 	filterInput whenTextChangedDo: [ self refreshView ]
-]
-
-{ #category : 'private' }
-MCPToolsCatalogPresenter >> copySelectedToolName [
-
-	toolsTable selectedItem ifNotNil: [ :tool | Clipboard clipboardText: tool name ]
 ]
 
 { #category : 'updating' }
@@ -134,8 +122,8 @@ MCPToolsCatalogPresenter >> initializeToolsTable [
 				 beSortable;
 				 yourself);
 		addColumn: (SpStringTableColumn title: 'Description' evaluated: [ :tool | self descriptionFor: tool ]);
-		contextMenu: [ self toolsContextMenu ];
-		beResizable
+		beResizable.
+	self connectToolsTable
 ]
 
 { #category : 'initialization' }
@@ -153,6 +141,7 @@ MCPToolsCatalogPresenter >> refreshView [
 	| shown all |
 	all := self allTools.
 	shown := self toolsMatchingFilter: all.
+	self fitToolsColumnsTo: all.
 	toolsTable items: shown.
 	countLabel label: (self countLabelFor: shown size of: all size)
 ]
@@ -177,27 +166,6 @@ MCPToolsCatalogPresenter >> searchTextFor: aTool [
 				  << (self descriptionFor: aTool) asLowercase ]
 ]
 
-{ #category : 'private' }
-MCPToolsCatalogPresenter >> toolsContextMenu [
-
-	^ self newMenu
-		  addGroup: [ :group |
-				  group
-					  addItem: [ :item |
-							  item
-								  name: 'Browse class';
-								  description: 'Open the class that implements the selected tool';
-								  enabled: [ toolsTable selectedItem isNotNil ];
-								  action: [ self browseSelectedTool ] ];
-					  addItem: [ :item |
-							  item
-								  name: 'Copy name';
-								  description: 'Copy the name of the selected tool to the clipboard';
-								  enabled: [ toolsTable selectedItem isNotNil ];
-								  action: [ self copySelectedToolName ] ] ];
-		  yourself
-]
-
 { #category : 'updating' }
 MCPToolsCatalogPresenter >> toolsMatchingFilter: someTools [
 
@@ -205,4 +173,10 @@ MCPToolsCatalogPresenter >> toolsMatchingFilter: someTools [
 	query := filterInput text asString trimBoth asLowercase.
 	query ifEmpty: [ ^ someTools ].
 	^ someTools select: [ :tool | (self searchTextFor: tool) includesSubstring: query ]
+]
+
+{ #category : 'accessing' }
+MCPToolsCatalogPresenter >> toolsTable [
+
+	^ toolsTable
 ]
