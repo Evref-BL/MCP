@@ -229,6 +229,30 @@ MCPToolRewriteMethodsTest >> testMissingClassScopeRejectsRewriteBeforePartialPre
 ]
 
 { #category : 'tests' }
+MCPToolRewriteMethodsTest >> testNamingARuleClassBringsEveryOneOfItsRewrites [
+	"A rule holds several matchers, and naming it stands for all of them rather than for the first."
+
+	| changes |
+	self
+		ensureMethodSource:
+		'foundTarget: aCollection (aCollection detect: [ :each | each odd ] ifNone: [ nil ]) ifNotNil: [ :found | found printString ]'
+		protocol: 'tests'
+		on: self targetClass.
+	self
+		ensureMethodSource:
+		'foundOrNoneTarget: aCollection ^ (aCollection detect: [ :each | each odd ] ifNone: [ nil ]) ifNil: [ 0 ] ifNotNil: [ :found | found ]'
+		protocol: 'tests'
+		on: self targetClass.
+	changes := (self dataFrom: (self callToolWith: {
+				             (#ruleClasses -> { MCPDetectIfFoundRule name }).
+				             (#scope -> { (#classes -> { self targetClassName }) } asDictionary) } asDictionary)) at: #changes.
+	self
+		assert: (changes collect: [ :each | each at: #selector ] as: Set)
+		equals: (Set with: 'foundTarget:' with: 'foundOrNoneTarget:').
+	self assert: (changes allSatisfy: [ :each | (each at: #newSource) includesSubstring: 'ifFound:' ])
+]
+
+{ #category : 'tests' }
 MCPToolRewriteMethodsTest >> testNamingARuleClassKeepsItsConditions [
 	"A rule that leaves some matches alone says so in its pattern, so applying it leaves them alone too."
 
@@ -242,29 +266,16 @@ MCPToolRewriteMethodsTest >> testNamingARuleClassKeepsItsConditions [
 ]
 
 { #category : 'tests' }
-MCPToolRewriteMethodsTest >> testNamingARuleClassStandsForItsPatterns [
-
-	| specs |
-	specs := MCPMethodRewriteRuleSpec specsForRuleClassNamed: 'MCPCollectionThenDoRule' startingAt: 1.
-	self assert: specs size equals: 3.
-	self assert: (specs collect: [ :each | each name ] as: Set) equals: (Set with: 'MCPCollectionThenDoRule').
-	self assert: ((specs collect: [ :each | each match ]) anySatisfy: [ :each | each includesSubstring: 'collect:' ]).
-	self assert: ((specs collect: [ :each | each replacement ]) allSatisfy: [ :each | each includesSubstring: 'thenDo:' ]).
-	"One rule always expands the same way, even though Renraku does not keep the declared order."
-	self
-		assert: (specs collect: [ :each | each match ])
-		equals:
-		((MCPMethodRewriteRuleSpec specsForRuleClassNamed: 'MCPCollectionThenDoRule' startingAt: 1) collect: [ :each | each match ])
-]
-
-{ #category : 'tests' }
 MCPToolRewriteMethodsTest >> testNamingARuleThatIsNotMCPsOwn [
 	"The rules worth applying are not only the ones MCP wrote."
 
-	| specs |
-	specs := MCPMethodRewriteRuleSpec specsForRuleClassNamed: 'ReEqualNilRule' startingAt: 1.
-	self deny: specs isEmpty.
-	self assert: (specs collect: [ :each | each name ] as: Set) equals: (Set with: 'ReEqualNilRule')
+	| changes |
+	self ensureMethodSource: 'equalNilTarget: anObject ^ anObject = nil' protocol: 'tests' on: self targetClass.
+	changes := (self dataFrom: (self callToolWith: {
+				             (#ruleClasses -> #( 'ReEqualNilRule' )).
+				             (#scope -> { (#classes -> { self targetClassName }) } asDictionary) } asDictionary)) at: #changes.
+	self assert: (changes collect: [ :each | each at: #selector ] as: Array) equals: #( 'equalNilTarget:' ).
+	self assert: ((changes first at: #newSource) includesSubstring: 'isNil')
 ]
 
 { #category : 'tests' }
@@ -401,12 +412,13 @@ MCPToolRewriteMethodsTest >> testRewriteThatKeepsMatchingIsRefused [
 ]
 
 { #category : 'tests' }
-MCPToolRewriteMethodsTest >> testRuleChainsCascadesLongerThanTwo [
-	"A cascade pattern matches a cascade of its own length, so the rule carries one pattern per length. What method_rewrite applies is those patterns written out and parsed again."
+MCPToolRewriteMethodsTest >> testRuleChainsACascadeOfAnyLength [
+	"No pattern can say 'a cascade of any length', so the rule says it in a pattern block and computes the chain. Fourteen writes is past anything a pattern per length would have reached."
 
 	| source |
 	self
-		ensureMethodSource: 'cascadeTarget: aStream aStream << ''one''; << ''two''; << ''three''; << ''four'''
+		ensureMethodSource:
+		'cascadeTarget: aStream aStream << 1; << 2; << 3; << 4; << 5; << 6; << 7; << 8; << 9; << 10; << 11; << 12; << 13; << 14'
 		protocol: 'tests'
 		on: self targetClass.
 	self dataFrom: (self callToolWith: {
@@ -415,7 +427,7 @@ MCPToolRewriteMethodsTest >> testRuleChainsCascadesLongerThanTwo [
 				 (#confirm -> true) } asDictionary).
 	source := self sourceForSelector: #cascadeTarget:.
 	self deny: (source includesSubstring: ';').
-	self assert: (source allRangesOfSubstring: '<<') size equals: 4
+	self assert: (source allRangesOfSubstring: '<<') size equals: 14
 ]
 
 { #category : 'tests' }
@@ -432,7 +444,7 @@ MCPToolRewriteMethodsTest >> testRuleClassWithoutPatternsIsRejected [
 
 { #category : 'tests' }
 MCPToolRewriteMethodsTest >> testRuleClassesRewriteToWhatTheyRecommend [
-	"Each rule's patterns are read back from the rule and parsed again, conditions included."
+	"Each rule is handed over whole, conditions included."
 
 	{
 		{
@@ -470,16 +482,16 @@ MCPToolRewriteMethodsTest >> testRuleClassesRewriteToWhatTheyRecommend [
 ]
 
 { #category : 'tests' }
-MCPToolRewriteMethodsTest >> testRuleThatComputesItsReplacementIsRejected [
-	"A rule can build its replacement with a block, which has no pattern form to hand over."
+MCPToolRewriteMethodsTest >> testRuleThatComputesItsReplacementIsApplied [
+	"A rule can build its replacement with a block instead of writing it as a pattern. It used to have no pattern form to hand over and was refused; the rule is handed over whole now."
 
-	| error result |
-	result := self callToolWith: {
-			          (#ruleClasses -> #( 'ReIconHardcodedMessageRule' )).
-			          (#scope -> { (#classes -> { self targetClassName }) } asDictionary) } asDictionary.
-	error := self errorFrom: result.
-	self assert: (result at: #isError).
-	self assert: ((error at: #message) includesSubstring: 'computes its replacement')
+	| changes |
+	self ensureMethodSource: 'iconTarget ^ Smalltalk ui icons smallOk' protocol: 'tests' on: self targetClass.
+	changes := (self dataFrom: (self callToolWith: {
+				             (#ruleClasses -> #( 'ReIconHardcodedMessageRule' )).
+				             (#scope -> { (#classes -> { self targetClassName }) } asDictionary) } asDictionary)) at: #changes.
+	self assert: (changes collect: [ :each | each at: #selector ] as: Array) equals: #( 'iconTarget' ).
+	self assert: ((changes first at: #newSource) includesSubstring: 'self iconNamed: #smallOk')
 ]
 
 { #category : 'tests' }

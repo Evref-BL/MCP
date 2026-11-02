@@ -3,7 +3,7 @@ Renraku rule that warns when consecutive stream writes are cascaded.
 
 `<<` answers the stream it wrote to, so writes chain directly. A cascade says the same thing with more punctuation, and reads as though each write needed the receiver named again.
 
-A cascade's messages are matched as a list of exactly the length the pattern writes, so one pattern cannot stand for every length the way a concatenation pattern does. There is a pattern per length instead, up to longestCascadeMatched.
+A cascade's messages are matched as a list of exactly the length the pattern writes, so no pattern can stand for a cascade of any length. The match is a pattern block asking whether a node is a cascade of stream writes, and the chain that takes its place is built rather than written out.
 "
 Class {
 	#name : 'MCPStreamWriteCascadeRule',
@@ -13,11 +13,25 @@ Class {
 	#tag : 'Critiques'
 }
 
-{ #category : 'accessing' }
-MCPStreamWriteCascadeRule class >> longestCascadeMatched [
-	"How many cascaded writes the patterns reach. A cascade pattern matches a cascade of exactly its own length, so one pattern per length is the only way to say it, and the rule has to stop somewhere. Twelve is past the longest all-<< cascade a Pharo image holds."
+{ #category : 'rewriting' }
+MCPStreamWriteCascadeRule class >> chainedFrom: aCascadeNode [
+	"The one chain that says what the cascade says, built from copies: the node answered here replaces the cascade, while the cascade itself belongs to the method being read."
 
-	^ 12
+	| chain |
+	chain := aCascadeNode messages first copy.
+	aCascadeNode messages allButFirst do: [ :each |
+			| write |
+			write := each copy.
+			write receiver: chain.
+			chain := write ].
+	^ chain
+]
+
+{ #category : 'testing' }
+MCPStreamWriteCascadeRule class >> isCascadeOfStreamWrites: aNode [
+	"The pattern block asks this of every node, because no pattern can say 'a cascade of any length': a cascade pattern matches a cascade of exactly as many messages as it writes."
+
+	^ aNode isCascade and: [ aNode messages allSatisfy: [ :each | each selector = #'<<' ] ]
 ]
 
 { #category : 'accessing' }
@@ -36,20 +50,7 @@ MCPStreamWriteCascadeRule class >> ruleName [
 MCPStreamWriteCascadeRule >> initialize [
 
 	super initialize.
-	2 to: self class longestCascadeMatched do: [ :writeCount | self replaceCascadeOf: writeCount ]
-]
-
-{ #category : 'initialization' }
-MCPStreamWriteCascadeRule >> replaceCascadeOf: writeCount [
-	"One pattern pair for a cascade of exactly writeCount writes, and the single chain that says the same thing."
-
-	| writes |
-	writes := (1 to: writeCount) collect: [ :index | '`@write' , index asString ].
 	self
-		replace: (String streamContents: [ :stream |
-					 stream << '`@stream << ' << writes first.
-					 writes allButFirst do: [ :each | stream << '; << ' << each ] ])
-		with: (String streamContents: [ :stream |
-					 stream << '`@stream'.
-					 writes do: [ :each | stream << ' << ' << each ] ])
+		replace: '`@cascade `{ :node | MCPStreamWriteCascadeRule isCascadeOfStreamWrites: node }'
+		byEvaluating: [ :node | self class chainedFrom: node ]
 ]

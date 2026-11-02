@@ -3,7 +3,7 @@ Abstract base for MCP-owned Renraku rewrite rules that flag local method-shape a
 
 Subclasses keep the match narrow and name one actionable rewrite family. They are warnings, not mechanical laws.
 
-Each subclass declares its rewrites as pattern pairs, which is what makes them applicable: method_rewrite reads the pairs of any rewrite rule and can be given one by name.
+Each subclass declares its rewrites to Renraku, as a pattern pair or as a pattern and a block that builds the new node. method_rewrite is given a rule by name and hands it over whole, so either kind applies.
 
 A pattern that matches more than its rule is about says so in a pattern block on the metavariable, calling the tests on my class side: canSend:to: keeps a rewrite off a receiver the source shows would not understand it, and isValueUnused: keeps one that answers something else to where nothing reads the answer. A condition kept anywhere else would reach the critique and not method_rewrite.
 "
