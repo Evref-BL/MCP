@@ -98,10 +98,11 @@ output is refused.
 }
 ```
 
-Any rewrite rule stands for its own patterns, Pharo's own included, so
-`ruleClasses` can name one instead of writing its patterns out. A rule that
-reports a critique is never applied by the tool that compiles: reporting is
-that tool's job, changing it is this one's, and the caller asks.
+`ruleClasses` names a rewrite rule instead of writing its patterns out,
+Pharo's own included, and a rule that builds its replacement rather than
+writing it applies the same way. A rule that reports a critique is never
+applied by the tool that compiles: reporting is that tool's job, changing it is
+this one's, and the caller asks.
 
 ## Mutation And Saving
 

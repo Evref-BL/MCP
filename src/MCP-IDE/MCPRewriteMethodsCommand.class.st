@@ -56,6 +56,16 @@ MCPRewriteMethodsCommand >> execute [
 ]
 
 { #category : 'private - rewriting' }
+MCPRewriteMethodsCommand >> parseTreeRewriter [
+	"Every rule adds itself: a pattern pair the caller wrote, or the matchers a named rule already holds."
+
+	| rewriter |
+	rewriter := RBParseTreeRewriter new.
+	self request rules do: [ :each | each addToRewriter: rewriter ].
+	^ rewriter
+]
+
+{ #category : 'private - rewriting' }
 MCPRewriteMethodsCommand >> refactoringChangeManager [
 
 	^ ReChangeManager instance
@@ -84,13 +94,7 @@ MCPRewriteMethodsCommand >> rewriteChangesFor: methods [
 MCPRewriteMethodsCommand >> rewriteRule [
 
 	self validateRewriteRules.
-	^ MCPSettlingRewriter on: (StRewriterRBApplier rewriter: self ruleHolders)
-]
-
-{ #category : 'private - rewriting' }
-MCPRewriteMethodsCommand >> ruleHolders [
-
-	^ self request rules collect: [ :each | each asStRewriterRuleHolder ] as: Array
+	^ MCPSettlingRewriter on: self parseTreeRewriter
 ]
 
 { #category : 'private - rewriting' }

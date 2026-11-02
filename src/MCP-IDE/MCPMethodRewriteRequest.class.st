@@ -49,8 +49,7 @@ MCPMethodRewriteRequest >> initializeFromRequest: request tool: aTool [
 	rules := OrderedCollection new.
 	ruleObjects doWithIndex: [ :eachRule :index |
 		rules add: (MCPMethodRewriteRuleSpec fromDictionary: eachRule request: request index: index) ].
-	ruleClassNames do: [ :eachName |
-		rules addAll: (MCPMethodRewriteRuleSpec specsForRuleClassNamed: eachName startingAt: rules size + 1) ].
+	ruleClassNames do: [ :eachName | rules add: (MCPMethodRewriteNamedRuleSpec named: eachName index: rules size + 1) ].
 	apply := request booleanArgumentNamed: 'confirm' default: false.
 	scopeQuery := aTool methodScopeQueryFromRequest: request.
 	scopeQuery requireCompleteScope

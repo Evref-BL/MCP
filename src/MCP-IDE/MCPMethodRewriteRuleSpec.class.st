@@ -1,7 +1,7 @@
 "
-Parsed rewrite rule for method_rewrite.
+A rewrite rule the caller wrote out, as method_rewrite's rules gives it.
 
-It holds one Smalltalk AST rewrite pattern pair and converts it to the NewTools rewriter rule holder used by the command.
+It holds one Smalltalk AST rewrite pattern pair and adds it to the rewriter the command applies. A rule named by its class instead is an MCPMethodRewriteNamedRuleSpec.
 "
 Class {
 	#name : 'MCPMethodRewriteRuleSpec',
@@ -24,61 +24,12 @@ MCPMethodRewriteRuleSpec class >> fromDictionary: aDictionary request: request i
 	^ self new initializeFromDictionary: aDictionary request: request index: index
 ]
 
-{ #category : 'instance creation' }
-MCPMethodRewriteRuleSpec class >> rewritePairFor: aMatcher rewriter: aRewriter ruleNamed: aName [
-	"A rewriter either carries the tree it rewrites to, or computes it with a block. Only the first
-	has a pattern form."
+{ #category : 'rewriting' }
+MCPMethodRewriteRuleSpec >> addToRewriter: aRewriter [
 
-	(aRewriter class allInstVarNames includes: 'tree') ifFalse: [
-			MCPCommandError
-				signalErrorCode: #RewriteRuleComputesItsReplacement
-				message: aName asString , ' computes its replacement instead of writing one, so it has no pattern form.'
-				details: { (#ruleClass -> aName) } asDictionary ].
-	^ {
-		  (#match -> aMatcher formattedCode).
-		  (#replacement -> (aRewriter instVarNamed: 'tree') formattedCode).
-		  (#isForMethod -> ([ aMatcher isMethod ] on: Error do: [ :error | false ])) } asDictionary
-]
-
-{ #category : 'instance creation' }
-MCPMethodRewriteRuleSpec class >> rewritePairsOf: aRuleClass named: aName [
-	"Renraku keeps a rule's pattern pairs in an instance variable and offers no accessor for them.
-	The Dictionary holding them does not keep the order they were declared in either, so they are
-	sorted, which at least makes one rule always expand the same way."
-
-	| matches pairs |
-	matches := [ aRuleClass new instVarNamed: 'matches' ]
-		           on: Error
-		           do: [ :error | nil ].
-	matches ifNil: [
-			MCPCommandError
-				signalErrorCode: #RewriteRuleHasNoReadablePatterns
-				message: (String streamContents: [ :stream | stream << 'Could not read the rewrite patterns of ' << aName asString << '.' ])
-				details: { (#ruleClass -> aName) } asDictionary ].
-	pairs := OrderedCollection new.
-	matches keysAndValuesDo: [ :matcher :rewriter | pairs add: (self rewritePairFor: matcher rewriter: rewriter ruleNamed: aName) ].
-	^ pairs sorted: [ :left :right | (left at: #match) <= (right at: #match) ]
-]
-
-{ #category : 'instance creation' }
-MCPMethodRewriteRuleSpec class >> specsForRuleClassNamed: aName startingAt: anIndex [
-	"A rewrite rule is a set of pattern pairs, so naming one stands for writing its patterns out."
-
-	| ruleClass pairs |
-	ruleClass := MCPImageLookup classNamed: aName.
-	(ruleClass inheritsFrom: ReNodeRewriteRule) ifFalse: [
-			MCPCommandError
-				signalErrorCode: #RewriteRuleClassHasNoPatterns
-				message: aName asString , ' is not a rewrite rule. Name a subclass of ReNodeRewriteRule.'
-				details: { (#ruleClass -> aName) } asDictionary ].
-	pairs := self rewritePairsOf: ruleClass named: aName.
-	^ pairs withIndexCollect: [ :pair :offset |
-		  self new
-			  initializeName: aName
-			  match: (pair at: #match)
-			  replacement: (pair at: #replacement)
-			  isForMethod: (pair at: #isForMethod)
-			  index: anIndex + offset - 1 ]
+	self isForMethod
+		ifTrue: [ aRewriter replaceMethod: self match with: self replacement ]
+		ifFalse: [ aRewriter replace: self match with: self replacement ]
 ]
 
 { #category : 'converting' }
