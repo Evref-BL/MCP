@@ -92,6 +92,42 @@ MCPToolStructuredOutputTest >> testEntryFieldsWithSeparatorsAreQuoted [
 ]
 
 { #category : 'tests' }
+MCPToolStructuredOutputTest >> testEvaluateReportsADeprecationBesideTheValue [
+	"A deprecation says the answer is not what the caller thinks, and the answer arrives all the same, so it has to arrive with it. The same deprecation raised twice is reported once."
+
+	| className contentText result warnings |
+	className := 'MCPEvaluateDeprecationFixture'.
+	self
+		createClassNamed: className
+		superclassName: 'Object'
+		slots: #(  )
+		classSlots: #(  ).
+	[
+		self
+			ensureMethodSource: 'answer
+
+	self deprecated: ''Use #betterAnswer instead.''.
+	^ 42'
+			protocol: 'tests'
+			on: (self classNamed: className).
+		result := self
+			          callToolNamed: 'image_evaluate'
+			          withArguments:
+			          { (#code -> '| fixture | fixture := MCPEvaluateDeprecationFixture new. fixture answer + fixture answer') }
+				          asDictionary.
+		warnings := self warningsFrom: result.
+		contentText := (result at: #content) first at: #text.
+		self deny: (result at: #isError ifAbsent: [ false ]).
+		self assert: ((self dataFrom: result) at: #resultPrintString) equals: '84'.
+		self assert: warnings size equals: 1.
+		self assert: (warnings first beginsWith: 'Deprecation: ').
+		self assert: (warnings first includesSubstring: className , '>>#answer').
+		self assert: (warnings first includesSubstring: 'Use #betterAnswer instead.').
+		self assert: (contentText includesSubstring: warnings first).
+		self assert: (contentText beginsWith: '84') ] ensure: [ self removeClassNamed: className ]
+]
+
+{ #category : 'tests' }
 MCPToolStructuredOutputTest >> testEvaluateReturnsStructuredError [
 
 	| result structured error |
@@ -128,7 +164,8 @@ MCPToolStructuredOutputTest >> testEvaluateReturnsStructuredSuccess [
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #resultClassName) equals: 'SmallInteger'.
-	self assert: (data at: #resultPrintString) equals: '3'
+	self assert: (data at: #resultPrintString) equals: '3'.
+	self assertEmpty: (self warningsFrom: result)
 ]
 
 { #category : 'tests' }

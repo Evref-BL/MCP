@@ -49,12 +49,17 @@ MCPToolEvaluate >> commandForRequest: evaluateRequest [
 
 { #category : 'private - results' }
 MCPToolEvaluate >> contentTextForStructuredContent: structuredContent [
-	"An evaluation answers one value or one failure, and the JSON envelope around it repeats the summary, the class and the signaler context that the text already carries."
+	"An evaluation answers one value or one failure, and the JSON envelope around it repeats the summary, the class and the signaler context that the text already carries. A warning raised on the way is the exception: the value arrives looking usable, and the warning is what says it is not."
 
-	^ structuredContent
-		  at: #data
-		  ifPresent: [ :data | self resultTextFor: data ]
-		  ifAbsent: [ self failureTextFor: structuredContent ]
+	| text |
+	text := structuredContent
+		        at: #data
+		        ifPresent: [ :data | self resultTextFor: data ]
+		        ifAbsent: [ self failureTextFor: structuredContent ].
+	^ (structuredContent at: #warnings ifAbsent: [ #(  ) ]) ifEmpty: [ text ] ifNotEmpty: [ :warningDescriptions |
+			  String streamContents: [ :stream |
+					  stream << text.
+					  warningDescriptions do: [ :each | stream << String lf << each ] ] ]
 ]
 
 { #category : 'metadata' }
@@ -79,7 +84,8 @@ MCPToolEvaluate >> executeWithRequest: request [
 				  commandResult := (self commandForRequest: evaluateRequest) execute.
 				  commandResult isError
 					  ifTrue: [ self errorResultText: commandResult summary details: commandResult errorDetails ]
-					  ifFalse: [ self successResultText: 'Code evaluated successfully.' data: commandResult data ] ]
+					  ifFalse: [
+					  self successResultText: 'Code evaluated successfully.' data: commandResult data warnings: commandResult warnings ] ]
 		  onError: [ :error :ignored |
 				  self
 					  errorResultText: (error messageText ifNil: [ error asString ] ifNotNil: [ :text | text ])

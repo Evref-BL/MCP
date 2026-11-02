@@ -1,5 +1,5 @@
 "
-Result DTO produced by the evaluate command. It transports either evaluated data or a structured evaluation failure back to the tool.
+Result DTO produced by the evaluate command. It transports either evaluated data or a structured evaluation failure back to the tool, with the warnings raised while the code ran.
 "
 Class {
 	#name : 'MCPEvaluateResult',
@@ -8,7 +8,8 @@ Class {
 		'status',
 		'data',
 		'summary',
-		'errorDetails'
+		'errorDetails',
+		'warnings'
 	],
 	#category : 'MCP-IDE-Results',
 	#package : 'MCP-IDE',
@@ -18,21 +19,13 @@ Class {
 { #category : 'instance creation' }
 MCPEvaluateResult class >> errorSummary: aString details: aDictionary [
 
-	^ self new
-		  initializeStatus: #error
-		  data: nil
-		  summary: aString
-		  errorDetails: aDictionary
+	^ self new initializeErrorSummary: aString details: aDictionary
 ]
 
 { #category : 'instance creation' }
-MCPEvaluateResult class >> okData: aDictionary [
+MCPEvaluateResult class >> okData: aDictionary warnings: warningStrings [
 
-	^ self new
-		  initializeStatus: #ok
-		  data: aDictionary
-		  summary: nil
-		  errorDetails: nil
+	^ self new initializeOkData: aDictionary warnings: warningStrings
 ]
 
 { #category : 'converting' }
@@ -42,6 +35,7 @@ MCPEvaluateResult >> asDictionary [
 	result := Dictionary new.
 	result at: #status put: self status.
 	self data ifNotNil: [ :value | result at: #data put: value ].
+	self warnings ifNotEmpty: [ :value | result at: #warnings put: value ].
 	self summary ifNotNil: [ :text | result at: #summary put: text ].
 	self errorDetails ifNotNil: [ :value | result at: #error put: value ].
 	^ result
@@ -60,13 +54,19 @@ MCPEvaluateResult >> errorDetails [
 ]
 
 { #category : 'initialization' }
-MCPEvaluateResult >> initializeStatus: aStatus data: aDictionary summary: aString errorDetails: detailsDictionary [
+MCPEvaluateResult >> initializeErrorSummary: aString details: detailsDictionary [
 
-	status := aStatus.
-	data := aDictionary.
+	status := #error.
 	summary := aString.
-	errorDetails := detailsDictionary.
-	^ self
+	errorDetails := detailsDictionary
+]
+
+{ #category : 'initialization' }
+MCPEvaluateResult >> initializeOkData: aDictionary warnings: warningStrings [
+
+	status := #ok.
+	data := aDictionary.
+	warnings := warningStrings ifNil: [ #(  ) ]
 ]
 
 { #category : 'testing' }
@@ -85,4 +85,11 @@ MCPEvaluateResult >> status [
 MCPEvaluateResult >> summary [
 
 	^ summary
+]
+
+{ #category : 'accessing' }
+MCPEvaluateResult >> warnings [
+	"What was raised while the code ran, reported beside the value rather than instead of it."
+
+	^ warnings ifNil: [ #(  ) ]
 ]
