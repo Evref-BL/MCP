@@ -10,7 +10,8 @@ Class {
 		'apply',
 		'changeInfos',
 		'appliedCount',
-		'scope'
+		'scope',
+		'skippedTraitMethods'
 	],
 	#category : 'MCP-IDE-Results',
 	#package : 'MCP-IDE',
@@ -48,6 +49,7 @@ MCPMethodRewriteReport >> asDictionary [
 	data at: #appliedCount put: self appliedCount.
 	data at: #scope put: self scope.
 	data at: #changes put: self changeDictionaries.
+	self skippedTraitMethods ifNotEmpty: [ :skipped | data at: #skippedTraitMethods put: skipped ].
 	^ data
 ]
 
@@ -89,4 +91,17 @@ MCPMethodRewriteReport >> initializeFromRequest: aRequest changeInfos: changeInf
 MCPMethodRewriteReport >> scope [
 
 	^ scope ifNil: [ Dictionary new ]
+]
+
+{ #category : 'accessing' }
+MCPMethodRewriteReport >> skippedTraitMethods [
+	"The methods in scope a trait defines, named by their origin. They were left out of the rewrite: a changed copy would shadow the trait in that class alone."
+
+	^ skippedTraitMethods ifNil: [ #(  ) ]
+]
+
+{ #category : 'accessing' }
+MCPMethodRewriteReport >> skippedTraitMethods: someMethodReferences [
+
+	skippedTraitMethods := someMethodReferences asArray
 ]

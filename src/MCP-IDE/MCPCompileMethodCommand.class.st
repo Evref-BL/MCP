@@ -36,6 +36,7 @@ MCPCompileMethodCommand >> execute [
 				  changeKind := (behavior includesSelector: selector)
 					                ifTrue: [ 'replaced' ]
 					                ifFalse: [ 'created' ].
+				  self tool signalTraitOriginBeforeCompiling: selector in: behavior unlessForced: self request force.
 				  selector := [ behavior compile: methodSource classified: self request protocol ]
 					              on: Exception
 					              do: [ :error | self signalCompileFailure: error methodSource: methodSource ].

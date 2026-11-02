@@ -338,6 +338,21 @@ MCPToolRewriteMethodsTest >> testPreviewReturnsChangesWithoutMutatingMethod [
 ]
 
 { #category : 'tests' }
+MCPToolRewriteMethodsTest >> testRewriteLeavesAMethodInstalledFromATraitToItsOrigin [
+
+	| data result |
+	result := self callToolWith: {
+			          (#rules -> { (self rewriteRuleFrom: '''from the trait''' to: '''rewritten''') }).
+			          (#scope -> { (#classes -> #( 'MCPToolMethodSearchTraitUser' 'MCPToolMethodSearchTraitOtherUser' )) } asDictionary) }
+			          asDictionary.
+	data := self dataFrom: result.
+	self assert: (data at: #changeCount) equals: 0.
+	self assert: (data at: #skippedTraitMethods) asArray equals: #( 'TMCPToolMethodSearchFixture>>mcpTraitFixtureValue' ).
+	self assert: ((self summaryFrom: result) includesSubstring: 'Skipped 1 method installed from a trait.').
+	self assert: MCPToolMethodSearchTraitUser new mcpTraitFixtureValue equals: 'from the trait'
+]
+
+{ #category : 'tests' }
 MCPToolRewriteMethodsTest >> testRewriteRuleNormalizesLineFeedsInPatterns [
 
 	| parsedRequest rule source tool |
@@ -353,6 +368,20 @@ MCPToolRewriteMethodsTest >> testRewriteRuleNormalizesLineFeedsInPatterns [
 	self deny: (rule replacement includes: Character lf).
 	self assert: (rule match includes: Character cr).
 	self assert: (rule replacement includes: Character cr)
+]
+
+{ #category : 'tests' }
+MCPToolRewriteMethodsTest >> testRewriteSkipsNothingWhenTheTraitItselfIsInScope [
+
+	| data result |
+	result := self callToolWith: {
+			          (#rules -> { (self rewriteRuleFrom: '''from the trait''' to: '''rewritten''') }).
+			          (#scope -> { (#classes -> #( 'MCPToolMethodSearchTraitUser' 'TMCPToolMethodSearchFixture' )) } asDictionary) }
+			          asDictionary.
+	data := self dataFrom: result.
+	self assert: (data at: #changeCount) equals: 1.
+	self assert: ((data at: #changes) first at: #class) equals: 'TMCPToolMethodSearchFixture'.
+	self deny: (data includesKey: #skippedTraitMethods)
 ]
 
 { #category : 'tests' }

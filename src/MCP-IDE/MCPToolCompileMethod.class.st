@@ -63,6 +63,17 @@ MCPToolCompileMethod >> defaultExposure [
 	^ 'static'
 ]
 
+{ #category : 'private - schema' }
+MCPToolCompileMethod >> forceSchemaProperty [
+	"Compiling has one more thing to force than the other mutations: a method the class got from a trait. Overriding one is Pharo's own move, and the override lands in the source of the class, so the caller is allowed it once they say so."
+
+	^ self
+		  booleanSchemaPropertyNamed: 'force'
+		  description:
+		  'Continue through refactoring warnings instead of stopping, and compile over a method the class got from a trait, overriding it in this class.'
+		  default: false
+]
+
 { #category : 'private - specs' }
 MCPToolCompileMethod >> methodToolSpec [
 
@@ -93,6 +104,7 @@ MCPToolCompileMethod >> methodToolSpec [
 				    type: 'string';
 				    description:
 					    'The protocol to file the method under. For an extension method, name an extension protocol such as *Package-Name.';
-				    yourself) }).
+				    yourself).
+			   self forceSchemaProperty }).
 		  (#requiredProperties -> #( 'class' 'source' 'protocol' )) } asDictionary
 ]

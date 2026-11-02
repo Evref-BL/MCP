@@ -197,6 +197,13 @@ MCPToolGetMethod >> incrementReferenceCountInSummary: aSummary [
 	aSummary at: #referenceCount put: (aSummary at: #referenceCount) + 1
 ]
 
+{ #category : 'private - results' }
+MCPToolGetMethod >> keyOrder [
+	"Where the method is defined comes before anything about it: a method a class got from a trait is read in the trait and changed there."
+
+	^ #( trait protocol )
+]
+
 { #category : 'private - analysis' }
 MCPToolGetMethod >> matchingSummaryForNodeName: aName kind: aKind ownerName: anOwnerName in: summaries [
 

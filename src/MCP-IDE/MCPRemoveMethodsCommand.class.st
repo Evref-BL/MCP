@@ -21,7 +21,8 @@ MCPRemoveMethodsCommand >> execute [
 					MCPCommandError
 						signalMissingMethodInClassName: self request className
 						classSide: self request classSide
-						selector: selector asString ] ].
+						selector: selector asString ].
+			self tool signalTraitOriginBeforeRemoving: selector in: behavior ].
 	self tool forceRemoveSelectors: selectorSymbols from: behavior.
 	^ MCPRemoveMethodsResult fromRequest: self request removedMethods: #(  ) warningMessages: { warningMessage }
 ]

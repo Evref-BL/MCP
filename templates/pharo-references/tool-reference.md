@@ -64,6 +64,16 @@ in the normal `warnings` array.
 A method can compile and still answer critiques. They are review evidence about
 code that now exists, not a transport failure.
 
+## Methods A Trait Defines
+
+A method a class got from a trait is answered by the trait that defines it: a
+search names the trait and the classes its method reached, and `method_get`
+names the trait before the source. It is the trait's to change, so
+`method_compile` stops unless `force` says to override it in this class alone,
+and `method_update` and `method_remove` stop with nothing to force. A rewrite
+leaves such a method to its origin and names in `skippedTraitMethods` the ones
+its rules matched.
+
 ## Rewriting
 
 `method_rewrite` takes Smalltalk AST patterns, not regex, and a scope is
