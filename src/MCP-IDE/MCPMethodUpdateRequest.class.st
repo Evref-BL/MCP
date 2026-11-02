@@ -184,8 +184,7 @@ MCPMethodUpdateRequest >> initializeFromRequest: request [
 		               permutationFromRequest: request
 		               selector: selector asSymbol
 		               newSelector: (newSelector ifNotNil: [ newSelector asSymbol ]).
-	force := request booleanArgumentNamed: 'force' default: false.
-	^ self
+	force := request booleanArgumentNamed: 'force' default: false
 ]
 
 { #category : 'private - request' }
@@ -400,8 +399,7 @@ MCPMethodUpdateRequest >> validateAddArgumentsUpdate [
 			MCPCommandError
 				signalErrorCode: #InvalidMethodArgumentValueExpressions
 				message: 'argumentValueExpressions must contain one expression for each newly added argument.'
-				details: self requestedContext ].
-	^ self
+				details: self requestedContext ]
 ]
 
 { #category : 'validating' }
@@ -421,8 +419,7 @@ MCPMethodUpdateRequest >> validateForUpdate [
 						message: 'argumentNames and argumentValueExpressions are only valid with newSelector.'
 						details: self requestedContext ] ].
 	action := self newSelectorUpdateAction.
-	action = 'addArguments' ifTrue: [ self validateAddArgumentsUpdate ].
-	^ self
+	action = 'addArguments' ifTrue: [ self validateAddArgumentsUpdate ]
 ]
 
 { #category : 'private - request' }
@@ -469,6 +466,5 @@ MCPMethodUpdateRequest >> validatePermutation: requestedPermutation fromSelector
 						MCPCommandError
 							signalErrorCode: #InvalidMethodArgumentPermutation
 							message: 'removing arguments does not accept negative permutation entries.'
-							details: self requestedContext ] ].
-	^ self
+							details: self requestedContext ] ]
 ]
