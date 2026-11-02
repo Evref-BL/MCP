@@ -587,6 +587,7 @@ MCPToolRepositoryOperationTest >> testDiffCanReportImageModifiedPackagesWithoutW
 			self assert: (data at: #isEmpty) equals: false.
 			self assert: (data at: #changeCount) equals: 1.
 			self assert: (data at: #changedPackages) equals: #( 'MCP-Test-Dirty' ).
+			self assert: (data at: #imageModifiedPackages) equals: #( 'MCP-Test-Dirty' ).
 			self deny: (data includesKey: #modifiedPaths) ]
 ]
 
@@ -605,7 +606,8 @@ MCPToolRepositoryOperationTest >> testDiffParsesAndDispatchesToDiffCommand [
 ]
 
 { #category : 'tests' }
-MCPToolRepositoryOperationTest >> testDiffReportsWorkingCopyDiffWithoutWriting [
+MCPToolRepositoryOperationTest >> testDiffReportsImageChangesWithoutWriting [
+	"A package loaded in the image and never written is what git cannot see, and what the change list exists to report."
 
 	| childNames data location packageName repository repositoryName result |
 	repositoryName := 'MCP Repository Command Diff Test'.
@@ -626,10 +628,11 @@ MCPToolRepositoryOperationTest >> testDiffReportsWorkingCopyDiffWithoutWriting [
 					data := self dataFrom: result.
 					childNames := self directChildNamesOf: location.
 					self deny: (result at: #isError ifAbsent: false).
-					self assert: data keys asSet equals: #( changeCount changedPackages isEmpty ) asSet.
+					self assert: data keys asSet equals: #( changeCount changedPackages imageModifiedPackages isEmpty ) asSet.
 					self assert: (data at: #isEmpty) equals: false.
 					self assert: (data at: #changeCount) > 0.
 					self assert: (data at: #changedPackages) equals: { packageName }.
+					self assert: (data at: #imageModifiedPackages) equals: { packageName }.
 					self deny: (data includesKey: #modifiedPaths).
 					self deny: (childNames anySatisfy: [ :each | each includesSubstring: packageName ]) ] ]
 ]

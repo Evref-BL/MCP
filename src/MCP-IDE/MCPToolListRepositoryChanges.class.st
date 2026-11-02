@@ -1,5 +1,7 @@
 "
-Concrete repository_change_list tool. It inspects the image-side Iceberg working-copy diff through MCPToolRepositoryOperation without writing files.
+Concrete repository_change_list tool.
+
+It reports what the image holds that its files do not, and what the checkout holds that its last commit does not, through MCPToolRepositoryOperation without writing files.
 "
 Class {
 	#name : 'MCPToolListRepositoryChanges',
@@ -32,7 +34,9 @@ MCPToolListRepositoryChanges >> repositoryToolSpec [
 
 	^ {
 		  (#title -> 'List Repository Changes').
-		  (#description -> 'Inspect the image-side Iceberg working-copy diff for a registered repository without writing files.').
+		  (#description
+		   ->
+		   'List what a registered repository has changed, on both sides and without writing anything: the packages the image has changed since they were last written to the checkout, which is what an export would write, and the files git sees changed in the checkout.').
 		  (#action -> 'diff').
 		  (#requestClass -> MCPRepositoryDiffRequest).
 		  (#commandClass -> MCPRepositoryDiffCommand) } asDictionary

@@ -1,5 +1,7 @@
 "
-Result DTO returned by repository_change_list. It reports the repository working-copy diff from the image, including changed package names, relative paths when Iceberg exposes them, a change count, and whether the diff is empty.
+Result DTO returned by repository_change_list.
+
+It names the two layers apart: imageModifiedPackages, the packages whose image contents have changed since they were last written to the checkout, which is what an export would write; and modifiedPaths, the files git sees changed in the checkout. changedPackages is the union of both, which is why it can name a package whose files are untouched.
 "
 Class {
 	#name : 'MCPRepositoryDiffResult',
@@ -8,7 +10,8 @@ Class {
 		'changedPackageNames',
 		'modifiedPaths',
 		'changeCount',
-		'isEmpty'
+		'isEmpty',
+		'imageModifiedPackageNames'
 	],
 	#category : 'MCP-IDE-Results',
 	#package : 'MCP-IDE',
@@ -16,13 +19,13 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPRepositoryDiffResult class >> repository: aRepository changedPackageNames: packageNames modifiedPaths: paths isEmpty: aBoolean [
+MCPRepositoryDiffResult class >> repository: aRepository changedPackageNames: packageNames imageModifiedPackages: imagePackageNames modifiedPaths: paths [
 
 	^ self new
 		  initializeRepository: aRepository
 		  changedPackageNames: packageNames
+		  imageModifiedPackages: imagePackageNames
 		  modifiedPaths: paths
-		  isEmpty: aBoolean
 ]
 
 { #category : 'converting' }
@@ -34,6 +37,7 @@ MCPRepositoryDiffResult >> asDictionary [
 		at: #changeCount put: self changeCount;
 		at: #isEmpty put: self isEmpty.
 	self changedPackageNames ifNotEmpty: [ :names | data at: #changedPackages put: names ].
+	self imageModifiedPackageNames ifNotEmpty: [ :names | data at: #imageModifiedPackages put: names ].
 	self modifiedPaths ifNotEmpty: [ :paths | data at: #modifiedPaths put: paths ].
 	^ data
 ]
@@ -69,13 +73,33 @@ MCPRepositoryDiffResult >> derivedChangeCount [
 	^ self changedPackageNames size
 ]
 
+{ #category : 'private' }
+MCPRepositoryDiffResult >> derivedIsEmpty [
+
+	^ self changedPackageNames isEmpty and: [ self modifiedPaths isEmpty ]
+]
+
+{ #category : 'accessing' }
+MCPRepositoryDiffResult >> imageModifiedPackageNames [
+	"The packages whose image contents have changed since they were last written to the checkout. They are what an export would write, and what git cannot see."
+
+	^ imageModifiedPackageNames ifNil: [ #(  ) ]
+]
+
+{ #category : 'accessing' }
+MCPRepositoryDiffResult >> imageModifiedPackageNames: aCollection [
+
+	imageModifiedPackageNames := aCollection ifNil: [ #(  ) ]
+]
+
 { #category : 'initialization' }
-MCPRepositoryDiffResult >> initializeRepository: aRepository changedPackageNames: packageNames modifiedPaths: paths isEmpty: aBoolean [
+MCPRepositoryDiffResult >> initializeRepository: aRepository changedPackageNames: packageNames imageModifiedPackages: imagePackageNames modifiedPaths: paths [
 
 	self initializeSnapshotFromRepository: aRepository.
 	changedPackageNames := packageNames ifNil: [ #(  ) ].
+	imageModifiedPackageNames := imagePackageNames ifNil: [ #(  ) ].
 	modifiedPaths := paths ifNil: [ #(  ) ].
-	isEmpty := aBoolean.
+	isEmpty := self derivedIsEmpty.
 	changeCount := self derivedChangeCount
 ]
 
