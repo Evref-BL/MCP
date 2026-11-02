@@ -117,7 +117,9 @@ the running image; both preview, and perform with `confirm=true`.
 ## The Escape Hatch
 
 `image_evaluate` runs arbitrary Smalltalk. Prefer a dedicated tool when one
-exists: it validates its input and answers structured data.
+exists: it validates its input and answers structured data. A warning raised
+while the code runs is printed after the value, so a deprecated method's answer
+arrives with the deprecation that qualifies it.
 
 Compiling is the case that bites. Method source separates lines with CR, and
 `method_compile` normalizes what it is given, while a bare `compile:` from

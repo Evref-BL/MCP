@@ -21,22 +21,22 @@ MCPEvaluateCommand class >> tool: aTool request: aRequest resultPreviewCharacter
 { #category : 'executing' }
 MCPEvaluateCommand >> execute [
 
-	| answer compiler notice |
+	| answer compiler notice warningDescriptions |
 	compiler := SmalltalkImage current compiler.
 	compiler compilationContext isScripting: true.
 	notice := nil.
+	warningDescriptions := OrderedCollection new.
 	compiler failBlock: [ :aNotice |
-		notice := aNotice.
-		nil ].
+			notice := aNotice.
+			nil ].
 	answer := [ compiler evaluate: request code ]
 		          on: Exception
 		          do: [ :error |
-			          (error isKindOf: Notification) ifTrue: [ self tool resumeNotification: error ].
-			          error mcpSyntaxNotice ifNotNil: [ :syntaxNotice |
-				          ^ self syntaxFailureFor: syntaxNotice ].
-			          ^ self runtimeFailureFor: error ].
+				          (error isKindOf: Notification) ifTrue: [ self resumeNotification: error collectingWarningInto: warningDescriptions ].
+				          error mcpSyntaxNotice ifNotNil: [ :syntaxNotice | ^ self syntaxFailureFor: syntaxNotice ].
+				          ^ self runtimeFailureFor: error ].
 	notice ifNotNil: [ ^ self syntaxFailureFor: notice ].
-	^ MCPEvaluateResult okData: (self resultDataFor: answer)
+	^ MCPEvaluateResult okData: (self resultDataFor: answer) warnings: warningDescriptions asArray
 ]
 
 { #category : 'initialization' }
@@ -67,6 +67,14 @@ MCPEvaluateCommand >> resultDataFor: anAnswer [
 MCPEvaluateCommand >> resultPreviewCharacterLimit [
 
 	^ resultPreviewCharacterLimit
+]
+
+{ #category : 'private' }
+MCPEvaluateCommand >> resumeNotification: aNotification collectingWarningInto: warningDescriptions [
+	"A warning is the one notification the caller has to see: the value still arrives, and the warning is what says it is not what it looks like. Pharo's own description names the class first, which is the word that gets read, and the same text is kept once, since a loop over a deprecated method raises one sentence as often as it runs."
+
+	(aNotification isKindOf: Warning) ifTrue: [ warningDescriptions addIfNotPresent: aNotification description ].
+	^ self tool resumeNotification: aNotification
 ]
 
 { #category : 'private' }
