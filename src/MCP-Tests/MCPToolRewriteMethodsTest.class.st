@@ -401,6 +401,24 @@ MCPToolRewriteMethodsTest >> testRewriteThatKeepsMatchingIsRefused [
 ]
 
 { #category : 'tests' }
+MCPToolRewriteMethodsTest >> testRuleChainsCascadesLongerThanTwo [
+	"A cascade pattern matches a cascade of its own length, so the rule carries one pattern per length. What method_rewrite applies is those patterns written out and parsed again."
+
+	| source |
+	self
+		ensureMethodSource: 'cascadeTarget: aStream aStream << ''one''; << ''two''; << ''three''; << ''four'''
+		protocol: 'tests'
+		on: self targetClass.
+	self dataFrom: (self callToolWith: {
+				 (#ruleClasses -> { MCPStreamWriteCascadeRule name }).
+				 (#scope -> { (#classes -> { self targetClassName }) } asDictionary).
+				 (#confirm -> true) } asDictionary).
+	source := self sourceForSelector: #cascadeTarget:.
+	self deny: (source includesSubstring: ';').
+	self assert: (source allRangesOfSubstring: '<<') size equals: 4
+]
+
+{ #category : 'tests' }
 MCPToolRewriteMethodsTest >> testRuleClassWithoutPatternsIsRejected [
 
 	| error result |

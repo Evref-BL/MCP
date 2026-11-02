@@ -124,24 +124,27 @@ MCPToolRunCritiquesTest >> testDetectIfFoundOnlyWhereNothingReadsTheAnswer [
 
 { #category : 'tests' }
 MCPToolRunCritiquesTest >> testFlagsCascadedStreamWrites [
-	"<< answers the stream, so a cascade of writes says the same thing with more punctuation."
+	"<< answers the stream, so a cascade of writes says the same thing with more punctuation. A cascade pattern matches a cascade of its own length and no other, so a cascade past two is its own case."
 
-	| data rule |
 	self compileFixtureMethodSource: 'cascadedStreamWriteProbe
 
 	^ String streamContents: [ :stream |
 		stream
 			<< ''first'';
 			<< ''second'' ]'.
+	self compileFixtureMethodSource: 'longCascadedStreamWriteProbe
 
-	data := self dataForArguments: {
-			        (#scope -> { (#classes -> { self fixtureClassName }) } asDictionary).
-			        (#ruleClasses -> { MCPStreamWriteCascadeRule name }) } asDictionary.
+	^ String streamContents: [ :stream |
+		stream
+			<< ''first'';
+			<< ''second'';
+			<< ''third'';
+			<< ''fourth'';
+			<< ''fifth'' ]'.
 
-	rule := (data at: #rules) first.
-	self assert: (rule at: #ruleClass) equals: MCPStreamWriteCascadeRule name.
-	self assert: (rule at: #hits) size equals: 1.
-	self assert: ((rule at: #hits) first at: #method) equals: self fixtureClassName , '>>cascadedStreamWriteProbe'
+	self
+		assert: (self selectorsHitBy: MCPStreamWriteCascadeRule)
+		equals: (Set with: #cascadedStreamWriteProbe with: #longCascadedStreamWriteProbe)
 ]
 
 { #category : 'tests' }
