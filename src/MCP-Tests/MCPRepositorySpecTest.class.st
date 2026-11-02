@@ -158,11 +158,12 @@ MCPRepositorySpecTest >> testRepositoryDiffResultReturnsDictionary [
 	result := MCPRepositoryDiffResult
 		          repository: repository
 		          changedPackageNames: #( 'MCP' )
-		          modifiedPaths: #( 'src/MCP.package' )
-		          isEmpty: false.
+		          imageModifiedPackages: #( 'MCP' )
+		          modifiedPaths: #( 'src/MCP.package' ).
 	data := result asDictionary.
-	self assert: data keys asSet equals: #( changeCount changedPackages isEmpty modifiedPaths ) asSet.
+	self assert: data keys asSet equals: #( changeCount changedPackages imageModifiedPackages isEmpty modifiedPaths ) asSet.
 	self assert: (data at: #changedPackages) equals: #( 'MCP' ).
+	self assert: (data at: #imageModifiedPackages) equals: #( 'MCP' ).
 	self assert: (data at: #modifiedPaths) equals: #( 'src/MCP.package' ).
 	self assert: (data at: #changeCount) equals: 1.
 	self assert: (data at: #isEmpty) equals: false

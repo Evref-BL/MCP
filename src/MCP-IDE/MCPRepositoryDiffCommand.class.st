@@ -1,5 +1,7 @@
 "
-Command wrapper for repository_change_list. It calculates IceRepository>>workingCopyDiff and returns an MCPRepositoryDiffResult without writing the disk working copy or updating the repository index.
+Command wrapper for repository_change_list.
+
+It reads the image's modified packages and the checkout's git status, and returns an MCPRepositoryDiffResult without writing the disk working copy or updating the repository index.
 "
 Class {
 	#name : 'MCPRepositoryDiffCommand',
@@ -12,19 +14,19 @@ Class {
 { #category : 'executing' }
 MCPRepositoryDiffCommand >> execute [
 
-	| changedPackageNames isEmpty modifiedPaths repository result |
+	| changedPackageNames imagePackageNames modifiedPaths repository result |
 	^ self
 		  executeRepositoryAction: 'diff'
 		  work: [
 				  repository := self request repository.
+				  imagePackageNames := self imageModifiedPackageNamesFor: repository.
 				  modifiedPaths := self modifiedPathsFromGitStatusIn: repository.
 				  changedPackageNames := self changedPackageNamesForRepository: repository modifiedPaths: modifiedPaths.
-				  isEmpty := changedPackageNames isEmpty and: [ modifiedPaths isEmpty ].
 				  result := MCPRepositoryDiffResult
 					            repository: repository
 					            changedPackageNames: changedPackageNames
-					            modifiedPaths: modifiedPaths
-					            isEmpty: isEmpty ]
+					            imageModifiedPackages: imagePackageNames
+					            modifiedPaths: modifiedPaths ]
 		  successResult: [ :warningMessages |
 				  self tool
 					  successResultText:
