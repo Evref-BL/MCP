@@ -100,21 +100,32 @@ MCPToolRunCritiques >> addMethodCritiqueEntriesForRuleClass: ruleClass queryRequ
 ]
 
 { #category : 'private - running' }
+MCPToolRunCritiques >> addNodeCritiqueEntriesForRule: rule method: aMethod to: entries maximum: maximum [
+
+	aMethod ast nodesDo: [ :eachNode |
+			(self hasCollectedEnoughEntries: entries maximum: maximum) ifFalse: [
+					rule check: eachNode forCritiquesDo: [ :critique |
+							self
+								addEntryForCritique: critique
+								rule: rule
+								fallbackEntity: aMethod
+								to: entries
+								maximum: maximum ] ] ]
+]
+
+{ #category : 'private - running' }
 MCPToolRunCritiques >> addNodeCritiqueEntriesForRuleClass: ruleClass queryRequest: queryRequest to: entries maximum: maximum [
+	"A node rule is asked whether it wants the method before its nodes are walked, which is what Renraku's own sweeps do. A rule that excludes a method, as ReDoNotSendSuperInitializeInClassSideRule excludes every instance-side initialize, would otherwise be reported here and by no other tool."
 
 	| rule |
 	rule := ruleClass new.
 	self sortedMethodsForQueryRequest: queryRequest do: [ :eachMethod |
-			(self hasCollectedEnoughEntries: entries maximum: maximum) ifFalse: [
-					eachMethod ast nodesDo: [ :eachNode |
-							(self hasCollectedEnoughEntries: entries maximum: maximum) ifFalse: [
-									rule check: eachNode forCritiquesDo: [ :critique |
-											self
-												addEntryForCritique: critique
-												rule: rule
-												fallbackEntity: eachMethod
-												to: entries
-												maximum: maximum ] ] ] ] ]
+			((self hasCollectedEnoughEntries: entries maximum: maximum) not and: [ rule shouldCheckMethod: eachMethod ]) ifTrue: [
+					self
+						addNodeCritiqueEntriesForRule: rule
+						method: eachMethod
+						to: entries
+						maximum: maximum ] ]
 ]
 
 { #category : 'private - running' }

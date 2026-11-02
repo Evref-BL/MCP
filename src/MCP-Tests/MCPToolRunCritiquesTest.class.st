@@ -92,6 +92,30 @@ MCPToolRunCritiquesTest >> tearDown [
 ]
 
 { #category : 'tests' }
+MCPToolRunCritiquesTest >> testAsksANodeRuleWhetherItWantsTheMethod [
+	"ReDoNotSendSuperInitializeInClassSideRule is about the class side and says so in shouldCheckMethod:. An instance-side initialize sending super initialize is what it exists to leave alone."
+
+	| data hits |
+	self compileFixtureMethodSource: 'initialize
+
+	super initialize.
+	self assignmentInBlockProbe'.
+	self
+		ensureMethodSource: 'initialize
+
+	super initialize.
+	self new'
+		protocol: 'tests'
+		on: self fixtureClass class.
+
+	data := self dataForArguments: {
+			        (#scope -> { (#classes -> { self fixtureClassName }) } asDictionary).
+			        (#ruleClasses -> { ReDoNotSendSuperInitializeInClassSideRule name }) } asDictionary.
+	hits := (data at: #rules) flatCollect: [ :each | each at: #hits ].
+	self assert: (hits collect: [ :each | each at: #method ] as: Array) equals: { (self fixtureClassName , ' class>>initialize') }
+]
+
+{ #category : 'tests' }
 MCPToolRunCritiquesTest >> testDeniesOnlyWhereDenyIsUnderstood [
 	"Object answers assert: and has no deny:."
 
