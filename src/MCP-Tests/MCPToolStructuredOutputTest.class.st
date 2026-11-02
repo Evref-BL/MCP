@@ -128,6 +128,20 @@ MCPToolStructuredOutputTest >> testEvaluateReportsADeprecationBesideTheValue [
 ]
 
 { #category : 'tests' }
+MCPToolStructuredOutputTest >> testEvaluateReportsAPlainWarningBesideTheValue [
+	"Warning>>defaultAction treats an unhandled warning as an error, so a call over code that only warned used to fail before its value arrived."
+
+	| contentText result warnings |
+	result := self callToolNamed: 'image_evaluate' withArguments: { (#code -> 'Warning signal: ''take care''. 42') } asDictionary.
+	warnings := self warningsFrom: result.
+	contentText := (result at: #content) first at: #text.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: ((self dataFrom: result) at: #resultPrintString) equals: '42'.
+	self assert: warnings asArray equals: #( 'Warning: take care' ).
+	self assert: (contentText beginsWith: '42')
+]
+
+{ #category : 'tests' }
 MCPToolStructuredOutputTest >> testEvaluateReturnsStructuredError [
 
 	| result structured error |
@@ -166,6 +180,23 @@ MCPToolStructuredOutputTest >> testEvaluateReturnsStructuredSuccess [
 	self assert: (data at: #resultClassName) equals: 'SmallInteger'.
 	self assert: (data at: #resultPrintString) equals: '3'.
 	self assertEmpty: (self warningsFrom: result)
+]
+
+{ #category : 'tests' }
+MCPToolStructuredOutputTest >> testEvaluateSurvivesADeprecationInAnImageThatRaisesThem [
+	"Deprecation>>defaultAction raises when the image is set to raise deprecations, which is the same line a plain warning reaches."
+
+	| previous result |
+	previous := Deprecation raiseWarning.
+	result := [
+		          Deprecation raiseWarning: true.
+		          self
+			          callToolNamed: 'image_evaluate'
+			          withArguments: { (#code -> 'Object new deprecated: ''probe explanation.''. 7') } asDictionary ] ensure: [
+		          Deprecation raiseWarning: previous ].
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: ((self dataFrom: result) at: #resultPrintString) equals: '7'.
+	self assert: ((self warningsFrom: result) anySatisfy: [ :each | each includesSubstring: 'probe explanation.' ])
 ]
 
 { #category : 'tests' }
