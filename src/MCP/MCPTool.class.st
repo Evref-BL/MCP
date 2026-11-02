@@ -951,11 +951,16 @@ MCPTool >> requestFromToolCallArguments: toolCallArguments [
 
 { #category : 'private - execution' }
 MCPTool >> resumeNotification: aNotification [
-	"Resume with the value the image itself would have produced. The default action may signal notifications of its own, and a handler is suspended while its block runs, so those would otherwise escape this boundary and fail the call: Deprecation>>defaultAction logs, and logging signals DeprecationPerformedNotification."
+	"Resume with the value the image itself would have produced. The default action may signal notifications of its own, and a handler is suspended while its block runs, so those would otherwise escape this boundary and fail the call: Deprecation>>defaultAction logs, and logging signals DeprecationPerformedNotification.
 
-	^ aNotification resume: ([ aNotification defaultAction ]
-			   on: Notification
-			   do: [ :nested | self resumeNotification: nested ])
+	A warning is where that value is an error rather than a value. Warning>>defaultAction treats the absence of a handler as one and raises, and a deprecation reaches the same line in an image set to raise them, so a call over code that only warned would fail. The default action still runs, for the log and the rewrite a deprecation performs, and what it raises instead of answering is dropped here."
+
+	^ aNotification resume: ([
+			   [ aNotification defaultAction ]
+				   on: Notification
+				   do: [ :nested | self resumeNotification: nested ] ]
+			   on: UnhandledError
+			   do: [ :unhandled | unhandled return: nil ])
 ]
 
 { #category : 'private - schema' }
