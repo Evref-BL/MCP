@@ -1220,6 +1220,31 @@ MCPToolMethodMutationTest >> testReformatsMethod [
 ]
 
 { #category : 'tests' }
+MCPToolMethodMutationTest >> testReformatsWithTheFormatterOfTheMethodPackage [
+	"The manifest of the method's package decides its formatting, not the manifest of the package that defines the AST."
+
+	| method result target |
+	self createGeneratedPackageManifestWithNarrowFormatter.
+	target := self
+		          createClassNamed: 'MCPToolMethodMutationTestFormatterTarget'
+		          superclassName: 'Object'
+		          slots: #(  )
+		          classSlots: #(  ).
+	[
+		result := self callToolWith: (self
+				           compileArgumentsForClass: target
+				           classSide: false
+				           methodSource: 'boundedAnswer ^ 1 between: 1000000 and: 2000000'
+				           protocol: 'tests').
+		method := target >> #boundedAnswer.
+		self deny: (result at: #isError ifAbsent: [ false ]).
+		self assert: method sourceCode equals: (method ast formattedCodeIn: target).
+		self deny: method sourceCode equals: method ast formattedCode ] ensure: [
+			self removeClassNamed: 'MCPToolMethodMutationTestFormatterTarget'.
+			self removeGeneratedPackageManifest ]
+]
+
+{ #category : 'tests' }
 MCPToolMethodMutationTest >> testRemoveArgumentWithoutPermutationKeepsTheNamedArguments [
 
 	| narrowed result |
