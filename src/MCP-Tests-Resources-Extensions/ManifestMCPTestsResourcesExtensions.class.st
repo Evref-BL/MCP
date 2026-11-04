@@ -1,5 +1,5 @@
 "
-Please describe the package using the class comment of the included manifest class. The manifest class also includes other additional metadata for the package. These meta data are used by other tools such as the SmalllintManifestChecker and the critics Browser
+Extension methods on a class of MCP-Tests-Resources, so the tests can tell an extension method from a method of the class's own package.
 "
 Class {
 	#name : 'ManifestMCPTestsResourcesExtensions',

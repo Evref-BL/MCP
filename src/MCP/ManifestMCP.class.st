@@ -1,5 +1,5 @@
 "
-Please describe the package using the class comment of the included manifest class. The manifest class also includes other additional metadata for the package. These meta data are used by other tools such as the SmalllintManifestChecker and the critics Browser
+The MCP server: its Streamable HTTP transport, the JSON-RPC handlers, the tool registry and its schema machinery, and the catalog tools it dispatches through. A project serving tools of its own needs this package alone.
 "
 Class {
 	#name : 'ManifestMCP',
