@@ -1431,7 +1431,7 @@ MCPToolContractsTest >> testMethodMutationToolsHaveAccurateNamesAndRequiredArgum
 	updatePropertyNames := updateTool inputSchema properties collect: [ :each | each name ].
 	self assert: createTool name equals: 'method_compile'.
 	self assert: updateTool name equals: 'method_update'.
-	self assert: createTool inputSchema required asSet equals: #( 'class' 'source' 'protocol' ) asSet.
+	self assert: createTool inputSchema required asSet equals: #( 'class' 'source' ) asSet.
 	self assert: updateTool inputSchema required asSet equals: #( 'class' 'selector' ) asSet.
 	self assert: updateTool atLeastOneInputProperties asSet equals: #( 'protocol' 'newSelector' ) asSet.
 	self assert: createPropertyNames asSet equals: #( 'class' 'side' 'protocol' 'source' 'force' ) asSet.

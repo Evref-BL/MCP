@@ -103,8 +103,8 @@ MCPToolCompileMethod >> methodToolSpec [
 				    name: 'protocol';
 				    type: 'string';
 				    description:
-					    'The protocol to file the method under. For an extension method, name an extension protocol such as *Package-Name.';
+					    'The protocol to file the method under. Omitted, a method being replaced keeps the protocol it is in, and a new one is left unclassified, which the answer warns about. For an extension method, name an extension protocol such as *Package-Name.';
 				    yourself).
 			   self forceSchemaProperty }).
-		  (#requiredProperties -> #( 'class' 'source' 'protocol' )) } asDictionary
+		  (#requiredProperties -> #( 'class' 'source' )) } asDictionary
 ]
