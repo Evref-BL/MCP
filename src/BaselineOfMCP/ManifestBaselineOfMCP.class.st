@@ -1,5 +1,5 @@
 "
-Please describe the package using the class comment of the included manifest class. The manifest class also includes other additional metadata for the package. These meta data are used by other tools such as the SmalllintManifestChecker and the critics Browser
+The Metacello baseline of MCP: its packages, what they depend on, and the groups a project loads them by. The formatter here is MCP's: every other MCP package's manifest answers it rather than state its own.
 "
 Class {
 	#name : 'ManifestBaselineOfMCP',

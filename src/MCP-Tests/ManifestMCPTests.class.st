@@ -1,5 +1,5 @@
 "
-Please describe the package using the class comment of the included manifest class. The manifest class also includes other additional metadata for the package. These meta data are used by other tools such as the SmalllintManifestChecker and the critics Browser
+The tests of the MCP server and its image tools. The classes they act on live in the MCP-Tests-Resources packages, and a class a test generates goes into MCP-Tests-Generated, outside the versioned packages.
 "
 Class {
 	#name : 'ManifestMCPTests',
