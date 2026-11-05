@@ -40,15 +40,33 @@ MCPTestCase >> createClassNamed: aClassName superclassName: aSuperclassName slot
 			  builder install ]
 ]
 
+{ #category : 'private - packages' }
+MCPTestCase >> createGeneratedPackageManifestWithNarrowFormatter [
+	"The image-wide default formatter can agree with a package's own, and then a formatter read from the wrong manifest goes unnoticed. This one wraps at 20 columns, which no default does."
+
+	| manifest |
+	manifest := self
+		            createClassNamed: self generatedManifestClassName
+		            superclassName: 'PackageManifest'
+		            slots: #(  )
+		            classSlots: #(  ).
+	self withoutEpiceaDuring: [
+			manifest classSide
+				compile: 'formatter ^ EFFormatter new installNewContext: (EFContext new maxLineLength: 20)'
+				classified: 'formatting' ].
+	^ manifest
+]
+
 { #category : 'private - methods' }
 MCPTestCase >> ensureMethodSource: aMethodSource protocol: aProtocol on: aBehavior [
-	"An extension protocol only makes the method an extension when the package it names exists, so it is created on demand."
+	"An extension protocol only makes the method an extension when the package it names exists, so it is created on demand. The method is formatted the way the tools format it, with the formatter of its class's package."
 
 	self withoutEpiceaDuring: [
-			| selector |
+			| method selector |
 			(aProtocol beginsWith: '*') ifTrue: [ PackageOrganizer default ensurePackage: aProtocol allButFirst ].
 			selector := aBehavior compile: aMethodSource classified: aProtocol.
-			(aBehavior >> selector) reformat ]
+			method := aBehavior >> selector.
+			aBehavior compile: (method ast formattedCodeIn: aBehavior) classified: method protocol ]
 ]
 
 { #category : 'private - classes' }
@@ -62,6 +80,12 @@ MCPTestCase >> generatedExtensionPackageName [
 MCPTestCase >> generatedExtensionProtocol [
 
 	^ '*' , self generatedExtensionPackageName
+]
+
+{ #category : 'private - classes' }
+MCPTestCase >> generatedManifestClassName [
+
+	^ 'ManifestMCPTestsGenerated'
 ]
 
 { #category : 'private - classes' }
@@ -94,6 +118,12 @@ MCPTestCase >> removeClassNamed: aClassName [
 	self withoutEpiceaDuring: [
 		(Smalltalk globals includesKey: classSymbol) ifTrue: [ (Smalltalk globals at: classSymbol) removeFromSystem ] ].
 	self removeGeneratedPackagesIfEmpty
+]
+
+{ #category : 'private - packages' }
+MCPTestCase >> removeGeneratedPackageManifest [
+
+	self removeClassNamed: self generatedManifestClassName
 ]
 
 { #category : 'private - classes' }

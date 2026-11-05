@@ -1004,6 +1004,36 @@ MCPToolClassMutationTest >> testUpdateRemovesTraitsWithEmptyArray [
 ]
 
 { #category : 'tests - update' }
+MCPToolClassMutationTest >> testUpdateRenameSlotReformatsWithTheFormatterOfTheClassPackage [
+
+	| method result target |
+	self createGeneratedPackageManifestWithNarrowFormatter.
+	self
+		createClassNamed: 'MCPToolClassMutationTestRenameSlotFormatterTarget'
+		superclassName: 'Object'
+		slots: #( oldSlot )
+		classSlots: #(  ).
+	[
+		self
+			ensureMethodSource: 'slotProbe ^ 1 between: oldSlot and: 2000000'
+			protocol: 'testing'
+			on: (self classNamed: 'MCPToolClassMutationTestRenameSlotFormatterTarget').
+		result := self callToolWith: (self
+				           updateRequestArgumentsForSlotRenameInClassNamed: 'MCPToolClassMutationTestRenameSlotFormatterTarget'
+				           slotName: 'oldSlot'
+				           newSlotName: 'renamedSlot'
+				           classSide: false).
+		target := self classNamed: 'MCPToolClassMutationTestRenameSlotFormatterTarget'.
+		method := target >> #slotProbe.
+		self deny: (result at: #isError ifAbsent: [ false ]).
+		self assert: (method sourceCode includesSubstring: 'renamedSlot').
+		self assert: method sourceCode equals: (method ast formattedCodeIn: target).
+		self deny: method sourceCode equals: method ast formattedCode ] ensure: [
+			self removeClassNamed: 'MCPToolClassMutationTestRenameSlotFormatterTarget'.
+			self removeGeneratedPackageManifest ]
+]
+
+{ #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateRenameUpdatesMethodReferences [
 
 	| reference |

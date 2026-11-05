@@ -240,7 +240,7 @@ MCPRenameSlotCommand >> rewriteClassSideReferencesForSelector: aSelector inBehav
 			changed := true ].
 	changed ifFalse: [ ^ self ].
 	protocol := (aBehavior >> aSelector) protocol.
-	source := parseTree formattedCode withInternalLineEndings.
+	source := (parseTree formattedCodeIn: aBehavior) withInternalLineEndings.
 	aBehavior compile: source classified: protocol
 ]
 
@@ -269,7 +269,7 @@ MCPRenameSlotCommand >> rewriteInstanceSideReferencesForSelector: aSelector inBe
 			changed := true ].
 	changed ifFalse: [ ^ self ].
 	protocol := (aBehavior >> aSelector) protocol.
-	source := parseTree formattedCode withInternalLineEndings.
+	source := (parseTree formattedCodeIn: aBehavior) withInternalLineEndings.
 	aBehavior compile: source classified: protocol
 ]
 

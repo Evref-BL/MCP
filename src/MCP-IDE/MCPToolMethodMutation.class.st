@@ -291,10 +291,11 @@ MCPToolMethodMutation >> parsedRequestFromToolRequest: request [
 
 { #category : 'private' }
 MCPToolMethodMutation >> reformattedMethodForBehavior: aBehavior selector: aSelector [
+	"Not CompiledMethod>>reformat: it formats in the context of the AST node's class, so it reads AST-Core's manifest instead of the formatter the method's own package declares."
 
 	| compiledMethod |
 	compiledMethod := aBehavior >> aSelector.
-	compiledMethod reformat.
+	aBehavior compile: (compiledMethod ast formattedCodeIn: aBehavior) classified: compiledMethod protocol.
 	^ aBehavior >> aSelector
 ]
 
