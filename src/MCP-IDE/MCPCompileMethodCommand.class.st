@@ -22,7 +22,7 @@ MCPCompileMethodCommand >> changeSummaryVerbFor: changeKindString [
 { #category : 'executing' }
 MCPCompileMethodCommand >> execute [
 
-	| behavior changeKind compiledMethod methodReference methodSource result selector |
+	| behavior changeKind compiledMethod methodReference methodSource previousProtocolName result selector |
 	^ self tool
 		  executeMutationAction: 'compile'
 		  force: self request force
@@ -36,8 +36,10 @@ MCPCompileMethodCommand >> execute [
 				  changeKind := (behavior includesSelector: selector)
 					                ifTrue: [ 'replaced' ]
 					                ifFalse: [ 'created' ].
+				  previousProtocolName := changeKind = 'replaced' ifTrue: [ self protocolNameOf: behavior >> selector ].
 				  self tool signalTraitOriginBeforeCompiling: selector in: behavior unlessForced: self request force.
-				  selector := [ behavior compile: methodSource classified: self request protocol ]
+				  "Naming no protocol keeps the one the method is in. Pharo's own compile:classified: with nil does not promise that, so it is passed explicitly."
+				  selector := [ behavior compile: methodSource classified: (self request protocol ifNil: [ previousProtocolName ]) ]
 					              on: Exception
 					              do: [ :error | self signalCompileFailure: error methodSource: methodSource ].
 				  compiledMethod := self tool reformattedMethodForBehavior: behavior selector: selector.
@@ -48,13 +50,39 @@ MCPCompileMethodCommand >> execute [
 					            changeKind: changeKind ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText:
-					  (String streamContents: [ :stream |
-						   stream << (self changeSummaryVerbFor: result changeKind) << ' ' << methodReference << '.' ])
+					  successResultText: (self
+							   summaryFor: result changeKind
+							   of: methodReference
+							   from: previousProtocolName
+							   to: (self protocolNameOf: compiledMethod))
 					  data: result asDictionary
-					  warnings: warningMessages ]
+					  warnings: warningMessages , (self protocolWarningsFor: compiledMethod reference: methodReference) ]
 		  failureSummary: [ :error |
 		  self tool failureMessageForCompileClassNamed: self request className classSide: self request classSide error: error ]
+]
+
+{ #category : 'private' }
+MCPCompileMethodCommand >> isUnclassified: aCompiledMethod [
+
+	^ (self protocolNameOf: aCompiledMethod)
+		  ifNil: [ true ]
+		  ifNotNil: [ :protocolName | protocolName = Protocol unclassified asString ]
+]
+
+{ #category : 'private' }
+MCPCompileMethodCommand >> protocolNameOf: aCompiledMethod [
+
+	^ aCompiledMethod protocol ifNotNil: [ :protocol | protocol name asString ]
+]
+
+{ #category : 'private' }
+MCPCompileMethodCommand >> protocolWarningsFor: aCompiledMethod reference: methodReference [
+	"Nobody chose to file a method as unclassified: it is what is left when no protocol was named for it."
+
+	(self isUnclassified: aCompiledMethod) ifFalse: [ ^ #(  ) ].
+	^ { (String streamContents: [ :stream |
+			   stream << methodReference << ' has no protocol, so it is filed under ''' << Protocol unclassified asString
+			   << '''. Name one with protocol, or move it with method_update.' ]) }
 ]
 
 { #category : 'private' }
@@ -77,4 +105,16 @@ MCPCompileMethodCommand >> signalCompileFailure: anError methodSource: methodSou
 				 summary:
 				 (self tool failureMessageForCompileClassNamed: self request className classSide: self request classSide error: compileError))
 				signal ]
+]
+
+{ #category : 'private' }
+MCPCompileMethodCommand >> summaryFor: changeKind of: methodReference from: previousProtocolName to: protocolName [
+	"A method that changed protocol says so. Before protocol was optional, replacing a method's body meant naming a protocol, and naming another one moved the method without a word."
+
+	^ String streamContents: [ :stream |
+			  stream << (self changeSummaryVerbFor: changeKind) << ' ' << methodReference.
+			  (changeKind = 'replaced' and: [ previousProtocolName ~= protocolName ]) ifTrue: [
+					  stream << ', moving it from ' << (previousProtocolName ifNil: [ 'no protocol' ]) << ' to '
+					  << (protocolName ifNil: [ 'no protocol' ]) ].
+			  stream << '.' ]
 ]

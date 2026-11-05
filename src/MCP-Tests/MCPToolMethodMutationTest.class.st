@@ -1059,6 +1059,80 @@ MCPToolMethodMutationTest >> testCompileReturnsStructuredCommandErrorForUndeclar
 ]
 
 { #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileWithAnotherProtocolSaysTheMethodMoved [
+
+	| result selector |
+	selector := #moveProtocolProbe.
+	self ensureMethodSource: 'moveProtocolProbe ^ 1' protocol: 'private' on: MCPToolMethodMutationTestTarget.
+	[
+		result := self callToolNamed: 'method_compile' withArguments: {
+				          (#class -> MCPToolMethodMutationTestTarget name).
+				          (#source -> 'moveProtocolProbe ^ 2').
+				          (#protocol -> 'tests') } asDictionary.
+		self deny: (result at: #isError ifAbsent: [ false ]).
+		self
+			assert: (self summaryFrom: result)
+			equals: 'Replaced MCPToolMethodMutationTestTarget>>moveProtocolProbe, moving it from private to tests.'.
+		self assert: (MCPToolMethodMutationTestTarget >> selector) protocol name asString equals: 'tests' ] ensure: [
+		self removeSelector: selector from: MCPToolMethodMutationTestTarget ]
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileWithoutProtocolKeepsAnExtensionMethodInItsPackage [
+	"An extension method's protocol is what puts it in the package that extends the class."
+
+	| method selector |
+	selector := #keepExtensionProbe.
+	self ensureMethodSource: 'keepExtensionProbe ^ 1' protocol: self generatedExtensionProtocol on: MCPToolMethodMutationTestTarget.
+	[
+		self callToolNamed: 'method_compile' withArguments: {
+				(#class -> MCPToolMethodMutationTestTarget name).
+				(#source -> 'keepExtensionProbe ^ 2') } asDictionary.
+		method := MCPToolMethodMutationTestTarget >> selector.
+		self assert: method protocol name asString equals: self generatedExtensionProtocol.
+		self assert: method package name equals: self generatedExtensionPackageName ] ensure: [
+			self removeSelector: selector from: MCPToolMethodMutationTestTarget.
+			self removeGeneratedPackagesIfEmpty ]
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileWithoutProtocolKeepsTheProtocolOfTheMethodItReplaces [
+	"Changing a method's body used to mean naming a protocol, and naming another one moved the method."
+
+	| result selector |
+	selector := #keepProtocolProbe.
+	self ensureMethodSource: 'keepProtocolProbe ^ 1' protocol: 'private' on: MCPToolMethodMutationTestTarget.
+	[
+		result := self callToolNamed: 'method_compile' withArguments: {
+				          (#class -> MCPToolMethodMutationTestTarget name).
+				          (#source -> 'keepProtocolProbe ^ 2') } asDictionary.
+		self deny: (result at: #isError ifAbsent: [ false ]).
+		self assert: (self summaryFrom: result) equals: 'Replaced MCPToolMethodMutationTestTarget>>keepProtocolProbe.'.
+		self assert: (MCPToolMethodMutationTestTarget >> selector) protocol name asString equals: 'private'.
+		self assert: (self warningsFrom: result) isEmpty.
+		self assert: MCPToolMethodMutationTestTarget new keepProtocolProbe equals: 2 ] ensure: [
+		self removeSelector: selector from: MCPToolMethodMutationTestTarget ]
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileWithoutProtocolWarnsThatANewMethodHasNone [
+
+	| result selector warnings |
+	selector := #unclassifiedProbe.
+	self removeSelector: selector from: MCPToolMethodMutationTestTarget.
+	[
+		result := self callToolNamed: 'method_compile' withArguments: {
+				          (#class -> MCPToolMethodMutationTestTarget name).
+				          (#source -> 'unclassifiedProbe ^ 3') } asDictionary.
+		self deny: (result at: #isError ifAbsent: [ false ]).
+		self assert: (MCPToolMethodMutationTestTarget >> selector) protocol name asString equals: Protocol unclassified asString.
+		warnings := self warningsFrom: result.
+		self assert: warnings size equals: 1.
+		self assert: (warnings first includesSubstring: 'MCPToolMethodMutationTestTarget>>unclassifiedProbe has no protocol') ] ensure: [
+		self removeSelector: selector from: MCPToolMethodMutationTestTarget ]
+]
+
+{ #category : 'tests' }
 MCPToolMethodMutationTest >> testCompilesClassSideMethod [
 
 	| data result |
@@ -1159,7 +1233,7 @@ MCPToolMethodMutationTest >> testMethodToolSchemasDeclareExpectedInputs [
 		assert: updatePropertyNames asArray
 		equals:
 		#( 'class' 'side' 'force' 'selector' 'protocol' 'newSelector' 'arguments' 'argumentValueExpressions' 'permutation' 'scope' ).
-	self assert: MCPToolCompileMethod new inputSchema required asSet equals: #( 'class' 'source' 'protocol' ) asSet.
+	self assert: MCPToolCompileMethod new inputSchema required asSet equals: #( 'class' 'source' ) asSet.
 	self assert: MCPToolUpdateMethod new inputSchema required asSet equals: #( 'class' 'selector' ) asSet.
 	self assert: (classSideProperty extraProperties at: #default) equals: 'instance'
 ]
