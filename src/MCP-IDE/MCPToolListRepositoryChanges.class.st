@@ -20,7 +20,7 @@ MCPToolListRepositoryChanges class >> toolName [
 { #category : 'metadata' }
 MCPToolListRepositoryChanges >> additionalKeywords [
 
-	^ super additionalKeywords , #( 'diff' 'status' 'change' )
+	^ super additionalKeywords , #( 'diff' 'status' 'change' 'modified' 'dirty' 'committed' 'uncommitted' 'unsaved' )
 ]
 
 { #category : 'metadata' }

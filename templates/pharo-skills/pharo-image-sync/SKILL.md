@@ -1,6 +1,6 @@
 ---
 name: pharo-image-sync
-description: Move code between a live Pharo image and its Tonel files, and tell the two apart. Use before exporting image changes, after a checkout moves under the image, and whenever Iceberg, the image and the files disagree.
+description: Move code between a live Pharo image and its Tonel files, and tell the two apart. Use before exporting image changes, after a checkout moves under the image, before saying what is or is not committed, and whenever Iceberg, the image and the files disagree.
 ---
 
 # Pharo Image Sync
@@ -11,6 +11,25 @@ Iceberg diff does not mean anything was written to disk.
 
 Git itself is ordinary shell work. These tools only cross the boundary between
 the image and the files.
+
+## What Is Committed
+
+The user may commit through Iceberg at any time, and nothing tells you. What
+you remember changing is not evidence that it is uncommitted, so ask before
+calling anything unsaved or at risk.
+
+- `git log` in the checkout says what was committed. Iceberg commits are
+  ordinary git commits, so it answers even when the image does not.
+- `repository_search` with `isModified` names the repositories and packages the
+  image changed since they were last written. Anything not committed is in one
+  of them, but an edit that was undone, or a test that compiled and removed a
+  method, marks a package too: a mark says where to look, not that something
+  differs.
+- To know whether one change is committed, compare `method_get` with the
+  class's file at `HEAD` (`git show HEAD:<path>`).
+
+`git status` cannot answer for the image: Iceberg writes files only when it
+commits or exports, so the checkout stays clean while the image holds changes.
 
 ## Out Of The Image
 

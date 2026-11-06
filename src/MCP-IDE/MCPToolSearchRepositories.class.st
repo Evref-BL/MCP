@@ -26,7 +26,8 @@ MCPToolSearchRepositories class >> toolName [
 { #category : 'metadata' }
 MCPToolSearchRepositories >> additionalKeywords [
 
-	^ #( 'repository' 'repositories' 'repo' 'iceberg' 'package' 'packages' 'class' 'classes' )
+	^ #( 'repository' 'repositories' 'repo' 'iceberg' 'package' 'packages' 'class' 'classes' 'status' 'modified' 'dirty' 'committed'
+	     'uncommitted' 'unsaved' )
 ]
 
 { #category : 'metadata' }

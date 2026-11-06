@@ -17,6 +17,9 @@ rather than letting source stand in for it.
   agents working in it at once share every edit, and one export writes both
   their changes into one diff. One writer at a time.
 - Tools change the running image but never save it; use a safe image boundary.
+- The user may commit through Iceberg while you work, and nothing reports it.
+  What you remember changing is not evidence that it is uncommitted: ask the
+  image and the checkout before calling any work unsaved or at risk.
 
 ## Context Loading
 
@@ -27,8 +30,8 @@ rather than letting source stand in for it.
   call came back with: read
   [tool reference](pharo-references/tool-reference.md).
 - Before loading a project: use `skills/pharo-project-load/SKILL.md`.
-- Before moving code between the image and its files: use
-  `skills/pharo-image-sync/SKILL.md`.
+- Before moving code between the image and its files, or saying what is not
+  committed yet: use `skills/pharo-image-sync/SKILL.md`.
 - Before reproducing smalltalkCI or GitHub failures: use
   `skills/pharo-ci-repro/SKILL.md`.
 - Before profiling or optimizing Pharo code: use
