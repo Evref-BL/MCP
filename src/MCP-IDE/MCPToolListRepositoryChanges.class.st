@@ -20,7 +20,7 @@ MCPToolListRepositoryChanges class >> toolName [
 { #category : 'metadata' }
 MCPToolListRepositoryChanges >> additionalKeywords [
 
-	^ super additionalKeywords , #( 'diff' 'status' 'change' )
+	^ super additionalKeywords , #( 'diff' 'status' 'change' 'modified' 'dirty' 'committed' 'uncommitted' 'unsaved' )
 ]
 
 { #category : 'metadata' }
@@ -36,7 +36,7 @@ MCPToolListRepositoryChanges >> repositoryToolSpec [
 		  (#title -> 'List Repository Changes').
 		  (#description
 		   ->
-		   'List what a registered repository has changed, on both sides and without writing anything: the packages the image has changed since they were last written to the checkout, which is what an export would write, and the files git sees changed in the checkout.').
+		   'List what a registered repository has changed, on both sides and without writing anything: the packages whose contents in the image differ from the checkout''s files, which is what an export would change, and the files git sees changed in the checkout.').
 		  (#action -> 'diff').
 		  (#requestClass -> MCPRepositoryDiffRequest).
 		  (#commandClass -> MCPRepositoryDiffCommand) } asDictionary

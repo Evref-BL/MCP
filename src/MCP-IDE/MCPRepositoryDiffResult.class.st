@@ -1,7 +1,7 @@
 "
 Result DTO returned by repository_change_list.
 
-It names the two layers apart: imageModifiedPackages, the packages whose image contents have changed since they were last written to the checkout, which is what an export would write; and modifiedPaths, the files git sees changed in the checkout. changedPackages is the union of both, which is why it can name a package whose files are untouched.
+It names the two layers apart: imageModifiedPackages, the packages whose contents in the image differ from the checkout's files, which is what an export would change; and modifiedPaths, the files git sees changed in the checkout. changedPackages is the union of both, which is why it can name a package whose files are untouched.
 "
 Class {
 	#name : 'MCPRepositoryDiffResult',
@@ -81,7 +81,7 @@ MCPRepositoryDiffResult >> derivedIsEmpty [
 
 { #category : 'accessing' }
 MCPRepositoryDiffResult >> imageModifiedPackageNames [
-	"The packages whose image contents have changed since they were last written to the checkout. They are what an export would write, and what git cannot see."
+	"The packages whose contents in the image differ from the checkout's files. They are what an export would change, and what git cannot see."
 
 	^ imageModifiedPackageNames ifNil: [ #(  ) ]
 ]

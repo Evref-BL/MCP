@@ -592,6 +592,65 @@ MCPToolRepositoryOperationTest >> testDiffCanReportImageModifiedPackagesWithoutW
 ]
 
 { #category : 'tests' }
+MCPToolRepositoryOperationTest >> testDiffLeavesOutAPackageMarkedOverNothing [
+	"Iceberg marks a package on any change and clears the mark only when it writes the package, so a method compiled and removed again leaves a mark over nothing. The change list answers what differs from the files, not the mark."
+
+	| class className data location packageName repository repositoryName result |
+	repositoryName := 'MCP Repository Command Diff Mark Test'.
+	packageName := 'MCPToolRepositoryOperationDiffMarkPackage'.
+	className := 'MCPToolRepositoryOperationDiffMarkClass'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestDiffMark'.
+	self withExportPackageNamed: packageName className: className do: [
+			self withCleanRepositoryNamed: repositoryName location: location do: [
+					self callToolWith: {
+							(#action -> 'create').
+							(#name -> repositoryName).
+							(#location -> location pathString).
+							(#packages -> { packageName }) } asDictionary.
+					self callToolWith: {
+							(#action -> 'export').
+							(#name -> repositoryName) } asDictionary.
+					repository := IceRepository repositories detect: [ :each | each name asString = repositoryName ].
+					class := self class environment at: className asSymbol.
+					class compile: 'probe ^ 1' classified: 'probing'.
+					class removeSelector: #probe.
+					self assert: (repository modifiedPackages collect: [ :each | each name ] as: Array) equals: { packageName }.
+					result := self callToolWith: {
+							          (#action -> 'diff').
+							          (#name -> repositoryName) } asDictionary.
+					data := self dataFrom: result.
+					self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
+					self deny: (data includesKey: #imageModifiedPackages) ] ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testDiffListsAPackageWhoseImageDiffersFromItsFiles [
+
+	| className data location packageName repositoryName result |
+	repositoryName := 'MCP Repository Command Diff Differs Test'.
+	packageName := 'MCPToolRepositoryOperationDiffDiffersPackage'.
+	className := 'MCPToolRepositoryOperationDiffDiffersClass'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestDiffDiffers'.
+	self withExportPackageNamed: packageName className: className do: [
+			self withCleanRepositoryNamed: repositoryName location: location do: [
+					self callToolWith: {
+							(#action -> 'create').
+							(#name -> repositoryName).
+							(#location -> location pathString).
+							(#packages -> { packageName }) } asDictionary.
+					self callToolWith: {
+							(#action -> 'export').
+							(#name -> repositoryName) } asDictionary.
+					(self class environment at: className asSymbol) compile: 'probe ^ 1' classified: 'probing'.
+					result := self callToolWith: {
+							          (#action -> 'diff').
+							          (#name -> repositoryName) } asDictionary.
+					data := self dataFrom: result.
+					self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
+					self assert: (data at: #imageModifiedPackages) equals: { packageName } ] ]
+]
+
+{ #category : 'tests' }
 MCPToolRepositoryOperationTest >> testDiffParsesAndDispatchesToDiffCommand [
 
 	| command parsedRequest rawRequest tool |

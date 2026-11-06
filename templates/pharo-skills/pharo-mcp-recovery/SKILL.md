@@ -11,7 +11,8 @@ standalone image without a safer environment-specific recovery surface.
 ## Workflow
 
 1. Determine whether the failure is the client route, MCP server, image, or
-   process.
+   process. A client that cannot reach the server says nothing yet about the
+   image.
 2. Preserve the image, changes, sources, VM logs, launch command, MCP URL, and
    repository/Git facts before mutation.
 3. Restart the same image first. Inspect `isRunning`, `isListening`, and
@@ -19,7 +20,10 @@ standalone image without a safer environment-specific recovery surface.
 4. Create a replacement image only after preserving the original. Use
    `pharo-project-load` to restore MCP and the target project.
 5. Recover changes by inspecting Epicea history before confirmed application.
-   Use `pharo-image-sync` before repository attachment or Tonel export.
+   History lists every change since the image started, committed or not:
+   check a change against the checkout's `git log` before naming it as lost,
+   as `pharo-image-sync` says. Use it too before repository attachment or
+   Tonel export.
 6. Verify the recovered behavior with focused inspection or tests.
 
 ## Stop And Ask
