@@ -20,11 +20,13 @@ calling anything unsaved or at risk.
 
 - `git log` in the checkout says what was committed. Iceberg commits are
   ordinary git commits, so it answers even when the image does not.
-- `repository_search` with `isModified` names the repositories and packages the
-  image changed since they were last written. Anything not committed is in one
-  of them, but an edit that was undone, or a test that compiled and removed a
-  method, marks a package too: a mark says where to look, not that something
-  differs.
+- `repository_search` with `isModified` names the repositories and packages
+  Iceberg marks as changed since they were last written. A mark says where to
+  look, not that something differs: an edit that was undone, or a test that
+  compiled and removed a method, leaves one too.
+- `repository_change_list` compares a repository's marked packages with its
+  files and names those that really differ, and the files git sees changed.
+  Anything not committed is in one of them.
 - To know whether one change is committed, compare `method_get` with the
   class's file at `HEAD` (`git show HEAD:<path>`).
 
