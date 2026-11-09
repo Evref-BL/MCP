@@ -1,51 +1,40 @@
 # Pharo MCP Agent Guide
 
-Use the configured `pharo` MCP server whenever a task depends on the running
-image. Preserve unrelated changes, and say which live check you could not run
-rather than letting source stand in for it.
+Use the `pharo` MCP server whenever a task depends on the running image.
+Preserve unrelated changes, and say which live check you could not run rather
+than letting source stand in for it.
 
 ## Read First
 
-- Inspect the tools and schemas exposed by the current client; do not rely on
-  remembered names. `tool_search` finds what is not advertised, and `tool_get`
-  answers one tool's schema.
-- Prefer the least-mutating dedicated tool. Use `image_evaluate` only when no
-  dedicated tool fits.
-- Treat image, Tonel, Iceberg, and Git state as separate. None of them proves
-  anything about the others.
-- The image is one workspace. It has no branches and no worktrees, so two
-  agents working in it at once share every edit, and one export writes both
-  their changes into one diff. One writer at a time.
-- Tools change the running image but never save it; use a safe image boundary.
-- The user may commit through Iceberg while you work, and nothing reports it.
-  What you remember changing is not evidence that it is uncommitted: ask the
-  image and the checkout before calling any work unsaved or at risk.
+- Look tools up rather than recall them: `tool_search` finds what the image
+  does not advertise, `tool_get` gives a tool's schema.
+- Prefer the least-mutating dedicated tool; `image_evaluate` only when none
+  fits.
+- Image, Tonel, Iceberg and Git are separate states; none proves anything
+  about another.
+- An image takes one writer: it has no branches, so two agents in it share
+  every edit.
+- Tools never save the image.
+- The user may commit through Iceberg unseen: ask the image and the checkout
+  before calling any work uncommitted.
 
 ## Context Loading
 
-- Before Pharo source changes: read the project's Pharo coding and testing
-  guidance. If none exists, use the local
-  [Pharo coding](pharo-references/pharo-coding.md) reference.
-- Before reading an answer closely, rewriting methods, or acting on a warning a
-  call came back with: read
+- Changing Pharo code: the project's coding guidance, or else
+  [Pharo coding](pharo-references/pharo-coding.md).
+- Reading an answer closely, rewriting methods, or acting on a warning:
   [tool reference](pharo-references/tool-reference.md).
-- Before loading a project: use `skills/pharo-project-load/SKILL.md`.
-- Before moving code between the image and its files, or saying what is not
-  committed yet: use `skills/pharo-image-sync/SKILL.md`.
-- Before reproducing smalltalkCI or GitHub failures: use
-  `skills/pharo-ci-repro/SKILL.md`.
-- Before profiling or optimizing Pharo code: use
-  `skills/pharo-code-profiling/SKILL.md`.
-- Before recovering a stopped standalone image: use
-  `skills/pharo-mcp-recovery/SKILL.md`.
+- Loading a project: `skills/pharo-project-load/SKILL.md`.
+- Moving code between the image and its files, or saying what is committed:
+  `skills/pharo-image-sync/SKILL.md`.
+- Reproducing smalltalkCI or GitHub failures: `skills/pharo-ci-repro/SKILL.md`.
+- Profiling: `skills/pharo-code-profiling/SKILL.md`.
+- Recovering a stopped standalone image: `skills/pharo-mcp-recovery/SKILL.md`.
 
 ## Workflow
 
-1. Discover the exact tool and inspect the target with read-only calls.
-2. Preview or verify identity before risky mutation.
-3. Make the narrowest image-side change.
-4. Run focused SUnit tests and inspect the result.
-5. Use the image-sync skill before exporting or committing Tonel changes.
-
-For repository work, verify repository identity before mutation and inspect the
-image-side diff before export or commit.
+1. Inspect with read-only calls.
+2. Verify identity before a risky change.
+3. Make the narrowest change in the image.
+4. Run focused tests.
+5. Use the image-sync skill before exporting or committing.
