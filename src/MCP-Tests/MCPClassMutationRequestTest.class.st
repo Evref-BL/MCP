@@ -40,7 +40,6 @@ MCPClassMutationRequestTest >> testCreateRequestParsesDefinitionArguments [
 						            (#slots -> #( 'firstName' 'lastName' )).
 						            (#classSlots -> #( 'defaultName' )).
 						            (#traits -> #( 'TComparable' )).
-						            (#classTraits -> #( 'TComparable classTrait' )).
 						            (#sharedVariables -> #( 'Current' )).
 						            (#sharedPools -> #( 'ChronologyConstants' )).
 						            (#layout -> 'WeakLayout') } asDictionary;
@@ -56,7 +55,6 @@ MCPClassMutationRequestTest >> testCreateRequestParsesDefinitionArguments [
 	self assert: request classSlotNames equals: #( 'defaultName' ).
 	self assert: request classSlots equals: #( #defaultName ).
 	self assert: request traits equals: #( 'TComparable' ).
-	self assert: request classTraits equals: #( 'TComparable classTrait' ).
 	self assert: request sharedVariables equals: #( 'Current' ).
 	self assert: request sharedPools equals: #( 'ChronologyConstants' ).
 	self assert: request layout equals: 'WeakLayout'.

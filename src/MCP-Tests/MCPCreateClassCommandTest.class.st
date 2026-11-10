@@ -83,7 +83,7 @@ MCPCreateClassCommandTest >> testCreatesClassWithTagSlotsAndClassSlots [
 ]
 
 { #category : 'tests' }
-MCPCreateClassCommandTest >> testCreatesClassWithTraitsClassTraitsSharedVariablesSharedPoolsAndLayout [
+MCPCreateClassCommandTest >> testCreatesClassWithTraitsSharedVariablesSharedPoolsAndLayout [
 
 	| createdClass result |
 	result := self executeCommand: (MCPCreateClassCommand
@@ -94,12 +94,12 @@ MCPCreateClassCommandTest >> testCreatesClassWithTraitsClassTraitsSharedVariable
 			           slots: #( #firstName )
 			           classSlots: #( #defaultName )
 			           traits: #( 'TAbleToRotate' )
-			           classTraits: #( 'TAbleToRotate classTrait' )
 			           sharedVariables: #( 'AlphaShared' 'BetaShared' )
 			           sharedPools: #( 'ChronologyConstants' )
 			           layout: 'WeakLayout').
 	createdClass := self classNamed: 'MCPCreateClassCommandTestConfigured'.
 	self assert: (createdClass traits collect: [ :each | each name asString ] as: Array) equals: #( 'TAbleToRotate' ).
+	"The class side comes with the trait: the class uses TAbleToRotate as a whole."
 	self
 		assert: (createdClass classSide traits collect: [ :each | each name asString ] as: Array)
 		equals: #( 'TAbleToRotate classTrait' ).

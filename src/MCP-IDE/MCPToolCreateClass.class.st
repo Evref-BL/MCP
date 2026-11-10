@@ -48,7 +48,6 @@ MCPToolCreateClass >> classToolSpec [
 			   self createSlotsSchemaProperty.
 			   self createClassSlotsSchemaProperty.
 			   self createTraitsSchemaProperty.
-			   self createClassTraitsSchemaProperty.
 			   self createSharedVariablesSchemaProperty.
 			   self createSharedPoolsSchemaProperty.
 			   self layoutSchemaProperty.
@@ -74,15 +73,6 @@ MCPToolCreateClass >> createClassNameSchemaProperty [
 MCPToolCreateClass >> createClassSlotsSchemaProperty [
 
 	^ self stringArraySchemaNamed: 'classSlots' description: 'Variables the class object itself holds.' itemDescription: 'Slot name.'
-]
-
-{ #category : 'private - schema' }
-MCPToolCreateClass >> createClassTraitsSchemaProperty [
-
-	^ self
-		  stringArraySchemaNamed: 'classTraits'
-		  description: 'Traits the class uses on the class side.'
-		  itemDescription: 'Trait name.'
 ]
 
 { #category : 'private - schema' }
@@ -142,7 +132,10 @@ MCPToolCreateClass >> createTagSchemaProperty [
 { #category : 'private - schema' }
 MCPToolCreateClass >> createTraitsSchemaProperty [
 
-	^ self stringArraySchemaNamed: 'traits' description: 'Traits the class uses on the instance side.' itemDescription: 'Trait name.'
+	^ self
+		  stringArraySchemaNamed: 'traits'
+		  description: 'Traits the class uses. Each also brings its class-side methods.'
+		  itemDescription: 'Trait name.'
 ]
 
 { #category : 'metadata' }

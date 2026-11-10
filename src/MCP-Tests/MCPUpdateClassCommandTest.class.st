@@ -46,18 +46,6 @@ MCPUpdateClassCommandTest >> testAppliedChangeResultWrapsPlanAndResult [
 ]
 
 { #category : 'tests' }
-MCPUpdateClassCommandTest >> testBuildsClassTraitReplacementUpdatePlan [
-
-	| command context plan |
-	command := self commandForArguments: (self updateArgumentsWith: { (#classTraits -> #( 'TAbleToRotate classTrait' )) }).
-	plan := command updatePlan.
-	context := plan requestedContext.
-	self assert: plan updateAction equals: 'replaceClassTraits'.
-	self assert: (context at: #name) equals: 'Object'.
-	self assert: (context at: #classTraits) equals: #( 'TAbleToRotate classTrait' )
-]
-
-{ #category : 'tests' }
 MCPUpdateClassCommandTest >> testBuildsDefinitionReplacementUpdatePlan [
 
 	| command context plan |
@@ -159,10 +147,6 @@ MCPUpdateClassCommandTest >> testMapsClassPatchFieldsToUpdateActions [
 	self
 		assert: (self commandForArguments: (self updateArgumentsWith: { (#traits -> #( 'TAbleToRotate' )) })) updateAction
 		equals: 'replaceTraits'.
-	self
-		assert:
-		(self commandForArguments: (self updateArgumentsWith: { (#classTraits -> #( 'TAbleToRotate classTrait' )) })) updateAction
-		equals: 'replaceClassTraits'.
 	self
 		assert: (self commandForArguments: (self updateArgumentsWith: { (#sharedVariables -> #( 'Current' )) })) updateAction
 		equals: 'replaceSharedVariables'.

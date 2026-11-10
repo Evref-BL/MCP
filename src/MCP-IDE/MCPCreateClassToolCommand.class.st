@@ -38,7 +38,6 @@ MCPCreateClassToolCommand >> execute [
 					             slots: self request slots
 					             classSlots: self request classSlots
 					             traits: self request traits
-					             classTraits: self request classTraits
 					             sharedVariables: self request sharedVariables
 					             sharedPools: self request sharedPools
 					             layout: self request layout) execute.

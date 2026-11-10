@@ -43,13 +43,13 @@ MCPToolUpdateClass >> classToolSpec [
 			   (self slotDeltaSchemaPropertyNamed: 'slots' describedAs: 'Patch over the instance-side slots.').
 			   (self slotDeltaSchemaPropertyNamed: 'classSlots' describedAs: 'Patch over the class-side slots.').
 			   self traitsSchemaProperty.
-			   self classTraitsSchemaProperty.
 			   self sharedVariablesSchemaProperty.
 			   self sharedPoolsSchemaProperty.
 			   self layoutSchemaProperty.
 			   self forceSchemaProperty }).
 		  (#requiredProperties -> #( 'name' )).
 		  (#atLeastOneProperties
-		   -> #( 'newName' 'superclass' 'package' 'tag' 'comment' 'slots' 'classSlots' 'traits' 'classTraits' 'sharedVariables'
-			      'sharedPools' 'layout' )) } asDictionary
+		   ->
+		   #( 'newName' 'superclass' 'package' 'tag' 'comment' 'slots' 'classSlots' 'traits' 'sharedVariables' 'sharedPools'
+		      'layout' )) } asDictionary
 ]

@@ -13,7 +13,6 @@ Class {
 		'slots',
 		'classSlots',
 		'traits',
-		'classTraits',
 		'sharedVariables',
 		'sharedPools',
 		'layout'
@@ -37,7 +36,7 @@ MCPCreateClassCommand class >> className: aClassName superclassName: aSuperclass
 ]
 
 { #category : 'instance creation' }
-MCPCreateClassCommand class >> className: aClassName superclassName: aSuperclassName packageName: aPackageName tag: aTag slots: someSlots classSlots: someClassSlots traits: someTraits classTraits: someClassTraits sharedVariables: someSharedVariables sharedPools: someSharedPools layout: aLayout [
+MCPCreateClassCommand class >> className: aClassName superclassName: aSuperclassName packageName: aPackageName tag: aTag slots: someSlots classSlots: someClassSlots traits: someTraits sharedVariables: someSharedVariables sharedPools: someSharedPools layout: aLayout [
 
 	^ self new
 		  className: aClassName;
@@ -47,7 +46,6 @@ MCPCreateClassCommand class >> className: aClassName superclassName: aSuperclass
 		  slots: someSlots;
 		  classSlots: someClassSlots;
 		  traits: someTraits;
-		  classTraits: someClassTraits;
 		  sharedVariables: someSharedVariables;
 		  sharedPools: someSharedPools;
 		  layout: aLayout;
@@ -64,7 +62,6 @@ MCPCreateClassCommand >> buildClass [
 	builder slots: self slots.
 	self classSlots ifNotEmpty: [ builder classSlots: self classSlots ].
 	self traits ifNotEmpty: [ builder traits: self resolvedTraits ].
-	self classTraits ifNotEmpty: [ builder classTraits: self resolvedClassTraits ].
 	self sharedVariables ifNotEmpty: [ builder sharedVariables: self sharedVariables ].
 	self sharedPools ifNotEmpty: [ builder sharedPools: self resolvedSharedPools ].
 	self layout ifNotNil: [ :layoutName | builder layout: (self resolvedLayoutClassNamed: layoutName) ].
@@ -82,18 +79,6 @@ MCPCreateClassCommand >> classSlots [
 MCPCreateClassCommand >> classSlots: someSlots [
 
 	classSlots := someSlots ifNil: [ #(  ) ] ifNotNil: [ someSlots asArray ]
-]
-
-{ #category : 'accessing' }
-MCPCreateClassCommand >> classTraits [
-
-	^ classTraits ifNil: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
-MCPCreateClassCommand >> classTraits: someTraits [
-
-	classTraits := someTraits ifNil: [ #(  ) ] ifNotNil: [ someTraits asArray ]
 ]
 
 { #category : 'private' }
@@ -134,34 +119,6 @@ MCPCreateClassCommand >> packageName [
 MCPCreateClassCommand >> packageName: aString [
 
 	packageName := aString
-]
-
-{ #category : 'private' }
-MCPCreateClassCommand >> resolvedClassTraitNamed: aClassTraitName [
-
-	| behavior classTraitName originalName |
-	originalName := aClassTraitName.
-	classTraitName := (originalName endsWith: ' classTrait')
-		                  ifTrue: [ originalName copyFrom: 1 to: originalName size - ' classTrait' size ]
-		                  ifFalse: [ originalName ].
-	behavior := Smalltalk globals at: classTraitName asSymbol ifAbsent: [
-			            MCPCommandError
-				            signalErrorCode: #ClassTraitNotFound
-				            message: (String streamContents: [ :stream | stream << 'Class trait ' << originalName << ' does not exist.' ])
-				            details: {
-						            (#class -> self className).
-						            (#classTrait -> originalName) } asDictionary ].
-	behavior isTrait ifFalse: [
-			MCPCommandError signalErrorCode: #InvalidClassTrait message: originalName , ' is not a class trait.' details: {
-					(#class -> self className).
-					(#classTrait -> originalName) } asDictionary ].
-	^ behavior classTrait
-]
-
-{ #category : 'private' }
-MCPCreateClassCommand >> resolvedClassTraits [
-
-	^ self classTraits collect: [ :each | self resolvedClassTraitNamed: each ] as: Array
 ]
 
 { #category : 'private' }
