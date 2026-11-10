@@ -50,12 +50,6 @@ MCPToolClassMutation >> classToolSpec [
 ]
 
 { #category : 'private - schema' }
-MCPToolClassMutation >> classTraitsSchemaProperty [
-
-	^ self stringArraySchemaNamed: 'classTraits' description: 'Class-side traits; empty array clears.' itemDescription: 'Trait name.'
-]
-
-{ #category : 'private - schema' }
 MCPToolClassMutation >> commentSchemaProperty [
 
 	^ self schemaPropertyNamed: 'comment' type: 'string' description: 'Class comment; empty clears.'
@@ -170,17 +164,6 @@ MCPToolClassMutation >> failureMessageForReparentClassNamed: className superclas
 				  nextPutAll: className;
 				  nextPutAll: ' to superclass ';
 				  nextPutAll: superclassName;
-				  nextPutAll: ': ';
-				  nextPutAll: (self normalizedCauseMessageForMutationError: anError) ]
-]
-
-{ #category : 'private' }
-MCPToolClassMutation >> failureMessageForReplaceClassTraitsOnClassNamed: className error: anError [
-
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Unable to replace class-side traits for class ';
-				  nextPutAll: className;
 				  nextPutAll: ': ';
 				  nextPutAll: (self normalizedCauseMessageForMutationError: anError) ]
 ]
@@ -425,5 +408,8 @@ MCPToolClassMutation >> title [
 { #category : 'private - schema' }
 MCPToolClassMutation >> traitsSchemaProperty [
 
-	^ self stringArraySchemaNamed: 'traits' description: 'Instance traits; empty array clears.' itemDescription: 'Trait name.'
+	^ self
+		  stringArraySchemaNamed: 'traits'
+		  description: 'Traits the class uses, class side included; empty array clears.'
+		  itemDescription: 'Trait name.'
 ]

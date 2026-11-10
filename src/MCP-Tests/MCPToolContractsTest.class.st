@@ -673,8 +673,8 @@ MCPToolContractsTest >> testClassMutationToolsHaveAccurateNamesAndRequiredArgume
 	self assert: createTool inputSchema required asSet equals: #( 'name' 'package' ) asSet.
 	self assert: updateTool inputSchema required asSet equals: #( 'name' ) asSet.
 	updatePropertyNames := updateTool inputSchema properties collect: [ :each | each name ].
-	#( 'newName' 'superclass' 'package' 'tag' 'comment' 'slots' 'classSlots' 'traits' 'classTraits' 'sharedVariables'
-	   'sharedPools' 'layout' 'force' ) do: [ :each | self assert: (updatePropertyNames includes: each) ].
+	#( 'newName' 'superclass' 'package' 'tag' 'comment' 'slots' 'classSlots' 'traits' 'sharedVariables' 'sharedPools' 'layout'
+	   'force' ) do: [ :each | self assert: (updatePropertyNames includes: each) ].
 	#( 'operation' 'slotAction' 'slot' 'newSlot' 'side' ) do: [ :each | self deny: (updatePropertyNames includes: each) ].
 	"Slots are patched, so their argument is a delta rather than a list."
 	slotsSchema := (updateTool inputSchema asJRPCJSON at: #properties) at: 'slots'.
@@ -685,12 +685,11 @@ MCPToolContractsTest >> testClassMutationToolsHaveAccurateNamesAndRequiredArgume
 { #category : 'tests' }
 MCPToolContractsTest >> testClassToolSchemaDescriptionsExplainRecategorizationAndReplacementSemantics [
 
-	| tool classTraitsDescription layoutDescription packageDescription sharedPoolsDescription sharedVariablesDescription slotsSchema tagDescription traitsDescription |
+	| tool layoutDescription packageDescription sharedPoolsDescription sharedVariablesDescription slotsSchema tagDescription traitsDescription |
 	tool := MCPToolUpdateClass new.
 	packageDescription := (self inputPropertyNamed: 'package' inTool: tool) description.
 	tagDescription := (self inputPropertyNamed: 'tag' inTool: tool) description.
 	traitsDescription := (self inputPropertyNamed: 'traits' inTool: tool) description.
-	classTraitsDescription := (self inputPropertyNamed: 'classTraits' inTool: tool) description.
 	sharedVariablesDescription := (self inputPropertyNamed: 'sharedVariables' inTool: tool) description.
 	sharedPoolsDescription := (self inputPropertyNamed: 'sharedPools' inTool: tool) description.
 	layoutDescription := (self inputPropertyNamed: 'layout' inTool: tool) description.
@@ -699,7 +698,8 @@ MCPToolContractsTest >> testClassToolSchemaDescriptionsExplainRecategorizationAn
 	self assert: (tagDescription includesSubstring: 'package').
 	"The stateless collections are replaced by value, and say so."
 	self assert: (traitsDescription includesSubstring: 'empty array').
-	self assert: (classTraitsDescription includesSubstring: 'empty array').
+	"A trait is used by the whole class, so traits says it covers the class side too."
+	self assert: (traitsDescription includesSubstring: 'class side').
 	self assert: (sharedVariablesDescription includesSubstring: 'empty array').
 	self assert: (sharedPoolsDescription includesSubstring: 'empty array').
 	self assert: (sharedPoolsDescription includesSubstring: 'Shared pools').

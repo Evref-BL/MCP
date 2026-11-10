@@ -250,14 +250,13 @@ MCPToolClassMutationTest >> testClassToolSchemasDeclareExpectedInputs [
 	self
 		assert: createProperties asArray
 		equals:
-			#( 'name' 'superclass' 'package' 'tag' 'slots' 'classSlots' 'traits' 'classTraits' 'sharedVariables' 'sharedPools'
-			   'layout' 'comment' ).
+		#( 'name' 'superclass' 'package' 'tag' 'slots' 'classSlots' 'traits' 'sharedVariables' 'sharedPools' 'layout' 'comment' ).
 	self assert: MCPToolCreateClass new inputSchema required asSet equals: #( 'name' 'package' ) asSet.
 	self
 		assert: updateProperties asArray
 		equals:
-			#( 'name' 'newName' 'superclass' 'package' 'tag' 'comment' 'slots' 'classSlots' 'traits' 'classTraits' 'sharedVariables'
-			   'sharedPools' 'layout' 'force' ).
+			#( 'name' 'newName' 'superclass' 'package' 'tag' 'comment' 'slots' 'classSlots' 'traits' 'sharedVariables' 'sharedPools'
+			   'layout' 'force' ).
 	self assert: MCPToolUpdateClass new inputSchema required asSet equals: #( 'name' ) asSet
 ]
 
@@ -285,7 +284,6 @@ MCPToolClassMutationTest >> testCreateAcceptsDefinitionOptions [
 		             superclassName: 'Object'
 		             packageName: self generatedPackageName.
 	arguments at: #traits put: #( 'TAbleToRotate' ).
-	arguments at: #classTraits put: #( 'TAbleToRotate classTrait' ).
 	arguments at: #sharedVariables put: #( 'AlphaShared' 'BetaShared' ).
 	arguments at: #sharedPools put: #( 'ChronologyConstants' ).
 	arguments at: #layout put: 'WeakLayout'.
@@ -295,6 +293,7 @@ MCPToolClassMutationTest >> testCreateAcceptsDefinitionOptions [
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (createdClass traits collect: [ :each | each name asString ] as: Array) equals: #( 'TAbleToRotate' ).
 	self assert: createdClass traitCompositionString equals: 'TAbleToRotate'.
+	"Asked for nothing on the class side, the class still uses the trait whole."
 	self
 		assert: (createdClass classSide traits collect: [ :each | each name asString ] as: Array)
 		equals: #( 'TAbleToRotate classTrait' ).
@@ -902,27 +901,6 @@ MCPToolClassMutationTest >> testUpdateRemovesClassSideSlot [
 ]
 
 { #category : 'tests - update' }
-MCPToolClassMutationTest >> testUpdateRemovesClassSideTraitsWithEmptyArray [
-
-	| createArguments data result targetClass |
-	createArguments := self
-		                   createRequestArgumentsForClassName: 'MCPToolClassMutationTestClassTraitRemovalTarget'
-		                   superclassName: 'Object'
-		                   packageName: self generatedPackageName.
-	createArguments at: #classTraits put: #( 'TAbleToRotate classTrait' ).
-	self callToolWith: createArguments.
-	result := self callToolWith:
-		          (self
-			           updateRequestArgumentsForClassTraitsInClassNamed: 'MCPToolClassMutationTestClassTraitRemovalTarget'
-			           classTraits: #(  )).
-	data := self dataFrom: result.
-	targetClass := self classNamed: 'MCPToolClassMutationTestClassTraitRemovalTarget'.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: targetClass classSide traits isEmpty.
-	self deny: (result at: #isError ifAbsent: [ false ])
-]
-
-{ #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateRemovesInstanceSlot [
 
 	| data result target |
@@ -1159,30 +1137,6 @@ MCPToolClassMutationTest >> testUpdateReparentsClassAndPreservesExistingState [
 	self assert: target superclass name asString equals: self reparentSuperclassName.
 	self assert: target new probeMethod equals: 41.
 	self assert: target comment equals: 'reparent comment'.
-	self deny: (result at: #isError ifAbsent: [ false ])
-]
-
-{ #category : 'tests - update' }
-MCPToolClassMutationTest >> testUpdateReplacesClassSideTraits [
-
-	| createArguments data result targetClass |
-	createArguments := self
-		                   createRequestArgumentsForClassName: 'MCPToolClassMutationTestClassTraitTarget'
-		                   superclassName: 'Object'
-		                   packageName: self generatedPackageName.
-	createArguments at: #classTraits put: #( 'TAbleToRotate classTrait' ).
-	self callToolWith: createArguments.
-	result := self callToolWith:
-		          (self
-			           updateRequestArgumentsForClassTraitsInClassNamed: 'MCPToolClassMutationTestClassTraitTarget'
-			           classTraits: #( 'TComparable' )).
-	data := self dataFrom: result.
-	targetClass := self classNamed: 'MCPToolClassMutationTestClassTraitTarget'.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self
-		assert: (targetClass classSide traits collect: [ :each | each name asString ] as: Array)
-		equals: #( 'TComparable classTrait' ).
-	self assert: targetClass classSide traitCompositionString equals: 'TComparable classTrait'.
 	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
@@ -1465,29 +1419,6 @@ MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenReparentSupercla
 ]
 
 { #category : 'tests - update' }
-MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenReplacementClassTraitIsMissing [
-
-	| createArguments error result |
-	createArguments := self
-		                   createRequestArgumentsForClassName: 'MCPToolClassMutationTestMissingClassTraitTarget'
-		                   superclassName: 'Object'
-		                   packageName: self generatedPackageName.
-	self callToolWith: createArguments.
-	result := self callToolWith: (self
-			           updateRequestArgumentsForClassTraitsInClassNamed: 'MCPToolClassMutationTestMissingClassTraitTarget'
-			           classTraits: #( 'DefinitelyMissingClassTrait' )).
-	error := self errorFrom: result.
-	self assert: (result at: #isError).
-	self assert: (error at: #action) equals: 'update'.
-	self assert: (error at: #updateAction) equals: 'replaceClassTraits'.
-	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
-	self assert: (error at: #errorCode) equals: 'ClassTraitNotFound'.
-	self assert: (error at: #class) equals: 'MCPToolClassMutationTestMissingClassTraitTarget'.
-	self assert: (error at: #classTrait) equals: 'DefinitelyMissingClassTrait'.
-	self assert: (error at: #classTraits) equals: #( 'DefinitelyMissingClassTrait' )
-]
-
-{ #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenReplacementLayoutIsInvalid [
 
 	| error result |
@@ -1632,14 +1563,6 @@ MCPToolClassMutationTest >> updateRequestArgumentsForClassComment: aClassComment
 		  (#action -> 'update').
 		  (#name -> self commentTargetClassName).
 		  (#comment -> aClassComment) } asDictionary
-]
-
-{ #category : 'private - update' }
-MCPToolClassMutationTest >> updateRequestArgumentsForClassTraitsInClassNamed: aClassName classTraits: someClassTraitNames [
-
-	^ self updateRequestArgumentsWith: {
-			  (#name -> aClassName).
-			  (#classTraits -> someClassTraitNames) }
 ]
 
 { #category : 'private - update' }

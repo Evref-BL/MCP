@@ -17,7 +17,6 @@ Class {
 		'slotDelta',
 		'classSlotDelta',
 		'traitNames',
-		'classTraitNames',
 		'sharedVariableNames',
 		'sharedPoolNames',
 		'layout',
@@ -64,18 +63,6 @@ MCPClassUpdateRequest >> classSlotDelta [
 	^ classSlotDelta
 ]
 
-{ #category : 'accessing' }
-MCPClassUpdateRequest >> classTraitNames [
-
-	^ classTraitNames ifNil: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
-MCPClassUpdateRequest >> classTraits [
-
-	^ self classTraitNames
-]
-
 { #category : 'converting' }
 MCPClassUpdateRequest >> commandForTool: aTool [
 
@@ -93,7 +80,6 @@ MCPClassUpdateRequest >> contextValueForPropertyNamed: propertyName [
 	propertyName = 'slots' ifTrue: [ ^ self slotDelta ifNotNil: [ :delta | delta asContextValue ] ].
 	propertyName = 'classSlots' ifTrue: [ ^ self classSlotDelta ifNotNil: [ :delta | delta asContextValue ] ].
 	propertyName = 'traits' ifTrue: [ ^ self traitNames ].
-	propertyName = 'classTraits' ifTrue: [ ^ self classTraitNames ].
 	propertyName = 'sharedVariables' ifTrue: [ ^ self sharedVariableNames ].
 	propertyName = 'sharedPools' ifTrue: [ ^ self sharedPoolNames ].
 	propertyName = 'layout' ifTrue: [ ^ self layout ifNil: [ '' ] ].
@@ -140,7 +126,6 @@ MCPClassUpdateRequest >> initializeFromRequest: request [
 	slotDelta := MCPSlotDelta fromRequest: request named: 'slots'.
 	classSlotDelta := MCPSlotDelta fromRequest: request named: 'classSlots'.
 	traitNames := request stringCollectionArgumentNamed: 'traits'.
-	classTraitNames := request stringCollectionArgumentNamed: 'classTraits'.
 	sharedVariableNames := request stringCollectionArgumentNamed: 'sharedVariables'.
 	sharedPoolNames := request stringCollectionArgumentNamed: 'sharedPools'.
 	layout := request stringArgumentNamed: 'layout'
@@ -193,7 +178,6 @@ MCPClassUpdateRequest >> requestedClassUpdateActions [
 	((self hasSuppliedPropertyNamed: 'package') or: [ self hasSuppliedPropertyNamed: 'tag' ]) ifTrue: [ actions add: 'move' ].
 	(self hasSuppliedPropertyNamed: 'comment') ifTrue: [ actions add: 'setComment' ].
 	(self hasSuppliedPropertyNamed: 'traits') ifTrue: [ actions add: 'replaceTraits' ].
-	(self hasSuppliedPropertyNamed: 'classTraits') ifTrue: [ actions add: 'replaceClassTraits' ].
 	(self hasSuppliedPropertyNamed: 'sharedVariables') ifTrue: [ actions add: 'replaceSharedVariables' ].
 	(self hasSuppliedPropertyNamed: 'sharedPools') ifTrue: [ actions add: 'replaceSharedPools' ].
 	(self hasSuppliedPropertyNamed: 'layout') ifTrue: [ actions add: 'replaceLayout' ].
@@ -274,8 +258,7 @@ MCPClassUpdateRequest >> traits [
 { #category : 'private - request' }
 MCPClassUpdateRequest >> updatePropertyNames [
 
-	^ #( 'newName' 'superclass' 'package' 'tag' 'comment' 'slots' 'classSlots' 'traits' 'classTraits' 'sharedVariables'
-	     'sharedPools' 'layout' )
+	^ #( 'newName' 'superclass' 'package' 'tag' 'comment' 'slots' 'classSlots' 'traits' 'sharedVariables' 'sharedPools' 'layout' )
 ]
 
 { #category : 'converting' }

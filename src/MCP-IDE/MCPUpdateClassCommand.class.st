@@ -28,7 +28,7 @@ MCPUpdateClassCommand >> actionApplicationOrder [
 	"Changes to one class are not independent, so the caller does not choose their order. The superclass goes first because it decides what everything after it validates against; slots are added before anything can refer to them and removed last, after any move that needed them; the name goes last because every other change resolves the class by the name the caller wrote."
 
 	^ #( 'reparent' 'replaceLayout' 'replaceDefinition' 'addSlot' 'renameSlot' 'pullUpSlot' 'pushDownSlot' 'removeSlot' 'replaceTraits'
-	     'replaceClassTraits' 'replaceSharedVariables' 'replaceSharedPools' 'setComment' 'move' 'rename' )
+	     'replaceSharedVariables' 'replaceSharedPools' 'setComment' 'move' 'rename' )
 ]
 
 { #category : 'private - results' }
@@ -87,7 +87,6 @@ MCPUpdateClassCommand >> executeBlockForAction: action [
 		  ('reparent' -> [ :plan | self executeReparentWithPlan: plan ]).
 		  ('setComment' -> [ :plan | self executeSetCommentWithPlan: plan ]).
 		  ('replaceTraits' -> [ :plan | self executeReplaceTraitsWithPlan: plan ]).
-		  ('replaceClassTraits' -> [ :plan | self executeReplaceClassTraitsWithPlan: plan ]).
 		  ('replaceSharedVariables' -> [ :plan | self executeReplaceSharedVariablesWithPlan: plan ]).
 		  ('replaceSharedPools' -> [ :plan | self executeReplaceSharedPoolsWithPlan: plan ]).
 		  ('replaceLayout' -> [ :plan | self executeReplaceLayoutWithPlan: plan ]).
@@ -285,29 +284,6 @@ MCPUpdateClassCommand >> executeReparentWithPlan: plan [
 ]
 
 { #category : 'executing - class' }
-MCPUpdateClassCommand >> executeReplaceClassTraitsWithPlan: plan [
-
-	| result |
-	^ self tool
-		  executeMutationAction: 'replaceClassTraits'
-		  force: false
-		  requestedContext: plan requestedContext
-		  work: [
-				  result := (MCPReplaceClassSideTraitsCommand
-					             className: self classRequest className
-					             classTraitNames: self classRequest classTraits) execute ]
-		  successResult: [ :warningMessages |
-				  self tool
-					  successResultText:
-					  (String streamContents: [ :stream |
-						   stream << 'Replaced class-side traits for class ' << self classRequest className << '.' ])
-					  data: (self tool dataForAppliedUpdateResult: (self appliedUpdateResultFor: result plan: plan))
-					  warnings: warningMessages ]
-		  failureSummary: [ :error |
-		  self tool failureMessageForReplaceClassTraitsOnClassNamed: self classRequest className error: error ]
-]
-
-{ #category : 'executing - class' }
 MCPUpdateClassCommand >> executeReplaceDefinitionWithPlan: plan [
 
 	| command result instanceDelta classDelta |
@@ -491,7 +467,7 @@ MCPUpdateClassCommand >> signalNoUpdateRequested [
 	^ MCPCommandError
 		  signalErrorCode: #NoClassUpdateRequested
 		  message:
-		  'Class update requires one update field such as newName, superclassName, packageName, tag, classComment, slots, classSlots, traits, classTraits, sharedVariables, sharedPools, layout, or slotAction.'
+		  'Class update requires one update field such as newName, superclassName, packageName, tag, classComment, slots, classSlots, traits, sharedVariables, sharedPools, layout, or slotAction.'
 		  details: self validationContext
 ]
 

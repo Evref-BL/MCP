@@ -15,7 +15,6 @@ Class {
 		'slotNames',
 		'classSlotNames',
 		'traitNames',
-		'classTraitNames',
 		'sharedVariableNames',
 		'sharedPoolNames',
 		'layout'
@@ -63,18 +62,6 @@ MCPClassCreateRequest >> classSlots [
 	^ self classSlotNames collect: #asSymbol as: Array
 ]
 
-{ #category : 'accessing' }
-MCPClassCreateRequest >> classTraitNames [
-
-	^ classTraitNames ifNil: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
-MCPClassCreateRequest >> classTraits [
-
-	^ self classTraitNames
-]
-
 { #category : 'converting' }
 MCPClassCreateRequest >> commandForTool: aTool [
 
@@ -92,7 +79,6 @@ MCPClassCreateRequest >> initializeFromRequest: request [
 	slotNames := request stringCollectionArgumentNamed: 'slots'.
 	classSlotNames := request stringCollectionArgumentNamed: 'classSlots'.
 	traitNames := request stringCollectionArgumentNamed: 'traits'.
-	classTraitNames := request stringCollectionArgumentNamed: 'classTraits'.
 	sharedVariableNames := request stringCollectionArgumentNamed: 'sharedVariables'.
 	sharedPoolNames := request stringCollectionArgumentNamed: 'sharedPools'.
 	layout := request stringArgumentNamed: 'layout'
@@ -122,7 +108,6 @@ MCPClassCreateRequest >> requestedContext [
 		  (#slots -> self slotNames).
 		  (#classSlots -> self classSlotNames).
 		  (#traits -> self traitNames).
-		  (#classTraits -> self classTraitNames).
 		  (#sharedVariables -> self sharedVariableNames).
 		  (#sharedPools -> self sharedPoolNames).
 		  (#layout -> (self layout ifNil: [ '' ])) } asDictionary
