@@ -118,7 +118,7 @@ MCPToolStructuredOutputTest >> testEvaluateForgetsItsVariablesAfterTheCall [
 	self callToolNamed: 'image_evaluate' withArguments: { (#code -> 'leftover := 5') } asDictionary.
 	result := self callToolNamed: 'image_evaluate' withArguments: { (#code -> 'leftover') } asDictionary.
 	self assert: (result at: #isError).
-	self assert: (((self errorFrom: result) at: #message) includesSubstring: 'leftover')
+	self assert: ((self errorFrom: result) at: #sourceLine) equals: 'leftover'
 ]
 
 { #category : 'tests' }
@@ -127,17 +127,17 @@ MCPToolStructuredOutputTest >> testEvaluateLeavesACapitalizedNameUndeclared [
 	| result |
 	result := self callToolNamed: 'image_evaluate' withArguments: { (#code -> 'MCPNoSuchGlobalForThisTest new') } asDictionary.
 	self assert: (result at: #isError).
-	self assert: (((self errorFrom: result) at: #message) includesSubstring: 'MCPNoSuchGlobalForThisTest')
+	self assert: ((self errorFrom: result) at: #sourceLine) equals: 'MCPNoSuchGlobalForThisTest new'
 ]
 
 { #category : 'tests' }
 MCPToolStructuredOutputTest >> testEvaluateLeavesANameNeverAssignedUndeclared [
-	"A Playground would read it as nil. A name only read is far more often a typo or a missing selector, and the compile error says which."
+	"A Playground would read it as nil. A name only read is far more often a typo or a missing selector, and the compile error points at it."
 
 	| result |
 	result := self callToolNamed: 'image_evaluate' withArguments: { (#code -> 'neverAssigned isNil') } asDictionary.
 	self assert: (result at: #isError).
-	self assert: (((self errorFrom: result) at: #message) includesSubstring: 'neverAssigned')
+	self assert: ((self errorFrom: result) at: #sourceLine) equals: 'neverAssigned isNil'
 ]
 
 { #category : 'tests' }
