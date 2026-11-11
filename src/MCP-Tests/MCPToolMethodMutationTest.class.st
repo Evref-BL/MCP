@@ -1538,7 +1538,9 @@ MCPToolMethodMutationTest >> testRenameReturnsStructuredErrorWhenScopeRequiresCl
 	arguments := self instanceRenameArguments copy.
 	arguments removeKey: #action ifAbsent: [ ].
 	arguments at: #scope put: 'classes'.
-	self should: [ self callDiscoveredToolNamed: 'method_update' withArguments: arguments ] raise: JRPCInvalidParameters
+	self
+		assertResult: (self callDiscoveredToolNamed: 'method_update' withArguments: arguments)
+		refusesArgumentsSaying: 'scope must be object, not string.'
 ]
 
 { #category : 'tests' }

@@ -81,7 +81,7 @@ MCPObservabilityBackend >> errorKindForDetails: details error: anError violation
 	(self stringValueAtKey: #errorClass in: details) = 'MCPInvalidToolInput' ifTrue: [ ^ 'input_schema' ].
 	(self stringValueAtKey: #errorCode in: details) ifNotEmpty: [ ^ 'domain' ].
 	anError ifNil: [ ^ 'tool_result' ].
-	anError mcpIsJRPCError ifTrue: [ ^ 'json_rpc' ].
+	anError mcpIsProtocolError ifTrue: [ ^ 'json_rpc' ].
 	^ 'exception'
 ]
 

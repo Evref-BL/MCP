@@ -1,7 +1,7 @@
 Extension { #name : 'JRPCError' }
 
 { #category : '*MCP' }
-JRPCError >> mcpIsJRPCError [
+JRPCError >> mcpIsProtocolError [
 
 	^ true
 ]

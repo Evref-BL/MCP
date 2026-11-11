@@ -219,6 +219,7 @@ MCPJSONSchemaValidatorTest >> testReportsRequiredTypeAndAdditionalPropertiesViol
 			(#path -> #( 'extra' )).
 			(#keyword -> 'additionalProperties').
 			(#message -> 'Object contains an unexpected property.').
+			(#expected -> #( 'count' 'name' )).
 			(#actual -> 'extra') } asDictionary
 ]
 
@@ -346,6 +347,37 @@ MCPJSONSchemaValidatorTest >> testValidatesOneOfExactlyOneBranch [
 		                  { (#type -> 'integer') } asDictionary.
 		                  { (#type -> 'number') } asDictionary }) } asDictionary.
 	self assert: (self keywordsFrom: (self violationsFor: 3 schema: invalidSchema)) equals: #( 'oneOf' )
+]
+
+{ #category : 'tests' }
+MCPJSONSchemaValidatorTest >> testViolationsReadAsACallerWritesTheArguments [
+	"Nested properties are dotted and array positions count from zero, in the sentence and in the path alike, as in the JSON the caller sent."
+
+	| schema sentences violations |
+	schema := {
+		          (#type -> 'object').
+		          (#properties -> {
+			           ('scope' -> {
+				            (#type -> 'object').
+				            (#required -> #( 'packages' )).
+				            (#properties -> { ('packages' -> {
+					              (#type -> 'array').
+					              (#items -> (self schemaPropertyType: 'string')) } asDictionary) } asDictionary) } asDictionary).
+			           ('side' -> {
+				            (#type -> 'string').
+				            (#enum -> #( 'instance' 'class' )) } asDictionary) } asDictionary) } asDictionary.
+	sentences := (self
+		              violationsFor: {
+				              ('scope' -> { ('classes' -> #( 'A' )) } asDictionary).
+				              ('side' -> 'meta') } asDictionary
+		              schema: schema) collect: [ :each | each sentence ].
+	self assert: (sentences includes: 'scope.packages is required.').
+	self assert: (sentences includes: 'side must be "instance" or "class", not "meta".').
+	violations := self violationsFor: { ('scope' -> { ('packages' -> #( 'A' 3 )) } asDictionary) } asDictionary schema: schema.
+	self
+		assert: (violations collect: [ :each | each sentence ] as: Array)
+		equals: #( 'scope.packages[1] must be string, not integer.' ).
+	self assert: violations first path equals: #( 'scope' 'packages' 1 )
 ]
 
 { #category : 'private' }

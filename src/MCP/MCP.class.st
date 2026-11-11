@@ -414,7 +414,7 @@ MCP >> executeTool: tool named: toolName withParams: arguments dispatchPath: dis
 		  on: Exception
 		  do: [ :error |
 				  | errorResult |
-				  error mcpIsJRPCError ifTrue: [
+				  error mcpIsProtocolError ifTrue: [
 						  self observability recordToolCallFinish: observabilityRecord result: nil error: error.
 						  error pass ].
 				  errorResult := tool errorResultFor: error.
@@ -432,7 +432,7 @@ MCP >> finishToolCallWrapper: observabilityRecord result: wrapperResult [
 MCP >> handleToolCallWrapperError: error tool: callTool observabilityRecord: observabilityRecord [
 
 	| errorResult |
-	error mcpIsJRPCError ifTrue: [
+	error mcpIsProtocolError ifTrue: [
 			self observability recordToolCallFinish: observabilityRecord result: nil error: error.
 			error pass ].
 	errorResult := callTool errorResultFor: error.

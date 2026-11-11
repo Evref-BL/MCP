@@ -188,12 +188,10 @@ MCPToolSearch >> fieldFiltersFromRequest: request fieldNames: fieldNames [
 	filters := Dictionary new.
 	fieldNames do: [ :fieldName |
 			(request hasArgumentNamed: fieldName) ifTrue: [
-					| value |
-					value := request stringArgumentNamed: fieldName.
-					value ifNil: [ MCPInvalidToolInput signalMissingRequiredArgumentNamed: fieldName forTool: self ].
-					value := value trimBoth.
-					value isEmpty ifTrue: [ MCPInvalidToolInput signalMissingRequiredArgumentNamed: fieldName forTool: self ].
-					filters at: fieldName put: value ] ].
+					filters
+						at: fieldName
+						put:
+						((request stringArgumentNamed: fieldName) ifNil: [ MCPInvalidToolInput signalBlankArgumentNamed: fieldName forTool: self ]) ] ].
 	^ filters
 ]
 
