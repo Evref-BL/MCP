@@ -478,6 +478,31 @@ MCPToolRepositoryOperationTest >> testCommitCreatesCommitAndReturnsResult [
 ]
 
 { #category : 'tests' }
+MCPToolRepositoryOperationTest >> testCommitMessageLeavesWithLineFeeds [
+	"A message arrives as the image keeps text, with carriage returns. Git, outside the image, takes line feeds, or keeps the whole message on one line."
+
+	| data location packageName repositoryName |
+	repositoryName := 'MCP Repository Command Commit Line Endings Test'.
+	packageName := 'MCPToolRepositoryOperationCommitLineEndingsPackage'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestCommitLineEndings'.
+	self withExportPackageNamed: packageName className: 'MCPToolRepositoryOperationCommitLineEndingsClass' do: [
+			self withCleanRepositoryNamed: repositoryName location: location do: [
+					self callToolWith: {
+							(#action -> 'create').
+							(#name -> repositoryName).
+							(#location -> location pathString).
+							(#packages -> { packageName }) } asDictionary.
+					data := self dataFrom: (self callToolWith: {
+								         (#action -> 'commit').
+								         (#name -> repositoryName).
+								         (#message -> (String streamContents: [ :stream | stream << 'Subject' << String cr << String cr << 'Body' ])) }
+								         asDictionary).
+					self
+						assert: (data at: #commitDescription)
+						equals: (String streamContents: [ :stream | stream << 'Subject' << String lf << String lf << 'Body' ]) ] ]
+]
+
+{ #category : 'tests' }
 MCPToolRepositoryOperationTest >> testCommitParsesAndDispatchesToCommitCommand [
 
 	| command parsedRequest rawRequest tool |

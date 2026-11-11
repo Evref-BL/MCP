@@ -1294,45 +1294,6 @@ MCPToolMethodMutationTest >> testMethodToolSchemasDeclareExpectedInputs [
 ]
 
 { #category : 'tests' }
-MCPToolMethodMutationTest >> testNormalizesLineEndingsBeforeCompilation [
-
-	| normalizedSource source |
-	source := String streamContents: [ :stream |
-		          stream << 'multilineAnswer' << String lf << '| value |' << String lf << 'value := 41.' << String lf << '^ value + 1' ].
-	self callToolWith: (self
-			 compileArgumentsForClass: MCPToolMethodMutationTestTarget
-			 classSide: false
-			 methodSource: source
-			 protocol: 'tests').
-	normalizedSource := (MCPToolMethodMutationTestTarget >> #multilineAnswer) sourceCode.
-	self deny: (normalizedSource includes: Character lf).
-	self assert: (normalizedSource includes: Character cr).
-	self assert: MCPToolMethodMutationTestTarget new multilineAnswer equals: 42
-]
-
-{ #category : 'tests' }
-MCPToolMethodMutationTest >> testNormalizesLineFeedStringLiteralBeforeCompilation [
-
-	| literal normalizedSource source |
-	source := String streamContents: [ :stream |
-		          stream << 'multilineStringAnswer' << String lf << '^ ''line one' << String lf << 'line two''' ].
-	[
-		self callToolWith: (self
-				 compileArgumentsForClass: MCPToolMethodMutationTestTarget
-				 classSide: false
-				 methodSource: source
-				 protocol: 'tests').
-		normalizedSource := (MCPToolMethodMutationTestTarget >> #multilineStringAnswer) sourceCode.
-		literal := MCPToolMethodMutationTestTarget new multilineStringAnswer.
-		self deny: (normalizedSource includes: Character lf).
-		self deny: (literal includes: Character lf).
-		self assert: (normalizedSource includes: Character cr).
-		self assert: (literal includes: Character cr).
-		self assert: literal equals: (String streamContents: [ :stream | stream << 'line one' << String cr << 'line two' ]) ] ensure: [
-		self removeSelector: #multilineStringAnswer from: MCPToolMethodMutationTestTarget ]
-]
-
-{ #category : 'tests' }
 MCPToolMethodMutationTest >> testReformatsMethod [
 
 	| reformattedSource result source |

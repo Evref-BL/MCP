@@ -107,7 +107,7 @@ MCPEventStream >> keepAliveInterval [
 
 { #category : 'writing' }
 MCPEventStream >> notificationFor: aMethodName parameters: someParameters [
-	"A notification as this stream will send it: the method, whatever it carries, and the subscription it belongs to when it belongs to one."
+	"A notification as this stream will send it: the method, whatever it carries, and the subscription it belongs to when it belongs to one. Its text leaves with line feeds, like every answer."
 
 	| parameters message |
 	parameters := someParameters ifNil: [ Dictionary new ] ifNotNil: [ :given | given copy ].
@@ -118,7 +118,7 @@ MCPEventStream >> notificationFor: aMethodName parameters: someParameters [
 		           at: 'method' put: aMethodName;
 		           yourself.
 	parameters ifNotEmpty: [ message at: 'params' put: parameters ].
-	^ STONJSON toString: message
+	^ STONJSON toString: (MCPLineEndings leaving: message)
 ]
 
 { #category : 'writing' }
