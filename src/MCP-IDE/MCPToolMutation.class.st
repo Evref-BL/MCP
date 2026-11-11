@@ -40,8 +40,7 @@ MCPToolMutation >> addSupplementalDetailsForMutationError: anError to: details [
 	cause := self mutationFailureCauseFor: anError.
 	methodNode := self methodNodeFromError: cause.
 	methodNode ifNotNil: [ self addSupplementalSelectorFromMethodNode: methodNode to: details ].
-	(anError mcpCompilationAst) ifNotNil: [ :ast |
-		self addSupplementalSelectorFromMethodNode: ast to: details ].
+	anError mcpCompilationAst ifNotNil: [ :ast | self addSupplementalSelectorFromMethodNode: ast to: details ].
 	anError == cause ifFalse: [
 			methodNode := self methodNodeFromError: anError.
 			methodNode ifNotNil: [ self addSupplementalSelectorFromMethodNode: methodNode to: details ] ].
@@ -51,7 +50,10 @@ MCPToolMutation >> addSupplementalDetailsForMutationError: anError to: details [
 	undeclaredVariableNode ifNotNil: [
 			variableName := self undeclaredVariableNameFor: cause.
 			variableName ifNotNil: [ details at: #variableName put: variableName ].
-			(self startPositionFromNode: undeclaredVariableNode) ifNotNil: [ :start | details at: #position put: start ] ]
+			(self startPositionFromNode: undeclaredVariableNode) ifNotNil: [ :start | details at: #position put: start ] ].
+	(self readOnlyAssignmentNodesFrom: cause) ifNotEmpty: [ :nodes |
+			details at: #variableName put: nodes first variable name asString.
+			details at: #position put: (self startPositionFromNode: nodes first) ]
 ]
 
 { #category : 'private - errors' }
@@ -207,6 +209,7 @@ MCPToolMutation >> failureErrorCodeFor: anError action: action [
 	cause := self mutationFailureCauseFor: anError.
 	prefix := self actionErrorCodePrefixFor: action.
 	(self undeclaredVariableNodeFrom: cause) ifNotNil: [ ^ prefix , 'UndeclaredVariable' ].
+	(self readOnlyAssignmentNodesFrom: cause) ifNotEmpty: [ ^ prefix , 'ReadOnlyAssignment' ].
 	^ prefix , cause mcpMutationFailureErrorCodeSuffix
 ]
 
@@ -300,6 +303,7 @@ MCPToolMutation >> normalizedCauseMessageForMutationError: anError [
 	| cause descriptionText message |
 	cause := self mutationFailureCauseFor: anError.
 	(self undeclaredVariableNodeFrom: cause) ifNotNil: [ ^ self undeclaredVariableCauseMessageFor: cause ].
+	(self readOnlyAssignmentCauseMessageFor: cause) ifNotNil: [ :readOnlyMessage | ^ readOnlyMessage ].
 	message := cause messageText.
 	message ifNil: [ message := '' ].
 	message := message asString.
@@ -375,6 +379,43 @@ MCPToolMutation >> parsedRequestFromToolRequest: request [
 MCPToolMutation >> positionFromError: anError [
 
 	^ anError mcpErrorPosition
+]
+
+{ #category : 'private - errors' }
+MCPToolMutation >> printReadOnlyAssignmentOf: aVariable on: aStream [
+
+	aStream
+		nextPutAll: 'Cannot assign to ';
+		nextPutAll: aVariable name;
+		nextPutAll: ': '.
+	aVariable isArgumentVariable ifTrue: [
+		^ aStream nextPutAll:
+			  'it is an argument, and arguments are read-only. Assign its value to a temporary variable and change that.' ].
+	aVariable isPseudoVariable ifTrue: [ ^ aStream nextPutAll: 'it is a pseudo-variable.' ].
+	aStream nextPutAll: 'it is read-only.'
+]
+
+{ #category : 'private - errors' }
+MCPToolMutation >> readOnlyAssignmentCauseMessageFor: anError [
+
+	| nodes variables |
+	nodes := self readOnlyAssignmentNodesFrom: anError.
+	nodes ifEmpty: [ ^ nil ].
+	variables := OrderedCollection new.
+	nodes do: [ :each | variables addIfNotPresent: each variable variable ].
+	^ String streamContents: [ :stream |
+		  variables do: [ :variable | self printReadOnlyAssignmentOf: variable on: stream ] separatedBy: [ stream space ] ]
+]
+
+{ #category : 'private - errors' }
+MCPToolMutation >> readOnlyAssignmentNodesFrom: anError [
+	"The assignments the compiler refused because their variable is read-only: an argument, most often. Pharo names none of them, only an offset."
+
+	| ast |
+	ast := anError mcpCompilationAst ifNil: [ anError mcpMethodNode ].
+	ast ifNil: [ ^ #(  ) ].
+	^ ast assignmentNodes select: [ :each |
+		  each variable variable ifNil: [ false ] ifNotNil: [ :variable | variable isWritable not ] ]
 ]
 
 { #category : 'private - refactoring' }

@@ -1004,6 +1004,32 @@ MCPToolMethodMutationTest >> testCompileReturnsSortedCollectionConversionCritiqu
 ]
 
 { #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileReturnsStructuredCommandErrorForReadOnlyAssignment [
+
+	| error result |
+	self removeSelector: #brokenMethod: from: MCPToolMethodMutationTestTarget.
+	result := self callToolWith: (self
+			           compileArgumentsForClass: MCPToolMethodMutationTestTarget
+			           classSide: false
+			           methodSource: 'brokenMethod: anInteger
+	anInteger := anInteger + 1.
+	^ anInteger'
+			           protocol: 'tests').
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (error at: #action) equals: 'compile'.
+	self assert: (error at: #errorCode) equals: 'CompileReadOnlyAssignment'.
+	self assert: (error at: #selector) equals: 'brokenMethod:'.
+	self assert: (error at: #variableName) equals: 'anInteger'.
+	self assert: (error at: #line) equals: 2.
+	self assert: (error at: #column) equals: 2.
+	self assert: ((error at: #message) includesSubstring: 'Cannot assign to anInteger').
+	self assert: ((error at: #message) includesSubstring: 'arguments are read-only').
+	self deny: ((error at: #message) includesSubstring: 'OCErrorNotice').
+	self deny: (MCPToolMethodMutationTestTarget includesSelector: #brokenMethod:)
+]
+
+{ #category : 'tests' }
 MCPToolMethodMutationTest >> testCompileReturnsStructuredCommandErrorForSyntaxError [
 
 	| error result structured |
