@@ -70,6 +70,13 @@ MCPMessageProcessor >> cachingHints [
 		  yourself
 ]
 
+{ #category : 'converting' }
+MCPMessageProcessor >> convertJRPCJsonableObjectToJSON: aJRPCJsonableObject on: aStream [
+	"Every answer the image sends, a result, an error or a batch, with its strings converted back to line feeds."
+
+	super convertJRPCJsonableObjectToJSON: (MCPLineEndings leaving: aJRPCJsonableObject) on: aStream
+]
+
 { #category : 'private - errors' }
 MCPMessageProcessor >> errorResponseFor: anException inEraOf: aJRPCRequestObject [
 	"Some conditions were renumbered between the eras, so a modern request is answered with the code its revision gives the condition."
@@ -118,6 +125,15 @@ MCPMessageProcessor >> modernErrorCodes [
 	"The conditions the 2026-07-28 revision renumbered, old code to new. Everything absent here answers the same code in both eras."
 
 	^ { (-32002 -> -32602) } asDictionary
+]
+
+{ #category : 'parsing' }
+MCPMessageProcessor >> parseSupposedJRPCMessageObjectFromStream: aStream [
+	"Every message the image receives, parsed as JRPC parses it, with its strings converted to the image's line endings before any handler, tool or argument parser reads them."
+
+	| jsonObject |
+	jsonObject := MCPLineEndings entering: (STONJSON fromStream: aStream).
+	^ (JRPCMessageObject classToInstantiateForJSONObject: jsonObject forClient: self isClient) fromJRPCJSONObject: jsonObject
 ]
 
 { #category : 'private - errors' }

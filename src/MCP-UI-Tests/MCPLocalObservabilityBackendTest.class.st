@@ -39,6 +39,17 @@ MCPLocalObservabilityBackendTest >> testExportDisabledByDefault [
 ]
 
 { #category : 'tests' }
+MCPLocalObservabilityBackendTest >> testExportedTextEndsLinesWithLineFeeds [
+	"A log or trace file is read outside the image, like an answer."
+
+	| record |
+	record := STONJSON fromString: (MCPLocalObservabilityBackend new
+			           logRecordJSONFor: (String streamContents: [ :stream | stream << 'one' << String cr << 'two' ])
+			           timestamp: DateAndTime now).
+	self assert: (record at: 'message') equals: (String streamContents: [ :stream | stream << 'one' << String lf << 'two' ])
+]
+
+{ #category : 'tests' }
 MCPLocalObservabilityBackendTest >> testInputSnapshotRedactsSensitiveKeys [
 
 	| input record state |

@@ -89,6 +89,7 @@ MCPRepositoryCommand >> exportProjectFileFor: aRepository [
 
 { #category : 'private - git' }
 MCPRepositoryCommand >> gitCommandStringFor: arguments in: aRepository outputFile: outputFile [
+	"A command line leaves the image, so a newline in an argument, a commit message's, is a line feed as git expects; a carriage return would leave the message on one line."
 
 	^ String streamContents: [ :stream |
 			  stream
@@ -97,7 +98,7 @@ MCPRepositoryCommand >> gitCommandStringFor: arguments in: aRepository outputFil
 			  arguments do: [ :argument |
 					  stream
 						  space;
-						  nextPutAll: (self shellQuote: argument asString) ].
+						  nextPutAll: (self shellQuote: argument asString withUnixLineEndings) ].
 			  stream
 				  space;
 				  nextPut: $>;

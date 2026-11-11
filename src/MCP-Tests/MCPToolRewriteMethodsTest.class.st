@@ -364,24 +364,6 @@ MCPToolRewriteMethodsTest >> testRewriteLeavesAMethodInstalledFromATraitToItsOri
 ]
 
 { #category : 'tests' }
-MCPToolRewriteMethodsTest >> testRewriteRuleNormalizesLineFeedsInPatterns [
-
-	| parsedRequest rule source tool |
-	source := String streamContents: [ :stream | stream << '''line one' << String lf << 'line two''' ].
-	tool := MCPToolRewriteMethods new.
-	parsedRequest := self parsedRequestForTool: tool arguments: {
-			                 (#rules -> { {
-				                  (#match -> source).
-				                  (#replacement -> source) } asDictionary }).
-			                 (#scope -> { (#classes -> { self targetClassName }) } asDictionary) } asDictionary.
-	rule := parsedRequest rules first.
-	self deny: (rule match includes: Character lf).
-	self deny: (rule replacement includes: Character lf).
-	self assert: (rule match includes: Character cr).
-	self assert: (rule replacement includes: Character cr)
-]
-
-{ #category : 'tests' }
 MCPToolRewriteMethodsTest >> testRewriteSkipsNothingWhenTheTraitItselfIsInScope [
 
 	| data result |

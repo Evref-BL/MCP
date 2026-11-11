@@ -1259,8 +1259,9 @@ MCPTool >> valueTextOn: stream for: value labelled: label indent: indent [
 		nextPut: $:.
 	(value isString and: [ value includesSubstring: String cr ])
 		ifTrue: [
-				stream nextPut: Character lf.
-				stream nextPutAll: value withUnixLineEndings ]
+				stream
+					nextPut: Character lf;
+					nextPutAll: value ]
 		ifFalse: [
 				stream
 					space;

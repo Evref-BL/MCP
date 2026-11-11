@@ -275,6 +275,13 @@ MCPLocalObservabilityBackend >> isVerboseTraceKey: aKey [
 	^ #( 'stackTrace' 'signalerContext' ) includes: aKey asString
 ]
 
+{ #category : 'private - exporting' }
+MCPLocalObservabilityBackend >> jsonStringFor: anObject [
+	"JSON for a file read outside the image, so written like an answer: every line of its text ended by a line feed."
+
+	^ STONJSON toString: (MCPLineEndings leaving: anObject)
+]
+
 { #category : 'private - logging' }
 MCPLocalObservabilityBackend >> logEntries [
 
@@ -329,7 +336,7 @@ MCPLocalObservabilityBackend >> logRecordDictionaryFor: aString timestamp: times
 { #category : 'private - exporting' }
 MCPLocalObservabilityBackend >> logRecordJSONFor: aString timestamp: timestamp [
 
-	^ STONJSON toString: (self logRecordDictionaryFor: aString timestamp: timestamp)
+	^ self jsonStringFor: (self logRecordDictionaryFor: aString timestamp: timestamp)
 ]
 
 { #category : 'private' }
@@ -785,7 +792,7 @@ MCPLocalObservabilityBackend >> traceRecordDictionaryFor: aRecord [
 { #category : 'private - tracing' }
 MCPLocalObservabilityBackend >> traceRecordJSONFor: aRecord [
 
-	^ STONJSON toString: (self traceRecordDictionaryFor: aRecord)
+	^ self jsonStringFor: (self traceRecordDictionaryFor: aRecord)
 ]
 
 { #category : 'accessing' }
@@ -877,7 +884,7 @@ MCPLocalObservabilityBackend >> writeJSON: aDictionary to: aFileReference [
 	temporaryFile := aFileReference parent
 	                 / (String streamContents: [ :stream | stream << aFileReference basename << '.' << UUID new asString << '.tmp' ]).
 	[
-		temporaryFile writeStreamDo: [ :stream | stream nextPutAll: (STONJSON toString: aDictionary) ].
+		temporaryFile writeStreamDo: [ :stream | stream nextPutAll: (self jsonStringFor: aDictionary) ].
 		aFileReference exists ifTrue: [ aFileReference delete ].
 		temporaryFile renameTo: aFileReference basename.
 		temporaryFile := nil.
