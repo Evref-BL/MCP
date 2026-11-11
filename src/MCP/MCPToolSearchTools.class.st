@@ -45,11 +45,8 @@ MCPToolSearchTools >> buildInputSchema [
 
 	^ MCPStructureInputSchema new
 		  type: 'object';
-		  properties: { (self
-				   schemaPropertyNamed: 'query'
-				   type: 'string'
-				   description:
-					   'Space-separated search words matched against tool names, titles, descriptions, groups, and keywords. Tools are ranked by how many words they match, so the closest tools are answered even when none matches every word.') };
+		  properties:
+			  { (self schemaPropertyNamed: 'query' type: 'string' description: 'Search words; tools matching more of them rank first.') };
 		  required: #(  );
 		  additionalProperties: false;
 		  yourself
@@ -97,7 +94,7 @@ MCPToolSearchTools >> defaultExposure [
 { #category : 'metadata' }
 MCPToolSearchTools >> description [
 
-	^ 'Search available tools, best match first. Use to discover tool names before tool_get or tool_call.'
+	^ 'Search the whole tool catalog, best match first, including tools not in your list.'
 ]
 
 { #category : 'executing' }
@@ -136,4 +133,3 @@ MCPToolSearchTools >> toolRegistry: aToolRegistry [
 
 	toolRegistry := aToolRegistry
 ]
-

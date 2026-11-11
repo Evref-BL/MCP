@@ -818,6 +818,17 @@ MCPToolContractsTest >> testDictionaryShapedCommandResultsUseDTOClasses [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testDiscoveryInstructionsNameOnlyAdvertisedTools [
+	"A host may let a model call only the tools its list holds, so a tool the instructions name must be one tools/list shows, or they send the model where it cannot go."
+
+	| server named |
+	server := self mcpWithoutObservabilityExport.
+	named := (server discoveryInstructions substrings: ' ,.;:()') select: [ :each | each includes: $_ ].
+	self deny: named isEmpty.
+	self assertEmpty: (named reject: [ :each | server advertisedToolNames includes: each ])
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testDiscoveryUsesConfiguredAdvertisedTools [
 
 	| createContract metadataByName result searchContract server |
@@ -1013,6 +1024,20 @@ MCPToolContractsTest >> testEvaluateToolPointsAtTheToolCatalog [
 	| tool |
 	tool := self toolRegistry toolNamed: 'image_evaluate' ifAbsent: [ self fail: 'Missing image_evaluate tool' ].
 	self assert: (tool description includesSubstring: 'tool_search')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testEveryAdvertisedToolSaysWhatItDoesWithinACatalogLine [
+	"A host that lists tools one line each, as OpenCode's code mode does, shows the first 120 characters of a description. A first sentence longer than that is cut before it has said what the tool is for."
+
+	| offenders |
+	offenders := self toolRegistry advertisedTools reject: [ :tool |
+			             | description |
+			             description := tool description.
+			             ((description includesSubstring: '. ')
+				              ifTrue: [ description copyFrom: 1 to: (description indexOfSubCollection: '. ') ]
+				              ifFalse: [ description ]) size <= 120 ].
+	self assertEmpty: (offenders collect: [ :each | each name ])
 ]
 
 { #category : 'tests' }

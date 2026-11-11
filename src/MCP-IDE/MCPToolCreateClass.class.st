@@ -39,7 +39,7 @@ MCPToolCreateClass >> classToolSpec [
 	^ {
 		  (#action -> 'create').
 		  (#title -> 'Create Class').
-		  (#description -> 'Create one class definition in the running image. Naming Trait as the superclass creates a trait.').
+		  (#description -> 'Create a class in the running image, or several sharing one definition.').
 		  (#inputProperties -> {
 			   self createClassNameSchemaProperty.
 			   self createSuperclassNameSchemaProperty.
@@ -63,31 +63,27 @@ MCPToolCreateClass >> createClassNameSchemaProperty [
 		   type: #( 'string' 'array' )
 		   description: 'Name of the class to create, or several names sharing the other arguments.')
 		  items: (MCPStructureProperties new
-			   type: 'string';
-			   description: 'Name of one class to create.';
-			   yourself);
+				   type: 'string';
+				   yourself);
 		  yourself
 ]
 
 { #category : 'private - schema' }
 MCPToolCreateClass >> createClassSlotsSchemaProperty [
 
-	^ self stringArraySchemaNamed: 'classSlots' description: 'Variables the class object itself holds.' itemDescription: 'Slot name.'
+	^ self stringArraySchemaNamed: 'classSlots' description: 'Class-side instance variable names.' itemDescription: 'Slot name.'
 ]
 
 { #category : 'private - schema' }
 MCPToolCreateClass >> createCommentSchemaProperty [
 
-	^ self schemaPropertyNamed: 'comment' type: 'string' description: 'Class comment, saying what the class is for.'
+	^ self schemaPropertyNamed: 'comment' type: 'string' description: 'Class comment.'
 ]
 
 { #category : 'private - schema' }
 MCPToolCreateClass >> createPackageNameSchemaProperty [
 
-	^ self
-		  schemaPropertyNamed: 'package'
-		  type: 'string'
-		  description: 'Package to create the class in. It is created if it does not exist.'
+	^ self schemaPropertyNamed: 'package' type: 'string' description: 'Package for the class, created if missing.'
 ]
 
 { #category : 'private - schema' }
@@ -102,16 +98,13 @@ MCPToolCreateClass >> createSharedPoolsSchemaProperty [
 { #category : 'private - schema' }
 MCPToolCreateClass >> createSharedVariablesSchemaProperty [
 
-	^ self
-		  stringArraySchemaNamed: 'sharedVariables'
-		  description: 'Class variables, shared by the class and every instance of it.'
-		  itemDescription: 'Variable name.'
+	^ self stringArraySchemaNamed: 'sharedVariables' description: 'Class variable names.' itemDescription: 'Variable name.'
 ]
 
 { #category : 'private - schema' }
 MCPToolCreateClass >> createSlotsSchemaProperty [
 
-	^ self stringArraySchemaNamed: 'slots' description: 'Instance variables the class defines.' itemDescription: 'Slot name.'
+	^ self stringArraySchemaNamed: 'slots' description: 'Instance variable names.' itemDescription: 'Slot name.'
 ]
 
 { #category : 'private - schema' }
@@ -120,22 +113,19 @@ MCPToolCreateClass >> createSuperclassNameSchemaProperty [
 	^ self
 		  schemaPropertyNamed: 'superclass'
 		  type: 'string'
-		  description: 'Superclass name, Object when omitted. Name Trait here to create a trait, which has no superclass of its own.'
+		  description: 'Superclass name, Object when omitted. Trait creates a trait.'
 ]
 
 { #category : 'private - schema' }
 MCPToolCreateClass >> createTagSchemaProperty [
 
-	^ self schemaPropertyNamed: 'tag' type: 'string' description: 'Tag to file the class under inside its package.'
+	^ self schemaPropertyNamed: 'tag' type: 'string' description: 'Tag within the package.'
 ]
 
 { #category : 'private - schema' }
 MCPToolCreateClass >> createTraitsSchemaProperty [
 
-	^ self
-		  stringArraySchemaNamed: 'traits'
-		  description: 'Traits the class uses. Each also brings its class-side methods.'
-		  itemDescription: 'Trait name.'
+	^ self stringArraySchemaNamed: 'traits' description: 'Traits the class uses, class side included.' itemDescription: 'Trait name.'
 ]
 
 { #category : 'metadata' }

@@ -44,7 +44,7 @@ MCPToolGetTool >> annotations [
 MCPToolGetTool >> buildInputSchema [
 
 	| nameProperty |
-	nameProperty := self schemaPropertyNamed: 'name' type: 'string' description: 'Name of the tool whose contract to return.'.
+	nameProperty := self schemaPropertyNamed: 'name' type: 'string' description: 'Tool name.'.
 	^ MCPStructureInputSchema new
 		  type: 'object';
 		  properties: { nameProperty };
@@ -80,7 +80,7 @@ MCPToolGetTool >> defaultExposure [
 { #category : 'metadata' }
 MCPToolGetTool >> description [
 
-	^ 'Return one tool contract with metadata and input schema.'
+	^ 'Get a tool''s description and input schema by name.'
 ]
 
 { #category : 'executing' }

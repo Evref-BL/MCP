@@ -160,7 +160,7 @@ MCPToolRunTests >> defaultTimeoutSeconds [
 { #category : 'metadata' }
 MCPToolRunTests >> description [
 
-	^ 'Run tests and return a compact summary with the failures and errors. Name test packages, test classes or individual test methods; at least one of the three is required.'
+	^ 'Run SUnit tests by package, class or Class>>selector, and report failures and errors.'
 ]
 
 { #category : 'private' }
@@ -300,7 +300,7 @@ MCPToolRunTests >> testSelectionInputProperties [
 	^ {
 		  (self stringArraySchemaNamed: 'packages' description: 'Run every test class in these packages.' itemDescription: nil).
 		  (self stringArraySchemaNamed: 'classes' description: 'Run these test classes.' itemDescription: nil).
-		  (self stringArraySchemaNamed: 'methods' description: 'Run these test methods, as Class>>#selector.' itemDescription: nil) }
+		  (self stringArraySchemaNamed: 'methods' description: 'Run these test methods, as Class>>selector.' itemDescription: nil) }
 ]
 
 { #category : 'metadata' }

@@ -344,9 +344,9 @@ MCP >> debugMode: aBoolean [
 
 { #category : 'start' }
 MCP >> discoveryInstructions [
-	"Natural-language guidance a client may put in front of a model. The catalog is larger than what tools/list shows, so the one thing worth saying is how to reach the rest of it."
+	"Natural-language guidance a client may put in front of a model: the everyday workflow, each step named by its tool, then how to reach what tools/list leaves out. A host may let a model call only what its own list holds, so a tool found that way goes through tool_call."
 
-	^ 'Pharo image tools. tools/list shows the advertised surface; tool_search finds the rest of the catalog, and any tool it names can be called by name. image_evaluate is the escape hatch when no tool fits.'
+	^ 'Pharo code lives in the running image: find it with class_search or method_search, read with method_get, write with method_compile, check with test_run. tool_search finds more; tool_call runs them.'
 ]
 
 { #category : 'private - tools' }

@@ -875,8 +875,7 @@ MCPTool >> offsetInputProperty [
 
 	^ (self
 		   integerSchemaPropertyNamed: 'offset'
-		   description:
-			   'Index of the first result to return. A page is a fixed size, which tool_get reports for this tool; a result that was cut short says how many more there are.'
+		   description: 'Index of the first result. A cut-short result gives the next offset.'
 		   default: 0)
 		  minimum: 0;
 		  yourself
@@ -997,15 +996,15 @@ MCPTool >> searchScopeSchemaProperties [
 		  (self stringArraySchemaNamed: 'packages' description: 'Every class in these packages.' itemDescription: 'Package name.').
 		  (self
 			   stringArraySchemaNamed: 'superclassesOf'
-			   description: 'Every ancestor of these classes, the classes themselves excluded.'
+			   description: 'Ancestors of these classes, excluding them.'
 			   itemDescription: 'Class name.').
 		  (self
 			   stringArraySchemaNamed: 'subclassesOf'
-			   description: 'Every descendant of these classes, the classes themselves excluded.'
+			   description: 'Descendants of these classes, excluding them.'
 			   itemDescription: 'Class name.').
 		  (self
 			   stringArraySchemaNamed: 'hierarchyOf'
-			   description: 'Whole hierarchies of these classes, superclasses and subclasses alike, the classes themselves included.'
+			   description: 'These classes with their ancestors and descendants.'
 			   itemDescription: 'Class name.') }
 ]
 
@@ -1021,8 +1020,7 @@ MCPTool >> searchScopeSchemaPropertyWith: someProperties [
 	^ MCPStructureProperties new
 		  name: 'scope';
 		  type: 'object';
-		  description:
-			  'What to narrow the sweep to. Give several entries and everything any of them selects is covered. Omitted, the whole image is swept.';
+		  description: 'Where to search; entries add up. Omitted, the whole image.';
 		  properties: someProperties;
 		  additionalProperties: false;
 		  yourself

@@ -35,7 +35,7 @@ MCPToolSearchMethods >> defaultExposure [
 { #category : 'metadata' }
 MCPToolSearchMethods >> description [
 
-	^ 'Search methods by selector, protocol, class, package, or scope. Use method_source_search for source text and method_reference_search for where a name is used.'
+	^ 'List methods by class, package, selector or protocol; method_source_search finds text, method_reference_search senders.'
 ]
 
 { #category : 'private - filtering' }
@@ -59,7 +59,7 @@ MCPToolSearchMethods >> metadataFilterInputProperties [
 		  (self
 			   schemaPropertyNamed: 'selector'
 			   type: 'string'
-			   description: 'Keep methods whose selector contains this text. Case matters, as it does in a selector.').
+			   description: 'Keep methods whose selector contains this text. Case matters.').
 		  (self
 			   schemaPropertyNamed: 'protocol'
 			   type: 'string'

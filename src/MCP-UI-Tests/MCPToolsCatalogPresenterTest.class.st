@@ -35,7 +35,7 @@ MCPToolsCatalogPresenterTest >> testFilterMatchesDescriptionAndGroupTooNotOnlyTh
 	tool := presenter allTools detect: [ :each | each name = 'class_get' ].
 
 	self assert: ((presenter searchTextFor: tool) includesSubstring: 'classes').
-	self assert: ((presenter searchTextFor: tool) includesSubstring: 'metadata')
+	self assert: ((presenter searchTextFor: tool) includesSubstring: 'definitions')
 ]
 
 { #category : 'tests' }
