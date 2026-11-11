@@ -1006,7 +1006,7 @@ MCPToolMethodMutationTest >> testCompileReturnsSortedCollectionConversionCritiqu
 { #category : 'tests' }
 MCPToolMethodMutationTest >> testCompileReturnsStructuredCommandErrorForReadOnlyAssignment [
 
-	| error result |
+	| error result text |
 	self removeSelector: #brokenMethod: from: MCPToolMethodMutationTestTarget.
 	result := self callToolWith: (self
 			           compileArgumentsForClass: MCPToolMethodMutationTestTarget
@@ -1016,6 +1016,7 @@ MCPToolMethodMutationTest >> testCompileReturnsStructuredCommandErrorForReadOnly
 	^ anInteger'
 			           protocol: 'tests').
 	error := self errorFrom: result.
+	text := (result at: #content) first at: #text.
 	self assert: (result at: #isError).
 	self assert: (error at: #action) equals: 'compile'.
 	self assert: (error at: #errorCode) equals: 'CompileReadOnlyAssignment'.
@@ -1026,13 +1027,15 @@ MCPToolMethodMutationTest >> testCompileReturnsStructuredCommandErrorForReadOnly
 	self assert: ((error at: #message) includesSubstring: 'Cannot assign to anInteger').
 	self assert: ((error at: #message) includesSubstring: 'arguments are read-only').
 	self deny: ((error at: #message) includesSubstring: 'OCErrorNotice').
+	self assert: (text includesSubstring: 'Line 2:').
+	self assert: (text includesSubstring: 'anInteger := anInteger + 1.').
 	self deny: (MCPToolMethodMutationTestTarget includesSelector: #brokenMethod:)
 ]
 
 { #category : 'tests' }
 MCPToolMethodMutationTest >> testCompileReturnsStructuredCommandErrorForSyntaxError [
 
-	| error result structured |
+	| error result structured text |
 	self removeSelector: #brokenMethod from: MCPToolMethodMutationTestTarget.
 	result := self callToolWith: (self
 			           compileArgumentsForClass: MCPToolMethodMutationTestTarget
@@ -1041,6 +1044,7 @@ MCPToolMethodMutationTest >> testCompileReturnsStructuredCommandErrorForSyntaxEr
 			           protocol: 'tests').
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
+	text := (result at: #content) first at: #text.
 	self assert: (result at: #isError).
 	self assert: (error at: #action) equals: 'compile'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
@@ -1051,6 +1055,14 @@ MCPToolMethodMutationTest >> testCompileReturnsStructuredCommandErrorForSyntaxEr
 	self assert: (error at: #line) equals: 1.
 	self assert: (error at: #column) equals: 19.
 	self assert: (error at: #sourceLine) equals: 'brokenMethod ^ 1 +'.
+	self assert: (text includesSubstring: (String streamContents: [ :stream |
+					  stream
+						  nextPutAll: 'Line 1:';
+						  nextPut: Character lf;
+						  nextPutAll: 'brokenMethod ^ 1 +';
+						  nextPut: Character lf;
+						  next: 18 put: Character space;
+						  nextPut: $^ ])).
 	self deny: (error includesKey: #variableName).
 	self deny: (MCPToolMethodMutationTestTarget includesSelector: #brokenMethod)
 ]
@@ -1082,6 +1094,23 @@ MCPToolMethodMutationTest >> testCompileReturnsStructuredCommandErrorForUndeclar
 	self assert: (error at: #sourceLine) equals: 'brokenMethod ^ missingVar'.
 	self assert: ((error at: #message) includesSubstring: 'missingVar').
 	self deny: (MCPToolMethodMutationTestTarget includesSelector: #brokenMethod)
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileSucceedsWhenACritiqueRuleRaisesAWarning [
+
+	| result selector |
+	selector := MCPWarningTestRule probeSelector.
+	self removeSelector: selector from: MCPToolMethodMutationTestTarget.
+	[
+		result := self callToolWith: (self
+				           compileArgumentsForClass: MCPToolMethodMutationTestTarget
+				           classSide: false
+				           methodSource: selector , ' ^ 1'
+				           protocol: 'tests').
+		self deny: (result at: #isError ifAbsent: [ false ]).
+		self assert: (MCPToolMethodMutationTestTarget includesSelector: selector) ] ensure: [
+		self removeSelector: selector from: MCPToolMethodMutationTestTarget ]
 ]
 
 { #category : 'tests' }
