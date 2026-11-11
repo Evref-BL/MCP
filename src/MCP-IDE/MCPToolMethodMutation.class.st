@@ -165,8 +165,11 @@ MCPToolMethodMutation >> critiqueDataFor: aCritique [
 
 { #category : 'private' }
 MCPToolMethodMutation >> critiqueDataForMethod: aCompiledMethod [
+	"Critiquing runs every rule in the image, from any package. Pharo guards each rule against errors but not warnings, and a warning a rule raises about its own code, such as a deprecation, says nothing about the method just compiled: it is resumed rather than allowed to turn the compile into a failure."
 
-	^ self critiqueDataFromProperties: aCompiledMethod critiques
+	^ self critiqueDataFromProperties: ([ aCompiledMethod critiques ]
+			   on: Warning
+			   do: [ :warning | warning resume ])
 ]
 
 { #category : 'private' }

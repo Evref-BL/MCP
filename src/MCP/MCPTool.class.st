@@ -574,6 +574,7 @@ MCPTool >> errorTextOn: stream for: error [
 	"The summary already carries the class, the message, and any suggestion the command phrased into it. What it does not carry is what a comparison found, where the failure happened, or the selectors a receiver would have understood."
 
 	error at: #mismatches ifPresent: [ :mismatches | self mismatchesTextOn: stream for: mismatches ].
+	(error includesKey: #sourceLine) ifTrue: [ self sourceLineTextOn: stream for: error ].
 	error at: #suggestedSelectors ifPresent: [ :selectors |
 			stream
 				nextPut: Character lf;
@@ -1062,6 +1063,30 @@ MCPTool >> shouldResumeNotification: aNotification [
 	"A notification is not a failed call, so the boundary resumes it. A refactoring warning is the exception: it reports a change that breaks something, and a tool that may proceed anyway handles it itself behind force, so letting it reach the boundary unresumed is what aborts an unauthorized mutation."
 
 	^ (aNotification isKindOf: RBRefactoringWarning) not
+]
+
+{ #category : 'private - results' }
+MCPTool >> sourceLineTextOn: stream for: error [
+	"Where the failure happened, as a compiler shows it: the line, then a caret under the column. A caller that reads only the text has no other way to find it."
+
+	| sourceLine |
+	sourceLine := error at: #sourceLine.
+	error at: #line ifPresent: [ :line |
+			stream
+				nextPut: Character lf;
+				nextPutAll: 'Line ';
+				print: line;
+				nextPut: $: ].
+	stream
+		nextPut: Character lf;
+		nextPutAll: sourceLine.
+	error at: #column ifPresent: [ :column |
+			stream nextPut: Character lf.
+			(sourceLine first: (column - 1 min: sourceLine size)) do: [ :each |
+					stream nextPut: (each = Character tab
+							 ifTrue: [ each ]
+							 ifFalse: [ Character space ]) ].
+			stream nextPut: $^ ]
 ]
 
 { #category : 'private - schema' }
