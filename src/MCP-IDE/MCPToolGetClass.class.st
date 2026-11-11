@@ -60,8 +60,7 @@ MCPToolGetClass >> buildInputSchema [
 	upToSuperclassNameProperty := MCPStructureProperties new
 		                              name: 'upToSuperclass';
 		                              type: 'string';
-		                              description:
-			                              'Return the superclass hierarchy up to and not including the given class. Using Object returns the whole superclass hierarchy.';
+		                              description: 'Also list superclasses up to, not including, this class.';
 		                              yourself.
 	subclassDepthProperty := MCPStructureProperties new
 		                         name: 'subclassDepth';
@@ -77,7 +76,6 @@ MCPToolGetClass >> buildInputSchema [
 		                description: 'Class name, or several class names.';
 		                items: (MCPStructureProperties new
 				                 type: 'string';
-				                 description: 'A class name.';
 				                 yourself);
 		                yourself.
 	^ MCPStructureInputSchema new
@@ -122,7 +120,7 @@ MCPToolGetClass >> defaultExposure [
 { #category : 'metadata' }
 MCPToolGetClass >> description [
 
-	^ 'Get metadata for one or more classes or traits. Optional superclass/subclass context, and the classes using a trait. Use class_search to discover names.'
+	^ 'Get class or trait definitions by name: superclass, slots, traits, package. method_search lists their methods.'
 ]
 
 { #category : 'private - hierarchy' }

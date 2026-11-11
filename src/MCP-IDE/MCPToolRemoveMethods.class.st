@@ -38,10 +38,9 @@ MCPToolRemoveMethods >> buildInputSchema [
 				  ((MCPStructureProperties new
 					    name: 'selector';
 					    type: #( 'string' 'array' );
-					    description: 'The selector to remove, or several removed together as one change. Senders are not checked.')
+					    description: 'The selector to remove, or several removed together as one change.')
 					   items: (MCPStructureProperties new
 							    type: 'string';
-							    description: 'A selector to remove.';
 							    yourself);
 					   yourself) };
 		  required: #( 'class' 'selector' );
@@ -77,7 +76,7 @@ MCPToolRemoveMethods >> defaultExposure [
 { #category : 'metadata' }
 MCPToolRemoveMethods >> description [
 
-	^ 'Remove methods from one class as a batch without sender safety checks. Use method_compile or method_update for method updates.'
+	^ 'Remove methods from one class. Senders are not checked.'
 ]
 
 { #category : 'private' }

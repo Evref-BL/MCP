@@ -56,7 +56,7 @@ MCPToolCallTool >> defaultExposure [
 { #category : 'metadata' }
 MCPToolCallTool >> description [
 
-	^ 'Invoke one MCP-Pharo tool selected by name from the discoverable catalog. The target tool receives the nested arguments object and is validated through its own schema.'
+	^ 'Call a tool not in your list by name, with its arguments. tool_search finds such tools.'
 ]
 
 { #category : 'executing' }

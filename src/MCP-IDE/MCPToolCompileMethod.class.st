@@ -69,8 +69,7 @@ MCPToolCompileMethod >> forceSchemaProperty [
 
 	^ self
 		  booleanSchemaPropertyNamed: 'force'
-		  description:
-		  'Continue through refactoring warnings instead of stopping, and compile over a method the class got from a trait, overriding it in this class.'
+		  description: 'Continue through refactoring warnings instead of stopping, and override a method the class gets from a trait.'
 		  default: false
 ]
 
@@ -79,31 +78,28 @@ MCPToolCompileMethod >> methodToolSpec [
 
 	^ {
 		  (#title -> 'Compile Method').
-		  (#description
-		   ->
-		   'Compile method source into a class. Creates the method when absent and replaces it when the selector already exists. Several sources can be compiled into the same class in one call.').
+		  (#description -> 'Add or replace methods in a class from their full source, selector line included.').
 		  (#action -> 'compile').
 		  (#inputProperties -> {
 			   (MCPStructureProperties new
 				    name: 'class';
 				    type: 'string';
-				    description: 'The class to compile the method into.';
+				    description: 'The class to compile into.';
 				    yourself).
 			   (self targetSideSchemaPropertyDescribedAs: 'Which side to compile into.').
 			   (MCPStructureProperties new
 				    name: 'source';
 				    type: #( 'string' 'array' );
-				    description: 'The full method source to compile, selector line included, or several method sources for the same class.';
+				    description: 'Full method source, selector line included, or several for the same class.';
 				    items: (MCPStructureProperties new
 						     type: 'string';
-						     description: 'The full source of one method.';
 						     yourself);
 				    yourself).
 			   (MCPStructureProperties new
 				    name: 'protocol';
 				    type: 'string';
 				    description:
-					    'The protocol to file the method under. Omitted, a method being replaced keeps the protocol it is in, and a new one is left unclassified, which the answer warns about. For an extension method, name an extension protocol such as *Package-Name.';
+					    'Protocol for the method; a replaced method keeps its own when omitted. Extension methods take *Package-Name.';
 				    yourself).
 			   self forceSchemaProperty }).
 		  (#requiredProperties -> #( 'class' 'source' )) } asDictionary

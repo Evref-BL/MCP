@@ -67,11 +67,9 @@ MCPToolGetMethod >> buildInputSchema [
 	selectorProperty := MCPStructureProperties new
 		                    name: 'selector';
 		                    type: #( 'string' 'array' );
-		                    description:
-			                    'A method as Class>>selector or Class class>>selector, or a bare selector when class is given. One of them, or several.';
+		                    description: 'Class>>selector, Class class>>selector, or a bare selector with class. One or several.';
 		                    items: (MCPStructureProperties new
 				                     type: 'string';
-				                     description: 'One method.';
 				                     yourself);
 		                    yourself.
 	^ MCPStructureInputSchema new
@@ -80,11 +78,10 @@ MCPToolGetMethod >> buildInputSchema [
 				  (MCPStructureProperties new
 					   name: 'class';
 					   type: 'string';
-					   description: 'The class defining the methods, for selectors that do not name their own.';
+					   description: 'Class for bare selectors.';
 					   yourself).
 				  selectorProperty.
-				  (self targetSideSchemaPropertyDescribedAs:
-					   'Which side a bare selector is on. A method written as Class class>>selector says so itself.').
+				  (self targetSideSchemaPropertyDescribedAs: 'Which side a bare selector is on.').
 				  includeVariableDetailsProperty };
 		  required: #( 'selector' );
 		  yourself
@@ -125,7 +122,7 @@ MCPToolGetMethod >> definingClassNameFromBinding: aBinding [
 { #category : 'metadata' }
 MCPToolGetMethod >> description [
 
-	^ 'Get known methods and return their source plus structured variable-reference context. Takes methods as Class>>selector, as a search prints them, or bare selectors with class. Use method_search or reference lookup tools to discover methods first.'
+	^ 'Get the source of methods named Class>>selector or Class class>>selector, one or several.'
 ]
 
 { #category : 'private' }

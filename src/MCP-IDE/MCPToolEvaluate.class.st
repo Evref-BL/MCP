@@ -35,7 +35,7 @@ MCPToolEvaluate >> buildInputSchema [
 		  properties: { (MCPStructureProperties new
 				   name: 'code';
 				   type: 'string';
-				   description: 'The Smalltalk code to execute in the running Pharo image.';
+				   description: 'Smalltalk code to run.';
 				   yourself) };
 		  required: #( 'code' );
 		  yourself
@@ -71,7 +71,7 @@ MCPToolEvaluate >> defaultExposure [
 { #category : 'metadata' }
 MCPToolEvaluate >> description [
 
-	^ 'Evaluate arbitrary Smalltalk code and return a bounded preview of the result, with what it wrote to the Transcript. It may mutate image state. This is the escape hatch: before hand-writing a class, method, package, test or repository change, look for the dedicated tool with tool_search.'
+	^ 'The escape hatch: run arbitrary Smalltalk code when no tool fits; tool_search finds one. Returns result and Transcript.'
 ]
 
 { #category : 'executing' }

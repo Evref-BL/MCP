@@ -33,11 +33,9 @@ MCPToolSearchMethodSource >> buildInputSchema [
 
 	| properties |
 	properties := self methodQueryScopeInputProperties , {
-		              (self filterSchemaPropertyWithDescription:
-			               'Source text to match in method bodies. Case matters, as it does in code.').
+		              (self filterSchemaPropertyWithDescription: 'Text to find in method source. Case matters.').
 		              (self
-			               filterModeSchemaPropertyWithDescription:
-			               'How filter is matched against the source: anywhere in it, at its start, as the whole of it, or as a regular expression.'
+			               filterModeSchemaPropertyWithDescription: 'Match filter as a substring or as a regular expression.'
 			               values: self supportedFilterModes).
 		              self offsetInputProperty }.
 	^ MCPStructureInputSchema new
@@ -62,7 +60,7 @@ MCPToolSearchMethodSource >> defaultFilterMode [
 { #category : 'metadata' }
 MCPToolSearchMethodSource >> description [
 
-	^ 'Search methods by source text. Use method_search for selector, protocol, class, or package metadata.'
+	^ 'Find methods by text or regex in their source.'
 ]
 
 { #category : 'private - filtering' }

@@ -252,7 +252,7 @@ MCPToolClassMutation >> layoutSchemaProperty [
 	^ self
 		  schemaPropertyNamed: 'layout'
 		  type: 'string'
-		  description: 'Name of the layout class, a subclass of AbstractLayout, such as FixedLayout or VariableLayout.'
+		  description: 'Layout class, a subclass of AbstractLayout such as VariableLayout.'
 ]
 
 { #category : 'private - actions' }

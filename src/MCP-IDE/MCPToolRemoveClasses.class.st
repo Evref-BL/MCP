@@ -32,17 +32,15 @@ MCPToolRemoveClasses >> buildInputSchema [
 				  ((MCPStructureProperties new
 					    name: 'name';
 					    type: #( 'string' 'array' );
-					    description:
-						    'Name of the class to remove, or several names removed together as one change, so references between them do not block the removal.')
+					    description: 'Class name, or several removed together so references between them do not block it.')
 					   items: (MCPStructureProperties new
 							    type: 'string';
-							    description: 'A class name to remove.';
 							    yourself);
 					   yourself).
 				  (MCPStructureProperties new
 					   name: 'force';
 					   type: 'boolean';
-					   description: 'Remove even when safe-removal warnings are raised. The warnings are reported either way.';
+					   description: 'Remove despite warnings, which are reported either way.';
 					   default: false;
 					   yourself) };
 		  required: #( 'name' );
@@ -80,7 +78,7 @@ MCPToolRemoveClasses >> defaultExposure [
 { #category : 'metadata' }
 MCPToolRemoveClasses >> description [
 
-	^ 'Remove classes as one batch. Safe-removal warnings stop the removal unless force is true. With force=true, the tool still returns those warnings. history_entry_revert undoes a removal in the running image.'
+	^ 'Remove classes in one change. Warnings, such as remaining references, stop it unless force is true.'
 ]
 
 { #category : 'private' }

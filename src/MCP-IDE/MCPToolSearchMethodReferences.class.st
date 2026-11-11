@@ -24,7 +24,7 @@ MCPToolSearchMethodReferences >> defaultExposure [
 { #category : 'metadata' }
 MCPToolSearchMethodReferences >> description [
 
-	^ 'Find where a name is used. A selector answers its implementors and its senders, a class name answers the methods referring to the class, any other name answers the methods referring to the variable. Use kind to ask for one of them.'
+	^ 'Find senders and implementors of a selector, or methods referring to a class or variable.'
 ]
 
 { #category : 'private - lookup' }
@@ -102,7 +102,7 @@ MCPToolSearchMethodReferences >> kindsForName: aName request: request [
 { #category : 'private - schema' }
 MCPToolSearchMethodReferences >> lookupArgumentDescription [
 
-	^ 'The selector, class name or variable name whose uses should be returned.'
+	^ 'Selector, class name or variable name.'
 ]
 
 { #category : 'private - schema' }
