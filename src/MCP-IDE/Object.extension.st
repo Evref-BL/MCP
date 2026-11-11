@@ -17,3 +17,9 @@ Object >> mcpNoticeNode [
 
 	^ nil
 ]
+
+{ #category : '*MCP-IDE' }
+Object >> mcpTranscriptToRestore [
+
+	^ self
+]
