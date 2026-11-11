@@ -108,7 +108,7 @@ MCPSocketSafeZnServer >> newServerSocket [
 { #category : 'private' }
 MCPSocketSafeZnServer >> readRequestTerminationExceptionSet [
 
-	^ super readRequestTerminationExceptionSet , (self exceptionSet: #( #SocketError ))
+	^ super readRequestTerminationExceptionSet , SocketError
 ]
 
 { #category : 'private' }
