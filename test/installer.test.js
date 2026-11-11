@@ -108,6 +108,7 @@ test("CLI installs into the current directory", () => {
     });
     assert.equal(result.status, 0, result.stderr);
     assert.ok(fs.existsSync(path.join(project, "opencode.json")));
+    assert.equal(JSON.parse(fs.readFileSync(path.join(project, "opencode.json"), "utf8")).mcp.pharo.codemode, false);
     assert.ok(fs.existsSync(path.join(project, ".opencode/skills/pharo-project-load/SKILL.md")));
   } finally {
     removeProject(project);
