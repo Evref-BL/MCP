@@ -92,6 +92,68 @@ MCPToolStructuredOutputTest >> testEntryFieldsWithSeparatorsAreQuoted [
 ]
 
 { #category : 'tests' }
+MCPToolStructuredOutputTest >> testEvaluateAnswersTranscriptContentsWithWhatItWrote [
+
+	| result |
+	result := self
+		          callToolNamed: 'image_evaluate'
+		          withArguments: { (#code -> 'Transcript show: ''written''. Transcript contents') } asDictionary.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: ((self dataFrom: result) at: #resultPrintString) equals: '''written'''
+]
+
+{ #category : 'tests' }
+MCPToolStructuredOutputTest >> testEvaluateDeclaresAnUndeclaredNameAsAPlaygroundDoes [
+
+	| result |
+	result := self callToolNamed: 'image_evaluate' withArguments: { (#code -> 'total := 3 + 4. total * 2') } asDictionary.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: ((self dataFrom: result) at: #resultPrintString) equals: '14'
+]
+
+{ #category : 'tests' }
+MCPToolStructuredOutputTest >> testEvaluateForgetsItsVariablesAfterTheCall [
+
+	| result |
+	self callToolNamed: 'image_evaluate' withArguments: { (#code -> 'leftover := 5') } asDictionary.
+	result := self callToolNamed: 'image_evaluate' withArguments: { (#code -> 'leftover') } asDictionary.
+	self assert: (result at: #isError).
+	self assert: (((self errorFrom: result) at: #message) includesSubstring: 'leftover')
+]
+
+{ #category : 'tests' }
+MCPToolStructuredOutputTest >> testEvaluateLeavesACapitalizedNameUndeclared [
+
+	| result |
+	result := self callToolNamed: 'image_evaluate' withArguments: { (#code -> 'MCPNoSuchGlobalForThisTest new') } asDictionary.
+	self assert: (result at: #isError).
+	self assert: (((self errorFrom: result) at: #message) includesSubstring: 'MCPNoSuchGlobalForThisTest')
+]
+
+{ #category : 'tests' }
+MCPToolStructuredOutputTest >> testEvaluateLeavesANameNeverAssignedUndeclared [
+	"A Playground would read it as nil. A name only read is far more often a typo or a missing selector, and the compile error says which."
+
+	| result |
+	result := self callToolNamed: 'image_evaluate' withArguments: { (#code -> 'neverAssigned isNil') } asDictionary.
+	self assert: (result at: #isError).
+	self assert: (((self errorFrom: result) at: #message) includesSubstring: 'neverAssigned')
+]
+
+{ #category : 'tests' }
+MCPToolStructuredOutputTest >> testEvaluatePutsTheTranscriptBackAfterAFailure [
+
+	| previous result |
+	previous := Smalltalk globals at: #Transcript.
+	result := self
+		          callToolNamed: 'image_evaluate'
+		          withArguments: { (#code -> 'Transcript show: ''before''. Error signal: ''boom''') } asDictionary.
+	self assert: (result at: #isError).
+	self assert: (Smalltalk globals at: #Transcript) identicalTo: previous.
+	self assert: ((self errorFrom: result) at: #transcript) equals: 'before'
+]
+
+{ #category : 'tests' }
 MCPToolStructuredOutputTest >> testEvaluateReportsADeprecationBesideTheValue [
 	"A deprecation says the answer is not what the caller thinks, and the answer arrives all the same, so it has to arrive with it. The same deprecation raised twice is reported once."
 
@@ -180,6 +242,25 @@ MCPToolStructuredOutputTest >> testEvaluateReturnsStructuredSuccess [
 	self assert: (data at: #resultClassName) equals: 'SmallInteger'.
 	self assert: (data at: #resultPrintString) equals: '3'.
 	self assertEmpty: (self warningsFrom: result)
+]
+
+{ #category : 'tests' }
+MCPToolStructuredOutputTest >> testEvaluateReturnsWhatItWroteToTheTranscript [
+
+	| contentText result |
+	result := self
+		          callToolNamed: 'image_evaluate'
+		          withArguments: { (#code -> 'Transcript show: ''one''; cr; show: 2. 42') } asDictionary.
+	contentText := (result at: #content) first at: #text.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: ((self dataFrom: result) at: #resultPrintString) equals: '42'.
+	self assert: ((self dataFrom: result) at: #transcript) equals: (String streamContents: [ :stream |
+				 stream
+					 nextPutAll: 'one';
+					 nextPut: Character lf;
+					 nextPutAll: '2' ]).
+	self assert: (contentText beginsWith: '42').
+	self assert: (contentText includesSubstring: 'Transcript:')
 ]
 
 { #category : 'tests' }

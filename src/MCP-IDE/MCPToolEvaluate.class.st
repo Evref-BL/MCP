@@ -71,7 +71,7 @@ MCPToolEvaluate >> defaultExposure [
 { #category : 'metadata' }
 MCPToolEvaluate >> description [
 
-	^ 'Evaluate arbitrary Smalltalk code and return a bounded preview of the result. It may mutate image state. This is the escape hatch: before hand-writing a class, method, package, test or repository change, look for the dedicated tool with tool_search.'
+	^ 'Evaluate arbitrary Smalltalk code and return a bounded preview of the result, with what it wrote to the Transcript. It may mutate image state. This is the escape hatch: before hand-writing a class, method, package, test or repository change, look for the dedicated tool with tool_search.'
 ]
 
 { #category : 'executing' }
@@ -107,9 +107,8 @@ MCPToolEvaluate >> failureTextFor: structuredContent [
 					  stream
 						  nextPut: Character lf;
 						  nextPutAll: 'Did you mean: '.
-					  selectors
-						  do: [ :each | stream nextPutAll: each ]
-						  separatedBy: [ stream nextPutAll: ', ' ] ].
+					  selectors do: [ :each | stream nextPutAll: each ] separatedBy: [ stream nextPutAll: ', ' ] ].
+			  self transcriptTextOn: stream for: error.
 			  error at: #stackTrace ifPresent: [ :frames |
 					  frames do: [ :each |
 							  stream
@@ -132,24 +131,21 @@ MCPToolEvaluate >> resultPreviewCharacterLimit [
 { #category : 'private - results' }
 MCPToolEvaluate >> resultTextFor: data [
 
-	| printString |
-	printString := data at: #resultPrintString.
-	(data includesKey: #truncated) ifFalse: [ ^ printString ].
 	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: printString;
-				  nextPut: Character lf;
-				  nextPutAll: '[truncated'.
-			  data
-				  at: #resultSize
-				  ifPresent: [ :size |
-						  stream
-							  nextPutAll: ': ';
-							  nextPutAll: (data at: #resultClassName);
-							  nextPutAll: ' of ';
-							  print: size;
-							  nextPutAll: ' elements' ].
-			  stream nextPut: $] ]
+			  stream nextPutAll: (data at: #resultPrintString).
+			  (data includesKey: #truncated) ifTrue: [
+					  stream
+						  nextPut: Character lf;
+						  nextPutAll: '[truncated'.
+					  data at: #resultSize ifPresent: [ :size |
+							  stream
+								  nextPutAll: ': ';
+								  nextPutAll: (data at: #resultClassName);
+								  nextPutAll: ' of ';
+								  print: size;
+								  nextPutAll: ' elements' ].
+					  stream nextPut: $] ].
+			  self transcriptTextOn: stream for: data ]
 ]
 
 { #category : 'private' }
@@ -185,4 +181,20 @@ MCPToolEvaluate >> syntaxFailureMessageFor: aNotice line: aLineNumber [
 MCPToolEvaluate >> title [
 
 	^ 'Evaluate Image Code'
+]
+
+{ #category : 'private - results' }
+MCPToolEvaluate >> transcriptTextOn: stream for: aDictionary [
+	"What the evaluation wrote to the Transcript, which its caller cannot see otherwise."
+
+	aDictionary at: #transcript ifPresent: [ :text |
+			stream
+				nextPut: Character lf;
+				nextPutAll: 'Transcript:';
+				nextPut: Character lf;
+				nextPutAll: text.
+			(aDictionary includesKey: #transcriptTruncated) ifTrue: [
+					stream
+						nextPut: Character lf;
+						nextPutAll: '[transcript truncated]' ] ]
 ]

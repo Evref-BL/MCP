@@ -5,7 +5,8 @@ Class {
 	#name : 'MCPEvaluateCommand',
 	#superclass : 'MCPToolRequestCommand',
 	#instVars : [
-		'resultPreviewCharacterLimit'
+		'resultPreviewCharacterLimit',
+		'transcript'
 	],
 	#category : 'MCP-IDE-Commands',
 	#package : 'MCP-IDE',
@@ -18,18 +19,29 @@ MCPEvaluateCommand class >> tool: aTool request: aRequest resultPreviewCharacter
 	^ self new initializeTool: aTool request: aRequest resultPreviewCharacterLimit: anInteger
 ]
 
+{ #category : 'private' }
+MCPEvaluateCommand >> addTranscriptTo: aDictionary [
+
+	transcript contents ifEmpty: [ ^ self ].
+	aDictionary at: #transcript put: transcript contents.
+	transcript isTruncated ifTrue: [ aDictionary at: #transcriptTruncated put: true ]
+]
+
 { #category : 'executing' }
 MCPEvaluateCommand >> execute [
+	"The code is compiled much as a Playground page compiles it, so a name it assigns without declaring is a variable of this evaluation, and what it writes to the Transcript comes back with its value."
 
 	| answer compiler notice warningDescriptions |
 	compiler := SmalltalkImage current compiler.
 	compiler compilationContext isScripting: true.
+	compiler requestor: (MCPPlaygroundRequestor forCode: request code).
 	notice := nil.
 	warningDescriptions := OrderedCollection new.
 	compiler failBlock: [ :aNotice |
 			notice := aNotice.
 			nil ].
-	answer := [ compiler evaluate: request code ]
+	transcript := MCPTranscriptRecorder limit: resultPreviewCharacterLimit.
+	answer := [ transcript recordDuring: [ compiler evaluate: request code ] ]
 		          on: Exception
 		          do: [ :error |
 				          (error isKindOf: Notification) ifTrue: [ self resumeNotification: error collectingWarningInto: warningDescriptions ].
@@ -57,6 +69,7 @@ MCPEvaluateCommand >> resultDataFor: anAnswer [
 	data := Dictionary new.
 	data at: #resultClassName put: anAnswer class name asString.
 	data at: #resultPrintString put: printString.
+	self addTranscriptTo: data.
 	printString size < resultPreviewCharacterLimit ifTrue: [ ^ data ].
 	data at: #truncated put: true.
 	(anAnswer isCollection and: [ anAnswer isString not ]) ifTrue: [ data at: #resultSize put: anAnswer size ].
@@ -83,6 +96,7 @@ MCPEvaluateCommand >> runtimeFailureFor: anError [
 	| details |
 	details := tool errorDetailsFor: anError.
 	anError mcpAddToolErrorDetailsTo: details.
+	self addTranscriptTo: details.
 	^ MCPEvaluateResult errorSummary: (tool runtimeFailureMessageFor: anError) details: details
 ]
 
