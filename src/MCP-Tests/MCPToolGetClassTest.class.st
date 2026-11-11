@@ -324,11 +324,10 @@ MCPToolGetClassTest >> testOmitsATraitCompositionThatOnlyRepeatsTheTraits [
 MCPToolGetClassTest >> testRejectsNegativeSubclassDepth [
 
 	self
-		should: [
-				self callToolWith: {
-						(#name -> self baseClassName).
-						(#subclassDepth -> -1) } asDictionary ]
-		raise: MCPInvalidToolInput
+		assertResult: (self callToolWith: {
+					 (#name -> self baseClassName).
+					 (#subclassDepth -> -1) } asDictionary)
+		refusesArgumentsSaying: 'subclassDepth must be at least 0, not -1.'
 ]
 
 { #category : 'tests' }

@@ -62,7 +62,7 @@ Exception >> mcpCommandErrorDo: commandBlock otherwise: fallbackBlock [
 ]
 
 { #category : '*MCP' }
-Exception >> mcpIsJRPCError [
+Exception >> mcpIsProtocolError [
 
 	^ false
 ]

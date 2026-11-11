@@ -82,6 +82,22 @@ MCPToolRequestTest >> testInvalidToolInputErrorResponseIncludesViolations [
 ]
 
 { #category : 'tests' }
+MCPToolRequestTest >> testInvalidToolInputSaysEachViolationInWords [
+
+	| error |
+	[
+		MCPToolRequest tool: MCPToolSearchPackages new arguments: {
+				(#offset -> 'ten').
+				(#extra -> true) } asDictionary ]
+		on: MCPInvalidToolInput
+		do: [ :signalledError | error := signalledError ].
+	self assert: (error messageText beginsWith: 'Invalid arguments for package_search. ').
+	self assert: (error messageText includesSubstring: 'offset must be integer, not string.').
+	self assert: (error messageText includesSubstring: 'extra is not accepted here; expected one of ').
+	self assert: (error messageText includesSubstring: 'offset, ')
+]
+
+{ #category : 'tests' }
 MCPToolRequestTest >> testNonNegativeIntegerArgumentClampsValuesAboveMaximum [
 
 	| request |

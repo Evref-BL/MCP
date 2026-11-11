@@ -136,6 +136,7 @@ MCPJSONSchemaValidator >> validate: aValue against: aSchema [
 
 { #category : 'private - object validation' }
 MCPJSONSchemaValidator >> validateAdditionalPropertiesIn: aDictionary againstSchema: schema atPath: path [
+	"An unexpected property expects the ones the schema names, so the caller learns what it could have sent."
 
 	| additionalProperties propertyNames |
 	additionalProperties := self keywordNamed: #additionalProperties in: schema ifAbsent: [ true ].
@@ -149,7 +150,7 @@ MCPJSONSchemaValidator >> validateAdditionalPropertiesIn: aDictionary againstSch
 									addViolationAt: (path copyWith: key asString)
 									keyword: #additionalProperties
 									message: 'Object contains an unexpected property.'
-									expected: nil
+									expected: (propertyNames ifEmpty: [ nil ] ifNotEmpty: [ propertyNames asArray sort ])
 									actual: key asString ]
 						ifFalse: [ self validateValue: value againstSchema: additionalProperties atPath: (path copyWith: key asString) ] ] ]
 ]
@@ -179,6 +180,7 @@ MCPJSONSchemaValidator >> validateAnyOfIn: schema for: aValue atPath: path [
 
 { #category : 'private - array validation' }
 MCPJSONSchemaValidator >> validateArray: aCollection againstSchema: schema atPath: path [
+	"Positions in a path count from zero, as in the JSON the caller sent."
 
 	| itemSchema minimumSize |
 	minimumSize := self keywordNamed: #minItems in: schema ifAbsent: [ nil ].
@@ -191,7 +193,7 @@ MCPJSONSchemaValidator >> validateArray: aCollection againstSchema: schema atPat
 						expected: requiredSize
 						actual: aCollection size ] ].
 	itemSchema := self keywordNamed: #items in: schema ifAbsent: [ ^ self ].
-	aCollection withIndexDo: [ :each :index | self validateValue: each againstSchema: itemSchema atPath: (path copyWith: index) ]
+	aCollection withIndexDo: [ :each :index | self validateValue: each againstSchema: itemSchema atPath: (path copyWith: index - 1) ]
 ]
 
 { #category : 'private - validating' }

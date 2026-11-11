@@ -27,6 +27,18 @@ MCPToolAPITestCase >> aroundToolCall: aBlock [
 	^ aBlock value
 ]
 
+{ #category : 'private - results' }
+MCPToolAPITestCase >> assertResult: aResult refusesArgumentsSaying: aString [
+	"Arguments a tool refuses come back as a tool result for the model to correct, saying what is wrong, without the stack that found it."
+
+	| summary |
+	summary := self summaryFrom: aResult.
+	self assert: (self resultIndicatesError: aResult) description: summary.
+	self assert: (summary beginsWith: 'Invalid arguments for ') description: summary.
+	self assert: (summary includesSubstring: aString) description: summary.
+	self deny: ((self errorFrom: aResult) includesKey: #stackTrace)
+]
+
 { #category : 'private - calling' }
 MCPToolAPITestCase >> callDiscoveredToolNamed: aToolName withArguments: someArguments [
 

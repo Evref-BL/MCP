@@ -677,6 +677,63 @@ MCPToolClassMutationTest >> testUpdatePreservesSharedVariableValueWhenNameIsKept
 ]
 
 { #category : 'tests - update' }
+MCPToolClassMutationTest >> testUpdatePullUpSlotNamedOnItsHolderSaysWhichClassToName [
+	"pullUp names the class the slot moves into. Naming the class that holds the slot is the likely misreading, and the answer names the class to use instead."
+
+	| error result |
+	self
+		createClassNamed: 'MCPToolClassMutationTestPullUpParent'
+		superclassName: 'Object'
+		slots: #(  )
+		classSlots: #(  ).
+	self
+		createClassNamed: 'MCPToolClassMutationTestPullUpChild'
+		superclassName: 'MCPToolClassMutationTestPullUpParent'
+		slots: #( colour )
+		classSlots: #(  ).
+	result := self callToolWith: (self
+			           updateRequestArgumentsForSlotAction: 'pullUp'
+			           className: 'MCPToolClassMutationTestPullUpChild'
+			           slotName: 'colour'
+			           classSide: false).
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (error at: #errorCode) equals: 'PullUpSlotRefactoringError'.
+	self assert: ((error at: #message) includesSubstring:
+			 'name MCPToolClassMutationTestPullUpParent to move colour up from MCPToolClassMutationTestPullUpChild').
+	self assert: (self classNamed: 'MCPToolClassMutationTestPullUpChild') slotNames equals: #( colour )
+]
+
+{ #category : 'tests - update' }
+MCPToolClassMutationTest >> testUpdatePullUpSlotRefusesASlotATraitSupplies [
+	"A slot a trait supplies is the trait's, not the class's, so no superclass would help and the answer names the trait instead."
+
+	| error result |
+	self withoutEpiceaDuring: [
+			| trait |
+			trait := (Trait << #MCPToolClassMutationTestPullUpColoured)
+				         slots: #( colour );
+				         package: self generatedPackageName;
+				         tag: self generatedTagName;
+				         install.
+			(Object << #MCPToolClassMutationTestPullUpTraitUser)
+				traits: trait;
+				package: self generatedPackageName;
+				tag: self generatedTagName;
+				install ].
+	result := self callToolWith: (self
+			           updateRequestArgumentsForSlotAction: 'pullUp'
+			           className: 'MCPToolClassMutationTestPullUpTraitUser'
+			           slotName: 'colour'
+			           classSide: false).
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (error at: #errorCode) equals: 'PullUpSlotRefactoringError'.
+	self assert: ((error at: #message) includesSubstring: 'which the trait MCPToolClassMutationTestPullUpColoured supplies').
+	self deny: ((error at: #message) includesSubstring: ': name ')
+]
+
+{ #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdatePullUpSlotReturnsStructuredCommandErrorForRefactoringFailure [
 
 	| error result structured |

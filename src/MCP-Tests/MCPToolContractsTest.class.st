@@ -855,12 +855,18 @@ MCPToolContractsTest >> testDiscoveryUsesConfiguredAdvertisedTools [
 
 { #category : 'tests' }
 MCPToolContractsTest >> testEmptyListOfTargetsIsRejectedAsInput [
+	"A list whose values are all blank names nothing either, though it has items."
 
 	self
-		should: [ self callToolNamed: 'method_get' withArguments: {
-				 (#class -> 'MCPTool').
-				 (#selector -> #(  )) } asDictionary ]
-		raise: MCPInvalidToolInput
+		assertResult: (self callToolNamed: 'method_get' withArguments: {
+					 (#class -> 'MCPTool').
+					 (#selector -> #(  )) } asDictionary)
+		refusesArgumentsSaying: 'selector names nothing to act on; give at least one value that is not blank.'.
+	self
+		assertResult: (self callToolNamed: 'method_get' withArguments: {
+					 (#class -> 'MCPTool').
+					 (#selector -> #( '' '  ' )) } asDictionary)
+		refusesArgumentsSaying: 'selector names nothing to act on'
 ]
 
 { #category : 'tests - evaluate' }
@@ -1140,6 +1146,31 @@ MCPToolContractsTest >> testGetToolReturnsSchemaForCatalogTool [
 	self assert: getToolPropertyNames equals: #( 'name' )
 ]
 
+{ #category : 'tests - validation' }
+MCPToolContractsTest >> testHandleJSONAnswersMissingRequiredArgumentsAsAToolError [
+	"Arguments a tool's schema refuses are for the model to correct, so they come back as a tool result naming the argument, not as a protocol error a client may keep to itself."
+
+	| response |
+	response := self handleJSON:
+		            '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"tool_call","arguments":{"name":"image_evaluate","arguments":{}}}}'.
+	self deny: (response includesSubstring: '"code":-32602').
+	self assert: (response includesSubstring: '"isError":true').
+	self assert: (response includesSubstring: 'Invalid arguments for image_evaluate. code is required.')
+]
+
+{ #category : 'tests - validation' }
+MCPToolContractsTest >> testHandleJSONAnswersToolCallArgumentsItRefusesAsAToolError [
+	"tool_call checks its own arguments before it dispatches, and refuses them the same way."
+
+	| response |
+	response := self handleJSON:
+		            '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"tool_call","arguments":{"toolName":"image_evaluate","arguments":{}}}}'.
+	self deny: (response includesSubstring: '"code":-32602').
+	self assert: (response includesSubstring: '"isError":true').
+	self assert: (response includesSubstring: 'Invalid arguments for tool_call. name is required.').
+	self assert: (response includesSubstring: 'toolName is not accepted here; expected one of arguments, name.')
+]
+
 { #category : 'tests' }
 MCPToolContractsTest >> testHandleJSONReturnsInternalErrorForUnhandledHalt [
 
@@ -1157,16 +1188,6 @@ MCPToolContractsTest >> testHandleJSONReturnsInternalErrorForUnhandledHalt [
 	self assert: (response includesSubstring: '"code":-32603').
 	self assert: (response includesSubstring: 'Halt').
 	self assert: (response includesSubstring: 'mcp processor halt test')
-]
-
-{ #category : 'tests - validation' }
-MCPToolContractsTest >> testHandleJSONReturnsInvalidParamsForMissingRequiredArguments [
-
-	| response |
-	response := self handleJSON:
-		            '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"tool_call","arguments":{"toolName":"image_evaluate","arguments":{}}}}'.
-	self assert: (response includesSubstring: '"code":-32602').
-	self assert: (response includesSubstring: '"message":"Invalid method parameter(s)."')
 ]
 
 { #category : 'tests' }
@@ -1868,46 +1889,47 @@ MCPToolContractsTest >> testRpcToolCallCatchesUnhandledHaltFromTool [
 	self assert: (text includesSubstring: 'mcp tool halt test')
 ]
 
+{ #category : 'tests - validation' }
+MCPToolContractsTest >> testRpcToolCallRefusesAMissingRequiredArgument [
+
+	self
+		assertResult: (self callDiscoveredToolNamed: 'image_evaluate' withArguments: Dictionary new)
+		refusesArgumentsSaying: 'code is required.'
+]
+
+{ #category : 'tests - validation' }
+MCPToolContractsTest >> testRpcToolCallRefusesAWrongArgumentType [
+
+	self
+		assertResult: (self callToolNamed: 'package_search' withArguments: { (#offset -> 'ten') } asDictionary)
+		refusesArgumentsSaying: 'offset must be integer, not string.'
+]
+
+{ #category : 'tests - validation' }
+MCPToolContractsTest >> testRpcToolCallRefusesAnInvalidNestedArrayItem [
+
+	self
+		assertResult:
+		(self callToolNamed: 'test_run' withArguments: { (#methods -> { { (#selector -> 'testPasses') } asDictionary }) } asDictionary)
+		refusesArgumentsSaying: 'methods[0] must be string, not object.'
+]
+
+{ #category : 'tests - validation' }
+MCPToolContractsTest >> testRpcToolCallRefusesAnUnexpectedArgument [
+
+	self
+		assertResult: (self callDiscoveredToolNamed: 'image_evaluate' withArguments: {
+					 (#code -> '1 + 1').
+					 (#unexpected -> true) } asDictionary)
+		refusesArgumentsSaying: 'unexpected is not accepted here; expected one of '
+]
+
 { #category : 'tests' }
 MCPToolContractsTest >> testRpcToolCallRejectsLegacyScopeArgument [
 
 	self
-		should: [ self callToolNamed: 'class_search' withArguments: { (#scope -> 'packages') } asDictionary ]
-		raise: JRPCInvalidParameters
-]
-
-{ #category : 'tests - validation' }
-MCPToolContractsTest >> testRpcToolCallSignalsInvalidParametersForInvalidNestedArrayItem [
-
-	self
-		should: [
-		self callToolNamed: 'test_run' withArguments: { (#methods -> { { (#selector -> 'testPasses') } asDictionary }) } asDictionary ]
-		raise: JRPCInvalidParameters
-]
-
-{ #category : 'tests - validation' }
-MCPToolContractsTest >> testRpcToolCallSignalsInvalidParametersForUnexpectedArgument [
-
-	self
-		should: [
-				self callDiscoveredToolNamed: 'image_evaluate' withArguments: {
-						(#code -> '1 + 1').
-						(#unexpected -> true) } asDictionary ]
-		raise: JRPCInvalidParameters
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testRpcToolCallSignalsInvalidParametersForWrongArgumentType [
-
-	self
-		should: [ self callToolNamed: 'package_search' withArguments: { (#offset -> 'ten') } asDictionary ]
-		raise: JRPCInvalidParameters
-]
-
-{ #category : 'tests - validation' }
-MCPToolContractsTest >> testRpcToolCallSignalsInvalidParametersWhenRequiredArgumentIsMissing [
-
-	self should: [ self callDiscoveredToolNamed: 'image_evaluate' withArguments: Dictionary new ] raise: JRPCInvalidParameters
+		assertResult: (self callToolNamed: 'class_search' withArguments: { (#scope -> 'packages') } asDictionary)
+		refusesArgumentsSaying: 'scope must be object, not string.'
 ]
 
 { #category : 'tests' }

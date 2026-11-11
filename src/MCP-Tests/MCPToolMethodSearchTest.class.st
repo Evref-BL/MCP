@@ -358,14 +358,14 @@ MCPToolMethodSearchTest >> testEquivalentSearchReturnsStructuredErrorWhenReferen
 
 { #category : 'tests' }
 MCPToolMethodSearchTest >> testExactEmptyFilterIsApplied [
+	"A blank filter matches nothing and is not missing either, so the answer says to leave it out."
 
-	| error result structured |
+	| error result |
 	result := self callToolWith: {
 			          (self searchScope: { (#classes -> { self targetClassName }) }).
 			          (#protocol -> '') } asDictionary.
-	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
-	self assert: (result at: #isError).
+	self assertResult: result refusesArgumentsSaying: 'protocol is blank; leave it out or give it a value.'.
 	self assert: (error at: #errorClass) equals: 'MCPInvalidToolInput'
 ]
 
@@ -539,7 +539,9 @@ MCPToolMethodSearchTest >> testReturnsWarningsAndEmptyResultsWhenPackageIsMissin
 { #category : 'tests' }
 MCPToolMethodSearchTest >> testScopeArgumentIsRejected [
 
-	self should: [ self callToolWith: { (#scope -> 'packages') } asDictionary ] raise: JRPCInvalidParameters
+	self
+		assertResult: (self callToolWith: { (#scope -> 'packages') } asDictionary)
+		refusesArgumentsSaying: 'scope must be object, not string.'
 ]
 
 { #category : 'tests' }

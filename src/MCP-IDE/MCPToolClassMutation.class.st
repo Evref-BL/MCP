@@ -355,7 +355,10 @@ MCPToolClassMutation >> slotDeltaSchemaPropertyNamed: aName describedAs: aDescri
 					   type: 'object';
 					   description: 'Slots to rename, as current name to new name. Values are migrated and references updated.';
 					   yourself).
-				  (self stringArraySchemaNamed: 'pullUp' description: 'Slots to move up to the superclass.' itemDescription: 'Slot name.').
+				  (self
+					   stringArraySchemaNamed: 'pullUp'
+					   description: 'Slots to move up into this class from the subclasses that define them.'
+					   itemDescription: 'Slot name.').
 				  (self
 					   stringArraySchemaNamed: 'pushDown'
 					   description: 'Slots to move down to every direct subclass.'
