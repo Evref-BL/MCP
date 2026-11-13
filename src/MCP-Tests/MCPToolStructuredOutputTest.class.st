@@ -285,11 +285,10 @@ MCPToolStructuredOutputTest >> testEvaluateSurvivesADeprecationInAnImageThatRais
 
 { #category : 'tests' }
 MCPToolStructuredOutputTest >> testEvaluateTakesTheStepTheWorldGivesTheTranscript [
-	"The world goes on stepping while an evaluation runs. Where it steps the Transcript global, the recorder standing in for it takes the step, or the world loop fails and a headless image quits."
+	"The world goes on stepping while an evaluation runs. Where it steps the Transcript, the recorder standing in for it takes the step, or the world loop fails and a headless image quits."
 
 	| result |
-	self worldStepsTheTranscriptGlobal ifFalse: [
-		^ self skip: 'The world steps the transcript of the tools, not the Transcript global.' ].
+	self worldStepsTheTranscript ifFalse: [ ^ self skip: 'The world no longer steps the Transcript.' ].
 	result := self
 		          callToolNamed: 'image_evaluate'
 		          withArguments: { (#code -> 'Transcript show: ''stepped''; stepGlobal. Transcript contents') } asDictionary.
