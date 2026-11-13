@@ -137,7 +137,7 @@ MCPRunTestsCommand >> runTestCase: aTestCase into: aResult deadline: deadline [
 	remaining <= 0 ifTrue: [ ^ true ].
 	^ [
 		  aTestCase run: aResult.
-		  false ] valueWithin: remaining milliSeconds onTimeout: [ true ]
+		  false ] valueWithinMilliseconds: remaining onTimeout: [ true ]
 ]
 
 { #category : 'private' }
