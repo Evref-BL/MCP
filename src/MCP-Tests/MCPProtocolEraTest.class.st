@@ -225,6 +225,20 @@ MCPProtocolEraTest >> testEveryCacheableOperationCarriesHints [
 ]
 
 { #category : 'tests' }
+MCPProtocolEraTest >> testInitializeCarriesTheInstructionsDiscoverAnswers [
+	"A client that opens with initialize has no server/discover to call, so it reads the instructions there or nowhere."
+
+	| mcp initialized |
+	mcp := self mcpWithoutObservabilityExport.
+	initialized := (mcp
+		                onInitialize: '2025-06-18'
+		                capabilities: nil
+		                clientInfo: nil
+		                websiteUrl: nil) asJRPCJSON.
+	self assert: (initialized at: #instructions) equals: (mcp rpcServerDiscover at: #instructions)
+]
+
+{ #category : 'tests' }
 MCPProtocolEraTest >> testInitializeStillNegotiatesTheOldWay [
 	"Legacy semantics are untouched: the server answers a version it supports rather than refusing, and never a modern one, which a client opening with initialize could not speak."
 
