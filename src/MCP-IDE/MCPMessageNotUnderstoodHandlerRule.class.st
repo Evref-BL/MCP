@@ -17,13 +17,6 @@ MCPMessageNotUnderstoodHandlerRule class >> checksMethod [
 	^ true
 ]
 
-{ #category : 'manifest' }
-MCPMessageNotUnderstoodHandlerRule class >> enabledByDefault [
-	"MCP's rules are advice for agents: MCP runs them itself, and a person turns them on in Renraku's settings to see them in the browser."
-
-	^ false
-]
-
 { #category : 'accessing' }
 MCPMessageNotUnderstoodHandlerRule class >> forbiddenExceptionName [
 
@@ -63,6 +56,7 @@ MCPMessageNotUnderstoodHandlerRule class >> uniqueIdentifierName [
 { #category : 'running' }
 MCPMessageNotUnderstoodHandlerRule >> check: aMethod forCritiquesDo: aCriticBlock [
 
+	MCPAgentCritiquing value ifFalse: [ ^ self ].
 	aMethod sendNodes do: [ :sendNode |
 			(self isMessageNotUnderstoodHandlerSend: sendNode) ifTrue: [
 					aCriticBlock cull: (self

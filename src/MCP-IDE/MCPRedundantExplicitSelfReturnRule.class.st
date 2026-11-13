@@ -15,13 +15,6 @@ MCPRedundantExplicitSelfReturnRule class >> checksMethod [
 	^ true
 ]
 
-{ #category : 'manifest' }
-MCPRedundantExplicitSelfReturnRule class >> enabledByDefault [
-	"MCP's rules are advice for agents: MCP runs them itself, and a person turns them on in Renraku's settings to see them in the browser."
-
-	^ false
-]
-
 { #category : 'accessing' }
 MCPRedundantExplicitSelfReturnRule class >> group [
 
@@ -56,6 +49,7 @@ MCPRedundantExplicitSelfReturnRule class >> uniqueIdentifierName [
 MCPRedundantExplicitSelfReturnRule >> check: aMethod forCritiquesDo: aCriticBlock [
 
 	| returnNode statements |
+	MCPAgentCritiquing value ifFalse: [ ^ self ].
 	statements := aMethod ast body statements.
 	statements size <= 1 ifTrue: [ ^ self ].
 	returnNode := statements last.

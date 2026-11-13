@@ -47,18 +47,13 @@ BaselineOfMCP >> defineGroups: spec [
 	SystemVersion current major < 12 ifTrue: [
 			spec
 				group: 'Core' with: #( 'MCP' 'MCP-Compatibility-Before12' );
-				group: 'IDE'
-				with: #( 'MCP-IDE' 'MCP-IDE-Compatibility-Before12' 'MCP-IDE-Compatibility-Before13' 'MCP-IDE-Compatibility-Before14' ) ].
+				group: 'IDE' with: #( 'MCP-IDE' 'MCP-IDE-Compatibility-Before12' 'MCP-IDE-Compatibility-Before13' ) ].
 	SystemVersion current major >= 12 ifTrue: [
 			spec
 				group: 'Core' with: #( 'MCP' 'MCP-Compatibility-From12' );
 				group: 'IDE' with: #( 'MCP-IDE' 'MCP-IDE-Compatibility-From12' ) ].
 	SystemVersion current major = 12 ifTrue: [
-			spec
-				group: 'IDE'
-				with: #( 'MCP-IDE' 'MCP-IDE-Compatibility-From12' 'MCP-IDE-Compatibility-Before13' 'MCP-IDE-Compatibility-Before14' ) ].
-	SystemVersion current major = 13 ifTrue: [
-		spec group: 'IDE' with: #( 'MCP-IDE' 'MCP-IDE-Compatibility-From12' 'MCP-IDE-Compatibility-Before14' ) ].
+		spec group: 'IDE' with: #( 'MCP-IDE' 'MCP-IDE-Compatibility-From12' 'MCP-IDE-Compatibility-Before13' ) ].
 	SystemVersion current major < 13 ifTrue: [ spec group: 'UI' with: #( 'MCP-UI' 'MCP-UI-Compatibility-Before13' ) ].
 	SystemVersion current major >= 13 ifTrue: [
 		spec group: 'Core' with: #( 'MCP' 'MCP-Compatibility-From12' 'MCP-Compatibility-From13' ) ].
@@ -90,8 +85,6 @@ BaselineOfMCP >> definePackages: spec [
 	SystemVersion current major < 13 ifTrue: [
 			spec package: 'MCP-IDE-Compatibility-Before13' with: [ spec requires: #( 'MCP-IDE' ) ].
 			spec package: 'MCP-UI-Compatibility-Before13' with: [ spec requires: #( 'MCP-UI' ) ] ].
-	SystemVersion current major < 14 ifTrue: [
-		spec package: 'MCP-IDE-Compatibility-Before14' with: [ spec requires: #( 'MCP-IDE' ) ] ].
 	SystemVersion current major >= 13 ifTrue: [ spec package: 'MCP-Compatibility-From13' with: [ spec requires: #( 'MCP' ) ] ].
 	SystemVersion current major >= 14 ifTrue: [ spec package: 'MCP-Compatibility-From14' with: [ spec requires: #( 'MCP' ) ] ]
 ]

@@ -27,14 +27,15 @@ MCPToolRunCritiques >> addClassCritiqueEntriesForRuleClass: ruleClass queryReque
 	| rule |
 	rule := ruleClass new.
 	self sortedBehaviorsForQueryRequest: queryRequest do: [ :eachBehavior |
-			(self hasCollectedEnoughEntries: entries maximum: maximum) ifFalse: [
-					rule check: eachBehavior forCritiquesDo: [ :critique |
-							self
-								addEntryForCritique: critique
-								rule: rule
-								fallbackEntity: eachBehavior
-								to: entries
-								maximum: maximum ] ] ]
+			((self hasCollectedEnoughEntries: entries maximum: maximum) not and: [ self rule: rule runsOn: eachBehavior for: queryRequest ])
+				ifTrue: [
+						rule check: eachBehavior forCritiquesDo: [ :critique |
+								self
+									addEntryForCritique: critique
+									rule: rule
+									fallbackEntity: eachBehavior
+									to: entries
+									maximum: maximum ] ] ]
 ]
 
 { #category : 'private - rules' }
@@ -89,14 +90,15 @@ MCPToolRunCritiques >> addMethodCritiqueEntriesForRuleClass: ruleClass queryRequ
 	| rule |
 	rule := ruleClass new.
 	self sortedMethodsForQueryRequest: queryRequest do: [ :eachMethod |
-			(self hasCollectedEnoughEntries: entries maximum: maximum) ifFalse: [
-					rule check: eachMethod forCritiquesDo: [ :critique |
-							self
-								addEntryForCritique: critique
-								rule: rule
-								fallbackEntity: eachMethod
-								to: entries
-								maximum: maximum ] ] ]
+			((self hasCollectedEnoughEntries: entries maximum: maximum) not and: [ self rule: rule runsOn: eachMethod for: queryRequest ])
+				ifTrue: [
+						rule check: eachMethod forCritiquesDo: [ :critique |
+								self
+									addEntryForCritique: critique
+									rule: rule
+									fallbackEntity: eachMethod
+									to: entries
+									maximum: maximum ] ] ]
 ]
 
 { #category : 'private - running' }
@@ -120,7 +122,8 @@ MCPToolRunCritiques >> addNodeCritiqueEntriesForRuleClass: ruleClass queryReques
 	| rule |
 	rule := ruleClass new.
 	self sortedMethodsForQueryRequest: queryRequest do: [ :eachMethod |
-			((self hasCollectedEnoughEntries: entries maximum: maximum) not and: [ rule shouldCheckMethod: eachMethod ]) ifTrue: [
+			((self hasCollectedEnoughEntries: entries maximum: maximum) not and: [
+				 (self rule: rule runsOn: eachMethod for: queryRequest) and: [ rule shouldCheckMethod: eachMethod ] ]) ifTrue: [
 					self
 						addNodeCritiqueEntriesForRule: rule
 						method: eachMethod
@@ -134,14 +137,15 @@ MCPToolRunCritiques >> addPackageCritiqueEntriesForRuleClass: ruleClass queryReq
 	| rule |
 	rule := ruleClass new.
 	self sortedPackagesForQueryRequest: queryRequest do: [ :eachPackage |
-			(self hasCollectedEnoughEntries: entries maximum: maximum) ifFalse: [
-					rule check: eachPackage forCritiquesDo: [ :critique |
-							self
-								addEntryForCritique: critique
-								rule: rule
-								fallbackEntity: eachPackage
-								to: entries
-								maximum: maximum ] ] ]
+			((self hasCollectedEnoughEntries: entries maximum: maximum) not and: [ self rule: rule runsOn: eachPackage for: queryRequest ])
+				ifTrue: [
+						rule check: eachPackage forCritiquesDo: [ :critique |
+								self
+									addEntryForCritique: critique
+									rule: rule
+									fallbackEntity: eachPackage
+									to: entries
+									maximum: maximum ] ] ]
 ]
 
 { #category : 'private - entries' }
@@ -168,11 +172,9 @@ MCPToolRunCritiques >> additionalKeywords [
 
 { #category : 'private - rules' }
 MCPToolRunCritiques >> allRuleClasses [
-	"The rules Renraku runs, and MCP's own, which it leaves to MCP."
+	"Every rule Renraku knows. Which of them run on an entity is decided there, since a manifest may force one the image has off."
 
-	^ ((ReRuleManager uniqueInstance allRules collect: [ :each | each class ] as: Set)
-		   addAll: ManifestMCPIDE agentRuleClasses;
-		   yourself) asArray sort: [ :left :right | left name <= right name ]
+	^ ReRuleManager visibleRuleClasses asArray sort: [ :left :right | left name <= right name ]
 ]
 
 { #category : 'metadata' }
@@ -309,17 +311,19 @@ MCPToolRunCritiques >> packagesForQueryRequest: queryRequest [
 
 { #category : 'private - template' }
 MCPToolRunCritiques >> queryEntriesForQueryRequest: queryRequest [
+	"MCP's own rules answer only an agent, which this is."
 
 	| entries maximum |
 	entries := OrderedCollection new.
 	maximum := self maximumEntriesToCollectForQueryRequest: queryRequest.
 	maximum = 0 ifTrue: [ ^ #(  ) ].
-	queryRequest ruleClasses do: [ :eachRuleClass |
-			self
-				addCritiqueEntriesForRuleClass: eachRuleClass
-				queryRequest: queryRequest
-				to: entries
-				maximum: maximum ].
+	MCPAgentCritiquing value: true during: [
+			queryRequest ruleClasses do: [ :eachRuleClass |
+					self
+						addCritiqueEntriesForRuleClass: eachRuleClass
+						queryRequest: queryRequest
+						to: entries
+						maximum: maximum ] ].
 	^ entries asArray
 ]
 
@@ -337,6 +341,16 @@ MCPToolRunCritiques >> queryResultDataForQueryRequest: queryRequest page: page [
 MCPToolRunCritiques >> requestedContextFromRequest: request [
 
 	^ { (#scope -> (self classAndMethodScopeSummaryFromRequest: request)) } asDictionary
+]
+
+{ #category : 'private - rules' }
+MCPToolRunCritiques >> rule: aRule runsOn: anEntity for: queryRequest [
+	"Whether a person's configuration lets aRule run on anEntity: the caller named it, the image has it on or the package's manifest forces it, and the manifest neither marks it a false positive there nor rejects it."
+
+	| manifestRules |
+	manifestRules := queryRequest manifestRulesFor: anEntity.
+	(manifestRules excludes: aRule on: anEntity) ifTrue: [ ^ false ].
+	^ queryRequest namesRules or: [ aRule class enabled or: [ manifestRules forces: aRule class ] ]
 ]
 
 { #category : 'private - rules' }
@@ -370,7 +384,7 @@ MCPToolRunCritiques >> ruleClassesSchemaProperty [
 
 	^ self
 		  stringArraySchemaNamed: 'ruleClasses'
-		  description: 'Renraku rule class names to run. Omit or pass an empty array to run all available rules.'
+		  description: 'Renraku rule class names to run, even if the image has them off. Omitted or empty, the rules Renraku would run.'
 		  itemDescription: 'Rule class name.'
 ]
 
