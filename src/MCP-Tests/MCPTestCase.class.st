@@ -196,3 +196,10 @@ MCPTestCase >> withoutEpiceaDuring: aBlock [
 	EpMonitor disableDuring: [ value := aBlock value ].
 	^ value
 ]
+
+{ #category : 'private - compatibility' }
+MCPTestCase >> worldStepsTheTranscriptGlobal [
+	"Before Pharo 12, the world loop steps the Transcript global, which is the recorder while an evaluation runs. From 12 on, it steps the transcript of the tools."
+
+	^ (WorldState >> #runStepMethodsIn:) literals anySatisfy: [ :each | each isVariableBinding and: [ each key = #Transcript ] ]
+]
