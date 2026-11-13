@@ -943,13 +943,13 @@ MCPToolContractsTest >> testEvaluateOmitsTruncationFieldsForSmallResults [
 MCPToolContractsTest >> testEvaluateReportsTheFailingSourceLine [
 	"A character offset makes a caller count through its own source to find the mistake."
 
-	| error |
-	error := self errorFrom: (self
-			         callDiscoveredToolNamed: 'image_evaluate'
-			         withArguments: { (#code -> '| s |
+	| error result |
+	result := self callDiscoveredToolNamed: 'image_evaluate' withArguments: { (#code -> '| s |
 s := WriteStream on: String new.
 s << cr.
-s contents') } asDictionary).
+s contents') } asDictionary.
+	self compilerReadsUndeclaredNamesAsNil ifTrue: [ ^ self assert: (result at: #isError) ].
+	error := self errorFrom: result.
 	self assert: (error at: #line) equals: 3.
 	self assert: (error at: #sourceLine) equals: 's << cr.'
 ]

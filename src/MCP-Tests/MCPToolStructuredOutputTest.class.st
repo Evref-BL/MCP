@@ -117,6 +117,7 @@ MCPToolStructuredOutputTest >> testEvaluateForgetsItsVariablesAfterTheCall [
 	| result |
 	self callToolNamed: 'image_evaluate' withArguments: { (#code -> 'leftover := 5') } asDictionary.
 	result := self callToolNamed: 'image_evaluate' withArguments: { (#code -> 'leftover') } asDictionary.
+	self compilerReadsUndeclaredNamesAsNil ifTrue: [ ^ self assert: ((self dataFrom: result) at: #resultPrintString) equals: 'nil' ].
 	self assert: (result at: #isError).
 	self assert: ((self errorFrom: result) at: #sourceLine) equals: 'leftover'
 ]
@@ -127,6 +128,7 @@ MCPToolStructuredOutputTest >> testEvaluateLeavesACapitalizedNameUndeclared [
 	| result |
 	result := self callToolNamed: 'image_evaluate' withArguments: { (#code -> 'MCPNoSuchGlobalForThisTest new') } asDictionary.
 	self assert: (result at: #isError).
+	self compilerReadsUndeclaredNamesAsNil ifTrue: [ ^ self ].
 	self assert: ((self errorFrom: result) at: #sourceLine) equals: 'MCPNoSuchGlobalForThisTest new'
 ]
 
@@ -136,6 +138,7 @@ MCPToolStructuredOutputTest >> testEvaluateLeavesANameNeverAssignedUndeclared [
 
 	| result |
 	result := self callToolNamed: 'image_evaluate' withArguments: { (#code -> 'neverAssigned isNil') } asDictionary.
+	self compilerReadsUndeclaredNamesAsNil ifTrue: [ ^ self deny: (result at: #isError ifAbsent: [ false ]) ].
 	self assert: (result at: #isError).
 	self assert: ((self errorFrom: result) at: #sourceLine) equals: 'neverAssigned isNil'
 ]

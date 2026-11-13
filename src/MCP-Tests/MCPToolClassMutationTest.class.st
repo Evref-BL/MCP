@@ -564,6 +564,7 @@ MCPToolClassMutationTest >> testUpdateForcePullUpSlotContinuesPastRefactoringWar
 				           (#name -> 'MCPToolClassMutationTestWarningPullUpTarget').
 				           (#slots -> (Dictionary with: 'pullUp' -> #( 'sharedSlot' ))).
 				           (#force -> true) }).
+	self refactoringsRefuseBreakingChanges ifTrue: [ ^ self assert: (result at: #isError) ].
 	warnings := self warningsFrom: result.
 	target := self classNamed: 'MCPToolClassMutationTestWarningPullUpTarget'.
 	childOne := self classNamed: 'MCPToolClassMutationTestWarningPullUpChildOne'.
@@ -595,6 +596,7 @@ MCPToolClassMutationTest >> testUpdateForceRemoveSlotContinuesPastRefactoringWar
 				           (#name -> 'MCPToolClassMutationTestWarningRemoveSlotTarget').
 				           (#slots -> (Dictionary with: 'remove' -> #( 'referencedSlot' ))).
 				           (#force -> true) }).
+	self refactoringsRefuseBreakingChanges ifTrue: [ ^ self assert: (result at: #isError) ].
 	warnings := self warningsFrom: result.
 	target := self classNamed: 'MCPToolClassMutationTestWarningRemoveSlotTarget'.
 	self deny: (result at: #isError ifAbsent: [ false ]).
@@ -750,7 +752,7 @@ MCPToolClassMutationTest >> testUpdatePullUpSlotReturnsStructuredCommandErrorFor
 	self assert: (error at: #updateAction) equals: 'pullUpSlot'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'PullUpSlotRefactoringError'.
-	self assert: (error at: #causeClass) equals: 'RBRefactoringError'.
+	self assert: (error at: #causeClass) equals: self expectedRefactoringFailureCauseClassName.
 	self assert: (error at: #class) equals: 'MCPToolMethodMutationTestTarget'.
 	self assert: (error at: #slot) equals: 'missingSlot'.
 	self assert: (error at: #side) equals: 'instance'.
@@ -832,6 +834,7 @@ MCPToolClassMutationTest >> testUpdatePullsUpInstanceSlotAcrossSubclasses [
 			           className: 'MCPToolClassMutationTestPullUpTarget'
 			           slotName: 'sharedSlot'
 			           classSide: false).
+	self refactoringsRefuseBreakingChanges ifTrue: [ ^ self assert: (result at: #isError) ].
 	data := self dataFrom: result.
 	target := self classNamed: 'MCPToolClassMutationTestPullUpTarget'.
 	childOne := self classNamed: 'MCPToolClassMutationTestPullUpChildOne'.
@@ -874,6 +877,7 @@ MCPToolClassMutationTest >> testUpdatePushesDownClassSlotToDirectSubclasses [
 			           className: 'MCPToolClassMutationTestPushDownTarget'
 			           slotName: 'sharedClassSlot'
 			           classSide: true).
+	self refactoringsRefuseBreakingChanges ifTrue: [ ^ self assert: (result at: #isError) ].
 	data := self dataFrom: result.
 	target := self classNamed: 'MCPToolClassMutationTestPushDownTarget'.
 	childOne := self classNamed: 'MCPToolClassMutationTestPushDownChildOne'.
@@ -925,6 +929,9 @@ MCPToolClassMutationTest >> testUpdateRemoveSlotStopsOnRefactoringWarningByDefau
 	self assert: (result at: #isError).
 	self assert: (error at: #action) equals: 'update'.
 	self assert: (error at: #updateAction) equals: 'removeSlot'.
+	self refactoringsRefuseBreakingChanges ifTrue: [
+			self assert: (error at: #errorCode) equals: 'RemoveSlotRefactoringError'.
+			^ self assert: (target slots collect: #name as: Array) equals: #( #referencedSlot ) ].
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'RemoveSlotRefactoringWarning'.
 	self assert: (self expectedRefactoringWarningCauseClassNames includes: (error at: #causeClass)).

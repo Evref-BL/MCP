@@ -26,6 +26,27 @@ MCPTestCase >> classNamed: aClassName [
 	^ Smalltalk globals at: aClassName asSymbol
 ]
 
+{ #category : 'private - compatibility' }
+MCPTestCase >> compilerReadsUndeclaredNamesAsNil [
+	"Before Pharo 12, a name nothing declares compiles in an evaluation, and reads as nil there as in a Playground. From 12 on, an evaluation that only reads it fails to compile."
+
+	^ (self class environment includesKey: #OCUndeclaredVariableNotice) not
+]
+
+{ #category : 'private - compatibility' }
+MCPTestCase >> compilerRefusesShadowingTemporaries [
+	"Before Pharo 12, a temporary that shadows an instance variable does not compile. From 12 on, it compiles and a critique reports it."
+
+	^ self class environment includesKey: #OCShadowVariableWarning
+]
+
+{ #category : 'private - compatibility' }
+MCPTestCase >> compilerReportsReadOnlyAssignmentsAsSyntaxErrors [
+	"Before Pharo 12, assigning to an argument is a syntax error like any other. From 12 on, the compiler names the read-only variable."
+
+	^ self class environment includesKey: #OCStoreIntoReadOnlyVariableError
+]
+
 { #category : 'private - classes' }
 MCPTestCase >> createClassNamed: aClassName superclassName: aSuperclassName slots: someSlots classSlots: someClassSlots [
 
@@ -70,6 +91,14 @@ MCPTestCase >> ensureMethodSource: aMethodSource protocol: aProtocol on: aBehavi
 			aBehavior compile: (method ast formattedCodeIn: aBehavior) classified: method protocol ]
 ]
 
+{ #category : 'private - compatibility' }
+MCPTestCase >> expectedRefactoringFailureCauseClassName [
+
+	^ self refactoringsRefuseBreakingChanges
+		  ifTrue: [ 'RBRefactoringFailure' ]
+		  ifFalse: [ 'RBRefactoringError' ]
+]
+
 { #category : 'private - classes' }
 MCPTestCase >> generatedExtensionPackageName [
 	"For a generated method whose package differs from its class's, which is what makes it an extension."
@@ -109,6 +138,13 @@ MCPTestCase >> mcpWithoutObservabilityExport [
 		  observabilityExportDirectory: nil;
 		  useContentAndStructuredContentToolResponses;
 		  yourself
+]
+
+{ #category : 'private - compatibility' }
+MCPTestCase >> refactoringsRefuseBreakingChanges [
+	"Before Pharo 12, a refactoring that would break code fails a precondition, which forcing does not get past, and moving a slot stops on the methods that use it while it is between classes. From 12 on, the refactoring raises a warning that forcing gets past."
+
+	^ self class environment includesKey: #RBRefactoringFailure
 ]
 
 { #category : 'private - classes' }

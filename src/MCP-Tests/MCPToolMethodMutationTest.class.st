@@ -810,16 +810,25 @@ MCPToolMethodMutationTest >> testCompileReturnsAllowlistedUnaryAccessingWithoutR
 { #category : 'tests' }
 MCPToolMethodMutationTest >> testCompileReturnsAllowlistedWarningCritiques [
 
-	| selector |
+	| selector source |
 	selector := #shadowedCounter:.
+	source := 'shadowedCounter: value | instanceCounter | instanceCounter := value. ^ instanceCounter + 1'.
 	self removeSelector: selector from: MCPToolGetMethodTestTarget.
 	[
-		self
-			assertCompileForClass: MCPToolGetMethodTestTarget
-			methodSource: 'shadowedCounter: value | instanceCounter | instanceCounter := value. ^ instanceCounter + 1'
-			protocol: 'tests'
-			returnsSingleCritiqueRuleClass: 'ReTempVarOverridesInstVarRule'
-			titledLike: 'Outer variable shadowed' ] ensure: [ self removeSelector: selector from: MCPToolGetMethodTestTarget ]
+		self compilerRefusesShadowingTemporaries
+			ifTrue: [
+					self assert: ((self callToolWith: (self
+								   compileArgumentsForClass: MCPToolGetMethodTestTarget
+								   classSide: false
+								   methodSource: source
+								   protocol: 'tests')) at: #isError) ]
+			ifFalse: [
+					self
+						assertCompileForClass: MCPToolGetMethodTestTarget
+						methodSource: source
+						protocol: 'tests'
+						returnsSingleCritiqueRuleClass: 'ReTempVarOverridesInstVarRule'
+						titledLike: 'Outer variable shadowed' ] ] ensure: [ self removeSelector: selector from: MCPToolGetMethodTestTarget ]
 ]
 
 { #category : 'tests' }
@@ -1020,6 +1029,9 @@ MCPToolMethodMutationTest >> testCompileReturnsStructuredCommandErrorForReadOnly
 	text := (result at: #content) first at: #text.
 	self assert: (result at: #isError).
 	self assert: (error at: #action) equals: 'compile'.
+	self compilerReportsReadOnlyAssignmentsAsSyntaxErrors ifTrue: [
+			self assert: (error at: #errorCode) equals: 'CompileSyntaxError'.
+			^ self deny: (MCPToolMethodMutationTestTarget includesSelector: #brokenMethod:) ].
 	self assert: (error at: #errorCode) equals: 'CompileReadOnlyAssignment'.
 	self assert: (error at: #selector) equals: 'brokenMethod:'.
 	self assert: (error at: #variableName) equals: 'anInteger'.

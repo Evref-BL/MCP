@@ -152,6 +152,9 @@ MCPRemoveClassesCommandTest >> tearDown [
 MCPRemoveClassesCommandTest >> testForceRemovesReferencedClassAndReturnsWarningMessages [
 
 	| result |
+	self refactoringsRefuseBreakingChanges ifTrue: [
+			self should: [ (MCPRemoveClassesCommand classNames: { self referencedClassName } force: true) execute ] raise: Error.
+			^ self assert: (Smalltalk globals includesKey: self referencedClassName asSymbol) ].
 	result := (MCPRemoveClassesCommand classNames: { self referencedClassName } force: true) execute.
 	self deny: (Smalltalk globals includesKey: self referencedClassName asSymbol).
 	self assert: ((self classNamed: self senderClassName) includesSelector: #useReferencedClass).
