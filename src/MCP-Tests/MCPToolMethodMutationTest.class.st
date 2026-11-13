@@ -427,7 +427,7 @@ MCPToolMethodMutationTest >> testChangesClassSideMethodProtocol [
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self
-		assert: (MCPToolMethodMutationTestTarget classSide >> self classProtocolSelector) protocol name asString
+		assert: (MCPToolMethodMutationTestTarget classSide >> self classProtocolSelector) protocolName asString
 		equals: 'instance creation'.
 	self assertSuccessDataHasMethodShape: data.
 	self deny: (result at: #isError ifAbsent: [ false ])
@@ -440,7 +440,7 @@ MCPToolMethodMutationTest >> testChangesInstanceSideMethodProtocol [
 	result := self callToolWith: self instanceChangeArguments.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (MCPToolMethodMutationTestTarget >> self instanceProtocolSelector) protocol name asString equals: 'accessing'.
+	self assert: (MCPToolMethodMutationTestTarget >> self instanceProtocolSelector) protocolName asString equals: 'accessing'.
 	self assertSuccessDataHasMethodShape: data.
 	self deny: (result at: #isError ifAbsent: [ false ])
 ]
@@ -452,7 +452,7 @@ MCPToolMethodMutationTest >> testChangingExtensionMethodProtocolUpdatesPackageMe
 	result := self callToolWith: self extensionChangeArguments.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (MCPToolMethodMutationTestTarget >> self extensionProtocolSelector) protocol name asString equals: 'tests'.
+	self assert: (MCPToolMethodMutationTestTarget >> self extensionProtocolSelector) protocolName asString equals: 'tests'.
 	self assertSuccessDataHasMethodShape: data
 ]
 
@@ -633,7 +633,7 @@ MCPToolMethodMutationTest >> testCompileCanReplaceMethodOnToolClass [
 	result := self callToolNamed: 'method_compile' withArguments: {
 			          (#class -> MCPHaltingTestTool name).
 			          (#source -> method sourceCode).
-			          (#protocol -> method protocol name asString) } asDictionary.
+			          (#protocol -> method protocolName asString) } asDictionary.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #changeKind) equals: 'replaced'
@@ -1128,7 +1128,7 @@ MCPToolMethodMutationTest >> testCompileWithAnotherProtocolSaysTheMethodMoved [
 		self
 			assert: (self summaryFrom: result)
 			equals: 'Replaced MCPToolMethodMutationTestTarget>>moveProtocolProbe, moving it from private to tests.'.
-		self assert: (MCPToolMethodMutationTestTarget >> selector) protocol name asString equals: 'tests' ] ensure: [
+		self assert: (MCPToolMethodMutationTestTarget >> selector) protocolName asString equals: 'tests' ] ensure: [
 		self removeSelector: selector from: MCPToolMethodMutationTestTarget ]
 ]
 
@@ -1144,7 +1144,7 @@ MCPToolMethodMutationTest >> testCompileWithoutProtocolKeepsAnExtensionMethodInI
 				(#class -> MCPToolMethodMutationTestTarget name).
 				(#source -> 'keepExtensionProbe ^ 2') } asDictionary.
 		method := MCPToolMethodMutationTestTarget >> selector.
-		self assert: method protocol name asString equals: self generatedExtensionProtocol.
+		self assert: method protocolName asString equals: self generatedExtensionProtocol.
 		self assert: method package name equals: self generatedExtensionPackageName ] ensure: [
 			self removeSelector: selector from: MCPToolMethodMutationTestTarget.
 			self removeGeneratedPackagesIfEmpty ]
@@ -1163,7 +1163,7 @@ MCPToolMethodMutationTest >> testCompileWithoutProtocolKeepsTheProtocolOfTheMeth
 				          (#source -> 'keepProtocolProbe ^ 2') } asDictionary.
 		self deny: (result at: #isError ifAbsent: [ false ]).
 		self assert: (self summaryFrom: result) equals: 'Replaced MCPToolMethodMutationTestTarget>>keepProtocolProbe.'.
-		self assert: (MCPToolMethodMutationTestTarget >> selector) protocol name asString equals: 'private'.
+		self assert: (MCPToolMethodMutationTestTarget >> selector) protocolName asString equals: 'private'.
 		self assert: (self warningsFrom: result) isEmpty.
 		self assert: MCPToolMethodMutationTestTarget new keepProtocolProbe equals: 2 ] ensure: [
 		self removeSelector: selector from: MCPToolMethodMutationTestTarget ]
@@ -1180,7 +1180,7 @@ MCPToolMethodMutationTest >> testCompileWithoutProtocolWarnsThatANewMethodHasNon
 				          (#class -> MCPToolMethodMutationTestTarget name).
 				          (#source -> 'unclassifiedProbe ^ 3') } asDictionary.
 		self deny: (result at: #isError ifAbsent: [ false ]).
-		self assert: (MCPToolMethodMutationTestTarget >> selector) protocol name asString equals: Protocol unclassified asString.
+		self assert: (MCPToolMethodMutationTestTarget >> selector) protocolName asString equals: Protocol unclassified asString.
 		warnings := self warningsFrom: result.
 		self assert: warnings size equals: 1.
 		self assert: (warnings first includesSubstring: 'MCPToolMethodMutationTestTarget>>unclassifiedProbe has no protocol') ] ensure: [
@@ -1198,7 +1198,7 @@ MCPToolMethodMutationTest >> testCompilesClassSideMethod [
 			           protocol: 'tests').
 	data := self dataFrom: result.
 	self assert: MCPToolMethodMutationTestTarget classAnswer equals: 7.
-	self assert: (MCPToolMethodMutationTestTarget classSide >> #classAnswer) protocol name equals: #tests.
+	self assert: (MCPToolMethodMutationTestTarget classSide >> #classAnswer) protocolName equals: #tests.
 	self assertSuccessDataHasMethodShape: data.
 	self deny: (result at: #isError ifAbsent: [ false ])
 ]
@@ -1214,7 +1214,7 @@ MCPToolMethodMutationTest >> testCompilesInstanceSideMethod [
 			           protocol: 'tests').
 	data := self dataFrom: result.
 	self assert: MCPToolMethodMutationTestTarget new instanceAnswer equals: 42.
-	self assert: (MCPToolMethodMutationTestTarget >> #instanceAnswer) protocol name equals: #tests.
+	self assert: (MCPToolMethodMutationTestTarget >> #instanceAnswer) protocolName equals: #tests.
 	self assertSuccessDataHasMethodShape: data.
 	self deny: (result at: #isError ifAbsent: [ false ])
 ]
@@ -1627,7 +1627,7 @@ MCPToolMethodMutationTest >> testUpdateChangesProtocolAndSelectorInOneCall [
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self deny: (MCPToolMethodMutationTestTarget includesSelector: self instanceProtocolSelector).
 	self assert: (MCPToolMethodMutationTestTarget includesSelector: renamed).
-	self assert: (MCPToolMethodMutationTestTarget >> renamed) protocol name asString equals: 'accessing'.
+	self assert: (MCPToolMethodMutationTestTarget >> renamed) protocolName asString equals: 'accessing'.
 	self assert: ((data at: #updates) collect: [ :each | each at: #action ] as: Array) equals: #( 'changeProtocol' 'rename' )
 ]
 
@@ -1645,7 +1645,7 @@ MCPToolMethodMutationTest >> testUpdatingAMethodInstalledFromATraitStopsAndNames
 	self assert: (error at: #errorCode) equals: 'MethodInstalledFromTrait'.
 	self assert: ((error at: #howToProceed) includesSubstring: 'Update TMCPToolMethodSearchFixture>>mcpTraitFixtureValue instead').
 	self assert: (MCPToolMethodSearchTraitUser >> #mcpTraitFixtureValue) isFromTrait.
-	self assert: (MCPToolMethodSearchTraitUser >> #mcpTraitFixtureValue) protocol name asString equals: 'accessing'
+	self assert: (MCPToolMethodSearchTraitUser >> #mcpTraitFixtureValue) protocolName asString equals: 'accessing'
 ]
 
 { #category : 'private - calling' }

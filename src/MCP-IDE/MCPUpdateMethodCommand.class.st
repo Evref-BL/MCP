@@ -268,7 +268,7 @@ MCPUpdateMethodCommand >> planForAction: action [
 { #category : 'private - methods' }
 MCPUpdateMethodCommand >> protocolNameForMethod: aCompiledMethod [
 
-	^ aCompiledMethod protocol ifNil: [ '' ] ifNotNil: [ :aProtocol | aProtocol name asString ]
+	^ aCompiledMethod protocolName ifNil: [ '' ] ifNotNil: [ :aProtocol | aProtocol asString ]
 ]
 
 { #category : 'private - planning' }

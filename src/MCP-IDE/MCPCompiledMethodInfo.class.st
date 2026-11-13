@@ -68,7 +68,7 @@ MCPCompiledMethodInfo >> initializeFromMethod: aCompiledMethod [
 	classSide := aCompiledMethod methodClass isMeta.
 	selector := aCompiledMethod selector asString.
 	aCompiledMethod isFromTrait ifTrue: [ traitName := aCompiledMethod origin instanceSide name asString ].
-	protocol := aCompiledMethod protocol ifNil: [ '' ] ifNotNil: [ :aProtocol | aProtocol name asString ].
+	protocol := aCompiledMethod protocolName ifNil: [ '' ] ifNotNil: [ :aProtocol | aProtocol asString ].
 	methodPackageName := aCompiledMethod package
 		                     ifNil: [ aCompiledMethod methodClass instanceSide package name asString ]
 		                     ifNotNil: [ :aPackage | aPackage name asString ].
