@@ -33,7 +33,6 @@ MCPEvaluateCommand >> execute [
 
 	| answer compiler notice warningDescriptions |
 	compiler := SmalltalkImage current compiler.
-	compiler compilationContext isScripting: true.
 	compiler requestor: (MCPPlaygroundRequestor forCode: request code).
 	notice := nil.
 	warningDescriptions := OrderedCollection new.
