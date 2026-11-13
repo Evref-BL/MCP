@@ -139,11 +139,3 @@ MCPMethodRewriteRuleSpec >> validateAtIndex: index [
 				message: (String streamContents: [ :stream | stream << 'Rewrite rule ' << index asString << ' is missing replacement.' ])
 				details: self diagnosticDetails ]
 ]
-
-{ #category : 'validating' }
-MCPMethodRewriteRuleSpec >> validatePatterns [
-
-	[ StRewriterRBApplier rewriter: { self asStRewriterRuleHolder } ]
-		on: Error
-		do: [ :error | self signalInvalidPatternError: error ]
-]
