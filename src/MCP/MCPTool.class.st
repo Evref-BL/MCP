@@ -223,15 +223,23 @@ MCPTool >> batchArgumentName [
 
 { #category : 'private - results' }
 MCPTool >> batchContentTextForResults: results summary: summary [
-	"Each target reads exactly as it would have read on its own, under one line saying how the call as a whole went."
+	"Each target reads as it would have read on its own, under one line saying how the call as a whole went. A warning every target that succeeded carries is said once there instead of once per target."
 
+	| sharedWarnings |
+	sharedWarnings := self warningsSharedByResults: results.
 	^ String streamContents: [ :stream |
-		  stream nextPutAll: summary.
-		  results do: [ :each |
-			  stream
-				  nextPut: Character lf;
-				  nextPut: Character lf;
-				  nextPutAll: (self contentTextForStructuredContent: each structuredContent) ] ]
+			  stream nextPutAll: summary.
+			  sharedWarnings do: [ :each |
+					  stream
+						  nextPut: Character lf;
+						  nextPutAll: 'Warning for each: ';
+						  nextPutAll: each ].
+			  results do: [ :each |
+					  stream
+						  nextPut: Character lf;
+						  nextPut: Character lf;
+						  nextPutAll:
+							  (self contentTextForStructuredContent: (self structuredContent: each structuredContent withoutWarnings: sharedWarnings)) ] ]
 ]
 
 { #category : 'private - results' }
@@ -1124,6 +1132,17 @@ MCPTool >> stringEnumSchemaPropertyNamed: propertyName description: propertyDesc
 ]
 
 { #category : 'private - results' }
+MCPTool >> structuredContent: structuredContent withoutWarnings: warningStrings [
+
+	| remaining copy |
+	warningStrings ifEmpty: [ ^ structuredContent ].
+	copy := structuredContent copy.
+	remaining := (structuredContent at: #warnings ifAbsent: [ #(  ) ]) reject: [ :each | warningStrings includes: each ].
+	remaining ifEmpty: [ copy removeKey: #warnings ifAbsent: [ ] ] ifNotEmpty: [ copy at: #warnings put: remaining ].
+	^ copy
+]
+
+{ #category : 'private - results' }
 MCPTool >> successResultText: aSummary data: aDictionary [
 
 	^ self successResultText: aSummary data: aDictionary warnings: #(  )
@@ -1267,4 +1286,21 @@ MCPTool >> valueTextOn: stream for: value labelled: label indent: indent [
 				stream
 					space;
 					nextPutAll: value asString ]
+]
+
+{ #category : 'private - results' }
+MCPTool >> warningsOfResult: aResult [
+
+	^ aResult structuredContent at: #warnings ifAbsent: [ #(  ) ]
+]
+
+{ #category : 'private - results' }
+MCPTool >> warningsSharedByResults: results [
+	"The warnings every successful result of a batch carries. A batch names at least two targets, but a lone success shares with nothing."
+
+	| succeeded |
+	succeeded := results reject: [ :each | each isError ].
+	succeeded size < 2 ifTrue: [ ^ #(  ) ].
+	^ (self warningsOfResult: succeeded first) select: [ :warning |
+		  succeeded allSatisfy: [ :each | (self warningsOfResult: each) includes: warning ] ]
 ]
