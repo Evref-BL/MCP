@@ -44,7 +44,7 @@ for developing MCP itself; users of a released server should start with
 ## Project Facts
 
 - Source: `src/`; baseline: `src/BaselineOfMCP/BaselineOfMCP.class.st`.
-- Supported versions: Pharo 11, 12, 13, 14, and 15; default development image:
+- Supported versions: Pharo 10, 11, 12, 13, 14, and 15; default development image:
   Pharo 14.
 - Static checks: `git diff --check` and source/package inspection.
 - Live checks: baseline load, server startup, MCP calls, and image-side tests.

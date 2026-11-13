@@ -17,7 +17,7 @@ Iceberg state, Git state, and supported-version compatibility coherent.
 ## Development Surface
 
 - Use Pharo 14 for normal day-to-day development and smoke checks.
-- Keep Pharo 11, 12, 13 and 15 compatibility intact.
+- Keep Pharo 10, 11, 12, 13 and 15 compatibility intact.
 - Verify affected supported versions when changing compatibility-sensitive
   behavior, PharoBackwardCompatibility backports, baseline loading, tool contracts, or
   APIs that differ by Pharo version.
@@ -107,7 +107,7 @@ separate from operational user instructions. Do not link that bibliography from
 
 The core baseline loads PharoBackwardCompatibility, JRPC, and PCRE2.
 OpenTelemetry is loaded only by the optional `Telemetry` group. CI covers
-Pharo 11, 12, 13, 14, and 15. Code should target the Pharo 14 API;
+Pharo 10, 11, 12, 13, 14, and 15. Code should target the Pharo 14 API;
 PharoBackwardCompatibility backports supported APIs to older images. It has no
 surface groups, so its default baseline is the whole of it:
 

@@ -30,7 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        smalltalk: [ Pharo64-11, Pharo64-12, Pharo64-13, Pharo64-14, Pharo64-15 ]
+        smalltalk: [ Pharo64-10, Pharo64-11, Pharo64-12, Pharo64-13, Pharo64-14, Pharo64-15 ]
     name: ${{ matrix.smalltalk }}
     steps:
       - name: Report the required context
