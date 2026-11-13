@@ -610,11 +610,13 @@ MCP >> observabilityTraces [
 
 { #category : 'start' }
 MCP >> onInitialize: protocolVersion capabilities: capabilities clientInfo: clientInfo websiteUrl: websiteUrl [
+	"A client that opens with initialize has no server/discover to call, so this answer carries the instructions too."
 
 	<jrpc: #initialize>
 	^ MCPStructureInitialize new
 		  protocolVersion: (self class negotiatedProtocolVersionFor: protocolVersion);
 		  capabilities: self advertisedCapabilities;
+		  instructions: self discoveryInstructions;
 		  metadata: self serverInfrastructureMetadata;
 		  serverInfo: self serverIdentity
 ]

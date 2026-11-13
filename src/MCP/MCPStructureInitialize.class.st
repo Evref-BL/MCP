@@ -1,7 +1,7 @@
 "
 MCP protocol structure returned by initialize.
 
-It carries protocol version, advertised server capabilities, serverInfo identity, and optional infrastructure metadata.
+It carries protocol version, advertised server capabilities, serverInfo identity, the instructions a client may put in front of a model, and optional infrastructure metadata.
 "
 Class {
 	#name : 'MCPStructureInitialize',
@@ -10,7 +10,8 @@ Class {
 		'protocolVersion',
 		'capabilities',
 		'serverInfo',
-		'metadata'
+		'metadata',
+		'instructions'
 	],
 	#category : 'MCP-Structure',
 	#package : 'MCP',
@@ -25,6 +26,7 @@ MCPStructureInitialize >> asJRPCJSON [
 		       (#capabilities -> self capabilities asJRPCJSON).
 		       (#protocolVersion -> self protocolVersion asJRPCJSON).
 		       (#serverInfo -> self serverInfo asJRPCJSON) } asDictionary.
+	self instructions ifNotNil: [ dic at: #instructions put: self instructions asJRPCJSON ].
 	self metadata ifNotNil: [ dic at: #_meta put: self metadata asJRPCJSON ].
 	^ dic
 ]
@@ -39,6 +41,18 @@ MCPStructureInitialize >> capabilities [
 MCPStructureInitialize >> capabilities: anObject [
 
 	capabilities := anObject
+]
+
+{ #category : 'accessing' }
+MCPStructureInitialize >> instructions [
+
+	^ instructions
+]
+
+{ #category : 'accessing' }
+MCPStructureInitialize >> instructions: aString [
+
+	instructions := aString
 ]
 
 { #category : 'accessing' }
