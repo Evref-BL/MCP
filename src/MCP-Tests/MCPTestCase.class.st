@@ -42,9 +42,16 @@ MCPTestCase >> compilerRefusesShadowingTemporaries [
 
 { #category : 'private - compatibility' }
 MCPTestCase >> compilerReportsReadOnlyAssignmentsAsSyntaxErrors [
-	"Before Pharo 12, assigning to an argument is a syntax error like any other. From 12 on, the compiler names the read-only variable."
+	"Before Pharo 12, an assignment to an argument fails to compile without the compiler naming the read-only variable: Pharo 11 reports a syntax error, Pharo 10 a notification. From 12 on, the compiler names it."
 
 	^ self class environment includesKey: #OCStoreIntoReadOnlyVariableError
+]
+
+{ #category : 'private - compatibility' }
+MCPTestCase >> coverageIsAvailable [
+	"Pharo 11 brought CoverageCollector. Before it, MCP has no coverage to report."
+
+	^ self class environment includesKey: #CoverageCollector
 ]
 
 { #category : 'private - classes' }

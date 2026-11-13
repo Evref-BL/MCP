@@ -493,8 +493,10 @@ MCPToolStructuredOutputTest >> testRunTestCoverageLetsNotificationsUseTheirDefau
 
 	| data result |
 	result := self callToolNamed: 'test_coverage_run' withArguments: {
-			  (#classes -> { MCPToolNotificationTargetTest name }).
-			  (#coverage -> { (#scope -> { (#classes -> { MCPToolCoverageTarget name }) } asDictionary) } asDictionary) } asDictionary.
+			          (#classes -> { MCPToolNotificationTargetTest name }).
+			          (#coverage -> { (#scope -> { (#classes -> { MCPToolCoverageTarget name }) } asDictionary) } asDictionary) }
+			          asDictionary.
+	self coverageIsAvailable ifFalse: [ ^ self assert: (self resultIndicatesError: result) ].
 	data := self dataFrom: result.
 	self assert: (data at: #runCount) equals: 1.
 	self assert: (data at: #passedCount) equals: 1
@@ -529,6 +531,7 @@ MCPToolStructuredOutputTest >> testRunTestsCoverageCanIncludeCoveredMethodsAndCa
 				           (#scope -> { (#classes -> #( 'MCPToolCoverageTarget' )) } asDictionary).
 				           (#includeCoveredMethods -> true).
 				           (#methodLimit -> 1) } asDictionary) } asDictionary.
+	self coverageIsAvailable ifFalse: [ ^ self assert: (self resultIndicatesError: result) ].
 	data := self dataFrom: result.
 	coverage := data at: #coverage.
 	coveredSelectors := (coverage at: #coveredMethods) collect: [ :each | each at: #selector ].
@@ -564,6 +567,7 @@ MCPToolStructuredOutputTest >> testRunTestsCoverageReturnsStructuredCoverage [
 			          (#coverage -> {
 				           (#scope -> { (#classes -> #( 'MCPToolCoverageTarget' )) } asDictionary).
 				           (#methodLimit -> 10) } asDictionary) } asDictionary.
+	self coverageIsAvailable ifFalse: [ ^ self assert: (self resultIndicatesError: result) ].
 	data := self dataFrom: result.
 	coverage := data at: #coverage.
 	uncoveredSelectors := (coverage at: #uncoveredMethods) collect: [ :each | each at: #selector ].

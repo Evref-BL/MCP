@@ -39,7 +39,7 @@ MCPResourceTemplateTestFixture class >> uriPrefix [
 MCPResourceTemplateTestFixture >> completionsFor: aVariableName value: aPrefix context: aContextDictionary [
 
 	aVariableName = 'name' ifFalse: [ ^ #(  ) ].
-	^ #( 'world' 'pharo' 'moon' ) select: [ :each | each beginsWith: aPrefix ]
+	^ #( 'world' 'pharo' 'moon' ) select: [ :each | aPrefix isEmpty or: [ each beginsWith: aPrefix ] ]
 ]
 
 { #category : 'metadata' }

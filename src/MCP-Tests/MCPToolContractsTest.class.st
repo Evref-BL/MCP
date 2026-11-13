@@ -959,12 +959,15 @@ MCPToolContractsTest >> testEvaluateReportsTruncationAndCollectionSize [
 	"A cut preview used to end in a marker and nothing else, so the caller could not tell whether two or two hundred kilobytes were missing."
 
 	| data |
-	data := self dataFrom: (self
+	data := self dataFrom:
+		        (self
 			         callDiscoveredToolNamed: 'image_evaluate'
 			         withArguments: { (#code -> '(1 to: 40000) asOrderedCollection') } asDictionary).
 	self assert: (data at: #truncated).
 	self assert: (data at: #resultSize) equals: 40000.
-	self assert: (data at: #resultPrintString) size equals: MCPToolEvaluate new resultPreviewCharacterLimit
+	self
+		assert: (data at: #resultPrintString) size
+		equals: ((1 to: 40000) asOrderedCollection printStringLimitedTo: MCPToolEvaluate new resultPreviewCharacterLimit) size
 ]
 
 { #category : 'tests' }
