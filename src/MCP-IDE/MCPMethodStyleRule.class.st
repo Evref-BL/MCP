@@ -34,6 +34,13 @@ MCPMethodStyleRule class >> classKnownFor: aNode [
 	^ nil
 ]
 
+{ #category : 'manifest' }
+MCPMethodStyleRule class >> enabledByDefault [
+	"MCP's rules are advice for agents: MCP runs them itself, and a person turns them on in Renraku's settings to see them in the browser."
+
+	^ false
+]
+
 { #category : 'accessing' }
 MCPMethodStyleRule class >> group [
 

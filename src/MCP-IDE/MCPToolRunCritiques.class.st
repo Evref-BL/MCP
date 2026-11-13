@@ -168,9 +168,11 @@ MCPToolRunCritiques >> additionalKeywords [
 
 { #category : 'private - rules' }
 MCPToolRunCritiques >> allRuleClasses [
+	"The rules Renraku runs, and MCP's own, which it leaves to MCP."
 
-	^ (ReRuleManager uniqueInstance allRules collect: [ :each | each class ] as: Set) asArray sort: [ :left :right |
-		  left name <= right name ]
+	^ ((ReRuleManager uniqueInstance allRules collect: [ :each | each class ] as: Set)
+		   addAll: ManifestMCPIDE agentRuleClasses;
+		   yourself) asArray sort: [ :left :right | left name <= right name ]
 ]
 
 { #category : 'metadata' }
