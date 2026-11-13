@@ -81,7 +81,7 @@ MCPStructureIcon class >> highScaleFormNamed: anIconSymbol [
 			pharoForm := self highScaleFormNamed: #pharo.
 			^ pharoForm scaledToSize: pharoForm width // 2 @ (pharoForm height // 2) ].
 	anIconSymbol = #referencesUpsideDown ifTrue: [ ^ (self highScaleFormNamed: #references) rotateBy: 180 ].
-	scaledIcons := Smalltalk ui icons iconsPerScale at: 2.0 ifAbsent: [ self error: 'Missing precomputed scale 2.0 icons.' ].
+	scaledIcons := self highScaleIcons.
 	^ scaledIcons at: anIconSymbol ifAbsent: [ self error: 'Missing UI icon named ' , anIconSymbol asString ]
 ]
 

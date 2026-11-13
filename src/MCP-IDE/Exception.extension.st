@@ -14,6 +14,13 @@ Exception >> mcpErrorResultForMutationTool: aTool action: action requestedContex
 ]
 
 { #category : '*MCP-IDE' }
+Exception >> mcpFailedPreconditions [
+	"The refactoring conditions a warning reports as failed, from Pharo 12 on; nil when it carries none."
+
+	^ nil
+]
+
+{ #category : '*MCP-IDE' }
 Exception >> mcpMutationFailureCauseForSyntaxNotice: aSyntaxNotice [
 
 	^ aSyntaxNotice

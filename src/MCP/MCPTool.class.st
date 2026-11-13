@@ -956,7 +956,7 @@ MCPTool >> resumeNotification: aNotification [
 	A warning is where that value is an error rather than a value. Warning>>defaultAction treats the absence of a handler as one and raises, and a deprecation reaches the same line in an image set to raise them, so a call over code that only warned would fail. The default action still runs, for the log and the rewrite a deprecation performs, and what it raises instead of answering is dropped here."
 
 	^ aNotification resume: ([
-			   [ aNotification defaultAction ]
+			   [ aNotification mcpDefaultAction ]
 				   on: Notification
 				   do: [ :nested | self resumeNotification: nested ] ]
 			   on: UnhandledError

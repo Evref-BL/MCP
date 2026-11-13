@@ -76,22 +76,6 @@ MCPRemoveClassesCommand >> isEmptyClass: aClass [
 ]
 
 { #category : 'private' }
-MCPRemoveClassesCommand >> performRemovalWithPreparedRefactoring: aRefactoring [
-
-	aRefactoring removeClassChanges.
-	aRefactoring performChanges
-]
-
-{ #category : 'private' }
-MCPRemoveClassesCommand >> preparedRefactoringForClassNames: someClassNames [
-
-	| refactoring |
-	refactoring := ReRemoveClassRefactoring classNames: (someClassNames collect: #asSymbol).
-	refactoring prepareForExecution.
-	^ refactoring
-]
-
-{ #category : 'private' }
 MCPRemoveClassesCommand >> removePackageIfNowEmptyNamed: aPackageName recordingInto: removedPackageNamesCollection [
 
 	aPackageName = '_UnpackagedPackage' ifTrue: [ ^ self ].

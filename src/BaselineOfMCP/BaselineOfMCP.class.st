@@ -44,10 +44,19 @@ BaselineOfMCP >> defineGroups: spec [
 		group: 'default' with: #( 'Core' 'IDE' 'UI' 'Tests' 'UI Tests' );
 		group: 'all' with: #( 'default' 'Telemetry' 'Telemetry Tests' ).
 
+	SystemVersion current major < 12 ifTrue: [
+			spec
+				group: 'Core' with: #( 'MCP' 'MCP-Compatibility-Before12' );
+				group: 'IDE' with: #( 'MCP-IDE' 'MCP-IDE-Compatibility-Before12' ) ].
+	SystemVersion current major >= 12 ifTrue: [
+			spec
+				group: 'Core' with: #( 'MCP' 'MCP-Compatibility-From12' );
+				group: 'IDE' with: #( 'MCP-IDE' 'MCP-IDE-Compatibility-From12' ) ].
 	SystemVersion current major < 13 ifTrue: [ spec group: 'UI' with: #( 'MCP-UI' 'MCP-UI-Compatibility-Before13' ) ].
-	SystemVersion current major >= 13 ifTrue: [ spec group: 'Core' with: #( 'MCP' 'MCP-Compatibility-From13' ) ].
+	SystemVersion current major >= 13 ifTrue: [
+		spec group: 'Core' with: #( 'MCP' 'MCP-Compatibility-From12' 'MCP-Compatibility-From13' ) ].
 	SystemVersion current major >= 14 ifTrue: [
-		spec group: 'Core' with: #( 'MCP' 'MCP-Compatibility-From13' 'MCP-Compatibility-From14' ) ]
+		spec group: 'Core' with: #( 'MCP' 'MCP-Compatibility-From12' 'MCP-Compatibility-From13' 'MCP-Compatibility-From14' ) ]
 ]
 
 { #category : 'baselines' }
@@ -65,6 +74,12 @@ BaselineOfMCP >> definePackages: spec [
 	spec package: 'MCP-Tests-Resources-Extensions' with: [ spec requires: #( 'MCP-Tests-Resources' ) ].
 	spec package: 'MCP-UI-Tests' with: [ spec requires: #( 'MCP-UI' 'MCP-Tests' ) ].
 
+	SystemVersion current major < 12 ifTrue: [
+			spec package: 'MCP-Compatibility-Before12' with: [ spec requires: #( 'MCP' ) ].
+			spec package: 'MCP-IDE-Compatibility-Before12' with: [ spec requires: #( 'MCP-IDE' 'MCP-Compatibility-Before12' ) ] ].
+	SystemVersion current major >= 12 ifTrue: [
+			spec package: 'MCP-Compatibility-From12' with: [ spec requires: #( 'MCP' ) ].
+			spec package: 'MCP-IDE-Compatibility-From12' with: [ spec requires: #( 'MCP-IDE' ) ] ].
 	SystemVersion current major < 13 ifTrue: [ spec package: 'MCP-UI-Compatibility-Before13' with: [ spec requires: #( 'MCP-UI' ) ] ].
 	SystemVersion current major >= 13 ifTrue: [ spec package: 'MCP-Compatibility-From13' with: [ spec requires: #( 'MCP' ) ] ].
 	SystemVersion current major >= 14 ifTrue: [ spec package: 'MCP-Compatibility-From14' with: [ spec requires: #( 'MCP' ) ] ]
