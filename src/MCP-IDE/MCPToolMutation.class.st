@@ -258,7 +258,7 @@ MCPToolMutation >> impactMessagesForRefactoringWarning: aWarning [
 
 	| failedPreconditions impactMessages primaryMessage |
 	impactMessages := OrderedCollection new.
-	failedPreconditions := aWarning failedPreconditions.
+	failedPreconditions := aWarning mcpFailedPreconditions.
 	failedPreconditions ifNotNil: [
 			failedPreconditions do: [ :each |
 					| message |

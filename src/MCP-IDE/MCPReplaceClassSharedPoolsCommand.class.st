@@ -35,12 +35,6 @@ MCPReplaceClassSharedPoolsCommand >> execute [
 ]
 
 { #category : 'private' }
-MCPReplaceClassSharedPoolsCommand >> replaceSharedPoolsOn: aClass [
-
-	^ ShiftClassInstaller update: aClass to: [ :builder | builder sharedPools: self resolvedSharedPools ]
-]
-
-{ #category : 'private' }
 MCPReplaceClassSharedPoolsCommand >> resolvedSharedPools [
 
 	^ self sharedPools collect: [ :each | self resolvedSharedPoolNamed: each ] as: Array

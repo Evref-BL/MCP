@@ -39,7 +39,7 @@ MCPCompileMethodCommand >> execute [
 				  previousProtocolName := changeKind = 'replaced' ifTrue: [ self protocolNameOf: behavior >> selector ].
 				  self tool signalTraitOriginBeforeCompiling: selector in: behavior unlessForced: self request force.
 				  "Naming no protocol keeps the one the method is in. Pharo's own compile:classified: with nil does not promise that, so it is passed explicitly."
-				  selector := [ behavior compile: methodSource classified: (self request protocol ifNil: [ previousProtocolName ]) ]
+				  selector := [ behavior mcpCompile: methodSource classified: (self request protocol ifNil: [ previousProtocolName ]) ]
 					              on: Exception
 					              do: [ :error | self signalCompileFailure: error methodSource: methodSource ].
 				  compiledMethod := self tool reformattedMethodForBehavior: behavior selector: selector.
@@ -72,7 +72,7 @@ MCPCompileMethodCommand >> isUnclassified: aCompiledMethod [
 { #category : 'private' }
 MCPCompileMethodCommand >> protocolNameOf: aCompiledMethod [
 
-	^ aCompiledMethod protocol ifNotNil: [ :protocol | protocol name asString ]
+	^ aCompiledMethod protocolName ifNotNil: [ :protocolName | protocolName asString ]
 ]
 
 { #category : 'private' }

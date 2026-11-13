@@ -52,7 +52,7 @@ MCPChangeClassCommentCommandTest >> testCanClearClassComment [
 	| result target |
 	result := self executeCommand: (MCPChangeClassCommentCommand className: self commentTargetClassName classComment: '').
 	target := self classNamed: self commentTargetClassName.
-	self assert: target comment equals: ''.
+	self assert: target mcpComment equals: ''.
 	self assert: result oldClassComment equals: 'original comment'.
 	self assert: result newClassComment equals: ''
 ]
@@ -74,7 +74,7 @@ MCPChangeClassCommentCommandTest >> testUpdatesClassCommentAndReturnsResultObjec
 	result := self executeCommand:
 		          (MCPChangeClassCommentCommand className: self commentTargetClassName classComment: 'updated comment').
 	target := self classNamed: self commentTargetClassName.
-	self assert: target comment equals: 'updated comment'.
+	self assert: target mcpComment equals: 'updated comment'.
 	self assert: result oldClassComment equals: 'original comment'.
 	self assert: result newClassComment equals: 'updated comment'.
 	self assert: result classInfo className equals: self commentTargetClassName

@@ -12,7 +12,7 @@ Class {
 MCPPackageInfoTest >> testBuildsPackageMetadataSnapshot [
 
 	| info package |
-	package := PackageOrganizer default packageNamed: #MCP.
+	package := self packageOrganizer packageNamed: #MCP.
 	info := MCPPackageInfo fromPackage: package projectNames: #( 'ZProject' 'AProject' ).
 	self assert: info packageName equals: 'MCP'.
 	self assert: info projectNames equals: #( 'AProject' 'ZProject' ).

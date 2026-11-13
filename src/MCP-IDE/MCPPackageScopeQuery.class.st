@@ -18,7 +18,7 @@ Class {
 { #category : 'private - scope' }
 MCPPackageScopeQuery >> allPackages [
 
-	^ self sortedPackagesByName: PackageOrganizer default packages
+	^ self sortedPackagesByName: self packageOrganizer packages
 ]
 
 { #category : 'initialization' }
@@ -92,7 +92,7 @@ MCPPackageScopeQuery >> packagesForProjectRegistration: aProjectRegistration [
 	| packages |
 	packages := OrderedCollection new.
 	aProjectRegistration projectVersion packages do: [ :eachSpec |
-		PackageOrganizer default packageNamed: eachSpec name asSymbol ifPresent: [ :package | packages add: package ] ].
+		self packageOrganizer packageNamed: eachSpec name asSymbol ifPresent: [ :package | packages add: package ] ].
 	^ packages asArray
 ]
 
@@ -124,7 +124,7 @@ MCPPackageScopeQuery >> projectRegistrationPackagesArePresent: aProjectRegistrat
 	[
 		aProjectRegistration projectVersion packages do: [ :eachSpec |
 				hasPackages := true.
-				(PackageOrganizer default hasPackage: eachSpec name asSymbol) ifFalse: [ ^ false ] ] ]
+				(self packageOrganizer hasPackage: eachSpec name asSymbol) ifFalse: [ ^ false ] ] ]
 		on: Error
 		do: [ ^ false ].
 	^ hasPackages

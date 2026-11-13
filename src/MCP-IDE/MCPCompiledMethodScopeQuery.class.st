@@ -278,8 +278,8 @@ MCPCompiledMethodScopeQuery >> packageNamed: aPackageName [
 { #category : 'private - resolution' }
 MCPCompiledMethodScopeQuery >> packageNamed: aPackageName inScope: scopeName [
 
-	(PackageOrganizer default hasPackage: aPackageName) ifFalse: [ ^ self recordMissingPackageNamed: aPackageName inScope: scopeName ].
-	^ PackageOrganizer default packageNamed: aPackageName
+	(self packageOrganizer hasPackage: aPackageName) ifFalse: [ ^ self recordMissingPackageNamed: aPackageName inScope: scopeName ].
+	^ self packageOrganizer packageNamed: aPackageName
 ]
 
 { #category : 'private - scope' }

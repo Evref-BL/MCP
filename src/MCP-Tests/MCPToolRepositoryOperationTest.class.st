@@ -57,10 +57,18 @@ MCPToolRepositoryOperationTest >> createClassNamed: aClassName inPackageNamed: a
 
 	^ self withoutEpiceaDuring: [
 			  | builder |
+			  self packageOrganizer ensurePackage: aPackageName.
 			  builder := Object << aClassName asSymbol.
 			  builder package: aPackageName.
 			  builder tag: 'Generated'.
 			  builder install ]
+]
+
+{ #category : 'private - compatibility' }
+MCPToolRepositoryOperationTest >> currentTonelFormatNamesPackages [
+	"Tonel 3, the format Pharo writes by default from 12 on, names the package of a class. Pharo 11 writes Tonel 1.0, which does not."
+
+	^ TonelWriter defaultVersion asNumber >= 3
 ]
 
 { #category : 'private' }
@@ -840,7 +848,7 @@ MCPToolRepositoryOperationTest >> testExportHonoursTheTonelVersionTheCheckoutPin
 					sourceFile := location / packageName / (className , '.class.st').
 					self assert: sourceFile exists.
 					self
-						assert: (sourceFile contents includesSubstring: '#package :')
+						assert: (sourceFile contents includesSubstring: '#package :') = self currentTonelFormatNamesPackages
 						description: 'A checkout that pins no version is written in the current Tonel format.'.
 					repository workingCopy repositoryProperties at: #version put: #'1.0'.
 					self callToolWith: {
@@ -1138,7 +1146,7 @@ MCPToolRepositoryOperationTest >> testUpdateRemovesPackageWithoutUnloading [
 
 	| data packageName repository result |
 	packageName := 'MCPToolRepositoryOperationRemovalPackage'.
-	self withoutEpiceaDuring: [ PackageOrganizer default ensurePackage: packageName ].
+	self withoutEpiceaDuring: [ self packageOrganizer ensurePackage: packageName ].
 	[
 		repository := self
 			              newRepositoryNamed: 'MCP Repository Command Remove Test'
@@ -1152,7 +1160,7 @@ MCPToolRepositoryOperationTest >> testUpdateRemovesPackageWithoutUnloading [
 				data := self dataFrom: result.
 				self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
 				self assert: (self packageNamesIn: repository) equals: #(  ).
-				self assert: (PackageOrganizer default hasPackage: packageName).
+				self assert: (self packageOrganizer hasPackage: packageName).
 				self assert: data keys asSet equals: #( removedPackageNames updateActions ) asSet.
 				self assert: (data at: #updateActions) equals: #( 'removePackages' ).
 				self assert: (data at: #removedPackageNames) equals: { packageName } ] ] ensure: [ self removePackageNamed: packageName ]

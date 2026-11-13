@@ -62,6 +62,7 @@ MCPToolRemoveClassesTest >> ensureClassNamed: aClassName superclassName: aSuperc
 	(self class environment includesKey: symbol) ifTrue: [ ^ self ].
 	superclass := self class environment at: aSuperclassName asSymbol.
 	self withoutEpiceaDuring: [
+			self packageOrganizer ensurePackage: aPackageName.
 			(superclass << symbol)
 				package: aPackageName;
 				install ]
@@ -195,6 +196,9 @@ MCPToolRemoveClassesTest >> testForceRemovesNonEmptyClassAndReparentsSubclassesW
 
 	| data result structured warnings |
 	result := self callToolWith: (self argumentsForClassNames: { self nonEmptyParentClassName } force: true).
+	self refactoringsRefuseBreakingChanges ifTrue: [
+			self assert: (result at: #isError).
+			^ self assert: (self class environment includesKey: self nonEmptyParentClassName asSymbol) ].
 	structured := self structuredContentFrom: result.
 	data := self dataFrom: result.
 	warnings := structured at: #warnings.
@@ -211,6 +215,9 @@ MCPToolRemoveClassesTest >> testForceRemovesReferencedClassAndReturnsWarnings [
 
 	| result structured warnings |
 	result := self callToolWith: (self argumentsForClassNames: { self referencedClassName } force: true).
+	self refactoringsRefuseBreakingChanges ifTrue: [
+			self assert: (result at: #isError).
+			^ self assert: (self class environment includesKey: self referencedClassName asSymbol) ].
 	structured := self structuredContentFrom: result.
 	warnings := structured at: #warnings.
 	self deny: (result at: #isError ifAbsent: [ false ]).
@@ -282,7 +289,7 @@ MCPToolRemoveClassesTest >> testSafelyRemovesSimpleClass [
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self deny: (self class environment includesKey: self simpleClassName asSymbol).
 	self deny: (self class environment includesKey: self packageCleanupClassName asSymbol).
-	self deny: (PackageOrganizer default hasPackage: self packageCleanupPackageName).
+	self deny: (self packageOrganizer hasPackage: self packageCleanupPackageName).
 	self assert: (data at: #removedPackageNames ifAbsent: [ #(  ) ]) equals: { self packageCleanupPackageName } asArray
 ]
 

@@ -56,7 +56,7 @@ MCPSocketSafeZnServer >> initializeServerSocket [
 		self bindingAddress
 			ifNil: [ socket listenOn: self port backlogSize: ZnNetworkingUtils listenBacklogSize ]
 			ifNotNil: [ :address | socket listenOn: self port backlogSize: ZnNetworkingUtils listenBacklogSize interface: address ].
-		socket isValid ifFalse: [ SocketError signal: 'Cannot listen on port ' , self port printString ] ] ifCurtailed: [
+		(self listensAsAsked: socket) ifFalse: [ SocketError signal: 'Cannot listen on port ' , self port printString ] ] ifCurtailed: [
 		socket destroy ].
 	serverSocket := socket.
 	lastListenError := nil.

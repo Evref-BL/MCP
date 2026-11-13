@@ -28,6 +28,7 @@ MCPRemoveClassesCommandTest >> createClassNamed: aClassName superclassName: aSup
 	^ self withoutEpiceaDuring: [
 			  | builder superclass |
 			  superclass := self classNamed: aSuperclassName.
+			  self packageOrganizer ensurePackage: aPackageName.
 			  builder := superclass << aClassName asSymbol.
 			  builder package: aPackageName.
 			  builder tag: 'Internal'.
@@ -151,6 +152,9 @@ MCPRemoveClassesCommandTest >> tearDown [
 MCPRemoveClassesCommandTest >> testForceRemovesReferencedClassAndReturnsWarningMessages [
 
 	| result |
+	self refactoringsRefuseBreakingChanges ifTrue: [
+			self should: [ (MCPRemoveClassesCommand classNames: { self referencedClassName } force: true) execute ] raise: Error.
+			^ self assert: (Smalltalk globals includesKey: self referencedClassName asSymbol) ].
 	result := (MCPRemoveClassesCommand classNames: { self referencedClassName } force: true) execute.
 	self deny: (Smalltalk globals includesKey: self referencedClassName asSymbol).
 	self assert: ((self classNamed: self senderClassName) includesSelector: #useReferencedClass).

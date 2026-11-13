@@ -26,12 +26,34 @@ MCPTestCase >> classNamed: aClassName [
 	^ Smalltalk globals at: aClassName asSymbol
 ]
 
+{ #category : 'private - compatibility' }
+MCPTestCase >> compilerReadsUndeclaredNamesAsNil [
+	"Before Pharo 12, a name nothing declares compiles in an evaluation, and reads as nil there as in a Playground. From 12 on, an evaluation that only reads it fails to compile."
+
+	^ (self class environment includesKey: #OCUndeclaredVariableNotice) not
+]
+
+{ #category : 'private - compatibility' }
+MCPTestCase >> compilerRefusesShadowingTemporaries [
+	"Before Pharo 12, a temporary that shadows an instance variable does not compile. From 12 on, it compiles and a critique reports it."
+
+	^ self class environment includesKey: #OCShadowVariableWarning
+]
+
+{ #category : 'private - compatibility' }
+MCPTestCase >> compilerReportsReadOnlyAssignmentsAsSyntaxErrors [
+	"Before Pharo 12, assigning to an argument is a syntax error like any other. From 12 on, the compiler names the read-only variable."
+
+	^ self class environment includesKey: #OCStoreIntoReadOnlyVariableError
+]
+
 { #category : 'private - classes' }
 MCPTestCase >> createClassNamed: aClassName superclassName: aSuperclassName slots: someSlots classSlots: someClassSlots [
 
 	^ self withoutEpiceaDuring: [
 			  | builder superclass |
 			  superclass := self classNamed: aSuperclassName.
+			  self packageOrganizer ensurePackage: self generatedPackageName.
 			  builder := superclass << aClassName asSymbol.
 			  builder package: self generatedPackageName.
 			  builder tag: self generatedTagName.
@@ -63,10 +85,18 @@ MCPTestCase >> ensureMethodSource: aMethodSource protocol: aProtocol on: aBehavi
 
 	self withoutEpiceaDuring: [
 			| method selector |
-			(aProtocol beginsWith: '*') ifTrue: [ PackageOrganizer default ensurePackage: aProtocol allButFirst ].
+			(aProtocol beginsWith: '*') ifTrue: [ self packageOrganizer ensurePackage: aProtocol allButFirst ].
 			selector := aBehavior compile: aMethodSource classified: aProtocol.
 			method := aBehavior >> selector.
 			aBehavior compile: (method ast formattedCodeIn: aBehavior) classified: method protocol ]
+]
+
+{ #category : 'private - compatibility' }
+MCPTestCase >> expectedRefactoringFailureCauseClassName [
+
+	^ self refactoringsRefuseBreakingChanges
+		  ifTrue: [ 'RBRefactoringFailure' ]
+		  ifFalse: [ 'RBRefactoringError' ]
 ]
 
 { #category : 'private - classes' }
@@ -110,6 +140,13 @@ MCPTestCase >> mcpWithoutObservabilityExport [
 		  yourself
 ]
 
+{ #category : 'private - compatibility' }
+MCPTestCase >> refactoringsRefuseBreakingChanges [
+	"Before Pharo 12, a refactoring that would break code fails a precondition, which forcing does not get past, and moving a slot stops on the methods that use it while it is between classes. From 12 on, the refactoring raises a warning that forcing gets past."
+
+	^ self class environment includesKey: #RBRefactoringFailure
+]
+
 { #category : 'private - classes' }
 MCPTestCase >> removeClassNamed: aClassName [
 
@@ -133,9 +170,9 @@ MCPTestCase >> removeGeneratedPackagesIfEmpty [
 	{
 		self generatedPackageName.
 		self generatedExtensionPackageName } do: [ :name |
-			(PackageOrganizer default hasPackage: name) ifTrue: [
+			(self packageOrganizer hasPackage: name) ifTrue: [
 					| package |
-					package := PackageOrganizer default packageNamed: name.
+					package := self packageOrganizer packageNamed: name.
 					(package definedClasses isEmpty and: [ package methods isEmpty ]) ifTrue: [ self removePackageNamed: name ] ] ]
 ]
 
@@ -143,7 +180,7 @@ MCPTestCase >> removeGeneratedPackagesIfEmpty [
 MCPTestCase >> removePackageNamed: aPackageName [
 
 	self withoutEpiceaDuring: [
-		(PackageOrganizer default hasPackage: aPackageName) ifTrue: [ PackageOrganizer default removePackage: aPackageName ] ]
+		(self packageOrganizer hasPackage: aPackageName) ifTrue: [ self packageOrganizer removePackage: aPackageName ] ]
 ]
 
 { #category : 'private - methods' }
@@ -158,4 +195,11 @@ MCPTestCase >> withoutEpiceaDuring: aBlock [
 	| value |
 	EpMonitor disableDuring: [ value := aBlock value ].
 	^ value
+]
+
+{ #category : 'private - compatibility' }
+MCPTestCase >> worldStepsTheTranscriptGlobal [
+	"Before Pharo 12, the world loop steps the Transcript global, which is the recorder while an evaluation runs. From 12 on, it steps the transcript of the tools."
+
+	^ (WorldState >> #runStepMethodsIn:) literals anySatisfy: [ :each | each isVariableBinding and: [ each key = #Transcript ] ]
 ]

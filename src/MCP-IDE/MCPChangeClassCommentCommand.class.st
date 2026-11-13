@@ -40,7 +40,7 @@ MCPChangeClassCommentCommand >> execute [
 
 	| oldClassComment targetClass updatedClass |
 	targetClass := self targetClass.
-	oldClassComment := targetClass comment.
+	oldClassComment := targetClass mcpComment.
 	oldClassComment = self classComment ifTrue: [
 			^ MCPChangeClassCommentResult
 				  classInfo: (MCPClassInfo fromClass: targetClass)
@@ -51,7 +51,7 @@ MCPChangeClassCommentCommand >> execute [
 	^ MCPChangeClassCommentResult
 		  classInfo: (MCPClassInfo fromClass: updatedClass)
 		  oldClassComment: oldClassComment
-		  newClassComment: updatedClass comment
+		  newClassComment: updatedClass mcpComment
 ]
 
 { #category : 'private' }

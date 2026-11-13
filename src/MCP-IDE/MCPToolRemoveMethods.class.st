@@ -139,15 +139,6 @@ MCPToolRemoveMethods >> failureMessageForClassNamed: className classSide: classS
 				  nextPutAll: anError messageText ]
 ]
 
-{ #category : 'private' }
-MCPToolRemoveMethods >> forceRemoveSelectors: selectorSymbols from: aBehavior [
-
-	| refactoring |
-	refactoring := ReRemoveMethodsRefactoring selectors: selectorSymbols from: aBehavior.
-	refactoring removeMethodChanges.
-	refactoring performChanges
-]
-
 { #category : 'private - request' }
 MCPToolRemoveMethods >> parsedRequestFromToolRequest: request [
 

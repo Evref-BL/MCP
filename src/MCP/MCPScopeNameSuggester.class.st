@@ -114,7 +114,7 @@ MCPScopeNameSuggester class >> missingPackageWarningFor: packageName scope: scop
 { #category : 'suggesting' }
 MCPScopeNameSuggester class >> packageSuggestionCandidates [
 
-	^ PackageOrganizer default packages collect: [ :eachPackage |
+	^ self packageOrganizer packages collect: [ :eachPackage |
 			  {
 				  (#name -> eachPackage name asString).
 				  (#bucket -> eachPackage name asString) } asDictionary ]

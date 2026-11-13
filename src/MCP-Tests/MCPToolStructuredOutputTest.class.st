@@ -117,6 +117,7 @@ MCPToolStructuredOutputTest >> testEvaluateForgetsItsVariablesAfterTheCall [
 	| result |
 	self callToolNamed: 'image_evaluate' withArguments: { (#code -> 'leftover := 5') } asDictionary.
 	result := self callToolNamed: 'image_evaluate' withArguments: { (#code -> 'leftover') } asDictionary.
+	self compilerReadsUndeclaredNamesAsNil ifTrue: [ ^ self assert: ((self dataFrom: result) at: #resultPrintString) equals: 'nil' ].
 	self assert: (result at: #isError).
 	self assert: ((self errorFrom: result) at: #sourceLine) equals: 'leftover'
 ]
@@ -127,6 +128,7 @@ MCPToolStructuredOutputTest >> testEvaluateLeavesACapitalizedNameUndeclared [
 	| result |
 	result := self callToolNamed: 'image_evaluate' withArguments: { (#code -> 'MCPNoSuchGlobalForThisTest new') } asDictionary.
 	self assert: (result at: #isError).
+	self compilerReadsUndeclaredNamesAsNil ifTrue: [ ^ self ].
 	self assert: ((self errorFrom: result) at: #sourceLine) equals: 'MCPNoSuchGlobalForThisTest new'
 ]
 
@@ -136,6 +138,7 @@ MCPToolStructuredOutputTest >> testEvaluateLeavesANameNeverAssignedUndeclared [
 
 	| result |
 	result := self callToolNamed: 'image_evaluate' withArguments: { (#code -> 'neverAssigned isNil') } asDictionary.
+	self compilerReadsUndeclaredNamesAsNil ifTrue: [ ^ self deny: (result at: #isError ifAbsent: [ false ]) ].
 	self assert: (result at: #isError).
 	self assert: ((self errorFrom: result) at: #sourceLine) equals: 'neverAssigned isNil'
 ]
@@ -278,6 +281,20 @@ MCPToolStructuredOutputTest >> testEvaluateSurvivesADeprecationInAnImageThatRais
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: ((self dataFrom: result) at: #resultPrintString) equals: '7'.
 	self assert: ((self warningsFrom: result) anySatisfy: [ :each | each includesSubstring: 'probe explanation.' ])
+]
+
+{ #category : 'tests' }
+MCPToolStructuredOutputTest >> testEvaluateTakesTheStepTheWorldGivesTheTranscript [
+	"The world goes on stepping while an evaluation runs. Where it steps the Transcript global, the recorder standing in for it takes the step, or the world loop fails and a headless image quits."
+
+	| result |
+	self worldStepsTheTranscriptGlobal ifFalse: [
+		^ self skip: 'The world steps the transcript of the tools, not the Transcript global.' ].
+	result := self
+		          callToolNamed: 'image_evaluate'
+		          withArguments: { (#code -> 'Transcript show: ''stepped''; stepGlobal. Transcript contents') } asDictionary.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: ((self dataFrom: result) at: #resultPrintString) equals: '''stepped'''
 ]
 
 { #category : 'tests' }

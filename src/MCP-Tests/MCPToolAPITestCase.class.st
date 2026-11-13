@@ -88,7 +88,8 @@ MCPToolAPITestCase >> expectedSyntaxErrorNoticeClassName [
 
 	^ (self class environment
 		   at: #OCSyntaxErrorNotice
-		   ifAbsent: [ self class environment at: #RBSyntaxErrorNotice ]) name asString
+		   ifAbsent: [ self class environment at: #RBSyntaxErrorNotice ifAbsent: [ self class environment at: #MCPSyntaxError ] ]) name
+		  asString
 ]
 
 { #category : 'private - compatibility' }

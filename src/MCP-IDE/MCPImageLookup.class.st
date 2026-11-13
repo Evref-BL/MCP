@@ -34,7 +34,7 @@ MCPImageLookup class >> packageNamed: aPackageName [
 { #category : 'resolving' }
 MCPImageLookup class >> packageNamed: aPackageName scopeName: scopeName [
 
-	^ PackageOrganizer default
+	^ self packageOrganizer
 		  packageNamed: aPackageName asSymbol
 		  ifAbsent: [ MCPCommandError signalMissingPackageNamed: aPackageName scopeName: scopeName ]
 ]

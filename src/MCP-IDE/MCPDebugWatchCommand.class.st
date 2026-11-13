@@ -134,17 +134,6 @@ MCPDebugWatchCommand >> nodeMatching: aTarget [
 		  ifNone: [ nil ]
 ]
 
-{ #category : 'private - probes' }
-MCPDebugWatchCommand >> probeForTarget: aTarget index: anIndex [
-
-	| node probe |
-	node := self nodeMatching: aTarget.
-	node ifNil: [ ^ nil ].
-	probe := DebugPointManager installNew: WatchDebugPoint on: node withBehaviors: { ScriptBehavior }.
-	(probe getBehavior: ScriptBehavior) script: (self scriptForTarget: aTarget index: anIndex).
-	^ probe
-]
-
 { #category : 'private - results' }
 MCPDebugWatchCommand >> resultForHits: recordedHits targets: targets result: resultText [
 

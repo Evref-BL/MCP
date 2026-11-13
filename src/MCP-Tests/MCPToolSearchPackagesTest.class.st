@@ -13,6 +13,7 @@ MCPToolSearchPackagesTest >> createFixtureClassNamed: aClassName packageName: aP
 
 	^ self withoutEpiceaDuring: [
 			  | builder |
+			  self packageOrganizer ensurePackage: aPackageName.
 			  builder := Object << aClassName asSymbol.
 			  builder package: aPackageName.
 			  builder tag: aTag.
@@ -73,7 +74,7 @@ MCPToolSearchPackagesTest >> testImageScopeCanPaginateFilteredPackages [
 	summary := self summaryFrom: result.
 	packageNames := (data at: #packages) collect: [ :each | each at: #package ].
 	"The filter keeps a package whose name holds the text anywhere, so the expectation has to read it the same way: a package such as PharoImageFS-MCP-Tests is one of them."
-	expected := (PackageOrganizer default packages
+	expected := (self packageOrganizer packages
 		             select: [ :each | each name asString includesSubstring: 'MCP-' ]
 		             thenCollect: [ :each | each name asString ]) asArray sort.
 	self deny: (result at: #isError ifAbsent: [ false ]).
@@ -194,8 +195,8 @@ MCPToolSearchPackagesTest >> withTemporaryTaggedPackagesDo: aBlock [
 	[
 		self createFixtureClassNamed: alphaClassName packageName: alphaPackageName tag: 'FixtureAlphaTag'.
 		self createFixtureClassNamed: betaClassName packageName: betaPackageName tag: 'FixtureBetaTag'.
-		alphaPackage := PackageOrganizer default packageNamed: alphaPackageName asSymbol.
-		betaPackage := PackageOrganizer default packageNamed: betaPackageName asSymbol.
+		alphaPackage := self packageOrganizer packageNamed: alphaPackageName asSymbol.
+		betaPackage := self packageOrganizer packageNamed: betaPackageName asSymbol.
 		packageProjectNames := Dictionary new
 			                       at: alphaPackageName put: #( 'FixtureProject' );
 			                       at: betaPackageName put: #( 'FixtureProject' );

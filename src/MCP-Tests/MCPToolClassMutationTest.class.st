@@ -116,7 +116,7 @@ MCPToolClassMutationTest >> ensureDestinationPackage [
 
 	self withoutEpiceaDuring: [
 			| package |
-			package := PackageOrganizer default ensurePackage: self destinationPackageName.
+			package := self packageOrganizer ensurePackage: self destinationPackageName.
 			package ensureTag: self destinationTagName ]
 ]
 
@@ -173,8 +173,8 @@ MCPToolClassMutationTest >> referenceClassName [
 MCPToolClassMutationTest >> removeDestinationPackage [
 
 	self withoutEpiceaDuring: [
-			(PackageOrganizer default hasPackage: self destinationPackageName) ifTrue: [
-				PackageOrganizer default removePackage: (PackageOrganizer default packageNamed: self destinationPackageName) ] ]
+			(self packageOrganizer hasPackage: self destinationPackageName) ifTrue: [
+				self packageOrganizer removePackage: (self packageOrganizer packageNamed: self destinationPackageName) ] ]
 ]
 
 { #category : 'private' }
@@ -515,7 +515,7 @@ MCPToolClassMutationTest >> testUpdateAppliesSeveralChangesInOneCall [
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: target superclass name equals: #ProtoObject.
 	self assert: target instVarNames asArray equals: #( 'kept' 'added' ).
-	self assert: target comment equals: 'fused comment'.
+	self assert: target mcpComment equals: 'fused comment'.
 	self assert: ((data at: #updates) collect: [ :each | each at: #action ] as: Array) equals: #( 'reparent' 'addSlot' 'setComment' )
 ]
 
@@ -533,7 +533,7 @@ MCPToolClassMutationTest >> testUpdateCanClearClassComment [
 	data := self dataFrom: result.
 	target := self classNamed: self commentTargetClassName.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: target comment equals: ''.
+	self assert: target mcpComment equals: ''.
 	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
@@ -564,6 +564,7 @@ MCPToolClassMutationTest >> testUpdateForcePullUpSlotContinuesPastRefactoringWar
 				           (#name -> 'MCPToolClassMutationTestWarningPullUpTarget').
 				           (#slots -> (Dictionary with: 'pullUp' -> #( 'sharedSlot' ))).
 				           (#force -> true) }).
+	self refactoringsRefuseBreakingChanges ifTrue: [ ^ self assert: (result at: #isError) ].
 	warnings := self warningsFrom: result.
 	target := self classNamed: 'MCPToolClassMutationTestWarningPullUpTarget'.
 	childOne := self classNamed: 'MCPToolClassMutationTestWarningPullUpChildOne'.
@@ -595,6 +596,7 @@ MCPToolClassMutationTest >> testUpdateForceRemoveSlotContinuesPastRefactoringWar
 				           (#name -> 'MCPToolClassMutationTestWarningRemoveSlotTarget').
 				           (#slots -> (Dictionary with: 'remove' -> #( 'referencedSlot' ))).
 				           (#force -> true) }).
+	self refactoringsRefuseBreakingChanges ifTrue: [ ^ self assert: (result at: #isError) ].
 	warnings := self warningsFrom: result.
 	target := self classNamed: 'MCPToolClassMutationTestWarningRemoveSlotTarget'.
 	self deny: (result at: #isError ifAbsent: [ false ]).
@@ -610,7 +612,7 @@ MCPToolClassMutationTest >> testUpdateMoveEnsuresMissingDestinationPackage [
 	result := self callToolWith: self updateRequestArgumentsForMoveToPackage.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (PackageOrganizer default hasPackage: self destinationPackageName).
+	self assert: (self packageOrganizer hasPackage: self destinationPackageName).
 	self assert: self moveTargetClass packageName asString equals: self destinationPackageName.
 	self deny: (result at: #isError ifAbsent: [ false ])
 ]
@@ -620,10 +622,10 @@ MCPToolClassMutationTest >> testUpdateMoveEnsuresMissingDestinationTag [
 
 	| data package result |
 	self removeDestinationPackage.
-	self withoutEpiceaDuring: [ PackageOrganizer default ensurePackage: self destinationPackageName ].
+	self withoutEpiceaDuring: [ self packageOrganizer ensurePackage: self destinationPackageName ].
 	result := self callToolWith: self updateRequestArgumentsForMoveToPackageAndTag.
 	data := self dataFrom: result.
-	package := PackageOrganizer default packageNamed: self destinationPackageName.
+	package := self packageOrganizer packageNamed: self destinationPackageName.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (package hasTag: self destinationTagName).
 	self assert: self moveTargetClass packageName asString equals: self destinationPackageName.
@@ -711,6 +713,7 @@ MCPToolClassMutationTest >> testUpdatePullUpSlotRefusesASlotATraitSupplies [
 	| error result |
 	self withoutEpiceaDuring: [
 			| trait |
+			self packageOrganizer ensurePackage: self generatedPackageName.
 			trait := (Trait << #MCPToolClassMutationTestPullUpColoured)
 				         slots: #( colour );
 				         package: self generatedPackageName;
@@ -749,7 +752,7 @@ MCPToolClassMutationTest >> testUpdatePullUpSlotReturnsStructuredCommandErrorFor
 	self assert: (error at: #updateAction) equals: 'pullUpSlot'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'PullUpSlotRefactoringError'.
-	self assert: (error at: #causeClass) equals: 'RBRefactoringError'.
+	self assert: (error at: #causeClass) equals: self expectedRefactoringFailureCauseClassName.
 	self assert: (error at: #class) equals: 'MCPToolMethodMutationTestTarget'.
 	self assert: (error at: #slot) equals: 'missingSlot'.
 	self assert: (error at: #side) equals: 'instance'.
@@ -831,6 +834,7 @@ MCPToolClassMutationTest >> testUpdatePullsUpInstanceSlotAcrossSubclasses [
 			           className: 'MCPToolClassMutationTestPullUpTarget'
 			           slotName: 'sharedSlot'
 			           classSide: false).
+	self refactoringsRefuseBreakingChanges ifTrue: [ ^ self assert: (result at: #isError) ].
 	data := self dataFrom: result.
 	target := self classNamed: 'MCPToolClassMutationTestPullUpTarget'.
 	childOne := self classNamed: 'MCPToolClassMutationTestPullUpChildOne'.
@@ -873,6 +877,7 @@ MCPToolClassMutationTest >> testUpdatePushesDownClassSlotToDirectSubclasses [
 			           className: 'MCPToolClassMutationTestPushDownTarget'
 			           slotName: 'sharedClassSlot'
 			           classSide: true).
+	self refactoringsRefuseBreakingChanges ifTrue: [ ^ self assert: (result at: #isError) ].
 	data := self dataFrom: result.
 	target := self classNamed: 'MCPToolClassMutationTestPushDownTarget'.
 	childOne := self classNamed: 'MCPToolClassMutationTestPushDownChildOne'.
@@ -892,7 +897,7 @@ MCPToolClassMutationTest >> testUpdateRecategorizesWithinCurrentPackageWhenPacka
 	| data package result |
 	result := self callToolWith: self updateRequestArgumentsForRecategorization.
 	data := self dataFrom: result.
-	package := PackageOrganizer default packageNamed: self originalMovePackageName.
+	package := self packageOrganizer packageNamed: self originalMovePackageName.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (package hasTag: self destinationTagName).
 	self assert: self moveTargetClass packageName asString equals: self originalMovePackageName.
@@ -924,6 +929,9 @@ MCPToolClassMutationTest >> testUpdateRemoveSlotStopsOnRefactoringWarningByDefau
 	self assert: (result at: #isError).
 	self assert: (error at: #action) equals: 'update'.
 	self assert: (error at: #updateAction) equals: 'removeSlot'.
+	self refactoringsRefuseBreakingChanges ifTrue: [
+			self assert: (error at: #errorCode) equals: 'RemoveSlotRefactoringError'.
+			^ self assert: (target slots collect: #name as: Array) equals: #( #referencedSlot ) ].
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'RemoveSlotRefactoringWarning'.
 	self assert: (self expectedRefactoringWarningCauseClassNames includes: (error at: #causeClass)).
@@ -1193,7 +1201,7 @@ MCPToolClassMutationTest >> testUpdateReparentsClassAndPreservesExistingState [
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: target superclass name asString equals: self reparentSuperclassName.
 	self assert: target new probeMethod equals: 41.
-	self assert: target comment equals: 'reparent comment'.
+	self assert: target mcpComment equals: 'reparent comment'.
 	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
@@ -1579,7 +1587,7 @@ MCPToolClassMutationTest >> testUpdateSetsClassComment [
 	data := self dataFrom: result.
 	target := self classNamed: self commentTargetClassName.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: target comment equals: 'updated comment'.
+	self assert: target mcpComment equals: 'updated comment'.
 	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
