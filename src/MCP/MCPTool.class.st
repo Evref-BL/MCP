@@ -622,17 +622,18 @@ MCPTool >> executeParsedRequestFrom: request do: executionBlock onError: errorBl
 	Every Warning and Notification is an Exception, so notifications are resumed here instead of failing the call."
 
 	| parsedRequest |
-	^ [
-	  [
-	  parsedRequest := self parsedRequestFromToolRequest: request.
-	  executionBlock value: parsedRequest ]
-		  on: Notification
-		  do: [ :notification |
-				  (self shouldResumeNotification: notification)
-					  ifTrue: [ self resumeNotification: notification ]
-					  ifFalse: [ notification pass ] ] ]
-		  on: Exception
-		  do: [ :error | errorBlock value: error value: parsedRequest ]
+	^ self duringCall: [
+			  [
+				  [
+					  parsedRequest := self parsedRequestFromToolRequest: request.
+					  executionBlock value: parsedRequest ]
+					  on: Notification
+					  do: [ :notification |
+							  (self shouldResumeNotification: notification)
+								  ifTrue: [ self resumeNotification: notification ]
+								  ifFalse: [ notification pass ] ] ]
+				  on: Exception
+				  do: [ :error | errorBlock value: error value: parsedRequest ] ]
 ]
 
 { #category : 'executing' }
