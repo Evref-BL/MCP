@@ -399,6 +399,45 @@ MCPToolMethodMutationTest >> testAddArgumentsUpdatesSendersAndReportsAction [
 ]
 
 { #category : 'tests' }
+MCPToolMethodMutationTest >> testBatchCompileWarnsOnlyTheMethodsWithoutProtocol [
+	"A replaced method keeps its protocol, so a warning only some methods of a batch carry stays with them."
+
+	| lines result selector |
+	selector := #unclassifiedProbe.
+	self removeSelector: selector from: MCPToolMethodMutationTestTarget.
+	[
+		result := self callToolNamed: 'method_compile' withArguments: {
+				          (#class -> MCPToolMethodMutationTestTarget name).
+				          (#source -> #( 'instanceProtocolTarget
+
+	^ 41' 'unclassifiedProbe ^ 3' )) } asDictionary.
+		self deny: (result at: #isError ifAbsent: [ false ]).
+		lines := ((result at: #content) first at: #text) lines.
+		self deny: (lines anySatisfy: [ :each | each beginsWith: 'Warning for each' ]).
+		self assert: ((lines at: (lines indexOf: 'Created MCPToolMethodMutationTestTarget>>unclassifiedProbe.') + 1) beginsWith:
+				 'Warning: No protocol was named') ] ensure: [ self removeSelector: selector from: MCPToolMethodMutationTestTarget ]
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testBatchCompileWithoutProtocolWarnsOnce [
+	"Batching is the point of passing several sources, so a warning each method carries is said once rather than once per method."
+
+	| contentText result selectors |
+	selectors := #( #unclassifiedProbeOne #unclassifiedProbeTwo ).
+	selectors do: [ :each | self removeSelector: each from: MCPToolMethodMutationTestTarget ].
+	[
+		result := self callToolNamed: 'method_compile' withArguments: {
+				          (#class -> MCPToolMethodMutationTestTarget name).
+				          (#source -> #( 'unclassifiedProbeOne ^ 1' 'unclassifiedProbeTwo ^ 2' )) } asDictionary.
+		self deny: (result at: #isError ifAbsent: [ false ]).
+		contentText := (result at: #content) first at: #text.
+		self assert: (contentText allRangesOfSubstring: 'No protocol was named') size equals: 1.
+		self assert: (contentText lines second beginsWith: 'Warning for each: No protocol was named').
+		((self dataFrom: result) at: #results) do: [ :each | self assert: (each at: #warnings) size equals: 1 ] ] ensure: [
+		selectors do: [ :each | self removeSelector: each from: MCPToolMethodMutationTestTarget ] ]
+]
+
+{ #category : 'tests' }
 MCPToolMethodMutationTest >> testChangeProtocolReturnsStructuredErrorWhenMethodIsMissing [
 
 	| error result structured |
@@ -1199,7 +1238,7 @@ MCPToolMethodMutationTest >> testCompileWithoutProtocolWarnsThatANewMethodHasNon
 		self assert: (MCPToolMethodMutationTestTarget >> selector) protocolName asString equals: Protocol unclassified asString.
 		warnings := self warningsFrom: result.
 		self assert: warnings size equals: 1.
-		self assert: (warnings first includesSubstring: 'MCPToolMethodMutationTestTarget>>unclassifiedProbe has no protocol') ] ensure: [
+		self assert: (warnings first beginsWith: 'No protocol was named') ] ensure: [
 		self removeSelector: selector from: MCPToolMethodMutationTestTarget ]
 ]
 

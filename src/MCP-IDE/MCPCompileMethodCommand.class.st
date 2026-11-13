@@ -56,7 +56,7 @@ MCPCompileMethodCommand >> execute [
 							   from: previousProtocolName
 							   to: (self protocolNameOf: compiledMethod))
 					  data: result asDictionary
-					  warnings: warningMessages , (self protocolWarningsFor: compiledMethod reference: methodReference) ]
+					  warnings: warningMessages , (self protocolWarningsFor: compiledMethod) ]
 		  failureSummary: [ :error |
 		  self tool failureMessageForCompileClassNamed: self request className classSide: self request classSide error: error ]
 ]
@@ -76,12 +76,12 @@ MCPCompileMethodCommand >> protocolNameOf: aCompiledMethod [
 ]
 
 { #category : 'private' }
-MCPCompileMethodCommand >> protocolWarningsFor: aCompiledMethod reference: methodReference [
-	"Nobody chose to file a method as unclassified: it is what is left when no protocol was named for it."
+MCPCompileMethodCommand >> protocolWarningsFor: aCompiledMethod [
+	"Nobody chose to file a method as unclassified: it is what is left when no protocol was named for it. The summary above the warning names the method, and a batch says a warning its methods share once, so the warning does not name it again."
 
 	(self isUnclassified: aCompiledMethod) ifFalse: [ ^ #(  ) ].
 	^ { (String streamContents: [ :stream |
-			   stream << methodReference << ' has no protocol, so it is filed under ''' << Protocol unclassified asString
+			   stream << 'No protocol was named, so it is filed under ''' << Protocol unclassified asString
 			   << '''. Name one with protocol, or move it with method_update.' ]) }
 ]
 
