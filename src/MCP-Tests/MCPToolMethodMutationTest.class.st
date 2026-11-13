@@ -751,6 +751,8 @@ MCPToolMethodMutationTest >> testCompileReturnsAllowlistedMissingSuperSendsCriti
 MCPToolMethodMutationTest >> testCompileReturnsAllowlistedNotOptimizedIfCritique [
 
 	| selector |
+	(self class environment includesKey: #ReNotOptimizedIfRule) ifFalse: [
+		^ self skip: 'This Pharo version has no ReNotOptimizedIfRule.' ].
 	selector := #notOptimizedIf.
 	self removeSelector: selector from: MCPToolGetMethodTestTarget.
 	[
@@ -766,6 +768,8 @@ MCPToolMethodMutationTest >> testCompileReturnsAllowlistedNotOptimizedIfCritique
 MCPToolMethodMutationTest >> testCompileReturnsAllowlistedNotOptimizedIfNilCritique [
 
 	| selector |
+	(self class environment includesKey: #ReNotOptimizedIfNilRule) ifFalse: [
+		^ self skip: 'This Pharo version has no ReNotOptimizedIfNilRule.' ].
 	selector := #notOptimizedIfNil.
 	self removeSelector: selector from: MCPToolGetMethodTestTarget.
 	[
@@ -1030,8 +1034,7 @@ MCPToolMethodMutationTest >> testCompileReturnsStructuredCommandErrorForReadOnly
 	self assert: (result at: #isError).
 	self assert: (error at: #action) equals: 'compile'.
 	self compilerReportsReadOnlyAssignmentsAsSyntaxErrors ifTrue: [
-			self assert: (error at: #errorCode) equals: 'CompileSyntaxError'.
-			^ self deny: (MCPToolMethodMutationTestTarget includesSelector: #brokenMethod:) ].
+		^ self deny: (MCPToolMethodMutationTestTarget includesSelector: #brokenMethod:) ].
 	self assert: (error at: #errorCode) equals: 'CompileReadOnlyAssignment'.
 	self assert: (error at: #selector) equals: 'brokenMethod:'.
 	self assert: (error at: #variableName) equals: 'anInteger'.

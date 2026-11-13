@@ -959,12 +959,15 @@ MCPToolContractsTest >> testEvaluateReportsTruncationAndCollectionSize [
 	"A cut preview used to end in a marker and nothing else, so the caller could not tell whether two or two hundred kilobytes were missing."
 
 	| data |
-	data := self dataFrom: (self
+	data := self dataFrom:
+		        (self
 			         callDiscoveredToolNamed: 'image_evaluate'
 			         withArguments: { (#code -> '(1 to: 40000) asOrderedCollection') } asDictionary).
 	self assert: (data at: #truncated).
 	self assert: (data at: #resultSize) equals: 40000.
-	self assert: (data at: #resultPrintString) size equals: MCPToolEvaluate new resultPreviewCharacterLimit
+	self
+		assert: (data at: #resultPrintString) size
+		equals: ((1 to: 40000) asOrderedCollection printStringLimitedTo: MCPToolEvaluate new resultPreviewCharacterLimit) size
 ]
 
 { #category : 'tests' }
@@ -1259,8 +1262,8 @@ MCPToolContractsTest >> testInitializeAdvertisesSupportedPharoVersions [
 	metadata := response at: #_meta.
 	self assert: (metadata includesKey: #'io.github.evref-bl/pharo').
 	pharo := metadata at: #'io.github.evref-bl/pharo'.
-	self assert: (pharo at: #supportedMajorVersions) equals: #( 11 12 13 14 15 ).
-	self assert: (pharo at: #supportedLauncherVersions) equals: #( '110' '120' '130' '140' '150' ).
+	self assert: (pharo at: #supportedMajorVersions) equals: #( 10 11 12 13 14 15 ).
+	self assert: (pharo at: #supportedLauncherVersions) equals: #( '100' '110' '120' '130' '140' '150' ).
 	runtimeVersion := pharo at: #runtimeVersion.
 	self assert: runtimeVersion isString.
 	self deny: runtimeVersion isEmpty
@@ -1275,8 +1278,8 @@ MCPToolContractsTest >> testInitializeResponseSerializesSupportedPharoVersions [
 	self assert: (response includesSubstring: '"result"').
 	self assert: (response includesSubstring: '"_meta"').
 	self assert: (response includesSubstring: '"io.github.evref-bl/pharo"').
-	self assert: (response includesSubstring: '"supportedMajorVersions":[11,12,13,14,15]').
-	self assert: (response includesSubstring: '"supportedLauncherVersions":["110","120","130","140","150"]').
+	self assert: (response includesSubstring: '"supportedMajorVersions":[10,11,12,13,14,15]').
+	self assert: (response includesSubstring: '"supportedLauncherVersions":["100","110","120","130","140","150"]').
 	self assert: (response includesSubstring: '"runtimeVersion":"')
 ]
 

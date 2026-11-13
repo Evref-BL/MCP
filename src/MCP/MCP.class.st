@@ -937,13 +937,13 @@ MCP >> stop [
 { #category : 'infrastructure metadata' }
 MCP >> supportedPharoLauncherVersions [
 
-	^ #( '110' '120' '130' '140' '150' )
+	^ #( '100' '110' '120' '130' '140' '150' )
 ]
 
 { #category : 'infrastructure metadata' }
 MCP >> supportedPharoMajorVersions [
 
-	^ #( 11 12 13 14 15 )
+	^ #( 10 11 12 13 14 15 )
 ]
 
 { #category : 'private - tools' }

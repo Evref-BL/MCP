@@ -66,9 +66,9 @@ MCPToolRepositoryOperationTest >> createClassNamed: aClassName inPackageNamed: a
 
 { #category : 'private - compatibility' }
 MCPToolRepositoryOperationTest >> currentTonelFormatNamesPackages [
-	"Tonel 3, the format Pharo writes by default from 12 on, names the package of a class. Pharo 11 writes Tonel 1.0, which does not."
+	"Tonel 3, the format Pharo writes by default from 12 on, names the package of a class. Pharo 11 writes Tonel 1.0 by default, and Pharo 10 knows no other version, neither of which does."
 
-	^ TonelWriter defaultVersion asNumber >= 3
+	^ (TonelWriter class canUnderstand: #defaultVersion) and: [ TonelWriter defaultVersion asNumber >= 3 ]
 ]
 
 { #category : 'private' }

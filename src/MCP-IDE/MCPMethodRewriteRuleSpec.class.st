@@ -44,12 +44,6 @@ MCPMethodRewriteRuleSpec >> asDictionary [
 ]
 
 { #category : 'converting' }
-MCPMethodRewriteRuleSpec >> asStRewriterRuleHolder [
-
-	^ StRewriterRuleHolder lhs: self match rhs: self replacement isForMethod: self isForMethod
-]
-
-{ #category : 'converting' }
 MCPMethodRewriteRuleSpec >> diagnosticDetails [
 
 	^ {
