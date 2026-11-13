@@ -1,5 +1,5 @@
 "
-Request DTO for critique_run. It carries the resolved scope, selected Renraku rule classes, and hit pagination settings.
+Request DTO for critique_run. It carries the resolved scope, selected Renraku rule classes and whether the caller named them, and hit pagination settings. It keeps the manifest rules of each package it meets, for the length of the call.
 "
 Class {
 	#name : 'MCPCritiqueRunRequest',
@@ -8,7 +8,9 @@ Class {
 		'scopeQuery',
 		'ruleClasses',
 		'limit',
-		'offset'
+		'offset',
+		'namesRules',
+		'manifestRules'
 	],
 	#category : 'MCP-IDE-Requests',
 	#package : 'MCP-IDE',
@@ -21,6 +23,7 @@ MCPCritiqueRunRequest class >> fromRequest: request tool: aTool [
 	^ self new
 		  scopeQuery: (aTool methodScopeQueryFromRequest: request);
 		  ruleClasses: (aTool ruleClassesFromRequest: request);
+		  namesRules: (request uniqueStringCollectionArgumentNamed: 'ruleClasses') isNotEmpty;
 		  limit: aTool defaultPageLimit;
 		  offset: (request nonNegativeIntegerArgumentNamed: 'offset' default: 0);
 		  yourself
@@ -46,6 +49,28 @@ MCPCritiqueRunRequest >> limit [
 MCPCritiqueRunRequest >> limit: anInteger [
 
 	limit := anInteger
+]
+
+{ #category : 'accessing' }
+MCPCritiqueRunRequest >> manifestRulesFor: anEntity [
+	"Looking a package's manifest up walks its classes, so each package's is looked up once per call."
+
+	^ (manifestRules ifNil: [ manifestRules := IdentityDictionary new ])
+		  at: anEntity package
+		  ifAbsentPut: [ MCPManifestRules for: anEntity ]
+]
+
+{ #category : 'accessing' }
+MCPCritiqueRunRequest >> namesRules [
+	"Whether the caller named the rules, which then run though the image has them off."
+
+	^ namesRules ifNil: [ false ]
+]
+
+{ #category : 'accessing' }
+MCPCritiqueRunRequest >> namesRules: aBoolean [
+
+	namesRules := aBoolean
 ]
 
 { #category : 'accessing' }

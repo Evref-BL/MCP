@@ -738,30 +738,6 @@ MCPToolMethodMutationTest >> testCompileMethodReportsReplacedChangeKind [
 ]
 
 { #category : 'tests' }
-MCPToolMethodMutationTest >> testCompileReportsAnMCPRuleAPersonTurnedOnOnce [
-	"A rule turned on in Renraku is run by Renraku, so MCP does not run it a second time."
-
-	| isConcatenation method previous selector |
-	selector := #concatenationProbe:.
-	previous := MCPStringConcatenationRule enabled.
-	isConcatenation := [ :each | each rule class = MCPStringConcatenationRule ].
-	self removeSelector: selector from: MCPToolMethodMutationTestTarget.
-	[
-		MCPStringConcatenationRule enabled: true.
-		self
-			ensureMethodSource: 'concatenationProbe: aName ^ ''<'' , aName , ''>'''
-			protocol: 'tests'
-			on: MCPToolMethodMutationTestTarget.
-		method := MCPToolMethodMutationTestTarget >> selector.
-		self denyEmpty: (method critiques select: isConcatenation).
-		self
-			assert: ((MCPToolCompileMethod new critiquesOfMethod: method) count: isConcatenation)
-			equals: (method critiques count: isConcatenation) ] ensure: [
-			MCPStringConcatenationRule enabled: previous.
-			self removeSelector: selector from: MCPToolMethodMutationTestTarget ]
-]
-
-{ #category : 'tests' }
 MCPToolMethodMutationTest >> testCompileReturnsAllowlistedEquivalentSuperclassMethodCritique [
 
 	| selector |
@@ -1176,31 +1152,6 @@ MCPToolMethodMutationTest >> testCompileReturnsStructuredCommandErrorForUndeclar
 ]
 
 { #category : 'tests' }
-MCPToolMethodMutationTest >> testCompileRunsTheMCPRulesRenrakuLeavesOff [
-	"Renraku does not run MCP's rules for the browser, so compiling runs them for the agent."
-
-	| critiques previous result selector |
-	selector := #concatenationProbe:.
-	previous := MCPStringConcatenationRule enabled.
-	self removeSelector: selector from: MCPToolMethodMutationTestTarget.
-	[
-		MCPStringConcatenationRule enabled: false.
-		result := self callToolWith: (self
-				           compileArgumentsForClass: MCPToolMethodMutationTestTarget
-				           classSide: false
-				           methodSource: 'concatenationProbe: aName ^ ''<'' , aName , ''>'''
-				           protocol: 'tests').
-		self deny: (result at: #isError ifAbsent: [ false ]).
-		critiques := (self dataFrom: result) at: #critiques.
-		self assert: (critiques anySatisfy: [ :each | (each at: #ruleClass) = MCPStringConcatenationRule name ]).
-		self deny:
-			((MCPToolMethodMutationTestTarget >> selector) critiques anySatisfy: [ :each | each rule class = MCPStringConcatenationRule ]) ]
-		ensure: [
-				MCPStringConcatenationRule enabled: previous.
-				self removeSelector: selector from: MCPToolMethodMutationTestTarget ]
-]
-
-{ #category : 'tests' }
 MCPToolMethodMutationTest >> testCompileSucceedsWhenACritiqueRuleRaisesAWarning [
 
 	| result selector |
@@ -1378,19 +1329,6 @@ MCPToolMethodMutationTest >> testMCPPackageMethodSourcesDoNotContainLineFeeds [
 	| offenders |
 	offenders := self methodSourceLineFeedOffenders.
 	self assert: offenders isEmpty description: 'MCP method source must not contain Character lf: ' , offenders printString
-]
-
-{ #category : 'tests' }
-MCPToolMethodMutationTest >> testMCPRulesAreOffInRenraku [
-	"The browser and Iceberg run the rules Renraku has on, and MCP's are advice for agents, so they are off until a person turns them on."
-
-	self denyEmpty: ManifestMCPIDE agentRuleClasses.
-	ManifestMCPIDE agentRuleClasses do: [ :each |
-			| previous |
-			previous := each enabled.
-			[
-				each enabled: nil.
-				self deny: each enabled description: each name , ' is on by default' ] ensure: [ each enabled: previous ] ]
 ]
 
 { #category : 'tests' }

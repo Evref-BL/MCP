@@ -20,6 +20,36 @@ MCPToolRunCritiquesTest >> compileFixtureMethodSource: source [
 	self ensureMethodSource: source protocol: 'tests' on: self fixtureClass
 ]
 
+{ #category : 'private' }
+MCPToolRunCritiquesTest >> compileReportsConcatenation [
+	"Whether method_compile reports MCPStringConcatenationRule for the concatenation probe, compiled into the fixture."
+
+	| result |
+	result := self callToolNamed: 'method_compile' withArguments: {
+			          (#class -> self fixtureClassName).
+			          (#source -> self concatenationSource).
+			          (#protocol -> 'tests') } asDictionary.
+	^ ((self dataFrom: result) at: #critiques ifAbsent: [ #(  ) ]) anySatisfy: [ :each |
+		  (each at: #ruleClass) = MCPStringConcatenationRule name ]
+]
+
+{ #category : 'private' }
+MCPToolRunCritiquesTest >> concatenationHitsNamingTheRule: namesTheRule [
+	"The hits of MCPStringConcatenationRule in the fixture, asking for it by name or for every rule."
+
+	| arguments |
+	arguments := Dictionary new.
+	arguments at: #scope put: { (#classes -> { self fixtureClassName }) } asDictionary.
+	namesTheRule ifTrue: [ arguments at: #ruleClasses put: { MCPStringConcatenationRule name } ].
+	^ ((self dataForArguments: arguments) at: #rules) select: [ :each | (each at: #ruleClass) = MCPStringConcatenationRule name ]
+]
+
+{ #category : 'private' }
+MCPToolRunCritiquesTest >> concatenationSource [
+
+	^ 'concatenationProbe: aName ^ ''<'' , aName , ''>'''
+]
+
 { #category : 'running' }
 MCPToolRunCritiquesTest >> dataForArguments: arguments [
 
@@ -38,10 +68,25 @@ MCPToolRunCritiquesTest >> fixtureClassName [
 	^ 'MCPCritiqueRunFixture'
 ]
 
+{ #category : 'private' }
+MCPToolRunCritiquesTest >> manifestBuilder [
+	"A manifest for the fixture's package, made the way the browser makes one when a person bans a critique."
+
+	^ TheManifestBuilder of: self fixtureClass
+]
+
 { #category : 'running' }
 MCPToolRunCritiquesTest >> removeFixtureClass [
 
 	self removeClassNamed: self fixtureClassName
+]
+
+{ #category : 'private' }
+MCPToolRunCritiquesTest >> removeFixtureManifest [
+
+	(self packageOrganizer hasPackage: self generatedPackageName) ifFalse: [ ^ self ].
+	(self packageOrganizer packageNamed: self generatedPackageName) packageManifestOrNil ifNotNil: [ :manifest |
+		self removeClassNamed: manifest name ]
 ]
 
 { #category : 'running' }
@@ -66,6 +111,7 @@ MCPToolRunCritiquesTest >> selectorsHitBy: aRuleClass [
 MCPToolRunCritiquesTest >> setUp [
 
 	super setUp.
+	self removeFixtureManifest.
 	self removeFixtureClass.
 	self
 		createClassNamed: self fixtureClassName
@@ -87,6 +133,7 @@ MCPToolRunCritiquesTest >> setUp [
 { #category : 'running' }
 MCPToolRunCritiquesTest >> tearDown [
 
+	self removeFixtureManifest.
 	self removeFixtureClass.
 	super tearDown
 ]
@@ -248,6 +295,65 @@ MCPToolRunCritiquesTest >> testLeavesNotEmptySentToAClassAlone [
 ]
 
 { #category : 'tests' }
+MCPToolRunCritiquesTest >> testLeavesOutAFalsePositiveTheManifestMarks [
+	"Banning a critique for a method writes it in the package's manifest as a false positive, and no tool reports it there again."
+
+	| builder |
+	self withConcatenationRuleEnabled: true during: [
+			self compileFixtureMethodSource: self concatenationSource.
+			builder := self manifestBuilder.
+			builder
+				installFalsePositiveOf: MCPStringConcatenationRule uniqueIdentifierName
+				version: MCPStringConcatenationRule identifierMinorVersionNumber.
+			builder
+				addFalsePositive: self fixtureClass >> #concatenationProbe:
+				of: MCPStringConcatenationRule uniqueIdentifierName
+				version: MCPStringConcatenationRule identifierMinorVersionNumber.
+			self assertEmpty: (self concatenationHitsNamingTheRule: true).
+			self deny: self compileReportsConcatenation ]
+]
+
+{ #category : 'tests' }
+MCPToolRunCritiquesTest >> testLeavesOutAFalsePositiveTheManifestMarksForAClass [
+	"A ban on a class holds for its methods, as it does in Renraku."
+
+	| builder |
+	self withConcatenationRuleEnabled: true during: [
+			self compileFixtureMethodSource: self concatenationSource.
+			builder := self manifestBuilder.
+			builder
+				installFalsePositiveOf: MCPStringConcatenationRule uniqueIdentifierName
+				version: MCPStringConcatenationRule identifierMinorVersionNumber.
+			builder
+				addFalsePositive: self fixtureClass
+				of: MCPStringConcatenationRule uniqueIdentifierName
+				version: MCPStringConcatenationRule identifierMinorVersionNumber.
+			self assertEmpty: (self concatenationHitsNamingTheRule: true).
+			self deny: self compileReportsConcatenation ]
+]
+
+{ #category : 'tests' }
+MCPToolRunCritiquesTest >> testLeavesOutARuleTheImageHasOff [
+	"Turning a rule off, or banning it for the image or every image, turns it off for agents too. A caller that names it still gets it."
+
+	self withConcatenationRuleEnabled: false during: [
+			self deny: self compileReportsConcatenation.
+			self assertEmpty: (self concatenationHitsNamingTheRule: false).
+			self denyEmpty: (self concatenationHitsNamingTheRule: true) ]
+]
+
+{ #category : 'tests' }
+MCPToolRunCritiquesTest >> testLeavesOutARuleThePackageRejects [
+	"Renraku's live critiques do not read rejectRules, but the critique browser does, and so does MCP."
+
+	self withConcatenationRuleEnabled: true during: [
+			self compileFixtureMethodSource: self concatenationSource.
+			self manifestBuilder addRejectRule: MCPStringConcatenationRule uniqueIdentifierName.
+			self assertEmpty: (self concatenationHitsNamingTheRule: true).
+			self deny: self compileReportsConcatenation ]
+]
+
+{ #category : 'tests' }
 MCPToolRunCritiquesTest >> testLiftsOnlyWhatStaysReadable [
 	"Lifting a send whose arguments are blocks leaves blocks inside a conditional, and lifting a return out of an assignment does not parse."
 
@@ -267,6 +373,21 @@ MCPToolRunCritiquesTest >> testLiftsOnlyWhatStaysReadable [
 	^ value'.
 
 	self assert: (self selectorsHitBy: MCPLiftCommonSendRule) equals: (Set with: #commonSendProbe: with: #commonReturnProbe:)
+]
+
+{ #category : 'tests' }
+MCPToolRunCritiquesTest >> testMCPRulesAnswerOnlyAnAgent [
+	"The browser and Iceberg critique as Renraku does, outside MCPAgentCritiquing, so MCP's rules say nothing there."
+
+	| isConcatenation method |
+	isConcatenation := [ :each | each rule class = MCPStringConcatenationRule ].
+	self withConcatenationRuleEnabled: true during: [
+			self compileFixtureMethodSource: self concatenationSource.
+			method := self fixtureClass >> #concatenationProbe:.
+			self deny: (method critiques anySatisfy: isConcatenation).
+			self assert: ((MCPAgentCritiquing value: true during: [ method critiques ]) anySatisfy: isConcatenation).
+			self assert: self compileReportsConcatenation.
+			self denyEmpty: (self concatenationHitsNamingTheRule: false) ]
 ]
 
 { #category : 'tests' }
@@ -339,6 +460,21 @@ MCPToolRunCritiquesTest >> testReturnsScopeWarnings [
 ]
 
 { #category : 'tests' }
+MCPToolRunCritiquesTest >> testRunsARuleThePackageForces [
+	"A manifest's forcedRules run on its package though the image has them off."
+
+	self withConcatenationRuleEnabled: false during: [
+			self compileFixtureMethodSource: self concatenationSource.
+			self manifestBuilder.
+			self
+				ensureMethodSource: 'forcedRules ^ #( #MCPStringConcatenationRule )'
+				protocol: 'code-critics'
+				on: self fixtureClass package packageManifestOrNil class.
+			self assert: self compileReportsConcatenation.
+			self denyEmpty: (self concatenationHitsNamingTheRule: false) ]
+]
+
+{ #category : 'tests' }
 MCPToolRunCritiquesTest >> testRunsAllCritiquesWhenRuleClassesAreOmitted [
 
 	| data ruleClassNames |
@@ -381,16 +517,11 @@ MCPToolRunCritiquesTest >> testRunsSelectedNodeCritiqueAndGroupsHitsByRule [
 	self assert: (hit includesKey: #interval)
 ]
 
-{ #category : 'tests' }
-MCPToolRunCritiquesTest >> testRunsTheMCPRulesRenrakuLeavesOffWhenNoneAreNamed [
-	"Naming no rule means every rule, and MCP's are among them though Renraku leaves them off."
+{ #category : 'private' }
+MCPToolRunCritiquesTest >> withConcatenationRuleEnabled: aBoolean during: aBlock [
 
-	| data previous |
+	| previous |
 	previous := MCPStringConcatenationRule enabled.
-	[
-		MCPStringConcatenationRule enabled: false.
-		self compileFixtureMethodSource: 'concatenationProbe: aName ^ ''<'' , aName , ''>'''.
-		data := self dataForArguments: { (#scope -> { (#classes -> { self fixtureClassName }) } asDictionary) } asDictionary.
-		self assert: ((self ruleClassNamesFromData: data) includes: MCPStringConcatenationRule name) ] ensure: [
-		MCPStringConcatenationRule enabled: previous ]
+	MCPStringConcatenationRule enabled: aBoolean.
+	aBlock ensure: [ MCPStringConcatenationRule enabled: previous ]
 ]

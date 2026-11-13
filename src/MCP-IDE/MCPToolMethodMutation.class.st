@@ -68,35 +68,6 @@ MCPToolMethodMutation >> additionalKeywords [
 ]
 
 { #category : 'private' }
-MCPToolMethodMutation >> agentRuleCritiquesOfMethod: aCompiledMethod [
-	"MCP's rules are off in Renraku so that the browser and Iceberg leave them to agents. They are run here the way Renraku would: a rule the method's manifest bans is skipped, a rewrite rule matches a copy of the tree, and one a person turned on is left to Renraku, which ran it already."
-
-	| builder critiques banned |
-	builder := TheManifestBuilder new.
-	banned := (builder manifestOf: aCompiledMethod) isNotNil.
-	critiques := OrderedCollection new.
-	ManifestMCPIDE agentRuleClasses do: [ :ruleClass |
-			| rule |
-			rule := ruleClass new.
-			(ruleClass enabled or: [
-				 banned and: [ aCompiledMethod banChecksForValidation anySatisfy: [ :each | builder bansRule: rule for: each ] ] ]) ifFalse: [
-					[
-						ruleClass checksMethod ifTrue: [ rule check: aCompiledMethod forCritiquesDo: [ :critique | critiques add: critique ] ].
-						(ruleClass checksNode and: [ rule shouldCheckMethod: aCompiledMethod ]) ifTrue: [
-								| ast |
-								ast := rule isRewriteRule
-									       ifTrue: [ aCompiledMethod ast copy ]
-									       ifFalse: [ aCompiledMethod ast ].
-								ast nodesDo: [ :node |
-										rule check: node forCritiquesDo: [ :critique |
-												critique sourceAnchor initializeEnitity: aCompiledMethod.
-												critiques add: critique ] ] ] ]
-						on: Error
-						do: [ :error | "Renraku keeps a failing rule out of the critiques, and so does this." ] ] ].
-	^ critiques
-]
-
-{ #category : 'private' }
 MCPToolMethodMutation >> allowedNonErrorCritiqueRuleClasses [
 
 	^ {
@@ -214,9 +185,12 @@ MCPToolMethodMutation >> critiqueDataFromProperties: properties [
 
 { #category : 'private' }
 MCPToolMethodMutation >> critiquesOfMethod: aCompiledMethod [
-	"What Renraku says of the method, and what MCP's own rules say, which Renraku leaves to MCP."
+	"What Renraku says of the method when an agent asks, which MCP's own rules answer too. Renraku drops the false positives and adds the forced rules; the rules and classes the package rejects, which only the critique browser reads, are dropped here."
 
-	^ aCompiledMethod critiques , (self agentRuleCritiquesOfMethod: aCompiledMethod)
+	| manifestRules |
+	manifestRules := MCPManifestRules for: aCompiledMethod.
+	^ (MCPAgentCritiquing value: true during: [ aCompiledMethod critiques ]) reject: [ :each |
+		  each isCritique and: [ manifestRules excludes: each rule on: aCompiledMethod ] ]
 ]
 
 { #category : 'metadata' }
