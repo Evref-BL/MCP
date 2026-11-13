@@ -425,9 +425,10 @@ MCPTool >> description [
 MCPTool >> entriesTextOn: stream for: entries labelled: label indent: indent [
 	"A list of records reads as one entry at a time under the name of the list it belongs to; a list of
 	plain values reads as one line, bracketed so that a list of two is not read as one value containing
-	a comma."
+	a comma. A field every record holds with the same value, often one the request fixed, is said once
+	beside the name of the list rather than on every line."
 
-	| entryIndent |
+	| entryIndent sharedKeys |
 	(entries anySatisfy: [ :each | each isDictionary ]) ifFalse: [
 			stream
 				nextPut: Character lf;
@@ -437,15 +438,26 @@ MCPTool >> entriesTextOn: stream for: entries labelled: label indent: indent [
 				nextPutAll: (', ' join: (entries collect: [ :each | each asString ]));
 				nextPut: $].
 			^ self ].
+	sharedKeys := self keysSharedByEntries: entries.
 	stream
 		nextPut: Character lf;
 		nextPutAll: indent;
-		nextPutAll: label;
-		nextPut: $:.
+		nextPutAll: label.
+	sharedKeys ifNotEmpty: [
+			stream
+				nextPutAll: ' (each ';
+				nextPutAll: (' ' join: (sharedKeys collect: [ :key | self inlinePairTextFor: key in: entries first ]));
+				nextPut: $) ].
+	stream nextPut: $:.
 	entryIndent := indent , '  '.
 	entries do: [ :entry |
 			entry isDictionary
-				ifTrue: [ self entryTextOn: stream for: entry indent: entryIndent ]
+				ifTrue: [
+						self
+							entryTextOn: stream
+							for: entry
+							indent: entryIndent
+							omitting: sharedKeys ]
 				ifFalse: [
 						stream
 							nextPut: Character lf;
@@ -454,24 +466,20 @@ MCPTool >> entriesTextOn: stream for: entries labelled: label indent: indent [
 ]
 
 { #category : 'private - results' }
-MCPTool >> entryTextOn: stream for: entry indent: indent [
-	"What identifies the entry goes on its line; anything it carries that has its own shape, such as a method's source or a list of hits, follows on its own lines."
+MCPTool >> entryTextOn: stream for: entry indent: indent omitting: omittedKeys [
+	"What identifies the entry goes on its line, but for the fields its list already said for every entry; anything it carries that has its own shape, such as a method's source or a list of hits, follows on its own lines."
 
-	| keys pairs skipped reference |
+	| pairs reference |
 	reference := self methodReferenceTextFor: entry.
-	skipped := self redundantKeys asOrderedCollection.
-	reference ifNotNil: [ skipped addAll: self methodReferenceKeys ].
-	keys := self orderedKeys: (entry keys reject: [ :key | skipped includes: key asSymbol ]).
 	pairs := OrderedCollection new.
 	reference ifNotNil: [ pairs add: reference ].
-	keys do: [ :key |
-			(self isInlineValue: (entry at: key)) ifTrue: [
-				pairs add: (String streamContents: [ :stream | stream << key asString << '=' << (self inlineValueTextFor: (entry at: key)) ]) ] ].
+	(self inlineKeysOf: entry) do: [ :key |
+		(omittedKeys includes: key) ifFalse: [ pairs add: (self inlinePairTextFor: key in: entry) ] ].
 	stream
 		nextPut: Character lf;
 		nextPutAll: indent;
 		nextPutAll: (' ' join: pairs).
-	keys do: [ :key |
+	(self shownKeysOf: entry) do: [ :key |
 			(self isInlineValue: (entry at: key)) ifFalse: [
 					self
 						valueTextOn: stream
@@ -709,6 +717,19 @@ MCPTool >> icons [
 ]
 
 { #category : 'private - results' }
+MCPTool >> inlineKeysOf: entry [
+	"The keys of a record that sit on its own line as key=value."
+
+	^ (self shownKeysOf: entry) select: [ :key | self isInlineValue: (entry at: key) ]
+]
+
+{ #category : 'private - results' }
+MCPTool >> inlinePairTextFor: key in: entry [
+
+	^ String streamContents: [ :stream | stream << key asString << '=' << (self inlineValueTextFor: (entry at: key)) ]
+]
+
+{ #category : 'private - results' }
 MCPTool >> inlineValueTextFor: aValue [
 	"A field that carries separators is quoted, so that where its value ends is never a guess."
 
@@ -772,6 +793,21 @@ MCPTool >> keyOrder [
 	"Answer the data keys this tool wants listed first, in that order. Keys it does not name follow, alphabetically. A tool declares its own."
 
 	^ #(  )
+]
+
+{ #category : 'private - results' }
+MCPTool >> keysSharedByEntries: entries [
+	"The inline fields every record of a list holds with the same value, provided each line keeps something that tells its record from the others."
+
+	| first shared |
+	(entries size >= 2 and: [ entries allSatisfy: [ :each | each isDictionary ] ]) ifFalse: [ ^ #(  ) ].
+	first := entries first.
+	shared := (self inlineKeysOf: first) select: [ :key |
+		          entries allSatisfy: [ :each | ((self inlineKeysOf: each) includes: key) and: [ (each at: key) = (first at: key) ] ] ].
+	^ (entries allSatisfy: [ :each |
+		   (self methodReferenceTextFor: each) isNotNil or: [ (self inlineKeysOf: each) size > shared size ] ])
+		  ifTrue: [ shared asArray ]
+		  ifFalse: [ #(  ) ]
 ]
 
 { #category : 'private - results' }
@@ -1070,6 +1106,16 @@ MCPTool >> shouldResumeNotification: aNotification [
 	"A notification is not a failed call, so the boundary resumes it. A refactoring warning is the exception: it reports a change that breaks something, and a tool that may proceed anyway handles it itself behind force, so letting it reach the boundary unresumed is what aborts an unauthorized mutation."
 
 	^ (aNotification isKindOf: RBRefactoringWarning) not
+]
+
+{ #category : 'private - results' }
+MCPTool >> shownKeysOf: entry [
+	"The keys of a record its text shows, in order: a method reference stands in for the fields that name the method."
+
+	| skipped |
+	skipped := self redundantKeys asOrderedCollection.
+	(self methodReferenceTextFor: entry) ifNotNil: [ skipped addAll: self methodReferenceKeys ].
+	^ self orderedKeys: (entry keys reject: [ :key | skipped includes: key asSymbol ])
 ]
 
 { #category : 'private - results' }

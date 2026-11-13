@@ -396,6 +396,42 @@ MCPToolStructuredOutputTest >> testGetMethodReturnsStructuredSuccess [
 ]
 
 { #category : 'tests' }
+MCPToolStructuredOutputTest >> testListsKeepAFieldWhenSayingItOnceWouldEmptyARow [
+	"Rows that differ in nothing on their line keep their fields, or the list would read as blank lines."
+
+	| lines |
+	lines := (String streamContents: [ :stream |
+			          MCPToolSearchMethodReferences new
+				          entriesTextOn: stream
+				          for: {
+						          { (#kind -> 'senders') } asDictionary.
+						          { (#kind -> 'senders') } asDictionary }
+				          labelled: 'rows'
+				          indent: '' ]) lines.
+	self assert: lines equals: #( '' 'rows:' '  kind=senders' '  kind=senders' )
+]
+
+{ #category : 'tests' }
+MCPToolStructuredOutputTest >> testListsSayAFieldEveryRowSharesOnce [
+	"A field the request fixed is the same on every row, so the list says it once beside its name and the rows keep what tells them apart."
+
+	| lines |
+	lines := (String streamContents: [ :stream |
+			          MCPToolSearchMethodReferences new
+				          entriesTextOn: stream
+				          for: {
+						          {
+							          (#kind -> 'senders').
+							          (#rank -> 1) } asDictionary.
+						          {
+							          (#kind -> 'senders').
+							          (#rank -> 2) } asDictionary }
+				          labelled: 'rows'
+				          indent: '' ]) lines.
+	self assert: lines equals: #( '' 'rows (each kind=senders):' '  rank=1' '  rank=2' )
+]
+
+{ #category : 'tests' }
 MCPToolStructuredOutputTest >> testMethodMetadataSearchReturnsStructuredArrayData [
 
 	| data methods result selectors |
@@ -448,18 +484,19 @@ MCPToolStructuredOutputTest >> testMethodRecordsReadAsMethodReferences [
 { #category : 'tests' }
 MCPToolStructuredOutputTest >> testRecordListsCarryTheirLabel [
 
-	| contentText lines result |
+	| contentText lines result subclasses superclasses |
 	result := self callToolNamed: 'class_get' withArguments: {
-		          (#name -> 'MCPToolMutation').
-		          (#subclassDepth -> 1).
-		          (#upToSuperclass -> 'Object') } asDictionary.
+			          (#name -> 'MCPToolMutation').
+			          (#subclassDepth -> 1).
+			          (#upToSuperclass -> 'Object') } asDictionary.
 	contentText := (result at: #content) first at: #text.
 	lines := contentText lines.
 	self deny: (self resultIndicatesError: result).
-	self assert: (lines includes: 'subclasses:').
-	self assert: (lines includes: 'superclasses:').
-	self assert: (lines indexOf: 'subclasses:') < (lines indexOf: 'superclasses:').
-	self assert: ((lines indexOf: 'className: MCPToolMutation') < (lines indexOf: 'subclasses:'))
+	subclasses := lines findFirst: [ :each | each beginsWith: 'subclasses' ].
+	superclasses := lines findFirst: [ :each | each beginsWith: 'superclasses' ].
+	self assert: subclasses > 0.
+	self assert: subclasses < superclasses.
+	self assert: (lines indexOf: 'className: MCPToolMutation') < subclasses
 ]
 
 { #category : 'tests' }
