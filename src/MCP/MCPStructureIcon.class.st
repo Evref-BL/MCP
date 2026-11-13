@@ -75,14 +75,12 @@ MCPStructureIcon class >> compositeFormBaseIconNamed: aBaseIconSymbol leftBadgeI
 { #category : 'instance creation' }
 MCPStructureIcon class >> highScaleFormNamed: anIconSymbol [
 
-	| scaledIcons |
 	anIconSymbol = #pharoHalfScale ifTrue: [
 			| pharoForm |
 			pharoForm := self highScaleFormNamed: #pharo.
 			^ pharoForm scaledToSize: pharoForm width // 2 @ (pharoForm height // 2) ].
 	anIconSymbol = #referencesUpsideDown ifTrue: [ ^ (self highScaleFormNamed: #references) rotateBy: 180 ].
-	scaledIcons := self highScaleIcons.
-	^ scaledIcons at: anIconSymbol ifAbsent: [ self error: 'Missing UI icon named ' , anIconSymbol asString ]
+	^ self highScaleIconNamed: anIconSymbol
 ]
 
 { #category : 'instance creation' }

@@ -10,8 +10,13 @@ Class {
 
 { #category : 'private' }
 MCPToolDebugWatchTest >> installedDebugPointCount [
+	"Before Pharo 12 there are no debug points, and a watch installs metalinks of its own."
 
-	^ DebugPoint all size
+	^ self class environment
+		  at: #DebugPoint
+		  ifPresent: [ :debugPoint | debugPoint all size ]
+		  ifAbsent: [
+		  MetaLink allInstances count: [ :each | each metaObject class name = #MCPWatchProbe and: [ each nodes isNotEmpty ] ] ]
 ]
 
 { #category : 'private' }

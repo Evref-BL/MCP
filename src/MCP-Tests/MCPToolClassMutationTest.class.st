@@ -515,7 +515,7 @@ MCPToolClassMutationTest >> testUpdateAppliesSeveralChangesInOneCall [
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: target superclass name equals: #ProtoObject.
 	self assert: target instVarNames asArray equals: #( 'kept' 'added' ).
-	self assert: target comment equals: 'fused comment'.
+	self assert: target mcpComment equals: 'fused comment'.
 	self assert: ((data at: #updates) collect: [ :each | each at: #action ] as: Array) equals: #( 'reparent' 'addSlot' 'setComment' )
 ]
 
@@ -533,7 +533,7 @@ MCPToolClassMutationTest >> testUpdateCanClearClassComment [
 	data := self dataFrom: result.
 	target := self classNamed: self commentTargetClassName.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: target comment equals: ''.
+	self assert: target mcpComment equals: ''.
 	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
@@ -1194,7 +1194,7 @@ MCPToolClassMutationTest >> testUpdateReparentsClassAndPreservesExistingState [
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: target superclass name asString equals: self reparentSuperclassName.
 	self assert: target new probeMethod equals: 41.
-	self assert: target comment equals: 'reparent comment'.
+	self assert: target mcpComment equals: 'reparent comment'.
 	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
@@ -1580,7 +1580,7 @@ MCPToolClassMutationTest >> testUpdateSetsClassComment [
 	data := self dataFrom: result.
 	target := self classNamed: self commentTargetClassName.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: target comment equals: 'updated comment'.
+	self assert: target mcpComment equals: 'updated comment'.
 	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 

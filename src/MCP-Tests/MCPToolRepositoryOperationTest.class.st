@@ -64,6 +64,13 @@ MCPToolRepositoryOperationTest >> createClassNamed: aClassName inPackageNamed: a
 			  builder install ]
 ]
 
+{ #category : 'private - compatibility' }
+MCPToolRepositoryOperationTest >> currentTonelFormatNamesPackages [
+	"Tonel 3, the format Pharo writes by default from 12 on, names the package of a class. Pharo 11 writes Tonel 1.0, which does not."
+
+	^ TonelWriter defaultVersion asNumber >= 3
+]
+
 { #category : 'private' }
 MCPToolRepositoryOperationTest >> deleteDirectoryIfExists: aFileReference [
 
@@ -841,7 +848,7 @@ MCPToolRepositoryOperationTest >> testExportHonoursTheTonelVersionTheCheckoutPin
 					sourceFile := location / packageName / (className , '.class.st').
 					self assert: sourceFile exists.
 					self
-						assert: (sourceFile contents includesSubstring: '#package :')
+						assert: (sourceFile contents includesSubstring: '#package :') = self currentTonelFormatNamesPackages
 						description: 'A checkout that pins no version is written in the current Tonel format.'.
 					repository workingCopy repositoryProperties at: #version put: #'1.0'.
 					self callToolWith: {
