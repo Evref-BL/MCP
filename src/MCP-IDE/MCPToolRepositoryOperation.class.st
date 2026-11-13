@@ -166,8 +166,7 @@ MCPToolRepositoryOperation >> subdirectorySchemaProperty [
 	^ self
 		  schemaPropertyNamed: 'subdirectory'
 		  type: 'string'
-		  description:
-		  'Directory inside the checkout holding the package sources, such as src. Omit it while the repository has no commit yet.'
+		  description: 'Directory inside the checkout holding the package sources, such as src.'
 ]
 
 { #category : 'metadata' }

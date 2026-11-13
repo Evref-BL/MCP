@@ -21,8 +21,9 @@ MCPAttachRepositoryCommand >> createRepository [
 	repository pluginManager repositoryWillBeCreated: repository.
 	repository workingCopy initializePackagesFromRepository.
 	self request subdirectory ifNotNil: [ :value |
-			self validateSubdirectorySupportedFor: repository.
-			repository subdirectory: value ].
+			self setSubdirectory: value on: repository.
+			"A checkout without .project had no source directory to read its packages from until now."
+			repository workingCopy refreshPackages ].
 	repository pluginManager repositoryWasCreated: repository.
 	repository register.
 	^ repository
@@ -40,7 +41,8 @@ MCPAttachRepositoryCommand >> execute [
 				  result := MCPRepositoryCreateResult fromRepository: repository ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText: (String streamContents: [ :stream | stream << 'Attached repository ' << self request name << '.' ])
+					  successResultText: (String streamContents: [ :stream |
+							   stream << 'Attached repository ' << self request name << '.' << (self projectFileNoteFor: repository) ])
 					  data: (self tool dataForRepositoryResult: result)
 					  warnings: warningMessages ]
 		  failureSummary: [ :error |

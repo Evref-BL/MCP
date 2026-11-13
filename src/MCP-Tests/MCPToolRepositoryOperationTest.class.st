@@ -276,6 +276,63 @@ MCPToolRepositoryOperationTest >> testAdoptHeadValidatesExpectedBranch [
 ]
 
 { #category : 'tests' }
+MCPToolRepositoryOperationTest >> testAttachGivesACheckoutWithoutProjectFileItsSubdirectory [
+
+	| location packageName repository repositoryName result |
+	repositoryName := 'MCP Attach Without Project File Test'.
+	packageName := 'MCPToolRepositoryOperationNoProjectPackage'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestAttachWithoutProjectFile'.
+	self withExportPackageNamed: packageName className: 'MCPToolRepositoryOperationNoProjectClass' do: [
+			self withCleanRepositoryNamed: repositoryName location: location do: [
+					self callToolWith: {
+							(#action -> 'create').
+							(#name -> repositoryName).
+							(#location -> location pathString).
+							(#subdirectory -> 'src').
+							(#packages -> { packageName }) } asDictionary.
+					self callToolWith: {
+							(#action -> 'export').
+							(#name -> repositoryName) } asDictionary.
+					(location / '.project') ensureDelete.
+					self commitAllIn: location message: 'Keep the sources without a project file'.
+					self removeRegisteredRepositoriesNamed: repositoryName.
+					result := self callToolWith: {
+							          (#action -> 'attach').
+							          (#name -> repositoryName).
+							          (#location -> location pathString).
+							          (#subdirectory -> 'src').
+							          (#packages -> { packageName }) } asDictionary.
+					self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
+					repository := IceRepository repositories detect: [ :each | each name asString = repositoryName ].
+					self assert: repository subdirectory equals: 'src'.
+					self assert: (self packageNamesIn: repository) equals: { packageName }.
+					self assert: ((self summaryFrom: result) includesSubstring: '.project').
+					self callToolWith: {
+							(#action -> 'export').
+							(#name -> repositoryName) } asDictionary.
+					self assert: ((location / '.project') contents includesSubstring: 'src') ] ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testAttachGivesAnEmptyCheckoutItsSubdirectory [
+
+	| location repository repositoryName result |
+	repositoryName := 'MCP Attach Unborn Subdirectory Test'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestAttachUnbornSubdirectory'.
+	self withCleanRepositoryNamed: repositoryName location: location do: [
+			location ensureCreateDirectory.
+			self shellCommand: 'git init --initial-branch=main ' , (self shellQuote: location pathString).
+			result := self callToolWith: {
+					          (#action -> 'attach').
+					          (#name -> repositoryName).
+					          (#location -> location pathString).
+					          (#subdirectory -> 'src') } asDictionary.
+			self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
+			repository := IceRepository repositories detect: [ :each | each name asString = repositoryName ].
+			self assert: repository subdirectory equals: 'src' ]
+]
+
+{ #category : 'tests' }
 MCPToolRepositoryOperationTest >> testAttachParsesAndDispatchesToAttachCommand [
 
 	| command parsedRequest rawRequest tool |
@@ -290,6 +347,39 @@ MCPToolRepositoryOperationTest >> testAttachParsesAndDispatchesToAttachCommand [
 	self assert: parsedRequest class equals: MCPRepositoryAttachRequest.
 	self assert: parsedRequest operation equals: 'attach'.
 	self assert: command class equals: MCPAttachRepositoryCommand
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testAttachReadsThePackagesOfACheckoutWithoutProjectFile [
+	"A checkout with .project has the packages under its source directory registered at attach, so one without it, whose source directory says its format in .properties as Tonel checkouts did before .project, has them too once it is given that directory."
+
+	| location packageName repository repositoryName result |
+	repositoryName := 'MCP Attach Reads Packages Without Project File Test'.
+	packageName := 'MCPToolRepositoryOperationNoProjectReadPackage'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestAttachReadsWithoutProjectFile'.
+	self withExportPackageNamed: packageName className: 'MCPToolRepositoryOperationNoProjectReadClass' do: [
+			self withCleanRepositoryNamed: repositoryName location: location do: [
+					self callToolWith: {
+							(#action -> 'create').
+							(#name -> repositoryName).
+							(#location -> location pathString).
+							(#subdirectory -> 'src').
+							(#packages -> { packageName }) } asDictionary.
+					self callToolWith: {
+							(#action -> 'export').
+							(#name -> repositoryName) } asDictionary.
+					(location / '.project') ensureDelete.
+					location / 'src' / '.properties' writeStreamDo: [ :stream | stream nextPutAll: '{ #format : #tonel }' ].
+					self commitAllIn: location message: 'Keep the sources without a project file'.
+					self removeRegisteredRepositoriesNamed: repositoryName.
+					result := self callToolWith: {
+							          (#action -> 'attach').
+							          (#name -> repositoryName).
+							          (#location -> location pathString).
+							          (#subdirectory -> 'src') } asDictionary.
+					self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
+					repository := IceRepository repositories detect: [ :each | each name asString = repositoryName ].
+					self assert: (self packageNamesIn: repository) equals: { packageName } ] ]
 ]
 
 { #category : 'tests' }
@@ -374,26 +464,6 @@ MCPToolRepositoryOperationTest >> testAttachRegistersLinkedGitWorktreeCheckout [
 												 stream << 'git -C ' << (self shellQuote: location pathString) << ' worktree remove --force '
 												 << (self shellQuote: linkedLocation pathString) ]).
 									self deleteDirectoryIfExists: linkedLocation ] ] ] ]
-]
-
-{ #category : 'tests' }
-MCPToolRepositoryOperationTest >> testAttachRejectsSubdirectoryForUnbornRepository [
-
-	| error location repositoryName result |
-	repositoryName := 'MCP Attach Unborn Subdirectory Test'.
-	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestAttachUnbornSubdirectory'.
-	self withCleanRepositoryNamed: repositoryName location: location do: [
-			location ensureCreateDirectory.
-			self shellCommand: 'git init --initial-branch=main ' , (self shellQuote: location pathString).
-			result := self callToolWith: {
-					          (#action -> 'attach').
-					          (#name -> repositoryName).
-					          (#location -> location pathString).
-					          (#subdirectory -> 'src') } asDictionary.
-			self assert: (self resultIndicatesError: result).
-			error := self errorFrom: result.
-			self assert: (error at: #errorCode) equals: 'RepositorySubdirectoryRequiresHead'.
-			self assert: ((self summaryFrom: result) includesSubstring: 'initial commit') ]
 ]
 
 { #category : 'tests' }
@@ -583,6 +653,41 @@ MCPToolRepositoryOperationTest >> testCommitUsesFallbackGitIdentityWhenGitSignat
 								 (String streamContents: [ :stream |
 									  stream << 'git -C ' << (self shellQuote: location pathString) << ' log -1 --format=%an' ])) trimBoth
 						equals: 'MCP' ] ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testCommitWritesTheProjectFileAnAttachGave [
+
+	| location packageName repositoryName result |
+	repositoryName := 'MCP Commit Pending Project File Test'.
+	packageName := 'MCPToolRepositoryOperationPendingProjectPackage'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestCommitPendingProjectFile'.
+	self withExportPackageNamed: packageName className: 'MCPToolRepositoryOperationPendingProjectClass' do: [
+			self withCleanRepositoryNamed: repositoryName location: location do: [
+					self callToolWith: {
+							(#action -> 'create').
+							(#name -> repositoryName).
+							(#location -> location pathString).
+							(#subdirectory -> 'src').
+							(#packages -> { packageName }) } asDictionary.
+					self callToolWith: {
+							(#action -> 'export').
+							(#name -> repositoryName) } asDictionary.
+					(location / '.project') ensureDelete.
+					self commitAllIn: location message: 'Keep the sources without a project file'.
+					self removeRegisteredRepositoriesNamed: repositoryName.
+					self callToolWith: {
+							(#action -> 'attach').
+							(#name -> repositoryName).
+							(#location -> location pathString).
+							(#subdirectory -> 'src').
+							(#packages -> { packageName }) } asDictionary.
+					result := self callToolWith: {
+							          (#action -> 'commit').
+							          (#name -> repositoryName).
+							          (#message -> 'Name the source directory') } asDictionary.
+					self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
+					self assert: ((location / '.project') contents includesSubstring: 'src') ] ]
 ]
 
 { #category : 'tests' }
@@ -860,6 +965,35 @@ MCPToolRepositoryOperationTest >> testExportHonoursTheTonelVersionTheCheckoutPin
 ]
 
 { #category : 'tests' }
+MCPToolRepositoryOperationTest >> testExportRewritesAShorterProjectFileWhole [
+
+	| location packageName repositoryName |
+	repositoryName := 'MCP Export Shorter Project File Test'.
+	packageName := 'MCPToolRepositoryOperationShorterProjectPackage'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestExportShorterProjectFile'.
+	self withExportPackageNamed: packageName className: 'MCPToolRepositoryOperationShorterProjectClass' do: [
+			self withCleanRepositoryNamed: repositoryName location: location do: [
+					self callToolWith: {
+							(#action -> 'create').
+							(#name -> repositoryName).
+							(#location -> location pathString).
+							(#subdirectory -> 'repository').
+							(#packages -> { packageName }) } asDictionary.
+					self callToolWith: {
+							(#action -> 'export').
+							(#name -> repositoryName) } asDictionary.
+					self callToolWith: {
+							(#action -> 'update').
+							(#name -> repositoryName).
+							(#subdirectory -> 'src') } asDictionary.
+					self callToolWith: {
+							(#action -> 'export').
+							(#name -> repositoryName) } asDictionary.
+					self assert: ((STON fromString: (location / '.project') contents) at: 'srcDirectory') equals: 'src'.
+					self assert: ((location / '.project') contents occurrencesOf: $}) equals: 1 ] ]
+]
+
+{ #category : 'tests' }
 MCPToolRepositoryOperationTest >> testExportUpdatesDiskAndIndexWithoutCommitting [
 
 	| childNames data location packageName repositoryName result |
@@ -1118,9 +1252,9 @@ MCPToolRepositoryOperationTest >> testUpdateCanReplacePackageMembership [
 ]
 
 { #category : 'tests' }
-MCPToolRepositoryOperationTest >> testUpdateRejectsSubdirectoryForUnbornRepository [
+MCPToolRepositoryOperationTest >> testUpdateGivesAnEmptyCheckoutItsSubdirectory [
 
-	| error location repositoryName result |
+	| location repository repositoryName result |
 	repositoryName := 'MCP Update Unborn Subdirectory Test'.
 	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestUpdateUnbornSubdirectory'.
 	self withCleanRepositoryNamed: repositoryName location: location do: [
@@ -1135,10 +1269,35 @@ MCPToolRepositoryOperationTest >> testUpdateRejectsSubdirectoryForUnbornReposito
 					          (#action -> 'update').
 					          (#name -> repositoryName).
 					          (#subdirectory -> 'src') } asDictionary.
-			self assert: (self resultIndicatesError: result).
-			error := self errorFrom: result.
-			self assert: (error at: #errorCode) equals: 'RepositorySubdirectoryRequiresHead'.
-			self assert: ((self summaryFrom: result) includesSubstring: 'initial commit') ]
+			self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
+			repository := IceRepository repositories detect: [ :each | each name asString = repositoryName ].
+			self assert: repository subdirectory equals: 'src'.
+			self assert: ((self summaryFrom: result) includesSubstring: '.project') ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testUpdateKeepsThePackagesOfACheckoutItGivesASubdirectory [
+
+	| location packageName repository repositoryName result |
+	repositoryName := 'MCP Update Keeps Packages Test'.
+	packageName := 'MCPToolRepositoryOperationKeptPackage'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestUpdateKeepsPackages'.
+	self withExportPackageNamed: packageName className: 'MCPToolRepositoryOperationKeptClass' do: [
+			self withCleanRepositoryNamed: repositoryName location: location do: [
+					location ensureCreateDirectory.
+					self shellCommand: 'git init --initial-branch=main ' , (self shellQuote: location pathString).
+					self callToolWith: {
+							(#action -> 'attach').
+							(#name -> repositoryName).
+							(#location -> location pathString).
+							(#packages -> { packageName }) } asDictionary.
+					result := self callToolWith: {
+							          (#action -> 'update').
+							          (#name -> repositoryName).
+							          (#subdirectory -> 'src') } asDictionary.
+					self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
+					repository := IceRepository repositories detect: [ :each | each name asString = repositoryName ].
+					self assert: (self packageNamesIn: repository) equals: { packageName } ] ]
 ]
 
 { #category : 'tests' }

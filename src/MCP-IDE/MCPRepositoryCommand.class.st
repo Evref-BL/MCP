@@ -84,6 +84,8 @@ MCPRepositoryCommand >> exportProjectFileFor: aRepository [
 	project ifNil: [ ^ self ].
 	project isUnborn ifTrue: [ ^ self ].
 	projectFile := aRepository location asFileReference / '.project'.
+	"A write stream on an existing file starts at its beginning and keeps whatever a shorter contents leaves past its end."
+	projectFile ensureDelete.
 	projectFile binaryWriteStreamDo: [ :stream | stream nextPutAll: project contentsString ]
 ]
 
@@ -185,6 +187,14 @@ MCPRepositoryCommand >> packageNameFromDirectoryName: aName writer: aWriterClass
 	^ (aWriterClass packageNameFromDirectory: aName asFileReference) asString
 ]
 
+{ #category : 'private' }
+MCPRepositoryCommand >> projectFileNoteFor: aRepository [
+	"The caller did not write the .project file the next export writes, so say it is coming when the image's project differs from the one at the checkout's HEAD."
+
+	(aRepository project isUnborn or: [ aRepository project isDirty not ]) ifTrue: [ ^ '' ].
+	^ ' The next export writes its .project file, which names the source directory.'
+]
+
 { #category : 'private - iceberg state' }
 MCPRepositoryCommand >> referenceCommitFor: aRepository [
 
@@ -243,6 +253,15 @@ MCPRepositoryCommand >> runGitArguments: arguments in: aRepository ifFailed: fai
 	^ failureBlock cull: result
 ]
 
+{ #category : 'private - iceberg state' }
+MCPRepositoryCommand >> setSubdirectory: aString on: aRepository [
+	"A checkout whose HEAD has no .project file has an unborn project, whatever its history, and an unborn project takes no source directory. Give it one with this directory, as Iceberg does when it creates a repository, and read the properties there. Its packages stay as they are, as they do when a project changes its source directory. The next export writes its .project file."
+
+	aRepository project isUnborn ifFalse: [ ^ aRepository subdirectory: aString ].
+	aRepository workingCopy basicSetProject: (IceBasicProject onRepository: aRepository withSourceDirectory: aString).
+	aRepository workingCopy refreshRepositoryProperties
+]
+
 { #category : 'private - git' }
 MCPRepositoryCommand >> shellQuote: aString [
 
@@ -288,18 +307,6 @@ MCPRepositoryCommand >> signalMissingSourceForPackageNames: packageNames in: aRe
 				(#repository -> aRepository name).
 				(#packages -> packageNames).
 				(#format -> aWriterClass id asString) } asDictionary
-]
-
-{ #category : 'private - validation' }
-MCPRepositoryCommand >> signalSubdirectoryRequiresHeadFor: aRepository [
-
-	MCPCommandError
-		signalErrorCode: #RepositorySubdirectoryRequiresHead
-		message:
-		'Repository subdirectory is not supported before the repository has an initial commit. Attach without subdirectory, commit or adopt the initial head, then update the repository subdirectory.'
-		details: {
-				(#name -> aRepository name asString).
-				(#subdirectory -> self request subdirectory) } asDictionary
 ]
 
 { #category : 'private - source format' }
@@ -378,13 +385,6 @@ MCPRepositoryCommand >> unloadDefinitionsAbsentFromLoadedVersions: versions [
 	loader := MCPackageLoader new.
 	staleDefinitions do: [ :definition | loader removeDefinition: definition ].
 	loader load
-]
-
-{ #category : 'private - validation' }
-MCPRepositoryCommand >> validateSubdirectorySupportedFor: aRepository [
-
-	self request subdirectory ifNil: [ ^ self ].
-	aRepository project isUnborn ifTrue: [ self signalSubdirectoryRequiresHeadFor: aRepository ]
 ]
 
 { #category : 'private - loading' }

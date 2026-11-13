@@ -59,8 +59,8 @@ MCPUpdateRepositoryCommand >> execute [
 					            removedPackageNames: self sortedRemovedPackageNames ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText:
-					  (String streamContents: [ :stream | stream << 'Updated repository ' << result repositoryInfo name << '.' ])
+					  successResultText: (String streamContents: [ :stream |
+							   stream << 'Updated repository ' << result repositoryInfo name << '.' << (self projectFileNoteFor: repository) ])
 					  data: (self tool dataForRepositoryResult: result)
 					  warnings: warningMessages ]
 		  failureSummary: [ :error | 'Failed to update repository: ' , (error messageText ifNil: [ error asString ]) ]
@@ -116,8 +116,7 @@ MCPUpdateRepositoryCommand >> replacePackagesIn: aRepository [
 { #category : 'private - metadata' }
 MCPUpdateRepositoryCommand >> setSubdirectoryOn: aRepository [
 
-	self validateSubdirectorySupportedFor: aRepository.
-	aRepository subdirectory: (self request subdirectory ifNil: [ '' ])
+	self setSubdirectory: (self request subdirectory ifNil: [ '' ]) on: aRepository
 ]
 
 { #category : 'private - signaling' }
