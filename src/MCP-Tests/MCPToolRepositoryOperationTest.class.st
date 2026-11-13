@@ -57,6 +57,7 @@ MCPToolRepositoryOperationTest >> createClassNamed: aClassName inPackageNamed: a
 
 	^ self withoutEpiceaDuring: [
 			  | builder |
+			  self packageOrganizer ensurePackage: aPackageName.
 			  builder := Object << aClassName asSymbol.
 			  builder package: aPackageName.
 			  builder tag: 'Generated'.

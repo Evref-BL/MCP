@@ -108,6 +108,7 @@ MCPToolMethodMutationTest >> createRenameScopeFixtureClassNamed: aClassName pack
 
 	self withoutEpiceaDuring: [
 			| builder |
+			self packageOrganizer ensurePackage: aPackageName.
 			builder := Object << aClassName asSymbol.
 			builder package: aPackageName.
 			builder install ]

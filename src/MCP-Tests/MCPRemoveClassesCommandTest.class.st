@@ -28,6 +28,7 @@ MCPRemoveClassesCommandTest >> createClassNamed: aClassName superclassName: aSup
 	^ self withoutEpiceaDuring: [
 			  | builder superclass |
 			  superclass := self classNamed: aSuperclassName.
+			  self packageOrganizer ensurePackage: aPackageName.
 			  builder := superclass << aClassName asSymbol.
 			  builder package: aPackageName.
 			  builder tag: 'Internal'.

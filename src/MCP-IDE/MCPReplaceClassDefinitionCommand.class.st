@@ -74,14 +74,6 @@ MCPReplaceClassDefinitionCommand >> replaceClassSlots: aBoolean [
 	replaceClassSlots := aBoolean
 ]
 
-{ #category : 'private' }
-MCPReplaceClassDefinitionCommand >> replaceDefinitionOn: aClass [
-
-	^ ShiftClassInstaller update: aClass to: [ :builder |
-			  self replaceSlots ifTrue: [ builder slots: self slots ].
-			  self replaceClassSlots ifTrue: [ builder classSlots: self classSlots ] ]
-]
-
 { #category : 'accessing' }
 MCPReplaceClassDefinitionCommand >> replaceSlots [
 

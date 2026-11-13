@@ -32,6 +32,7 @@ MCPTestCase >> createClassNamed: aClassName superclassName: aSuperclassName slot
 	^ self withoutEpiceaDuring: [
 			  | builder superclass |
 			  superclass := self classNamed: aSuperclassName.
+			  self packageOrganizer ensurePackage: self generatedPackageName.
 			  builder := superclass << aClassName asSymbol.
 			  builder package: self generatedPackageName.
 			  builder tag: self generatedTagName.

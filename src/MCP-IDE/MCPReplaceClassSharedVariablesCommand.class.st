@@ -34,12 +34,6 @@ MCPReplaceClassSharedVariablesCommand >> execute [
 		  newSharedVariableNames: self sharedVariableNames
 ]
 
-{ #category : 'private' }
-MCPReplaceClassSharedVariablesCommand >> replaceSharedVariablesOn: aClass [
-
-	^ ShiftClassInstaller update: aClass to: [ :builder | builder sharedVariables: self sharedVariableNames ]
-]
-
 { #category : 'accessing' }
 MCPReplaceClassSharedVariablesCommand >> sharedVariableNames [
 

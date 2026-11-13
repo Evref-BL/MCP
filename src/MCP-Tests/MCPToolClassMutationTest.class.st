@@ -711,6 +711,7 @@ MCPToolClassMutationTest >> testUpdatePullUpSlotRefusesASlotATraitSupplies [
 	| error result |
 	self withoutEpiceaDuring: [
 			| trait |
+			self packageOrganizer ensurePackage: self generatedPackageName.
 			trait := (Trait << #MCPToolClassMutationTestPullUpColoured)
 				         slots: #( colour );
 				         package: self generatedPackageName;

@@ -13,6 +13,7 @@ MCPToolSearchPackagesTest >> createFixtureClassNamed: aClassName packageName: aP
 
 	^ self withoutEpiceaDuring: [
 			  | builder |
+			  self packageOrganizer ensurePackage: aPackageName.
 			  builder := Object << aClassName asSymbol.
 			  builder package: aPackageName.
 			  builder tag: aTag.
