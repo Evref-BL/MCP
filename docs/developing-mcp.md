@@ -17,7 +17,7 @@ Iceberg state, Git state, and supported-version compatibility coherent.
 ## Development Surface
 
 - Use Pharo 14 for normal day-to-day development and smoke checks.
-- Keep Pharo 12, 13 and 15 compatibility intact.
+- Keep Pharo 11, 12, 13 and 15 compatibility intact.
 - Verify affected supported versions when changing compatibility-sensitive
   behavior, PharoBackwardCompatibility backports, baseline loading, tool contracts, or
   APIs that differ by Pharo version.
@@ -107,7 +107,7 @@ separate from operational user instructions. Do not link that bibliography from
 
 The core baseline loads PharoBackwardCompatibility, JRPC, and PCRE2.
 OpenTelemetry is loaded only by the optional `Telemetry` group. CI covers
-Pharo 12, 13, 14, and 15. Code should target the Pharo 14 API;
+Pharo 11, 12, 13, 14, and 15. Code should target the Pharo 14 API;
 PharoBackwardCompatibility backports supported APIs to older images. It has no
 surface groups, so its default baseline is the whole of it:
 
@@ -119,6 +119,11 @@ spec
 
 A difference it does not cover belongs in a package the baseline loads only
 where it applies, the way `MCP-Compatibility-From13` is loaded when
-`SystemVersion current major >= 13`. Offer a general difference upstream
+`SystemVersion current major >= 13`. Code written against a newer Pharo stays
+as it is: what an older version needs another body for is a method of its own,
+which a `From` package holds as written and its `Before` counterpart answers
+for the older versions under the same selector, as `MCP-Compatibility-From12`
+and `MCP-Compatibility-Before12` do, and `MCP-IDE-Compatibility-From12` and
+`MCP-IDE-Compatibility-Before12` for MCP-IDE. Offer a general difference upstream
 instead of keeping it local, and verify on every version in the matrix: a shim
 that loads is not a shim that works.
