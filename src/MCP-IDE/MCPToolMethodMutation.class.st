@@ -68,6 +68,35 @@ MCPToolMethodMutation >> additionalKeywords [
 ]
 
 { #category : 'private' }
+MCPToolMethodMutation >> agentRuleCritiquesOfMethod: aCompiledMethod [
+	"MCP's rules are off in Renraku so that the browser and Iceberg leave them to agents. They are run here the way Renraku would: a rule the method's manifest bans is skipped, a rewrite rule matches a copy of the tree, and one a person turned on is left to Renraku, which ran it already."
+
+	| builder critiques banned |
+	builder := TheManifestBuilder new.
+	banned := (builder manifestOf: aCompiledMethod) isNotNil.
+	critiques := OrderedCollection new.
+	ManifestMCPIDE agentRuleClasses do: [ :ruleClass |
+			| rule |
+			rule := ruleClass new.
+			(ruleClass enabled or: [
+				 banned and: [ aCompiledMethod banChecksForValidation anySatisfy: [ :each | builder bansRule: rule for: each ] ] ]) ifFalse: [
+					[
+						ruleClass checksMethod ifTrue: [ rule check: aCompiledMethod forCritiquesDo: [ :critique | critiques add: critique ] ].
+						(ruleClass checksNode and: [ rule shouldCheckMethod: aCompiledMethod ]) ifTrue: [
+								| ast |
+								ast := rule isRewriteRule
+									       ifTrue: [ aCompiledMethod ast copy ]
+									       ifFalse: [ aCompiledMethod ast ].
+								ast nodesDo: [ :node |
+										rule check: node forCritiquesDo: [ :critique |
+												critique sourceAnchor initializeEnitity: aCompiledMethod.
+												critiques add: critique ] ] ] ]
+						on: Error
+						do: [ :error | "Renraku keeps a failing rule out of the critiques, and so does this." ] ] ].
+	^ critiques
+]
+
+{ #category : 'private' }
 MCPToolMethodMutation >> allowedNonErrorCritiqueRuleClasses [
 
 	^ {
@@ -167,7 +196,7 @@ MCPToolMethodMutation >> critiqueDataFor: aCritique [
 MCPToolMethodMutation >> critiqueDataForMethod: aCompiledMethod [
 	"Critiquing runs every rule in the image, from any package. Pharo guards each rule against errors but not warnings, and a warning a rule raises about its own code, such as a deprecation, says nothing about the method just compiled: it is resumed rather than allowed to turn the compile into a failure."
 
-	^ self critiqueDataFromProperties: ([ aCompiledMethod critiques ]
+	^ self critiqueDataFromProperties: ([ self critiquesOfMethod: aCompiledMethod ]
 			   on: Warning
 			   do: [ :warning | warning resume ])
 ]
@@ -181,6 +210,13 @@ MCPToolMethodMutation >> critiqueDataFromProperties: properties [
 			   left title = right title
 				   ifTrue: [ left rule class name < right rule class name ]
 				   ifFalse: [ left title < right title ] ]) collect: [ :each | self critiqueDataFor: each ]
+]
+
+{ #category : 'private' }
+MCPToolMethodMutation >> critiquesOfMethod: aCompiledMethod [
+	"What Renraku says of the method, and what MCP's own rules say, which Renraku leaves to MCP."
+
+	^ aCompiledMethod critiques , (self agentRuleCritiquesOfMethod: aCompiledMethod)
 ]
 
 { #category : 'metadata' }

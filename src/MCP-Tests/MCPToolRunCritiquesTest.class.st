@@ -380,3 +380,17 @@ MCPToolRunCritiquesTest >> testRunsSelectedNodeCritiqueAndGroupsHitsByRule [
 	self assert: (hit at: #method) equals: self fixtureClassName , '>>assignmentInBlockProbe'.
 	self assert: (hit includesKey: #interval)
 ]
+
+{ #category : 'tests' }
+MCPToolRunCritiquesTest >> testRunsTheMCPRulesRenrakuLeavesOffWhenNoneAreNamed [
+	"Naming no rule means every rule, and MCP's are among them though Renraku leaves them off."
+
+	| data previous |
+	previous := MCPStringConcatenationRule enabled.
+	[
+		MCPStringConcatenationRule enabled: false.
+		self compileFixtureMethodSource: 'concatenationProbe: aName ^ ''<'' , aName , ''>'''.
+		data := self dataForArguments: { (#scope -> { (#classes -> { self fixtureClassName }) } asDictionary) } asDictionary.
+		self assert: ((self ruleClassNamesFromData: data) includes: MCPStringConcatenationRule name) ] ensure: [
+		MCPStringConcatenationRule enabled: previous ]
+]

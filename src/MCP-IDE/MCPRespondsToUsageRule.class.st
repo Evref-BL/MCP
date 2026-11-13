@@ -17,6 +17,13 @@ MCPRespondsToUsageRule class >> checksMethod [
 	^ true
 ]
 
+{ #category : 'manifest' }
+MCPRespondsToUsageRule class >> enabledByDefault [
+	"MCP's rules are advice for agents: MCP runs them itself, and a person turns them on in Renraku's settings to see them in the browser."
+
+	^ false
+]
+
 { #category : 'accessing' }
 MCPRespondsToUsageRule class >> forbiddenSelector [
 
