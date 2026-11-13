@@ -30,12 +30,6 @@ MCPRunTestsCommand >> coverableMethodsForCoverageRequest: aCoverageRequest [
 ]
 
 { #category : 'private - coverage' }
-MCPRunTestsCommand >> coverageCollectorClass [
-
-	^ CoverageCollector
-]
-
-{ #category : 'private - coverage' }
 MCPRunTestsCommand >> coverageCollectorForMethods: methods [
 
 	| collector |
