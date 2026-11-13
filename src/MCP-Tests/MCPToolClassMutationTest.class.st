@@ -116,7 +116,7 @@ MCPToolClassMutationTest >> ensureDestinationPackage [
 
 	self withoutEpiceaDuring: [
 			| package |
-			package := PackageOrganizer default ensurePackage: self destinationPackageName.
+			package := self packageOrganizer ensurePackage: self destinationPackageName.
 			package ensureTag: self destinationTagName ]
 ]
 
@@ -173,8 +173,8 @@ MCPToolClassMutationTest >> referenceClassName [
 MCPToolClassMutationTest >> removeDestinationPackage [
 
 	self withoutEpiceaDuring: [
-			(PackageOrganizer default hasPackage: self destinationPackageName) ifTrue: [
-				PackageOrganizer default removePackage: (PackageOrganizer default packageNamed: self destinationPackageName) ] ]
+			(self packageOrganizer hasPackage: self destinationPackageName) ifTrue: [
+				self packageOrganizer removePackage: (self packageOrganizer packageNamed: self destinationPackageName) ] ]
 ]
 
 { #category : 'private' }
@@ -610,7 +610,7 @@ MCPToolClassMutationTest >> testUpdateMoveEnsuresMissingDestinationPackage [
 	result := self callToolWith: self updateRequestArgumentsForMoveToPackage.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (PackageOrganizer default hasPackage: self destinationPackageName).
+	self assert: (self packageOrganizer hasPackage: self destinationPackageName).
 	self assert: self moveTargetClass packageName asString equals: self destinationPackageName.
 	self deny: (result at: #isError ifAbsent: [ false ])
 ]
@@ -620,10 +620,10 @@ MCPToolClassMutationTest >> testUpdateMoveEnsuresMissingDestinationTag [
 
 	| data package result |
 	self removeDestinationPackage.
-	self withoutEpiceaDuring: [ PackageOrganizer default ensurePackage: self destinationPackageName ].
+	self withoutEpiceaDuring: [ self packageOrganizer ensurePackage: self destinationPackageName ].
 	result := self callToolWith: self updateRequestArgumentsForMoveToPackageAndTag.
 	data := self dataFrom: result.
-	package := PackageOrganizer default packageNamed: self destinationPackageName.
+	package := self packageOrganizer packageNamed: self destinationPackageName.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (package hasTag: self destinationTagName).
 	self assert: self moveTargetClass packageName asString equals: self destinationPackageName.
@@ -892,7 +892,7 @@ MCPToolClassMutationTest >> testUpdateRecategorizesWithinCurrentPackageWhenPacka
 	| data package result |
 	result := self callToolWith: self updateRequestArgumentsForRecategorization.
 	data := self dataFrom: result.
-	package := PackageOrganizer default packageNamed: self originalMovePackageName.
+	package := self packageOrganizer packageNamed: self originalMovePackageName.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (package hasTag: self destinationTagName).
 	self assert: self moveTargetClass packageName asString equals: self originalMovePackageName.

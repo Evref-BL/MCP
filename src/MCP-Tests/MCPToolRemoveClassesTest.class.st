@@ -282,7 +282,7 @@ MCPToolRemoveClassesTest >> testSafelyRemovesSimpleClass [
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self deny: (self class environment includesKey: self simpleClassName asSymbol).
 	self deny: (self class environment includesKey: self packageCleanupClassName asSymbol).
-	self deny: (PackageOrganizer default hasPackage: self packageCleanupPackageName).
+	self deny: (self packageOrganizer hasPackage: self packageCleanupPackageName).
 	self assert: (data at: #removedPackageNames ifAbsent: [ #(  ) ]) equals: { self packageCleanupPackageName } asArray
 ]
 

@@ -31,7 +31,7 @@ MCPMoveClassCommandTest >> ensureDestinationPackage [
 
 	self withoutEpiceaDuring: [
 			| package |
-			package := PackageOrganizer default ensurePackage: self destinationPackageName.
+			package := self packageOrganizer ensurePackage: self destinationPackageName.
 			package ensureTag: self destinationTagName ]
 ]
 
@@ -45,8 +45,8 @@ MCPMoveClassCommandTest >> originalPackageName [
 MCPMoveClassCommandTest >> removeDestinationPackage [
 
 	self withoutEpiceaDuring: [
-			(PackageOrganizer default hasPackage: self destinationPackageName) ifTrue: [
-				PackageOrganizer default removePackage: (PackageOrganizer default packageNamed: self destinationPackageName) ] ]
+			(self packageOrganizer hasPackage: self destinationPackageName) ifTrue: [
+				self packageOrganizer removePackage: (self packageOrganizer packageNamed: self destinationPackageName) ] ]
 ]
 
 { #category : 'private' }
@@ -93,7 +93,7 @@ MCPMoveClassCommandTest >> testEnsuresMissingDestinationPackageBeforeMovingClass
 	self removeDestinationPackage.
 	result := self executeCommand:
 		          (MCPMoveClassCommand className: self targetClassName packageName: self destinationPackageName tag: nil).
-	self assert: (PackageOrganizer default hasPackage: self destinationPackageName).
+	self assert: (self packageOrganizer hasPackage: self destinationPackageName).
 	self assert: self targetClass packageName asString equals: self destinationPackageName.
 	self assert: result oldPackageName equals: self originalPackageName
 ]
@@ -103,13 +103,13 @@ MCPMoveClassCommandTest >> testEnsuresMissingDestinationTagBeforeMovingClass [
 
 	| package result |
 	self removeDestinationPackage.
-	self withoutEpiceaDuring: [ PackageOrganizer default ensurePackage: self destinationPackageName ].
+	self withoutEpiceaDuring: [ self packageOrganizer ensurePackage: self destinationPackageName ].
 	result := self executeCommand:
 		          (MCPMoveClassCommand
 			           className: self targetClassName
 			           packageName: self destinationPackageName
 			           tag: self destinationTagName).
-	package := PackageOrganizer default packageNamed: self destinationPackageName.
+	package := self packageOrganizer packageNamed: self destinationPackageName.
 	self assert: (package hasTag: self destinationTagName).
 	self assert: self targetClass packageName asString equals: self destinationPackageName.
 	self assert: self currentTagOfTargetClass equals: self destinationTagName.

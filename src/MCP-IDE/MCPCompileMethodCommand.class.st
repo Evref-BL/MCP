@@ -72,7 +72,7 @@ MCPCompileMethodCommand >> isUnclassified: aCompiledMethod [
 { #category : 'private' }
 MCPCompileMethodCommand >> protocolNameOf: aCompiledMethod [
 
-	^ aCompiledMethod protocol ifNotNil: [ :protocol | protocol name asString ]
+	^ aCompiledMethod protocolName ifNotNil: [ :protocolName | protocolName asString ]
 ]
 
 { #category : 'private' }

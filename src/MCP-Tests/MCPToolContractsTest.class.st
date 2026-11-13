@@ -300,7 +300,7 @@ MCPToolContractsTest >> inputPropertyNamed: aPropertyName inTool: aTool [
 MCPToolContractsTest >> mcpClassesInPackageTagNamed: aTagName [
 	"A tag says what kind of class this is, not which of MCP's packages it lives in, and since the split they live in two."
 
-	^ ((MCPTool builtInPackageNames flatCollect: [ :each | (PackageOrganizer default packageNamed: each asSymbol) definedClasses ])
+	^ ((MCPTool builtInPackageNames flatCollect: [ :each | (self packageOrganizer packageNamed: each asSymbol) definedClasses ])
 		   select: [ :each | each packageTagName asString = aTagName ]) asArray
 ]
 
@@ -453,7 +453,7 @@ MCPToolContractsTest >> selfSentNotImplementedCritiquesForMCPMethods [
 
 	| issues package rule |
 	rule := ReSelfSentNotImplementedRule new.
-	package := PackageOrganizer default packageNamed: #MCP.
+	package := self packageOrganizer packageNamed: #MCP.
 	issues := OrderedCollection new.
 	package definedClasses do: [ :class |
 			class localMethods do: [ :method | self addSelfSentNotImplementedCritiquesFrom: method using: rule to: issues ].
@@ -1643,7 +1643,7 @@ MCPToolContractsTest >> testProjectMethodsDoNotHandleMessageNotUnderstoodAsContr
 
 	| methods offendingMethods rule |
 	rule := MCPMessageNotUnderstoodHandlerRule new.
-	methods := #( 'MCP' 'MCP-Tests' ) flatCollect: [ :packageName | (PackageOrganizer default packageNamed: packageName) methods ].
+	methods := #( 'MCP' 'MCP-Tests' ) flatCollect: [ :packageName | (self packageOrganizer packageNamed: packageName) methods ].
 	offendingMethods := methods select: [ :method |
 		                    method sendNodes anySatisfy: [ :sendNode | rule isMessageNotUnderstoodHandlerSend: sendNode ] ].
 	self assert: offendingMethods isEmpty description: ('Methods handling MessageNotUnderstood: {1}' format:
@@ -1655,7 +1655,7 @@ MCPToolContractsTest >> testProjectMethodsDoNotSendReflectiveProtocolChecks [
 
 	| forbiddenSelector methods offendingMethods |
 	forbiddenSelector := MCPRespondsToUsageRule forbiddenSelector.
-	methods := #( 'MCP' 'MCP-Tests' ) flatCollect: [ :packageName | (PackageOrganizer default packageNamed: packageName) methods ].
+	methods := #( 'MCP' 'MCP-Tests' ) flatCollect: [ :packageName | (self packageOrganizer packageNamed: packageName) methods ].
 	offendingMethods := methods select: [ :method |
 		                    method sendNodes anySatisfy: [ :sendNode | sendNode selector = forbiddenSelector ] ].
 	self assert: offendingMethods isEmpty description: ('Methods sending {1}: {2}' format: {
@@ -2772,7 +2772,7 @@ MCPToolContractsTest >> toolFlowSpecs [
 MCPToolContractsTest >> unimplementedResponsibilitiesForConcreteMCPClasses [
 
 	| classes issues |
-	classes := (PackageOrganizer default packageNamed: #MCP) definedClasses reject: [ :each | each isTrait ].
+	classes := (self packageOrganizer packageNamed: #MCP) definedClasses reject: [ :each | each isTrait ].
 	issues := OrderedCollection new.
 	classes do: [ :class |
 			class isAbstract ifFalse: [

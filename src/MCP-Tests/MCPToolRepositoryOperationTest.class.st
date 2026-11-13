@@ -1138,7 +1138,7 @@ MCPToolRepositoryOperationTest >> testUpdateRemovesPackageWithoutUnloading [
 
 	| data packageName repository result |
 	packageName := 'MCPToolRepositoryOperationRemovalPackage'.
-	self withoutEpiceaDuring: [ PackageOrganizer default ensurePackage: packageName ].
+	self withoutEpiceaDuring: [ self packageOrganizer ensurePackage: packageName ].
 	[
 		repository := self
 			              newRepositoryNamed: 'MCP Repository Command Remove Test'
@@ -1152,7 +1152,7 @@ MCPToolRepositoryOperationTest >> testUpdateRemovesPackageWithoutUnloading [
 				data := self dataFrom: result.
 				self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
 				self assert: (self packageNamesIn: repository) equals: #(  ).
-				self assert: (PackageOrganizer default hasPackage: packageName).
+				self assert: (self packageOrganizer hasPackage: packageName).
 				self assert: data keys asSet equals: #( removedPackageNames updateActions ) asSet.
 				self assert: (data at: #updateActions) equals: #( 'removePackages' ).
 				self assert: (data at: #removedPackageNames) equals: { packageName } ] ] ensure: [ self removePackageNamed: packageName ]

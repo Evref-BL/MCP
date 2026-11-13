@@ -77,12 +77,14 @@ MCPCommandError class >> methodReferenceForClassName: className selector: select
 MCPCommandError class >> methodSuggestionForBehavior: aBehavior selector: aSelectorSymbol [
 
 	| protocolName |
-	protocolName := (aBehavior compiledMethodAt: aSelectorSymbol) protocol
+	protocolName := (aBehavior compiledMethodAt: aSelectorSymbol) protocolName
 		                ifNil: [ '' ]
-		                ifNotNil: [ :protocol | protocol name asString ].
+		                ifNotNil: [ :protocol | protocol asString ].
 	^ {
 		  (#class -> aBehavior instanceSide name asString).
-		  (#side -> (aBehavior isClassSide ifTrue: [ 'class' ] ifFalse: [ 'instance' ])).
+		  (#side -> (aBehavior isClassSide
+			    ifTrue: [ 'class' ]
+			    ifFalse: [ 'instance' ])).
 		  (#selector -> aSelectorSymbol asString).
 		  (#protocol -> protocolName) } asDictionary
 ]

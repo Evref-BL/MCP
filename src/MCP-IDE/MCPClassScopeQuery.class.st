@@ -122,7 +122,7 @@ MCPClassScopeQuery >> resolvedPackageNamed: packageName [
 { #category : 'private - resolution' }
 MCPClassScopeQuery >> resolvedPackageNamed: packageName inScope: scopeName [
 
-	^ PackageOrganizer default
+	^ self packageOrganizer
 		  packageNamed: packageName asSymbol
 		  ifAbsent: [ self recordMissingPackageNamed: packageName inScope: scopeName ]
 ]

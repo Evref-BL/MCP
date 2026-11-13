@@ -63,7 +63,7 @@ MCPTestCase >> ensureMethodSource: aMethodSource protocol: aProtocol on: aBehavi
 
 	self withoutEpiceaDuring: [
 			| method selector |
-			(aProtocol beginsWith: '*') ifTrue: [ PackageOrganizer default ensurePackage: aProtocol allButFirst ].
+			(aProtocol beginsWith: '*') ifTrue: [ self packageOrganizer ensurePackage: aProtocol allButFirst ].
 			selector := aBehavior compile: aMethodSource classified: aProtocol.
 			method := aBehavior >> selector.
 			aBehavior compile: (method ast formattedCodeIn: aBehavior) classified: method protocol ]
@@ -133,9 +133,9 @@ MCPTestCase >> removeGeneratedPackagesIfEmpty [
 	{
 		self generatedPackageName.
 		self generatedExtensionPackageName } do: [ :name |
-			(PackageOrganizer default hasPackage: name) ifTrue: [
+			(self packageOrganizer hasPackage: name) ifTrue: [
 					| package |
-					package := PackageOrganizer default packageNamed: name.
+					package := self packageOrganizer packageNamed: name.
 					(package definedClasses isEmpty and: [ package methods isEmpty ]) ifTrue: [ self removePackageNamed: name ] ] ]
 ]
 
@@ -143,7 +143,7 @@ MCPTestCase >> removeGeneratedPackagesIfEmpty [
 MCPTestCase >> removePackageNamed: aPackageName [
 
 	self withoutEpiceaDuring: [
-		(PackageOrganizer default hasPackage: aPackageName) ifTrue: [ PackageOrganizer default removePackage: aPackageName ] ]
+		(self packageOrganizer hasPackage: aPackageName) ifTrue: [ self packageOrganizer removePackage: aPackageName ] ]
 ]
 
 { #category : 'private - methods' }

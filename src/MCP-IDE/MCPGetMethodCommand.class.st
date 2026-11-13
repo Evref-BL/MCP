@@ -14,7 +14,7 @@ MCPGetMethodCommand >> execute [
 
 	| compiledMethod data methodBehavior protocolName variableReferences |
 	compiledMethod := tool methodForClassNamed: request className selector: request selectorString classSide: request classSide.
-	protocolName := compiledMethod protocol ifNil: [ '' ] ifNotNil: [ :protocol | protocol name asString ].
+	protocolName := compiledMethod protocolName ifNil: [ '' ] ifNotNil: [ :protocol | protocol asString ].
 	data := {
 		        (#protocol -> protocolName).
 		        (#source -> (compiledMethod sourceCode ifNil: [ '' ])) } asDictionary.

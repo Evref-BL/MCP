@@ -51,7 +51,7 @@ MCPToolSearchRepositories >> classNamesForRepositoryEntry: anEntry [
 	| classNames |
 	classNames := OrderedCollection new.
 	(anEntry at: #packages) do: [ :packageName |
-			PackageOrganizer default
+			self packageOrganizer
 				packageNamed: packageName asSymbol
 				ifPresent: [ :package | package definedClasses do: [ :class | classNames add: class name asString ] ] ].
 	^ classNames asArray

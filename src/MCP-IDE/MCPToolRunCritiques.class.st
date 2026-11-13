@@ -298,7 +298,7 @@ MCPToolRunCritiques >> methodScopeQueryFromRequest: request [
 { #category : 'private - scope' }
 MCPToolRunCritiques >> packagesForQueryRequest: queryRequest [
 
-	queryRequest scopeQuery usesImplicitImageScope ifTrue: [ ^ PackageOrganizer default packages asArray ].
+	queryRequest scopeQuery usesImplicitImageScope ifTrue: [ ^ self packageOrganizer packages asArray ].
 	queryRequest scopeQuery packageNames ifEmpty: [ ^ #(  ) ].
 	^ queryRequest scopeQuery packageNames
 		  collect: [ :eachName | queryRequest scopeQuery packageNamed: eachName inScope: 'packages' ]
