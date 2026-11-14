@@ -944,6 +944,36 @@ MCPToolContractsTest >> testEvaluateLetsNotificationsUseTheirDefaultAction [
 ]
 
 { #category : 'tests - evaluate' }
+MCPToolContractsTest >> testEvaluateNotStartedTextTellsAnEvaluationFromAFork [
+	"A process named after the tool is an earlier evaluation, which ends at its own limit; any other at the priority evaluations run at was forked by one, and has no limit."
+
+	| tool evaluation fork lines hints forkHint |
+	tool := MCPToolEvaluate new.
+	evaluation := [ 1 ] newProcess
+		              name: 'image_evaluate';
+		              yourself.
+	fork := [ 2 ] newProcess
+		        name: 'mcp-fork-probe';
+		        yourself.
+	forkHint := 'A fork has no time limit; while it computes, evaluations may not start.'.
+	lines := tool heldByLinesFor: {
+			         evaluation.
+			         fork }.
+	self assert: (lines first beginsWith: 'an earlier evaluation, in ').
+	self assert: (lines second beginsWith: 'a process an evaluation forked, named mcp-fork-probe, in ').
+	hints := tool heldByHintLinesFor: {
+			         evaluation.
+			         fork }.
+	self assert: hints first equals: 'An earlier evaluation stops at its own time limit; call again after it.'.
+	self assert: (hints includes: forkHint).
+	self deny: ((tool heldByHintLinesFor: { evaluation }) includes: forkHint).
+	self
+		assert: (tool heldByHintLinesFor: #(  )) asArray
+		equals:
+		#( 'No other process holds the priority evaluations run at,' 'so code at a higher priority, such as another call, kept the processor.' )
+]
+
+{ #category : 'tests - evaluate' }
 MCPToolContractsTest >> testEvaluateOmitsTruncationFieldsForSmallResults [
 
 	| data |
@@ -1062,6 +1092,27 @@ MCPToolContractsTest >> testEvaluateStackTraceStopsAtTheEvaluatedCode [
 	self assert: stackTrace last equals: 'UndefinedObject>>DoIt'.
 	self deny: (stackTrace anySatisfy: [ :each | each includesSubstring: 'MCP' ]).
 	self deny: (stackTrace anySatisfy: [ :each | each includesSubstring: 'OpalCompiler' ])
+]
+
+{ #category : 'tests - evaluate' }
+MCPToolContractsTest >> testEvaluateThatNeverStartedSaysSo [
+	"Whether an evaluation behind a computing process ever gets a turn depends on how the virtual machine schedules processes of one priority, so the double leaves it unstarted, as if it never did."
+
+	| command holder result |
+	self timeLimit: 30 seconds.
+	holder := [ [ true ] whileTrue ] forkAt: Processor activePriority - 1 named: 'mcp-evaluate-holder-probe'.
+	[
+		command := MCPEvaluateCommandNeverStarting
+			           tool: MCPToolEvaluate new
+			           request: (MCPEvaluateRequest new initializeCode: '3 + 4' timeoutSeconds: 1)
+			           resultPreviewCharacterLimit: 100.
+		result := command execute ] ensure: [ holder terminate ].
+	self assert: result isError.
+	self assert: result summary equals: 'Evaluation did not start within 1 s, its time limit; none of it ran.'.
+	self assert: ((result errorDetails at: #heldBy) anySatisfy: [ :each |
+			 each beginsWith: 'a process an evaluation forked, named mcp-evaluate-holder-probe, in ' ]).
+	self assert: (result errorDetails at: #timeoutSeconds) equals: 1.
+	self assert: command evaluator isTerminated
 ]
 
 { #category : 'tests' }

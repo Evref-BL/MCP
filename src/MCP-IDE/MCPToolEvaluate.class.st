@@ -129,11 +129,64 @@ MCPToolEvaluate >> failureTextFor: structuredContent [
 								  nextPutAll: each ] ] ]
 ]
 
+{ #category : 'private' }
+MCPToolEvaluate >> heldByHintLinesFor: processes [
+	"An earlier evaluation ends at its own limit. A fork has none, and no tool can stop it, since stopping a process takes an evaluation."
+
+	| lines |
+	processes ifEmpty: [
+		^ #( 'No other process holds the priority evaluations run at,' 'so code at a higher priority, such as another call, kept the processor.' ) ].
+	lines := OrderedCollection new.
+	(processes anySatisfy: [ :each | self isEvaluation: each ]) ifTrue: [
+		lines add: 'An earlier evaluation stops at its own time limit; call again after it.' ].
+	(processes anySatisfy: [ :each | (self isEvaluation: each) not ]) ifTrue: [
+			lines
+				add: 'A fork has no time limit; while it computes, evaluations may not start.';
+				add: 'If it never ends, only an image restart ends it, losing what was not saved.';
+				add: 'Fork long work at Processor userBackgroundPriority, below evaluations.' ].
+	^ lines asArray
+]
+
+{ #category : 'private' }
+MCPToolEvaluate >> heldByLinesFor: processes [
+	"One line per process holding the priority evaluations run at. MCP runs nothing else there and a plain fork inherits it, so a process not named after this tool was forked by an evaluation, or by one of its forks. A frame is printed by its class and method only: printing a value would run the code that may be what never ends."
+
+	^ processes collect: [ :each |
+			  String streamContents: [ :stream |
+					  (self isEvaluation: each)
+						  ifTrue: [ stream nextPutAll: 'an earlier evaluation' ]
+						  ifFalse: [
+								  stream
+									  nextPutAll: 'a process an evaluation forked, named ';
+									  nextPutAll: each name trimBoth ].
+					  each suspendedContext ifNotNil: [ :frame |
+							  stream
+								  nextPutAll: ', in ';
+								  print: frame ] ] ]
+]
+
+{ #category : 'private' }
+MCPToolEvaluate >> isEvaluation: aProcess [
+	"An evaluation runs in a process named after this tool, and so does the process that stops one."
+
+	^ aProcess name beginsWith: self name
+]
+
 { #category : 'metadata' }
 MCPToolEvaluate >> maximumTimeoutSeconds [
 	"Long enough for a client that waits to run a long load inline, and a bound on what an evaluation nobody waits for any more can cost."
 
 	^ 600
+]
+
+{ #category : 'private' }
+MCPToolEvaluate >> notStartedMessageFor: seconds [
+
+	^ String streamContents: [ :stream |
+			  stream
+				  nextPutAll: 'Evaluation did not start within ';
+				  print: seconds;
+				  nextPutAll: ' s, its time limit; none of it ran.' ]
 ]
 
 { #category : 'private - request' }

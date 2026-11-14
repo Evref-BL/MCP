@@ -110,6 +110,28 @@ MCPEvaluateCommand >> initializeTool: aTool request: aRequest resultPreviewChara
 ]
 
 { #category : 'private' }
+MCPEvaluateCommand >> notStartedDetailsFor: processes [
+
+	^ Dictionary new
+		  at: #heldBy put: (tool heldByLinesFor: processes);
+		  at: #hint put: (tool heldByHintLinesFor: processes);
+		  at: #timeoutSeconds put: request timeoutSeconds;
+		  yourself
+]
+
+{ #category : 'private' }
+MCPEvaluateCommand >> notStartedResultFor: anEvaluator [
+	"Other processes kept the processor the whole time, so the evaluator ran nothing and has nothing to unwind: this process terminates it itself. Its priority is read first, since terminating it raises it to this one."
+
+	| priority |
+	priority := anEvaluator priority.
+	anEvaluator terminate.
+	^ MCPEvaluateResult
+		  errorSummary: (tool notStartedMessageFor: request timeoutSeconds)
+		  details: (self notStartedDetailsFor: (Processor waitingProcessesAt: priority) asArray)
+]
+
+{ #category : 'private' }
 MCPEvaluateCommand >> resultDataFor: anAnswer [
 	"Report what a truncated preview left out. The full length is deliberately not computed: printStringLimitedTo: stops early, and forcing the whole print string is exactly the cost this preview exists to avoid."
 
