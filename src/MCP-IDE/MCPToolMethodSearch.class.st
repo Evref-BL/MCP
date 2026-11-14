@@ -253,6 +253,13 @@ MCPToolMethodSearch >> queryResultDataForQueryRequest: queryRequest page: page [
 	^ self methodQueryResultDataForPage: page entriesKey: #methods
 ]
 
+{ #category : 'private - results' }
+MCPToolMethodSearch >> redundantKeys [
+	"An extension's protocol already names its package with a star, so isExtension says nothing a row does not."
+
+	^ #( isExtension )
+]
+
 { #category : 'private - template' }
 MCPToolMethodSearch >> scopeQueryFromRequest: request [
 

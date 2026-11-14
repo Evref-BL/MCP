@@ -600,6 +600,19 @@ MCPToolMethodSearchTest >> testReturnsWarningsAndEmptyResultsWhenPackageIsMissin
 ]
 
 { #category : 'tests' }
+MCPToolMethodSearchTest >> testRowsDoNotRepeatExtensionBesideItsProtocol [
+	"An extension's protocol names its package with a star, so its row leaves out isExtension; the data keeps it."
+
+	| contentText result |
+	result := self callToolWith: { (self searchScope: { (#packages -> #( 'MCP-Tests-Resources-Extensions' )) }) } asDictionary.
+	contentText := (result at: #content) first at: #text.
+	self assert:
+		(contentText includesSubstring: 'MCPToolMethodSearchReferenceTarget>>extensionProbe protocol=*MCP-Tests-Resources-Extensions').
+	self deny: (contentText includesSubstring: 'isExtension').
+	self assert: (((self dataFrom: result) at: #methods) anySatisfy: [ :each | each at: #isExtension ifAbsent: [ false ] ])
+]
+
+{ #category : 'tests' }
 MCPToolMethodSearchTest >> testScopeArgumentIsRejected [
 
 	self
