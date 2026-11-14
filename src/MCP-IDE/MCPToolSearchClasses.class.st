@@ -84,6 +84,13 @@ MCPToolSearchClasses >> description [
 	^ 'Search classes by name, package, tag, or superclass/subclass scope. Use class_get when you already know the class name.'
 ]
 
+{ #category : 'private - results' }
+MCPToolSearchClasses >> entryNameKeys [
+	"A row is a class."
+
+	^ #( class )
+]
+
 { #category : 'private - filtering' }
 MCPToolSearchClasses >> fieldTextsForClassEntry: anEntry fieldName: fieldName [
 

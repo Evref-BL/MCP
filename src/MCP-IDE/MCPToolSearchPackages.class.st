@@ -35,6 +35,13 @@ MCPToolSearchPackages >> description [
 	^ 'Search packages by name, project, or tag.'
 ]
 
+{ #category : 'private - results' }
+MCPToolSearchPackages >> entryNameKeys [
+	"A row is a package."
+
+	^ #( package )
+]
+
 { #category : 'private - filtering' }
 MCPToolSearchPackages >> fieldTextsForPackageEntry: anEntry fieldName: fieldName [
 

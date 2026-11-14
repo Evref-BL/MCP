@@ -509,6 +509,37 @@ MCPToolStructuredOutputTest >> testRecordListsCarryTheirLabel [
 ]
 
 { #category : 'tests' }
+MCPToolStructuredOutputTest >> testRecordsLeadWithTheirName [
+	"A record opens with what it names, bare, rather than spending a field on it, and its name is what tells it from the others."
+
+	| lines |
+	lines := (((self
+		            callToolNamed: 'class_search'
+		            withArguments:
+		            { (self searchScope: { (#classes -> #( 'MCPToolHierarchyTestMid' 'MCPToolGetClass' )) }) } asDictionary) at:
+		           #content) first at: #text) lines.
+	self assert: (lines includes: 'classes:').
+	self assert: (lines anySatisfy: [ :each | each beginsWith: '  MCPToolGetClass package=MCP-IDE' ]).
+	self assert: (lines anySatisfy: [ :each | each beginsWith: '  MCPToolHierarchyTestMid package=MCP-Tests-Resources' ]).
+	self deny: (lines anySatisfy: [ :each | each includesSubstring: 'class=' ]).
+	lines := (((self callToolNamed: 'package_search' withArguments: { (#packages -> #( 'MCP-Tests-Resources' )) } asDictionary) at:
+		           #content) first at: #text) lines.
+	self assert: (lines includes: '  MCP-Tests-Resources').
+	self deny: (lines anySatisfy: [ :each | each includesSubstring: 'package=' ]).
+	lines := (MCPToolListChangeHistoryFiles new contentTextForStructuredContent: (Dictionary new
+			           at: #summary put: 'Listed 2 change history files.';
+			           at: #data put: { (#files -> {
+						            {
+							            (#file -> 'a.ombu').
+							            (#isCurrent -> true) } asDictionary.
+						            {
+							            (#file -> 'b.ombu').
+							            (#isCurrent -> true) } asDictionary }) } asDictionary;
+			           yourself)) lines.
+	self assert: lines equals: #( 'Listed 2 change history files.' 'files (each isCurrent=true):' '  a.ombu' '  b.ombu' )
+]
+
+{ #category : 'tests' }
 MCPToolStructuredOutputTest >> testRemoveClassReturnsStructuredError [
 
 	| result structured error |

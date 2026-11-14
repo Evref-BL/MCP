@@ -466,13 +466,38 @@ MCPTool >> entriesTextOn: stream for: entries labelled: label indent: indent [
 ]
 
 { #category : 'private - results' }
-MCPTool >> entryTextOn: stream for: entry indent: indent omitting: omittedKeys [
-	"What identifies the entry goes on its line, but for the fields its list already said for every entry; anything it carries that has its own shape, such as a method's source or a list of hits, follows on its own lines."
+MCPTool >> entryNameKeyOf: aDictionary [
+	"The key whose value opens the record, or nil. A record naming a method opens with the method reference instead."
 
-	| pairs reference |
-	reference := self methodReferenceTextFor: entry.
+	(self methodReferenceTextFor: aDictionary) ifNotNil: [ ^ nil ].
+	^ self entryNameKeys
+		  detect: [ :key | (self valueIn: aDictionary at: key) ifNil: [ false ] ifNotNil: [ :value | self isInlineValue: value ] ]
+		  ifNone: [ nil ]
+]
+
+{ #category : 'private - results' }
+MCPTool >> entryNameKeys [
+	"Answer the keys whose value names a record, as a method reference names a method: the record opens with the first of them it holds, bare. A tool declares its own."
+
+	^ #(  )
+]
+
+{ #category : 'private - results' }
+MCPTool >> entryNameTextFor: aDictionary [
+	"What opens a record's line: the method it names, the way Pharo writes it, or else the value of the first name key it holds."
+
+	^ (self methodReferenceTextFor: aDictionary) ifNil: [
+		  (self entryNameKeyOf: aDictionary) ifNotNil: [ :key | (self valueIn: aDictionary at: key) asString ] ]
+]
+
+{ #category : 'private - results' }
+MCPTool >> entryTextOn: stream for: entry indent: indent omitting: omittedKeys [
+	"What identifies the entry goes on its line, opening with its name, but for the fields its list already said for every entry; anything it carries that has its own shape, such as a method's source or a list of hits, follows on its own lines."
+
+	| name pairs |
+	name := self entryNameTextFor: entry.
 	pairs := OrderedCollection new.
-	reference ifNotNil: [ pairs add: reference ].
+	name ifNotNil: [ pairs add: name ].
 	(self inlineKeysOf: entry) do: [ :key |
 		(omittedKeys includes: key) ifFalse: [ pairs add: (self inlinePairTextFor: key in: entry) ] ].
 	stream
@@ -797,15 +822,14 @@ MCPTool >> keyOrder [
 
 { #category : 'private - results' }
 MCPTool >> keysSharedByEntries: entries [
-	"The inline fields every record of a list holds with the same value, provided each line keeps something that tells its record from the others."
+	"The inline fields every record of a list holds with the same value, provided each line keeps something that tells its record from the others. A record's name tells it apart, and is never said once for all."
 
 	| first shared |
 	(entries size >= 2 and: [ entries allSatisfy: [ :each | each isDictionary ] ]) ifFalse: [ ^ #(  ) ].
 	first := entries first.
 	shared := (self inlineKeysOf: first) select: [ :key |
 		          entries allSatisfy: [ :each | ((self inlineKeysOf: each) includes: key) and: [ (each at: key) = (first at: key) ] ] ].
-	^ (entries allSatisfy: [ :each |
-		   (self methodReferenceTextFor: each) isNotNil or: [ (self inlineKeysOf: each) size > shared size ] ])
+	^ (entries allSatisfy: [ :each | (self entryNameTextFor: each) isNotNil or: [ (self inlineKeysOf: each) size > shared size ] ])
 		  ifTrue: [ shared asArray ]
 		  ifFalse: [ #(  ) ]
 ]
@@ -1110,11 +1134,12 @@ MCPTool >> shouldResumeNotification: aNotification [
 
 { #category : 'private - results' }
 MCPTool >> shownKeysOf: entry [
-	"The keys of a record its text shows, in order: a method reference stands in for the fields that name the method."
+	"The keys of a record its text shows, in order: a method reference stands in for the fields that name the method, and a name opening the record for its own field."
 
 	| skipped |
 	skipped := self redundantKeys asOrderedCollection.
 	(self methodReferenceTextFor: entry) ifNotNil: [ skipped addAll: self methodReferenceKeys ].
+	(self entryNameKeyOf: entry) ifNotNil: [ :key | skipped add: key asSymbol ].
 	^ self orderedKeys: (entry keys reject: [ :key | skipped includes: key asSymbol ])
 ]
 

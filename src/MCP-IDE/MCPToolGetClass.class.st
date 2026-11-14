@@ -138,6 +138,13 @@ MCPToolGetClass >> descriptionDictionaryForClass: aClass includeComment: include
 	^ data
 ]
 
+{ #category : 'private - results' }
+MCPToolGetClass >> entryNameKeys [
+	"A superclass or subclass record is a class."
+
+	^ #( class )
+]
+
 { #category : 'private' }
 MCPToolGetClass >> errorResultForError: anError className: className [
 

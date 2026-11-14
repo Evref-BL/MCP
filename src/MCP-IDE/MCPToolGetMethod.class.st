@@ -125,6 +125,13 @@ MCPToolGetMethod >> description [
 	^ 'Get the source of methods named Class>>selector or Class class>>selector, one or several.'
 ]
 
+{ #category : 'private - results' }
+MCPToolGetMethod >> entryNameKeys [
+	"A variable record is the variable of its name."
+
+	^ #( name )
+]
+
 { #category : 'private' }
 MCPToolGetMethod >> errorResultForError: anError className: className selector: selectorString classSide: classSide [
 

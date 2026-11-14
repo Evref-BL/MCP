@@ -368,6 +368,17 @@ MCPToolSearchClassesTest >> testReturnsWarningsAndEmptyResultsWhenPackageIsMissi
 ]
 
 { #category : 'tests' }
+MCPToolSearchClassesTest >> testRowsLeadWithTheClassName [
+
+	| lines result |
+	result := self callToolWith: { (#name -> self fixturePrefix) } asDictionary.
+	lines := ((result at: #content) first at: #text) lines.
+	self deny: (self resultIndicatesError: result).
+	self assert: (lines second beginsWith: 'classes (each package=').
+	self assert: (lines allButFirst: 2) equals: (self fixtureClassNames collect: [ :each | '  ' , each ])
+]
+
+{ #category : 'tests' }
 MCPToolSearchClassesTest >> testSubclassClassNamesReturnSubclassesOnly [
 
 	| classNames data result |
