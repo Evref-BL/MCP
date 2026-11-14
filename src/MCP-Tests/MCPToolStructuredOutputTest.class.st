@@ -405,6 +405,43 @@ MCPToolStructuredOutputTest >> testGetMethodReturnsStructuredSuccess [
 ]
 
 { #category : 'tests' }
+MCPToolStructuredOutputTest >> testLineFeedTextReadsAsABlock [
+	"Text the server writes ends its lines with LF, and reads as a block as text ending them with CR does."
+
+	| contentText |
+	contentText := MCPToolGetClass new contentTextForStructuredContent: (Dictionary new
+			                at: #summary put: 'Summary.';
+			                at: #data put: {
+					                (#text -> (String lf join: #( 'one' 'two' ))).
+					                (#name -> 'Plain') } asDictionary;
+			                yourself).
+	self assert: contentText lines equals: #( 'Summary.' 'name: Plain' 'text:' 'one' 'two' )
+]
+
+{ #category : 'tests' }
+MCPToolStructuredOutputTest >> testListOfMultiLineValuesReadsOneValueAtATime [
+	"A list whose values have lines of their own gives each value its own lines, every one of them indented as an item of the list, so no value runs into the next."
+
+	| lines |
+	lines := (String streamContents: [ :stream |
+			          MCPToolGetClass new
+				          entriesTextOn: stream
+				          for: {
+						          (String lf join: #( 'first' '   detail' )).
+						          'second' }
+				          labelled: 'values'
+				          indent: '  ' ]) lines.
+	self assert: lines equals: #( '' '  values:' '    first' '       detail' '    second' ).
+	lines := (String streamContents: [ :stream |
+			          MCPToolGetClass new
+				          entriesTextOn: stream
+				          for: #( 'one' 'two' )
+				          labelled: 'values'
+				          indent: '' ]) lines.
+	self assert: lines equals: #( '' 'values: [one, two]' )
+]
+
+{ #category : 'tests' }
 MCPToolStructuredOutputTest >> testListsKeepAFieldWhenSayingItOnceWouldEmptyARow [
 	"Rows that differ in nothing on their line keep their fields, or the list would read as blank lines."
 

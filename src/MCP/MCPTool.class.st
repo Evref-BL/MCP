@@ -423,13 +423,10 @@ MCPTool >> description [
 
 { #category : 'private - results' }
 MCPTool >> entriesTextOn: stream for: entries labelled: label indent: indent [
-	"A list of records reads as one entry at a time under the name of the list it belongs to; a list of
-	plain values reads as one line, bracketed so that a list of two is not read as one value containing
-	a comma. A field every record holds with the same value, often one the request fixed, is said once
-	beside the name of the list rather than on every line."
+	"A list of records reads as one entry at a time under the name of the list it belongs to. A list of plain values reads as one line, bracketed so that a list of two is not read as one value containing a comma, unless a value has lines of its own, such as a stack frame and its variables: then each value reads on its own lines under the label. A field every record holds with the same value, often one the request fixed, is said once beside the name of the list rather than on every line."
 
 	| entryIndent sharedKeys |
-	(entries anySatisfy: [ :each | each isDictionary ]) ifFalse: [
+	(entries allSatisfy: [ :each | self isInlineValue: each ]) ifTrue: [
 			stream
 				nextPut: Character lf;
 				nextPutAll: indent;
@@ -458,11 +455,7 @@ MCPTool >> entriesTextOn: stream for: entries labelled: label indent: indent [
 							for: entry
 							indent: entryIndent
 							omitting: sharedKeys ]
-				ifFalse: [
-						stream
-							nextPut: Character lf;
-							nextPutAll: entryIndent;
-							nextPutAll: entry asString ] ]
+				ifFalse: [ self valueLinesOn: stream for: entry indent: entryIndent ] ]
 ]
 
 { #category : 'private - results' }
@@ -735,6 +728,13 @@ MCPTool >> groupName [
 	^ self class groupName
 ]
 
+{ #category : 'private - results' }
+MCPTool >> hasLineBreak: aString [
+	"The server writes its own text with LF and Pharo's sources hold CR; either ends a line."
+
+	^ (aString includes: Character cr) or: [ aString includes: Character lf ]
+]
+
 { #category : 'metadata' }
 MCPTool >> icons [
 
@@ -793,7 +793,7 @@ MCPTool >> integerSchemaPropertyNamed: propertyName description: propertyDescrip
 MCPTool >> isBlockValue: value [
 	"A block is read as a block: text with its own lines, or prose too long to sit in a field. It belongs after the fields that identify the result, not among them."
 
-	^ value isString and: [ (value includesSubstring: String cr) or: [ value size > 160 ] ]
+	^ value isString and: [ (self hasLineBreak: value) or: [ value size > 160 ] ]
 ]
 
 { #category : 'private - results' }
@@ -907,13 +907,12 @@ MCPTool >> methodSearchScopeSchemaProperty [
 
 { #category : 'private - results' }
 MCPTool >> mismatchValueText: value [
-	"One side of a mismatch, on one line. A list is the interesting case: the
-	fields a repository guard compares are often package names."
+	"One side of a mismatch, on one line. A list is the interesting case: the fields a repository guard compares are often package names, and it reads bracketed, like every other list."
 
 	value ifNil: [ ^ 'none' ].
 	(value isCollection and: [ value isString not ]) ifTrue: [
 			value ifEmpty: [ ^ 'none' ].
-			^ String streamContents: [ :stream | stream << '(' << (', ' join: (value collect: [ :each | each asString ])) << ')' ] ].
+			^ String streamContents: [ :stream | stream << '[' << (', ' join: (value collect: [ :each | each asString ])) << ']' ] ].
 	^ value asString
 ]
 
@@ -1313,6 +1312,17 @@ MCPTool >> valueIn: aDictionary at: aKey [
 ]
 
 { #category : 'private - results' }
+MCPTool >> valueLinesOn: stream for: aValue indent: indent [
+	"Every line of a value after the indent of its list, so that a value with lines of its own still reads as one item."
+
+	(aValue asString lines ifEmpty: [ #( '' ) ]) do: [ :line |
+			stream
+				nextPut: Character lf;
+				nextPutAll: indent;
+				nextPutAll: line ]
+]
+
+{ #category : 'private - results' }
 MCPTool >> valueTextOn: stream for: value labelled: label indent: indent [
 
 	| reference |
@@ -1348,7 +1358,7 @@ MCPTool >> valueTextOn: stream for: value labelled: label indent: indent [
 		nextPutAll: indent;
 		nextPutAll: label;
 		nextPut: $:.
-	(value isString and: [ value includesSubstring: String cr ])
+	(value isString and: [ self hasLineBreak: value ])
 		ifTrue: [
 				stream
 					nextPut: Character lf;

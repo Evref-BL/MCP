@@ -1385,7 +1385,7 @@ MCPToolRepositoryOperationTest >> testVerifyIdentityReadsItsMismatchesWithoutStr
 			contentText := (result at: #content) first at: #text.
 			self assert: (contentText includesSubstring: 'Repository identity verification failed').
 			self assert: (contentText includesSubstring: 'branch: expected feature, actual main').
-			self assert: (contentText includesSubstring: 'packages: expected (MCP, MCP-Tests), actual (MCP)') ]
+			self assert: (contentText includesSubstring: 'packages: expected [MCP, MCP-Tests], actual [MCP]') ]
 ]
 
 { #category : 'tests' }
