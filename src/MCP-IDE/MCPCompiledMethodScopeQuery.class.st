@@ -45,7 +45,7 @@ MCPCompiledMethodScopeQuery >> allMethodsDo: aBlock [
 	Smalltalk globals allBehaviorsDo: [ :eachBehavior |
 			(self matchesSideForBehavior: eachBehavior) ifTrue: [
 					eachBehavior methods do: [ :eachMethod |
-							(seenMethods includes: eachMethod) ifFalse: [
+							((self isInstalledFromTraitedClass: eachMethod) or: [ seenMethods includes: eachMethod ]) ifFalse: [
 									seenMethods add: eachMethod.
 									aBlock value: eachMethod ] ] ] ]
 ]
@@ -160,6 +160,13 @@ MCPCompiledMethodScopeQuery >> initialize [
 ]
 
 { #category : 'private - scope' }
+MCPCompiledMethodScopeQuery >> isInstalledFromTraitedClass: aCompiledMethod [
+	"Whether Pharo installed this method from TraitedClass, as it does on the class side of every class and trait that uses traits. Nobody wrote it there, so a sweep leaves it out. TraitedClass's own methods are not from a trait, so a sweep of TraitedClass still lists them, and an image without TraitedClass leaves nothing out."
+
+	^ aCompiledMethod isFromTrait and: [ aCompiledMethod origin == (Smalltalk globals at: #TraitedClass ifAbsent: [ nil ]) ]
+]
+
+{ #category : 'private - scope' }
 MCPCompiledMethodScopeQuery >> matchesSideForBehavior: aBehavior [
 
 	aBehavior isMeta ifTrue: [ ^ self includesClassSide ].
@@ -213,20 +220,9 @@ MCPCompiledMethodScopeQuery >> methodsForBehaviors: behaviors [
 
 	| methods |
 	methods := IdentitySet new.
-	behaviors do: [ :eachBehavior | eachBehavior methods do: [ :eachMethod | methods add: eachMethod ] ].
-	^ methods asArray
-]
-
-{ #category : 'private - scope' }
-MCPCompiledMethodScopeQuery >> methodsForBehaviors: behaviors do: aBlock [
-
-	| seenMethods |
-	seenMethods := IdentitySet new.
 	behaviors do: [ :eachBehavior |
-			eachBehavior methods do: [ :eachMethod |
-					(seenMethods includes: eachMethod) ifFalse: [
-							seenMethods add: eachMethod.
-							aBlock value: eachMethod ] ] ]
+		eachBehavior methods do: [ :eachMethod | (self isInstalledFromTraitedClass: eachMethod) ifFalse: [ methods add: eachMethod ] ] ].
+	^ methods asArray
 ]
 
 { #category : 'private - scope' }

@@ -25,6 +25,12 @@ MCPToolMethodSearchTest >> entryForReference: aReference in: methods [
 ]
 
 { #category : 'private' }
+MCPToolMethodSearchTest >> referencesOf: methodEntries [
+
+	^ methodEntries collect: [ :each | MCPToolSearchMethods new methodEntryLabel: each ] as: Array
+]
+
+{ #category : 'private' }
 MCPToolMethodSearchTest >> targetClassName [
 
 	^ MCPToolMethodSearchTestTarget name
@@ -165,6 +171,19 @@ MCPToolMethodSearchTest >> testClassReferenceReturnsStructuredErrorWhenClassIsMi
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: ((error at: #message) includesSubstring: 'There is no class, variable or selector named MCPDefinitelyMissingReferenceClass')
+]
+
+{ #category : 'tests' }
+MCPToolMethodSearchTest >> testClassScopeLeavesOutWhatTraitedClassInstalls [
+	"Pharo installs TraitedClass's methods on the class side of every class using traits. Nobody wrote them there, so a sweep of the class leaves them out and lists what the class and its own traits define."
+
+	| methods |
+	methods := (self dataFrom:
+		            (self callToolWith:
+			             { (self searchScope: { (#classes -> { MCPToolMethodSearchTraitUser name }) } side: 'class') } asDictionary)) at:
+		           #methods.
+	self deny: (methods anySatisfy: [ :each | (each at: #trait ifAbsent: [ '' ]) = 'TraitedClass' ]).
+	self assert: (self referencesOf: methods) equals: #( 'TMCPToolMethodSearchFixture class>>mcpTraitFixtureValue' )
 ]
 
 { #category : 'tests' }
@@ -392,6 +411,16 @@ MCPToolMethodSearchTest >> testExactEmptyFilterIsApplied [
 ]
 
 { #category : 'tests' }
+MCPToolMethodSearchTest >> testImageScopeLeavesOutWhatTraitedClassInstalls [
+
+	| methods |
+	methods := (self dataFrom: (self callToolWith: {
+				             (self searchScope: {  } side: 'class').
+				             (#selector -> 'findOriginClassOf:') } asDictionary)) at: #methods.
+	self deny: (methods anySatisfy: [ :each | (each at: #trait ifAbsent: [ '' ]) = 'TraitedClass' ])
+]
+
+{ #category : 'tests' }
 MCPToolMethodSearchTest >> testImageScopeReturnsInstanceAndClassImplementors [
 
 	| entries queryRequest scopeQuery selector tool |
@@ -417,6 +446,18 @@ MCPToolMethodSearchTest >> testImageScopeReturnsInstanceAndClassImplementors [
 		entryForReference:
 		(String streamContents: [ :stream | stream << MCPToolMethodSearchReferenceFixture name << ' class>>' << selector ])
 		in: entries
+]
+
+{ #category : 'tests' }
+MCPToolMethodSearchTest >> testImplementorsLeaveOutWhatTraitedClassInstalls [
+	"An implementor lookup reads the behaviors of its scope itself, and leaves out the copies TraitedClass installs as a sweep does."
+
+	| result |
+	result := self callToolNamed: 'method_reference_search' withArguments: {
+			          (#kind -> 'implementors').
+			          (#name -> 'allTraits').
+			          (self searchScope: { (#classes -> { MCPToolMethodSearchTraitUser name }) }) } asDictionary.
+	self assert: ((self dataFrom: result) at: #methods) isEmpty
 ]
 
 { #category : 'tests' }
@@ -772,6 +813,21 @@ MCPToolMethodSearchTest >> testTraitMethodCopiesAreAnsweredOncePerSide [
 			MCPToolMethodSearchTraitOtherUser name.
 			MCPToolMethodSearchTraitOverrider name.
 			MCPToolMethodSearchTraitUser name }
+]
+
+{ #category : 'tests' }
+MCPToolMethodSearchTest >> testTraitedClassStillListsItsOwnMethods [
+	"TraitedClass's own methods are its own, not copies, so a sweep of TraitedClass lists them."
+
+	| data |
+	(Smalltalk globals includesKey: #TraitedClass) ifFalse: [ ^ self skip: 'This Pharo has no TraitedClass.' ].
+	data := self dataFrom: (self callToolWith: {
+				         (self searchScope: { (#classes -> #( 'TraitedClass' )) } side: 'instance').
+				         (#selector -> 'allTraits') } asDictionary).
+	self assert: ((self referencesOf: (data at: #methods)) includes: 'TraitedClass>>allTraits').
+	data := self dataFrom:
+		        (self callToolWith: { (self searchScope: { (#classes -> #( 'TraitedClass' )) } side: 'instance') } asDictionary).
+	self assert: ((data at: #pagination) at: #totalCount) equals: (Smalltalk globals at: #TraitedClass) localMethods size
 ]
 
 { #category : 'tests' }

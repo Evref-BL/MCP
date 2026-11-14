@@ -123,7 +123,10 @@ MCPToolMethodSearch >> implementorMethodsForSelector: selectorSymbol queryReques
 		^ (scopeQuery methods select: [ :eachMethod | eachMethod selector = selectorSymbol ]) asArray ].
 	methods := OrderedCollection new.
 	scopeQuery behaviors do: [ :eachBehavior |
-		(eachBehavior includesSelector: selectorSymbol) ifTrue: [ methods add: eachBehavior >> selectorSymbol ] ].
+			(eachBehavior includesSelector: selectorSymbol) ifTrue: [
+					| method |
+					method := eachBehavior >> selectorSymbol.
+					(scopeQuery isInstalledFromTraitedClass: method) ifFalse: [ methods add: method ] ] ].
 	^ methods asArray
 ]
 
