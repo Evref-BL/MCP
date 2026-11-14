@@ -931,6 +931,33 @@ MCPToolContractsTest >> testEvaluateIsMarkedAsAdvancedEscapeHatch [
 ]
 
 { #category : 'tests - evaluate' }
+MCPToolContractsTest >> testEvaluateLetsASaveFinish [
+	"Stopped between the snapshot and the restart of the listener that follows it, a save would leave the image without its listener. Neither process is resumed, so nothing is saved."
+
+	| command other saving |
+	command := MCPEvaluateCommand
+		           tool: MCPToolEvaluate new
+		           request: (MCPEvaluateRequest new initializeCode: 'Smalltalk saveSession' timeoutSeconds: 1)
+		           resultPreviewCharacterLimit: 100.
+	saving := Process
+		          forContext: (Context
+				           sender: nil
+				           receiver: SessionManager default
+				           method: SessionManager >> #snapshot:andQuit:
+				           arguments: #( true false ))
+		          priority: Processor userBackgroundPriority.
+	other := Process
+		         forContext: (Context
+				          sender: nil
+				          receiver: SessionManager default
+				          method: SessionManager >> #currentSession
+				          arguments: #(  ))
+		         priority: Processor userBackgroundPriority.
+	self assert: (command isSaving: saving).
+	self deny: (command isSaving: other)
+]
+
+{ #category : 'tests - evaluate' }
 MCPToolContractsTest >> testEvaluateLetsNotificationsUseTheirDefaultAction [
 
 	| data result |

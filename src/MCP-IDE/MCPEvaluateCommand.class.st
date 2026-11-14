@@ -110,6 +110,15 @@ MCPEvaluateCommand >> initializeTool: aTool request: aRequest resultPreviewChara
 ]
 
 { #category : 'private' }
+MCPEvaluateCommand >> isSaving: aProcess [
+	"A save restarts the MCP listener in the process that asked for it, after the snapshot. Stopped in between, the image would be left without its listener, so a save runs to its end, however long."
+
+	| top |
+	top := aProcess suspendedContext ifNil: [ ^ false ].
+	^ (top stackOfSize: self savingFrameLimit) anySatisfy: [ :each | each method == (SessionManager >> #snapshot:andQuit:) ]
+]
+
+{ #category : 'private' }
 MCPEvaluateCommand >> notStartedDetailsFor: processes [
 
 	^ Dictionary new
@@ -169,6 +178,13 @@ MCPEvaluateCommand >> runtimeFailureFor: anError [
 	anError mcpAddToolErrorDetailsTo: details.
 	self addTranscriptTo: details.
 	^ MCPEvaluateResult errorSummary: (tool runtimeFailureMessageFor: anError) details: details
+]
+
+{ #category : 'private' }
+MCPEvaluateCommand >> savingFrameLimit [
+	"How deep in the evaluator's stack a save is looked for: deeper than the snapshot and the startup actions that follow it."
+
+	^ 50
 ]
 
 { #category : 'private' }
