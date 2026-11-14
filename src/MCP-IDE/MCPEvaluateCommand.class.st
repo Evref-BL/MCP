@@ -206,6 +206,40 @@ MCPEvaluateCommand >> start: aProcess [
 ]
 
 { #category : 'private' }
+MCPEvaluateCommand >> stop: anEvaluator [
+	"Where the code is, and what it wrote, are read before it unwinds. A computing evaluator is taken off the run queue here: the helper below runs at its priority, and would otherwise wait behind it for a turn it may never get. One waiting on a semaphore is left waiting, since terminating it from there is what releases a critical section. The helper terminates it, so that its ensure blocks run at its own priority and this process waits for them only so long."
+
+	| details stopped |
+	anEvaluator suspendingList == (Processor waitingProcessesAt: anEvaluator priority) ifTrue: [ anEvaluator suspend ].
+	details := self stoppedDetailsFor: anEvaluator.
+	stopped := Semaphore new.
+	[ [ anEvaluator terminate ] ensure: [ stopped signal ] ] forkAt: anEvaluator priority named: tool name , ' stop'.
+	(stopped waitTimeoutSeconds: self unwindingSeconds) ifTrue: [
+			details at: #stillUnwinding put: true.
+			transcript ifNotNil: [ :recorder | recorder finish ] ].
+	^ MCPEvaluateResult errorSummary: (tool stoppedMessageFor: request timeoutSeconds) details: details
+]
+
+{ #category : 'private' }
+MCPEvaluateCommand >> stoppedDetailsFor: anEvaluator [
+	"Where the code is, read before it unwinds, cut at the outermost DoIt as a failure's frames are. Each frame is printed by its class and method only: printing a value would run the stopped code's own printOn:, which may be what never ends, or wait on a lock the stopped process holds."
+
+	| details frames limit |
+	limit := tool errorStackTraceLimit.
+	frames := anEvaluator suspendedContext
+		          ifNil: [ #(  ) ]
+		          ifNotNil: [ :top | tool framesUpToCallerIn: (top stackOfSize: limit + 1) ].
+	details := Dictionary new.
+	details at: #stoppedIn put: (tool
+			 collapsedFrameLines: ((frames first: (frames size min: limit)) collect: [ :each | each printString ] as: Array)
+			 deeper: frames size > limit).
+	details at: #hint put: tool longerWorkHintLines.
+	details at: #timeoutSeconds put: request timeoutSeconds.
+	transcript ifNotNil: [ self addTranscriptTo: details ].
+	^ details
+]
+
+{ #category : 'private' }
 MCPEvaluateCommand >> syntaxFailureFor: aNotice [
 
 	| details index line |
@@ -217,4 +251,11 @@ MCPEvaluateCommand >> syntaxFailureFor: aNotice [
 			details at: #line put: line.
 			details at: #sourceLine put: (request code lineCorrespondingToIndex: index) ].
 	^ MCPEvaluateResult errorSummary: (tool syntaxFailureMessageFor: aNotice line: line) details: details
+]
+
+{ #category : 'private' }
+MCPEvaluateCommand >> unwindingSeconds [
+	"How long a stopped evaluation's ensure blocks may run before the answer goes without waiting for them."
+
+	^ 5
 ]

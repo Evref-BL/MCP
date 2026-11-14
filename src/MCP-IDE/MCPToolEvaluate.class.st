@@ -41,6 +41,16 @@ MCPToolEvaluate >> buildInputSchema [
 		  yourself
 ]
 
+{ #category : 'private' }
+MCPToolEvaluate >> collapsedFrameLines: frameNames deeper: aBoolean [
+	"A recursion fills every frame kept with one name, so a run of equal names is one line with its count. When the stack goes deeper than the frames kept, the run that reaches the last of them counts at least that many."
+
+	| runs |
+	runs := frameNames piecesCutWhere: [ :left :right | left ~= right ].
+	^ (runs withIndexCollect: [ :run :index |
+		   self frameLineFor: run first count: run size atLeast: (aBoolean and: [ index = runs size ]) ]) asArray
+]
+
 { #category : 'private - execution' }
 MCPToolEvaluate >> commandForRequest: evaluateRequest [
 
@@ -130,6 +140,20 @@ MCPToolEvaluate >> failureTextFor: structuredContent [
 ]
 
 { #category : 'private' }
+MCPToolEvaluate >> frameLineFor: aFrameName count: anInteger atLeast: aBoolean [
+
+	anInteger = 1 ifTrue: [ ^ aFrameName ].
+	^ String streamContents: [ :stream |
+			  stream
+				  nextPutAll: aFrameName;
+				  nextPutAll: ', '.
+			  aBoolean ifTrue: [ stream nextPutAll: 'at least ' ].
+			  stream
+				  print: anInteger;
+				  nextPutAll: ' times in a row' ]
+]
+
+{ #category : 'private' }
 MCPToolEvaluate >> heldByHintLinesFor: processes [
 	"An earlier evaluation ends at its own limit. A fork has none, and no tool can stop it, since stopping a process takes an evaluation."
 
@@ -170,6 +194,22 @@ MCPToolEvaluate >> isEvaluation: aProcess [
 	"An evaluation runs in a process named after this tool, and so does the process that stops one."
 
 	^ aProcess name beginsWith: self name
+]
+
+{ #category : 'private' }
+MCPToolEvaluate >> longerWorkHintLines [
+	"Forking is the one way a stopped evaluation is told to run longer work: a raised limit is lost wherever the client waits less. The fork runs below every evaluation, so even one that never ends keeps none from starting, and an error in the work becomes its result rather than a file that never appears."
+
+	^ 'Run longer work in a forked process that writes its result to a file:
+[ | file result |
+	file := FileLocator imageDirectory / ''result.txt''.
+	file ensureDelete.
+	result := [ "the work" ] on: Error do: [ :error | error description ].
+	file writeStreamDo: [ :out | out print: result ] ]
+		forkAt: Processor userBackgroundPriority
+		named: ''result''
+The file appears when the work ends; read it in a later call.
+A fork has no time limit, and at this priority it holds up no evaluation.' lines
 ]
 
 { #category : 'metadata' }
@@ -233,6 +273,16 @@ MCPToolEvaluate >> runtimeFailureMessageFor: anError [
 				  nextPutAll: anError class name;
 				  nextPutAll: '): ';
 				  nextPutAll: message ]
+]
+
+{ #category : 'private' }
+MCPToolEvaluate >> stoppedMessageFor: seconds [
+
+	^ String streamContents: [ :stream |
+			  stream
+				  nextPutAll: 'Evaluation stopped after ';
+				  print: seconds;
+				  nextPutAll: ' s, its time limit.' ]
 ]
 
 { #category : 'private' }
