@@ -253,10 +253,13 @@ MCPCommandError class >> signalMissingPackageNamed: aPackageName scopeName: scop
 
 { #category : 'signaling' }
 MCPCommandError class >> signalMissingProjectNamed: aProjectName [
+	"Projects are named only by package_search's projects, which is where the scope says the name was given."
 
 	| message |
 	message := String streamContents: [ :stream | stream << 'Project ' << aProjectName << ' does not exist.' ].
-	^ self signalErrorCode: #ProjectNotFound message: message details: { (#project -> aProjectName) } asDictionary
+	^ self signalErrorCode: #ProjectNotFound message: message details: {
+			  (#project -> aProjectName).
+			  (#scope -> 'projects') } asDictionary
 ]
 
 { #category : 'signaling' }

@@ -295,6 +295,13 @@ MCPCompiledMethodScopeQuery >> parentBehaviorsForClassNames [
 	^ behaviors asArray
 ]
 
+{ #category : 'phrasing' }
+MCPCompiledMethodScopeQuery >> scopePhrase [
+	"A sweep of one side says which."
+
+	^ super scopePhrase ifNotNil: [ :phrase | phrase , self sidePhrase ]
+]
+
 { #category : 'accessing' }
 MCPCompiledMethodScopeQuery >> side [
 
@@ -305,6 +312,14 @@ MCPCompiledMethodScopeQuery >> side [
 MCPCompiledMethodScopeQuery >> side: aSide [
 
 	side := aSide ifNil: [ 'both' ]
+]
+
+{ #category : 'phrasing' }
+MCPCompiledMethodScopeQuery >> sidePhrase [
+
+	side = 'instance' ifTrue: [ ^ ', instance side' ].
+	side = 'class' ifTrue: [ ^ ', class side' ].
+	^ ''
 ]
 
 { #category : 'private - scope' }

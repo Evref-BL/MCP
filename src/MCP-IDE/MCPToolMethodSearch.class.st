@@ -87,12 +87,6 @@ MCPToolMethodSearch >> collapsedTraitEntriesIn: entries [
 	^ collapsed
 ]
 
-{ #category : 'private - results' }
-MCPToolMethodSearch >> failureMessageForScope: scopeSummary error: anError [
-
-	^ self scopeQueryFailureMessageFor: 'methods' scope: scopeSummary error: anError
-]
-
 { #category : 'private - filtering' }
 MCPToolMethodSearch >> fieldTextsForMethodEntry: anEntry sourceText: sourceText fieldName: fieldName [
 
@@ -257,9 +251,15 @@ MCPToolMethodSearch >> queryResultDataForQueryRequest: queryRequest page: page [
 ]
 
 { #category : 'private - template' }
-MCPToolMethodSearch >> requestedContextFromRequest: request [
+MCPToolMethodSearch >> scopeQueryFromRequest: request [
 
-	^ { (#scope -> (self classAndMethodScopeSummaryFromRequest: request)) } asDictionary
+	^ self methodScopeQueryFromRequest: request
+]
+
+{ #category : 'private - template' }
+MCPToolMethodSearch >> searchedNoun [
+
+	^ 'method'
 ]
 
 { #category : 'private - methods' }
@@ -282,12 +282,6 @@ MCPToolMethodSearch >> sortedMethodEntries: entries [
 
 	^ (self collapsedTraitEntriesIn: entries) asArray sort: [ :left :right |
 		  (self methodEntryLabel: left) <= (self methodEntryLabel: right) ]
-]
-
-{ #category : 'private - results' }
-MCPToolMethodSearch >> successSummaryForScope: scopeSummary page: page [
-
-	^ self scopeQuerySuccessSummaryFor: 'methods' scope: scopeSummary page: page
 ]
 
 { #category : 'private - schema' }

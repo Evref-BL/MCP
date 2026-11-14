@@ -70,10 +70,10 @@ MCPToolSearchRepositories >> description [
 	^ 'Search registered repositories by image-side repository, package, class, and modification state.'
 ]
 
-{ #category : 'private - results' }
-MCPToolSearchRepositories >> failureMessageForScope: scopeSummary error: anError [
+{ #category : 'private - template' }
+MCPToolSearchRepositories >> failureScopePhraseFromRequest: request [
 
-	^ self scopeQueryFailureMessageFor: 'repositories' scope: scopeSummary error: anError
+	^ 'the image'
 ]
 
 { #category : 'private - filtering' }
@@ -86,6 +86,13 @@ MCPToolSearchRepositories >> fieldTextsForRepositoryEntry: anEntry fieldName: fi
 	fieldName = 'class' ifTrue: [ ^ self classNamesForRepositoryEntry: anEntry ].
 	fieldName = 'modifiedPackage' ifTrue: [ ^ anEntry at: #modifiedPackages ].
 	^ #(  )
+]
+
+{ #category : 'private - template' }
+MCPToolSearchRepositories >> filtersQueryRequest: queryRequest [
+	"Its filters are its fields and the two states it can keep."
+
+	^ queryRequest hasFieldFilters or: [ queryRequest isModified isNotNil or: [ queryRequest isMissing isNotNil ] ]
 ]
 
 { #category : 'private - filtering' }
@@ -160,24 +167,6 @@ MCPToolSearchRepositories >> repositoryFilterFieldNames [
 	^ #( 'name' 'location' 'subdirectory' 'package' 'class' 'modifiedPackage' )
 ]
 
-{ #category : 'private - results' }
-MCPToolSearchRepositories >> repositoryScopeSummaryForAssociations: scopeAssociations [
-
-	| labels |
-	labels := OrderedCollection new.
-	scopeAssociations do: [ :eachAssociation | eachAssociation value ifTrue: [ self addScopeLabel: eachAssociation key to: labels ] ].
-	^ self scopeSummaryFromLabels: labels
-]
-
-{ #category : 'private - results' }
-MCPToolSearchRepositories >> repositoryScopeSummaryForRequest: queryRequest [
-
-	^ self repositoryScopeSummaryForAssociations: {
-			  ('modified-state' -> queryRequest isModified isNotNil).
-			  ('missing-state' -> queryRequest isMissing isNotNil).
-			  ('field-filters' -> queryRequest hasFieldFilters) }
-]
-
 { #category : 'private - schema' }
 MCPToolSearchRepositories >> repositoryTextFilterPropertyNamed: propertyName description: descriptionString [
 
@@ -185,13 +174,10 @@ MCPToolSearchRepositories >> repositoryTextFilterPropertyNamed: propertyName des
 ]
 
 { #category : 'private - template' }
-MCPToolSearchRepositories >> requestedContextFromRequest: request [
+MCPToolSearchRepositories >> scopePhraseForQueryRequest: queryRequest [
+	"Repositories are registered with the image, so the image is where this looks."
 
-	^ { (#scope -> (self repositoryScopeSummaryForAssociations: {
-			    ('modified-state' -> (request hasArgumentNamed: 'isModified')).
-			    ('missing-state' -> (request hasArgumentNamed: 'isMissing')).
-			    ('field-filters' -> (self repositoryFilterFieldNames anySatisfy: [ :fieldName | request hasArgumentNamed: fieldName ])) })) }
-		  asDictionary
+	^ 'the image'
 ]
 
 { #category : 'private - template' }
@@ -201,15 +187,9 @@ MCPToolSearchRepositories >> searchRequestFromToolRequest: request [
 ]
 
 { #category : 'private - template' }
-MCPToolSearchRepositories >> successSummaryForQueryRequest: queryRequest page: page [
+MCPToolSearchRepositories >> searchedNoun [
 
-	^ self successSummaryForScope: (self repositoryScopeSummaryForRequest: queryRequest) page: page
-]
-
-{ #category : 'private - results' }
-MCPToolSearchRepositories >> successSummaryForScope: scopeSummary page: page [
-
-	^ self scopeQuerySuccessSummaryFor: 'repositories' scope: scopeSummary page: page
+	^ 'repository'
 ]
 
 { #category : 'metadata' }

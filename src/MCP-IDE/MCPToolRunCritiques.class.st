@@ -215,9 +215,10 @@ MCPToolRunCritiques >> description [
 ]
 
 { #category : 'private - template' }
-MCPToolRunCritiques >> failureMessageForScope: scopeSummary error: anError [
+MCPToolRunCritiques >> filtersQueryRequest: queryRequest [
+	"Rules choose what is run, not which hits are kept."
 
-	^ self scopeQueryFailureMessageFor: 'critiques' scope: scopeSummary error: anError
+	^ false
 ]
 
 { #category : 'private - results' }
@@ -337,12 +338,6 @@ MCPToolRunCritiques >> queryResultDataForQueryRequest: queryRequest page: page [
 	^ data
 ]
 
-{ #category : 'private - template' }
-MCPToolRunCritiques >> requestedContextFromRequest: request [
-
-	^ { (#scope -> (self classAndMethodScopeSummaryFromRequest: request)) } asDictionary
-]
-
 { #category : 'private - rules' }
 MCPToolRunCritiques >> rule: aRule runsOn: anEntity for: queryRequest [
 	"Whether a person's configuration lets aRule run on anEntity: the caller named it, the image has it on or the package's manifest forces it, and the manifest neither marks it a false positive there nor rejects it."
@@ -416,10 +411,28 @@ MCPToolRunCritiques >> ruleGroupsFromEntries: entries [
 	^ groups collect: [ :each | self finalizedRuleGroup: each ] as: Array
 ]
 
+{ #category : 'private - template' }
+MCPToolRunCritiques >> scopeQueryFromRequest: request [
+
+	^ self methodScopeQueryFromRequest: request
+]
+
+{ #category : 'private - template' }
+MCPToolRunCritiques >> searchActivityText [
+
+	^ 'run critiques'
+]
+
 { #category : 'private - request' }
 MCPToolRunCritiques >> searchRequestFromToolRequest: request [
 
 	^ MCPCritiqueRunRequest fromRequest: request tool: self
+]
+
+{ #category : 'private - template' }
+MCPToolRunCritiques >> searchedNoun [
+
+	^ 'critique hit'
 ]
 
 { #category : 'private - scope' }
@@ -454,12 +467,6 @@ MCPToolRunCritiques >> sourceAnchorForCritique: critique [
 
 	(critique class canUnderstand: #sourceAnchor) ifFalse: [ ^ nil ].
 	^ critique sourceAnchor
-]
-
-{ #category : 'private - results' }
-MCPToolRunCritiques >> successSummaryForScope: scopeSummary page: page [
-
-	^ self scopeQuerySuccessSummaryFor: 'critique hits' scope: scopeSummary page: page
 ]
 
 { #category : 'private - entries' }

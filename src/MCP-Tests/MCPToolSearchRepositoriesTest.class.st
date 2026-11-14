@@ -159,6 +159,27 @@ MCPToolSearchRepositoriesTest >> testListsStaleRepositoryAsMissingAndContinues [
 				self deny: (entry includesKey: #branch) ]
 ]
 
+{ #category : 'tests' }
+MCPToolSearchRepositoriesTest >> testSummaryCountsTheRepositoriesOfTheImage [
+	"Repositories are registered with the image, so that is where a search looks; a name, a field or a state it keeps makes the count one that matches."
+
+	| alpha beta |
+	alpha := self newRepositoryNamed: 'MCP Alpha Repository' location: FileLocator imageDirectory packageNames: #( 'MCP' ).
+	beta := self newRepositoryNamed: 'MCP Beta Repository' location: FileLocator imageDirectory packageNames: #( 'Other-Package' ).
+	self
+		withRepositories: {
+				alpha.
+				beta }
+		do: [
+				self assert: (self summaryFrom: (self callToolWith: Dictionary new)) equals: '2 repositories in the image.'.
+				self
+					assert: (self summaryFrom: (self callToolWith: { (#name -> 'Alpha') } asDictionary))
+					equals: '1 repository matches in the image.'.
+				self
+					assert: (self summaryFrom: (self callToolWith: { (#isMissing -> true) } asDictionary))
+					equals: 'No repositories match in the image.' ]
+]
+
 { #category : 'private - calling' }
 MCPToolSearchRepositoriesTest >> toolName [
 

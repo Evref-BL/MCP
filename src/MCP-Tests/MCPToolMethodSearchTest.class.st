@@ -357,6 +357,28 @@ MCPToolMethodSearchTest >> testEquivalentSearchReturnsStructuredErrorWhenReferen
 ]
 
 { #category : 'tests' }
+MCPToolMethodSearchTest >> testEquivalentSearchSummaryNamesTheReferenceMethod [
+
+	| result |
+	result := self callToolNamed: 'method_equivalent_search' withArguments: {
+			          (self searchScope: { (#classes -> #( 'MCPToolMethodSearchReferenceFixture' )) } side: 'class').
+			          (#class -> 'MCPToolMethodSearchReferenceFixture').
+			          (#selector -> 'sharedTarget').
+			          (#side -> 'class') } asDictionary.
+	self
+		assert: (self summaryFrom: result)
+		equals:
+		'1 method equivalent to MCPToolMethodSearchReferenceFixture class>>sharedTarget in MCPToolMethodSearchReferenceFixture, class side.'.
+	result := self callToolNamed: 'method_equivalent_search' withArguments: {
+			          (self searchScope: { (#classes -> #( 'MCPToolHierarchyTestMid' )) }).
+			          (#class -> 'MCPToolMethodSearchReferenceFixture').
+			          (#selector -> 'sharedTarget') } asDictionary.
+	self
+		assert: (self summaryFrom: result)
+		equals: 'No methods equivalent to MCPToolMethodSearchReferenceFixture>>sharedTarget in MCPToolHierarchyTestMid.'
+]
+
+{ #category : 'tests' }
 MCPToolMethodSearchTest >> testExactEmptyFilterIsApplied [
 	"A blank filter matches nothing and is not missing either, so the answer says to leave it out."
 

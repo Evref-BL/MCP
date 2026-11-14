@@ -20,13 +20,8 @@ Class {
 { #category : 'instance creation' }
 MCPSearchPackagesRequest class >> fromRequest: request tool: aTool [
 
-	| scopeQuery |
-	scopeQuery := MCPPackageScopeQuery new
-		              projectNames: (request stringCollectionArgumentNamed: 'projects');
-		              packageNames: (request stringCollectionArgumentNamed: 'packages');
-		              yourself.
 	^ self new
-		  scopeQuery: scopeQuery;
+		  scopeQuery: (aTool packageScopeQueryFromRequest: request);
 		  filterMode: aTool defaultFilterMode;
 		  fieldFilters: (aTool fieldFiltersFromRequest: request fieldNames: aTool packageFilterFieldNames);
 		  caseSensitive: false;
@@ -75,6 +70,13 @@ MCPSearchPackagesRequest >> filterMode: anObject [
 MCPSearchPackagesRequest >> hasFieldFilters [
 
 	^ self fieldFilters isNotEmpty
+]
+
+{ #category : 'testing' }
+MCPSearchPackagesRequest >> hasFilterPattern [
+	"A package search takes no filter pattern, only field filters."
+
+	^ false
 ]
 
 { #category : 'accessing' }

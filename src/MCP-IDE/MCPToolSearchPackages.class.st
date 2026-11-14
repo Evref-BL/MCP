@@ -35,12 +35,6 @@ MCPToolSearchPackages >> description [
 	^ 'Search packages by name, project, or tag.'
 ]
 
-{ #category : 'private - results' }
-MCPToolSearchPackages >> failureMessageForScope: scopeSummary error: anError [
-
-	^ self scopeQueryFailureMessageFor: 'packages' scope: scopeSummary error: anError
-]
-
 { #category : 'private - filtering' }
 MCPToolSearchPackages >> fieldTextsForPackageEntry: anEntry fieldName: fieldName [
 
@@ -103,6 +97,15 @@ MCPToolSearchPackages >> packageFilterInputProperties [
 			   description: 'Keep packages carrying a tag that contains this text, ignoring case.') }
 ]
 
+{ #category : 'private - request' }
+MCPToolSearchPackages >> packageScopeQueryFromRequest: request [
+
+	^ MCPPackageScopeQuery new
+		  projectNames: (request stringCollectionArgumentNamed: 'projects');
+		  packageNames: (request stringCollectionArgumentNamed: 'packages');
+		  yourself
+]
+
 { #category : 'private - template' }
 MCPToolSearchPackages >> queryEntriesForQueryRequest: queryRequest [
 
@@ -116,11 +119,9 @@ MCPToolSearchPackages >> queryResultDataForQueryRequest: queryRequest page: page
 ]
 
 { #category : 'private - template' }
-MCPToolSearchPackages >> requestedContextFromRequest: request [
+MCPToolSearchPackages >> scopeQueryFromRequest: request [
 
-	^ { (#scope -> (self
-		    packageScopeSummaryForProjectNames: (request stringCollectionArgumentNamed: 'projects')
-		    packageNames: (request stringCollectionArgumentNamed: 'packages'))) } asDictionary
+	^ self packageScopeQueryFromRequest: request
 ]
 
 { #category : 'private - template' }
@@ -130,20 +131,9 @@ MCPToolSearchPackages >> searchRequestFromToolRequest: request [
 ]
 
 { #category : 'private - template' }
-MCPToolSearchPackages >> successSummaryForQueryRequest: queryRequest page: page [
+MCPToolSearchPackages >> searchedNoun [
 
-	^ self
-		  successSummaryForScope:
-		  (self
-			   packageScopeSummaryForProjectNames: queryRequest scopeQuery projectNames
-			   packageNames: queryRequest scopeQuery packageNames)
-		  page: page
-]
-
-{ #category : 'private - results' }
-MCPToolSearchPackages >> successSummaryForScope: scopeSummary page: page [
-
-	^ self scopeQuerySuccessSummaryFor: 'packages' scope: scopeSummary page: page
+	^ 'package'
 ]
 
 { #category : 'metadata' }

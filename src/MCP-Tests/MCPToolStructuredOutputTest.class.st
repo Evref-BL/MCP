@@ -8,6 +8,15 @@ Class {
 	#package : 'MCP-Tests'
 }
 
+{ #category : 'private' }
+MCPToolStructuredOutputTest >> summaryOfTool: aToolName with: someAssociations [
+
+	| result |
+	result := self callToolNamed: aToolName withArguments: someAssociations asDictionary.
+	self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
+	^ self summaryFrom: result
+]
+
 { #category : 'tests' }
 MCPToolStructuredOutputTest >> testCountedNounsReadAsEnglish [
 
@@ -820,6 +829,22 @@ MCPToolStructuredOutputTest >> testSearchClassesReturnsStructuredWarnings [
 ]
 
 { #category : 'tests' }
+MCPToolStructuredOutputTest >> testSearchFailureNamesTheScope [
+	"A search that fails names what it was asked to search, a name that does not exist included, and leaves the scope key of the details to the schema path of a scope entry."
+
+	| error result |
+	result := self callToolNamed: 'method_source_search' withArguments: {
+			          (self searchScope: { (#classes -> #( 'MCPToolMethodSearchTestTarget' 'MCPNoSuchSummaryClass' )) }).
+			          (#filterMode -> 'regex').
+			          (#filter -> '[') } asDictionary.
+	error := self errorFrom: result.
+	self assert: (self resultIndicatesError: result).
+	self assert: ((self summaryFrom: result) beginsWith:
+			 'Unable to search methods in MCPToolMethodSearchTestTarget and MCPNoSuchSummaryClass (RegexSyntaxError): ').
+	self deny: (error includesKey: #scope)
+]
+
+{ #category : 'tests' }
 MCPToolStructuredOutputTest >> testSearchPackagesDefaultsToImageScopeWhenScopePropertiesAreOmitted [
 
 	| data packageNames packages result |
@@ -859,6 +884,106 @@ MCPToolStructuredOutputTest >> testSearchPackagesReturnsStructuredError [
 	self assert: (error at: #project) equals: 'DefinitelyMissingProject'.
 	self assert: (error at: #scope) equals: 'projects'.
 	self assert: ((error at: #message) includesSubstring: 'Project DefinitelyMissingProject does not exist.')
+]
+
+{ #category : 'tests' }
+MCPToolStructuredOutputTest >> testSearchSummaryCountsOneInTheSingular [
+
+	self
+		assert: (self summaryOfTool: 'class_search' with: { (self searchScope: { (#classes -> #( 'MCPToolHierarchyTestMid' )) }) })
+		equals: '1 class in MCPToolHierarchyTestMid.'.
+	self
+		assert: (self summaryOfTool: 'class_search' with: { (#name -> 'MCPToolHierarchyTestMid') })
+		equals: '1 class matches in the image.'.
+	self
+		assert: (self summaryOfTool: 'method_search' with: {
+					 (self searchScope: { (#classes -> #( 'MCPToolMethodSearchTestTarget' )) }).
+					 (#selector -> 'classNeedleSelector') })
+		equals: '1 method matches in MCPToolMethodSearchTestTarget.'
+]
+
+{ #category : 'tests' }
+MCPToolStructuredOutputTest >> testSearchSummaryLeavesOutANameThatDoesNotExist [
+	"The warning names a missing name; the summary says where the search did look."
+
+	| result |
+	result := self
+		          callToolNamed: 'class_search'
+		          withArguments:
+		          { (self searchScope: { (#classes -> #( 'MCPToolHierarchyTestMid' 'MCPNoSuchSummaryClass' )) }) } asDictionary.
+	self assert: (self summaryFrom: result) equals: '1 class in MCPToolHierarchyTestMid.'.
+	self assert: (self warningsFrom: result) size equals: 1.
+	self assert: ((self warningsFrom: result) first includesSubstring: 'MCPNoSuchSummaryClass').
+	result := self callToolNamed: 'method_search' withArguments: {
+			          (self searchScope: { (#classes -> #( 'MCPNoSuchSummaryClass' )) }).
+			          (#selector -> 'size') } asDictionary.
+	self assert: (self summaryFrom: result) equals: 'No methods match: the scope names nothing that exists.'.
+	self assert: ((self warningsFrom: result) first includesSubstring: 'MCPNoSuchSummaryClass')
+]
+
+{ #category : 'tests' }
+MCPToolStructuredOutputTest >> testSearchSummaryNamesTheScopeItSearched [
+	"A summary says where the search looked, in words, rather than which arguments the scope was given."
+
+	self
+		assert: (self
+				 summaryOfTool: 'class_search'
+				 with: { (self searchScope: { (#classes -> #( 'MCPToolHierarchyTestBase' 'MCPToolHierarchyTestMid' )) }) })
+		equals: '2 classes in MCPToolHierarchyTestBase and MCPToolHierarchyTestMid.'.
+	self
+		assert: (self summaryOfTool: 'package_search' with: { (#packages -> #( 'MCP-Tests-Resources' )) })
+		equals: '1 package in package MCP-Tests-Resources.'.
+	self
+		assert:
+		(self summaryOfTool: 'class_search' with: { (self searchScope: { (#subclassesOf -> #( 'MCPToolHierarchyTestBase' )) }) })
+		equals: '2 classes in the subclasses of MCPToolHierarchyTestBase.'.
+	self
+		assert: (self summaryOfTool: 'class_search' with: { (#name -> 'MCPToolHierarchyTest') })
+		equals: '3 classes match in the image.'.
+	self
+		assert: (self
+				 summaryOfTool: 'method_search'
+				 with: { (self searchScope: { (#classes -> #( 'MCPToolMethodSearchTestTarget' )) } side: 'class') })
+		equals: '2 methods in MCPToolMethodSearchTestTarget, class side.'.
+	self
+		assert: (self summaryOfTool: 'class_search' with: { (self searchScope: {
+						  (#packages -> #( 'MCP-Tests-Resources-Extensions' )).
+						  (#classes -> #( 'MCPToolHierarchyTestMid' )) }) })
+		equals: ('{1} classes in package MCP-Tests-Resources-Extensions and MCPToolHierarchyTestMid.' format:
+				 { (1 + (self packageOrganizer packageNamed: 'MCP-Tests-Resources-Extensions') classes size) })
+]
+
+{ #category : 'tests' }
+MCPToolStructuredOutputTest >> testSearchSummarySaysWhenNothingMatched [
+
+	self
+		assert: (self summaryOfTool: 'class_search' with: { (#name -> 'MCPNoClassIsNamedLikeThisAnywhere') })
+		equals: 'No classes match in the image.'.
+	self
+		assert:
+		(self summaryOfTool: 'class_search' with: { (self searchScope: { (#subclassesOf -> #( 'MCPToolHierarchyTestChild' )) }) })
+		equals: 'No classes in the subclasses of MCPToolHierarchyTestChild.'
+]
+
+{ #category : 'tests' }
+MCPToolStructuredOutputTest >> testSearchSummarySaysWhereTheNextPageStarts [
+
+	| arguments result total |
+	arguments := { (self searchScope: { (#packages -> #( 'MCP-IDE' )) }) }.
+	result := self callToolNamed: 'method_search' withArguments: arguments asDictionary.
+	total := ((self dataFrom: result) at: #pagination) at: #totalCount.
+	self assert: total > 50.
+	self
+		assert: (self summaryFrom: result)
+		equals: ('25 of {1} methods in package MCP-IDE. Next page: offset 25, or narrow the search.' format: { total }).
+	self
+		assert: (self summaryOfTool: 'method_search' with: arguments , { (#offset -> 25) })
+		equals: ('25 of {1} methods in package MCP-IDE. Next page: offset 50, or narrow the search.' format: { total }).
+	self
+		assert: (self summaryOfTool: 'method_search' with: arguments , { (#offset -> (total + 5)) })
+		equals: ('No methods from offset {1}; {2} methods in package MCP-IDE.' format: {
+					 (total + 5).
+					 total })
 ]
 
 { #category : 'tests' }

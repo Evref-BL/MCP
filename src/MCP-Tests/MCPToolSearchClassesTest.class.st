@@ -185,8 +185,8 @@ MCPToolSearchClassesTest >> testImageScopeCanFilterAndPaginate [
 
 	| classNames data pagination result summary |
 	result := self callToolWith: {
-		          (#name -> self fixturePrefix).
-		          (#offset -> 1) } asDictionary.
+			          (#name -> self fixturePrefix).
+			          (#offset -> 1) } asDictionary.
 	data := self dataFrom: result.
 	pagination := data at: #pagination.
 	summary := self summaryFrom: result.
@@ -197,7 +197,7 @@ MCPToolSearchClassesTest >> testImageScopeCanFilterAndPaginate [
 	self assert: (pagination at: #returnedCount) equals: 2.
 	self assert: (pagination at: #totalCount) equals: 3.
 	self deny: (pagination at: #truncated).
-	self assert: (summary includesSubstring: 'Showing 2 of 3 classes').
+	self assert: summary equals: '2 of 3 classes match in the image.'.
 	self assert: classNames equals: {
 			self childClassName.
 			self grandchildClassName } asArray

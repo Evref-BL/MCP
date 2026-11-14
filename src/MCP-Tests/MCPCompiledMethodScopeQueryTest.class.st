@@ -129,6 +129,62 @@ MCPCompiledMethodScopeQueryTest >> testParentScopeCollectsMethodsFromParentsOnly
 ]
 
 { #category : 'tests' }
+MCPCompiledMethodScopeQueryTest >> testScopePhraseLeavesOutWhatTheQueryCouldNotResolve [
+
+	| query |
+	query := MCPCompiledMethodScopeQuery new
+		         classNames: #( 'MCPToolHierarchyTestChild' 'MCPDefinitelyMissingPhraseClass' );
+		         side: 'class';
+		         yourself.
+	self assert: query scopePhrase equals: 'MCPToolHierarchyTestChild and MCPDefinitelyMissingPhraseClass, class side'.
+	query methods.
+	self assert: query scopePhrase equals: 'MCPToolHierarchyTestChild, class side'.
+	self deny: query namesNothingThatExists.
+	query classNames: #( 'MCPDefinitelyMissingPhraseClass' ).
+	query methods.
+	self assert: query namesNothingThatExists.
+	self assert: query scopePhrase isNil
+]
+
+{ #category : 'tests' }
+MCPCompiledMethodScopeQueryTest >> testScopePhraseNamesWhereTheQueryLooks [
+	"Names are listed up to three and counted from four on, in the order projects, packages, classes, hierarchies, subclasses, superclasses."
+
+	self assert: MCPCompiledMethodScopeQuery new scopePhrase equals: 'the image'.
+	self
+		assert: (MCPCompiledMethodScopeQuery new
+				 side: 'instance';
+				 yourself) scopePhrase
+		equals: 'the image, instance side'.
+	self
+		assert: (MCPCompiledMethodScopeQuery new
+				 packageNames: #( 'A' 'B' );
+				 classNames: #( 'C' 'D' 'E' );
+				 yourself) scopePhrase
+		equals: 'packages A and B and C, D and E'.
+	self
+		assert: (MCPCompiledMethodScopeQuery new
+				 hierarchyClassNames: #( 'A' );
+				 subclassClassNames: #( 'B' 'C' );
+				 parentClassNames: #( 'A' 'B' 'C' 'D' );
+				 yourself) scopePhrase
+		equals: 'the hierarchy of A and the subclasses of B and C and the superclasses of 4 classes'.
+	self
+		assert: (MCPClassScopeQuery new
+				 packageNames: #( 'A' 'B' 'C' 'D' 'E' 'F' );
+				 hierarchyClassNames: #( 'A' 'B' 'C' 'D' );
+				 yourself) scopePhrase
+		equals: '6 packages and the hierarchies of 4 classes'.
+	self
+		assert: (MCPPackageScopeQuery new
+				 projectNames: #( 'X' );
+				 packageNames: #( 'P' 'P' );
+				 yourself) scopePhrase
+		equals: 'project X and package P'.
+	self assert: MCPPackageScopeQuery new scopePhrase equals: 'the image'
+]
+
+{ #category : 'tests' }
 MCPCompiledMethodScopeQueryTest >> testSubclassScopeCollectsMethodsFromSubclassesOnly [
 
 	| methodIdentities query |

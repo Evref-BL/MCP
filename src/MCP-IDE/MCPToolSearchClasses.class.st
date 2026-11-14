@@ -84,12 +84,6 @@ MCPToolSearchClasses >> description [
 	^ 'Search classes by name, package, tag, or superclass/subclass scope. Use class_get when you already know the class name.'
 ]
 
-{ #category : 'private - results' }
-MCPToolSearchClasses >> failureMessageForScope: scopeSummary error: anError [
-
-	^ self scopeQueryFailureMessageFor: 'classes' scope: scopeSummary error: anError
-]
-
 { #category : 'private - filtering' }
 MCPToolSearchClasses >> fieldTextsForClassEntry: anEntry fieldName: fieldName [
 
@@ -136,9 +130,9 @@ MCPToolSearchClasses >> queryResultEntryFromClassEntry: anEntry [
 ]
 
 { #category : 'private - template' }
-MCPToolSearchClasses >> requestedContextFromRequest: request [
+MCPToolSearchClasses >> scopeQueryFromRequest: request [
 
-	^ { (#scope -> (self classAndMethodScopeSummaryFromRequest: request)) } asDictionary
+	^ self classScopeQueryFromRequest: request
 ]
 
 { #category : 'private - template' }
@@ -147,10 +141,10 @@ MCPToolSearchClasses >> searchRequestFromToolRequest: request [
 	^ MCPSearchClassesRequest fromRequest: request tool: self
 ]
 
-{ #category : 'private - results' }
-MCPToolSearchClasses >> successSummaryForScope: scopeSummary page: page [
+{ #category : 'private - template' }
+MCPToolSearchClasses >> searchedNoun [
 
-	^ self scopeQuerySuccessSummaryFor: 'classes' scope: scopeSummary page: page
+	^ 'class'
 ]
 
 { #category : 'metadata' }
