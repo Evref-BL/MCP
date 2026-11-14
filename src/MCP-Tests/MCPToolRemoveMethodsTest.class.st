@@ -189,6 +189,21 @@ MCPToolRemoveMethodsTest >> tearDown [
 ]
 
 { #category : 'tests' }
+MCPToolRemoveMethodsTest >> testAMissingClassIsSaidByTheLookup [
+
+	| error result |
+	result := self callToolWith: {
+			          (#class -> 'MCPToolRemoveMethodsTestMissingClass').
+			          (#selector -> self firstInstanceBatchSelectorString) } asDictionary.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
+	self assert: (error at: #class) equals: 'MCPToolRemoveMethodsTestMissingClass'.
+	self assert: ((error at: #message) beginsWith: 'Class MCPToolRemoveMethodsTestMissingClass does not exist.').
+	self deny: ((error at: #message) includesSubstring: 'SystemEnvironment')
+]
+
+{ #category : 'tests' }
 MCPToolRemoveMethodsTest >> testDefaultsToRemovingInstanceSideMethodsWhenClassSideIsOmitted [
 
 	| result |

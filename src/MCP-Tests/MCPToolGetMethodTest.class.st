@@ -9,7 +9,7 @@ Class {
 }
 
 { #category : 'tests' }
-MCPToolGetMethodTest >> testGetMethodMissingClassHasNoMethodSuggestions [
+MCPToolGetMethodTest >> testGetMethodMissingClassSuggestsClassNames [
 
 	| error result |
 	result := self callToolWith: {
@@ -20,7 +20,8 @@ MCPToolGetMethodTest >> testGetMethodMissingClassHasNoMethodSuggestions [
 	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
 	self assert: (error at: #class) equals: 'MCPToolGetMethodTestMissingClass'.
 	self assert: (error at: #selector) equals: 'value'.
-	self deny: (error includesKey: #suggestions).
+	self assert: ((error at: #suggestions) includes: 'MCPToolGetMethodTest').
+	self assert: ((error at: #suggestions) allSatisfy: [ :each | each isString ]).
 	self assert: ((error at: #message) includesSubstring: 'Class MCPToolGetMethodTestMissingClass does not exist')
 ]
 

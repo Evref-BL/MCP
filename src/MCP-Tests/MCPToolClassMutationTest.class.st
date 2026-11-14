@@ -1347,7 +1347,7 @@ MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenCommentClassIsMi
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
 	self assert: (error at: #class) equals: 'MCPToolClassMutationTestMissing'.
-	self assert: (error at: #scope) equals: 'class'.
+	self deny: (error includesKey: #scope).
 	self assert: suggestions size <= 5.
 	self assert: ((error at: #message) includesSubstring: 'MCPToolClassMutationTestMissing does not exist')
 ]
@@ -1434,7 +1434,7 @@ MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenRenameClassIsMis
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
 	self assert: (error at: #class) equals: 'MCPToolClassMutationTestMissing'.
-	self assert: (error at: #scope) equals: 'class'.
+	self deny: (error includesKey: #scope).
 	self assert: suggestions size <= 5.
 	self assert: ((error at: #message) includesSubstring: 'MCPToolClassMutationTestMissing does not exist')
 ]

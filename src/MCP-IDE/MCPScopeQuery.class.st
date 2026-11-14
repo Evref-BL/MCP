@@ -70,31 +70,28 @@ MCPScopeQuery >> parentClassNames: aCollection [
 
 { #category : 'private - resolution' }
 MCPScopeQuery >> recordMissingClassNamed: className inScope: scopeName [
+	"Smalltalk globals had no className. MCP's lookup reads it again, as every tool reads a class name, so Foo class still finds Foo. What it cannot find, a scope that must be complete refuses, and any other scope skips with a warning."
 
-	| suggestions |
-	suggestions := MCPScopeNameSuggester classSuggestionsFor: className.
-	self requiresCompleteScope ifTrue: [ ^ MCPCommandError signalMissingClassNamed: className scopeName: scopeName ].
-	warnings ifNil: [ self resetWarnings ].
-	warnings add: (MCPScopeNameSuggester
-			 missingNameWarningForKind: 'Class'
-			 name: className
-			 scope: scopeName
-			 suggestions: suggestions).
-	^ nil
+	^ self requiresCompleteScope
+		  ifTrue: [ MCPImageLookup classNamed: className inScope: scopeName ]
+		  ifFalse: [ MCPImageLookup classNamed: className inScope: scopeName ifSkipped: [ :warning | self recordWarning: warning ] ]
 ]
 
 { #category : 'private - resolution' }
 MCPScopeQuery >> recordMissingPackageNamed: packageName inScope: scopeName [
+	"A scope that must be complete refuses a missing package; any other scope skips it with a warning."
 
-	| suggestions |
-	suggestions := MCPScopeNameSuggester packageSuggestionsFor: packageName.
-	self requiresCompleteScope ifTrue: [ ^ MCPCommandError signalMissingPackageNamed: packageName scopeName: scopeName ].
+	^ self requiresCompleteScope
+		  ifTrue: [ MCPImageLookup packageNamed: packageName inScope: scopeName ]
+		  ifFalse: [ MCPImageLookup packageNamed: packageName inScope: scopeName ifSkipped: [ :warning | self recordWarning: warning ] ]
+]
+
+{ #category : 'private - resolution' }
+MCPScopeQuery >> recordWarning: aWarning [
+	"Keep aWarning for the answer, and answer nil: the entry it is about selects nothing."
+
 	warnings ifNil: [ self resetWarnings ].
-	warnings add: (MCPScopeNameSuggester
-			 missingNameWarningForKind: 'Package'
-			 name: packageName
-			 scope: scopeName
-			 suggestions: suggestions).
+	warnings add: aWarning.
 	^ nil
 ]
 

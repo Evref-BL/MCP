@@ -222,7 +222,7 @@ MCPRunTestsCommand >> testCasesFromSuite: aSuite [
 MCPRunTestsCommand >> testClassesInPackageNamed: packageName [
 
 	| package |
-	package := MCPImageLookup packageNamed: packageName scopeName: 'packages'.
+	package := MCPImageLookup packageNamed: packageName.
 	^ (package definedClasses select: [ :each | each isTestCase and: [ each isAbstract not ] ]) asArray sort: [ :left :right |
 		  left name <= right name ]
 ]
@@ -341,6 +341,6 @@ MCPRunTestsCommand >> validatedRequestsFrom: testRequests [
 						  each testMethodName ifNotNil: [ :testMethodName |
 								  testClass
 									  compiledMethodAt: testMethodName asSymbol
-									  ifAbsent: [ MCPCommandError signalMissingMethodInClassName: each className classSide: false selector: testMethodName ] ].
+									  ifAbsent: [ MCPCommandError signalMissingMethod: testMethodName in: testClass ] ].
 						  MCPValidatedTestRunRequest request: each testClass: testClass ] ]
 ]

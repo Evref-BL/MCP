@@ -463,7 +463,7 @@ MCPToolStructuredOutputTest >> testMethodMetadataSearchReturnsStructuredWarnings
 	self assert: (data at: #methods) isEmpty.
 	self assert: warnings size equals: 1.
 	self assert: (warnings first includesSubstring: 'MCP-Definitely-Missing').
-	self assert: (warnings first includesSubstring: 'packages scope').
+	self assert: (warnings first includesSubstring: 'does not exist, so ').
 	self assert: (warnings first includesSubstring: 'Did you mean:')
 ]
 
@@ -815,7 +815,7 @@ MCPToolStructuredOutputTest >> testSearchClassesReturnsStructuredWarnings [
 	self assert: (data at: #classes) isEmpty.
 	self assert: warnings size equals: 1.
 	self assert: (warnings first includesSubstring: 'MCP-Definitely-Missing').
-	self assert: (warnings first includesSubstring: 'packages scope').
+	self assert: (warnings first includesSubstring: 'does not exist, so ').
 	self assert: (warnings first includesSubstring: 'Did you mean:')
 ]
 

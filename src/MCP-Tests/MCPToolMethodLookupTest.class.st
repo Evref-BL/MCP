@@ -31,6 +31,26 @@ MCPToolMethodLookupTest >> targetClassName [
 ]
 
 { #category : 'tests' }
+MCPToolMethodLookupTest >> testAClassNameThatNamesNoClassIsSaidByTheLookup [
+
+	| error result |
+	result := self callToolNamed: 'method_reference_search' withArguments: {
+			          (#kind -> 'class').
+			          (#name -> 'MCPToolMethodSearchReferenceTargt') } asDictionary.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
+	self assert: ((error at: #message) beginsWith: 'Class MCPToolMethodSearchReferenceTargt does not exist. Did you mean: ').
+	self assert: ((error at: #suggestions) includes: 'MCPToolMethodSearchReferenceTarget').
+	result := self callToolNamed: 'method_reference_search' withArguments: {
+			          (#kind -> 'class').
+			          (#name -> 'Transcript') } asDictionary.
+	error := self errorFrom: result.
+	self assert: (error at: #errorCode) equals: 'NotAClass'.
+	self assert: (error at: #message) equals: 'Transcript is a global variable, not a class.'
+]
+
+{ #category : 'tests' }
 MCPToolMethodLookupTest >> testClassNameAnswersClassReferences [
 
 	| data |

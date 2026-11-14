@@ -47,9 +47,9 @@ MCPGetClassCommand >> superclassesForClass: aClass [
 	| targetSuperclass targetSuperclassName |
 	targetSuperclassName := request upToSuperclassName.
 	targetSuperclassName ifNil: [ ^ #(  ) ].
-	targetSuperclass := Smalltalk globals
-		                    at: targetSuperclassName asSymbol
-		                    ifAbsent: [
-		                    MCPCommandError signalMissingSuperclassNamed: targetSuperclassName forClassNamed: aClass name asString ].
+	targetSuperclass := MCPImageLookup
+		                    classNamed: targetSuperclassName
+		                    role: #superclass
+		                    details: { (#class -> aClass name asString) }.
 	^ aClass allSuperclasses asArray copyUpTo: targetSuperclass
 ]

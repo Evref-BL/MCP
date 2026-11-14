@@ -175,9 +175,7 @@ MCPCreateClassCommand >> slots: someSlots [
 { #category : 'private' }
 MCPCreateClassCommand >> superclass [
 
-	^ Smalltalk globals
-		  at: self superclassName asSymbol
-		  ifAbsent: [ MCPCommandError signalMissingSuperclassNamed: self superclassName forClassNamed: self className ]
+	^ MCPImageLookup classNamed: self superclassName role: #superclass details: { (#class -> self className) }
 ]
 
 { #category : 'accessing' }

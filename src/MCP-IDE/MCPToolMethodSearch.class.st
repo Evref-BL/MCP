@@ -153,9 +153,7 @@ MCPToolMethodSearch >> matchesFilterOnMethodEntry: anEntry sourceText: sourceTex
 MCPToolMethodSearch >> matchingClassReferencesForClassNamed: aClassName inMethods: compiledMethods [
 
 	| classBinding |
-	classBinding := self classBindingForClassName: aClassName.
-	classBinding ifNil: [
-		Error signal: (String streamContents: [ :stream | stream << 'There is no class named ' << aClassName << '.' ]) ].
+	classBinding := self classBindingForClassName: (MCPImageLookup classNamed: aClassName) name.
 	^ (compiledMethods select: [ :eachMethod | self method: eachMethod referencesAnyVariable: { classBinding } ]) asArray
 ]
 

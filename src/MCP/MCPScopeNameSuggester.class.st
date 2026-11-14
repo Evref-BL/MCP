@@ -28,15 +28,20 @@ MCPScopeNameSuggester class >> candidate: candidateDictionary matchesRequested: 
 ]
 
 { #category : 'suggesting' }
-MCPScopeNameSuggester class >> classSuggestionCandidates [
+MCPScopeNameSuggester class >> candidatesAmong: someBehaviors [
+	"Each behaviour as a name to rank, in the bucket of its package, so that one package cannot fill the suggestions."
 
-	| candidates |
-	candidates := OrderedCollection new.
-	Smalltalk globals allClasses do: [ :eachClass |
-			candidates add: {
-					(#name -> eachClass name asString).
-					(#bucket -> eachClass package name asString) } asDictionary ].
-	^ candidates asArray
+	^ someBehaviors asArray collect: [ :each |
+			  {
+				  (#name -> each name asString).
+				  (#bucket -> (each package ifNil: [ '' ] ifNotNil: [ :package | package name asString ])) } asDictionary ]
+]
+
+{ #category : 'suggesting' }
+MCPScopeNameSuggester class >> classSuggestionCandidates [
+	"Classes and traits, the two kinds a class name may name."
+
+	^ self candidatesAmong: Smalltalk globals allClassesAndTraits
 ]
 
 { #category : 'suggesting' }
@@ -74,43 +79,6 @@ MCPScopeNameSuggester class >> editDistanceBetween: leftString and: rightString 
 	^ previous last
 ]
 
-{ #category : 'warnings' }
-MCPScopeNameSuggester class >> missingClassWarningFor: className scope: scopeName [
-
-	^ self
-		  missingNameWarningForKind: 'Class'
-		  name: className
-		  scope: scopeName
-		  suggestions: (self classSuggestionsFor: className)
-]
-
-{ #category : 'warnings' }
-MCPScopeNameSuggester class >> missingNameWarningForKind: kind name: missingName scope: scopeName suggestions: suggestions [
-
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: kind;
-				  space;
-				  nextPutAll: missingName asString;
-				  nextPutAll: ' does not exist in ';
-				  nextPutAll: scopeName asString;
-				  nextPutAll: ' scope.'.
-			  suggestions ifNotEmpty: [
-					  stream nextPutAll: ' Did you mean: '.
-					  suggestions do: [ :each | stream nextPutAll: each ] separatedBy: [ stream nextPutAll: ', ' ].
-					  stream nextPut: $. ] ]
-]
-
-{ #category : 'warnings' }
-MCPScopeNameSuggester class >> missingPackageWarningFor: packageName scope: scopeName [
-
-	^ self
-		  missingNameWarningForKind: 'Package'
-		  name: packageName
-		  scope: scopeName
-		  suggestions: (self packageSuggestionsFor: packageName)
-]
-
 { #category : 'suggesting' }
 MCPScopeNameSuggester class >> packageSuggestionCandidates [
 
@@ -138,6 +106,13 @@ MCPScopeNameSuggester class >> scoreForRequested: requestedName candidate: candi
 	(candidate includesSubstring: requested) ifTrue: [ ^ 30 + (candidate size - requested size) ].
 	(requested includesSubstring: candidate) ifTrue: [ ^ 40 + (requested size - candidate size) ].
 	^ 100 + (self editDistanceBetween: requested and: candidate)
+]
+
+{ #category : 'suggesting' }
+MCPScopeNameSuggester class >> suggestionsFor: aName among: someBehaviors [
+	"The names of someBehaviors nearest aName, ranked by name and package. The caller decides which behaviours the name could have meant."
+
+	^ self suggestionsFor: aName candidates: (self candidatesAmong: someBehaviors) max: self defaultLimit
 ]
 
 { #category : 'suggesting' }
