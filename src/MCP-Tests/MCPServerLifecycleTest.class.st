@@ -96,6 +96,33 @@ MCPServerLifecycleTest >> testAbruptClientDisconnectReleasesConnection [
 ]
 
 { #category : 'tests' }
+MCPServerLifecycleTest >> testAnAnswerOutlivesARestartDuringItsRequest [
+	"Zinc restarts the servers it manages around every image save, from the process that asked for the save. A call that saves the image is answered on the connection it came in on, so that connection stays open through the restart."
+
+	| answer server |
+	server := MCPSocketSafeZnServer new.
+	server
+		bindingAddress: #[ 127 0 0 1 ];
+		port: 0;
+		onRequestRespond: [ :request |
+				server stop: false.
+				server start.
+				ZnResponse ok: (ZnEntity text: 'answered') ].
+	[
+		server start.
+		self assert: (self waitUntil: [ server isListening ] forMilliseconds: 3000).
+		answer := ZnClient new
+			          beOneShot;
+			          timeout: 5;
+			          http;
+			          host: '127.0.0.1';
+			          port: server port;
+			          get.
+		self assert: answer equals: 'answered'.
+		self assert: (self waitUntil: [ server isListening ] forMilliseconds: 3000) ] ensure: [ server stop ]
+]
+
+{ #category : 'tests' }
 MCPServerLifecycleTest >> testBindFailureDestroysTheSocketItCreated [
 
 	| occupiedSocket server |
@@ -401,11 +428,11 @@ MCPServerLifecycleTest >> testStoppingServerClosesActiveConnections [
 		self assert: (self waitUntil: [ server isListening ] forMilliseconds: 3000).
 		clientStream := SocketStream openConnectionToHost: #[ 127 0 0 1 ] port: server port.
 		self assert: (self waitUntil: [ server connections isNotEmpty ] forMilliseconds: 3000).
-		server stop: false.
+		server stop.
 		self deny: server isRunning.
 		self assert: server connections isEmpty ] ensure: [
 			clientStream ifNotNil: [ clientStream close ].
-			server stop: false ]
+			server stop ]
 ]
 
 { #category : 'tests' }

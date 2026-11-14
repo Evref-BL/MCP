@@ -161,10 +161,12 @@ MCPSocketSafeZnServer >> start [
 
 { #category : 'public' }
 MCPSocketSafeZnServer >> stop: unregister [
+	"Stopping for good closes the open connections. Zinc's restart, around every image save, only stops listening: the connection of the call that saved stays open, and its worker answers after the save."
 
 	(process isNil and: [ serverSocket isNil ]) ifTrue: [
-			unregister ifTrue: [ self unregister ].
-			self closeConnections.
+			unregister ifTrue: [
+					self unregister.
+					self closeConnections ].
 			^ self ].
 	process ifNotNil: [
 			process terminate.
@@ -172,6 +174,6 @@ MCPSocketSafeZnServer >> stop: unregister [
 	unregister ifTrue: [ self unregister ].
 	self closeDelegate.
 	self releaseServerSocketAfterSocketError.
-	self closeConnections.
+	unregister ifTrue: [ self closeConnections ].
 	self logStopped
 ]
