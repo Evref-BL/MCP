@@ -36,7 +36,7 @@ MCPScopeQuery class >> listPhraseFor: someNames [
 	"A, A and B, A, B and C."
 
 	^ String streamContents: [ :stream |
-			  someNames doWithIndex: [ :each :index |
+			  someNames withIndexDo: [ :each :index |
 					  index > 1 ifTrue: [
 							  stream nextPutAll: (index = someNames size
 									   ifTrue: [ ' and ' ]
