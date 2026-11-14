@@ -27,8 +27,18 @@ MCPEvaluateCommand >> addTranscriptTo: aDictionary [
 	transcript isTruncated ifTrue: [ aDictionary at: #transcriptTruncated put: true ]
 ]
 
+{ #category : 'private' }
+MCPEvaluateCommand >> endedItsOwnProcessResult [
+	"The code terminated the process it ran in, so there is no value, only what it wrote to the Transcript before."
+
+	| details |
+	details := Dictionary new.
+	transcript ifNotNil: [ self addTranscriptTo: details ].
+	^ MCPEvaluateResult errorSummary: tool endedItsOwnProcessMessage details: details
+]
+
 { #category : 'executing' }
-MCPEvaluateCommand >> execute [
+MCPEvaluateCommand >> evaluate [
 	"The code is compiled much as a Playground page compiles it, so a name it assigns without declaring is a variable of this evaluation, and what it writes to the Transcript comes back with its value."
 
 	| answer compiler notice warningDescriptions |
@@ -48,6 +58,46 @@ MCPEvaluateCommand >> execute [
 				          ^ self runtimeFailureFor: error ].
 	notice ifNotNil: [ ^ self syntaxFailureFor: notice ].
 	^ MCPEvaluateResult okData: (self resultDataFor: answer) warnings: warningDescriptions asArray
+]
+
+{ #category : 'private' }
+MCPEvaluateCommand >> evaluateWithinCallBoundary [
+	"The boundary MCPTool>>executeParsedRequestFrom:do:onError: keeps around a call, in the process the code runs in, so that no exception goes unhandled there, opens a debugger and leaves the call waiting for its limit."
+
+	^ [
+		  [ self evaluate ]
+			  on: Notification
+			  do: [ :notification |
+					  (tool shouldResumeNotification: notification)
+						  ifTrue: [ tool resumeNotification: notification ]
+						  ifFalse: [ notification pass ] ] ]
+		  on: Exception
+		  do: [ :error |
+		  MCPEvaluateResult errorSummary: (error messageText ifNil: [ error asString ]) details: (tool errorDetailsFor: error) ]
+]
+
+{ #category : 'executing' }
+MCPEvaluateCommand >> execute [
+	"The code runs in a process one priority below this one, which can therefore always take the processor back, however the code computes, and stop it at its time limit. A limit kept at the same priority cannot preempt a computing loop."
+
+	| done evaluator outcome started actions |
+	done := Semaphore new.
+	started := false.
+	actions := MCPPostResponseActions value.
+	evaluator := [
+		             started := true.
+		             [ outcome := MCPPostResponseActions value: actions during: [ self evaluateWithinCallBoundary ] ] ensure: [
+			             done signal ] ] newProcess.
+	evaluator
+		priority: Processor activePriority - 1;
+		name: tool name.
+	self start: evaluator.
+	(done waitTimeoutSeconds: request timeoutSeconds) ifFalse: [ ^ outcome ifNil: [ self endedItsOwnProcessResult ] ].
+	started ifFalse: [ ^ self notStartedResultFor: evaluator ].
+	[ outcome isNil and: [ self isSaving: evaluator ] ] whileTrue: [ done waitTimeoutSeconds: 1 ].
+	outcome ifNotNil: [ ^ outcome ].
+	evaluator isTerminated ifTrue: [ ^ self endedItsOwnProcessResult ].
+	^ self stop: evaluator
 ]
 
 { #category : 'initialization' }
@@ -108,6 +158,13 @@ MCPEvaluateCommand >> sourceIndexFor: aPosition [
 	source := request code.
 	source ifEmpty: [ ^ nil ].
 	^ (aPosition max: 1) min: source size
+]
+
+{ #category : 'private' }
+MCPEvaluateCommand >> start: aProcess [
+	"A method of its own, so that a test double can leave the evaluator unstarted."
+
+	aProcess resume
 ]
 
 { #category : 'private' }

@@ -69,9 +69,22 @@ MCPToolEvaluate >> defaultExposure [
 ]
 
 { #category : 'metadata' }
+MCPToolEvaluate >> defaultTimeoutSeconds [
+	"Half of what PLexus waits for a call, which leaves room to read where the code is, let it unwind and answer before the client gives up. Agents' evaluations take milliseconds."
+
+	^ 30
+]
+
+{ #category : 'metadata' }
 MCPToolEvaluate >> description [
 
 	^ 'The escape hatch: run arbitrary Smalltalk code when no tool fits; tool_search finds one. Returns result and Transcript.'
+]
+
+{ #category : 'private' }
+MCPToolEvaluate >> endedItsOwnProcessMessage [
+
+	^ 'Evaluation ended the process running it, so it has no value to answer.'
 ]
 
 { #category : 'executing' }
@@ -114,6 +127,13 @@ MCPToolEvaluate >> failureTextFor: structuredContent [
 							  stream
 								  nextPut: Character lf;
 								  nextPutAll: each ] ] ]
+]
+
+{ #category : 'metadata' }
+MCPToolEvaluate >> maximumTimeoutSeconds [
+	"Long enough for a client that waits to run a long load inline, and a bound on what an evaluation nobody waits for any more can cost."
+
+	^ 600
 ]
 
 { #category : 'private - request' }

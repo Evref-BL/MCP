@@ -795,7 +795,6 @@ MCPToolContractsTest >> testDictionaryShapedCommandResultsUseDTOClasses [
 
 	| commandResultClasses |
 	commandResultClasses := {
-		                        (MCPEvaluateCommand -> MCPEvaluateResult).
 		                        (MCPGetClassCommand -> MCPGetClassResult).
 		                        (MCPGetMethodCommand -> MCPGetMethodResult).
 		                        (MCPRewriteMethodsCommand -> MCPMethodRewriteReport).
@@ -813,6 +812,7 @@ MCPToolContractsTest >> testDictionaryShapedCommandResultsUseDTOClasses [
 			| source |
 			source := (association key >> #execute) sourceCode.
 			self assert: (source includesSubstring: association value name asString) ].
+	self assert: ((MCPEvaluateCommand >> #evaluate) sourceCode includesSubstring: MCPEvaluateResult name asString).
 	self assert: ((MCPRunTestsCommand >> #aggregateDataForResults:timedOut:unrunTests:) sourceCode includesSubstring:
 			 MCPRunTestsResult name asString)
 ]
@@ -880,6 +880,20 @@ MCPToolContractsTest >> testEvaluateAnswersThePrintStringAsItsWholeText [
 ]
 
 { #category : 'tests - evaluate' }
+MCPToolContractsTest >> testEvaluateAnswersWhenTheCodeEndsItsOwnProcess [
+	"The process that ends is the one the code runs in, not the one that answers."
+
+	| result |
+	result := self
+		          callDiscoveredToolNamed: 'image_evaluate'
+		          withArguments: { (#code -> 'Processor activeProcess terminate') } asDictionary.
+	self assert: (self resultIndicatesError: result).
+	self
+		assert: (self firstTextFromToolResult: result)
+		equals: 'Evaluation ended the process running it, so it has no value to answer.'
+]
+
+{ #category : 'tests - evaluate' }
 MCPToolContractsTest >> testEvaluateCatchesHaltAsRuntimeFailure [
 
 	| result text |
@@ -937,6 +951,20 @@ MCPToolContractsTest >> testEvaluateOmitsTruncationFieldsForSmallResults [
 		        (self callDiscoveredToolNamed: 'image_evaluate' withArguments: { (#code -> '#( 1 2 3 )') } asDictionary).
 	self deny: (data includesKey: #truncated).
 	self deny: (data includesKey: #resultSize)
+]
+
+{ #category : 'tests - evaluate' }
+MCPToolContractsTest >> testEvaluateQueuesPostResponseActionsOfTheCall [
+	"The code runs in a process of its own, and what it defers must still wait for the response of the call that ran it."
+
+	| actions result |
+	actions := OrderedCollection new.
+	result := MCPPostResponseActions value: actions during: [
+			          self
+				          callDiscoveredToolNamed: 'image_evaluate'
+				          withArguments: { (#code -> 'MCPPostResponseActions value add: [ 1 ]. #queued') } asDictionary ].
+	self assert: (self firstTextFromToolResult: result) equals: '#queued'.
+	self assert: actions size equals: 1
 ]
 
 { #category : 'tests - evaluate' }
@@ -1011,6 +1039,16 @@ MCPToolContractsTest >> testEvaluateReturnsRuntimeFailureInformation [
 	self assert: (text includesSubstring: 'failed during execution').
 	self assert: (text includesSubstring: 'boom').
 	self assert: ((text lines reject: [ :each | each beginsWith: '   ' ]) last includesSubstring: 'UndefinedObject>>DoIt')
+]
+
+{ #category : 'tests - evaluate' }
+MCPToolContractsTest >> testEvaluateRunsJustBelowTheCallingProcess [
+	"Only a process above the code can take the processor back from code that computes, so the code runs one priority below the call."
+
+	self
+		assert: (self firstTextFromToolResult:
+				 (self callDiscoveredToolNamed: 'image_evaluate' withArguments: { (#code -> 'Processor activePriority') } asDictionary))
+		equals: (Processor activePriority - 1) printString
 ]
 
 { #category : 'tests - evaluate' }

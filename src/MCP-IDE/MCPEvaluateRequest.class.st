@@ -5,7 +5,8 @@ Class {
 	#name : 'MCPEvaluateRequest',
 	#superclass : 'Object',
 	#instVars : [
-		'code'
+		'code',
+		'timeoutSeconds'
 	],
 	#category : 'MCP-IDE-Requests',
 	#package : 'MCP-IDE',
@@ -15,7 +16,10 @@ Class {
 { #category : 'instance creation' }
 MCPEvaluateRequest class >> fromRequest: aRequest tool: aTool [
 
-	^ self new initializeCode: (aRequest stringArgumentNamed: 'code')
+	^ self new initializeCode: (aRequest stringArgumentNamed: 'code') timeoutSeconds: (aRequest
+			   nonNegativeIntegerArgumentNamed: 'timeoutSeconds'
+			   default: aTool defaultTimeoutSeconds
+			   maximum: aTool maximumTimeoutSeconds)
 ]
 
 { #category : 'accessing' }
@@ -25,8 +29,15 @@ MCPEvaluateRequest >> code [
 ]
 
 { #category : 'initialization' }
-MCPEvaluateRequest >> initializeCode: aString [
+MCPEvaluateRequest >> initializeCode: aString timeoutSeconds: anInteger [
 
 	code := aString.
-	^ self
+	timeoutSeconds := anInteger
+]
+
+{ #category : 'accessing' }
+MCPEvaluateRequest >> timeoutSeconds [
+	"How long the code may run before it is stopped."
+
+	^ timeoutSeconds
 ]
