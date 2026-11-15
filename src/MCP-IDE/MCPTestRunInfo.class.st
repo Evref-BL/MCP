@@ -1,7 +1,7 @@
 "
 Internal DTO for one executed test_run selection.
 
-It records counts and normalized issue dictionaries so MCPRunTestsResult can build compact aggregate output.
+It holds the outcome of every test the selection ran to its end, and counts them: each test counts once, and the run count leaves skipped tests out, as SUnit's does.
 "
 Class {
 	#name : 'MCPTestRunInfo',
@@ -10,12 +10,7 @@ Class {
 		'className',
 		'testMethodName',
 		'selectedTestCount',
-		'runCount',
-		'passedCount',
-		'skippedCount',
-		'failureCount',
-		'errorCount',
-		'issues'
+		'outcomes'
 	],
 	#category : 'MCP-IDE-DTOs',
 	#package : 'MCP-IDE',
@@ -23,13 +18,9 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPTestRunInfo class >> validatedRequest: validatedRequest selectedTestCount: selectedCount result: aResult issues: issueCollection [
+MCPTestRunInfo class >> validatedRequest: validatedRequest selectedTestCount: selectedCount outcomes: someOutcomes [
 
-	^ self new
-		  initializeValidatedRequest: validatedRequest
-		  selectedTestCount: selectedCount
-		  result: aResult
-		  issues: issueCollection
+	^ self new initializeValidatedRequest: validatedRequest selectedTestCount: selectedCount outcomes: someOutcomes
 ]
 
 { #category : 'converting' }
@@ -45,7 +36,7 @@ MCPTestRunInfo >> asDictionary [
 	data at: #skippedCount put: self skippedCount.
 	data at: #failureCount put: self failureCount.
 	data at: #errorCount put: self errorCount.
-	self issues ifNotEmpty: [ :issueDetails | data at: #issues put: issueDetails ].
+	self outcomes ifNotEmpty: [ :finished | data at: #outcomes put: (finished collect: [ :each | each asDictionary ]) ].
 	^ data
 ]
 
@@ -56,48 +47,50 @@ MCPTestRunInfo >> className [
 ]
 
 { #category : 'accessing' }
+MCPTestRunInfo >> countOf: aSelector [
+
+	^ self outcomes count: [ :each | each perform: aSelector ]
+]
+
+{ #category : 'accessing' }
 MCPTestRunInfo >> errorCount [
 
-	^ errorCount ifNil: [ 0 ]
+	^ self countOf: #isError
 ]
 
 { #category : 'accessing' }
 MCPTestRunInfo >> failureCount [
 
-	^ failureCount ifNil: [ 0 ]
+	^ self countOf: #isFailure
 ]
 
 { #category : 'initialization' }
-MCPTestRunInfo >> initializeValidatedRequest: validatedRequest selectedTestCount: selectedCount result: aResult issues: issueCollection [
+MCPTestRunInfo >> initializeValidatedRequest: validatedRequest selectedTestCount: selectedCount outcomes: someOutcomes [
 
 	className := validatedRequest className.
 	testMethodName := validatedRequest testMethodName.
 	selectedTestCount := selectedCount.
-	runCount := aResult runCount.
-	passedCount := aResult passedCount.
-	skippedCount := aResult skippedCount.
-	failureCount := aResult failureCount.
-	errorCount := aResult errorCount.
-	issues := issueCollection ifNil: [ #(  ) ].
-	^ self
+	outcomes := someOutcomes asArray
 ]
 
 { #category : 'accessing' }
-MCPTestRunInfo >> issues [
+MCPTestRunInfo >> outcomes [
+	"One per test that finished, in the order they ran."
 
-	^ issues ifNil: [ #(  ) ]
+	^ outcomes ifNil: [ #(  ) ]
 ]
 
 { #category : 'accessing' }
 MCPTestRunInfo >> passedCount [
 
-	^ passedCount ifNil: [ 0 ]
+	^ self countOf: #isPassed
 ]
 
 { #category : 'accessing' }
 MCPTestRunInfo >> runCount [
+	"As SUnit counts a run: the tests that passed, failed or erred, skipped ones left out. Each test counts once, however many exceptions it raised."
 
-	^ runCount ifNil: [ 0 ]
+	^ self passedCount + self failureCount + self errorCount
 ]
 
 { #category : 'accessing' }
@@ -109,7 +102,7 @@ MCPTestRunInfo >> selectedTestCount [
 { #category : 'accessing' }
 MCPTestRunInfo >> skippedCount [
 
-	^ skippedCount ifNil: [ 0 ]
+	^ self countOf: #isSkipped
 ]
 
 { #category : 'accessing' }

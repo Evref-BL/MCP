@@ -49,16 +49,9 @@ MCPRunTestsResult >> asDictionary [
 ]
 
 { #category : 'converting' }
-MCPRunTestsResult >> compactIssueFor: issue [
+MCPRunTestsResult >> countOf: aSelector [
 
-	| data |
-	data := Dictionary new.
-	data at: #test put: (self testReferenceForIssue: issue).
-	issue at: #message ifPresent: [ :message | message isEmpty ifFalse: [ data at: #message put: message ] ].
-	(issue at: #kind ifAbsent: [ nil ]) = 'error' ifTrue: [
-		issue at: #errorClass ifPresent: [ :className | data at: #errorClass put: className ] ].
-	issue at: #parameters ifPresent: [ :parameters | parameters ifNotEmpty: [ data at: #parameters put: parameters ] ].
-	^ data
+	^ self results inject: 0 into: [ :sum :each | sum + (each perform: aSelector) ]
 ]
 
 { #category : 'accessing' }
@@ -74,16 +67,41 @@ MCPRunTestsResult >> coverage: aCoverageResult [
 ]
 
 { #category : 'converting' }
+MCPRunTestsResult >> entryForIssue: issue of: anOutcome [
+
+	| data |
+	data := Dictionary new.
+	data at: #test put: anOutcome reference.
+	(issue at: #message) ifNotEmpty: [ :message | data at: #message put: message ].
+	(issue at: #kind) = 'error' ifTrue: [ data at: #errorClass put: (issue at: #errorClass) ].
+	anOutcome parameters ifNotEmpty: [ :parameters | data at: #parameters put: parameters ].
+	(issue at: #locations) ifNotEmpty: [ :locations | data at: #locations put: locations asArray ].
+	issue at: #statement ifPresent: [ :statement | data at: #statement put: statement ].
+	^ data
+]
+
+{ #category : 'converting' }
+MCPRunTestsResult >> errorCount [
+
+	^ self countOf: #errorCount
+]
+
+{ #category : 'converting' }
 MCPRunTestsResult >> errorDictionaries [
 
-	^ Array streamContents: [ :stream | (self issuesOfKind: 'error') do: [ :issue | stream nextPut: (self compactIssueFor: issue) ] ]
+	^ self issueEntriesOfKind: 'error'
+]
+
+{ #category : 'converting' }
+MCPRunTestsResult >> failureCount [
+
+	^ self countOf: #failureCount
 ]
 
 { #category : 'converting' }
 MCPRunTestsResult >> failureDictionaries [
 
-	^ Array streamContents: [ :stream |
-		  (self issuesOfKind: 'failure') do: [ :issue | stream nextPut: (self compactIssueFor: issue) ] ]
+	^ self issueEntriesOfKind: 'failure'
 ]
 
 { #category : 'initialization' }
@@ -96,17 +114,25 @@ MCPRunTestsResult >> initializeResults: resultCollection timedOut: aBoolean unru
 ]
 
 { #category : 'converting' }
-MCPRunTestsResult >> issuesOfKind: issueKind [
+MCPRunTestsResult >> issueEntriesOfKind: aKind [
+	"One entry per issue of aKind each test raised, in the order the tests ran."
 
 	^ Array streamContents: [ :stream |
-			  self results do: [ :resultInfo |
-				  resultInfo issues do: [ :issue | (issue at: #kind ifAbsent: [ nil ]) = issueKind ifTrue: [ stream nextPut: issue ] ] ] ]
+			  self outcomes do: [ :outcome |
+				  (outcome issuesOfKind: aKind) do: [ :issue | stream nextPut: (self entryForIssue: issue of: outcome) ] ] ]
+]
+
+{ #category : 'accessing' }
+MCPRunTestsResult >> outcomes [
+	"Every test that finished, each once, in the order they ran."
+
+	^ Array streamContents: [ :stream | self results do: [ :each | stream nextPutAll: each outcomes ] ]
 ]
 
 { #category : 'converting' }
 MCPRunTestsResult >> passedCount [
 
-	^ self results inject: 0 into: [ :sum :each | sum + each passedCount ]
+	^ self countOf: #passedCount
 ]
 
 { #category : 'converting' }
@@ -124,19 +150,20 @@ MCPRunTestsResult >> results [
 { #category : 'converting' }
 MCPRunTestsResult >> runCount [
 
-	^ self results inject: 0 into: [ :sum :each | sum + each runCount ]
+	^ self countOf: #runCount
+]
+
+{ #category : 'converting' }
+MCPRunTestsResult >> skippedCount [
+
+	^ self countOf: #skippedCount
 ]
 
 { #category : 'converting' }
 MCPRunTestsResult >> skippedTestReferences [
 
-	^ self uniqueStringsFrom: ((self issuesOfKind: 'skipped') collect: [ :issue | self testReferenceForIssue: issue ])
-]
-
-{ #category : 'converting' }
-MCPRunTestsResult >> testReferenceForIssue: issue [
-
-	^ String streamContents: [ :stream | stream << (issue at: #class) asString << '>>#' << (issue at: #testMethod) asString ]
+	^ self uniqueStringsFrom:
+		  (self outcomes select: [ :each | (each issuesOfKind: 'skipped') isNotEmpty ] thenCollect: [ :each | each reference ])
 ]
 
 { #category : 'accessing' }

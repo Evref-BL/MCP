@@ -147,22 +147,27 @@ MCPRunTestsCommand >> resolvedRequestFor: aTestRequest [
 
 { #category : 'private' }
 MCPRunTestsCommand >> resultForValidatedRequest: validatedRequest deadline: deadline seenTestCaseNames: seenTestCaseNames [
+	"Each test runs into a result of its own, so that SUnit counts it once however many exceptions it raised."
 
-	| includeResult result resultInfo selectedTestCount testCases timedOutIndex unrunTestRequests |
+	| outcomes testCases timedOutIndex unrunTestRequests |
 	testCases := self uniqueTestCasesForValidatedRequest: validatedRequest seenTestCaseNames: seenTestCaseNames.
-	selectedTestCount := testCases size.
-	result := MCPStructuredTestResult new.
+	outcomes := OrderedCollection new.
 	timedOutIndex := nil.
 	testCases doWithIndex: [ :testCase :index |
-		timedOutIndex ifNil: [ (self runTestCase: testCase into: result deadline: deadline) ifTrue: [ timedOutIndex := index ] ] ].
-	includeResult := self shouldIncludeTestResult: result selectedTestCount: selectedTestCount timedOutIndex: timedOutIndex.
-	resultInfo := includeResult ifTrue: [
-		              self testRunInfoForTestResult: result validatedRequest: validatedRequest selectedTestCount: selectedTestCount ].
+			timedOutIndex ifNil: [
+					| result |
+					result := MCPStructuredTestResult new.
+					(self runTestCase: testCase into: result deadline: deadline)
+						ifTrue: [ timedOutIndex := index ]
+						ifFalse: [ outcomes add: (MCPTestOutcome testCase: testCase result: result) ] ] ].
 	unrunTestRequests := timedOutIndex
 		                     ifNil: [ #(  ) ]
 		                     ifNotNil: [
 		                     self unrunRequestsForValidatedRequest: validatedRequest testCases: testCases startingAt: timedOutIndex ].
-	^ MCPTestRunResult resultInfo: resultInfo timedOut: timedOutIndex isNotNil unrunTestRequests: unrunTestRequests
+	^ MCPTestRunResult
+		  resultInfo: (MCPTestRunInfo validatedRequest: validatedRequest selectedTestCount: testCases size outcomes: outcomes)
+		  timedOut: timedOutIndex isNotNil
+		  unrunTestRequests: unrunTestRequests
 ]
 
 { #category : 'private - coverage' }
@@ -238,16 +243,6 @@ MCPRunTestsCommand >> shouldIgnoreMethodForCoverage: aCompiledMethod [
 	aCompiledMethod methodClass instanceSide isTestCase ifTrue: [ ^ true ].
 	aCompiledMethod isAbstract ifTrue: [ ^ true ].
 	^ aCompiledMethod hasPragmaNamed: #ignoreForCoverage
-]
-
-{ #category : 'private' }
-MCPRunTestsCommand >> shouldIncludeTestResult: aResult selectedTestCount: selectedTestCount timedOutIndex: timedOutIndex [
-
-	selectedTestCount isZero ifTrue: [ ^ false ].
-	timedOutIndex ifNil: [ ^ true ].
-	aResult runCount > 0 ifTrue: [ ^ true ].
-	aResult skippedCount > 0 ifTrue: [ ^ true ].
-	^ aResult issueDetails isNotEmpty
 ]
 
 { #category : 'private' }
@@ -334,22 +329,6 @@ MCPRunTestsCommand >> testRequestsForTestCases: testCases startingAt: startIndex
 	requests := OrderedCollection new.
 	startIndex to: testCases size do: [ :index | requests add: (self testRequestForTestCase: (testCases at: index)) ].
 	^ requests asArray
-]
-
-{ #category : 'private - tests' }
-MCPRunTestsCommand >> testRunInfoForTestResult: aResult validatedRequest: validatedRequest selectedTestCount: selectedTestCount [
-
-	| issues |
-	issues := (aResult issueDetails asArray sort: [ :left :right | (left at: #test) <= (right at: #test) ]) collect: [ :each |
-			          | issue |
-			          issue := each copy.
-			          issue removeKey: #test ifAbsent: [ ].
-			          issue ].
-	^ MCPTestRunInfo
-		  validatedRequest: validatedRequest
-		  selectedTestCount: selectedTestCount
-		  result: aResult
-		  issues: issues
 ]
 
 { #category : 'private - validation' }
