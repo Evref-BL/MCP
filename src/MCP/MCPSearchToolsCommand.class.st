@@ -51,8 +51,15 @@ MCPSearchToolsCommand >> execute [
 	| data |
 	matchingTools := self toolRegistry toolsMatchingQuery: request query.
 	data := Dictionary new.
-	data at: #tools put: (self visibleTools collect: [ :each | each searchMetadata ] as: Array).
+	data at: #tools put: (self visibleTools collect: [ :each | self toolRegistry searchMetadataForTool: each ] as: Array).
 	^ data
+]
+
+{ #category : 'private' }
+MCPSearchToolsCommand >> notAdvertisedText [
+	"Every registered tool is callable by name; only a client that calls nothing but the tools it lists needs tool_call to reach the others."
+
+	^ 'Tools not in your list can be called by name, or through tool_call if your client only calls listed tools.'
 ]
 
 { #category : 'accessing' }
@@ -60,6 +67,12 @@ MCPSearchToolsCommand >> resultLimit [
 	"The ranking answers the closest matches; a caller narrows the search with more words instead of paging through worse ones."
 
 	^ 15
+]
+
+{ #category : 'private' }
+MCPSearchToolsCommand >> showsToolsNotAdvertised [
+
+	^ self visibleTools anySatisfy: [ :each | (self toolRegistry isToolAdvertised: each) not ]
 ]
 
 { #category : 'accessing' }
@@ -71,10 +84,16 @@ MCPSearchToolsCommand >> summaryText [
 				  ifTrue: [ self catalogOverviewText ]
 				  ifFalse: [ 'No tool matched. ' , self catalogOverviewText ] ].
 	shown := self visibleTools size.
-	shown = matchingTools size ifTrue: [ ^ shown asString , ' tools matched, best first.' ].
 	^ String streamContents: [ :stream |
-			  stream << shown asString << ' of ' << matchingTools size asString
-			  << ' matching tools, best first. Add words to narrow the search.' ]
+			  shown = matchingTools size
+				  ifTrue: [ stream << (self tool textForCount: shown noun: 'tool') << ' matched, best first.' ]
+				  ifFalse: [
+						  stream << shown asString << ' of ' << matchingTools size asString
+						  << ' matching tools, best first. Add words to narrow the search.' ].
+			  self showsToolsNotAdvertised ifTrue: [
+					  stream
+						  space;
+						  nextPutAll: self notAdvertisedText ] ]
 ]
 
 { #category : 'private' }
