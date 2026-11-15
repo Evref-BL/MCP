@@ -1094,6 +1094,21 @@ MCPToolRepositoryOperationTest >> testCommitWritesTheProjectFileAnAttachGave [
 ]
 
 { #category : 'tests' }
+MCPToolRepositoryOperationTest >> testCreateCountsAGitDirectoryThatIsNoRootAsAFile [
+	"A .git that makes no Git root is something there create would write over, so it is named as a file."
+
+	| location repositoryName result |
+	repositoryName := 'MCP Create Broken Git Test'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestCreateBrokenGit'.
+	self withCleanRepositoryNamed: repositoryName location: location do: [
+			(location / '.git') ensureCreateDirectory.
+			result := self refusedCreateNamed: repositoryName location: location pathString.
+			self assert: ((self errorFrom: result) at: #errorCode) equals: 'RepositoryLocationNotEmpty'.
+			self assert: ((self summaryFrom: result) includesSubstring: ' already holds a file, .git. Give ').
+			self deny: (self isRegistered: repositoryName) ]
+]
+
+{ #category : 'tests' }
 MCPToolRepositoryOperationTest >> testCreateCreatesAndRegistersRepository [
 
 	| location packageName repository repositoryName result |
