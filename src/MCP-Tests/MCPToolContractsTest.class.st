@@ -2130,7 +2130,7 @@ MCPToolContractsTest >> testRunTestCoverageParsesCompactSelections [
 { #category : 'tests' }
 MCPToolContractsTest >> testRunTestToolsHaveAccurateNamesAndRequiredArguments [
 
-	| coverageInputProperties coverageInputProperty coverageTool inputPropertyNames tool |
+	| coverageInputProperties coverageInputProperty coverageTool inputPropertyNames timeoutDescription tool |
 	tool := MCPToolRunTests new.
 	self assert: tool name equals: 'test_run'.
 	self assert: (tool inputSchema required ifNil: [ #(  ) ]) isEmpty.
@@ -2149,7 +2149,12 @@ MCPToolContractsTest >> testRunTestToolsHaveAccurateNamesAndRequiredArguments [
 	self deny: (inputPropertyNames includes: 'timeoutMilliseconds').
 	coverageInputProperty := coverageTool inputSchema properties detect: [ :each | each name = 'coverage' ].
 	coverageInputProperties := coverageInputProperty asJRPCJSON at: #properties.
-	self assert: coverageInputProperties keys asSet equals: #( 'scope' 'includeCoveredMethods' 'methodLimit' ) asSet
+	self assert: coverageInputProperties keys asSet equals: #( 'scope' 'includeCoveredMethods' 'methodLimit' ) asSet.
+
+	timeoutDescription := [ :aTool |
+	                      (aTool inputSchema properties detect: [ :each | each name = 'timeoutSeconds' ]) asJRPCJSON at: #description ].
+	self assert: (timeoutDescription value: coverageTool) equals: (timeoutDescription value: tool).
+	self deny: (coverageTool description includesSubstring: 'per-package')
 ]
 
 { #category : 'tests' }

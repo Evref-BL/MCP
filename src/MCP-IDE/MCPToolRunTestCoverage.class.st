@@ -18,17 +18,11 @@ MCPToolRunTestCoverage class >> toolName [
 { #category : 'metadata' }
 MCPToolRunTestCoverage >> buildInputSchema [
 
-	| timeoutProperty |
-	timeoutProperty := self
-		                   integerSchemaPropertyNamed: 'timeoutSeconds'
-		                   description: 'Timeout seconds; 0 returns immediately.'
-		                   default: self defaultTimeoutSeconds.
-	timeoutProperty minimum: 0.
 	^ MCPStructureInputSchema new
 		  type: 'object';
 		  properties: self testSelectionInputProperties , {
 					  self coverageOptionsObjectSchema.
-					  timeoutProperty };
+					  self timeoutSecondsProperty };
 		  required: #( 'coverage' );
 		  yourself
 ]
@@ -57,7 +51,7 @@ MCPToolRunTestCoverage >> defaultExposure [
 { #category : 'metadata' }
 MCPToolRunTestCoverage >> description [
 
-	^ 'Run tests while recording which methods they execute, and return the test summary with per-package and per-class coverage. Name the methods to measure under coverage.scope; without it nothing is measured.'
+	^ 'Run tests while recording which of the methods under coverage.scope they execute, and report the test summary, the share of those methods'' code that ran, and the methods left unexecuted or partly executed.'
 ]
 
 { #category : 'private - request' }
