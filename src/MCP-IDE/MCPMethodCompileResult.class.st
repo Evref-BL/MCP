@@ -17,12 +17,6 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPMethodCompileResult class >> method: aCompiledMethod critiques: critiqueDictionaries [
-
-	^ self method: aCompiledMethod critiques: critiqueDictionaries changeKind: 'created'
-]
-
-{ #category : 'instance creation' }
 MCPMethodCompileResult class >> method: aCompiledMethod critiques: critiqueDictionaries changeKind: changeKindString [
 
 	^ self new
@@ -64,12 +58,6 @@ MCPMethodCompileResult >> critiques [
 MCPMethodCompileResult >> critiques: critiqueDictionaries [
 
 	critiques := critiqueDictionaries ifNil: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
-MCPMethodCompileResult >> methodInfo [
-
-	^ methodInfo
 ]
 
 { #category : 'accessing' }

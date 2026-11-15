@@ -234,32 +234,6 @@ MCPCompiledMethodScopeQuery >> methodsForPackageNames [
 	^ methods asArray
 ]
 
-{ #category : 'private - scope' }
-MCPCompiledMethodScopeQuery >> methodsForPackageNamesDo: aBlock [
-
-	| seenMethods |
-	seenMethods := IdentitySet new.
-	self packageNames do: [ :eachName |
-			| package |
-			package := self packageNamed: eachName.
-			package definedClasses do: [ :aClass |
-					self includesInstanceSide ifTrue: [
-							aClass localMethods do: [ :eachMethod |
-									(seenMethods includes: eachMethod) ifFalse: [
-											seenMethods add: eachMethod.
-											aBlock value: eachMethod ] ] ].
-					self includesClassSide ifTrue: [
-							aClass classSide localMethods do: [ :eachMethod |
-									(seenMethods includes: eachMethod) ifFalse: [
-											seenMethods add: eachMethod.
-											aBlock value: eachMethod ] ] ] ].
-			package extensionMethods do: [ :eachMethod |
-					(self matchesSideForMethod: eachMethod) ifTrue: [
-							(seenMethods includes: eachMethod) ifFalse: [
-									seenMethods add: eachMethod.
-									aBlock value: eachMethod ] ] ] ]
-]
-
 { #category : 'private - resolution' }
 MCPCompiledMethodScopeQuery >> packageNamed: aPackageName [
 

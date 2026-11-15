@@ -121,21 +121,9 @@ MCPToolCallStats >> displayAverageMilliseconds [
 ]
 
 { #category : 'displaying' }
-MCPToolCallStats >> displayAverageOutputBytes [
-
-	^ self averageOutputBytes asFloat printShowingDecimalPlaces: 1
-]
-
-{ #category : 'displaying' }
 MCPToolCallStats >> displayLastMilliseconds [
 
 	^ (self lastMilliseconds ifNil: [ 0 ]) asString
-]
-
-{ #category : 'displaying' }
-MCPToolCallStats >> displayLastOutputBytes [
-
-	^ self lastOutputBytes asString
 ]
 
 { #category : 'displaying' }
@@ -145,27 +133,9 @@ MCPToolCallStats >> displayMaxMilliseconds [
 ]
 
 { #category : 'displaying' }
-MCPToolCallStats >> displayMaxOutputBytes [
-
-	^ self maxOutputBytes asString
-]
-
-{ #category : 'displaying' }
 MCPToolCallStats >> displayMinMilliseconds [
 
 	^ (self minMilliseconds ifNil: [ 0 ]) asString
-]
-
-{ #category : 'displaying' }
-MCPToolCallStats >> displayOutlierExplanation [
-
-	^ self lastOutlierExplanation ifNil: [ '' ]
-]
-
-{ #category : 'displaying' }
-MCPToolCallStats >> displayOutputBudgetExceededCount [
-
-	^ self outputBudgetExceededCount asString
 ]
 
 { #category : 'accessing' }
@@ -190,13 +160,6 @@ MCPToolCallStats >> errorCountsByCode [
 MCPToolCallStats >> errorCountsByKind [
 
 	^ errorCountsByKind ifNil: [ errorCountsByKind := Dictionary new ]
-]
-
-{ #category : 'accessing' }
-MCPToolCallStats >> errorRate [
-
-	self callCount = 0 ifTrue: [ ^ 0 ].
-	^ self errorCount / self callCount
 ]
 
 { #category : 'accessing' }

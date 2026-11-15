@@ -214,12 +214,6 @@ MCPToolMutation >> failureErrorCodeFor: anError action: action [
 	^ prefix , cause mcpMutationFailureErrorCodeSuffix
 ]
 
-{ #category : 'private - request' }
-MCPToolMutation >> forceFromRequest: request [
-
-	^ request booleanArgumentNamed: 'force' default: false
-]
-
 { #category : 'private - schema' }
 MCPToolMutation >> forceSchemaProperty [
 

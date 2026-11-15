@@ -1019,12 +1019,6 @@ MCPTool >> pluralNounFor: aNoun [
 ]
 
 { #category : 'private - icons' }
-MCPTool >> pngCompositeBaseIconNamed: aBaseIconSymbol badgeIconNamed: aBadgeIconSymbol [
-
-	^ MCPStructureIcon compositeBaseIconNamed: aBaseIconSymbol badgeIconNamed: aBadgeIconSymbol
-]
-
-{ #category : 'private - icons' }
 MCPTool >> pngDataUriForForm: aForm [
 
 	^ MCPStructureIcon pngDataUriForForm: aForm
@@ -1205,12 +1199,6 @@ MCPTool >> sourceLineTextOn: stream for: error [
 ]
 
 { #category : 'private - schema' }
-MCPTool >> stringArraySchemaNamed: aName [
-
-	^ self stringArraySchemaNamed: aName description: nil itemDescription: nil
-]
-
-{ #category : 'private - schema' }
 MCPTool >> stringArraySchemaNamed: aName description: aDescription itemDescription: anItemDescription [
 
 	| itemsProperty |
@@ -1272,16 +1260,6 @@ MCPTool >> successResultText: aSummary data: aDictionary warnings: warningString
 		  structuredContent: structuredContent
 ]
 
-{ #category : 'private' }
-MCPTool >> successfulStructuredDataFromResult: aResult ifAbsent: absentBlock [
-
-	| structuredContent |
-	aResult isError ifTrue: [ ^ absentBlock value ].
-	structuredContent := aResult structuredContent.
-	structuredContent ifNil: [ ^ absentBlock value ].
-	^ structuredContent at: #data ifAbsent: absentBlock
-]
-
 { #category : 'private - results' }
 MCPTool >> summaryAndWarningsOn: stream for: structuredContent [
 	"The opening of a plain-text result: what happened, then anything the call wants to qualify it with."
@@ -1292,12 +1270,6 @@ MCPTool >> summaryAndWarningsOn: stream for: structuredContent [
 			nextPut: Character lf;
 			nextPutAll: 'Warning: ';
 			nextPutAll: each ]
-]
-
-{ #category : 'private - request' }
-MCPTool >> targetSideIsClassIn: aRequest [
-
-	^ (aRequest stringArgumentNamed: 'side' default: 'instance') = 'class'
 ]
 
 { #category : 'private - schema' }

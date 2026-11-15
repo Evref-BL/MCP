@@ -25,12 +25,6 @@ MCPRepositoryUpdateResult >> addedPackageNames [
 	^ addedPackageNames ifNil: [ #(  ) ]
 ]
 
-{ #category : 'accessing' }
-MCPRepositoryUpdateResult >> addedPackageNames: aCollection [
-
-	addedPackageNames := aCollection ifNil: [ #(  ) ]
-]
-
 { #category : 'converting' }
 MCPRepositoryUpdateResult >> asDictionary [
 

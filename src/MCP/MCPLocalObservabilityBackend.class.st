@@ -139,13 +139,6 @@ MCPLocalObservabilityBackend >> enabled: aBoolean [
 		ifFalse: [ self disable ]
 ]
 
-{ #category : 'private' }
-MCPLocalObservabilityBackend >> errorClassNameFor: anError [
-
-	anError ifNil: [ ^ '' ].
-	^ anError class name asString
-]
-
 { #category : 'private - tracing' }
 MCPLocalObservabilityBackend >> eventKindsForRecord: aRecord [
 

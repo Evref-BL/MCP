@@ -33,12 +33,6 @@ MCPMethodUpdateChangeResult >> asDictionary [
 ]
 
 { #category : 'accessing' }
-MCPMethodUpdateChangeResult >> methodInfo [
-
-	^ methodInfo
-]
-
-{ #category : 'accessing' }
 MCPMethodUpdateChangeResult >> methodInfo: aMethodInfo [
 
 	methodInfo := aMethodInfo

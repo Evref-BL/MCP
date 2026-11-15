@@ -315,17 +315,6 @@ MCPCommandError class >> signalMissingProjectNamed: aProjectName [
 ]
 
 { #category : 'signaling' }
-MCPCommandError class >> signalMissingTag: aTag packageName: aPackageName [
-
-	| message |
-	message := String streamContents: [ :stream |
-		           stream << 'Package ' << aPackageName << ' does not have a tag named ' << aTag << '.' ].
-	^ self signalErrorCode: #TagNotFound message: message details: {
-			  (#package -> aPackageName).
-			  (#tag -> aTag) } asDictionary
-]
-
-{ #category : 'signaling' }
 MCPCommandError class >> signalMissingTag: aTag packageName: aPackageName forClassNamed: aClassName [
 
 	| message |

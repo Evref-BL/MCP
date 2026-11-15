@@ -46,12 +46,6 @@ MCPToolMethodSearch >> classReferenceEntriesForClassNamed: className queryReques
 ]
 
 { #category : 'private - methods' }
-MCPToolMethodSearch >> classReferenceEntriesForQueryRequest: queryRequest [
-
-	^ self classReferenceEntriesForClassNamed: (queryRequest requiredFilterPatternForTool: self) queryRequest: queryRequest
-]
-
-{ #category : 'private - methods' }
 MCPToolMethodSearch >> collapsedEntriesFor: entries [
 	"One entry for the trait, keeping the classes its method reached. Entries the trait no longer answers for, as an alias installs the method under another selector, are left as they are."
 
@@ -89,12 +83,6 @@ MCPToolMethodSearch >> fieldTextsForMethodEntry: anEntry sourceText: sourceText 
 MCPToolMethodSearch >> filterTextsForMethodEntry: anEntry sourceText: sourceText [
 
 	^ #(  )
-]
-
-{ #category : 'private - methods' }
-MCPToolMethodSearch >> implementorEntriesForQueryRequest: queryRequest [
-
-	^ self implementorEntriesForSelector: queryRequest filterPattern queryRequest: queryRequest
 ]
 
 { #category : 'private - methods' }
@@ -246,12 +234,6 @@ MCPToolMethodSearch >> searchedNoun [
 ]
 
 { #category : 'private - methods' }
-MCPToolMethodSearch >> selectorReferenceEntriesForQueryRequest: queryRequest [
-
-	^ self selectorReferenceEntriesForSelector: (queryRequest requiredFilterPatternForTool: self) queryRequest: queryRequest
-]
-
-{ #category : 'private - methods' }
 MCPToolMethodSearch >> selectorReferenceEntriesForSelector: selectorString queryRequest: queryRequest [
 
 	^ self
@@ -302,12 +284,6 @@ MCPToolMethodSearch >> variableBindingsNamed: aVariableName inBehaviors: behavio
 			eachBehavior allSlots do: [ :eachSlot | eachSlot name asString = aVariableName ifTrue: [ variables add: eachSlot ] ].
 			(eachBehavior bindingOf: aVariableName) ifNotNil: [ :binding | variables add: binding ] ].
 	^ variables asArray
-]
-
-{ #category : 'private - methods' }
-MCPToolMethodSearch >> variableReferenceEntriesForQueryRequest: queryRequest [
-
-	^ self variableReferenceEntriesForVariableNamed: (queryRequest requiredFilterPatternForTool: self) queryRequest: queryRequest
 ]
 
 { #category : 'private - methods' }

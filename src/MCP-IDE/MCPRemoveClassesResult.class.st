@@ -17,12 +17,6 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPRemoveClassesResult class >> removedClasses: someRemovedClasses removedPackageNames: somePackageNames [
-
-	^ self removedClasses: someRemovedClasses removedPackageNames: somePackageNames warningMessages: #(  )
-]
-
-{ #category : 'instance creation' }
 MCPRemoveClassesResult class >> removedClasses: someRemovedClasses removedPackageNames: somePackageNames warningMessages: someWarningMessages [
 
 	^ self new

@@ -77,12 +77,6 @@ MCPTestRunResult >> resultInfo [
 ]
 
 { #category : 'accessing' }
-MCPTestRunResult >> resultInfo: anObject [
-
-	resultInfo := anObject
-]
-
-{ #category : 'accessing' }
 MCPTestRunResult >> timedOut [
 
 	^ timedOut ifNil: [ false ]

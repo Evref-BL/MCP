@@ -39,19 +39,7 @@ MCPRepositorySnapshotResult >> packageInfos [
 ]
 
 { #category : 'accessing' }
-MCPRepositorySnapshotResult >> packageInfos: aCollection [
-
-	packageInfos := aCollection ifNil: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
 MCPRepositorySnapshotResult >> repositoryInfo [
 
 	^ repositoryInfo
-]
-
-{ #category : 'accessing' }
-MCPRepositorySnapshotResult >> repositoryInfo: aRepositoryInfo [
-
-	repositoryInfo := aRepositoryInfo
 ]

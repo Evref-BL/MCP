@@ -45,9 +45,3 @@ MCPRepositoryTransitionResult >> repositoryInfoAfter [
 
 	^ repositoryInfoAfter
 ]
-
-{ #category : 'accessing' }
-MCPRepositoryTransitionResult >> repositoryInfoBefore [
-
-	^ repositoryInfoBefore
-]

@@ -47,32 +47,6 @@ MCPToolRunTests >> commandForRequest: runTestsRequest [
 ]
 
 { #category : 'private - coverage schema' }
-MCPToolRunTests >> coverageMethodArrayPropertyNamed: propertyName description: propertyDescription [
-
-	^ (self schemaPropertyNamed: propertyName type: 'array' description: propertyDescription)
-		  items: self coverageMethodObjectSchema;
-		  yourself
-]
-
-{ #category : 'private - coverage schema' }
-MCPToolRunTests >> coverageMethodObjectSchema [
-
-	^ MCPStructureProperties new
-		  type: 'object';
-		  description: 'A compiled method entry included in a coverage method list.';
-		  properties: {
-				  (self schemaPropertyNamed: 'class' type: 'string' description: 'The method class name.').
-				  (self schemaPropertyNamed: 'selector' type: 'string' description: 'The method selector.').
-				  (self targetSideSchemaPropertyDescribedAs: 'Which side the method is on; absent means instance.').
-				  (self schemaPropertyNamed: 'package' type: 'string' description: 'The package that defines the method.').
-				  (self booleanSchemaPropertyNamed: 'isExtension' description: 'Whether the method is an extension method.').
-				  (self schemaPropertyNamed: 'protocol' type: 'string' description: 'The method protocol.') };
-		  required: #( 'class' 'selector' 'package' 'isExtension' 'protocol' );
-		  additionalProperties: false;
-		  yourself
-]
-
-{ #category : 'private - coverage schema' }
 MCPToolRunTests >> coverageOptionsObjectSchema [
 
 	| methodLimitProperty property |

@@ -24,16 +24,6 @@ MCPRenameClassCommand class >> className: aClassName newClassName: aNewClassName
 		  yourself
 ]
 
-{ #category : 'instance creation' }
-MCPRenameClassCommand class >> className: aClassName newClassName: aNewClassName model: aModel [
-
-	^ self new
-		  className: aClassName;
-		  newClassName: aNewClassName;
-		  model: aModel;
-		  yourself
-]
-
 { #category : 'executing' }
 MCPRenameClassCommand >> execute [
 

@@ -113,12 +113,6 @@ MCPChangeHistorySelectionRequest >> initializeFromRequest: aRequest operation: o
 ]
 
 { #category : 'testing' }
-MCPChangeHistorySelectionRequest >> isApplyOperation [
-
-	^ self operation = 'applyEntries'
-]
-
-{ #category : 'testing' }
 MCPChangeHistorySelectionRequest >> isRevertOperation [
 
 	^ self operation = 'revertEntries'
