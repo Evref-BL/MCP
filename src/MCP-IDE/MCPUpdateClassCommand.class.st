@@ -140,8 +140,7 @@ MCPUpdateClassCommand >> executeMoveWithPlan: plan [
 				            execute ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText: (String streamContents: [ :stream |
-							   stream << 'Moved class ' << self classRequest className << ' to package ' << packageName << '.' ])
+					  successResultText: (self moveSummaryForClassInfo: result classInfo)
 					  data: (self tool dataForAppliedUpdateResult: (self appliedUpdateResultFor: result plan: plan))
 					  warnings: warningMessages ]
 		  failureSummary: [ :error |
@@ -439,6 +438,26 @@ MCPUpdateClassCommand >> moveRequestedContext [
 		  (#class -> self classRequest className).
 		  (#package -> self movePackageName).
 		  (#tag -> (self classRequest tag ifNil: [ '' ])) } asDictionary
+]
+
+{ #category : 'private - move' }
+MCPUpdateClassCommand >> moveSummaryForClassInfo: aClassInfo [
+	"Moved class EvalCanvas to tag Rendering of package Eval-Shapes. It says where the class is after the move: a class filed under a tag is named with the tag and its package, one at its package's root with the package alone."
+
+	^ String streamContents: [ :stream |
+			  stream
+				  nextPutAll: 'Moved class ';
+				  nextPutAll: aClassInfo className;
+				  nextPutAll: ' to '.
+			  aClassInfo hasTag ifTrue: [
+					  stream
+						  nextPutAll: 'tag ';
+						  nextPutAll: aClassInfo tag;
+						  nextPutAll: ' of ' ].
+			  stream
+				  nextPutAll: 'package ';
+				  nextPutAll: aClassInfo packageName;
+				  nextPut: $. ]
 ]
 
 { #category : 'private - planning' }

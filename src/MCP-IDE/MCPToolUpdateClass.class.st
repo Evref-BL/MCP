@@ -53,3 +53,10 @@ MCPToolUpdateClass >> classToolSpec [
 		   #( 'newName' 'superclass' 'package' 'tag' 'comment' 'slots' 'classSlots' 'traits' 'sharedVariables' 'sharedPools'
 		      'layout' )) } asDictionary
 ]
+
+{ #category : 'private - results' }
+MCPToolUpdateClass >> keysStatedInSummary [
+	"Several updates each say what they did in the summary, a line each."
+
+	^ #( updates )
+]

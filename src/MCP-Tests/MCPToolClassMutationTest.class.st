@@ -455,6 +455,49 @@ MCPToolClassMutationTest >> testCreateSetsClassComment [
 ]
 
 { #category : 'tests - update' }
+MCPToolClassMutationTest >> testRetagSummaryNamesTheTag [
+	"A class moved to a tag is named with the tag and the package it lies in; one moved to a package's root, with the package alone."
+
+	self
+		assert: (self summaryFrom: (self callToolWith: self updateRequestArgumentsForRecategorization))
+		equals: ('Moved class {1} to tag {2} of package {3}.' format: {
+					 self moveTargetClassName.
+					 self destinationTagName.
+					 self originalMovePackageName }).
+	self
+		assert: (self summaryFrom: (self callToolWith: self updateRequestArgumentsForMoveToPackage))
+		equals: ('Moved class {1} to package {2}.' format: {
+					 self moveTargetClassName.
+					 self destinationPackageName })
+]
+
+{ #category : 'tests - update' }
+MCPToolClassMutationTest >> testSeveralUpdatesSayEachChange [
+	"Each update says what it did, on a line of its own in the order applied, as it would alone; the text does not list the updates again as data."
+
+	| lines result targetName |
+	targetName := 'MCPToolClassMutationTestFusedTarget'.
+	self
+		createClassNamed: targetName
+		superclassName: 'Object'
+		slots: #( 'kept' )
+		classSlots: #(  ).
+	result := self callToolWith: {
+			          (#name -> targetName).
+			          (#superclass -> 'ProtoObject').
+			          (#slots -> (Dictionary with: 'add' -> #( 'added' ))).
+			          (#comment -> 'fused comment') } asDictionary.
+	self deny: (self resultIndicatesError: result).
+	lines := ((result at: #content) first at: #text) lines.
+	self assert: lines asArray equals: {
+			('Applied 3 updates to class {1}:' format: { targetName }).
+			('Reparented class {1} to superclass ProtoObject.' format: { targetName }).
+			('Added slot added to class {1}.' format: { targetName }).
+			('Set comment for class {1}.' format: { targetName }) }.
+	self assert: ((self dataFrom: result) at: #updates) size equals: 3
+]
+
+{ #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateAddsClassSideSlot [
 
 	| data result target |

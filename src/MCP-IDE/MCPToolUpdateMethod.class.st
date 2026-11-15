@@ -22,6 +22,13 @@ MCPToolUpdateMethod >> additionalKeywords [
 	^ super additionalKeywords , #( 'protocol' 'selector' 'rename' 'recategorize' 'signature' 'argument' 'extension' )
 ]
 
+{ #category : 'private - results' }
+MCPToolUpdateMethod >> keysStatedInSummary [
+	"Several updates each say what they did in the summary, a line each."
+
+	^ #( updates )
+]
+
 { #category : 'private - specs' }
 MCPToolUpdateMethod >> methodToolSpec [
 

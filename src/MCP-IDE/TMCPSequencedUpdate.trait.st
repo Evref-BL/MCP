@@ -69,7 +69,7 @@ TMCPSequencedUpdate >> executePlan: plan [
 
 { #category : 'private - results' }
 TMCPSequencedUpdate >> resultForAppliedUpdates: applied [
-	"One action answers exactly what it answered when it had a tool of its own; several are reported together."
+	"One action answers exactly what it answered when it had a tool of its own. Several say how many were applied, then what each one answered alone, a line each in the order applied; their data stays under updates."
 
 	| warnings updates |
 	applied size = 1 ifTrue: [ ^ applied first value ].
@@ -81,9 +81,16 @@ TMCPSequencedUpdate >> resultForAppliedUpdates: applied [
 				           yourself ].
 	^ self tool
 		  successResultText: (String streamContents: [ :stream |
-					   stream << 'Applied ' << applied size asString << ' updates to ' << self updateSubjectDescription << ': '.
-					   applied do: [ :each | stream << each key ] separatedBy: [ stream << ', ' ].
-					   stream << '.' ])
+					   stream
+						   nextPutAll: 'Applied ';
+						   print: applied size;
+						   nextPutAll: ' updates to ';
+						   nextPutAll: self updateSubjectDescription;
+						   nextPut: $:.
+					   applied do: [ :each |
+							   stream
+								   nextPut: Character lf;
+								   nextPutAll: (self summaryOfResult: each value) ] ])
 		  data: { (#updates -> updates asArray) } asDictionary
 		  warnings: warnings asArray
 ]
@@ -111,6 +118,12 @@ TMCPSequencedUpdate >> resultForFailure: errorResult at: plan applied: appliedAc
 					           skippedActions do: [ :each | stream << each ] separatedBy: [ stream << ', ' ] ].
 			           stream << '.' ].
 	^ self tool errorResultText: summary details: details
+]
+
+{ #category : 'private - results' }
+TMCPSequencedUpdate >> summaryOfResult: aResult [
+
+	^ aResult structuredContent at: #summary ifAbsent: [ '' ]
 ]
 
 { #category : 'requirements' }
