@@ -525,16 +525,39 @@ MCPToolContractsTest >> signalHaltForMCPMessageProcessorTest [
 ]
 
 { #category : 'private - evaluate' }
+MCPToolContractsTest >> stoppedText: aString [
+	"A text that must be the answer to a stop at a limit of 1 s."
+
+	self
+		assert: (aString lines first: 2)
+		equals: #( 'Evaluation stopped after 1 s, its time limit.' 'What it changed before then stays changed.' ).
+	^ aString
+]
+
+{ #category : 'private - evaluate' }
 MCPToolContractsTest >> stoppedTextOf: aResult [
 	"The text of an answer that must be a stop at a limit of 1 s."
 
-	| text |
 	self assert: (self resultIndicatesError: aResult).
-	text := self firstTextFromToolResult: aResult.
-	self
-		assert: (text lines first: 2)
-		equals: #( 'Evaluation stopped after 1 s, its time limit.' 'What it changed before then stays changed.' ).
-	^ text
+	^ self stoppedText: (self firstTextFromToolResult: aResult)
+]
+
+{ #category : 'private - evaluate' }
+MCPToolContractsTest >> stoppedTextUnwindingBrieflyOf: aString deferringInto: actions [
+	"The text of an evaluation of aString that must be stopped at a limit of 1 s, by a command that waits 1 s rather than 5 for the stopped code to unwind, leaving in actions what the call deferred until after its response. A test whose stopped code unwinds slowly waits that bound in full."
+
+	| command result tool |
+	tool := MCPToolEvaluate new.
+	command := MCPEvaluateCommandUnwindingBriefly
+		           tool: tool
+		           request: (MCPEvaluateRequest new initializeCode: aString timeoutSeconds: 1)
+		           resultPreviewCharacterLimit: tool resultPreviewCharacterLimit.
+	result := MCPPostResponseActions value: actions during: [ command execute ].
+	self assert: result isError.
+	^ self stoppedText: (tool contentTextForStructuredContent: (Dictionary new
+				    at: #summary put: result summary;
+				    at: #error put: result errorDetails;
+				    yourself))
 ]
 
 { #category : 'tests' }
@@ -943,17 +966,22 @@ MCPToolContractsTest >> testEmptyListOfTargetsIsRejectedAsInput [
 MCPToolContractsTest >> testEvaluateAnswersBeforeASlowUnwindEnds [
 	"An ensure block may take as long as it likes. The answer waits for it only so long, says it was still running, and puts the Transcript back itself."
 
-	| milliseconds result transcript |
+	| actions milliseconds text transcript |
 	self timeLimit: 30 seconds.
 	MCPEvaluateTestProbe reset.
 	transcript := Smalltalk globals at: #Transcript.
+	actions := OrderedCollection new.
 	[
 		milliseconds := Time millisecondsToRun: [
-			                result := self evaluate: '[ [ true ] whileTrue ] ensure: [ MCPEvaluateTestProbe holdUntilReleased ]' within: 1 ].
+				                text := self
+					                        stoppedTextUnwindingBrieflyOf:
+					                        '[ [ true ] whileTrue ] ensure: [ MCPEvaluateTestProbe holdUntilReleased ]'
+					                        deferringInto: actions ].
 		self assert: (Smalltalk globals at: #Transcript) identicalTo: transcript ] ensure: [
+			actions do: #value.
 			MCPEvaluateTestProbe release.
 			MCPEvaluateTestProbe holder ifNotNil: [ :holder | self waitUntilEnded: holder ] ].
-	self assert: ((self stoppedTextOf: result) lines at: 3) equals: 'Its ensure blocks were still running when this answer was sent.'.
+	self assert: (text lines at: 3) equals: 'Its ensure blocks were still running when this answer was sent.'.
 	self assert: milliseconds < 15000
 ]
 
@@ -987,17 +1015,18 @@ MCPToolContractsTest >> testEvaluateAnswersWhileAForkHoldsItsPriority [
 
 	self timeLimit: 30 seconds.
 	self underEitherPreemptionRuleDo: [ :yields |
-			| before milliseconds result |
+			| actions before milliseconds |
 			before := self liveProcessesNamed: 'image_evaluate stop'.
+			actions := OrderedCollection new.
 			[
 				milliseconds := Time millisecondsToRun: [
-						                result := self
-							                          evaluate:
-							                          '[ [ true ] whileTrue ] forkAt: Processor activePriority named: ''mcp-evaluate-hog-probe''. [ true ] whileTrue'
-							                          within: 1 ] ] ensure: [
-				(self liveProcessesNamed: 'mcp-evaluate-hog-probe') do: [ :each | each terminate ] ].
+						                self
+							                stoppedTextUnwindingBrieflyOf:
+							                '[ [ true ] whileTrue ] forkAt: Processor activePriority named: ''mcp-evaluate-hog-probe''. [ true ] whileTrue'
+							                deferringInto: actions ] ] ensure: [
+					actions do: #value.
+					(self liveProcessesNamed: 'mcp-evaluate-hog-probe') do: [ :each | each terminate ] ].
 			((self liveProcessesNamed: 'image_evaluate stop') copyWithoutAll: before) do: [ :each | self waitUntilEnded: each ].
-			self stoppedTextOf: result.
 			self assert: milliseconds < 15000 ]
 ]
 
@@ -1300,7 +1329,9 @@ MCPToolContractsTest >> testEvaluateStopCollectsGarbageOnceTheCodeHasUnwound [
 	before := self liveProcessesNamed: 'image_evaluate stop'.
 	actions := OrderedCollection new.
 	[
-		self evaluate: '[ [ true ] whileTrue ] ensure: [ MCPEvaluateTestProbe holdUntilReleased ]' within: 1 deferringInto: actions.
+		self
+			stoppedTextUnwindingBrieflyOf: '[ [ true ] whileTrue ] ensure: [ MCPEvaluateTestProbe holdUntilReleased ]'
+			deferringInto: actions.
 		collections := self fullGarbageCollections.
 		actions do: #value.
 		self assert: self fullGarbageCollections equals: collections.
