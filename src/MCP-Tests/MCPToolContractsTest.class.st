@@ -1097,7 +1097,6 @@ MCPToolContractsTest >> testDictionaryShapedCommandResultsUseDTOClasses [
 	commandResultClasses := {
 		                        (MCPGetClassCommand -> MCPGetClassResult).
 		                        (MCPGetMethodCommand -> MCPGetMethodResult).
-		                        (MCPRewriteMethodsCommand -> MCPMethodRewriteReport).
 		                        (MCPCreateRepositoryCommand -> MCPRepositoryCreateResult).
 		                        (MCPAttachRepositoryCommand -> MCPRepositoryCreateResult).
 		                        (MCPUpdateRepositoryCommand -> MCPRepositoryUpdateResult).

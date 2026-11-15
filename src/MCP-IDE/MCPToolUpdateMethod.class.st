@@ -334,7 +334,7 @@ MCPToolUpdateMethod >> requestedContextFor: request permutation: aPermutation [
 
 { #category : 'private - results' }
 MCPToolUpdateMethod >> resultForFailure: errorResult of: action applied: appliedActions skipped: skippedActions [
-	"A single change fails as it always did. When it was one of several, say which had already landed and which were never attempted, because the method is left part-way."
+	"A single change fails as it always did. When it was one of several, say which had already landed and which were never attempted, because the target is left part-way."
 
 	| details summary |
 	(appliedActions isEmpty and: [ skippedActions isEmpty ]) ifTrue: [ ^ errorResult ].
@@ -373,10 +373,8 @@ MCPToolUpdateMethod >> resultForUpdates: applied of: request [
 					   stream
 						   nextPutAll: 'Applied ';
 						   print: applied size;
-						   nextPutAll: ' updates to method ';
-						   nextPutAll: (self classNameAndSideOf: request do: [ :className :classSide :sideGiven | className ]);
-						   nextPutAll: '>>';
-						   nextPutAll: (request stringArgumentNamed: 'selector');
+						   nextPutAll: ' updates to ';
+						   nextPutAll: (self updateSubjectDescriptionFor: request);
 						   nextPut: $:.
 					   applied do: [ :each |
 							   stream
@@ -432,6 +430,18 @@ MCPToolUpdateMethod >> updateArgumentNames [
 	"The arguments that say what to change, in the order the requested context names them."
 
 	^ #( 'newSelector' 'protocol' 'permutation' 'arguments' 'argumentValueExpressions' )
+]
+
+{ #category : 'private - results' }
+MCPToolUpdateMethod >> updateSubjectDescriptionFor: request [
+	"What the summary of several updates calls the method: method EvalLedger>>audit, its class named without its side."
+
+	^ String streamContents: [ :stream |
+			  stream
+				  nextPutAll: 'method ';
+				  nextPutAll: (self classNameAndSideOf: request do: [ :className :classSide :sideGiven | className ]);
+				  nextPutAll: '>>';
+				  nextPutAll: (request stringArgumentNamed: 'selector') ]
 ]
 
 { #category : 'private - updating' }

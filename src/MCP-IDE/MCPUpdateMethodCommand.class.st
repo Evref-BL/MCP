@@ -33,7 +33,7 @@ MCPUpdateMethodCommand class >> changing: oldSelector of: aBehavior to: newSelec
 		  model: aModel
 ]
 
-{ #category : 'private - planning' }
+{ #category : 'planning' }
 MCPUpdateMethodCommand class >> defaultPermutationFrom: oldSelector to: newSelector [
 	"The permutation a selector change implies when the caller gives none: one entry per argument of newSelector, holding the index of the argument of oldSelector it takes, or a negative number for a new one."
 

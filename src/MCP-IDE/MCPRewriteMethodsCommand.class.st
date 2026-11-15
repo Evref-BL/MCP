@@ -1,7 +1,7 @@
 "
-Calculates and optionally applies the method rewrite changes some rules make in a method scope.
+Calculates the method rewrite changes some rules make in a method scope, and applies them when asked.
 
-It delegates pattern matching to the NewTools rewrite backend through an MCPSettlingRewriter, so each method is rewritten until nothing more matches, and answers an MCPMethodRewriteReport. A method a class got from a trait is left out, since a changed copy would shadow the trait in that class alone; skippedTraitChanges says what the rules would change in the trait instead.
+It delegates pattern matching to the NewTools rewrite backend through an MCPSettlingRewriter, so each method is rewritten until nothing more matches. execute answers the changes, sorted, and applyChanges: performs them, so a caller can describe them first, while the methods still hold the sources they replace. A method a class got from a trait is left out, since a changed copy would shadow the trait in that class alone; skippedTraitChanges says what the rules would change in the trait instead.
 "
 Class {
 	#name : 'MCPRewriteMethodsCommand',
@@ -9,7 +9,6 @@ Class {
 	#instVars : [
 		'rules',
 		'scopeQuery',
-		'apply',
 		'methods'
 	],
 	#category : 'MCP-IDE-Commands',
@@ -18,19 +17,12 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPRewriteMethodsCommand class >> rules: someRuleSpecs scopeQuery: aScopeQuery apply: aBoolean [
+MCPRewriteMethodsCommand class >> rules: someRuleSpecs scopeQuery: aScopeQuery [
 
-	^ self new initializeRules: someRuleSpecs scopeQuery: aScopeQuery apply: aBoolean
+	^ self new initializeRules: someRuleSpecs scopeQuery: aScopeQuery
 ]
 
-{ #category : 'accessing' }
-MCPRewriteMethodsCommand >> apply [
-	"Whether the changes are applied, or only previewed."
-
-	^ apply
-]
-
-{ #category : 'private - rewriting' }
+{ #category : 'executing' }
 MCPRewriteMethodsCommand >> applyChanges: changes [
 
 	| changeManager |
@@ -38,13 +30,6 @@ MCPRewriteMethodsCommand >> applyChanges: changes [
 	^ [ changes do: [ :change | changeManager performChange: change ] ]
 		  on: Deprecation
 		  do: [ :deprecation | deprecation resume ]
-]
-
-{ #category : 'private - results' }
-MCPRewriteMethodsCommand >> changeInfosForChanges: changes [
-	"A preview exists to show what would change, so it carries the sources; an apply has already changed them."
-
-	^ changes collect: [ :each | MCPMethodRewriteChangeInfo fromChange: each includeSources: apply not ] as: Array
 ]
 
 { #category : 'private - rewriting' }
@@ -59,25 +44,17 @@ MCPRewriteMethodsCommand >> classNameForChange: aChange [
 
 { #category : 'executing' }
 MCPRewriteMethodsCommand >> execute [
-	"Compute the changes the rules make to the methods in scope, sorted, apply them when asked, and answer a report of them. They are described before they are applied, while the methods still hold the sources they replace."
+	"Answer the changes the rules make to the methods in scope, sorted by class, side and selector. Nothing changes until they are given to applyChanges:, so a caller can describe them first, while the methods still hold the sources they replace."
 
-	| appliedCount changeInfos changes |
 	methods := scopeQuery methods.
-	changes := self sortedChanges: (self rewriteChangesFor: (self rewritableMethodsIn: methods)).
-	changeInfos := self changeInfosForChanges: changes.
-	appliedCount := 0.
-	apply ifTrue: [
-			self applyChanges: changes.
-			appliedCount := changes size ].
-	^ MCPMethodRewriteReport request: self changeInfos: changeInfos appliedCount: appliedCount
+	^ self sortedChanges: (self rewriteChangesFor: (self rewritableMethodsIn: methods))
 ]
 
 { #category : 'initialization' }
-MCPRewriteMethodsCommand >> initializeRules: someRuleSpecs scopeQuery: aScopeQuery apply: aBoolean [
+MCPRewriteMethodsCommand >> initializeRules: someRuleSpecs scopeQuery: aScopeQuery [
 
 	rules := someRuleSpecs.
-	scopeQuery := aScopeQuery.
-	apply := aBoolean
+	scopeQuery := aScopeQuery
 ]
 
 { #category : 'private - rewriting' }
@@ -122,13 +99,7 @@ MCPRewriteMethodsCommand >> rewriteRule [
 	^ MCPSettlingRewriter on: self parseTreeRewriter
 ]
 
-{ #category : 'accessing' }
-MCPRewriteMethodsCommand >> scopeQuery [
-
-	^ scopeQuery
-]
-
-{ #category : 'private - rewriting' }
+{ #category : 'executing' }
 MCPRewriteMethodsCommand >> skippedTraitChanges [
 	"Once executed, what the rules would change in the trait methods behind the copies in scope, which were left out: a changed copy would shadow the trait in that class alone. A scope naming the users of a trait and not the trait itself reports no change at all otherwise, and nothing would say where the method lives. Only the methods the rules actually match count, since every traited class carries copies of Pharo's own trait methods and they are nobody's business here."
 

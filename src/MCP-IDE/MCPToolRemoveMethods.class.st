@@ -59,12 +59,16 @@ MCPToolRemoveMethods >> checkArguments: request [
 
 { #category : 'private - errors' }
 MCPToolRemoveMethods >> classNameFor: request checked: aBoolean [
-	"The class without the side it may name; before the arguments are checked, an empty name when the call gave none."
+	"The class an error names. Before the arguments are checked, a call that gave none reads as an empty name."
 
-	| className |
-	className := request stringArgumentNamed: 'class'.
-	aBoolean ifTrue: [ ^ className ifNotNil: [ MCPImageLookup baseNameOf: className ] ].
-	^ className ifNil: [ '' ] ifNotNil: [ MCPImageLookup baseNameOf: className ]
+	^ (self classNameOf: request) ifNil: [ aBoolean ifFalse: [ '' ] ]
+]
+
+{ #category : 'private' }
+MCPToolRemoveMethods >> classNameOf: request [
+	"The class the call names, without the side it may name."
+
+	^ (request stringArgumentNamed: 'class') ifNotNil: [ :className | MCPImageLookup baseNameOf: className ]
 ]
 
 { #category : 'private' }
@@ -235,7 +239,7 @@ MCPToolRemoveMethods >> removeWith: request [
 	"Senders do not stop a removal. Once the methods are gone, the answer warns of the sends they left without a method."
 
 	| behavior className classSide selectorSymbols selectors |
-	className := self classNameFor: request checked: true.
+	className := self classNameOf: request.
 	classSide := self classSideOf: request.
 	selectors := self selectorsFromRequest: request.
 	selectorSymbols := selectors collect: #asSymbol.
