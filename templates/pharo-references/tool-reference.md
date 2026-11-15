@@ -57,9 +57,9 @@ Pharo signals a notification for a remark rather than a fault, and every
 have produced and the call proceeds, so a deprecated send, or an undeclared
 variable during a load, does not fail it.
 
-`RBRefactoringWarning` is the exception. It reports a change that breaks
-something, so it stops the call. When it stops a call that creates, compiles or
-updates a class or method, the message names every impact and says that `force`
+`RBRefactoringWarning` is the exception, and so is `class_remove`'s refusal of a
+class something still needs. They report a change that breaks something, so
+they stop the call; the message names every impact and says whether `force`
 gets past it, and with structured content the error also carries
 `impactMessages`, `howToProceed` and `forceSupported`. Send the same request
 with `force: true` only when the impacts are acceptable; forced warnings come
