@@ -271,7 +271,7 @@ MCPEvaluateCommand >> stoppedDetailsFor: anEvaluator [
 		          ifNotNil: [ :top | tool framesUpToCallerIn: (top stackOfSize: limit + 1) ].
 	details := Dictionary new.
 	details at: #stoppedIn put: (tool
-			 collapsedFrameLines: ((frames first: (frames size min: limit)) collect: [ :each | each printString ] as: Array)
+			 collapsedFrameLines: ((frames first: (frames size min: limit)) collect: [ :each | tool frameNameFor: each ] as: Array)
 			 deeper: frames size > limit).
 	details at: #hint put: tool longerWorkHintLines.
 	details at: #timeoutSeconds put: request timeoutSeconds.

@@ -165,6 +165,26 @@ MCPToolEvaluate >> frameLineFor: aFrameName count: anInteger atLeast: aBoolean [
 ]
 
 { #category : 'private' }
+MCPToolEvaluate >> frameNameFor: aContext [
+	"A frame on one line, by its receiver's class, its method's class when another, and its selector, after [ ] in for a block. Pharo prints a frame so from 14 on; before, a block's frame prints the block's source, over as many lines as it has."
+
+	^ String streamContents: [ :stream |
+			  | receiverClass methodClass |
+			  aContext isBlockContext ifTrue: [ stream nextPutAll: '[ ] in ' ].
+			  receiverClass := aContext receiver class.
+			  methodClass := aContext methodClass.
+			  stream nextPutAll: receiverClass name.
+			  methodClass == receiverClass ifFalse: [
+					  stream
+						  nextPut: $(;
+						  nextPutAll: methodClass name;
+						  nextPut: $) ].
+			  stream
+				  nextPutAll: '>>';
+				  nextPutAll: aContext selector ]
+]
+
+{ #category : 'private' }
 MCPToolEvaluate >> heldByHintLinesFor: processes [
 	"An earlier evaluation ends at its own limit. A fork has none, and no tool can stop it, since stopping a process takes an evaluation."
 
@@ -197,7 +217,7 @@ MCPToolEvaluate >> heldByLinesFor: processes [
 					  each suspendedContext ifNotNil: [ :frame |
 							  stream
 								  nextPutAll: ', in ';
-								  print: frame ] ] ]
+								  nextPutAll: (self frameNameFor: frame) ] ] ]
 ]
 
 { #category : 'private' }

@@ -1163,6 +1163,25 @@ MCPToolContractsTest >> testEvaluateLooksAtTheMemoryOnlyOnceTheCodeHasStarted [
 ]
 
 { #category : 'tests - evaluate' }
+MCPToolContractsTest >> testEvaluateNamesAFrameOnOneLineByItsClassAndMethod [
+	"Every Pharo names a frame so; before 14, Pharo printed a block's frame with the block's source, over as many lines as it has."
+
+	| tool |
+	tool := MCPToolEvaluate new.
+	self assert: (tool frameNameFor: thisContext) equals: 'MCPToolContractsTest>>testEvaluateNamesAFrameOnOneLineByItsClassAndMethod'.
+	self
+		assert: [ tool frameNameFor: thisContext ] value
+		equals: '[ ] in MCPToolContractsTest>>testEvaluateNamesAFrameOnOneLineByItsClassAndMethod'.
+	self
+		assert: (tool frameNameFor: (Context
+					  sender: nil
+					  receiver: 3
+					  method: Object >> #printString
+					  arguments: #(  )))
+		equals: 'SmallInteger(Object)>>printString'
+]
+
+{ #category : 'tests - evaluate' }
 MCPToolContractsTest >> testEvaluateNotStartedTextTellsAnEvaluationFromAFork [
 	"A process named after the tool is an earlier evaluation, which ends at its own limit; any other at the priority evaluations run at was forked by one, and has no limit."
 
@@ -1188,7 +1207,7 @@ MCPToolContractsTest >> testEvaluateNotStartedTextTellsAnEvaluationFromAFork [
 		   'Fork long work at Processor userBackgroundPriority, below evaluations.' ).
 	lines := (self notStartedTextHeldBy: { evaluation }) lines.
 	self assert: lines size equals: 4.
-	self assert: (lines at: 3) equals: 'an earlier evaluation, in ' , evaluation suspendedContext printString.
+	self assert: (lines at: 3) equals: 'an earlier evaluation, in ' , (MCPToolEvaluate new frameNameFor: evaluation suspendedContext).
 	self assert: lines last equals: 'An earlier evaluation stops at its own time limit; call again after it.'.
 	self assert: (self notStartedTextHeldBy: #(  )) lines equals: {
 			summary.
