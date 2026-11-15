@@ -89,12 +89,13 @@ MCPToolSearchMethodReferences >> fallbackKindsFor: kinds [
 
 { #category : 'private - lookup' }
 MCPToolSearchMethodReferences >> kindsForName: aName request: request [
+	"A capitalised name is a class when its base name is one, so Foo class reads as references to Foo, and a variable otherwise."
 
 	(self requestedKindIn: request) ifNotNil: [ :requested | ^ { requested } ].
 	(aName includes: $:) ifTrue: [ ^ #( 'implementors' 'senders' ) ].
 	aName first isLetter ifFalse: [ ^ #( 'implementors' 'senders' ) ].
 	aName first isUppercase ifFalse: [ ^ #( 'implementors' 'senders' ) ].
-	^ (Smalltalk globals at: aName asSymbol ifAbsent: [ nil ]) isBehavior
+	^ (MCPImageLookup isClassName: aName)
 		  ifTrue: [ #( 'class' ) ]
 		  ifFalse: [ #( 'variable' ) ]
 ]

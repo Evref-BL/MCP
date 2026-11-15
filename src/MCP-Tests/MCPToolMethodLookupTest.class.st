@@ -51,6 +51,22 @@ MCPToolMethodLookupTest >> testAClassNameThatNamesNoClassIsSaidByTheLookup [
 ]
 
 { #category : 'tests' }
+MCPToolMethodLookupTest >> testAClassSideNameAnswersReferencesToItsClass [
+	"Foo class names no global of its own, so its spelling alone would read it as a variable. Its base name decides, and the references are those of Foo."
+
+	| data references |
+	data := self
+		        toolNamed: 'method_reference_search'
+		        dataFromArguments: { (#name -> 'MCPToolMethodSearchReferenceTarget class') } asDictionary.
+	references := self
+		              toolNamed: 'method_reference_search'
+		              dataFromArguments: { (#name -> 'MCPToolMethodSearchReferenceTarget') } asDictionary.
+	self denyEmpty: (data at: #methods).
+	(data at: #methods) do: [ :each | self assert: (each at: #reference) equals: 'class' ].
+	self assert: (data at: #methods) equals: (references at: #methods)
+]
+
+{ #category : 'tests' }
 MCPToolMethodLookupTest >> testClassNameAnswersClassReferences [
 
 	| data |

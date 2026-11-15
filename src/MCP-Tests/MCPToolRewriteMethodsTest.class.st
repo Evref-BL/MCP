@@ -95,6 +95,28 @@ MCPToolRewriteMethodsTest >> tearDown [
 ]
 
 { #category : 'tests' }
+MCPToolRewriteMethodsTest >> testARuleClassThatNamesNoRuleIsSaidByTheLookup [
+	"A misspelt rule suggests rewrite rules, under a code of its own rather than a missing class's."
+
+	| error result |
+	result := self callToolWith: {
+			          (#ruleClasses -> #( 'MCPDetectIfFoundRul' )).
+			          (#scope -> { (#classes -> { self targetClassName }) } asDictionary) } asDictionary.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (error at: #errorCode) equals: 'RewriteRuleNotFound'.
+	self assert: (error at: #ruleClass) equals: 'MCPDetectIfFoundRul'.
+	self assert: ((error at: #message) beginsWith: 'Rewrite rule MCPDetectIfFoundRul does not exist. Did you mean: ').
+	self assert: ((error at: #suggestions) includes: MCPDetectIfFoundRule name).
+	result := self callToolWith: {
+			          (#ruleClasses -> #( 'Transcript' )).
+			          (#scope -> { (#classes -> { self targetClassName }) } asDictionary) } asDictionary.
+	error := self errorFrom: result.
+	self assert: (error at: #errorCode) equals: 'NotAClass'.
+	self assert: (error at: #message) equals: 'Transcript is a global variable, not a rewrite rule.'
+]
+
+{ #category : 'tests' }
 MCPToolRewriteMethodsTest >> testApplyMutatesMethodInOneCall [
 
 	| data result rule |

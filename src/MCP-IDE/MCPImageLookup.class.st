@@ -181,6 +181,17 @@ MCPImageLookup class >> compileTargetNamed: aName classSide: aBoolean [
 ]
 
 { #category : 'reading names' }
+MCPImageLookup class >> isClassName: aName [
+	"Whether aName names a class or trait, read as every lookup reads a name: Foo class names Foo, and neither a list nor a global variable that is no class names one."
+
+	^ (self
+		   classNamed: aName
+		   ifList: [ nil ]
+		   ifNotAClass: [ :baseName | nil ]
+		   ifAbsent: [ :baseName | nil ]) isNotNil
+]
+
+{ #category : 'reading names' }
 MCPImageLookup class >> isListInOneName: aName [
 	"Whether aName is several names written as one string, between brackets or braces, rather than one name."
 

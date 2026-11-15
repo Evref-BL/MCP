@@ -258,12 +258,6 @@ MCPToolRunCritiques >> hitDataForCritique: critique fallbackEntity: fallbackEnti
 	^ data
 ]
 
-{ #category : 'private - rules' }
-MCPToolRunCritiques >> isCritiqueRuleClass: aClass [
-
-	^ aClass isBehavior and: [ aClass isMeta not and: [ aClass canUnderstand: #check:forCritiquesDo: ] ]
-]
-
 { #category : 'private - pagination' }
 MCPToolRunCritiques >> maximumEntriesToCollectForQueryRequest: queryRequest [
 
@@ -355,19 +349,9 @@ MCPToolRunCritiques >> rule: aRule runsOn: anEntity for: queryRequest [
 
 { #category : 'private - rules' }
 MCPToolRunCritiques >> ruleClassNamed: aRuleClassName [
+	"A rule named in ruleClasses: a misspelt one suggests the rules critique_run runs, and a class that runs no critique is refused as not a rule."
 
-	| ruleClass |
-	ruleClass := Smalltalk globals at: aRuleClassName asSymbol ifAbsent: [
-			             MCPCommandError
-				             signalErrorCode: #CritiqueRuleNotFound
-				             message: 'Critique rule class not found: ' , aRuleClassName
-				             details: { (#ruleClass -> aRuleClassName) } asDictionary ].
-	(self isCritiqueRuleClass: ruleClass) ifFalse: [
-			MCPCommandError
-				signalErrorCode: #InvalidCritiqueRule
-				message: aRuleClassName , ' is not a critique rule class.'
-				details: { (#ruleClass -> aRuleClassName) } asDictionary ].
-	^ ruleClass
+	^ MCPImageLookup classNamed: aRuleClassName role: #critiqueRule details: #(  )
 ]
 
 { #category : 'private - rules' }

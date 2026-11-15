@@ -139,6 +139,34 @@ MCPToolRunCritiquesTest >> tearDown [
 ]
 
 { #category : 'tests' }
+MCPToolRunCritiquesTest >> testARuleClassThatNamesNoRuleIsSaidByTheLookup [
+	"A misspelt rule suggests the rules critique_run runs; a global variable and a class that runs no critique each say what they are not."
+
+	| error result |
+	result := self callCritiqueRunWithArguments: {
+			          (#scope -> { (#classes -> { self fixtureClassName }) } asDictionary).
+			          (#ruleClasses -> #( 'ReAssignmentInBlockRul' )) } asDictionary.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (error at: #errorCode) equals: 'CritiqueRuleNotFound'.
+	self assert: (error at: #ruleClass) equals: 'ReAssignmentInBlockRul'.
+	self assert: ((error at: #message) beginsWith: 'Critique rule ReAssignmentInBlockRul does not exist. Did you mean: ').
+	self assert: ((error at: #suggestions) includes: ReAssignmentInBlockRule name).
+	result := self callCritiqueRunWithArguments: {
+			          (#scope -> { (#classes -> { self fixtureClassName }) } asDictionary).
+			          (#ruleClasses -> #( 'Transcript' )) } asDictionary.
+	error := self errorFrom: result.
+	self assert: (error at: #errorCode) equals: 'NotAClass'.
+	self assert: (error at: #message) equals: 'Transcript is a global variable, not a critique rule.'.
+	result := self callCritiqueRunWithArguments: {
+			          (#scope -> { (#classes -> { self fixtureClassName }) } asDictionary).
+			          (#ruleClasses -> #( 'Object' )) } asDictionary.
+	error := self errorFrom: result.
+	self assert: (error at: #errorCode) equals: 'InvalidCritiqueRule'.
+	self assert: (error at: #message) equals: 'Object is not a critique rule class.'
+]
+
+{ #category : 'tests' }
 MCPToolRunCritiquesTest >> testAsksANodeRuleWhetherItWantsTheMethod [
 	"ReDoNotSendSuperInitializeInClassSideRule is about the class side and says so in shouldCheckMethod:. An instance-side initialize sending super initialize is what it exists to leave alone."
 
