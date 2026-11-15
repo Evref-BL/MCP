@@ -68,7 +68,7 @@ MCPToolContractsTest >> assertNamesAMissingClassAlike: aCase [
 
 { #category : 'private' }
 MCPToolContractsTest >> assertToolFlowSpec: aSpec [
-	"A tool that reads its arguments from the request it is given builds no command, so its spec names none."
+	"A spec that names no command class is for a tool that reads the request it is given and builds no command, so it keeps MCPTool's commandForRequest:."
 
 	| parsedRequest rawRequest tool |
 	tool := (aSpec at: #toolClass) new.
@@ -78,6 +78,7 @@ MCPToolContractsTest >> assertToolFlowSpec: aSpec [
 	aSpec
 		at: #commandClass
 		ifPresent: [ :commandClass | self assert: (tool commandForRequest: parsedRequest) class equals: commandClass ]
+		ifAbsent: [ self assert: (tool class lookupSelector: #commandForRequest:) methodClass equals: MCPTool ]
 ]
 
 { #category : 'private' }
