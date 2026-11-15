@@ -770,6 +770,33 @@ MCPToolRepositoryOperationTest >> testAttachWithoutPackagesWarns [
 ]
 
 { #category : 'tests' }
+MCPToolRepositoryOperationTest >> testChangeListSaysWhenNothingIsUncommitted [
+
+	| location packageName repositoryName result |
+	repositoryName := 'MCP Change List Nothing Uncommitted Test'.
+	packageName := 'MCPToolRepositoryOperationNothingUncommittedPackage'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestChangeListNothingUncommitted'.
+	self withExportPackageNamed: packageName className: 'MCPToolRepositoryOperationNothingUncommittedClass' do: [
+			self withCleanRepositoryNamed: repositoryName location: location do: [
+					self
+						createRepositoryNamed: repositoryName
+						location: location
+						subdirectory: 'src'
+						packages: { packageName }.
+					self exportRepositoryNamed: repositoryName.
+					self commitRepositoryNamed: repositoryName message: 'Hold the package'.
+					result := self callToolWith: {
+							          (#action -> 'diff').
+							          (#name -> repositoryName) } asDictionary.
+					self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
+					self
+						assert: (self summaryFrom: result)
+						equals:
+						('Repository {1} has no uncommitted changes: the image matches its files and git sees none.' format: { repositoryName }).
+					self assert: (self dataFrom: result) isEmpty ] ]
+]
+
+{ #category : 'tests' }
 MCPToolRepositoryOperationTest >> testCheckoutBranchLoadsTargetBranchSnapshot [
 
 	| baseBranch checkoutResult className extraSelector featureBranch location packageName repository repositoryName |
@@ -1436,11 +1463,9 @@ MCPToolRepositoryOperationTest >> testDiffCanReportImageModifiedPackagesWithoutW
 					          (#name -> repository name) } asDictionary.
 			data := self dataFrom: result.
 			self deny: (result at: #isError ifAbsent: false).
-			self assert: (data at: #isEmpty) equals: false.
-			self assert: (data at: #changeCount) equals: 1.
-			self assert: (data at: #changedPackages) equals: #( 'MCP-Test-Dirty' ).
-			self assert: (data at: #imageModifiedPackages) equals: #( 'MCP-Test-Dirty' ).
-			self deny: (data includesKey: #modifiedPaths) ]
+			self assert: (self summaryFrom: result) equals: 'Repository MCP Diff Package Only Test Repository has uncommitted changes.'.
+			self assert: data keys asSet equals: #( imageModifiedPackages ) asSet.
+			self assert: (data at: #imageModifiedPackages) equals: #( 'MCP-Test-Dirty' ) ]
 ]
 
 { #category : 'tests' }
@@ -1539,12 +1564,9 @@ MCPToolRepositoryOperationTest >> testDiffReportsImageChangesWithoutWriting [
 					data := self dataFrom: result.
 					childNames := self directChildNamesOf: location.
 					self deny: (result at: #isError ifAbsent: false).
-					self assert: data keys asSet equals: #( changeCount changedPackages imageModifiedPackages isEmpty ) asSet.
-					self assert: (data at: #isEmpty) equals: false.
-					self assert: (data at: #changeCount) > 0.
-					self assert: (data at: #changedPackages) equals: { packageName }.
+					self assert: (self summaryFrom: result) equals: ('Repository {1} has uncommitted changes.' format: { repositoryName }).
+					self assert: data keys asSet equals: #( imageModifiedPackages ) asSet.
 					self assert: (data at: #imageModifiedPackages) equals: { packageName }.
-					self deny: (data includesKey: #modifiedPaths).
 					self deny: (childNames anySatisfy: [ :each | each includesSubstring: packageName ]) ] ]
 ]
 

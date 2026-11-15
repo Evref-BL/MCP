@@ -14,26 +14,21 @@ Class {
 { #category : 'executing' }
 MCPRepositoryDiffCommand >> execute [
 
-	| changedPackageNames imagePackageNames modifiedPaths repository result |
+	| repository result |
 	^ self
 		  executeRepositoryAction: 'diff'
 		  work: [
 				  repository := self request repository.
-				  imagePackageNames := self imageDifferingPackageNamesFor: repository.
-				  modifiedPaths := self modifiedPathsFromGitStatusIn: repository.
-				  changedPackageNames := self sortedStringsFrom: imagePackageNames , (self packageNamesForPaths: modifiedPaths in: repository).
 				  result := MCPRepositoryDiffResult
 					            repository: repository
-					            changedPackageNames: changedPackageNames
-					            imageModifiedPackages: imagePackageNames
-					            modifiedPaths: modifiedPaths ]
+					            imageModifiedPackages: (self imageDifferingPackageNamesFor: repository)
+					            modifiedPaths: (self modifiedPathsFromGitStatusIn: repository) ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText:
-					  (String streamContents: [ :stream | stream << 'Computed repository diff for ' << result repositoryInfo name << '.' ])
+					  successResultText: (self summaryForDiffResult: result)
 					  data: (self tool dataForRepositoryResult: result)
 					  warnings: warningMessages ]
-		  failureSummary: [ :error | 'Failed repository diff: ' , (error messageText ifNil: [ error asString ]) ]
+		  failureSummary: [ :error | 'Failed to list repository changes: ' , (error messageText ifNil: [ error asString ]) ]
 ]
 
 { #category : 'private - comparing' }
@@ -65,4 +60,13 @@ MCPRepositoryDiffCommand >> package: anIcePackage differsIn: sourceRepository wr
 			  ifNotNil: [ :version | ((MCPackage named: anIcePackage name) snapshot patchRelativeToBase: version snapshot) isEmpty not ] ]
 		  on: Error
 		  do: [ true ]
+]
+
+{ #category : 'private - results' }
+MCPRepositoryDiffCommand >> summaryForDiffResult: aDiffResult [
+
+	^ String streamContents: [ :stream |
+			  stream << 'Repository ' << aDiffResult repositoryInfo name << (aDiffResult hasChanges
+				   ifTrue: [ ' has uncommitted changes.' ]
+				   ifFalse: [ ' has no uncommitted changes: the image matches its files and git sees none.' ]) ]
 ]
