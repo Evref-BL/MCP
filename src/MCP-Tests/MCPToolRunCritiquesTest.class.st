@@ -516,7 +516,8 @@ MCPToolRunCritiquesTest >> testRunsSelectedNodeCritiqueAndGroupsHitsByRule [
 	self assert: (hit at: #method) equals: self fixtureClassName , '>>assignmentInBlockProbe'.
 	self assert: (hit includesKey: #interval).
 	self assert: (hit at: #line) equals: 4.
-	self assert: (hit at: #code) equals: '[ value := 1 ] ensure: [ ]'
+	"The code is the flagged statement as the method is stored, and the fixture is stored as the image's formatter writes it, which is not the same in every Pharo."
+	self assert: (hit at: #code) equals: (self fixtureClass >> #assignmentInBlockProbe) ast statements first sourceCode
 ]
 
 { #category : 'tests' }

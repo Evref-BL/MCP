@@ -513,9 +513,10 @@ MCPToolRepositoryOperationTest >> testAttachNamesThePackagesItRegistered [
 					self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
 					self
 						assert: (self summaryFrom: result)
-						equals: ('Attached repository {1} at {2}, on branch main, with its sources in src.' format: {
+						equals: ('Attached repository {1} at {2}, on branch {3}, with its sources in src.' format: {
 									 repositoryName.
-									 location fullName }).
+									 location fullName.
+									 (self git: 'symbolic-ref --short HEAD' in: location) }).
 					self assert: ((self dataFrom: result) at: #packages) asArray equals: { packageName }.
 					self assert: (self warningsFrom: result) isEmpty ] ]
 ]
@@ -2229,9 +2230,9 @@ MCPToolRepositoryOperationTest >> testReloadAnswersBranchAndPackages [
 							          (#action -> 'reload').
 							          (#name -> repositoryName) } asDictionary.
 					self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
-					self
-						assert: (self summaryFrom: result)
-						equals: ('Reloaded repository {1} from its files, on branch main.' format: { repositoryName }).
+					self assert: (self summaryFrom: result) equals: ('Reloaded repository {1} from its files, on branch {2}.' format: {
+								 repositoryName.
+								 (self git: 'symbolic-ref --short HEAD' in: location) }).
 					self assert: (self dataFrom: result) keys asArray equals: #( packages ).
 					self assert: ((self dataFrom: result) at: #packages) asArray equals: { packageName } ] ]
 ]
