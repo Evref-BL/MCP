@@ -125,9 +125,12 @@ MCPToolEvaluate >> executeWithRequest: request [
 
 { #category : 'private - results' }
 MCPToolEvaluate >> failureTextFor: structuredContent [
+	"A stopped evaluation and one that never started have layouts of their own; every other failure reads as its summary, the failing line, the suggestions, the Transcript and the frames."
 
 	| error |
 	error := structuredContent at: #error ifAbsent: [ ^ super contentTextForStructuredContent: structuredContent ].
+	(error includesKey: #stoppedIn) ifTrue: [ ^ self stoppedTextFor: structuredContent ].
+	(error includesKey: #heldBy) ifTrue: [ ^ self notStartedTextFor: structuredContent ].
 	^ String streamContents: [ :stream |
 			  stream nextPutAll: (structuredContent at: #summary ifAbsent: [ '' ]).
 			  error at: #sourceLine ifPresent: [ :sourceLine |
@@ -204,6 +207,16 @@ MCPToolEvaluate >> isEvaluation: aProcess [
 	^ aProcess name beginsWith: self name
 ]
 
+{ #category : 'private - results' }
+MCPToolEvaluate >> lines: someLines on: aStream [
+	"Each on a line of its own, after what the stream already holds."
+
+	someLines do: [ :each |
+			aStream
+				nextPut: Character lf;
+				nextPutAll: each ]
+]
+
 { #category : 'private' }
 MCPToolEvaluate >> longerWorkHintLines [
 	"Forking is the one way a stopped evaluation is told to run longer work: a raised limit is lost wherever the client waits less. The fork runs below every evaluation, so even one that never ends keeps none from starting, and an error in the work becomes its result rather than a file that never appears."
@@ -235,6 +248,22 @@ MCPToolEvaluate >> notStartedMessageFor: seconds [
 				  nextPutAll: 'Evaluation did not start within ';
 				  print: seconds;
 				  nextPutAll: ' s, its time limit; none of it ran.' ]
+]
+
+{ #category : 'private - results' }
+MCPToolEvaluate >> notStartedTextFor: structuredContent [
+	"What kept the processor at the priority evaluations run at, then what to do about it. None of the code ran, so there is no Transcript to show."
+
+	| error |
+	error := structuredContent at: #error.
+	^ String streamContents: [ :stream |
+			  stream nextPutAll: (structuredContent at: #summary ifAbsent: [ '' ]).
+			  (error at: #heldBy) ifNotEmpty: [ :processLines |
+					  stream
+						  nextPut: Character lf;
+						  nextPutAll: 'Holding the priority evaluations run at:'.
+					  self lines: processLines on: stream ].
+			  self lines: (error at: #hint ifAbsent: [ #(  ) ]) on: stream ]
 ]
 
 { #category : 'private - request' }
@@ -291,6 +320,30 @@ MCPToolEvaluate >> stoppedMessageFor: seconds [
 				  nextPutAll: 'Evaluation stopped after ';
 				  print: seconds;
 				  nextPutAll: ' s, its time limit.' ]
+]
+
+{ #category : 'private - results' }
+MCPToolEvaluate >> stoppedTextFor: structuredContent [
+	"Where the code was when it was stopped, then the one way the answer recommends to run longer work. The limit is not offered for raising: through a client that waits less, a raised limit loses the answer while the code goes on."
+
+	| error |
+	error := structuredContent at: #error.
+	^ String streamContents: [ :stream |
+			  stream
+				  nextPutAll: (structuredContent at: #summary ifAbsent: [ '' ]);
+				  nextPut: Character lf;
+				  nextPutAll: 'What it changed before then stays changed.'.
+			  (error at: #stillUnwinding ifAbsent: [ false ]) ifTrue: [
+					  stream
+						  nextPut: Character lf;
+						  nextPutAll: 'Its ensure blocks were still running when this answer was sent.' ].
+			  (error at: #stoppedIn) ifNotEmpty: [ :frameLines |
+					  stream
+						  nextPut: Character lf;
+						  nextPutAll: 'Stopped in:'.
+					  self lines: frameLines on: stream ].
+			  self lines: (error at: #hint ifAbsent: [ #(  ) ]) on: stream.
+			  self transcriptTextOn: stream for: error ]
 ]
 
 { #category : 'private' }

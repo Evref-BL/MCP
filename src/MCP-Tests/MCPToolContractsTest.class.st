@@ -373,6 +373,22 @@ MCPToolContractsTest >> methodSendsSubclassResponsibility: aCompiledMethod [
 	^ false
 ]
 
+{ #category : 'private - evaluate' }
+MCPToolContractsTest >> notStartedTextHeldBy: processes [
+	"The text of an evaluation that never started within 1 s, while these processes held the priority evaluations run at."
+
+	| command tool |
+	tool := MCPToolEvaluate new.
+	command := MCPEvaluateCommand
+		           tool: tool
+		           request: (MCPEvaluateRequest new initializeCode: '3 + 4' timeoutSeconds: 1)
+		           resultPreviewCharacterLimit: tool resultPreviewCharacterLimit.
+	^ tool contentTextForStructuredContent: (Dictionary new
+			   at: #summary put: (tool notStartedMessageFor: 1);
+			   at: #error put: (command notStartedDetailsFor: processes);
+			   yourself)
+]
+
 { #category : 'support' }
 MCPToolContractsTest >> readScreenToolFlowSpec [
 
@@ -1044,30 +1060,34 @@ MCPToolContractsTest >> testEvaluateLetsNotificationsUseTheirDefaultAction [
 MCPToolContractsTest >> testEvaluateNotStartedTextTellsAnEvaluationFromAFork [
 	"A process named after the tool is an earlier evaluation, which ends at its own limit; any other at the priority evaluations run at was forked by one, and has no limit."
 
-	| tool evaluation fork lines hints forkHint |
-	tool := MCPToolEvaluate new.
+	| evaluation fork lines summary |
 	evaluation := [ 1 ] newProcess
 		              name: 'image_evaluate';
 		              yourself.
 	fork := [ 2 ] newProcess
 		        name: 'mcp-fork-probe';
 		        yourself.
-	forkHint := 'A fork has no time limit; while it computes, evaluations may not start.'.
-	lines := tool heldByLinesFor: {
-			         evaluation.
-			         fork }.
-	self assert: (lines first beginsWith: 'an earlier evaluation, in ').
-	self assert: (lines second beginsWith: 'a process an evaluation forked, named mcp-fork-probe, in ').
-	hints := tool heldByHintLinesFor: {
-			         evaluation.
-			         fork }.
-	self assert: hints first equals: 'An earlier evaluation stops at its own time limit; call again after it.'.
-	self assert: (hints includes: forkHint).
-	self deny: ((tool heldByHintLinesFor: { evaluation }) includes: forkHint).
-	self
-		assert: (tool heldByHintLinesFor: #(  )) asArray
-		equals:
-		#( 'No other process holds the priority evaluations run at,' 'so code at a higher priority, such as another call, kept the processor.' )
+	summary := 'Evaluation did not start within 1 s, its time limit; none of it ran.'.
+	lines := (self notStartedTextHeldBy: {
+			          evaluation.
+			          fork }) lines.
+	self assert: (lines first: 2) equals: {
+			summary.
+			'Holding the priority evaluations run at:' }.
+	self assert: ((lines at: 3) beginsWith: 'an earlier evaluation, in ').
+	self assert: ((lines at: 4) beginsWith: 'a process an evaluation forked, named mcp-fork-probe, in ').
+	self assert: (lines allButFirst: 4) equals: #( 'An earlier evaluation stops at its own time limit; call again after it.'
+		   'A fork has no time limit; while it computes, evaluations may not start.'
+		   'If it never ends, only an image restart ends it, losing what was not saved.'
+		   'Fork long work at Processor userBackgroundPriority, below evaluations.' ).
+	lines := (self notStartedTextHeldBy: { evaluation }) lines.
+	self assert: lines size equals: 4.
+	self assert: (lines at: 3) equals: 'an earlier evaluation, in ' , evaluation suspendedContext printString.
+	self assert: lines last equals: 'An earlier evaluation stops at its own time limit; call again after it.'.
+	self assert: (self notStartedTextHeldBy: #(  )) lines equals: {
+			summary.
+			'No other process holds the priority evaluations run at,'.
+			'so code at a higher priority, such as another call, kept the processor.' }
 ]
 
 { #category : 'tests - evaluate' }
@@ -1227,6 +1247,37 @@ MCPToolContractsTest >> testEvaluateStoppedFramesCollapseARecursion [
 	self assert: (tool collapsedFrameLines: #( 'a' 'b' 'b' 'c' 'b' ) deeper: false) equals: #( 'a' 'b, 2 times in a row'
 	   'c' 'b' ).
 	self assert: (tool collapsedFrameLines: #( 'a' 'b' ) deeper: true) equals: #( 'a' 'b' )
+]
+
+{ #category : 'tests - evaluate' }
+MCPToolContractsTest >> testEvaluateStoppedTextNamesTheLimitAndTheWayToRunLongerWork [
+	"The answer names the limit the code reached, where it was, and the one way it recommends to run longer work. It does not offer to raise the limit: through a client that waits less, a raised limit loses the answer while the code goes on."
+
+	| text tool |
+	tool := MCPToolEvaluate new.
+	text := tool contentTextForStructuredContent: (Dictionary new
+			         at: #summary put: (tool stoppedMessageFor: 30);
+			         at: #error put: (Dictionary new
+					          at: #stoppedIn put: (tool collapsedFrameLines: (Array new: 20 withAll: 'EvalPayroll>>employees') deeper: true);
+					          at: #hint put: tool longerWorkHintLines;
+					          at: #timeoutSeconds put: 30;
+					          yourself);
+			         yourself).
+	self assert: text equals: (String lf join: 'Evaluation stopped after 30 s, its time limit.
+What it changed before then stays changed.
+Stopped in:
+EvalPayroll>>employees, at least 20 times in a row
+Run longer work in a forked process that writes its result to a file:
+[ | file result |
+	file := FileLocator imageDirectory / ''result.txt''.
+	file ensureDelete.
+	result := [ "the work" ] on: Error do: [ :error | error description ].
+	file writeStreamDo: [ :out | out print: result ] ]
+		forkAt: Processor userBackgroundPriority
+		named: ''result''
+The file appears when the work ends; read it in a later call.
+A fork has no time limit, and at this priority it holds up no evaluation.' lines).
+	self deny: (text includesSubstring: 'timeoutSeconds')
 ]
 
 { #category : 'tests - evaluate' }
