@@ -38,8 +38,8 @@ For local Tonel, use an absolute `tonel:///.../src` URL.
 `image_evaluate` stops its code at its time limit, 30 s unless the call passes
 `timeoutSeconds`, and a limit longer than the client waits loses the answer.
 What a stopped load loaded stays loaded: an answer that begins `Evaluation
-stopped after` leaves the image half loaded, so load again before relying on
-it. A load that may take longer runs forked, and writes how it ended to a file:
+stopped` leaves the image half loaded, so load again before relying on it. A
+load that may take longer runs forked, and writes how it ended to a file:
 
 ```smalltalk
 | file |
