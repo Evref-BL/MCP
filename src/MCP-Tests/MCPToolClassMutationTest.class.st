@@ -455,6 +455,69 @@ MCPToolClassMutationTest >> testCreateSetsClassComment [
 ]
 
 { #category : 'tests - update' }
+MCPToolClassMutationTest >> testRefactoringWarningListsEveryImpact [
+	"The text names every impact, each as a clause, and how to get past them, since a client reading text sees nothing of the error's details."
+
+	| error impacts result text |
+	self
+		createClassNamed: 'MCPToolClassMutationTestWarningPullUpTarget'
+		superclassName: 'Object'
+		slots: #(  )
+		classSlots: #(  ).
+	self
+		createClassNamed: 'MCPToolClassMutationTestWarningPullUpChildOne'
+		superclassName: 'MCPToolClassMutationTestWarningPullUpTarget'
+		slots: #( sharedSlot )
+		classSlots: #(  ).
+	self
+		createClassNamed: 'MCPToolClassMutationTestWarningPullUpChildTwo'
+		superclassName: 'MCPToolClassMutationTestWarningPullUpTarget'
+		slots: #(  )
+		classSlots: #(  ).
+	result := self callToolWith: (self
+			           updateRequestArgumentsForSlotAction: 'pullUp'
+			           className: 'MCPToolClassMutationTestWarningPullUpTarget'
+			           slotName: 'sharedSlot'
+			           classSide: false).
+	error := self errorFrom: result.
+	impacts := error at: #impactMessages.
+	text := (result at: #content) first at: #text.
+	self denyEmpty: impacts.
+	self assert:
+		(text beginsWith: 'Refactoring warning for pullUpSlot on MCPToolClassMutationTestWarningPullUpTarget slot sharedSlot: ').
+	self assert: (text lines first endsWith: ' Rerun with force: true to proceed anyway.').
+	impacts do: [ :each |
+			self assert: (text includesSubstring: ((each endsWith: '.')
+						  ifTrue: [ each allButLast ]
+						  ifFalse: [ each ])) ].
+	self
+		assert: (MCPToolUpdateClass new
+				 refactoringWarningSummaryFor: nil
+				 action: 'removeSlot'
+				 requestedContext: {
+						 (#class -> 'EvalShape').
+						 (#slot -> 'color') } asDictionary
+				 impactMessages: #( 'EvalShape>>area reads color.' 'EvalShape>>describe writes color' ))
+		equals:
+		'Refactoring warning for removeSlot on EvalShape slot color: EvalShape>>area reads color; EvalShape>>describe writes color. Rerun with force: true to proceed anyway.'.
+	self
+		assert: (MCPToolUpdateClass new
+				 refactoringWarningSummaryFor: nil
+				 action: 'removeSlot'
+				 requestedContext: { (#class -> 'EvalShape') } asDictionary
+				 impactMessages: #(  ))
+		equals: 'Refactoring warning for removeSlot on EvalShape. Rerun with force: true to proceed anyway.'.
+	self
+		assert: (MCPToolUpdateClass new
+				 refactoringWarningSummaryFor: nil
+				 action: 'pullUpSlot'
+				 requestedContext: { (#class -> 'EvalShape') } asDictionary
+				 impactMessages: #( 'Not all subclasses have it. Pull it up anyway?' ))
+		equals:
+		'Refactoring warning for pullUpSlot on EvalShape: Not all subclasses have it. Pull it up anyway? Rerun with force: true to proceed anyway.'
+]
+
+{ #category : 'tests - update' }
 MCPToolClassMutationTest >> testRetagSummaryNamesTheTag [
 	"A class moved to a tag is named with the tag and the package it lies in; one moved to a package's root, with the package alone."
 
@@ -841,7 +904,7 @@ MCPToolClassMutationTest >> testUpdatePullUpSlotStopsOnRefactoringWarningByDefau
 	self assert: (error at: #slot) equals: 'sharedSlot'.
 	self assert: (error at: #side) equals: 'instance'.
 	self assert: (error at: #forceSupported) equals: true.
-	self assert: ((error at: #howToProceed) includesSubstring: 'force=true').
+	self assert: ((error at: #howToProceed) includesSubstring: 'force: true').
 	self assert:
 		((error at: #impactMessages) anySatisfy: [ :each | each includesSubstring: 'Not all subclasses have an instance variable named' ]).
 	self assert: (target slots collect: #name as: Array) equals: #(  ).
@@ -982,7 +1045,7 @@ MCPToolClassMutationTest >> testUpdateRemoveSlotStopsOnRefactoringWarningByDefau
 	self assert: (error at: #slot) equals: 'referencedSlot'.
 	self assert: (error at: #side) equals: 'instance'.
 	self assert: (error at: #forceSupported) equals: true.
-	self assert: ((error at: #howToProceed) includesSubstring: 'force=true').
+	self assert: ((error at: #howToProceed) includesSubstring: 'force: true').
 	self assertIncludesReferencedSlotWarning: (error at: #impactMessages).
 	self assert: (target slots collect: #name as: Array) equals: #( #referencedSlot )
 ]
