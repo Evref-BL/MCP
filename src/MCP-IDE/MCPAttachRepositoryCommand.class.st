@@ -51,38 +51,6 @@ MCPAttachRepositoryCommand >> execute [
 ]
 
 { #category : 'private' }
-MCPAttachRepositoryCommand >> gitDirectoryReferenceFor: gitDirPath relativeTo: aLocation [
-
-	| reference |
-	reference := gitDirPath asFileReference.
-	^ reference isAbsolute
-		  ifTrue: [ reference ]
-		  ifFalse: [ aLocation / gitDirPath ]
-]
-
-{ #category : 'private' }
-MCPAttachRepositoryCommand >> isGitCheckoutRoot: aLocation [
-
-	^ (IceRepositoryCreator isGitRoot: aLocation) or: [ self isLinkedGitWorktreeRoot: aLocation ]
-]
-
-{ #category : 'private' }
-MCPAttachRepositoryCommand >> isLinkedGitWorktreeRoot: aLocation [
-
-	| contents gitDirectoryPath gitFile |
-	aLocation isDirectory ifFalse: [ ^ false ].
-	gitFile := aLocation / '.git'.
-	(gitFile exists and: [ gitFile isFile ]) ifFalse: [ ^ false ].
-	contents := [ gitFile contents trimBoth ]
-		            on: Error
-		            do: [ :ignored | ^ false ].
-	(contents beginsWith: 'gitdir:') ifFalse: [ ^ false ].
-	gitDirectoryPath := (contents allButFirst: 'gitdir:' size) trimBoth.
-	gitDirectoryPath isEmpty ifTrue: [ ^ false ].
-	^ (self gitDirectoryReferenceFor: gitDirectoryPath relativeTo: aLocation) exists
-]
-
-{ #category : 'private' }
 MCPAttachRepositoryCommand >> locationReference [
 
 	| location |
@@ -98,15 +66,6 @@ MCPAttachRepositoryCommand >> locationReference [
 				message: 'repository_attach requires location to be an existing Git repository root.'
 				details: self request requestedContext ].
 	^ location
-]
-
-{ #category : 'private' }
-MCPAttachRepositoryCommand >> matchingRegisteredRepositories [
-
-	| locationPath |
-	locationPath := self request location asFileReference pathString.
-	^ IceRepository repositories select: [ :each |
-		  each name asString = self request name or: [ (self repositoryLocationPathFor: each) = locationPath ] ]
 ]
 
 { #category : 'private' }

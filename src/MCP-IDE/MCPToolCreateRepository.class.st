@@ -1,5 +1,5 @@
 "
-Concrete repository_create tool. It creates a new Iceberg repository directory and optional initial package membership through MCPToolRepositoryOperation.
+Concrete repository_create tool. It starts a Git repository with no history at a location that does not exist yet or holds no file, registers it and gives it packages from the image, through MCPToolRepositoryOperation. An existing checkout is registered with repository_attach instead.
 "
 Class {
 	#name : 'MCPToolCreateRepository',
@@ -22,7 +22,7 @@ MCPToolCreateRepository >> repositoryToolSpec [
 		  (#title -> 'Create Repository').
 		  (#description
 		   ->
-		   'Create a new Iceberg repository directory and optionally attach initial packages. When location is omitted, use Iceberg''s default local repository directory.').
+		   'Start a Git repository with no history at a location that does not exist yet or holds no file, register it, and give it packages from the image. An existing checkout is registered with repository_attach. Without a location, the repository goes in Iceberg''s own directory of repositories, under its name.').
 		  (#action -> 'create').
 		  (#requestClass -> MCPRepositoryCreateRequest).
 		  (#commandClass -> MCPCreateRepositoryCommand).
@@ -33,14 +33,14 @@ MCPToolCreateRepository >> repositoryToolSpec [
 				    schemaPropertyNamed: 'location'
 				    type: 'string'
 				    description:
-				    'Optional filesystem path where the new repository directory is created. Defaults to Iceberg''s local repository directory / repository name.').
+				    'Absolute path of the new repository: a directory that does not exist yet, one that holds no file, or a Git repository with no commit.').
 			   (self
 				    schemaPropertyNamed: 'subdirectory'
 				    type: 'string'
-				    description: 'Optional source subdirectory for packages managed by this repository.').
+				    description: 'Directory inside the repository for the package sources, such as src. Defaults to its root.').
 			   (self
 				    stringArraySchemaNamed: 'packages'
-				    description: 'Package names to manage initially in the new repository.'
+				    description: 'Packages of the image the repository holds.'
 				    itemDescription: 'A package name.') }).
 		  (#requiredProperties -> #( 'name' )) } asDictionary
 ]

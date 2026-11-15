@@ -18,5 +18,8 @@ MCPRepositoryCreateResult class >> fromRepository: aRepository [
 { #category : 'converting' }
 MCPRepositoryCreateResult >> asDictionary [
 
-	^ Dictionary new
+	| data |
+	data := Dictionary new.
+	self packageInfos ifNotEmpty: [ :infos | data at: #packages put: (infos collect: [ :each | each name ] as: Array) ].
+	^ data
 ]

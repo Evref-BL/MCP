@@ -149,6 +149,12 @@ MCPToolRepositoryOperationTest >> git: arguments in: aLocation [
 ]
 
 { #category : 'private' }
+MCPToolRepositoryOperationTest >> isRegistered: aRepositoryName [
+
+	^ IceRepository repositories anySatisfy: [ :each | each name asString = aRepositoryName ]
+]
+
+{ #category : 'private' }
 MCPToolRepositoryOperationTest >> newRepositoryNamed: aRepositoryName location: aFileReference packageNames: somePackageNames [
 
 	| repository |
@@ -175,6 +181,19 @@ MCPToolRepositoryOperationTest >> newTestRepositoryNamed: aRepositoryName [
 MCPToolRepositoryOperationTest >> packageNamesIn: aRepository [
 
 	^ aRepository workingCopy packageNames asArray sort
+]
+
+{ #category : 'private - calling' }
+MCPToolRepositoryOperationTest >> refusedCreateNamed: aRepositoryName location: aLocationString [
+	"Ask create for a repository with no packages, and fail the test unless it refuses."
+
+	| result |
+	result := self callToolWith: {
+			          (#action -> 'create').
+			          (#name -> aRepositoryName).
+			          (#location -> aLocationString) } asDictionary.
+	self assert: (self resultIndicatesError: result) description: 'create should have refused'.
+	^ result
 ]
 
 { #category : 'private - assertions' }
@@ -237,6 +256,41 @@ MCPToolRepositoryOperationTest >> shellQuote: aString [
 MCPToolRepositoryOperationTest >> temporaryRepositoryLocationNamed: aName [
 
 	^ FileLocator imageDirectory / aName
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testACreatedRepositoryReattachesWithItsPackages [
+	"Once exported and committed, a repository create made is attached again with the packages its files hold, read in Tonel. Once where the location did not exist, once where it was an empty Git repository."
+
+	| location packageName repositoryName |
+	repositoryName := 'MCP Create Reattach Test'.
+	packageName := 'MCPToolRepositoryOperationReattachPackage'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestReattach'.
+	self withExportPackageNamed: packageName className: 'MCPToolRepositoryOperationReattachClass' do: [
+			{
+				[ ].
+				[ self shellCommand: 'git init --initial-branch=main ' , (self shellQuote: location pathString) ] } do: [ :prepareLocation |
+					self withCleanRepositoryNamed: repositoryName location: location do: [
+							| repository result |
+							prepareLocation value.
+							self
+								createRepositoryNamed: repositoryName
+								location: location
+								subdirectory: 'src'
+								packages: { packageName }.
+							result := self exportRepositoryNamed: repositoryName.
+							self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
+							result := self commitRepositoryNamed: repositoryName message: 'Hold the package'.
+							self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
+							self removeRegisteredRepositoriesNamed: repositoryName.
+							result := self callToolWith: {
+									          (#action -> 'attach').
+									          (#name -> repositoryName).
+									          (#location -> location pathString) } asDictionary.
+							self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
+							repository := IceRepository repositories detect: [ :each | each name asString = repositoryName ].
+							self assert: (self packageNamesIn: repository) equals: { packageName }.
+							self assert: repository properties writerClass id asString equals: 'tonel' ] ] ]
 ]
 
 { #category : 'tests' }
@@ -820,21 +874,375 @@ MCPToolRepositoryOperationTest >> testCommitWritesTheProjectFileAnAttachGave [
 { #category : 'tests' }
 MCPToolRepositoryOperationTest >> testCreateCreatesAndRegistersRepository [
 
-	| location repository repositoryName result |
+	| location packageName repository repositoryName result |
 	repositoryName := 'MCP Repository Command Create Test'.
+	packageName := 'MCPToolRepositoryOperationCreatePackage'.
 	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestCreate'.
+	self withExportPackageNamed: packageName className: 'MCPToolRepositoryOperationCreateClass' do: [
+			self withCleanRepositoryNamed: repositoryName location: location do: [
+					result := self
+						          createRepositoryNamed: repositoryName
+						          location: location
+						          subdirectory: 'src'
+						          packages: { packageName }.
+					repository := IceRepository repositories detect: [ :each | each name asString = repositoryName ].
+					self
+						assert: (self summaryFrom: result)
+						equals: ('Created repository {1} at {2}, with its sources in src; repository_export writes its packages there.' format: {
+									 repositoryName.
+									 location fullName }).
+					self assert: ((self dataFrom: result) at: #packages) asArray equals: { packageName }.
+					self assert: repository location pathString equals: location pathString.
+					self assert: repository subdirectory equals: 'src'.
+					self assert: (self packageNamesIn: repository) equals: { packageName } ] ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testCreateNamesTheFirstFilesADirectoryHolds [
+	"The files a refusal names are found level by level in name order, and three are as many as it names."
+
+	| location repositoryName |
+	repositoryName := 'MCP Create First Files Test'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestCreateFirstFiles'.
 	self withCleanRepositoryNamed: repositoryName location: location do: [
-			result := self callToolWith: {
-					          (#action -> 'create').
-					          (#name -> repositoryName).
-					          (#location -> location pathString).
-					          (#subdirectory -> 'src').
-					          (#packages -> #( 'MCP' 'MCP-Tests' )) } asDictionary.
-			repository := IceRepository repositories detect: [ :each | each name asString = repositoryName ].
-			self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
-			self assert: repository location pathString equals: location pathString.
-			self assert: repository subdirectory equals: 'src'.
-			self assert: (self packageNamesIn: repository) equals: #( 'MCP' 'MCP-Tests' ) ]
+			self write: 'c' to: location / 'b' / 'c.txt'.
+			self write: 'a' to: location / 'a.txt'.
+			self write: 'finder' to: location / '.DS_Store'.
+			self assert: ((self summaryFrom: (self refusedCreateNamed: repositoryName location: location pathString)) includesSubstring:
+					 ' already holds files, such as a.txt and b/c.txt. Give ').
+			self write: 'e' to: location / 'e.txt'.
+			self write: 'd' to: location / 'd.txt'.
+			self assert: ((self summaryFrom: (self refusedCreateNamed: repositoryName location: location pathString)) includesSubstring:
+					 ' already holds files, such as a.txt, b/c.txt and d.txt. Give ') ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testCreateRefusesACheckoutWithCommits [
+
+	| headBefore location repositoryName result |
+	repositoryName := 'MCP Create Checkout With Commits Test'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestCreateCheckoutWithCommits'.
+	self withCleanRepositoryNamed: repositoryName location: location do: [
+			self shellCommand: 'git init --initial-branch=main ' , (self shellQuote: location pathString).
+			self write: 'notes' to: location / 'README.md'.
+			self commitAllIn: location message: 'Start the notes'.
+			headBefore := self git: 'log --format=%H' in: location.
+			result := self refusedCreateNamed: repositoryName location: location pathString.
+			self assert: ((self errorFrom: result) at: #errorCode) equals: 'RepositoryLocationIsCheckout'.
+			self
+				assert: (self summaryFrom: result)
+				equals: ('Cannot create repository {1}: {2} is already a Git checkout. Register it with repository_attach instead.' format: {
+							 repositoryName.
+							 location fullName }).
+			self deny: (self isRegistered: repositoryName).
+			self assert: (self git: 'log --format=%H' in: location) equals: headBefore ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testCreateRefusesADirectoryHoldingFiles [
+
+	| location repositoryName result |
+	repositoryName := 'MCP Create Directory Holding Files Test'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestCreateDirectoryHoldingFiles'.
+	self withCleanRepositoryNamed: repositoryName location: location do: [
+			self write: 'a' to: location / 'a.txt'.
+			result := self refusedCreateNamed: repositoryName location: location pathString.
+			self assert: ((self errorFrom: result) at: #errorCode) equals: 'RepositoryLocationNotEmpty'.
+			self
+				assert: (self summaryFrom: result)
+				equals:
+					('Cannot create repository {1}: {2} already holds a file, a.txt. Give a location that does not exist yet or holds no file; to keep what is there, run git init there and register it with repository_attach.'
+						 format: {
+								 repositoryName.
+								 location fullName }).
+			self deny: (location / '.git') exists.
+			self deny: (self isRegistered: repositoryName) ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testCreateRefusesAFile [
+
+	| location repositoryName result |
+	repositoryName := 'MCP Create File Test'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestCreateFile'.
+	self withCleanRepositoryNamed: repositoryName location: location do: [
+			self write: 'a file' to: location.
+			[
+				result := self refusedCreateNamed: repositoryName location: location pathString.
+				self assert: ((self errorFrom: result) at: #errorCode) equals: 'RepositoryLocationNotDirectory'.
+				self
+					assert: (self summaryFrom: result)
+					equals: ('Cannot create repository {1}: {2} is a file. Give a directory that does not exist yet or holds no file.' format: {
+								 repositoryName.
+								 location fullName }).
+				self assert: location contents equals: 'a file' ] ensure: [ location ensureDelete ] ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testCreateRefusesAPackageNotInTheImage [
+	"A registration naming a package the image lacks would only be one to repair; the refusal names the package meant."
+
+	| location packageName repositoryName result summary typo |
+	repositoryName := 'MCP Create Missing Package Test'.
+	packageName := 'MCPToolRepositoryOperationTypoPackage'.
+	typo := packageName allButLast , 's'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestCreateMissingPackage'.
+	self withExportPackageNamed: packageName className: 'MCPToolRepositoryOperationTypoClass' do: [
+			self withCleanRepositoryNamed: repositoryName location: location do: [
+					result := self callToolWith: {
+							          (#action -> 'create').
+							          (#name -> repositoryName).
+							          (#location -> location pathString).
+							          (#packages -> {
+								           packageName.
+								           typo }) } asDictionary.
+					self assert: (self resultIndicatesError: result).
+					self assert: ((self errorFrom: result) at: #errorCode) equals: 'PackageNotFound'.
+					summary := self summaryFrom: result.
+					self assert: (summary beginsWith: ('Cannot create repository {1}: package {2} does not exist.' format: {
+									  repositoryName.
+									  typo })).
+					self assert: (summary includesSubstring: ' Did you mean: ').
+					self assert: (summary includesSubstring: packageName).
+					self assert:
+						(summary endsWith: ' Create the package first, or leave it out and add it later with repository_update addPackages.').
+					self deny: location exists.
+					self deny: (self isRegistered: repositoryName) ] ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testCreateRefusesARegisteredLocation [
+
+	| location otherName registered repositoryName result |
+	repositoryName := 'MCP Create Registered Location Test'.
+	otherName := 'MCP Create Registered Location Other'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestCreateRegisteredLocation'.
+	self deleteDirectoryIfExists: location.
+	registered := self newRepositoryNamed: otherName location: location packageNames: #(  ).
+	self withRegisteredRepository: registered do: [
+			result := self refusedCreateNamed: repositoryName location: location pathString.
+			self
+				assert: (self summaryFrom: result)
+				equals:
+					('Cannot create repository {1}: repository {2} is already registered at {3}. Use it, or choose another location.' format: {
+							 repositoryName.
+							 otherName.
+							 location pathString }).
+			self deny: (self isRegistered: repositoryName).
+			self deny: location exists ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testCreateRefusesARegisteredName [
+
+	| location registered registeredLocation repositoryName result |
+	repositoryName := 'MCP Create Registered Name Test'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestCreateRegisteredName'.
+	registeredLocation := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestCreateRegisteredNameElsewhere'.
+	registered := self newRepositoryNamed: repositoryName location: registeredLocation packageNames: #(  ).
+	self deleteDirectoryIfExists: location.
+	self withRegisteredRepository: registered do: [
+			result := self refusedCreateNamed: repositoryName location: location pathString.
+			self assert: ((self errorFrom: result) at: #errorCode) equals: 'RepositoryAlreadyRegistered'.
+			self
+				assert: (self summaryFrom: result)
+				equals:
+					('Cannot create repository {1}: a repository of that name is already registered, at {2}. Choose another name.' format: {
+							 repositoryName.
+							 registeredLocation pathString }).
+			self assert: ((self errorFrom: result) at: #matchingRepositories) asArray equals: { repositoryName }.
+			self deny: location exists ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testCreateRefusesARegisteredNameWithNoLocation [
+
+	| location registered registry repositoryName result |
+	repositoryName := 'MCP Create Registered Without Location Test'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestCreateRegisteredWithoutLocation'.
+	self deleteDirectoryIfExists: location.
+	registered := IceLibgitRepository new
+		              name: repositoryName;
+		              yourself.
+	registry := IceRepository registry.
+	registry add: registered.
+	[
+		result := self refusedCreateNamed: repositoryName location: location pathString.
+		self
+			assert: (self summaryFrom: result)
+			equals:
+				('Cannot create repository {1}: a repository of that name is already registered, with no location. Choose another name.'
+					 format: { repositoryName }).
+		self deny: location exists ] ensure: [ registry remove: registered ifAbsent: [ ] ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testCreateRefusesARelativeLocation [
+	"The image resolves a relative path against its own working directory, which is not the caller's."
+
+	| relative repositoryName result |
+	repositoryName := 'MCP Create Relative Location Test'.
+	relative := 'mcp-create-relative'.
+	self withCleanRepositoryNamed: repositoryName location: FileSystem workingDirectory / relative do: [
+			result := self refusedCreateNamed: repositoryName location: relative.
+			self assert: ((self errorFrom: result) at: #errorCode) equals: 'RepositoryLocationNotAbsolute'.
+			self
+				assert: (self summaryFrom: result)
+				equals:
+					('Cannot create repository {1}: location mcp-create-relative is not an absolute path, and the image would resolve it against its own working directory, {2}. Give the full path.'
+						 format: {
+								 repositoryName.
+								 FileSystem workingDirectory fullName }).
+			self deny: (FileSystem workingDirectory / relative) exists.
+			self deny: (self isRegistered: repositoryName) ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testCreateTakesADirectoryHoldingOnlyDsStore [
+	"macOS's Finder leaves .DS_Store files behind; they are not files create could lose, and it leaves them where they are."
+
+	| location repositoryName |
+	repositoryName := 'MCP Create DS Store Test'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestCreateDsStore'.
+	self withCleanRepositoryNamed: repositoryName location: location do: [
+			self write: 'finder' to: location / '.DS_Store'.
+			self write: 'finder' to: location / 'src' / '.DS_Store'.
+			self
+				createRepositoryNamed: repositoryName
+				location: location
+				subdirectory: 'src'
+				packages: #(  ).
+			self assert: (self isRegistered: repositoryName).
+			self assert: (location / '.DS_Store') exists.
+			self assert: (location / 'src' / '.DS_Store') exists ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testCreateTakesADirectoryHoldingOnlyEmptyDirectories [
+	"An agent that makes the source directory first has made nothing create could lose."
+
+	| location repositoryName result |
+	repositoryName := 'MCP Create Empty Subdirectories Test'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestCreateEmptySubdirectories'.
+	self withCleanRepositoryNamed: repositoryName location: location do: [
+			(location / 'src') ensureCreateDirectory.
+			result := self
+				          createRepositoryNamed: repositoryName
+				          location: location
+				          subdirectory: nil
+				          packages: #(  ).
+			self
+				assert: (self summaryFrom: result)
+				equals:
+					('Created repository {1} at {2}, with its sources at its root; repository_export writes its packages there.' format: {
+							 repositoryName.
+							 location fullName }).
+			self assert: (self isRegistered: repositoryName).
+			self assert: (location / 'src') isDirectory ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testCreateTakesAnEmptyDirectory [
+
+	| location packageName repositoryName result |
+	repositoryName := 'MCP Create Empty Directory Test'.
+	packageName := 'MCPToolRepositoryOperationEmptyDirectoryPackage'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestCreateEmptyDirectory'.
+	self withExportPackageNamed: packageName className: 'MCPToolRepositoryOperationEmptyDirectoryClass' do: [
+			self withCleanRepositoryNamed: repositoryName location: location do: [
+					location ensureCreateDirectory.
+					result := self
+						          createRepositoryNamed: repositoryName
+						          location: location
+						          subdirectory: 'src'
+						          packages: { packageName }.
+					self
+						assert: (self summaryFrom: result)
+						equals: ('Created repository {1} at {2}, with its sources in src; repository_export writes its packages there.' format: {
+									 repositoryName.
+									 location fullName }).
+					self assert: (location / '.git') exists.
+					self assert: (location / 'src') isDirectory.
+					self assert: ((self dataFrom: result) at: #packages) asArray equals: { packageName } ] ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testCreateTakesAnEmptyGitRepositoryAndKeepsItsConfiguration [
+	"git init, perhaps with a remote set, is what an agent runs before create; create registers that repository and touches nothing in .git."
+
+	| location packageName repositoryName result |
+	repositoryName := 'MCP Create Empty Git Repository Test'.
+	packageName := 'MCPToolRepositoryOperationEmptyGitPackage'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestCreateEmptyGit'.
+	self withExportPackageNamed: packageName className: 'MCPToolRepositoryOperationEmptyGitClass' do: [
+			self withCleanRepositoryNamed: repositoryName location: location do: [
+					self shellCommand: 'git init --initial-branch=main ' , (self shellQuote: location pathString).
+					self git: 'remote add origin https://example.com/x.git' in: location.
+					result := self
+						          createRepositoryNamed: repositoryName
+						          location: location
+						          subdirectory: 'src'
+						          packages: { packageName }.
+					self
+						assert: (self summaryFrom: result)
+						equals:
+							('Created repository {1} in the empty Git repository at {2}, with its sources in src; repository_export writes its packages there.'
+								 format: {
+										 repositoryName.
+										 location fullName }).
+					self assert: ((self dataFrom: result) at: #packages) asArray equals: { packageName }.
+					self assert: (self git: 'remote get-url origin' in: location) equals: 'https://example.com/x.git'.
+					result := self exportRepositoryNamed: repositoryName.
+					self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
+					self assert: ((STON fromString: (location / '.project') contents) at: 'srcDirectory') equals: 'src'.
+					self assert: (location / 'src' / packageName) isDirectory ] ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testCreateWarnsOfAPackageRegisteredElsewhere [
+	"Two registrations claiming one package is a hazard, so the second says so."
+
+	| firstLocation firstName location packageName repositoryName result |
+	firstName := 'MCP Create Shared Package First Test'.
+	repositoryName := 'MCP Create Shared Package Test'.
+	packageName := 'MCPToolRepositoryOperationSharedPackage'.
+	firstLocation := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestCreateSharedPackageFirst'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestCreateSharedPackage'.
+	self withExportPackageNamed: packageName className: 'MCPToolRepositoryOperationSharedClass' do: [
+			self withCleanRepositoryNamed: firstName location: firstLocation do: [
+					self withCleanRepositoryNamed: repositoryName location: location do: [
+							result := self
+								          createRepositoryNamed: firstName
+								          location: firstLocation
+								          subdirectory: nil
+								          packages: { packageName }.
+							self assert: (self warningsFrom: result) isEmpty.
+							result := self
+								          createRepositoryNamed: repositoryName
+								          location: location
+								          subdirectory: nil
+								          packages: { packageName }.
+							self assert: (self warningsFrom: result) asArray equals: { ('{1} is also registered in repository {2}.' format: {
+										 packageName.
+										 firstName }) } ] ] ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testCreateWithoutPackagesWarns [
+
+	| location repositoryName result |
+	repositoryName := 'MCP Create Without Packages Test'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestCreateWithoutPackages'.
+	self withCleanRepositoryNamed: repositoryName location: location do: [
+			result := self
+				          createRepositoryNamed: repositoryName
+				          location: location
+				          subdirectory: nil
+				          packages: #(  ).
+			self
+				assert: (self warningsFrom: result) asArray
+				equals: { ('Repository {1} has no packages yet; repository_update addPackages adds them.' format: { repositoryName }) }.
+			self deny: ((self dataFrom: result) includesKey: #packages) ]
 ]
 
 { #category : 'tests' }
