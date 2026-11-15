@@ -207,7 +207,7 @@ MCPEvaluateCommand >> start: aProcess [
 
 { #category : 'private' }
 MCPEvaluateCommand >> stop: anEvaluator [
-	"Where the code is, and what it wrote, are read before it unwinds. A computing evaluator is taken off the run queue here: the helper below runs at its priority, and would otherwise wait behind it for a turn it may never get. One waiting on a semaphore is left waiting, since terminating it from there is what releases a critical section. The helper terminates it, so that its ensure blocks run at its own priority and this process waits for them only so long."
+	"Where the code is, and what it wrote, are read before it unwinds. A computing evaluator is taken off the run queue here: the helper below runs at its priority, and would otherwise wait behind it for a turn it may never get. One waiting on a semaphore is left waiting, since terminating it from there is what releases a critical section. The helper terminates it, so that its ensure blocks run at its own priority and this process waits for them only so long. What the stopped code grew is collected after the answer, since a full collection of a large heap takes seconds."
 
 	| details stopped |
 	anEvaluator suspendingList == (Processor waitingProcessesAt: anEvaluator priority) ifTrue: [ anEvaluator suspend ].
@@ -217,6 +217,7 @@ MCPEvaluateCommand >> stop: anEvaluator [
 	(stopped waitTimeoutSeconds: self unwindingSeconds) ifTrue: [
 			details at: #stillUnwinding put: true.
 			transcript ifNotNil: [ :recorder | recorder finish ] ].
+	MCPPostResponseActions defer: [ Smalltalk garbageCollect ].
 	^ MCPEvaluateResult errorSummary: (tool stoppedMessageFor: request timeoutSeconds) details: details
 ]
 

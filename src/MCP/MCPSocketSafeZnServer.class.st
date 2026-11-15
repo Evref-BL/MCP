@@ -19,7 +19,7 @@ Class {
 { #category : 'post response' }
 MCPSocketSafeZnServer >> deferAfterCurrentResponse: aBlock [
 
-	MCPPostResponseActions value ifNil: [ aBlock value ] ifNotNil: [ :actions | actions add: aBlock ]
+	MCPPostResponseActions defer: aBlock
 ]
 
 { #category : 'request handling' }

@@ -1237,6 +1237,17 @@ MCPToolContractsTest >> testEvaluateStopCollapsesARecursion [
 ]
 
 { #category : 'tests - evaluate' }
+MCPToolContractsTest >> testEvaluateStopCollectsGarbageAfterTheAnswer [
+	"What a stopped evaluation grew is garbage once it ends. A full collection of a large heap takes seconds, so it waits for the answer to go out instead of holding it back."
+
+	| actions |
+	self timeLimit: 30 seconds.
+	actions := OrderedCollection new.
+	MCPPostResponseActions value: actions during: [ self evaluate: '[ true ] whileTrue' within: 1 ].
+	self assert: actions size equals: 1
+]
+
+{ #category : 'tests - evaluate' }
 MCPToolContractsTest >> testEvaluateStoppedFramesCollapseARecursion [
 	"A run of equal frame names is one line with its count, and the run that reaches the last frame kept, when the stack goes deeper, counts at least that many."
 
