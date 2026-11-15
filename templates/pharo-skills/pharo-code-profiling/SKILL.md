@@ -27,9 +27,9 @@ see, not only in how much:
 ## Workflow
 
 1. Build a workload that runs for one to five seconds: long enough for a
-   thousand samples, short enough to answer inside the client's timeout, since
-   `image_evaluate` has none of its own. Fork a longer one instead, as below.
-   Run the workload once before measuring so the JIT is warm.
+   thousand samples, short enough to finish well inside `image_evaluate`'s time
+   limit. Fork a longer one instead, as below. Run the workload once before
+   measuring so the JIT is warm.
 2. Profile it and keep the tally, which is what renders the report:
 
 ```smalltalk
@@ -111,7 +111,7 @@ percentage by the same factor: read the proportions, not the values.
  - 933 tallies, 933 msec.
 
 **Tree**
-Process: (60) ...
+Process: (59) ...
 63.9% {596ms} Array(SequenceableCollection)>>shuffle
   63.9% {596ms} Array(SequenceableCollection)>>shuffleBy:
     62.7% {585ms} Random>>nextInteger:

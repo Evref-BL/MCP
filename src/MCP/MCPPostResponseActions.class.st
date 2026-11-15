@@ -10,3 +10,10 @@ Class {
 	#package : 'MCP',
 	#tag : 'Transport'
 }
+
+{ #category : 'deferring' }
+MCPPostResponseActions class >> defer: aBlock [
+	"Run after the response of the call being served, so that its caller does not wait for it; at once when no response is pending."
+
+	self value ifNil: [ aBlock value ] ifNotNil: [ :actions | actions add: aBlock ]
+]

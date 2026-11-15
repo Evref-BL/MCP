@@ -4,12 +4,15 @@ Zinc server used by MCP HTTP transport.
 It treats socket errors while reading a request as connection termination. This matters after image restart because serialized connection processes can resume invalid native sockets; they should close quietly instead of opening a debugger.
 
 It also owns the socket it listens on, rather than letting ZnNetworkingUtils create one it drops when binding fails, so retrying on a port another process holds costs nothing.
+
+While it runs, a process of its own tells the virtual machine to read its sockets every few milliseconds. The machine reads them only when told to, which the idle process does once nothing else runs, so code computing below the calls, an evaluation or a process forked below it, would otherwise keep every call from being accepted, read or answered until it ended.
 "
 Class {
 	#name : 'MCPSocketSafeZnServer',
 	#superclass : 'ZnManagingMultiThreadedServer',
 	#instVars : [
-		'lastListenError'
+		'lastListenError',
+		'socketPoller'
 	],
 	#category : 'MCP-Transport',
 	#package : 'MCP',
@@ -19,7 +22,7 @@ Class {
 { #category : 'post response' }
 MCPSocketSafeZnServer >> deferAfterCurrentResponse: aBlock [
 
-	MCPPostResponseActions value ifNil: [ aBlock value ] ifNotNil: [ :actions | actions add: aBlock ]
+	MCPPostResponseActions defer: aBlock
 ]
 
 { #category : 'request handling' }
@@ -106,6 +109,15 @@ MCPSocketSafeZnServer >> newServerSocket [
 ]
 
 { #category : 'private' }
+MCPSocketSafeZnServer >> pollSockets [
+	"The virtual machine reads its sockets only when the image relinquishes the processor, which the idle process does once nothing else runs. Code computing below this process, an evaluation or a process forked below it, would keep every call from being accepted, read or answered until it ended. Woken at this priority, above all of it, this process tells the machine to read them, without waiting."
+
+	[
+		(Delay forMilliseconds: self socketPollingMilliseconds) wait.
+		ProcessorScheduler relinquishProcessorForMicroseconds: 0 ] repeat
+]
+
+{ #category : 'private' }
 MCPSocketSafeZnServer >> readRequestTerminationExceptionSet [
 
 	^ super readRequestTerminationExceptionSet , SocketError
@@ -142,6 +154,20 @@ MCPSocketSafeZnServer >> runPostResponseActions: actions [
 				do: [ :error | self logServerHandlerError: error ] ]
 ]
 
+{ #category : 'accessing' }
+MCPSocketSafeZnServer >> socketPoller [
+	"The process that tells the virtual machine to read its sockets while the server runs."
+
+	^ socketPoller
+]
+
+{ #category : 'private' }
+MCPSocketSafeZnServer >> socketPollingMilliseconds [
+	"How often the sockets are read while code computes below the calls. Accepting, reading and answering a call each take a read."
+
+	^ 20
+]
+
 { #category : 'private' }
 MCPSocketSafeZnServer >> socketRestartDelayAfter: milliseconds [
 	"Double the wait between attempts, up to the longest the server should go without noticing that the port came free."
@@ -151,11 +177,12 @@ MCPSocketSafeZnServer >> socketRestartDelayAfter: milliseconds [
 
 { #category : 'public' }
 MCPSocketSafeZnServer >> start [
-	"Start the listener in a small supervisor loop. If a saved image resumes with invalid socket state, retry with a fresh socket instead of staying running but not listening."
+	"Start the listener in a small supervisor loop. If a saved image resumes with invalid socket state, retry with a fresh socket instead of staying running but not listening. The socket poller runs at the priority calls are served at, above every evaluation and every process an evaluation forks."
 
 	self stop: false.
 	self class default = self ifTrue: [ self register ].
 	process := [ self restartableListenLoop ] forkAt: Processor highIOPriority named: self serverProcessName.
+	socketPoller := [ self pollSockets ] forkAt: Processor lowIOPriority named: self serverProcessName , ' socket poller'.
 	self logStarted
 ]
 
@@ -163,6 +190,9 @@ MCPSocketSafeZnServer >> start [
 MCPSocketSafeZnServer >> stop: unregister [
 	"Stopping for good closes the open connections. Zinc's restart, around every image save, only stops listening: the connection of the call that saved stays open, and its worker answers after the save."
 
+	socketPoller ifNotNil: [
+			socketPoller terminate.
+			socketPoller := nil ].
 	(process isNil and: [ serverSocket isNil ]) ifTrue: [
 			unregister ifTrue: [
 					self unregister.

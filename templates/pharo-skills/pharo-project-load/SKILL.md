@@ -33,6 +33,42 @@ Metacello new
 
 For local Tonel, use an absolute `tonel:///.../src` URL.
 
+## A Load Longer Than The Call
+
+`image_evaluate` stops its code at its time limit, 30 s unless the call passes
+`timeoutSeconds`, and a limit longer than the client waits loses the answer.
+What a stopped load loaded stays loaded: an answer that begins `Evaluation
+stopped` leaves the image half loaded, so load again before relying on it. A
+load that may take longer runs forked, and writes how it ended to a file:
+
+```smalltalk
+| file |
+file := FileLocator imageDirectory / 'load-result.txt'.
+file ensureDelete.
+[ | result |
+result := [
+	[ Metacello new
+		baseline: 'MyProject';
+		repository: 'github://Owner/MyProject:main/src';
+		load.
+	'loaded' ]
+		on: Warning
+		do: [ :warning | warning resume ] ]
+	on: Error
+	do: [ :error | error description ].
+file writeStreamDo: [ :out | out nextPutAll: result ] ]
+	forkAt: Processor userBackgroundPriority
+	named: 'project-load'.
+file fullName
+```
+
+The call answers at once and the image keeps answering while the fork loads.
+The file appears when the load ends, holding `loaded` or the error that ended
+it; until then a process named `project-load` is alive. The fork resumes
+warnings, as `image_evaluate` does for the code it runs itself. Without that
+handler, a warning such as Monticello's about missing dependencies stops the
+fork at a debugger, and the file never appears.
+
 ## Diagnose By Phase
 
 - Baseline/package not found: verify branch and source directory.
