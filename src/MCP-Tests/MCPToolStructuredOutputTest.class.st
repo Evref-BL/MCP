@@ -101,6 +101,15 @@ MCPToolStructuredOutputTest >> testEntryFieldsWithSeparatorsAreQuoted [
 ]
 
 { #category : 'tests' }
+MCPToolStructuredOutputTest >> testEvaluateAnsweringTheSilentTranscriptNamesIt [
+
+	| result |
+	result := self callToolNamed: 'image_evaluate' withArguments: { (#code -> 'Transcript') } asDictionary.
+	self assert: ((result at: #content) first at: #text) equals: 'Transcript'.
+	self deny: ((self dataFrom: result) includesKey: #transcript)
+]
+
+{ #category : 'tests' }
 MCPToolStructuredOutputTest >> testEvaluateAnswersTranscriptContentsWithWhatItWrote [
 
 	| result |
@@ -118,6 +127,30 @@ MCPToolStructuredOutputTest >> testEvaluateDeclaresAnUndeclaredNameAsAPlayground
 	result := self callToolNamed: 'image_evaluate' withArguments: { (#code -> 'total := 3 + 4. total * 2') } asDictionary.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: ((self dataFrom: result) at: #resultPrintString) equals: '14'
+]
+
+{ #category : 'tests' }
+MCPToolStructuredOutputTest >> testEvaluateEndingOnTheTranscriptAnswersWhatItWrote [
+	"A cascade of show: answers the recorder that stood in for the Transcript. What it wrote is the answer; the recorder is nobody's business, and a value line reading Transcript would say nothing more."
+
+	| contentText data result truncatedText |
+	result := self
+		          callToolNamed: 'image_evaluate'
+		          withArguments: { (#code -> 'Transcript show: ''Balance: 120''; cr; show: ''Largest Deposit: 100''') } asDictionary.
+	contentText := (result at: #content) first at: #text.
+	data := self dataFrom: result.
+	self assert: contentText equals: (String lf join: #( 'Transcript:' 'Balance: 120' 'Largest Deposit: 100' )).
+	self deny: (contentText includesSubstring: 'MCPTranscriptRecorder').
+	self assert: (data at: #resultPrintString) equals: 'Transcript'.
+	self assert: (data at: #resultClassName) equals: (Smalltalk globals at: #Transcript) class name asString.
+	self assert: (data at: #answeredTranscript).
+	truncatedText := MCPToolEvaluate new resultTextFor: (Dictionary new
+			                  at: #resultPrintString put: 'Transcript';
+			                  at: #answeredTranscript put: true;
+			                  at: #transcript put: 'Balance';
+			                  at: #transcriptTruncated put: true;
+			                  yourself).
+	self assert: truncatedText equals: (String lf join: #( 'Transcript:' 'Balance' '[transcript truncated]' ))
 ]
 
 { #category : 'tests' }

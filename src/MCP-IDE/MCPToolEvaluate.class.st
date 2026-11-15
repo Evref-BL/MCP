@@ -130,7 +130,10 @@ MCPToolEvaluate >> resultPreviewCharacterLimit [
 
 { #category : 'private - results' }
 MCPToolEvaluate >> resultTextFor: data [
+	"Code that ends on the Transcript answers the Transcript itself. When it wrote there, what it wrote is the answer, and a value line reading Transcript above it would say nothing more."
 
+	((data at: #answeredTranscript ifAbsent: [ false ]) and: [ data includesKey: #transcript ]) ifTrue: [
+		^ String streamContents: [ :stream | self writtenTranscriptOn: stream for: data ] ].
 	^ String streamContents: [ :stream |
 			  stream nextPutAll: (data at: #resultPrintString).
 			  (data includesKey: #truncated) ifTrue: [
@@ -185,16 +188,23 @@ MCPToolEvaluate >> title [
 
 { #category : 'private - results' }
 MCPToolEvaluate >> transcriptTextOn: stream for: aDictionary [
-	"What the evaluation wrote to the Transcript, which its caller cannot see otherwise."
+	"What the evaluation wrote to the Transcript, which its caller cannot see otherwise, on lines of its own after what came before."
 
-	aDictionary at: #transcript ifPresent: [ :text |
+	(aDictionary includesKey: #transcript) ifFalse: [ ^ self ].
+	stream nextPut: Character lf.
+	self writtenTranscriptOn: stream for: aDictionary
+]
+
+{ #category : 'private - results' }
+MCPToolEvaluate >> writtenTranscriptOn: stream for: aDictionary [
+	"What the evaluation wrote to the Transcript, under its label, and whether some of it was cut."
+
+	stream
+		nextPutAll: 'Transcript:';
+		nextPut: Character lf;
+		nextPutAll: (aDictionary at: #transcript).
+	(aDictionary includesKey: #transcriptTruncated) ifTrue: [
 			stream
 				nextPut: Character lf;
-				nextPutAll: 'Transcript:';
-				nextPut: Character lf;
-				nextPutAll: text.
-			(aDictionary includesKey: #transcriptTruncated) ifTrue: [
-					stream
-						nextPut: Character lf;
-						nextPutAll: '[transcript truncated]' ] ]
+				nextPutAll: '[transcript truncated]' ]
 ]
