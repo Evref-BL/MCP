@@ -158,7 +158,7 @@ MCPCommandError class >> signalClassNameIsAList: aName scope: aScopeKeyOrNil det
 
 { #category : 'signaling' }
 MCPCommandError class >> signalClassRemovalBlocked: aMessage details: aDictionary [
-	"Pharo's removal check refused class_remove. aMessage says what blocks it, from what the image answers rather than from the check's own text; aDictionary carries classes, referencedBy, subclasses, users, impactMessages, howToProceed and forceSupported."
+	"Pharo's removal check refused class_remove. aMessage says what blocks it; aDictionary carries classes, impactMessages, howToProceed and forceSupported."
 
 	^ self signalErrorCode: #ClassRemovalBlocked message: aMessage details: aDictionary
 ]
