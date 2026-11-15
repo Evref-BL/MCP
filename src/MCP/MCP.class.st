@@ -6,7 +6,7 @@ The registry is the source of truth for registered tools. The toolsList instance
 Two words govern the tool surface. A *registered* tool is in the catalog, callable by name, and findable through tool_search and tool_get. An *advertised* tool is also in tools/list.
 
 - `mcp addTool: MyToolClass` and `mcp addTools: { A. B }` register tools, as classes or ready instances;
-- `mcp removeTool: 'image_evaluate'` takes one back out;
+- `mcp removeTool: 'evaluate'` takes one back out;
 - `mcp onlyTools: { A. B }` replaces the catalog with exactly those;
 - `mcp advertiseTools: { A. 'class_search' }` chooses what tools/list shows, registering anything not yet in the catalog;
 - `mcp advertiseAllTools` and `mcp advertiseToolDefaults` are the other two advertising states;

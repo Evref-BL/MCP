@@ -18,7 +18,7 @@ MCPToolEvaluate class >> groupName [
 { #category : 'metadata' }
 MCPToolEvaluate class >> toolName [
 
-	^ 'image_evaluate'
+	^ 'evaluate'
 ]
 
 { #category : 'metadata' }

@@ -9,7 +9,7 @@ for developing MCP itself; users of a released server should start with
 - Preserve unrelated local changes.
 - Image, Tonel, Iceberg and Git are separate states. Do not infer live-image
   behavior from Tonel source alone.
-- Prefer dedicated Pharo MCP tools over `image_evaluate`, and find them with
+- Prefer dedicated Pharo MCP tools over `evaluate`, and find them with
   `tool_search`.
 - No tool saves the image. A change lives in the running image until someone
   saves it, so closing the image discards it and a mistake costs the session.

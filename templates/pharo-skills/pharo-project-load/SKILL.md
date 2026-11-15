@@ -35,7 +35,7 @@ For local Tonel, use an absolute `tonel:///.../src` URL.
 
 ## A Load Longer Than The Call
 
-`image_evaluate` stops its code at its time limit, 30 s unless the call passes
+`evaluate` stops its code at its time limit, 30 s unless the call passes
 `timeoutSeconds`, and a limit longer than the client waits loses the answer.
 What a stopped load loaded stays loaded: an answer that begins `Evaluation
 stopped` leaves the image half loaded, so load again before relying on it. A
@@ -65,7 +65,7 @@ file fullName
 The call answers at once and the image keeps answering while the fork loads.
 The file appears when the load ends, holding `loaded` or the error that ended
 it; until then a process named `project-load` is alive. The fork resumes
-warnings, as `image_evaluate` does for the code it runs itself. Without that
+warnings, as `evaluate` does for the code it runs itself. Without that
 handler, a warning such as Monticello's about missing dependencies stops the
 fork at a debugger, and the file never appears.
 

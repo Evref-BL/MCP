@@ -27,7 +27,7 @@ see, not only in how much:
 ## Workflow
 
 1. Build a workload that runs for one to five seconds: long enough for a
-   thousand samples, short enough to finish well inside `image_evaluate`'s time
+   thousand samples, short enough to finish well inside `evaluate`'s time
    limit. Fork a longer one instead, as below. Run the workload once before
    measuring so the JIT is warm.
 2. Profile it and keep the tally, which is what renders the report:

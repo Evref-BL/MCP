@@ -88,13 +88,13 @@ MCPDashboardPresenterTest >> testDisablingAToolTakesItOffTheServer [
 	| mcp presenter tool |
 	mcp := self mcpWithoutObservabilityExport.
 	presenter := MCPDashboardPresenter on: mcp.
-	tool := mcp toolRegistry toolNamed: 'image_evaluate' ifAbsent: [ nil ].
+	tool := mcp toolRegistry toolNamed: 'evaluate' ifAbsent: [ nil ].
 
 	presenter disableTool: tool.
 
 	self deny: (presenter isToolEnabled: tool).
-	self deny: (mcp toolRegistry includesToolNamed: 'image_evaluate').
-	self assert: (presenter toolRows anySatisfy: [ :each | each name = 'image_evaluate' ])
+	self deny: (mcp toolRegistry includesToolNamed: 'evaluate').
+	self assert: (presenter toolRows anySatisfy: [ :each | each name = 'evaluate' ])
 ]
 
 { #category : 'tests' }
@@ -103,13 +103,13 @@ MCPDashboardPresenterTest >> testEnablingAToolPutsItBack [
 	| mcp presenter tool |
 	mcp := self mcpWithoutObservabilityExport.
 	presenter := MCPDashboardPresenter on: mcp.
-	tool := mcp toolRegistry toolNamed: 'image_evaluate' ifAbsent: [ nil ].
+	tool := mcp toolRegistry toolNamed: 'evaluate' ifAbsent: [ nil ].
 	presenter disableTool: tool.
 
 	presenter enableTool: tool.
 
 	self assert: (presenter isToolEnabled: tool).
-	self assert: (mcp toolRegistry includesToolNamed: 'image_evaluate')
+	self assert: (mcp toolRegistry includesToolNamed: 'evaluate')
 ]
 
 { #category : 'tests' }
@@ -263,7 +263,7 @@ MCPDashboardPresenterTest >> testToolRowsAreMarkedWithTheirOwnIcon [
 
 	| presenter tool |
 	presenter := MCPDashboardPresenter on: self mcpWithoutObservabilityExport.
-	tool := presenter toolRows detect: [ :each | each name = 'image_evaluate' ].
+	tool := presenter toolRows detect: [ :each | each name = 'evaluate' ].
 
 	self assert: (presenter rowIconFor: tool) extent equals: presenter rowIconSize @ presenter rowIconSize.
 	self assert: (presenter rowIconFor: tool) == (presenter rowIconFor: tool)
@@ -301,12 +301,12 @@ MCPDashboardPresenterTest >> testUnlistingAToolLeavesItEnabledAndCallable [
 	| mcp presenter tool |
 	mcp := self mcpWithoutObservabilityExport.
 	presenter := MCPDashboardPresenter on: mcp.
-	tool := mcp toolRegistry toolNamed: 'image_evaluate' ifAbsent: [ nil ].
+	tool := mcp toolRegistry toolNamed: 'evaluate' ifAbsent: [ nil ].
 	self assert: (presenter isToolListed: tool).
 
 	presenter unlistTool: tool.
 
 	self deny: (presenter isToolListed: tool).
 	self assert: (presenter isToolEnabled: tool).
-	self assert: (mcp toolRegistry includesToolNamed: 'image_evaluate')
+	self assert: (mcp toolRegistry includesToolNamed: 'evaluate')
 ]

@@ -8,7 +8,7 @@ than letting source stand in for it.
 
 - Look tools up rather than recall them: `tool_search` finds what the image
   does not advertise, `tool_get` gives a tool's schema.
-- Prefer the least-mutating dedicated tool; `image_evaluate` only when none
+- Prefer the least-mutating dedicated tool; `evaluate` only when none
   fits.
 - Image, Tonel, Iceberg and Git are separate states; none proves anything
   about another.

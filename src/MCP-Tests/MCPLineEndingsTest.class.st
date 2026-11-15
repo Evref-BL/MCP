@@ -66,7 +66,7 @@ MCPLineEndingsTest >> testANotificationLeavesWithLineFeeds [
 MCPLineEndingsTest >> testAnAnswerLeavesWithLineFeeds [
 
 	self
-		assert: (self answerTextOf: 'image_evaluate' arguments: '{"code":"''one'' , String cr , ''two''"}')
+		assert: (self answerTextOf: 'evaluate' arguments: '{"code":"''one'' , String cr , ''two''"}')
 		equals: (String streamContents: [ :stream | stream << '''one' << String lf << 'two''' ])
 ]
 
@@ -75,7 +75,7 @@ MCPLineEndingsTest >> testAnArgumentArrivesWithCarriageReturns [
 	"Evaluated code is read as a Playground reads it: a newline written inside a string literal is a carriage return there too."
 
 	self
-		assert: (self answerTextOf: 'image_evaluate' arguments: '{"code":"''one\ntwo'' = (''one'' , String cr , ''two'')"}')
+		assert: (self answerTextOf: 'evaluate' arguments: '{"code":"''one\ntwo'' = (''one'' , String cr , ''two'')"}')
 		equals: 'true'
 ]
 

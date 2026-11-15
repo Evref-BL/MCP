@@ -1,7 +1,7 @@
 "
 The facts about the image this server runs in, as a JSON document.
 
-An agent that knows which Pharo it is talking to writes different code for it, and asking through image_evaluate costs a tool call and a round trip. As a resource the host can pull it once and keep it in front of the model.
+An agent that knows which Pharo it is talking to writes different code for it, and asking through the evaluate tool costs a tool call and a round trip. As a resource the host can pull it once and keep it in front of the model.
 
 It answers the image's basename rather than its full path: the name identifies which image is answering, and the path would add the home directory for nothing.
 "
