@@ -95,6 +95,21 @@ MCPToolSearchClassesTest >> tearDown [
 ]
 
 { #category : 'tests' }
+MCPToolSearchClassesTest >> testAnUntaggedClassRowHasNoTag [
+	"An untagged class sits in its package's root tag, which its row leaves out; a filter on that tag still finds it."
+
+	| entry result |
+	result := self callToolWith: { (self searchScope: { (#classes -> #( 'MCPToolGetMethodTestTarget' )) }) } asDictionary.
+	entry := ((self dataFrom: result) at: #classes) first.
+	self deny: (entry includesKey: #tag).
+	self assert: (((result at: #content) first at: #text) lines includes: '  MCPToolGetMethodTestTarget package=MCP-Tests-Resources').
+	result := self callToolWith: {
+			          (self searchScope: { (#classes -> #( 'MCPToolGetMethodTestTarget' )) }).
+			          (#tag -> MCPToolGetMethodTestTarget packageTagName asString) } asDictionary.
+	self assert: ((self dataFrom: result) at: #classes) size equals: 1
+]
+
+{ #category : 'tests' }
 MCPToolSearchClassesTest >> testClassNamesReturnExactClassInfos [
 
 	| baseEntry data result |

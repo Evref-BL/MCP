@@ -129,11 +129,14 @@ MCPToolSearchClasses >> queryResultDataForQueryRequest: queryRequest page: page 
 
 { #category : 'private - results' }
 MCPToolSearchClasses >> queryResultEntryFromClassEntry: anEntry [
+	"A class that is not tagged sits in its package's root tag, which says nothing a row needs."
 
-	^ {
-		  (#class -> (anEntry at: #class)).
-		  (#package -> (anEntry at: #package)).
-		  (#tag -> (anEntry at: #tag)) } asDictionary
+	| entry |
+	entry := {
+		         (#class -> (anEntry at: #class)).
+		         (#package -> (anEntry at: #package)) } asDictionary.
+	(anEntry at: #hasTag) ifTrue: [ entry at: #tag put: (anEntry at: #tag) ].
+	^ entry
 ]
 
 { #category : 'private - template' }

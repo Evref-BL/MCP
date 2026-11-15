@@ -19,7 +19,8 @@ Class {
 		'sharedVariableNames',
 		'sharedPoolNames',
 		'layoutClassName',
-		'isTrait'
+		'isTrait',
+		'hasTag'
 	],
 	#category : 'MCP-IDE-DTOs',
 	#package : 'MCP-IDE',
@@ -60,6 +61,7 @@ MCPClassInfo >> asQueryDictionary [
 		  (#class -> self className).
 		  (#package -> self packageName).
 		  (#tag -> self tag).
+		  (#hasTag -> self hasTag).
 		  (#instanceSlots -> self instanceSlotNames).
 		  (#classSlots -> self classSlotNames) } asDictionary
 ]
@@ -82,6 +84,13 @@ MCPClassInfo >> classTraitNames [
 	^ classTraitNames
 ]
 
+{ #category : 'accessing' }
+MCPClassInfo >> hasTag [
+	"Whether the class is filed under a tag of its own, rather than its package's root, whose name tag still answers so that a filter on it matches as it always has."
+
+	^ hasTag = true
+]
+
 { #category : 'initialization' }
 MCPClassInfo >> initializeFromClass: aClass [
 
@@ -90,6 +99,7 @@ MCPClassInfo >> initializeFromClass: aClass [
 	superclassName := aClass superclass ifNil: [ '' ] ifNotNil: [ :aSuperclass | aSuperclass name asString ].
 	packageName := aClass package ifNil: [ '' ] ifNotNil: [ :aPackage | aPackage name asString ].
 	tag := aClass packageTagName asString.
+	hasTag := aClass mcpTagName isNotNil.
 	instanceSlotNames := aClass slots collect: [ :each | each name asString ] as: Array.
 	classSlotNames := aClass classSide slots collect: [ :each | each name asString ] as: Array.
 	traitNames := aClass traits collect: [ :each | each name asString ] as: Array.

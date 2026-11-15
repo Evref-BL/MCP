@@ -15,3 +15,14 @@ ClassDescription >> mcpCompile: aString classified: aProtocolNameOrNil [
 		  compile: aString
 		  classified: (aProtocolNameOrNil ifNil: [ Protocol unclassified ])
 ]
+
+{ #category : '*MCP-IDE-Compatibility-Before12' }
+ClassDescription >> mcpTagName [
+	"The name of the tag the class is filed under, or nil when it is not tagged. Before Pharo 12, an untagged class answers nil, an empty name or its package's own name for its tag."
+
+	| packageName tagName |
+	tagName := self packageTagName ifNil: [ ^ nil ].
+	packageName := self package ifNotNil: [ :package | package name asString ].
+	(tagName isEmpty or: [ tagName asString = packageName ]) ifTrue: [ ^ nil ].
+	^ tagName asString
+]
