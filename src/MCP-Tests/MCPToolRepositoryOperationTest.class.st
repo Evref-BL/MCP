@@ -2467,7 +2467,7 @@ MCPToolRepositoryOperationTest >> testVerifyIdentityOperationRequiresRepositoryA
 { #category : 'tests' }
 MCPToolRepositoryOperationTest >> testVerifyIdentityPassesWhenExpectedIdentityMatches [
 
-	| data repository result |
+	| repository result |
 	repository := self newTestRepositoryNamed: 'MCP VerifyIdentity Match Test Repository'.
 	repository workingCopy packageNames: #( 'MCP-Tests' 'MCP' ).
 	repository modifiedPackageNames: #( 'MCP' ).
@@ -2481,10 +2481,12 @@ MCPToolRepositoryOperationTest >> testVerifyIdentityPassesWhenExpectedIdentityMa
 					          (#packages -> #( 'MCP' 'MCP-Tests' )).
 					          (#modifiedPackages -> #( 'MCP' )).
 					          (#isModified -> true) } asDictionary.
-			data := self dataFrom: result.
 			self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
-			self assert: data keys asSet equals: #( matched ) asSet.
-			self assert: (data at: #matched).
+			self
+				assert: (self summaryFrom: result)
+				equals:
+				'Verified repository MCP VerifyIdentity Match Test Repository: location, branch, subdirectory, packages, modifiedPackages, isModified as expected.'.
+			self assert: (self dataFrom: result) isEmpty.
 			self assert: repository actionLog asArray equals: #(  ) ]
 ]
 

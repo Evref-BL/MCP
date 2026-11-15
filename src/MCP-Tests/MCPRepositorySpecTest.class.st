@@ -270,14 +270,13 @@ MCPRepositorySpecTest >> testRepositoryVerifyIdentityRequestParsesTypedInput [
 { #category : 'tests' }
 MCPRepositorySpecTest >> testRepositoryVerifyIdentityResultReturnsDictionary [
 
-	| data repository result |
+	| repository result |
 	repository := MCPTestIceRepository named: 'MCP VerifyIdentity Repository' location: 'memory://verifyIdentity'.
 	repository workingCopy packageNames: #( 'MCP-Tests' 'MCP' ).
 	repository modifiedPackageNames: #( 'MCP' ).
 	result := MCPRepositoryVerifyIdentityResult repository: repository checkedFields: #( 'branch' 'packages' 'isModified' ).
-	data := result asDictionary.
-	self assert: data keys asSet equals: #( matched ) asSet.
-	self assert: (data at: #matched)
+	self assert: result asDictionary isEmpty.
+	self assert: result checkedFields equals: #( 'branch' 'packages' 'isModified' )
 ]
 
 { #category : 'private' }
