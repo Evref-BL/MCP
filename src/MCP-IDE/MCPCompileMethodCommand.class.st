@@ -39,7 +39,7 @@ MCPCompileMethodCommand >> execute [
 				  behavior := MCPImageLookup compileTargetNamed: self request className classSide: self request classSide.
 				  methodSource := self request methodSource.
 				  (self headerIn: methodSource) ifNotNil: [ :header |
-						  behavior := self target: behavior forHeader: header line: (self firstLineOf: methodSource).
+						  behavior := self target: behavior forHeader: header source: methodSource.
 						  methodSource := self source: methodSource withSelectorLine: header selector.
 						  headerWarnings := { self droppedHeaderWarning } ].
 				  selector := [ self selectorForMethodSource: methodSource ]
@@ -116,11 +116,10 @@ MCPCompileMethodCommand >> isUnclassified: aCompiledMethod [
 ]
 
 { #category : 'private - header' }
-MCPCompileMethodCommand >> isWholeSelectorLine: aSelectorLine [
-	"Whether the text after a header's separator is a method's whole first line, as calcArea or foo: a are, rather than a selector alone, as width:height:color: or >= are, which leave out their argument names. The parser decides, the one selectorForMethodSource: uses; Pharo 12 and later signal the error after the block unless it returns."
+MCPCompileMethodCommand >> methodNodeOfSelectorLine: aSelectorLine [
+	"The method aSelectorLine, the text after a header's separator, parses as on its own, or nil when it is not a method's whole first line, as width:height:color: and >= are not, leaving out their argument names. The parser is the one selectorForMethodSource: uses; Pharo 12 and later signal the error after the block unless it returns."
 
-	RBParser parseMethod: aSelectorLine onError: [ :message :position | ^ false ].
-	^ true
+	^ RBParser parseMethod: aSelectorLine onError: [ :message :position | ^ nil ]
 ]
 
 { #category : 'private' }
@@ -177,14 +176,35 @@ MCPCompileMethodCommand >> signalCompileFailure: anError methodSource: methodSou
 ]
 
 { #category : 'private - header' }
-MCPCompileMethodCommand >> signalHeader: aLine saying: aRest classSide: isClassSide [
-	"Refuse a source that begins with aLine, a method's reference that cannot simply be dropped. Nothing is compiled."
+MCPCompileMethodCommand >> signalHeader: aLine message: aMessage classSide: isClassSide [
+	"Refuse a source that begins with aLine, a method's reference that cannot simply be dropped, saying aMessage. Nothing is compiled."
 
 	^ MCPCommandError
 		  signalMethodSourceHeader: aLine
-		  message: (String streamContents: [ :stream | stream << 'The source begins with ' << aLine << aRest ])
+		  message: aMessage
 		  className: self request className
 		  side: (self sideNameFor: isClassSide)
+]
+
+{ #category : 'private - header' }
+MCPCompileMethodCommand >> signalHeader: aLine saying: aRest classSide: isClassSide [
+	"Refuse a source that begins with aLine, a method's reference that cannot simply be dropped. Nothing is compiled."
+
+	^ self
+		  signalHeader: aLine
+		  message: (String streamContents: [ :stream | stream << 'The source begins with ' << aLine << aRest ])
+		  classSide: isClassSide
+]
+
+{ #category : 'private - header' }
+MCPCompileMethodCommand >> source: aSource holdsNoBodyAfterSelectorLine: aSelectorLineNodeOrNil [
+	"Whether a source that begins with a header holds nothing else: only blanks follow its first line, and its selector line, parsed as aSelectorLineNodeOrNil when it is a whole first line, holds no statement or pragma of its own, as #fail or foo: a do not. Such a source names a method rather than writing it."
+
+	| end |
+	end := self firstLineEndIn: aSource.
+	(end isZero or: [ (aSource asString allButFirst: end) allSatisfy: [ :each | each isSeparator ] ]) ifFalse: [ ^ false ].
+	^ aSelectorLineNodeOrNil isNil or: [
+		  aSelectorLineNodeOrNil body statements isEmpty and: [ aSelectorLineNodeOrNil pragmas isEmpty ] ]
 ]
 
 { #category : 'private - header' }
@@ -210,29 +230,31 @@ MCPCompileMethodCommand >> summaryFor: changeKind of: methodReference from: prev
 ]
 
 { #category : 'private - header' }
-MCPCompileMethodCommand >> target: aBehavior forHeader: aReference line: aLine [
-	"The behaviour a source whose first line, aLine, is the method's reference aReference compiles into. The header is dropped only when it says what the call says, since dropping any other would compile somewhere the call did not say; otherwise the refusal gives the first line to write. The checks go in order: Tonel's form, another class, another side, then a selector line that is not a whole first line. When the call gave no side, the header's is used."
+MCPCompileMethodCommand >> target: aBehavior forHeader: aReference source: aSource [
+	"The behaviour a source that begins with the method's reference aReference compiles into. The header is dropped only when it says what the call says and a body follows it, since dropping any other would compile somewhere the call did not say, and dropping one with nothing after it would compile an empty method; otherwise the refusal gives the first line to write. The checks go in order: Tonel's form, another class, another side, no body, then a selector line that is not a whole first line. When the call gave no side, the header's is used."
 
-	| className selectorLine isTonel isWhole targetSide |
+	| className line selectorLine selectorLineNode isTonel isWhole targetSide |
 	className := aBehavior instanceSide name asString.
+	line := self firstLineOf: aSource.
 	targetSide := self request sideGiven
 		              ifTrue: [ self request classSide ]
 		              ifFalse: [ aReference classSide ].
-	isTonel := aLine last = $[.
+	isTonel := line last = $[.
 	selectorLine := isTonel
 		                ifTrue: [ aReference selector allButLast trimBoth ]
 		                ifFalse: [ aReference selector ].
-	isWhole := self isWholeSelectorLine: selectorLine.
+	selectorLineNode := self methodNodeOfSelectorLine: selectorLine.
+	isWhole := selectorLineNode isNotNil.
 	isTonel ifTrue: [
 			self
-				signalHeader: aLine
+				signalHeader: line
 				saying: (String streamContents: [ :stream |
 							 stream << ', Tonel''s form of a method. Write the method without Tonel''s brackets: '
 							 << (self selectorLinePhrase: selectorLine whole: isWhole) << ', then its body.' ])
 				classSide: targetSide ].
 	aReference className = className ifFalse: [
 			self
-				signalHeader: aLine
+				signalHeader: line
 				saying: (String streamContents: [ :stream |
 							 stream << ', which names ' << aReference className << ', but the call''s class is ' << className
 							 << '. Start the source with ' << (self selectorLinePhrase: selectorLine whole: isWhole)
@@ -240,15 +262,24 @@ MCPCompileMethodCommand >> target: aBehavior forHeader: aReference line: aLine [
 				classSide: targetSide ].
 	aReference classSide = targetSide ifFalse: [
 			self
-				signalHeader: aLine
+				signalHeader: line
 				saying: (String streamContents: [ :stream |
 							 stream << ', which names the ' << (self sideNameFor: aReference classSide) << ' side, but the call''s side is '
 							 << (self sideNameFor: targetSide) << '. Start the source with ' << (self selectorLinePhrase: selectorLine whole: isWhole)
 							 << ', and choose the side with side.' ])
 				classSide: targetSide ].
+	(self source: aSource holdsNoBodyAfterSelectorLine: selectorLineNode) ifTrue: [
+			self
+				signalHeader: line
+				message: (String streamContents: [ :stream |
+							 stream << 'The source holds only ' << line << ', a method''s reference with no body. Write the method itself: '
+							 << (self selectorLinePhrase: selectorLine whole: isWhole) << ', then its body'.
+							 (aReference classSide and: [ self request sideGiven not ]) ifTrue: [ stream << ', and pass side class' ].
+							 stream nextPut: $. ])
+				classSide: targetSide ].
 	isWhole ifFalse: [
 			self
-				signalHeader: aLine
+				signalHeader: line
 				saying: (String streamContents: [ :stream |
 							 stream << ', a method''s reference rather than its first line. Start the source with ' << ((selectorLine includes: $:)
 								  ifTrue: [ 'the selector and its argument names, each keyword followed by the name the body uses for that argument' ]

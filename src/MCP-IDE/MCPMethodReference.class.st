@@ -18,7 +18,7 @@ Class {
 
 { #category : 'instance creation' }
 MCPMethodReference class >> fromString: aString [
-	"Answer the method aString names, or nil when it names no class and is therefore a bare selector. The side is read as every class name is, so TFoo classTrait>>bar names a class-side method too."
+	"Answer the method aString names, or nil when it names no class and is therefore a bare selector. The side is read as every class name is, so TFoo classTrait>>bar names a class-side method too. Only the separator is dropped, with the # that may follow >>, so a binary selector keeps its own > as in Money>>>= or Money >> >= other."
 
 	| text separatorIndex head tail baseName |
 	aString ifNil: [ ^ nil ].
@@ -26,8 +26,13 @@ MCPMethodReference class >> fromString: aString [
 	separatorIndex := self separatorIndexIn: text.
 	separatorIndex isZero ifTrue: [ ^ nil ].
 	head := (text first: separatorIndex - 1) trimBoth.
-	tail := (text allButFirst: separatorIndex - 1) trimBoth.
-	[ tail isNotEmpty and: [ '>#' includes: tail first ] ] whileTrue: [ tail := tail allButFirst trimBoth ].
+	tail := text allButFirst: separatorIndex - 1.
+	(tail beginsWith: '>>')
+		ifTrue: [
+				tail := (tail allButFirst: 2) trimBoth.
+				(tail beginsWith: '#') ifTrue: [ tail := tail allButFirst ] ]
+		ifFalse: [ tail := tail allButFirst ].
+	tail := tail trimBoth.
 	baseName := MCPImageLookup baseNameOf: head.
 	(self namesAClass: baseName) ifFalse: [ ^ nil ].
 	tail ifEmpty: [ ^ nil ].
@@ -58,12 +63,14 @@ MCPMethodReference class >> namesAClass: aString [
 
 { #category : 'private' }
 MCPMethodReference class >> separatorIndexIn: aString [
-	"Answer where the class stops, whichever separator the caller reached for."
+	"Answer where the class stops, whichever separator the caller reached for: the first >> or #, since a class name holds neither and a selector may begin with >."
 
-	| index |
+	| hashIndex index |
 	index := aString indexOfSubCollection: '>>'.
-	index isZero ifFalse: [ ^ index ].
-	^ aString indexOf: $#
+	hashIndex := aString indexOf: $#.
+	index isZero ifTrue: [ ^ hashIndex ].
+	hashIndex isZero ifTrue: [ ^ index ].
+	^ index min: hashIndex
 ]
 
 { #category : 'accessing' }

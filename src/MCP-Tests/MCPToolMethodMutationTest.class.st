@@ -46,7 +46,7 @@ MCPToolMethodMutationTest >> assertHeaderOf: aSource side: aSideOrNil isRefusedS
 	self assert: (error at: #header) equals: aSource lines first trimBoth.
 	self assert: (error at: #class) equals: MCPToolMethodMutationTestTarget name.
 	self assert: (self textFrom: result) equals: aText.
-	#( #headerProbe #headerProbe:with: #headerProbe: ) do: [ :each |
+	#( #headerProbe #headerProbe:with: #headerProbe: #= #'>=' ) do: [ :each |
 			self deny: (MCPToolMethodMutationTestTarget includesSelector: each).
 			self deny: (MCPToolMethodMutationTestTarget classSide includesSelector: each) ].
 	^ error
@@ -261,7 +261,7 @@ MCPToolMethodMutationTest >> methodSourceLineFeedOffendersInPackageNamed: packag
 { #category : 'private' }
 MCPToolMethodMutationTest >> removeHeaderProbes [
 
-	#( #headerProbe #headerProbe: #headerProbeTwo #HeaderProbe ) do: [ :each |
+	#( #headerProbe #headerProbe: #headerProbeTwo #HeaderProbe #'>=' #> ) do: [ :each |
 			self removeSelector: each from: MCPToolMethodMutationTestTarget.
 			self removeSelector: each from: MCPToolMethodMutationTestTarget classSide ]
 ]
@@ -379,6 +379,74 @@ MCPToolMethodMutationTest >> tearDown [
 	self removeSelector: self extensionProtocolSelector from: MCPToolMethodMutationTestTarget.
 	self removeGeneratedPackagesIfEmpty.
 	super tearDown
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testABinaryHeaderKeepsItsSelector [
+	"A binary selector may begin with >, as >= does. Only the header's separator, and the # after it, is dropped, never the selector's own >, so the method compiled is the one the header names and not = or a unary method named after the argument."
+
+	| result |
+	[
+		result := self
+			          compileSource: 'MCPToolMethodMutationTestTarget >> >= other
+	^ true'
+			          into: MCPToolMethodMutationTestTarget name
+			          side: nil.
+		self deny: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
+		self assert: (self summaryFrom: result) equals: 'Created MCPToolMethodMutationTestTarget>>>=.'.
+		self assert: (self warningsFrom: result) first equals: self droppedHeaderWarning.
+		self assert: MCPToolMethodMutationTestTarget new >= 1.
+		self deny: (MCPToolMethodMutationTestTarget includesSelector: #=).
+
+		result := self
+			          compileSource: 'MCPToolMethodMutationTestTarget>>#> other
+	^ false'
+			          into: MCPToolMethodMutationTestTarget name
+			          side: nil.
+		self deny: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
+		self assert: (self summaryFrom: result) equals: 'Created MCPToolMethodMutationTestTarget>>>.'.
+		self deny: MCPToolMethodMutationTestTarget new > 1.
+		self deny: (MCPToolMethodMutationTestTarget includesSelector: #other) ] ensure: [ self removeHeaderProbes ]
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testAHeaderWithNothingAfterItIsRefused [
+	"A source that is only a method's reference names the method and writes none of it. Dropping the header would compile an empty method, replacing the body of one that exists, so it is refused and nothing is compiled. A body on the header's own line is a body."
+
+	| error result |
+	[
+		self ensureMethodSource: 'headerProbe ^ 1' protocol: 'tests' on: MCPToolMethodMutationTestTarget.
+		result := self
+			          compileSource: 'MCPToolMethodMutationTestTarget >> #headerProbe'
+			          into: MCPToolMethodMutationTestTarget name
+			          side: nil.
+		error := self errorFrom: result.
+		self assert: (result at: #isError).
+		self assert: (error at: #errorCode) equals: 'MethodSourceHeader'.
+		self assert: (error at: #header) equals: 'MCPToolMethodMutationTestTarget >> #headerProbe'.
+		self
+			assert: (self textFrom: result)
+			equals:
+			'The source holds only MCPToolMethodMutationTestTarget >> #headerProbe, a method''s reference with no body. Write the method itself: its selector line, headerProbe, then its body.'.
+		self assert: (MCPToolMethodMutationTestTarget new perform: #headerProbe) equals: 1.
+
+		result := self
+			          compileSource: 'MCPToolMethodMutationTestTarget >> headerProbe ^ 2'
+			          into: MCPToolMethodMutationTestTarget name
+			          side: nil.
+		self deny: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
+		self assert: (MCPToolMethodMutationTestTarget new perform: #headerProbe) equals: 2 ] ensure: [ self removeHeaderProbes ].
+	self
+		assertHeaderOf: 'MCPToolMethodMutationTestTarget class>>headerProbe: a
+	'
+		side: nil
+		isRefusedSaying:
+		'The source holds only MCPToolMethodMutationTestTarget class>>headerProbe: a, a method''s reference with no body. Write the method itself: its selector line, headerProbe: a, then its body, and pass side class.'.
+	self
+		assertHeaderOf: 'MCPToolMethodMutationTestTarget>>#headerProbe:with:'
+		side: nil
+		isRefusedSaying:
+		'The source holds only MCPToolMethodMutationTestTarget>>#headerProbe:with:, a method''s reference with no body. Write the method itself: its selector line, the selector with its argument names, then its body.'
 ]
 
 { #category : 'tests' }

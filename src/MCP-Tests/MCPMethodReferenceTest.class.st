@@ -9,6 +9,25 @@ Class {
 }
 
 { #category : 'tests' }
+MCPMethodReferenceTest >> testABinarySelectorKeepsItsOwnGreaterThan [
+	"Only the separator is dropped, with the # that may follow >>: a binary selector that begins with > keeps it."
+
+	{
+		('Money>>>=' -> '>=').
+		('Money >> >=' -> '>=').
+		('Money>>#>=' -> '>=').
+		('Money >> #>' -> '>').
+		('Money>>>>' -> '>>').
+		('Money#>>' -> '>>').
+		('Money#>=' -> '>=').
+		('Money >> >= other' -> '>= other') } do: [ :each |
+			| reference |
+			reference := MCPMethodReference fromString: each key.
+			self assert: reference className equals: 'Money'.
+			self assert: reference selector equals: each value ]
+]
+
+{ #category : 'tests' }
 MCPMethodReferenceTest >> testBareSelectorNamesNoClass [
 
 	#( 'batchSummaryNoun' 'at:put:' '+' '' ) do: [ :each |
