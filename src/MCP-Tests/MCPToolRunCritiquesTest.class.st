@@ -393,16 +393,16 @@ MCPToolRunCritiquesTest >> testMCPRulesAnswerOnlyAnAgent [
 { #category : 'tests' }
 MCPToolRunCritiquesTest >> testMarksTheRulesMethodRewriteCanApply [
 
-	| mcpRule renrakuRule |
-	mcpRule := (self dataForArguments: {
-			            (#scope -> { (#classes -> { self fixtureClassName }) } asDictionary).
-			            (#ruleClasses -> { MCPCollectionThenDoRule name }) } asDictionary) at: #rules.
+	| concatenationRule renrakuRule |
+	self compileFixtureMethodSource: self concatenationSource.
+	concatenationRule := self concatenationHitsNamingTheRule: true.
 	renrakuRule := (self dataForArguments: {
-			              (#scope -> { (#classes -> { self fixtureClassName }) } asDictionary).
-			              (#ruleClasses -> { ReAssignmentInBlockRule name }) } asDictionary) at: #rules.
-	"A rule whose patterns method_rewrite can be given by name says so."
-	mcpRule ifNotEmpty: [ :rules | self assert: (rules first at: #fixable) ].
-	"One whose it cannot does not claim it."
+			                (#scope -> { (#classes -> { self fixtureClassName }) } asDictionary).
+			                (#ruleClasses -> { ReAssignmentInBlockRule name }) } asDictionary) at: #rules.
+	"A rule method_rewrite can apply says so."
+	self assert: concatenationRule size equals: 1.
+	self assert: (concatenationRule first at: #fixable).
+	"One it cannot does not claim it."
 	self deny: (renrakuRule first includesKey: #fixable)
 ]
 
@@ -514,7 +514,45 @@ MCPToolRunCritiquesTest >> testRunsSelectedNodeCritiqueAndGroupsHitsByRule [
 	self assert: hits size equals: 2.
 	hit := hits first.
 	self assert: (hit at: #method) equals: self fixtureClassName , '>>assignmentInBlockProbe'.
-	self assert: (hit includesKey: #interval)
+	self assert: (hit includesKey: #interval).
+	self assert: (hit at: #line) equals: 4.
+	self assert: (hit at: #code) equals: '[ value := 1 ] ensure: [ ]'
+]
+
+{ #category : 'tests' }
+MCPToolRunCritiquesTest >> testTextReadsRuleThenHitsByLine [
+	"A rule reads as its class, whether it is an error, its title, and whether method_rewrite can apply it; its hits follow two spaces in, a method with the line of its stored source and the code there, a class by its name."
+
+	| lines result tool |
+	self compileFixtureMethodSource: 'joinProbe: first with: second ^ first , ''-'' , second'.
+	self compileFixtureMethodSource: 'trueProbe ^ True'.
+	result := self callCritiqueRunWithArguments: {
+			          (#scope -> { (#classes -> { self fixtureClassName }) } asDictionary).
+			          (#ruleClasses -> {
+				           MCPStringConcatenationRule name.
+				           ReNoClassCommentRule name.
+				           ReUsesTrueRule name }) } asDictionary.
+	lines := ((result at: #content) first at: #text) lines allButFirst.
+	self assert: lines asArray equals: {
+			(String streamContents: [ :stream |
+				 stream << 'MCPStringConcatenationRule: ' << MCPStringConcatenationRule new name << '. method_rewrite can apply it.' ]).
+			(String streamContents: [ :stream |
+				 stream << '  ' << self fixtureClassName << '>>joinProbe:with: line 3: first , ''-'' , second' ]).
+			(String streamContents: [ :stream | stream << 'ReNoClassCommentRule: ' << ReNoClassCommentRule new name ]).
+			(String streamContents: [ :stream | stream << '  ' << self fixtureClassName ]).
+			(String streamContents: [ :stream | stream << 'ReUsesTrueRule (error): ' << ReUsesTrueRule new name ]).
+			(String streamContents: [ :stream | stream << '  ' << self fixtureClassName << '>>trueProbe line 3: True' ]) }.
+	tool := MCPToolRunCritiques new.
+	self
+		assert: (String streamContents: [ :stream |
+					 tool ruleTextOn: stream for: {
+							 (#ruleClass -> 'MCPExampleRule').
+							 (#title -> 'Do it this way.').
+							 (#fixable -> true) } asDictionary ])
+		equals: (String streamContents: [ :stream | stream lf << 'MCPExampleRule: Do it this way. method_rewrite can apply it.' ]).
+	self
+		assert: (String streamContents: [ :stream | tool hitTextOn: stream for: { (#package -> 'Eval-Shapes') } asDictionary ])
+		equals: (String streamContents: [ :stream | stream lf << '  package Eval-Shapes' ])
 ]
 
 { #category : 'private' }
