@@ -69,13 +69,14 @@ MCPToolContractsTest >> assertNamesAMissingClassAlike: aCase [
 { #category : 'private' }
 MCPToolContractsTest >> assertToolFlowSpec: aSpec [
 
-	| command parsedRequest rawRequest tool |
+	| parsedRequest rawRequest tool |
 	tool := (aSpec at: #toolClass) new.
 	rawRequest := tool requestFromToolCallArguments: (aSpec at: #arguments).
 	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
-	command := tool commandForRequest: parsedRequest.
 	self assert: parsedRequest class equals: (aSpec at: #requestClass).
-	self assert: command class equals: (aSpec at: #commandClass)
+	aSpec
+		at: #commandClass
+		ifPresent: [ :commandClass | self assert: (tool commandForRequest: parsedRequest) class equals: commandClass ]
 ]
 
 { #category : 'private' }
@@ -175,20 +176,17 @@ MCPToolContractsTest >> baseToolFlowSpecs [
 		  {
 			  (#toolClass -> MCPToolSearchTools).
 			  (#arguments -> Dictionary new).
-			  (#requestClass -> MCPSearchToolsRequest).
-			  (#commandClass -> MCPSearchToolsCommand) } asDictionary.
+			  (#requestClass -> MCPToolRequest) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolGetTool).
 			  (#arguments -> { (#name -> 'class_search') } asDictionary).
-			  (#requestClass -> MCPGetToolRequest).
-			  (#commandClass -> MCPGetToolCommand) } asDictionary.
+			  (#requestClass -> MCPToolRequest) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolCallTool).
 			  (#arguments -> {
 				   (#name -> 'package_search').
 				   (#arguments -> Dictionary new) } asDictionary).
-			  (#requestClass -> MCPCallToolRequest).
-			  (#commandClass -> MCPCallToolCommand) } asDictionary }
+			  (#requestClass -> MCPCallToolRequest) } asDictionary }
 ]
 
 { #category : 'private' }
@@ -3162,7 +3160,7 @@ MCPToolContractsTest >> testSearchToolsCapsResultsAtResultLimit [
 	| result tools |
 	result := self callToolNamed: 'tool_search' withArguments: { (#query -> 'class method repository') } asDictionary.
 	tools := (self dataFrom: result) at: #tools.
-	self assert: tools size equals: MCPSearchToolsCommand new resultLimit.
+	self assert: tools size equals: MCPToolSearchTools new resultLimit.
 	self assert: ((self summaryFrom: result) includesSubstring: 'matching tools, best first')
 ]
 
