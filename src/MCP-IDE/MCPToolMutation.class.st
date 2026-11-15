@@ -85,7 +85,7 @@ MCPToolMutation >> buildInputSchema [
 { #category : 'private - refactoring' }
 MCPToolMutation >> classesRefactoringEnvironmentForClassNames: classNames baseEnvironment: baseEnvironment [
 
-	^ baseEnvironment forClasses: (self resolvedRefactoringScopeClassesFrom: classNames)
+	^ baseEnvironment forClasses: (self resolvedRefactoringScopeClassesFrom: classNames inScope: 'scope.classes')
 ]
 
 { #category : 'private - execution' }
@@ -232,7 +232,7 @@ MCPToolMutation >> forceSchemaProperty [
 MCPToolMutation >> hierarchyRefactoringEnvironmentForClassNames: classNames baseEnvironment: baseEnvironment [
 
 	| environment resolvedClasses |
-	resolvedClasses := self resolvedRefactoringScopeClassesFrom: classNames.
+	resolvedClasses := self resolvedRefactoringScopeClassesFrom: classNames inScope: 'scope.hierarchyOf'.
 	environment := nil.
 	resolvedClasses do: [ :eachClass |
 		environment := self unionRefactoringEnvironment: environment with: (baseEnvironment forClassHierarchy: eachClass) ].
@@ -503,9 +503,10 @@ MCPToolMutation >> requiredInputProperties [
 ]
 
 { #category : 'private - request' }
-MCPToolMutation >> resolvedRefactoringScopeClassesFrom: classNames [
+MCPToolMutation >> resolvedRefactoringScopeClassesFrom: classNames inScope: aScopeKey [
+	"A refactoring scope must be complete: an entry that names no class refuses the call, under its key as the schema spells it."
 
-	^ classNames collect: [ :eachName | MCPImageLookup classNamed: eachName ]
+	^ classNames collect: [ :eachName | MCPImageLookup classNamed: eachName inScope: aScopeKey ]
 ]
 
 { #category : 'private - errors' }
@@ -590,7 +591,7 @@ MCPToolMutation >> validateAtLeastOneInputPropertyIn: request [
 { #category : 'private - request' }
 MCPToolMutation >> validateRefactoringScopePackageNamesExist: packageNames [
 
-	packageNames do: [ :eachName | MCPImageLookup packageNamed: eachName ]
+	packageNames do: [ :eachName | MCPImageLookup packageNamed: eachName inScope: 'scope.packages' ]
 ]
 
 { #category : 'validating' }

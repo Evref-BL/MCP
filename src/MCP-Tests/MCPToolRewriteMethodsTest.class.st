@@ -222,7 +222,8 @@ MCPToolRewriteMethodsTest >> testMissingClassScopeRejectsRewriteBeforePartialPre
 	self assert: (result at: #isError).
 	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
 	self assert: (error at: #class) equals: 'MCPDefinitelyMissingRewriteClass'.
-	self assert: (error at: #scope) equals: 'classes'.
+	self assert: (error at: #scope) equals: 'scope.classes'.
+	self assert: ((error at: #message) beginsWith: 'Class MCPDefinitelyMissingRewriteClass, in scope.classes, does not exist.').
 	self assert: suggestions size <= 5.
 	self assert: ((error at: #message) includesSubstring: 'Did you mean:').
 	self assert: ((self sourceForSelector: #previewTarget) includesSubstring: 'oldValue')

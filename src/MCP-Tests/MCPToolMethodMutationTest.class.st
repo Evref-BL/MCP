@@ -1795,6 +1795,24 @@ MCPToolMethodMutationTest >> testRenameKeepsRenamedMethodCallable [
 ]
 
 { #category : 'tests' }
+MCPToolMethodMutationTest >> testRenameRefusesAScopeEntryThatNamesNoClassUnderItsKey [
+	"A refactoring scope must be complete, so an entry that names no class refuses the rename before anything changes."
+
+	#( #classes 'Class Zzqxw, in scope.classes, does not exist.' #hierarchyOf 'Class Zzqxw, in scope.hierarchyOf, does not exist.' )
+		pairsDo: [ :key :text |
+				| error result |
+				result := self callToolWith: (self instanceRenameArguments copy
+						           at: #scope put: { (key -> #( 'Zzqxw' )) } asDictionary;
+						           yourself).
+				error := self errorFrom: result.
+				self assert: (result at: #isError).
+				self assert: (error at: #errorCode) equals: 'ClassNotFound'.
+				self assert: (error at: #scope) equals: 'scope.' , key.
+				self assert: (self textFrom: result) equals: text.
+				self assert: (MCPToolMethodMutationTestTarget includesSelector: self instanceSelector) ]
+]
+
+{ #category : 'tests' }
 MCPToolMethodMutationTest >> testRenameReturnsStructuredErrorWhenMethodIsMissing [
 
 	| error result structured |
@@ -1843,6 +1861,8 @@ MCPToolMethodMutationTest >> testRenameReturnsStructuredErrorWhenScopedPackageIs
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'PackageNotFound'.
 	self assert: (error at: #package) equals: 'DefinitelyMissingPackage'.
+	self assert: (error at: #scope) equals: 'scope.packages'.
+	self assert: ((error at: #message) beginsWith: 'Package DefinitelyMissingPackage, in scope.packages, does not exist.').
 	self assert: (error at: #selector) equals: self instanceSelector asString.
 	self assert: (error at: #newSelector) equals: self renamedInstanceSelector asString
 ]
@@ -1872,20 +1892,6 @@ MCPToolMethodMutationTest >> testRenameWithoutPermutationKeepsArgumentsInPlace [
 ]
 
 { #category : 'tests' }
-MCPToolMethodMutationTest >> testRenamesClassSideMethodWithDefaultPermutation [
-
-	| data result |
-	result := self callToolWith: self classRenameArguments.
-	data := self dataFrom: result.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self deny: (MCPToolMethodMutationTestTarget classSide includesSelector: self classSelector).
-	self assert: (MCPToolMethodMutationTestTarget classSide includesSelector: self renamedClassSelector).
-	self assert: MCPToolMethodMutationTestSender new callClassTarget equals: 'Class-value'.
-	self assertSuccessDataHasMethodShape: data.
-	self deny: (result at: #isError ifAbsent: [ false ])
-]
-
-{ #category : 'tests' }
 MCPToolMethodMutationTest >> testRenamesClassSideMethodOfAClassWrittenWithItsSide [
 	"Foo class with a bare selector names the class-side method, so the summary names the side once."
 
@@ -1902,6 +1908,20 @@ MCPToolMethodMutationTest >> testRenamesClassSideMethodOfAClassWrittenWithItsSid
 ]
 
 { #category : 'tests' }
+MCPToolMethodMutationTest >> testRenamesClassSideMethodWithDefaultPermutation [
+
+	| data result |
+	result := self callToolWith: self classRenameArguments.
+	data := self dataFrom: result.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self deny: (MCPToolMethodMutationTestTarget classSide includesSelector: self classSelector).
+	self assert: (MCPToolMethodMutationTestTarget classSide includesSelector: self renamedClassSelector).
+	self assert: MCPToolMethodMutationTestSender new callClassTarget equals: 'Class-value'.
+	self assertSuccessDataHasMethodShape: data.
+	self deny: (result at: #isError ifAbsent: [ false ])
+]
+
+{ #category : 'tests' }
 MCPToolMethodMutationTest >> testRenamesInstanceMethodAndReturnsStructuredData [
 
 	| data result |
@@ -1912,6 +1932,22 @@ MCPToolMethodMutationTest >> testRenamesInstanceMethodAndReturnsStructuredData [
 	self assert: (MCPToolMethodMutationTestTarget includesSelector: self renamedInstanceSelector).
 	self assertSuccessDataHasMethodShape: data.
 	self deny: (result at: #isError ifAbsent: [ false ])
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testSourcesThatBeginWithTheirSelectorLineHaveNoHeader [
+	"A header needs one capitalised word before its separator, so no method's own first line reads as one."
+
+	[
+		#( 'headerProbe ^ #bar' 'HeaderProbe
+	^ 1' 'headerProbe: aStream
+	aStream << #x' ) do: [ :each |
+				| result |
+				result := self compileSource: each into: MCPToolMethodMutationTestTarget name side: nil.
+				self deny: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
+				self deny: ((self warningsFrom: result) includes: self droppedHeaderWarning) ].
+		self assert: (MCPToolMethodMutationTestTarget new perform: #headerProbe) equals: #bar.
+		self assert: (MCPToolMethodMutationTestTarget new perform: #HeaderProbe) equals: 1 ] ensure: [ self removeHeaderProbes ]
 ]
 
 { #category : 'tests' }
@@ -1931,22 +1967,6 @@ MCPToolMethodMutationTest >> testUpdateChangesProtocolAndSelectorInOneCall [
 	self assert: (MCPToolMethodMutationTestTarget includesSelector: renamed).
 	self assert: (MCPToolMethodMutationTestTarget >> renamed) protocolName asString equals: 'accessing'.
 	self assert: ((data at: #updates) collect: [ :each | each at: #action ] as: Array) equals: #( 'changeProtocol' 'rename' )
-]
-
-{ #category : 'tests' }
-MCPToolMethodMutationTest >> testSourcesThatBeginWithTheirSelectorLineHaveNoHeader [
-	"A header needs one capitalised word before its separator, so no method's own first line reads as one."
-
-	[
-		#( 'headerProbe ^ #bar' 'HeaderProbe
-	^ 1' 'headerProbe: aStream
-	aStream << #x' ) do: [ :each |
-				| result |
-				result := self compileSource: each into: MCPToolMethodMutationTestTarget name side: nil.
-				self deny: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
-				self deny: ((self warningsFrom: result) includes: self droppedHeaderWarning) ].
-		self assert: (MCPToolMethodMutationTestTarget new perform: #headerProbe) equals: #bar.
-		self assert: (MCPToolMethodMutationTestTarget new perform: #HeaderProbe) equals: 1 ] ensure: [ self removeHeaderProbes ]
 ]
 
 { #category : 'tests' }

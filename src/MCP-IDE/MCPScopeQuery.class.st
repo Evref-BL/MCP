@@ -20,6 +20,15 @@ Class {
 	#tag : 'Queries'
 }
 
+{ #category : 'private - resolution' }
+MCPScopeQuery >> classNamed: className inScope: aScopeKey [
+	"A scope entry, read as every class name is, so Foo class selects Foo. What names no class, a scope that must be complete refuses, and any other scope skips with a warning. aScopeKey is the entry's key as the schema spells it, such as scope.classes."
+
+	^ self requiresCompleteScope
+		  ifTrue: [ MCPImageLookup classNamed: className inScope: aScopeKey ]
+		  ifFalse: [ MCPImageLookup classNamed: className inScope: aScopeKey ifSkipped: [ :warning | self recordWarning: warning ] ]
+]
+
 { #category : 'accessing' }
 MCPScopeQuery >> classNames [
 
@@ -44,6 +53,15 @@ MCPScopeQuery >> hierarchyClassNames: aCollection [
 	hierarchyClassNames := aCollection
 ]
 
+{ #category : 'private - resolution' }
+MCPScopeQuery >> packageNamed: packageName inScope: aScopeKey [
+	"A scope entry naming a package. A scope that must be complete refuses a missing one; any other scope skips it with a warning. aScopeKey is the entry's key as the schema spells it, such as scope.packages."
+
+	^ self requiresCompleteScope
+		  ifTrue: [ MCPImageLookup packageNamed: packageName inScope: aScopeKey ]
+		  ifFalse: [ MCPImageLookup packageNamed: packageName inScope: aScopeKey ifSkipped: [ :warning | self recordWarning: warning ] ]
+]
+
 { #category : 'accessing' }
 MCPScopeQuery >> packageNames [
 
@@ -66,24 +84,6 @@ MCPScopeQuery >> parentClassNames [
 MCPScopeQuery >> parentClassNames: aCollection [
 
 	parentClassNames := aCollection
-]
-
-{ #category : 'private - resolution' }
-MCPScopeQuery >> recordMissingClassNamed: className inScope: scopeName [
-	"Smalltalk globals had no className. MCP's lookup reads it again, as every tool reads a class name, so Foo class still finds Foo. What it cannot find, a scope that must be complete refuses, and any other scope skips with a warning."
-
-	^ self requiresCompleteScope
-		  ifTrue: [ MCPImageLookup classNamed: className inScope: scopeName ]
-		  ifFalse: [ MCPImageLookup classNamed: className inScope: scopeName ifSkipped: [ :warning | self recordWarning: warning ] ]
-]
-
-{ #category : 'private - resolution' }
-MCPScopeQuery >> recordMissingPackageNamed: packageName inScope: scopeName [
-	"A scope that must be complete refuses a missing package; any other scope skips it with a warning."
-
-	^ self requiresCompleteScope
-		  ifTrue: [ MCPImageLookup packageNamed: packageName inScope: scopeName ]
-		  ifFalse: [ MCPImageLookup packageNamed: packageName inScope: scopeName ifSkipped: [ :warning | self recordWarning: warning ] ]
 ]
 
 { #category : 'private - resolution' }

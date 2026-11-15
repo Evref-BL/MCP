@@ -26,7 +26,7 @@ MCPClassScopeQuery >> classScopeSets [
 	| sets |
 	sets := OrderedCollection new.
 	self packageNames ifNotEmpty: [ sets add: self classesForPackageNames ].
-	self classNames ifNotEmpty: [ sets add: (self resolvedClassesNamed: self classNames inScope: 'classes') ].
+	self classNames ifNotEmpty: [ sets add: (self resolvedClassesNamed: self classNames inScope: 'scope.classes') ].
 	self hierarchyClassNames ifNotEmpty: [ sets add: (self hierarchyClassesNamed: self hierarchyClassNames) ].
 	self subclassClassNames ifNotEmpty: [ sets add: (self subclassClassesNamed: self subclassClassNames) ].
 	self parentClassNames ifNotEmpty: [ sets add: (self parentClassesNamed: self parentClassNames) ].
@@ -47,7 +47,7 @@ MCPClassScopeQuery >> classesForPackageNames [
 	| classes |
 	classes := IdentitySet new.
 	packageNames do: [ :eachName |
-			(self resolvedPackageNamed: eachName inScope: 'packages') ifNotNil: [ :package |
+			(self packageNamed: eachName inScope: 'scope.packages') ifNotNil: [ :package |
 				package classes do: [ :eachClass | classes add: eachClass instanceSide ] ] ].
 	^ self sortedClassesByName: classes
 ]
@@ -57,7 +57,7 @@ MCPClassScopeQuery >> hierarchyClassesNamed: someClassNames [
 
 	| classes |
 	classes := IdentitySet new.
-	(self resolvedClassesNamed: someClassNames inScope: 'hierarchyClasses') do: [ :eachClass |
+	(self resolvedClassesNamed: someClassNames inScope: 'scope.hierarchyOf') do: [ :eachClass |
 		eachClass withAllSuperAndSubclasses do: [ :relatedClass | classes add: relatedClass instanceSide ] ].
 	^ self sortedClassesByName: classes
 ]
@@ -80,51 +80,19 @@ MCPClassScopeQuery >> parentClassesNamed: someClassNames [
 
 	| classes |
 	classes := IdentitySet new.
-	(self resolvedClassesNamed: someClassNames inScope: 'parentClasses') do: [ :eachClass |
+	(self resolvedClassesNamed: someClassNames inScope: 'scope.superclassesOf') do: [ :eachClass |
 		eachClass allSuperclasses do: [ :relatedClass | classes add: relatedClass instanceSide ] ].
 	^ self sortedClassesByName: classes
 ]
 
 { #category : 'private - resolution' }
-MCPClassScopeQuery >> resolvedClassNamed: className [
-
-	^ self resolvedClassNamed: className inScope: 'classes'
-]
-
-{ #category : 'private - resolution' }
-MCPClassScopeQuery >> resolvedClassNamed: className inScope: scopeName [
-
-	^ Smalltalk globals at: className asSymbol ifAbsent: [ self recordMissingClassNamed: className inScope: scopeName ]
-]
-
-{ #category : 'private - resolution' }
-MCPClassScopeQuery >> resolvedClassesNamed: someClassNames [
-
-	^ self resolvedClassesNamed: someClassNames inScope: 'classes'
-]
-
-{ #category : 'private - resolution' }
-MCPClassScopeQuery >> resolvedClassesNamed: someClassNames inScope: scopeName [
+MCPClassScopeQuery >> resolvedClassesNamed: someClassNames inScope: aScopeKey [
 
 	| classes |
 	classes := IdentitySet new.
 	someClassNames do: [ :eachName |
-		(self resolvedClassNamed: eachName inScope: scopeName) ifNotNil: [ :resolvedClass | classes add: resolvedClass instanceSide ] ].
+		(self classNamed: eachName inScope: aScopeKey) ifNotNil: [ :resolvedClass | classes add: resolvedClass instanceSide ] ].
 	^ self sortedClassesByName: classes
-]
-
-{ #category : 'private - resolution' }
-MCPClassScopeQuery >> resolvedPackageNamed: packageName [
-
-	^ self resolvedPackageNamed: packageName inScope: 'packages'
-]
-
-{ #category : 'private - resolution' }
-MCPClassScopeQuery >> resolvedPackageNamed: packageName inScope: scopeName [
-
-	^ self packageOrganizer
-		  packageNamed: packageName asSymbol
-		  ifAbsent: [ self recordMissingPackageNamed: packageName inScope: scopeName ]
 ]
 
 { #category : 'private - scope' }
@@ -138,7 +106,7 @@ MCPClassScopeQuery >> subclassClassesNamed: someClassNames [
 
 	| classes |
 	classes := IdentitySet new.
-	(self resolvedClassesNamed: someClassNames inScope: 'subclassClasses') do: [ :eachClass |
+	(self resolvedClassesNamed: someClassNames inScope: 'scope.subclassesOf') do: [ :eachClass |
 		eachClass allSubclasses do: [ :relatedClass | classes add: relatedClass instanceSide ] ].
 	^ self sortedClassesByName: classes
 ]

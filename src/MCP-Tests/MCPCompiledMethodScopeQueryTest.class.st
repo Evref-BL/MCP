@@ -23,6 +23,52 @@ MCPCompiledMethodScopeQueryTest >> methodIdentitiesFor: compiledMethods [
 ]
 
 { #category : 'tests' }
+MCPCompiledMethodScopeQueryTest >> testAClassWrittenWithItsSideSelectsTheClass [
+
+	| query |
+	query := MCPCompiledMethodScopeQuery new
+		         classNames: #( 'MCPToolHierarchyTestChild class' );
+		         side: 'instance';
+		         yourself.
+	self assert: ((self methodIdentitiesFor: query methods) includes: 'MCPToolHierarchyTestChild>>hierarchyProbe').
+	self assert: query warnings isEmpty
+]
+
+{ #category : 'tests' }
+MCPCompiledMethodScopeQueryTest >> testACompleteScopeRefusesAMissingClassUnderItsKey [
+
+	| error query |
+	query := MCPCompiledMethodScopeQuery new
+		         hierarchyClassNames: #( 'Zzqxw' );
+		         requireCompleteScope;
+		         yourself.
+	error := [
+		         query methods.
+		         nil ]
+		         on: MCPCommandError
+		         do: [ :signal | signal return: signal ].
+	self assert: error errorCode equals: #ClassNotFound.
+	self assert: error messageText equals: 'Class Zzqxw, in scope.hierarchyOf, does not exist.'.
+	self assert: (error details at: #scope) equals: 'scope.hierarchyOf'
+]
+
+{ #category : 'tests' }
+MCPCompiledMethodScopeQueryTest >> testAMissingClassIsNamedByItsScopeKey [
+	"Each scope key warns under the name the schema gives it, never an internal label such as hierarchyClasses."
+
+	{
+		(#classNames: -> 'Class Zzqxw does not exist, so scope.classes skipped it.').
+		(#hierarchyClassNames: -> 'Class Zzqxw does not exist, so scope.hierarchyOf skipped it.').
+		(#parentClassNames: -> 'Class Zzqxw does not exist, so scope.superclassesOf skipped it.').
+		(#subclassClassNames: -> 'Class Zzqxw does not exist, so scope.subclassesOf skipped it.') } do: [ :each |
+			| query |
+			query := MCPCompiledMethodScopeQuery new.
+			query perform: each key with: #( 'Zzqxw' ).
+			self assert: query methods isEmpty.
+			self assert: query warnings asArray equals: { each value } ]
+]
+
+{ #category : 'tests' }
 MCPCompiledMethodScopeQueryTest >> testClassesScopeCollectsMethodsFromExactClasses [
 
 	| methodIdentities query |

@@ -517,6 +517,24 @@ MCPToolRunCritiquesTest >> testRunsSelectedNodeCritiqueAndGroupsHitsByRule [
 	self assert: (hit includesKey: #interval)
 ]
 
+{ #category : 'tests' }
+MCPToolRunCritiquesTest >> testScopeWarningsNameTheirKey [
+
+	| result warnings |
+	result := self callCritiqueRunWithArguments: {
+			          (#scope -> {
+				           (#classes -> #( 'Zzqxw' )).
+				           (#packages -> #( 'Zzqxw-Package' )) } asDictionary).
+			          (#ruleClasses -> { ReAssignmentInBlockRule name }) } asDictionary.
+	warnings := self warningsFrom: result.
+	self assert: warnings size equals: 2.
+	self
+		assert: warnings asSet
+		equals:
+			#( 'Class Zzqxw does not exist, so scope.classes skipped it.' 'Package Zzqxw-Package does not exist, so scope.packages skipped it.' )
+				asSet
+]
+
 { #category : 'private' }
 MCPToolRunCritiquesTest >> withConcatenationRuleEnabled: aBoolean during: aBlock [
 
