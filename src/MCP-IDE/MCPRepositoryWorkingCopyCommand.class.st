@@ -34,6 +34,18 @@ MCPRepositoryWorkingCopyCommand >> alsoUncommittedFrom: uncommittedPaths written
 ]
 
 { #category : 'private - diff' }
+MCPRepositoryWorkingCopyCommand >> assertRepositoryCleanAfterDiscard: aRepository [
+
+	| remainingPackageNames remainingPaths |
+	remainingPaths := self modifiedPathsFromGitStatusIn: aRepository.
+	remainingPackageNames := self changedPackageNamesForRepository: aRepository modifiedPaths: remainingPaths.
+	(remainingPackageNames isEmpty and: [ remainingPaths isEmpty ]) ifFalse: [
+			MCPCommandError signalErrorCode: 'RepositoryDiscardIncomplete' message: 'Repository changes remain after discard.' details: {
+					(#remainingPackageNames -> remainingPackageNames).
+					(#remainingPaths -> remainingPaths) } asDictionary ]
+]
+
+{ #category : 'private - diff' }
 MCPRepositoryWorkingCopyCommand >> byteForGitEscape: aCharacter [
 
 	^ {
@@ -126,6 +138,25 @@ MCPRepositoryWorkingCopyCommand >> gitStatusLinesFor: aRepository [
 ]
 
 { #category : 'private - diff' }
+MCPRepositoryWorkingCopyCommand >> imageDifferingPackageNamesFor: aRepository [
+	"The packages Iceberg marks modified whose contents in the image differ from the checkout's files. Iceberg marks a package on any change and clears the mark only when it writes the package, so an edit undone, or a test that compiles a method and removes it, leaves a mark over nothing. When the files cannot be read at all, the marks are all there is to answer with."
+
+	| modifiedPackages writerClass |
+	modifiedPackages := aRepository modifiedPackages.
+	modifiedPackages ifEmpty: [ ^ #(  ) ].
+	^ self withoutLeavingFiletreeMarkerIn: (self repositorySourceDirectoryFor: aRepository) do: [
+			  | sourceRepository |
+			  sourceRepository := [
+				                      writerClass := self sourceWriterClassFor: aRepository.
+				                      self sourceRepositoryFor: aRepository writer: writerClass ]
+				                      on: Error
+				                      do: [ ^ self imageModifiedPackageNamesFor: aRepository ].
+			  self sortedStringsFrom: (modifiedPackages
+					   select: [ :each | self package: each differsIn: sourceRepository writer: writerClass ]
+					   thenCollect: [ :each | each name ]) ]
+]
+
+{ #category : 'private - diff' }
 MCPRepositoryWorkingCopyCommand >> imageModifiedPackageNamesFor: aRepository [
 
 	^ self sortedStringsFrom: (aRepository modifiedPackages collect: [ :each | each name ])
@@ -167,6 +198,18 @@ MCPRepositoryWorkingCopyCommand >> modifiedPathsFromGitStatusIn: aRepository [
 		  ((self gitStatusLinesFor: aRepository)
 			   collect: [ :line | self pathFromGitStatusLine: line ]
 			   thenSelect: [ :path | path isNotEmpty ])
+]
+
+{ #category : 'private - diff' }
+MCPRepositoryWorkingCopyCommand >> package: anIcePackage differsIn: sourceRepository writer: aWriterClass [
+	"Answer whether the image holds anIcePackage otherwise than the checkout's files do. A package the files lack differs, and so does one that cannot be read or compared: nothing showed it equal."
+
+	^ [
+		  (self versionIn: sourceRepository for: anIcePackage writer: aWriterClass)
+			  ifNil: [ true ]
+			  ifNotNil: [ :version | ((MCPackage named: anIcePackage name) snapshot patchRelativeToBase: version snapshot) isEmpty not ] ]
+		  on: Error
+		  do: [ true ]
 ]
 
 { #category : 'private - paths' }
@@ -335,6 +378,13 @@ MCPRepositoryWorkingCopyCommand >> uncommittedPathsIn: aRepository [
 		           ifFailed: [ :gitResult | self signalGitCommandFailed: gitResult action: 'status' ]) at: #output.
 	^ self sortedStringsFrom:
 		  (output lines collect: [ :line | self pathFromGitStatusLine: line ] thenSelect: [ :path | path isNotEmpty ])
+]
+
+{ #category : 'private - export' }
+MCPRepositoryWorkingCopyCommand >> unloadedPackageNamesOf: aRepository [
+	"The packages the repository registers and the image does not hold, sorted. Export leaves their files as they are."
+
+	^ self sortedStringsFrom: (aRepository workingCopy packages reject: [ :each | each isLoaded ] thenCollect: [ :each | each name ])
 ]
 
 { #category : 'private - diff' }

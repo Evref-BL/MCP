@@ -4,10 +4,54 @@ Command wrapper for repository_commit. It writes the repository's packages as re
 Class {
 	#name : 'MCPCommitRepositoryCommand',
 	#superclass : 'MCPRepositoryWorkingCopyCommand',
+	#instVars : [
+		'repository',
+		'message',
+		'commitId',
+		'branchName',
+		'subject',
+		'packageNames',
+		'otherFiles',
+		'registersNoPackage',
+		'unloadedPackageNames'
+	],
 	#category : 'MCP-IDE-Commands',
 	#package : 'MCP-IDE',
 	#tag : 'Commands'
 }
+
+{ #category : 'instance creation' }
+MCPCommitRepositoryCommand class >> repository: aRepository message: aString [
+
+	^ self new initializeRepository: aRepository message: aString
+]
+
+{ #category : 'accessing' }
+MCPCommitRepositoryCommand >> branchName [
+
+	^ branchName
+]
+
+{ #category : 'private - committing' }
+MCPCommitRepositoryCommand >> commitChanges [
+	"Stage every change git sees in the checkout and commit it with the message."
+
+	(self modifiedPathsFromGitStatusIn: repository) ifEmpty: [ self signalNothingToCommitIn: repository ].
+	self
+		runGitArguments: #( 'add' '--all' )
+		in: repository
+		ifFailed: [ :gitResult | self signalGitCommandFailed: gitResult action: 'add' ].
+	self
+		runGitArguments: (self gitCommitArgumentsFor: repository message: message)
+		in: repository
+		ifFailed: [ :gitResult | self signalGitCommandFailed: gitResult action: 'commit' ]
+]
+
+{ #category : 'accessing' }
+MCPCommitRepositoryCommand >> commitId [
+
+	^ commitId
+]
 
 { #category : 'private - git' }
 MCPCommitRepositoryCommand >> committedPathsIn: aRepository [
@@ -34,38 +78,10 @@ MCPCommitRepositoryCommand >> currentBranchNameIn: aRepository [
 { #category : 'executing' }
 MCPCommitRepositoryCommand >> execute [
 
-	| commitId commitWarnings committedPaths repository result snapshot summary |
-	^ self
-		  executeRepositoryAction: 'commit'
-		  work: [
-				  repository := self request repository.
-				  (self repositoryHasChangesToCommit: repository) ifFalse: [ self signalNothingToCommitIn: repository ].
-				  snapshot := self snapshotFilesFor: repository.
-				  commitWarnings := (self warningsForCommitWithoutPackagesIn: repository) , (self exportLoadedPackagesFrom: repository).
-				  self restoreOrderOnlyTonelChurnFor: repository fromSnapshot: snapshot.
-				  (self modifiedPathsFromGitStatusIn: repository) ifEmpty: [ self signalNothingToCommitIn: repository ].
-				  self
-					  runGitArguments: #( 'add' '--all' )
-					  in: repository
-					  ifFailed: [ :gitResult | self signalGitCommandFailed: gitResult action: 'add' ].
-				  self
-					  runGitArguments: (self gitCommitArgumentsFor: repository message: self request message)
-					  in: repository
-					  ifFailed: [ :gitResult | self signalGitCommandFailed: gitResult action: 'commit' ].
-				  commitId := self headCommitIdIn: repository.
-				  self adoptHeadCommit: (repository lookupCommit: commitId) for: repository.
-				  summary := self summaryForCommit: commitId in: repository.
-				  committedPaths := self committedPathsIn: repository.
-				  result := MCPRepositoryCommitResult repository: repository.
-				  result
-					  packageNames: (self packageNamesForPaths: committedPaths in: repository);
-					  otherFiles: (self pathsOutsidePackages: committedPaths in: repository) ]
-		  successResult: [ :warningMessages |
-			  self tool
-				  successResultText: summary
-				  data: (self tool dataForRepositoryResult: result)
-				  warnings: warningMessages , commitWarnings ]
-		  failureSummary: [ :error | 'Failed to commit repository: ' , (error messageText ifNil: [ error asString ]) ]
+	(self repositoryHasChangesToCommit: repository) ifFalse: [ self signalNothingToCommitIn: repository ].
+	self writePackages.
+	self commitChanges.
+	self readCommit
 ]
 
 { #category : 'private - git identity' }
@@ -125,6 +141,45 @@ MCPCommitRepositoryCommand >> headCommitIdIn: aRepository [
 	^ self trimmedGitOutputFor: #( 'rev-parse' 'HEAD' ) in: aRepository action: 'rev-parse'
 ]
 
+{ #category : 'initialization' }
+MCPCommitRepositoryCommand >> initializeRepository: aRepository message: aString [
+
+	repository := aRepository.
+	message := aString
+]
+
+{ #category : 'accessing' }
+MCPCommitRepositoryCommand >> otherFiles [
+
+	^ otherFiles
+]
+
+{ #category : 'accessing' }
+MCPCommitRepositoryCommand >> packageNames [
+
+	^ packageNames
+]
+
+{ #category : 'private - committing' }
+MCPCommitRepositoryCommand >> readCommit [
+	"Adopt the commit as the working copy's reference, then read where it is and what it holds: the branch HEAD is on, the first line of its message as git stored it, and the registered packages and other files it changed."
+
+	| committedPaths |
+	commitId := self headCommitIdIn: repository.
+	self adoptHeadCommit: (repository lookupCommit: commitId) for: repository.
+	branchName := self currentBranchNameIn: repository.
+	subject := (self headCommitDescriptionIn: repository) lines ifEmpty: [ '' ] ifNotEmpty: [ :lines | lines first ].
+	committedPaths := self committedPathsIn: repository.
+	packageNames := self packageNamesForPaths: committedPaths in: repository.
+	otherFiles := self pathsOutsidePackages: committedPaths in: repository
+]
+
+{ #category : 'accessing' }
+MCPCommitRepositoryCommand >> registersNoPackage [
+
+	^ registersNoPackage
+]
+
 { #category : 'private - diff' }
 MCPCommitRepositoryCommand >> repositoryHasChangesToCommit: aRepository [
 
@@ -162,6 +217,12 @@ MCPCommitRepositoryCommand >> signalNothingToCommitIn: aRepository [
 		details: { (#repository -> aRepository name) } asDictionary
 ]
 
+{ #category : 'accessing' }
+MCPCommitRepositoryCommand >> subject [
+
+	^ subject
+]
+
 { #category : 'private - git' }
 MCPCommitRepositoryCommand >> summaryForCommit: aCommitId in: aRepository [
 	"Name the commit as git log --oneline does, on the branch HEAD is on; the subject is the first line of the message as git stored it."
@@ -186,10 +247,28 @@ MCPCommitRepositoryCommand >> trimmedGitOutputFor: arguments in: aRepository act
 	^ (gitResult at: #output) trimBoth
 ]
 
+{ #category : 'accessing' }
+MCPCommitRepositoryCommand >> unloadedPackageNames [
+
+	^ unloadedPackageNames
+]
+
 { #category : 'private - warnings' }
 MCPCommitRepositoryCommand >> warningsForCommitWithoutPackagesIn: aRepository [
 
 	aRepository workingCopy packages ifNotEmpty: [ ^ #(  ) ].
 	^ { (String streamContents: [ :stream |
 		   stream << 'Repository ' << aRepository name << ' has no packages, so this commit holds only what git saw in its checkout.' ]) }
+]
+
+{ #category : 'private - committing' }
+MCPCommitRepositoryCommand >> writePackages [
+	"Write the packages the image holds as an export does, keeping the files the writer only reordered as they were."
+
+	| snapshot |
+	snapshot := self snapshotFilesFor: repository.
+	registersNoPackage := repository workingCopy packages isEmpty.
+	self exportLoadedPackagesFrom: repository.
+	unloadedPackageNames := self unloadedPackageNamesOf: repository.
+	self restoreOrderOnlyTonelChurnFor: repository fromSnapshot: snapshot
 ]

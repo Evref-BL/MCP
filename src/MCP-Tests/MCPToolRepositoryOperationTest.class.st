@@ -389,17 +389,15 @@ MCPToolRepositoryOperationTest >> testAdoptHeadNamesADetachedHead [
 { #category : 'tests' }
 MCPToolRepositoryOperationTest >> testAdoptHeadOperationRequiresRepositoryAndParses [
 
-	| command parsedRequest rawRequest tool |
+	| parsedRequest rawRequest tool |
 	tool := MCPToolAdoptRepositoryHead new.
 	rawRequest := tool requestFromToolCallArguments: {
 			              (#name -> 'MCP').
 			              (#branch -> 'main') } asDictionary.
 	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
-	command := tool commandForRequest: parsedRequest.
-	self assert: parsedRequest class equals: MCPRepositoryAdoptHeadRequest.
-	self assert: parsedRequest operation equals: 'adoptHead'.
-	self assert: parsedRequest branchName equals: 'main'.
-	self assert: command class equals: MCPAdoptRepositoryHeadCommand
+	self assert: parsedRequest identicalTo: rawRequest.
+	self assert: (tool mutationActionFor: parsedRequest checked: true) equals: 'adoptHead'.
+	self assert: ((tool requestedContextFor: parsedRequest checked: true) at: #branch) equals: 'main'
 ]
 
 { #category : 'tests' }
@@ -481,20 +479,21 @@ MCPToolRepositoryOperationTest >> testAttachGivesAnEmptyCheckoutItsSubdirectory 
 ]
 
 { #category : 'tests' }
-MCPToolRepositoryOperationTest >> testAttachParsesAndDispatchesToAttachCommand [
+MCPToolRepositoryOperationTest >> testAttachReadsItsRequest [
 
-	| command parsedRequest rawRequest tool |
+	| context parsedRequest rawRequest tool |
 	tool := MCPToolAttachRepository new.
 	rawRequest := tool requestFromToolCallArguments: {
 			              (#name -> 'MCP').
 			              (#location -> 'C:/src/MCP').
 			              (#packages -> #( 'MCP' )) } asDictionary.
 	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
-	command := tool commandForRequest: parsedRequest.
+	context := tool requestedContextFor: parsedRequest checked: true.
 
-	self assert: parsedRequest class equals: MCPRepositoryAttachRequest.
-	self assert: parsedRequest operation equals: 'attach'.
-	self assert: command class equals: MCPAttachRepositoryCommand
+	self assert: parsedRequest identicalTo: rawRequest.
+	self assert: (tool mutationActionFor: parsedRequest checked: true) equals: 'attach'.
+	self assert: (context at: #location) equals: 'C:/src/MCP'.
+	self assert: (context at: #packages) equals: #( 'MCP' )
 ]
 
 { #category : 'tests' }
@@ -859,20 +858,18 @@ MCPToolRepositoryOperationTest >> testCommitOfARepositoryWithoutPackages [
 ]
 
 { #category : 'tests' }
-MCPToolRepositoryOperationTest >> testCommitParsesAndDispatchesToCommitCommand [
+MCPToolRepositoryOperationTest >> testCommitReadsItsRequest [
 
-	| command parsedRequest rawRequest tool |
+	| parsedRequest rawRequest tool |
 	tool := MCPToolCommitRepository new.
 	rawRequest := tool requestFromToolCallArguments: {
 			              (#name -> 'MCP').
 			              (#message -> 'Commit from test') } asDictionary.
 	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
-	command := tool commandForRequest: parsedRequest.
 
-	self assert: parsedRequest class equals: MCPRepositoryCommitRequest.
-	self assert: parsedRequest message equals: 'Commit from test'.
-	self assert: parsedRequest operation equals: 'commit'.
-	self assert: command class equals: MCPCommitRepositoryCommand
+	self assert: parsedRequest identicalTo: rawRequest.
+	self assert: ((tool requestedContextFor: parsedRequest checked: true) at: #message) equals: 'Commit from test'.
+	self assert: (tool mutationActionFor: parsedRequest checked: true) equals: 'commit'
 ]
 
 { #category : 'tests' }
@@ -1456,17 +1453,15 @@ MCPToolRepositoryOperationTest >> testDiffListsAPackageWhoseImageDiffersFromItsF
 ]
 
 { #category : 'tests' }
-MCPToolRepositoryOperationTest >> testDiffParsesAndDispatchesToDiffCommand [
+MCPToolRepositoryOperationTest >> testDiffReadsItsRequest [
 
-	| command parsedRequest rawRequest tool |
+	| parsedRequest rawRequest tool |
 	tool := MCPToolListRepositoryChanges new.
 	rawRequest := tool requestFromToolCallArguments: { (#name -> 'MCP') } asDictionary.
 	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
-	command := tool commandForRequest: parsedRequest.
 
-	self assert: parsedRequest class equals: MCPRepositoryDiffRequest.
-	self assert: parsedRequest operation equals: 'diff'.
-	self assert: command class equals: MCPRepositoryDiffCommand
+	self assert: parsedRequest identicalTo: rawRequest.
+	self assert: (tool mutationActionFor: parsedRequest checked: true) equals: 'diff'
 ]
 
 { #category : 'tests' }
@@ -1562,17 +1557,15 @@ MCPToolRepositoryOperationTest >> testDiscardNamesNoPackageForAnUnregisteredDire
 ]
 
 { #category : 'tests' }
-MCPToolRepositoryOperationTest >> testDiscardParsesAndDispatchesToDiscardCommand [
+MCPToolRepositoryOperationTest >> testDiscardReadsItsRequest [
 
-	| command parsedRequest rawRequest tool |
+	| parsedRequest rawRequest tool |
 	tool := MCPToolDiscardRepositoryChanges new.
 	rawRequest := tool requestFromToolCallArguments: { (#name -> 'MCP') } asDictionary.
 	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
-	command := tool commandForRequest: parsedRequest.
 
-	self assert: parsedRequest class equals: MCPRepositoryDiscardRequest.
-	self assert: parsedRequest operation equals: 'discard'.
-	self assert: command class equals: MCPDiscardRepositoryChangesCommand
+	self assert: parsedRequest identicalTo: rawRequest.
+	self assert: (tool mutationActionFor: parsedRequest checked: true) equals: 'discard'
 ]
 
 { #category : 'tests' }
@@ -1954,7 +1947,7 @@ MCPToolRepositoryOperationTest >> testExportWarnsOfARegisteredPackageNotInTheIma
 MCPToolRepositoryOperationTest >> testGitCommandFailureSignalsStructuredCommandError [
 
 	| command error |
-	command := MCPCommitRepositoryCommand tool: MCPToolCommitRepository new request: nil.
+	command := MCPCommitRepositoryCommand new.
 	error := [
 		         command
 			         signalGitCommandFailed: {
@@ -2359,7 +2352,7 @@ MCPToolRepositoryOperationTest >> testUpdateWithNothingToDoNamesItsArguments [
 { #category : 'tests' }
 MCPToolRepositoryOperationTest >> testVerifyIdentityOperationRequiresRepositoryAndParses [
 
-	| command parsedRequest rawRequest tool |
+	| context parsedRequest rawRequest tool |
 	tool := MCPToolVerifyRepositoryIdentity new.
 	rawRequest := tool requestFromToolCallArguments: {
 			              (#name -> 'MCP').
@@ -2367,13 +2360,12 @@ MCPToolRepositoryOperationTest >> testVerifyIdentityOperationRequiresRepositoryA
 			              (#packages -> #( 'MCP' )).
 			              (#isModified -> false) } asDictionary.
 	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
-	command := tool commandForRequest: parsedRequest.
+	context := tool requestedContextFor: parsedRequest checked: true.
 
-	self assert: parsedRequest class equals: MCPRepositoryVerifyIdentityRequest.
-	self assert: parsedRequest operation equals: 'verifyIdentity'.
-	self assert: parsedRequest branchName equals: 'main'.
-	self assert: parsedRequest isModified equals: false.
-	self assert: command class equals: MCPRepositoryVerifyIdentityCommand
+	self assert: parsedRequest identicalTo: rawRequest.
+	self assert: (tool mutationActionFor: parsedRequest checked: true) equals: 'verifyIdentity'.
+	self assert: (context at: #branch) equals: 'main'.
+	self assert: (context at: #isModified) equals: false
 ]
 
 { #category : 'tests' }

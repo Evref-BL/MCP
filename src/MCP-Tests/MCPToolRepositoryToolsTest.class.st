@@ -23,65 +23,47 @@ MCPToolRepositoryToolsTest >> repositoryToolSpecifications [
 			  (#arguments -> {
 				   (#name -> 'MCP').
 				   (#branch -> 'main') } asDictionary).
-			  (#action -> 'verifyIdentity').
-			  (#requestClass -> MCPRepositoryVerifyIdentityRequest).
-			  (#commandClass -> MCPRepositoryVerifyIdentityCommand) } asDictionary.
+			  (#action -> 'verifyIdentity') } asDictionary.
 		  {
 			  (#toolClass -> MCPToolListRepositoryChanges).
 			  (#arguments -> { (#name -> 'MCP') } asDictionary).
-			  (#action -> 'diff').
-			  (#requestClass -> MCPRepositoryDiffRequest).
-			  (#commandClass -> MCPRepositoryDiffCommand) } asDictionary.
+			  (#action -> 'diff') } asDictionary.
 		  {
 			  (#toolClass -> MCPToolCreateRepository).
 			  (#arguments -> {
 				   (#name -> 'MCP Test Repository').
 				   (#location -> '/tmp/mcp-test-repository') } asDictionary).
-			  (#action -> 'create').
-			  (#requestClass -> MCPRepositoryCreateRequest).
-			  (#commandClass -> MCPCreateRepositoryCommand) } asDictionary.
+			  (#action -> 'create') } asDictionary.
 		  {
 			  (#toolClass -> MCPToolAttachRepository).
 			  (#arguments -> {
 				   (#name -> 'MCP Test Repository').
 				   (#location -> '/tmp/mcp-test-repository') } asDictionary).
-			  (#action -> 'attach').
-			  (#requestClass -> MCPRepositoryAttachRequest).
-			  (#commandClass -> MCPAttachRepositoryCommand) } asDictionary.
+			  (#action -> 'attach') } asDictionary.
 		  {
 			  (#toolClass -> MCPToolUpdateRepository).
 			  (#arguments -> {
 				   (#name -> 'MCP').
 				   (#addPackages -> #( 'MCP' )) } asDictionary).
-			  (#action -> 'update').
-			  (#requestClass -> MCPRepositoryUpdateRequest).
-			  (#commandClass -> MCPUpdateRepositoryCommand) } asDictionary.
+			  (#action -> 'update') } asDictionary.
 		  {
 			  (#toolClass -> MCPToolExportRepository).
 			  (#arguments -> { (#name -> 'MCP') } asDictionary).
-			  (#action -> 'export').
-			  (#requestClass -> MCPRepositoryExportRequest).
-			  (#commandClass -> MCPExportRepositoryCommand) } asDictionary.
+			  (#action -> 'export') } asDictionary.
 		  {
 			  (#toolClass -> MCPToolCommitRepository).
 			  (#arguments -> {
 				   (#name -> 'MCP').
 				   (#message -> 'Commit from test') } asDictionary).
-			  (#action -> 'commit').
-			  (#requestClass -> MCPRepositoryCommitRequest).
-			  (#commandClass -> MCPCommitRepositoryCommand) } asDictionary.
+			  (#action -> 'commit') } asDictionary.
 		  {
 			  (#toolClass -> MCPToolAdoptRepositoryHead).
 			  (#arguments -> { (#name -> 'MCP') } asDictionary).
-			  (#action -> 'adoptHead').
-			  (#requestClass -> MCPRepositoryAdoptHeadRequest).
-			  (#commandClass -> MCPAdoptRepositoryHeadCommand) } asDictionary.
+			  (#action -> 'adoptHead') } asDictionary.
 		  {
 			  (#toolClass -> MCPToolReloadRepository).
 			  (#arguments -> { (#name -> 'MCP') } asDictionary).
-			  (#action -> 'reload').
-			  (#requestClass -> MCPRepositoryReloadRequest).
-			  (#commandClass -> MCPReloadRepositoryCommand) } asDictionary }
+			  (#action -> 'reload') } asDictionary }
 ]
 
 { #category : 'private' }
@@ -110,6 +92,18 @@ MCPToolRepositoryToolsTest >> testRepositoryToolsAreDiscoverableWithExpectedMeta
 ]
 
 { #category : 'tests' }
+MCPToolRepositoryToolsTest >> testRepositoryToolsReadTheirRequestAndNameTheirAction [
+
+	self repositoryToolSpecifications do: [ :specification |
+			| parsedRequest rawRequest tool |
+			tool := (specification at: #toolClass) new.
+			rawRequest := tool requestFromToolCallArguments: (specification at: #arguments).
+			parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
+			self assert: parsedRequest identicalTo: rawRequest.
+			self assert: (tool mutationActionFor: parsedRequest checked: true) equals: (specification at: #action) ]
+]
+
+{ #category : 'tests' }
 MCPToolRepositoryToolsTest >> testRepositoryToolsRequiredInputs [
 
 	| expectations |
@@ -123,20 +117,6 @@ MCPToolRepositoryToolsTest >> testRepositoryToolsRequiredInputs [
 		                (MCPToolCommitRepository -> #( 'name' 'message' )).
 		                (MCPToolAdoptRepositoryHead -> #( 'name' )) }.
 	expectations do: [ :association | self assert: association key new inputSchema required asArray equals: association value ]
-]
-
-{ #category : 'tests' }
-MCPToolRepositoryToolsTest >> testRepositoryToolsRouteToRepositoryCommands [
-
-	self repositoryToolSpecifications do: [ :specification |
-			| command parsedRequest rawRequest tool |
-			tool := (specification at: #toolClass) new.
-			rawRequest := tool requestFromToolCallArguments: (specification at: #arguments).
-			parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
-			command := tool commandForRequest: parsedRequest.
-			self assert: parsedRequest class equals: (specification at: #requestClass).
-			self assert: parsedRequest operation equals: (specification at: #action).
-			self assert: command class equals: (specification at: #commandClass) ]
 ]
 
 { #category : 'tests' }

@@ -4,54 +4,79 @@ Command wrapper for repository_export. It refuses a repository that registers no
 Class {
 	#name : 'MCPExportRepositoryCommand',
 	#superclass : 'MCPRepositoryWorkingCopyCommand',
+	#instVars : [
+		'repository',
+		'packageNames',
+		'writtenPaths',
+		'deletedPaths',
+		'alsoUncommittedPaths',
+		'unloadedPackageNames'
+	],
 	#category : 'MCP-IDE-Commands',
 	#package : 'MCP-IDE',
 	#tag : 'Commands'
 }
 
+{ #category : 'instance creation' }
+MCPExportRepositoryCommand class >> repository: aRepository [
+
+	^ self new initializeRepository: aRepository
+]
+
+{ #category : 'accessing' }
+MCPExportRepositoryCommand >> alsoUncommittedPaths [
+
+	^ alsoUncommittedPaths
+]
+
+{ #category : 'accessing' }
+MCPExportRepositoryCommand >> deletedPaths [
+
+	^ deletedPaths
+]
+
 { #category : 'executing' }
 MCPExportRepositoryCommand >> execute [
+	"Write the packages the image holds and .project to the checkout, put back the files the writer only reordered, and read back what changed."
 
-	| before directoriesBefore exportWarnings repository result |
-	^ self
-		  executeRepositoryAction: 'export'
-		  work: [
-				  repository := self request repository.
-				  self refuseExportWithNothingToWriteFor: repository.
-				  directoriesBefore := self existingLoadedPackageDirectoryPathsFor: repository.
-				  before := self snapshotFilesFor: repository.
-				  self withNonInteractiveAuthorDuring: [
-						  exportWarnings := self exportLoadedPackagesFrom: repository.
-						  self restoreOrderOnlyTonelChurnFor: repository fromSnapshot: before ].
-				  result := MCPRepositoryExportResult repository: repository.
-				  self
-					  record: result
-					  filesWrittenSince: before
-					  directories: directoriesBefore
-					  in: repository.
-				  self markLoadedPackagesCleanIn: repository workingCopy ]
-		  successResult: [ :warningMessages |
-				  self tool
-					  successResultText: (self tool summaryForExportResult: result)
-					  data: (self tool dataForRepositoryResult: result)
-					  warnings: warningMessages , exportWarnings ]
-		  failureSummary: [ :error | 'Failed to export repository: ' , (error messageText ifNil: [ error asString ]) ]
+	| before directoriesBefore |
+	self refuseExportWithNothingToWriteFor: repository.
+	directoriesBefore := self existingLoadedPackageDirectoryPathsFor: repository.
+	before := self snapshotFilesFor: repository.
+	self withNonInteractiveAuthorDuring: [
+			self exportLoadedPackagesFrom: repository.
+			unloadedPackageNames := self unloadedPackageNamesOf: repository.
+			self restoreOrderOnlyTonelChurnFor: repository fromSnapshot: before ].
+	self recordFilesWrittenSince: before directories: directoriesBefore.
+	self markLoadedPackagesCleanIn: repository workingCopy
+]
+
+{ #category : 'initialization' }
+MCPExportRepositoryCommand >> initializeRepository: aRepository [
+
+	repository := aRepository
+]
+
+{ #category : 'accessing' }
+MCPExportRepositoryCommand >> packageNames [
+
+	^ packageNames
 ]
 
 { #category : 'private - export' }
-MCPExportRepositoryCommand >> record: anExportResult filesWrittenSince: before directories: directoriesBefore in: aRepository [
+MCPExportRepositoryCommand >> recordFilesWrittenSince: before directories: directoriesBefore [
 	"Read the files again. What differs from before is what export wrote or deleted, and the packages they belong to are those it wrote; what git sees besides is left uncommitted."
 
-	| after deleted newDirectories written |
-	newDirectories := (self existingLoadedPackageDirectoryPathsFor: aRepository) reject: [ :each | directoriesBefore includes: each ].
-	after := self snapshotFilesFor: aRepository.
-	written := self writtenPathsFrom: before to: after newDirectories: newDirectories.
-	deleted := self deletedPathsFrom: before to: after.
-	anExportResult
-		packageNames: (self packageNamesForPaths: written , deleted in: aRepository);
-		writtenPaths: written;
-		deletedPaths: deleted;
-		alsoUncommittedPaths: (self alsoUncommittedFrom: (self uncommittedPathsIn: aRepository) written: written deleted: deleted)
+	| after newDirectories |
+	newDirectories := (self existingLoadedPackageDirectoryPathsFor: repository) reject: [ :each | directoriesBefore includes: each ].
+	after := self snapshotFilesFor: repository.
+	writtenPaths := self writtenPathsFrom: before to: after newDirectories: newDirectories.
+	deletedPaths := self deletedPathsFrom: before to: after.
+	packageNames := self packageNamesForPaths: writtenPaths , deletedPaths in: repository.
+	alsoUncommittedPaths := self
+		                        alsoUncommittedFrom: (self uncommittedPathsIn: repository)
+		                        written: writtenPaths
+		                        deleted: deletedPaths
 ]
 
 { #category : 'private - export' }
@@ -77,4 +102,16 @@ MCPExportRepositoryCommand >> refuseExportWithNothingToWriteFor: aRepository [
 		details: {
 				(#repository -> aRepository name).
 				(#packages -> names) } asDictionary
+]
+
+{ #category : 'accessing' }
+MCPExportRepositoryCommand >> unloadedPackageNames [
+
+	^ unloadedPackageNames
+]
+
+{ #category : 'accessing' }
+MCPExportRepositoryCommand >> writtenPaths [
+
+	^ writtenPaths
 ]

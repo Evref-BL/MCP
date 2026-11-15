@@ -15,6 +15,15 @@ MCPRepositoryCommand class >> isAbstract [
 	^ self = MCPRepositoryCommand
 ]
 
+{ #category : 'private - packages' }
+MCPRepositoryCommand >> addPackageNamed: aPackageName to: aRepository [
+	"Register the package with the repository unless it already is, and answer whether this added it."
+
+	((self sortedStringsFrom: aRepository workingCopy packageNames) includes: aPackageName) ifTrue: [ ^ false ].
+	aRepository workingCopy addPackageNamed: aPackageName.
+	^ true
+]
+
 { #category : 'private - iceberg state' }
 MCPRepositoryCommand >> adoptHeadCommit: headCommit for: aRepository [
 
@@ -213,6 +222,14 @@ MCPRepositoryCommand >> projectFileNoteFor: aRepository [
 MCPRepositoryCommand >> referenceCommitFor: aRepository [
 
 	^ aRepository workingCopy referenceCommit
+]
+
+{ #category : 'private - packages' }
+MCPRepositoryCommand >> removePackageNamed: aPackageName from: aRepository [
+	"Drop the package from the repository, leaving it loaded in the image, and answer whether the repository registered it."
+
+	(aRepository workingCopy packageNamed: aPackageName ifAbsent: [ ^ false ]) remove.
+	^ true
 ]
 
 { #category : 'private - git' }

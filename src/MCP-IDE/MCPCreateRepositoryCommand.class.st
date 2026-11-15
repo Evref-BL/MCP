@@ -4,10 +4,29 @@ Command wrapper for repository_create. It starts a repository with no history wh
 Class {
 	#name : 'MCPCreateRepositoryCommand',
 	#superclass : 'MCPRepositoryCommand',
+	#instVars : [
+		'name',
+		'location',
+		'subdirectory',
+		'packageNames',
+		'verb',
+		'locationState'
+	],
 	#category : 'MCP-IDE-Commands',
 	#package : 'MCP-IDE',
 	#tag : 'Commands'
 }
+
+{ #category : 'instance creation' }
+MCPCreateRepositoryCommand class >> name: aName location: aLocation subdirectory: aSubdirectoryOrNil packageNames: packageNames [
+	"A repository of that name at that absolute path, holding the packages from the source subdirectory, or from its root when there is none."
+
+	^ self new
+		  initializeName: aName
+		  location: aLocation
+		  subdirectory: aSubdirectoryOrNil
+		  packageNames: packageNames
+]
 
 { #category : 'private - location' }
 MCPCreateRepositoryCommand >> addFilesIn: aDirectory under: aPrefix to: files ignoringGit: ignoresGit [
@@ -33,7 +52,24 @@ MCPCreateRepositoryCommand >> addFilesIn: aDirectory under: aPrefix to: files ig
 { #category : 'private' }
 MCPCreateRepositoryCommand >> addRequestedPackagesTo: aRepository [
 
-	self request packageNames do: [ :each | aRepository workingCopy addPackageNamed: each ]
+	packageNames do: [ :each | aRepository workingCopy addPackageNamed: each ]
+]
+
+{ #category : 'executing' }
+MCPCreateRepositoryCommand >> attach [
+	"Register the existing checkout at the location as it is, without writing to it, and give it its packages; answer the repository."
+
+	| repository |
+	verb := 'attach'.
+	self refuseRelativeLocation.
+	self refuseRegisteredNameOrLocation.
+	repository := self registerCheckoutAt: self existingCheckoutLocation during: [ :each |
+			              subdirectory ifNotNil: [ :value |
+					              self setSubdirectory: value on: each.
+					              "A checkout without .project had no source directory to read its packages from until now."
+					              each workingCopy refreshPackages ] ].
+	self addRequestedPackagesTo: repository.
+	^ repository
 ]
 
 { #category : 'private - location' }
@@ -49,11 +85,11 @@ MCPCreateRepositoryCommand >> checkoutHasNoCommit: aLocation [
 MCPCreateRepositoryCommand >> createRepositoryIn: aLocationState [
 	"Iceberg's creator makes a location that does not exist; an empty directory gets git init and is then registered as an empty Git repository is."
 
-	| location |
-	location := self request location asFileReference.
-	aLocationState = #absent ifTrue: [ ^ self createRepositoryWithIcebergAt: location ].
-	aLocationState = #empty ifTrue: [ self initializeGitAt: location ].
-	^ self registerEmptyCheckoutAt: location
+	| reference |
+	reference := location asFileReference.
+	aLocationState = #absent ifTrue: [ ^ self createRepositoryWithIcebergAt: reference ].
+	aLocationState = #empty ifTrue: [ self initializeGitAt: reference ].
+	^ self registerEmptyCheckoutAt: reference
 ]
 
 { #category : 'private - creating' }
@@ -62,36 +98,47 @@ MCPCreateRepositoryCommand >> createRepositoryWithIcebergAt: aLocation [
 	| creator repository |
 	creator := IceRepositoryCreator new.
 	creator location: aLocation.
-	self request subdirectory ifNotNil: [ :value | creator subdirectory: value ].
-	repository := creator createNewRepositoryNamed: self request name.
+	subdirectory ifNotNil: [ :value | creator subdirectory: value ].
+	repository := creator createNewRepositoryNamed: name.
 	repository register.
 	^ repository
 ]
 
 { #category : 'executing' }
 MCPCreateRepositoryCommand >> execute [
+	"Start the repository, register it and give it its packages, refusing before anything is written what create cannot do; answer the repository."
 
-	| locationState packageWarnings repository result summary |
-	^ self
-		  executeRepositoryAction: 'create'
-		  work: [
-				  self refuseRelativeLocation.
-				  self refuseRegisteredNameOrLocation.
-				  self refusePackagesNotInImage.
-				  locationState := self locationStateRefusingAnyOther.
-				  repository := self createRepositoryIn: locationState.
-				  self addRequestedPackagesTo: repository.
-				  result := MCPRepositoryCreateResult fromRepository: repository.
-				  summary := self summaryForRepository: repository createdIn: locationState.
-				  packageWarnings := self packageWarningsFor: repository ]
-		  successResult: [ :warningMessages |
-			  self tool
-				  successResultText: summary
-				  data: (self tool dataForRepositoryResult: result)
-				  warnings: warningMessages , packageWarnings ]
-		  failureSummary: [ :error |
-				  String streamContents: [ :stream |
-					  stream << 'Failed to create repository ' << self request name << ': ' << (error messageText ifNil: [ error asString ]) ] ]
+	| repository |
+	verb := 'create'.
+	self refuseRelativeLocation.
+	self refuseRegisteredNameOrLocation.
+	self refusePackagesNotInImage.
+	locationState := self locationStateRefusingAnyOther.
+	repository := self createRepositoryIn: locationState.
+	self addRequestedPackagesTo: repository.
+	^ repository
+]
+
+{ #category : 'private - location' }
+MCPCreateRepositoryCommand >> existingCheckoutLocation [
+	"The checkout attach registers, refused when nothing is there or when it is no Git root."
+
+	| reference |
+	reference := location asFileReference.
+	reference exists ifFalse: [
+			MCPCommandError
+				signalErrorCode: #RepositoryLocationMissing
+				message: (String streamContents: [ :stream | stream << self refusalPrefix << reference fullName << ' does not exist.' ])
+				details: self requestedDetails ].
+	(self isGitCheckoutRoot: reference) ifFalse: [
+			MCPCommandError
+				signalErrorCode: #RepositoryLocationNotGitRoot
+				message: (String streamContents: [ :stream |
+							 stream << self refusalPrefix << reference fullName
+							 <<
+							 ' is not the root of a Git checkout. repository_create starts a repository there if it holds no file; otherwise run git init there first.' ])
+				details: self requestedDetails ].
+	^ reference
 ]
 
 { #category : 'private - location' }
@@ -127,6 +174,15 @@ MCPCreateRepositoryCommand >> initializeGitAt: aLocation [
 		 yourself) init
 ]
 
+{ #category : 'initialization' }
+MCPCreateRepositoryCommand >> initializeName: aName location: aLocation subdirectory: aSubdirectory packageNames: somePackageNames [
+
+	name := aName.
+	location := aLocation.
+	subdirectory := aSubdirectory.
+	packageNames := somePackageNames
+]
+
 { #category : 'private - location' }
 MCPCreateRepositoryCommand >> isGitCheckoutRoot: aLocation [
 
@@ -149,20 +205,27 @@ MCPCreateRepositoryCommand >> isLinkedGitWorktreeRoot: aLocation [
 	^ (self gitDirectoryReferenceFor: gitDirectoryPath relativeTo: aLocation) exists
 ]
 
+{ #category : 'accessing' }
+MCPCreateRepositoryCommand >> locationState [
+	"Where execute found the location: #absent, #empty or #emptyCheckout."
+
+	^ locationState
+]
+
 { #category : 'private - location' }
 MCPCreateRepositoryCommand >> locationStateRefusingAnyOther [
 	"Where create starts the repository: #absent where nothing exists yet, #empty in a directory that holds no file, #emptyCheckout in a Git repository with no commit that holds no file. Any other location is refused here, before anything is written."
 
-	| files location |
-	location := self request location asFileReference.
-	location exists ifFalse: [ ^ #absent ].
-	location isDirectory ifFalse: [ self signalLocationIsAFile: location ].
-	(self isGitCheckoutRoot: location) ifTrue: [
-			((self checkoutHasNoCommit: location) and: [ (self firstFilesIn: location ignoringGit: true) isEmpty ]) ifTrue: [
+	| files reference |
+	reference := location asFileReference.
+	reference exists ifFalse: [ ^ #absent ].
+	reference isDirectory ifFalse: [ self signalLocationIsAFile: reference ].
+	(self isGitCheckoutRoot: reference) ifTrue: [
+			((self checkoutHasNoCommit: reference) and: [ (self firstFilesIn: reference ignoringGit: true) isEmpty ]) ifTrue: [
 				^ #emptyCheckout ].
-			self signalLocationIsACheckout: location ].
-	files := self firstFilesIn: location ignoringGit: false.
-	files ifNotEmpty: [ self signalLocation: location holdsFiles: files ].
+			self signalLocationIsACheckout: reference ].
+	files := self firstFilesIn: reference ignoringGit: false.
+	files ifNotEmpty: [ self signalLocation: reference holdsFiles: files ].
 	^ #empty
 ]
 
@@ -171,9 +234,9 @@ MCPCreateRepositoryCommand >> matchingRegisteredRepositories [
 	"The registered repositories that already have the requested name or location."
 
 	| locationPath |
-	locationPath := self request location asFileReference pathString.
+	locationPath := location asFileReference pathString.
 	^ IceRepository repositories select: [ :each |
-		  each name asString = self request name or: [ (self repositoryLocationStringFor: each) = locationPath ] ]
+		  each name asString = name or: [ (self repositoryLocationStringFor: each) = locationPath ] ]
 ]
 
 { #category : 'private - results' }
@@ -205,15 +268,14 @@ MCPCreateRepositoryCommand >> packageWarningsFor: aRepository [
 { #category : 'private - signaling' }
 MCPCreateRepositoryCommand >> refusalPrefix [
 
-	^ String streamContents: [ :stream |
-		  stream << 'Cannot ' << self request operation << ' repository ' << self request name << ': ' ]
+	^ String streamContents: [ :stream | stream << 'Cannot ' << verb << ' repository ' << name << ': ' ]
 ]
 
 { #category : 'private - signaling' }
 MCPCreateRepositoryCommand >> refusePackagesNotInImage [
 	"A repository registering a package the image lacks would only leave a registration to repair."
 
-	self request packageNames
+	packageNames
 		detect: [ :each | (self packageOrganizer hasPackage: each) not ]
 		ifFound: [ :packageName | self signalPackageNotInImageNamed: packageName ]
 		ifNone: [ ]
@@ -227,7 +289,7 @@ MCPCreateRepositoryCommand >> refuseRegisteredNameOrLocation [
 	matches := self matchingRegisteredRepositories.
 	matches ifEmpty: [ ^ self ].
 	matches
-		detect: [ :each | each name asString = self request name ]
+		detect: [ :each | each name asString = name ]
 		ifFound: [ :repository | self signalNameRegisteredFor: repository among: matches ]
 		ifNone: [ self signalLocationRegisteredFor: matches first among: matches ]
 ]
@@ -236,14 +298,14 @@ MCPCreateRepositoryCommand >> refuseRegisteredNameOrLocation [
 MCPCreateRepositoryCommand >> refuseRelativeLocation [
 	"The image would resolve a relative location against its own working directory, which is not the caller's."
 
-	self request location asFileReference isAbsolute ifTrue: [ ^ self ].
+	location asFileReference isAbsolute ifTrue: [ ^ self ].
 	MCPCommandError
 		signalErrorCode: #RepositoryLocationNotAbsolute
 		message: (String streamContents: [ :stream |
-					 stream << self refusalPrefix << 'location ' << self request location
+					 stream << self refusalPrefix << 'location ' << location
 					 << ' is not an absolute path, and the image would resolve it against its own working directory, '
 					 << FileSystem workingDirectory fullName << '. Give the full path.' ])
-		details: self request requestedContext
+		details: self requestedDetails
 ]
 
 { #category : 'private - creating' }
@@ -252,7 +314,7 @@ MCPCreateRepositoryCommand >> registerCheckoutAt: aLocation during: aBlock [
 
 	| repository |
 	repository := IceLibgitRepository new
-		              name: self request name;
+		              name: name;
 		              location: aLocation;
 		              yourself.
 	repository pluginManager repositoryWillBeCreated: repository.
@@ -268,14 +330,25 @@ MCPCreateRepositoryCommand >> registerEmptyCheckoutAt: aLocation [
 	"Its project is unborn: give it a source directory, as Iceberg's creator does, and make that directory. Nothing in .git is touched, so a remote set there before is kept."
 
 	^ self registerCheckoutAt: aLocation during: [ :repository |
-			  self setSubdirectory: (self request subdirectory ifNil: [ '' ]) on: repository.
+			  self setSubdirectory: (subdirectory ifNil: [ '' ]) on: repository.
 			  (self repositorySourceDirectoryFor: repository) ensureCreateDirectory ]
+]
+
+{ #category : 'accessing' }
+MCPCreateRepositoryCommand >> requestedDetails [
+	"What a refusal says of the repository asked for."
+
+	^ {
+		  (#name -> name).
+		  (#location -> location).
+		  (#subdirectory -> (subdirectory ifNil: [ '' ])).
+		  (#packages -> packageNames) } asDictionary
 ]
 
 { #category : 'private - signaling' }
 MCPCreateRepositoryCommand >> signalAlreadyRegistered: aMessage among: matches [
 
-	MCPCommandError signalErrorCode: #RepositoryAlreadyRegistered message: aMessage details: (self request requestedContext copy
+	MCPCommandError signalErrorCode: #RepositoryAlreadyRegistered message: aMessage details: (self requestedDetails copy
 			 at: #matchingRepositories put: (matches collect: [ :each | each name asString ] as: Array) sort;
 			 yourself)
 ]
@@ -293,7 +366,7 @@ MCPCreateRepositoryCommand >> signalLocation: aLocation holdsFiles: filePaths [
 					 stream
 					 <<
 					 '. Give a location that does not exist yet or holds no file; to keep what is there, run git init there and register it with repository_attach.' ])
-		details: (self request requestedContext copy
+		details: (self requestedDetails copy
 				 at: #files put: filePaths;
 				 yourself)
 ]
@@ -306,7 +379,7 @@ MCPCreateRepositoryCommand >> signalLocationIsACheckout: aLocation [
 		message: (String streamContents: [ :stream |
 				 stream << self refusalPrefix << aLocation fullName
 				 << ' is already a Git checkout. Register it with repository_attach instead.' ])
-		details: self request requestedContext
+		details: self requestedDetails
 ]
 
 { #category : 'private - signaling' }
@@ -317,7 +390,7 @@ MCPCreateRepositoryCommand >> signalLocationIsAFile: aLocation [
 		message: (String streamContents: [ :stream |
 				 stream << self refusalPrefix << aLocation fullName
 				 << ' is a file. Give a directory that does not exist yet or holds no file.' ])
-		details: self request requestedContext
+		details: self requestedDetails
 ]
 
 { #category : 'private - signaling' }
