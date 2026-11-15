@@ -736,6 +736,26 @@ MCPToolMethodSearchTest >> testSelectorReferenceSuperclassAndSubclassScopesSearc
 ]
 
 { #category : 'tests' }
+MCPToolMethodSearchTest >> testSourceHitsReadAsLineNumberAndText [
+	"A source hit reads like grep: the method, then the number and text of the line that matched, unquoted; the data keeps both as fields."
+
+	| contentText result |
+	result := self callToolNamed: 'method_source_search' withArguments: {
+			          (#filter -> 'SharedLimit').
+			          (self searchScope: { (#classes -> #( 'MCPToolGetMethodTestTarget' )) }) } asDictionary.
+	contentText := (result at: #content) first at: #text.
+	self assert: (contentText lines includes:
+			 '  MCPToolGetMethodTestTarget>>readInstanceWith: line 4: local := instanceCounter ifNil: [ SharedLimit ].').
+	self assert: (contentText lines includes:
+			 '  MCPToolGetMethodTestTarget class>>readClassSide line 4: local := classCounter ifNil: [ SharedLimit ].').
+	self deny: (contentText includesSubstring: 'lineNumber=').
+	self deny: (contentText includesSubstring: 'line="').
+	self deny: (contentText includesSubstring: 'protocol=').
+	self assert: (((self dataFrom: result) at: #methods) allSatisfy: [ :each |
+			 (each at: #lineNumber) = 4 and: [ (each includesKey: #line) and: [ each includesKey: #protocol ] ] ])
+]
+
+{ #category : 'tests' }
 MCPToolMethodSearchTest >> testSourceSearchShowsTheLineThatMatched [
 
 	| data result |

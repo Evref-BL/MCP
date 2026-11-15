@@ -63,6 +63,22 @@ MCPToolSearchMethodSource >> description [
 	^ 'Find methods by text or regex in their source.'
 ]
 
+{ #category : 'private - results' }
+MCPToolSearchMethodSource >> entryLineTextFor: entry omitting: omittedKeys [
+	"EvalShape>>summary line 3: ^ self describe , ' of area '. The line is written as it is, unquoted, since nothing follows it on the row."
+
+	| lineNumber text |
+	text := super entryLineTextFor: entry omitting: omittedKeys.
+	lineNumber := (self valueIn: entry at: #lineNumber) ifNil: [ ^ text ].
+	^ String streamContents: [ :stream |
+			  stream
+				  nextPutAll: text;
+				  nextPutAll: ' line ';
+				  nextPutAll: lineNumber asString;
+				  nextPutAll: ': ';
+				  nextPutAll: ((self valueIn: entry at: #line) ifNil: [ '' ]) asString ]
+]
+
 { #category : 'private - filtering' }
 MCPToolSearchMethodSource >> filterTextsForMethodEntry: anEntry sourceText: sourceText [
 
@@ -80,6 +96,13 @@ MCPToolSearchMethodSource >> queryEntriesForQueryRequest: queryRequest [
 
 	queryRequest requiredFilterPatternForTool: self.
 	^ super queryEntriesForQueryRequest: queryRequest
+]
+
+{ #category : 'private - results' }
+MCPToolSearchMethodSource >> redundantKeys [
+	"A hit reads like grep: the line that matched closes its row, so its line and number are not fields. The protocol says nothing about where the text matched."
+
+	^ #( isExtension protocol line lineNumber )
 ]
 
 { #category : 'private - template' }

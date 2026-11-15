@@ -459,6 +459,18 @@ MCPTool >> entriesTextOn: stream for: entries labelled: label indent: indent [
 ]
 
 { #category : 'private - results' }
+MCPTool >> entryLineTextFor: entry omitting: omittedKeys [
+	"A record's own line: its name, then its inline fields as key=value, but for those its list already said for every record."
+
+	| pairs |
+	pairs := OrderedCollection new.
+	(self entryNameTextFor: entry) ifNotNil: [ :name | pairs add: name ].
+	(self inlineKeysOf: entry) do: [ :key |
+		(omittedKeys includes: key) ifFalse: [ pairs add: (self inlinePairTextFor: key in: entry) ] ].
+	^ ' ' join: pairs
+]
+
+{ #category : 'private - results' }
 MCPTool >> entryNameKeyOf: aDictionary [
 	"The key whose value opens the record, or nil. A record naming a method opens with the method reference instead."
 
@@ -487,16 +499,10 @@ MCPTool >> entryNameTextFor: aDictionary [
 MCPTool >> entryTextOn: stream for: entry indent: indent omitting: omittedKeys [
 	"What identifies the entry goes on its line, opening with its name, but for the fields its list already said for every entry; anything it carries that has its own shape, such as a method's source or a list of hits, follows on its own lines."
 
-	| name pairs |
-	name := self entryNameTextFor: entry.
-	pairs := OrderedCollection new.
-	name ifNotNil: [ pairs add: name ].
-	(self inlineKeysOf: entry) do: [ :key |
-		(omittedKeys includes: key) ifFalse: [ pairs add: (self inlinePairTextFor: key in: entry) ] ].
 	stream
 		nextPut: Character lf;
 		nextPutAll: indent;
-		nextPutAll: (' ' join: pairs).
+		nextPutAll: (self entryLineTextFor: entry omitting: omittedKeys).
 	(self shownKeysOf: entry) do: [ :key |
 			(self isInlineValue: (entry at: key)) ifFalse: [
 					self
