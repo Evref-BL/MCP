@@ -70,6 +70,13 @@ MCPToolSearchRepositories >> description [
 	^ 'Search registered repositories by image-side repository, package, class, and modification state.'
 ]
 
+{ #category : 'private - results' }
+MCPToolSearchRepositories >> entryNameKeys [
+	"A row is a repository."
+
+	^ #( name )
+]
+
 { #category : 'private - template' }
 MCPToolSearchRepositories >> failureScopePhraseFromRequest: request [
 

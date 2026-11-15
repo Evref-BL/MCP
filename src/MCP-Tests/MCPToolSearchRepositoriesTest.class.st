@@ -160,6 +160,27 @@ MCPToolSearchRepositoriesTest >> testListsStaleRepositoryAsMissingAndContinues [
 ]
 
 { #category : 'tests' }
+MCPToolSearchRepositoriesTest >> testRowsLeadWithTheRepositoryName [
+
+	| lines located unlocated |
+	unlocated := IceLibgitRepository new
+		             name: 'MCP Unlocated Repository';
+		             yourself.
+	located := self newRepositoryNamed: 'MCP Located Repository' location: FileLocator imageDirectory packageNames: #(  ).
+	self
+		withRepositories: {
+				unlocated.
+				located }
+		do: [
+				lines := (((self callToolWith: Dictionary new) at: #content) first at: #text) lines.
+				self assert: (lines anySatisfy: [ :each | each beginsWith: '  MCP Unlocated Repository isMissing=true' ]).
+				self assert: (lines anySatisfy: [ :each | each beginsWith: '  MCP Located Repository isMissing=false' ]).
+				self deny: (lines anySatisfy: [ :each | each includesSubstring: 'name=' ]).
+				self deny:
+					(lines anySatisfy: [ :each | (each beginsWith: '  MCP Unlocated Repository') and: [ each includesSubstring: 'location=' ] ]) ]
+]
+
+{ #category : 'tests' }
 MCPToolSearchRepositoriesTest >> testSearchOmitsAnEmptyLocation [
 	"A repository registered with no location has no location to name, and an empty one would read as a field with no value."
 
