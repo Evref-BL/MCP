@@ -75,23 +75,8 @@ MCPToolRemoveClassesTest >> ensureMethodSource: aMethodSource onClassNamed: aCla
 ]
 
 { #category : 'private' }
-MCPToolRemoveClassesTest >> ensureTraitNamed: aTraitName usedByClassNamed: aClassName [
-
-	self withoutEpiceaDuring: [
-			| trait |
-			trait := (Trait << aTraitName asSymbol)
-				         package: 'MCP-Tests';
-				         install.
-			trait compile: 'usedMarker ^ 1' classified: 'tests'.
-			(Object << aClassName asSymbol)
-				traits: trait;
-				package: 'MCP-Tests';
-				install ]
-]
-
-{ #category : 'private' }
 MCPToolRemoveClassesTest >> fixtureClassNames [
-	"Removed in reverse order, so a trait's user goes before the trait."
+	"Removed in reverse order, so a subclass goes before its superclass."
 
 	^ {
 		  self simpleClassName.
@@ -104,9 +89,6 @@ MCPToolRemoveClassesTest >> fixtureClassNames [
 		  self senderClassName.
 		  self mutualFirstClassName.
 		  self mutualSecondClassName.
-		  self selfReferencedClassName.
-		  self usedTraitName.
-		  self traitUserClassName.
 		  self packageCleanupClassName } asArray
 ]
 
@@ -114,6 +96,15 @@ MCPToolRemoveClassesTest >> fixtureClassNames [
 MCPToolRemoveClassesTest >> fixturePrefix [
 
 	^ self class name asString
+]
+
+{ #category : 'private' }
+MCPToolRemoveClassesTest >> howToProceed [
+	"Force gets past Pharo's check from Pharo 12, where it signals a warning rather than an error."
+
+	^ self refactoringsRefuseBreakingChanges
+		  ifTrue: [ 'Change that first: force does not get past this check in this Pharo version.' ]
+		  ifFalse: [ 'Change that first, or resend with force: true to remove anyway.' ]
 ]
 
 { #category : 'private' }
@@ -206,12 +197,6 @@ MCPToolRemoveClassesTest >> secondReferencedClassName [
 ]
 
 { #category : 'private' }
-MCPToolRemoveClassesTest >> selfReferencedClassName [
-
-	^ self fixturePrefix , 'SelfReferenced'
-]
-
-{ #category : 'private' }
 MCPToolRemoveClassesTest >> senderClassName [
 
 	^ self fixturePrefix , 'Sender'
@@ -238,60 +223,10 @@ MCPToolRemoveClassesTest >> tearDown [
 ]
 
 { #category : 'tests' }
-MCPToolRemoveClassesTest >> testAClassReferencedOnlyFromItsOwnClassSideIsNeverRefusedInPharosWords [
-	"Pharo 12 and 13 count a class-side method of the class itself as a reference, and 14 does not. Either way the answer is the image's: removed, or refused naming that method."
+MCPToolRemoveClassesTest >> testAReferenceListStopsAtFiveMethods [
+	"The text names the first five; method_reference_search lists them all."
 
 	| result |
-	self ensureClassNamed: self selfReferencedClassName superclassName: 'Object'.
-	self withoutEpiceaDuring: [
-			(self classNamed: self selfReferencedClassName) classSide
-				compile: ('make ^ {1} new' format: { self selfReferencedClassName })
-				classified: 'tests' ].
-	result := self callToolWith: (self argumentsForClassNames: { self selfReferencedClassName }).
-	(result at: #isError ifAbsent: [ false ]) ifFalse: [
-		^ self deny: (self class environment includesKey: self selfReferencedClassName asSymbol) ].
-	self assert: ((self errorFrom: result) at: #errorCode) equals: 'ClassRemovalBlocked'.
-	self assert: ((self textFrom: result) includesSubstring: ('{1} class>>make' format: { self selfReferencedClassName })).
-	self deny: ((self textFrom: result) includesSubstring: 'Pharo''s removal check')
-]
-
-{ #category : 'tests' }
-MCPToolRemoveClassesTest >> testANonEmptyClassNamedWithItsSubclassFollowsPharosCheck [
-	"Before Pharo 12 the subclass check leaves out the classes asked for, so a class goes with its subclass. From 12 it compares the subclasses' names with a dictionary's values, so, as read, naming the subclass does not lift it; force then removes both, and nothing says the subclass moved."
-
-	| error result |
-	result := self callToolWith: (self argumentsForClassNames: {
-				           self nonEmptyParentClassName.
-				           self nonEmptyChildClassName }).
-	self refactoringsRefuseBreakingChanges ifFalse: [
-			error := self errorFrom: result.
-			self assert: (error at: #errorCode) equals: 'ClassRemovalBlocked'.
-			self assert: ((error at: #subclasses) at: self nonEmptyParentClassName) equals: { self nonEmptyChildClassName }.
-			self
-				assert: (error at: #message)
-				equals:
-					('Removed none of {1}, {2}: {1}''s subclass {2} inherits the methods and variables it defines. Reparent {2} with class_update or remove it first, or resend with force to remove the classes anyway.'
-						 format: {
-								 self nonEmptyParentClassName.
-								 self nonEmptyChildClassName }).
-			self assert: (self class environment includesKey: self nonEmptyChildClassName asSymbol).
-			result := self callToolWith: (self
-					           argumentsForClassNames: {
-							           self nonEmptyParentClassName.
-							           self nonEmptyChildClassName }
-					           force: true).
-			self assert: (self warningsFrom: result) isEmpty.
-			self deny: ((self textFrom: result) includesSubstring: 'Reparented') ].
-	self deny: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
-	self deny: (self class environment includesKey: self nonEmptyParentClassName asSymbol).
-	self deny: (self class environment includesKey: self nonEmptyChildClassName asSymbol)
-]
-
-{ #category : 'tests' }
-MCPToolRemoveClassesTest >> testAReferenceListStopsAtFiveMethods [
-	"The text names the first five; method_reference_search lists them all, and the details hold every one."
-
-	| error result text |
 	1 to: 5 do: [ :index |
 			self
 				ensureMethodSource: ('refer{1} ^ {2}' format: {
@@ -299,34 +234,10 @@ MCPToolRemoveClassesTest >> testAReferenceListStopsAtFiveMethods [
 							 self referencedClassName })
 				onClassNamed: self senderClassName ].
 	result := self callToolWith: (self argumentsForClassNames: { self referencedClassName }).
-	error := self errorFrom: result.
-	text := self textFrom: result.
-	self assert: ((error at: #message) beginsWith:
-			 ('Did not remove {1}: 6 methods refer to it. Change those methods first' format: { self referencedClassName })).
-	self assert: ((error at: #referencedBy) at: self referencedClassName) size equals: 6.
-	self assert: (text lines includes:
-			 ('referencedBy: {1}>>refer1, {1}>>refer2, {1}>>refer3, {1}>>refer4, {1}>>refer5, and 1 more (method_reference_search lists them)'
-				  format: { self senderClassName }))
-]
-
-{ #category : 'tests' }
-MCPToolRemoveClassesTest >> testATraitSomeClassUsesNamesItsUsers [
-	"Before Pharo 12 a trait some class uses is not removed, its users counted as Pharo counts them, even when they are asked for too."
-
-	| error result |
-	self refactoringsRefuseBreakingChanges ifFalse: [
-		^ self skip: 'From Pharo 12 the classes using a trait do not block its removal.' ].
-	self ensureTraitNamed: self usedTraitName usedByClassNamed: self traitUserClassName.
-	result := self callToolWith: (self argumentsForClassNames: { self usedTraitName }).
-	error := self errorFrom: result.
-	self assert: (error at: #errorCode) equals: 'ClassRemovalBlocked'.
-	self
-		assert: (error at: #message)
-		equals: ('Did not remove {1}: {2} uses it. Remove {1} from {2}''s traits with class_update first.' format: {
-					 self usedTraitName.
-					 self traitUserClassName }).
-	self assert: ((error at: #users) at: self usedTraitName) equals: { self traitUserClassName }.
-	self assert: (self class environment includesKey: self usedTraitName asSymbol)
+	self assert: (((self errorFrom: result) at: #message) includesSubstring:
+			 ('{1} is referred to by {2}>>refer1, {2}>>refer2, {2}>>refer3, {2}>>refer4, {2}>>refer5, and 1 more.' format: {
+					  self referencedClassName.
+					  self senderClassName }))
 ]
 
 { #category : 'tests' }
@@ -363,23 +274,21 @@ MCPToolRemoveClassesTest >> testClassesThatReferOnlyToEachOtherAreRemovedTogethe
 { #category : 'tests' }
 MCPToolRemoveClassesTest >> testForceRemovesNonEmptyClassAndReparentsSubclassesWithWarnings [
 
-	| data result structured text warnings |
+	| data result text |
 	result := self callToolWith: (self argumentsForClassNames: { self nonEmptyParentClassName } force: true).
 	self refactoringsRefuseBreakingChanges ifTrue: [
 			self assert: (result at: #isError).
-			self assert: (((self errorFrom: result) at: #message) endsWith: 'Force does not get past this check before Pharo 12.').
+			self assert: (((self errorFrom: result) at: #message) endsWith: self howToProceed).
 			^ self assert: (self class environment includesKey: self nonEmptyParentClassName asSymbol) ].
-	structured := self structuredContentFrom: result.
 	data := self dataFrom: result.
 	text := self textFrom: result.
-	warnings := structured at: #warnings.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self deny: (self class environment includesKey: self nonEmptyParentClassName asSymbol).
 	self assert: (self classNamed: self nonEmptyChildClassName) superclass name asString equals: 'Object'.
 	self assert: (data at: #reparentedSubclassNames ifAbsent: [ #(  ) ]) equals: { self nonEmptyChildClassName } asArray.
-	self assert: warnings asArray equals: { ('{1} no longer inherits the methods and variables {2} defined.' format: {
-				 self nonEmptyChildClassName.
-				 self nonEmptyParentClassName }) }.
+	self assert: (self warningsFrom: result) asArray equals: { ('{1} is not empty and has subclasses: {2}.' format: {
+				 self nonEmptyParentClassName.
+				 self nonEmptyChildClassName }) }.
 	self assert: text lines first equals: ('Force-removed class {1}. Reparented subclasses: {2}.' format: {
 				 self nonEmptyParentClassName.
 				 self nonEmptyChildClassName }).
@@ -389,44 +298,19 @@ MCPToolRemoveClassesTest >> testForceRemovesNonEmptyClassAndReparentsSubclassesW
 { #category : 'tests' }
 MCPToolRemoveClassesTest >> testForceRemovesReferencedClassAndReturnsWarnings [
 
-	| error result structured warnings |
+	| error result |
 	result := self callToolWith: (self argumentsForClassNames: { self referencedClassName } force: true).
 	self refactoringsRefuseBreakingChanges ifTrue: [
 			error := self errorFrom: result.
-			self assert: (result at: #isError).
 			self assert: (error at: #errorCode) equals: 'ClassRemovalBlocked'.
-			self
-				assert: (error at: #message)
-				equals:
-					('Did not remove {1}: 1 method refers to it. Change that method first. Force does not get past this check before Pharo 12.'
-						 format: { self referencedClassName }).
+			self assert: ((error at: #message) endsWith: self howToProceed).
 			^ self assert: (self class environment includesKey: self referencedClassName asSymbol) ].
-	structured := self structuredContentFrom: result.
-	warnings := structured at: #warnings.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self deny: (self class environment includesKey: self referencedClassName asSymbol).
 	self assert: ((self classNamed: self senderClassName) includesSelector: #useReferencedClass).
-	self
-		assert: warnings asArray
-		equals: { ('1 method still referred to {1} and now refers to an undeclared variable: {2}>>useReferencedClass.' format: {
-					 self referencedClassName.
-					 self senderClassName }) }
-]
-
-{ #category : 'tests' }
-MCPToolRemoveClassesTest >> testForcingAClassReferencedOnlyFromItsOwnClassSideLeavesNothingBehind [
-	"Pharo 12 and 13 count a class-side method of the class itself as a reference. Force removes that method with its class, so no warning says a method was left referring to an undeclared variable."
-
-	| result |
-	self ensureClassNamed: self selfReferencedClassName superclassName: 'Object'.
-	self withoutEpiceaDuring: [
-			(self classNamed: self selfReferencedClassName) classSide
-				compile: ('make ^ {1} new' format: { self selfReferencedClassName })
-				classified: 'tests' ].
-	result := self callToolWith: (self argumentsForClassNames: { self selfReferencedClassName } force: true).
-	self deny: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
-	self deny: (self class environment includesKey: self selfReferencedClassName asSymbol).
-	self deny: ((self warningsFrom: result) anySatisfy: [ :each | each includesSubstring: 'undeclared' ])
+	self assert: (self warningsFrom: result) asArray equals: { ('{1} is referred to by {2}>>useReferencedClass.' format: {
+				 self referencedClassName.
+				 self senderClassName }) }
 ]
 
 { #category : 'tests' }
@@ -439,18 +323,14 @@ MCPToolRemoveClassesTest >> testRefusalNamesReferencesAndSubclassesTogether [
 	result := self callToolWith: (self argumentsForClassNames: { self nonEmptyParentClassName }).
 	error := self errorFrom: result.
 	self assert: (error at: #errorCode) equals: 'ClassRemovalBlocked'.
-	self assert: (error at: #message) equals: (self refactoringsRefuseBreakingChanges
-			 ifTrue: [
-					 'Did not remove {1}: 1 method refers to it, and its subclass {2} inherits the methods and variables it defines. Change that method and reparent {2} with class_update or remove it first.'
-						 format: {
-								 self nonEmptyParentClassName.
-								 self nonEmptyChildClassName } ]
-			 ifFalse: [
-					 'Did not remove {1}: 1 method refers to it, and its subclass {2} inherits the methods and variables it defines. Change that method and reparent {2} with class_update or remove it first, or resend with force to remove {1} anyway: the method will refer to an undeclared {1}, and {2} will move under Object without what {1} defines.'
-						 format: {
-								 self nonEmptyParentClassName.
-								 self nonEmptyChildClassName } ]).
-	self assert: (error at: #impactMessages) size equals: 2
+	self
+		assert: (error at: #message)
+		equals:
+			('Did not remove {1}. {1} is referred to by {3}>>useNonEmptyParent. {1} is not empty and has subclasses: {2}. {4}' format: {
+					 self nonEmptyParentClassName.
+					 self nonEmptyChildClassName.
+					 self senderClassName.
+					 self howToProceed })
 ]
 
 { #category : 'tests' }
@@ -475,7 +355,7 @@ MCPToolRemoveClassesTest >> testRefusesAClassSideNameAndRemovesNothing [
 
 { #category : 'tests' }
 MCPToolRemoveClassesTest >> testReturnsStructuredErrorWhenClassHasReferences [
-	"Pharo's check decides, and the refusal names the method that refers to the class in its own words, offering force only where it gets past the check."
+	"Pharo's check decides, and the refusal names the method that refers to the class, offering force only where it gets past the check."
 
 	| error result text |
 	result := self callToolWith: (self argumentsForClassNames: { self referencedClassName }).
@@ -484,20 +364,15 @@ MCPToolRemoveClassesTest >> testReturnsStructuredErrorWhenClassHasReferences [
 	self assert: (result at: #isError).
 	self assert: (error at: #errorCode) equals: 'ClassRemovalBlocked'.
 	self assert: (error at: #classes) equals: { self referencedClassName } asArray.
-	self assert: (error at: #message) equals: (self refactoringsRefuseBreakingChanges
-			 ifTrue: [ 'Did not remove {1}: 1 method refers to it. Change that method first.' format: { self referencedClassName } ]
-			 ifFalse: [
-					 'Did not remove {1}: 1 method refers to it. Change that method first, or resend with force to remove {1} anyway: the method will refer to an undeclared {1}.'
-						 format: { self referencedClassName } ]).
-	self assert: (text lines includes: ('referencedBy: {1}>>useReferencedClass' format: { self senderClassName })).
-	self
-		assert: ((error at: #referencedBy) at: self referencedClassName)
-		equals: { ('{1}>>useReferencedClass' format: { self senderClassName }) }.
-	self assert: (error at: #impactMessages) equals: { ('1 method refers to {1}.' format: { self referencedClassName }) }.
+	self assert: (error at: #message) equals: ('Did not remove {1}. {1} is referred to by {2}>>useReferencedClass. {3}' format: {
+				 self referencedClassName.
+				 self senderClassName.
+				 self howToProceed }).
+	self assert: (error at: #impactMessages) asArray equals: { ('{1} is referred to by {2}>>useReferencedClass.' format: {
+				 self referencedClassName.
+				 self senderClassName }) }.
 	self assert: (error at: #forceSupported) equals: self refactoringsRefuseBreakingChanges not.
-	self assert: (text includesSubstring: 'resend with force') equals: self refactoringsRefuseBreakingChanges not.
 	#( 'RBRefactoring' 'NOT ' '<n>' 'Browse' ) do: [ :each | self deny: (text includesSubstring: each) ].
-	self deny: (text lines anySatisfy: [ :each | each endsWith: ' ' ]).
 	self assert: (self class environment includesKey: self referencedClassName asSymbol)
 ]
 
@@ -520,17 +395,15 @@ MCPToolRemoveClassesTest >> testReturnsStructuredErrorWhenClassIsMissing [
 { #category : 'tests' }
 MCPToolRemoveClassesTest >> testReturnsStructuredErrorWhenNonEmptyClassHasSubclasses [
 
-	| error result structured |
+	| error result |
 	result := self callToolWith: (self argumentsForClassNames: { self nonEmptyParentClassName }).
-	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (error at: #errorCode) equals: 'ClassRemovalBlocked'.
 	self assert: (error at: #classes) equals: { self nonEmptyParentClassName } asArray.
-	self assert: ((error at: #message) includesSubstring:
-			 ('its subclass {1} inherits the methods and variables it defines' format: { self nonEmptyChildClassName })).
-	self assert: ((error at: #subclasses) at: self nonEmptyParentClassName) equals: { self nonEmptyChildClassName }.
-	self deny: (error includesKey: #referencedBy).
+	self assert: (error at: #impactMessages) asArray equals: { ('{1} is not empty and has subclasses: {2}.' format: {
+				 self nonEmptyParentClassName.
+				 self nonEmptyChildClassName }) }.
 	self assert: (self class environment includesKey: self nonEmptyParentClassName asSymbol).
 	self assert: (self classNamed: self nonEmptyChildClassName) superclass name asString equals: self nonEmptyParentClassName
 ]
@@ -571,9 +444,9 @@ MCPToolRemoveClassesTest >> testToolRequiresClassNameInSchema [
 ]
 
 { #category : 'tests' }
-MCPToolRemoveClassesTest >> testTwoReferencedClassesAreEachNamedOnTheirOwnLine [
+MCPToolRemoveClassesTest >> testTwoReferencedClassesAreEachNamed [
 
-	| error result text |
+	| error result |
 	self ensureClassNamed: self secondReferencedClassName superclassName: 'Object'.
 	self
 		ensureMethodSource: ('useReferencedToo ^ {1} new' format: { self secondReferencedClassName })
@@ -582,19 +455,16 @@ MCPToolRemoveClassesTest >> testTwoReferencedClassesAreEachNamedOnTheirOwnLine [
 				           self referencedClassName.
 				           self secondReferencedClassName }).
 	error := self errorFrom: result.
-	text := self textFrom: result.
 	self assert: (error at: #errorCode) equals: 'ClassRemovalBlocked'.
-	self assert: ((error at: #message) beginsWith:
-			 ('Removed none of {1}, {2}: 1 method refers to {1}, and 1 method refers to {2}. Change those methods first' format: {
-					  self referencedClassName.
-					  self secondReferencedClassName })).
-	self assert: (text lines includes: 'referencedBy:').
-	self assert: (text lines includes: ('  {1}: {2}>>useReferencedClass' format: {
-					  self referencedClassName.
-					  self senderClassName })).
-	self assert: (text lines includes: ('  {1}: {2}>>useReferencedToo' format: {
-					  self secondReferencedClassName.
-					  self senderClassName })).
+	self
+		assert: (error at: #message)
+		equals:
+			('Did not remove {1}, {2}. {1} is referred to by {3}>>useReferencedClass. {2} is referred to by {3}>>useReferencedToo. {4}'
+				 format: {
+						 self referencedClassName.
+						 self secondReferencedClassName.
+						 self senderClassName.
+						 self howToProceed }).
 	self assert: (self class environment includesKey: self referencedClassName asSymbol).
 	self assert: (self class environment includesKey: self secondReferencedClassName asSymbol)
 ]
@@ -609,16 +479,4 @@ MCPToolRemoveClassesTest >> textFrom: aResult [
 MCPToolRemoveClassesTest >> toolName [
 
 	^ 'class_remove'
-]
-
-{ #category : 'private' }
-MCPToolRemoveClassesTest >> traitUserClassName [
-
-	^ self fixturePrefix , 'TraitUser'
-]
-
-{ #category : 'private' }
-MCPToolRemoveClassesTest >> usedTraitName [
-
-	^ 'T' , self fixturePrefix , 'Used'
 ]

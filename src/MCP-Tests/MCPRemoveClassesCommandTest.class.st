@@ -69,7 +69,7 @@ MCPRemoveClassesCommandTest >> ensureMethodSource: aMethodSource onClassNamed: a
 
 { #category : 'private' }
 MCPRemoveClassesCommandTest >> fixtureClassNames [
-	"Removed in reverse order, so a trait's user goes before the trait."
+	"Removed in reverse order, so a subclass goes before its superclass."
 
 	^ {
 		  self simpleClassName.
@@ -77,8 +77,6 @@ MCPRemoveClassesCommandTest >> fixtureClassNames [
 		  self emptyChildClassName.
 		  self referencedClassName.
 		  self senderClassName.
-		  self usedTraitName.
-		  self traitUserClassName.
 		  self packageCleanupClassName }
 ]
 
@@ -158,29 +156,11 @@ MCPRemoveClassesCommandTest >> testABlockedRemovalSignalsWhatBlocksIt [
 	error := self captureCommandError: [ (MCPRemoveClassesCommand classNames: { self referencedClassName }) execute ].
 	self assert: error errorCode equals: #ClassRemovalBlocked.
 	self assert: (error details at: #classes) equals: { self referencedClassName }.
-	self
-		assert: ((error details at: #referencedBy) at: self referencedClassName)
-		equals: { ('{1}>>useReferencedClass' format: { self senderClassName }) }.
+	self assert: (error details at: #impactMessages) equals: { ('{1} is referred to by {2}>>useReferencedClass.' format: {
+				 self referencedClassName.
+				 self senderClassName }) }.
 	self assert: (error details at: #forceSupported) equals: self refactoringsRefuseBreakingChanges not.
 	self assert: (Smalltalk globals includesKey: self referencedClassName asSymbol)
-]
-
-{ #category : 'tests' }
-MCPRemoveClassesCommandTest >> testATraitsUsersAreItsBlockingUsersBeforePharo12 [
-	"The users Pharo 10 and 11 count, by name; a class is no trait and has none."
-
-	| command trait |
-	self withoutEpiceaDuring: [
-			trait := (Trait << self usedTraitName asSymbol)
-				         package: 'MCP-Tests';
-				         install.
-			(Object << self traitUserClassName asSymbol)
-				traits: trait;
-				package: 'MCP-Tests';
-				install ].
-	command := MCPRemoveClassesCommand classNames: #(  ).
-	self assert: (command traitUserNamesOf: trait) equals: { self traitUserClassName }.
-	self assertEmpty: (command traitUserNamesOf: Object)
 ]
 
 { #category : 'tests' }
@@ -195,11 +175,9 @@ MCPRemoveClassesCommandTest >> testForceRemovesReferencedClassAndReturnsWarningM
 	result := (MCPRemoveClassesCommand classNames: { self referencedClassName } force: true) execute.
 	self deny: (Smalltalk globals includesKey: self referencedClassName asSymbol).
 	self assert: ((self classNamed: self senderClassName) includesSelector: #useReferencedClass).
-	self
-		assert: result warningMessages
-		equals: { ('1 method still referred to {1} and now refers to an undeclared variable: {2}>>useReferencedClass.' format: {
-					 self referencedClassName.
-					 self senderClassName }) }
+	self assert: result warningMessages equals: { ('{1} is referred to by {2}>>useReferencedClass.' format: {
+				 self referencedClassName.
+				 self senderClassName }) }
 ]
 
 { #category : 'tests' }
@@ -218,16 +196,16 @@ MCPRemoveClassesCommandTest >> testMissingClassSignalsCommandError [
 { #category : 'tests' }
 MCPRemoveClassesCommandTest >> testOnlyAClassThatIsNotEmptyIsBlockedByItsSubclasses [
 
-	| command |
+	| command parent |
+	parent := self classNamed: self emptyParentClassName.
 	command := MCPRemoveClassesCommand classNames: { self emptyParentClassName }.
-	self assertEmpty: command subclassesBlockingRemoval.
+	self assertEmpty: (command subclassesBlockingRemovalOf: parent).
 	self ensureMethodSource: 'marker ^ 1' onClassNamed: self emptyParentClassName.
-	command := MCPRemoveClassesCommand classNames: { self emptyParentClassName }.
-	self
-		assert: (command subclassNamesOf: (self classNamed: self emptyParentClassName) excluding: #(  ))
-		equals: { self emptyChildClassName }.
-	self assertEmpty: (command subclassNamesOf: (self classNamed: self emptyParentClassName) excluding: { self emptyChildClassName }).
-	self assert: (command subclassesBlockingRemoval at: self emptyParentClassName) equals: { self emptyChildClassName }
+	self assert: (command subclassesBlockingRemovalOf: parent) equals: { self emptyChildClassName }.
+	command := MCPRemoveClassesCommand classNames: {
+			           self emptyParentClassName.
+			           self emptyChildClassName }.
+	self assertEmpty: (command subclassesBlockingRemovalOf: parent)
 ]
 
 { #category : 'tests' }
@@ -263,14 +241,15 @@ MCPRemoveClassesCommandTest >> testReparentsDirectSubclassesWhenRemovingEmptyCla
 
 { #category : 'tests' }
 MCPRemoveClassesCommandTest >> testTheScanFindsReferencesOutsideTheClassesAskedFor [
-	"Pharo 10 and 11 keep no list of what refers to a class, so the command scans for the methods that access its binding, as method_reference_search does. A class asked for does not count, on either side."
+	"The command finds the methods that access a class's binding, as method_reference_search does. A class asked for does not count, on either side."
 
-	| references |
-	references := (MCPRemoveClassesCommand classNames: { self referencedClassName }) referencesOutsideRemoval.
+	| command references |
+	command := MCPRemoveClassesCommand classNames: { self referencedClassName }.
+	references := command referencesOutsideRemoval.
 	self assert: references keys asArray equals: { self referencedClassName }.
 	self
-		assert: (MCPClassRemovalFacts referenceTextsOf: (references at: self referencedClassName))
-		equals: { ('{1}>>useReferencedClass' format: { self senderClassName }) }.
+		assert: (command referenceListOf: (references at: self referencedClassName))
+		equals: ('{1}>>useReferencedClass' format: { self senderClassName }).
 	self withoutEpiceaDuring: [
 			(self classNamed: self referencedClassName) classSide
 				compile: ('make ^ {1} new' format: { self referencedClassName })
@@ -279,16 +258,4 @@ MCPRemoveClassesCommandTest >> testTheScanFindsReferencesOutsideTheClassesAskedF
 			               self referencedClassName.
 			               self senderClassName }) referencesOutsideRemoval.
 	self assertEmpty: references
-]
-
-{ #category : 'private' }
-MCPRemoveClassesCommandTest >> traitUserClassName [
-
-	^ self fixturePrefix , 'TraitUser'
-]
-
-{ #category : 'private' }
-MCPRemoveClassesCommandTest >> usedTraitName [
-
-	^ 'T' , self fixturePrefix , 'Used'
 ]

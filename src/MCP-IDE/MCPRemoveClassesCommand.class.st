@@ -31,6 +31,22 @@ MCPRemoveClassesCommand class >> classNames: someClassNames force: forceRemoval 
 		  yourself
 ]
 
+{ #category : 'private - facts' }
+MCPRemoveClassesCommand >> blockingFactsFor: anException [
+	"One sentence per fact, class by class: the methods outside the removal that refer to it, and the subclasses not asked for of one that is not empty. When none explains the check, its own text, on one line."
+
+	| references facts |
+	references := self referencesOutsideRemoval.
+	facts := Array streamContents: [ :stream |
+			         self resolvedClasses do: [ :each |
+					         references
+						         at: each name asString
+						         ifPresent: [ :methods | stream nextPut: each name , ' is referred to by ' , (self referenceListOf: methods) , '.' ].
+					         (self subclassesBlockingRemovalOf: each) ifNotEmpty: [ :names |
+						         stream nextPut: each name , ' is not empty and has subclasses: ' , (', ' join: names) , '.' ] ] ].
+	^ facts ifEmpty: [ { (MCPRefactoringText withoutNegation: (MCPRefactoringText singleLine: anException messageText)) } ]
+]
+
 { #category : 'accessing' }
 MCPRemoveClassesCommand >> classNames [
 
@@ -84,6 +100,16 @@ MCPRemoveClassesCommand >> isEmptyClass: aClass [
 ]
 
 { #category : 'private - facts' }
+MCPRemoveClassesCommand >> referenceListOf: someMethods [
+	"The first five, then how many more: method_reference_search lists them all."
+
+	| names |
+	names := (someMethods collect: [ :each | each methodClass name , '>>' , each selector ] as: Set) asArray sort.
+	names size <= 5 ifTrue: [ ^ ', ' join: names ].
+	^ (', ' join: (names first: 5)) , ', and ' , (names size - 5) printString , ' more'
+]
+
+{ #category : 'private - facts' }
 MCPRemoveClassesCommand >> referencesOutsideRemoval [
 	"Class name to the methods that refer to it, outside the classes asked for, on either side, found by the test method_reference_search makes. One scan of the image's methods per class asked for."
 
@@ -96,22 +122,6 @@ MCPRemoveClassesCommand >> referencesOutsideRemoval [
 			((MCPClassReferenceQuery forClass: each) methodsReferringIn: methods) ifNotEmpty: [ :referring |
 				references at: each name asString put: referring ] ].
 	^ references
-]
-
-{ #category : 'private - facts' }
-MCPRemoveClassesCommand >> removalFactsFor: anException refactoring: aRefactoring [
-	"What blocks the removal, gathered only once Pharo's check has refused it."
-
-	^ MCPClassRemovalFacts new
-		  classes: self resolvedClasses;
-		  referencedBy: ((self referencesBlockingRemovalBy: anException refactoring: aRefactoring) collect: [ :methods |
-					   MCPClassRemovalFacts referenceTextsOf: methods ]);
-		  subclasses: self subclassesBlockingRemoval;
-		  users: self usersBlockingRemoval;
-		  forced: self force;
-		  forceSupported: (self forceGoesPast: anException);
-		  conditionText: anException messageText;
-		  yourself
 ]
 
 { #category : 'private' }
@@ -160,6 +170,28 @@ MCPRemoveClassesCommand >> shouldReparentSubclassesWhenRemoving: aClass wasEmpty
 ]
 
 { #category : 'private - facts' }
+MCPRemoveClassesCommand >> signalBlockedBy: anException [
+	"Force is offered only where it gets past the check."
+
+	| facts forceSupported howToProceed |
+	facts := self blockingFactsFor: anException.
+	forceSupported := self forceGoesPast: anException.
+	howToProceed := forceSupported
+		                ifTrue: [ 'Change that first, or resend with force: true to remove anyway.' ]
+		                ifFalse: [ 'Change that first: force does not get past this check in this Pharo version.' ].
+	^ MCPCommandError
+		  signalClassRemovalBlocked:
+			  'Did not remove ' , (', ' join: (self resolvedClasses collect: [ :each | each name ])) , '. ' , (' ' join: facts) , ' '
+			  , howToProceed
+		  details: (Dictionary new
+				   at: #classes put: (self resolvedClasses collect: [ :each | each name asString ]) asArray;
+				   at: #impactMessages put: facts;
+				   at: #howToProceed put: howToProceed;
+				   at: #forceSupported put: forceSupported;
+				   yourself)
+]
+
+{ #category : 'private - facts' }
 MCPRemoveClassesCommand >> subclassNamesOf: aClass excluding: someNames [
 	"The names of aClass's direct subclasses that are not among someNames, in order."
 
@@ -167,39 +199,16 @@ MCPRemoveClassesCommand >> subclassNamesOf: aClass excluding: someNames [
 ]
 
 { #category : 'private - facts' }
-MCPRemoveClassesCommand >> subclassesBlockingRemoval [
-	"Class name to the subclasses that block its removal. Only a class that is not empty is blocked by its subclasses: an empty one's are reparented to its superclass."
+MCPRemoveClassesCommand >> subclassesBlockingRemovalOf: aClass [
+	"An empty class's subclasses are reparented to its superclass; a non-empty one's block its removal, unless they go with it."
 
-	| subclasses |
-	subclasses := Dictionary new.
-	self resolvedClasses do: [ :each |
-			(self isEmptyClass: each) ifFalse: [
-				(self subclassesBlockingRemovalOf: each) ifNotEmpty: [ :names | subclasses at: each name asString put: names ] ] ].
-	^ subclasses
-]
-
-{ #category : 'private - facts' }
-MCPRemoveClassesCommand >> traitUserNamesOf: aClass [
-	"The names of the classes and traits that use aClass, when it is a trait, in order."
-
-	aClass isTrait ifFalse: [ ^ #(  ) ].
-	^ (aClass users collect: [ :each | each name asString ] as: Set) asArray sort
-]
-
-{ #category : 'private - facts' }
-MCPRemoveClassesCommand >> usersBlockingRemoval [
-	"Trait name to the classes using it that block its removal."
-
-	| users |
-	users := Dictionary new.
-	self resolvedClasses do: [ :each |
-		(self usersBlockingRemovalOf: each) ifNotEmpty: [ :names | users at: each name asString put: names ] ].
-	^ users
+	(self isEmptyClass: aClass) ifTrue: [ ^ #(  ) ].
+	^ self subclassNamesOf: aClass excluding: (self resolvedClasses collect: [ :each | each name asString ])
 ]
 
 { #category : 'private' }
 MCPRemoveClassesCommand >> validatePreparedRefactoring: aRefactoring [
-	"Pharo's check decides whether the removal is blocked; what blocks it is said from what the image answers, never from the check's text. Force goes past a warning, and the removal then warns of what it left behind. It cannot go past an error, which is all Pharo 10 and 11 signal."
+	"Pharo's check decides whether the removal is blocked, and the image says what blocks it. Force goes past a warning, and the removal then warns with the same facts; it cannot go past an error, which is all Pharo 10 and 11 signal."
 
 	| blocking warningMessages |
 	warningMessages := OrderedCollection new.
@@ -208,9 +217,9 @@ MCPRemoveClassesCommand >> validatePreparedRefactoring: aRefactoring [
 		do: [ :exception |
 				(self force and: [ self forceGoesPast: exception ])
 					ifTrue: [
-							warningMessages addAll: (self removalFactsFor: exception refactoring: aRefactoring) forcedWarnings.
+							warningMessages addAll: (self blockingFactsFor: exception).
 							exception resume: true ]
 					ifFalse: [ blocking := exception ] ].
-	blocking ifNotNil: [ (self removalFactsFor: blocking refactoring: aRefactoring) signalBlocked ].
+	blocking ifNotNil: [ self signalBlockedBy: blocking ].
 	^ warningMessages asArray
 ]
