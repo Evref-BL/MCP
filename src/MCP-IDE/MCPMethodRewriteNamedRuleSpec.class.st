@@ -16,10 +16,34 @@ Class {
 	#tag : 'Requests'
 }
 
+{ #category : 'testing' }
+MCPMethodRewriteNamedRuleSpec class >> canApplyRuleClass: aClass [
+	"Whether method_rewrite can apply the rule named by aClass: it is a rewrite rule, and its matchers read and are not empty. A critique names its rule for method_rewrite only then, since only then does the caller have something to do with it."
+
+	(self isRewriteRuleClass: aClass) ifFalse: [ ^ false ].
+	^ [ (self rewritesOfRuleClass: aClass) isEmptyOrNil not ]
+		  on: Error
+		  do: [ :error | false ]
+]
+
+{ #category : 'testing' }
+MCPMethodRewriteNamedRuleSpec class >> isRewriteRuleClass: aClass [
+	"Only a rewrite rule carries matchers and what to put in their place."
+
+	^ aClass isBehavior and: [ aClass inheritsFrom: ReNodeRewriteRule ]
+]
+
 { #category : 'instance creation' }
 MCPMethodRewriteNamedRuleSpec class >> named: aName index: anIndex [
 
 	^ self new initializeName: aName index: anIndex
+]
+
+{ #category : 'accessing' }
+MCPMethodRewriteNamedRuleSpec class >> rewritesOfRuleClass: aRuleClass [
+	"Renraku keeps a rule's matchers and what to put in their place in an instance variable, and offers no accessor for them."
+
+	^ aRuleClass new instVarNamed: 'matches'
 ]
 
 { #category : 'rewriting' }
@@ -51,7 +75,7 @@ MCPMethodRewriteNamedRuleSpec >> initializeName: aName index: anIndex [
 	name := aName.
 	ruleIndex := anIndex.
 	ruleClass := MCPImageLookup classNamed: aName.
-	(ruleClass inheritsFrom: ReNodeRewriteRule) ifFalse: [
+	(self class isRewriteRuleClass: ruleClass) ifFalse: [
 			MCPCommandError
 				signalErrorCode: #RewriteRuleClassHasNoPatterns
 				message: aName asString , ' is not a rewrite rule. Name a subclass of ReNodeRewriteRule.'
@@ -66,9 +90,8 @@ MCPMethodRewriteNamedRuleSpec >> name [
 
 { #category : 'rewriting' }
 MCPMethodRewriteNamedRuleSpec >> rewritesOfRule [
-	"Renraku keeps a rule's matchers and what to put in their place in an instance variable, and offers no accessor for them."
 
-	^ [ self ruleClass new instVarNamed: 'matches' ]
+	^ [ self class rewritesOfRuleClass: self ruleClass ]
 		  on: Error
 		  do: [ :error |
 				  MCPCommandError
