@@ -23,7 +23,7 @@ MCPToolApplyChangeHistoryEntries >> changeHistoryToolSpec [
 		  (#description
 		   ->
 		   'Preview or confirm applying selected Pharo change history entries to the current image. Set confirm=true to perform the previewed changes.').
-		  (#action -> 'applyEntries') } asDictionary
+		  (#action -> 'apply') } asDictionary
 ]
 
 { #category : 'private - results' }

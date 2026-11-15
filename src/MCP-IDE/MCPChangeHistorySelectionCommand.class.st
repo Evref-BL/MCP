@@ -1,18 +1,51 @@
 "
-Previews and applies selected image change history entries using Epicea's apply preview machinery.
+Selects change history entries by index, by range and by a count of the latest ones, previews what applying or reverting them would change using Epicea's apply preview machinery, and carries it out when confirmed.
+
+execute answers the preview log; log, historyFileName, selectedPairs, skippedNonCodeChangeCount and performedCount then say what was selected and done.
 "
 Class {
 	#name : 'MCPChangeHistorySelectionCommand',
 	#superclass : 'MCPChangeHistoryCommand',
+	#instVars : [
+		'revert',
+		'directoryPath',
+		'historyFile',
+		'indexes',
+		'range',
+		'latestCount',
+		'codeChangesOnly',
+		'confirm',
+		'log',
+		'historyFileName',
+		'selectedPairs',
+		'skippedNonCodeChangeCount',
+		'performedCount'
+	],
 	#category : 'MCP-IDE-Commands',
 	#package : 'MCP-IDE',
 	#tag : 'Commands'
 }
 
-{ #category : 'private - selection' }
-MCPChangeHistorySelectionCommand >> addIndexSelectionsTo: pairs fromLog: aLog [
+{ #category : 'instance creation' }
+MCPChangeHistorySelectionCommand class >> revert: revertBoolean directoryPath: aPathString historyFile: aFileName indexes: someIndexes range: rangeIndexes latestCount: aCountOrNil codeChangesOnly: codeChangesOnlyBoolean confirm: confirmBoolean [
+	"aPathString and aFileName name a .ombu file, or are nil for the session in progress. The entries are those at someIndexes and rangeIndexes, then the latest aCountOrNil of them."
 
-	request indexes do: [ :index |
+	^ self new
+		  revert: revertBoolean;
+		  directoryPath: aPathString;
+		  historyFile: aFileName;
+		  indexes: someIndexes;
+		  range: rangeIndexes;
+		  latestCount: aCountOrNil;
+		  codeChangesOnly: codeChangesOnlyBoolean;
+		  confirm: confirmBoolean;
+		  yourself
+]
+
+{ #category : 'private - selection' }
+MCPChangeHistorySelectionCommand >> addEntriesAt: someIndexes to: pairs fromLog: aLog [
+
+	someIndexes do: [ :index |
 			pairs add: {
 					index.
 					(self entryAtIndex: index inLog: aLog) } ].
@@ -23,48 +56,32 @@ MCPChangeHistorySelectionCommand >> addIndexSelectionsTo: pairs fromLog: aLog [
 MCPChangeHistorySelectionCommand >> addLatestSelectionTo: pairs fromLog: aLog [
 
 	| allPairs selected start |
-	request latestCount ifNil: [ ^ pairs ].
+	latestCount ifNil: [ ^ pairs ].
 	allPairs := self entryPairsFromLog: aLog.
-	request codeChangesOnly ifTrue: [ allPairs := allPairs select: [ :pair | self isCodeChangeEntry: pair second ] ].
+	codeChangesOnly ifTrue: [ allPairs := allPairs select: [ :pair | self isCodeChangeEntry: pair second ] ].
 	allPairs ifEmpty: [ ^ pairs ].
-	start := allPairs size - request latestCount + 1 max: 1.
+	start := allPairs size - latestCount + 1 max: 1.
 	selected := allPairs copyFrom: start to: allPairs size.
 	pairs addAll: selected.
 	^ pairs
 ]
 
-{ #category : 'private - selection' }
-MCPChangeHistorySelectionCommand >> addRangeSelectionTo: pairs fromLog: aLog [
+{ #category : 'accessing' }
+MCPChangeHistorySelectionCommand >> codeChangesOnly: aBoolean [
 
-	request hasRangeSelection ifFalse: [ ^ pairs ].
-	request startIndex to: request endIndex do: [ :index |
-			pairs add: {
-					index.
-					(self entryAtIndex: index inLog: aLog) } ].
-	^ pairs
+	codeChangesOnly := aBoolean
 ]
 
-{ #category : 'execution' }
-MCPChangeHistorySelectionCommand >> applyOrRevertEntries [
+{ #category : 'accessing' }
+MCPChangeHistorySelectionCommand >> confirm: aBoolean [
 
-	| fileName log logAndFileName previewLog performedCount rawPairs selectedPairs |
-	logAndFileName := self logAndFileNameForRequest.
-	log := logAndFileName first.
-	fileName := logAndFileName second.
-	rawPairs := self rawSelectedEntryPairsFrom: log.
-	selectedPairs := self selectedEntryPairsFromRawPairs: rawPairs.
-	previewLog := self previewLogForSelectedEntryPairs: selectedPairs fromLog: log.
-	performedCount := request confirm
-		                  ifTrue: [ self performPreviewLog: previewLog ]
-		                  ifFalse: [ 0 ].
-	^ self
-		  resultForLog: log
-		  fileName: fileName
-		  rawPairs: rawPairs
-		  selectedPairs: selectedPairs
-		  previewLog: previewLog
-		  performed: request confirm
-		  performedCount: performedCount
+	confirm := aBoolean
+]
+
+{ #category : 'accessing' }
+MCPChangeHistorySelectionCommand >> directoryPath: aPathString [
+
+	directoryPath := aPathString
 ]
 
 { #category : 'private - entries' }
@@ -81,18 +98,6 @@ MCPChangeHistorySelectionCommand >> entryAtIndex: anIndex inLog: aLog [
 	^ aLog entries at: anIndex
 ]
 
-{ #category : 'private - result' }
-MCPChangeHistorySelectionCommand >> entryInfosFromLog: aLog [
-
-	^ aLog entries collectWithIndex: [ :entry :index | MCPChangeHistoryEntryInfo fromEntry: entry index: index log: aLog ]
-]
-
-{ #category : 'private - result' }
-MCPChangeHistorySelectionCommand >> entryInfosFromPairs: pairs log: aLog [
-
-	^ pairs collect: [ :pair | MCPChangeHistoryEntryInfo fromEntry: pair second index: pair first log: aLog ]
-]
-
 { #category : 'private - entries' }
 MCPChangeHistorySelectionCommand >> entryPairsFromLog: aLog [
 
@@ -107,18 +112,52 @@ MCPChangeHistorySelectionCommand >> entryPairsFromLog: aLog [
 
 { #category : 'execution' }
 MCPChangeHistorySelectionCommand >> execute [
+	"Select the entries, preview what applying or reverting them would change, and carry that out when confirmed. Answer the preview log."
 
-	(#( 'applyEntries' 'revertEntries' ) includes: request operation) ifTrue: [ ^ self applyOrRevertEntries ].
-	MCPCommandError
-		signalErrorCode: #UnsupportedChangeHistoryOperation
-		message: 'Unsupported change history selection operation.'
-		details: { (#operation -> request operation) } asDictionary
+	| logAndFileName previewLog rawPairs |
+	logAndFileName := self logAndFileNameFromDirectoryPath: directoryPath fileName: historyFile.
+	log := logAndFileName first.
+	historyFileName := logAndFileName second.
+	rawPairs := self rawSelectedEntryPairsFrom: log.
+	selectedPairs := self selectedEntryPairsFromRawPairs: rawPairs.
+	skippedNonCodeChangeCount := rawPairs size - selectedPairs size.
+	previewLog := self previewLogForSelectedEntryPairs: selectedPairs fromLog: log.
+	performedCount := confirm
+		                  ifTrue: [ self performPreviewLog: previewLog ]
+		                  ifFalse: [ 0 ].
+	^ previewLog
 ]
 
-{ #category : 'private - log' }
-MCPChangeHistorySelectionCommand >> logAndFileNameForRequest [
+{ #category : 'accessing' }
+MCPChangeHistorySelectionCommand >> historyFile: aFileName [
 
-	^ self logAndFileNameFromDirectoryPath: request directoryPath fileName: request historyFileName
+	historyFile := aFileName
+]
+
+{ #category : 'accessing' }
+MCPChangeHistorySelectionCommand >> historyFileName [
+	"The name of the file execute selected the entries from, nil when the session in progress has none."
+
+	^ historyFileName
+]
+
+{ #category : 'accessing' }
+MCPChangeHistorySelectionCommand >> indexes: someIndexes [
+
+	indexes := someIndexes
+]
+
+{ #category : 'accessing' }
+MCPChangeHistorySelectionCommand >> latestCount: aCountOrNil [
+
+	latestCount := aCountOrNil
+]
+
+{ #category : 'accessing' }
+MCPChangeHistorySelectionCommand >> log [
+	"The log execute selected the entries from."
+
+	^ log
 ]
 
 { #category : 'private - apply' }
@@ -132,24 +171,37 @@ MCPChangeHistorySelectionCommand >> performPreviewLog: aPreviewLog [
 		           entries: entries;
 		           errorHandlerBlock: [ :error | error signal ];
 		           yourself.
-	request isRevertOperation
+	revert
 		ifTrue: [ factory revertCodeChangesInPreviewMode ]
 		ifFalse: [ factory applyCodeChanges ].
 	^ entries size
 ]
 
+{ #category : 'accessing' }
+MCPChangeHistorySelectionCommand >> performedCount [
+	"How many previewed changes execute carried out: none unless confirmed."
+
+	^ performedCount
+]
+
 { #category : 'private - preview' }
-MCPChangeHistorySelectionCommand >> previewLogForSelectedEntryPairs: selectedPairs fromLog: aLog [
+MCPChangeHistorySelectionCommand >> previewLogForSelectedEntryPairs: somePairs fromLog: aLog [
 
 	| factory |
-	selectedPairs ifEmpty: [ ^ EpLog newWithEvents: #(  ) ].
+	somePairs ifEmpty: [ ^ EpLog newWithEvents: #(  ) ].
 	factory := EpLogBrowserOperationFactory new
 		           logBrowserModel: (EpLogBrowserPresenter newWithLog: aLog);
-		           entries: (selectedPairs collect: [ :pair | pair second ]);
+		           entries: (somePairs collect: [ :pair | pair second ]);
 		           errorHandlerBlock: [ :error | error signal ];
 		           yourself.
-	request isRevertOperation ifTrue: [ ^ factory newRevertPreviewLog ].
+	revert ifTrue: [ ^ factory newRevertPreviewLog ].
 	^ factory newApplyPreviewLog
+]
+
+{ #category : 'accessing' }
+MCPChangeHistorySelectionCommand >> range: someIndexes [
+
+	range := someIndexes
 ]
 
 { #category : 'private - selection' }
@@ -157,31 +209,37 @@ MCPChangeHistorySelectionCommand >> rawSelectedEntryPairsFrom: aLog [
 
 	| pairs |
 	pairs := OrderedCollection new.
-	self addIndexSelectionsTo: pairs fromLog: aLog.
-	self addRangeSelectionTo: pairs fromLog: aLog.
+	self addEntriesAt: indexes to: pairs fromLog: aLog.
+	self addEntriesAt: range to: pairs fromLog: aLog.
 	self addLatestSelectionTo: pairs fromLog: aLog.
 	^ self uniqueSortedPairsFrom: pairs
 ]
 
-{ #category : 'private - result' }
-MCPChangeHistorySelectionCommand >> resultForLog: aLog fileName: fileName rawPairs: rawPairs selectedPairs: selectedPairs previewLog: previewLog performed: performedFlag performedCount: anInteger [
+{ #category : 'accessing' }
+MCPChangeHistorySelectionCommand >> revert: aBoolean [
 
-	^ MCPChangeHistorySelectionResult
-		  action: request action
-		  historyFileName: fileName
-		  selectionCriteria: request selectionCriteria
-		  selectedEntries: (self entryInfosFromPairs: selectedPairs log: aLog)
-		  previewEntries: (self entryInfosFromLog: previewLog)
-		  skippedNonCodeChangeCount: rawPairs size - selectedPairs size
-		  performed: performedFlag
-		  performedCount: anInteger
+	revert := aBoolean
 ]
 
 { #category : 'private - selection' }
 MCPChangeHistorySelectionCommand >> selectedEntryPairsFromRawPairs: rawPairs [
 
-	request codeChangesOnly ifFalse: [ ^ rawPairs ].
+	codeChangesOnly ifFalse: [ ^ rawPairs ].
 	^ rawPairs select: [ :pair | self isCodeChangeEntry: pair second ]
+]
+
+{ #category : 'accessing' }
+MCPChangeHistorySelectionCommand >> selectedPairs [
+	"The selected entries execute previewed, as pairs of their one-based index and the entry, in index order."
+
+	^ selectedPairs
+]
+
+{ #category : 'accessing' }
+MCPChangeHistorySelectionCommand >> skippedNonCodeChangeCount [
+	"How many selected entries execute left out for not being code changes."
+
+	^ skippedNonCodeChangeCount
 ]
 
 { #category : 'private - selection' }

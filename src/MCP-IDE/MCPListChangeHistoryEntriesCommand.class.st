@@ -1,25 +1,77 @@
 "
-Command that lists granular entries from image change history.
+Reads the entries of a change history, from the session in progress or from a named .ombu file, keeping the code changes only when asked and the newest first when asked.
+
+execute answers each entry with its one-based index; log and historyFileName then say where they were read from.
 "
 Class {
 	#name : 'MCPListChangeHistoryEntriesCommand',
 	#superclass : 'MCPChangeHistoryCommand',
+	#instVars : [
+		'directoryPath',
+		'historyFile',
+		'codeChangesOnly',
+		'newestFirst',
+		'log',
+		'historyFileName'
+	],
 	#category : 'MCP-IDE-Commands',
 	#package : 'MCP-IDE',
 	#tag : 'Commands'
 }
 
+{ #category : 'instance creation' }
+MCPListChangeHistoryEntriesCommand class >> directoryPath: aPathString historyFile: aFileName codeChangesOnly: codeChangesOnlyBoolean newestFirst: newestFirstBoolean [
+	"aPathString and aFileName name a .ombu file, or are nil for the directory holding this image's history and the session in progress."
+
+	^ self new
+		  directoryPath: aPathString;
+		  historyFile: aFileName;
+		  codeChangesOnly: codeChangesOnlyBoolean;
+		  newestFirst: newestFirstBoolean;
+		  yourself
+]
+
+{ #category : 'accessing' }
+MCPListChangeHistoryEntriesCommand >> codeChangesOnly: aBoolean [
+
+	codeChangesOnly := aBoolean
+]
+
+{ #category : 'accessing' }
+MCPListChangeHistoryEntriesCommand >> directoryPath: aPathString [
+
+	directoryPath := aPathString
+]
+
 { #category : 'execution' }
 MCPListChangeHistoryEntriesCommand >> execute [
+	"Answer the entries of the history as pairs of their one-based index and the entry, the oldest first unless newestFirst."
 
-	| entryInfos fileName log logAndFileName page resultPage |
-	logAndFileName := self logAndFileNameFromDirectoryPath: request directoryPath fileName: request historyFileName.
+	| logAndFileName |
+	logAndFileName := self logAndFileNameFromDirectoryPath: directoryPath fileName: historyFile.
 	log := logAndFileName first.
-	fileName := logAndFileName second.
-	page := self pageFrom: (self matchingEntryPairsFrom: log) offset: request offset limit: request limit.
-	entryInfos := page entries collect: [ :pair | MCPChangeHistoryEntryInfo fromEntry: pair second index: pair first log: log ].
-	resultPage := MCPPaginationResult entries: entryInfos nextOffset: page nextOffset.
-	^ MCPChangeHistoryListEntriesResult historyFileName: fileName page: resultPage
+	historyFileName := logAndFileName second.
+	^ self matchingEntryPairsFrom: log
+]
+
+{ #category : 'accessing' }
+MCPListChangeHistoryEntriesCommand >> historyFile: aFileName [
+
+	historyFile := aFileName
+]
+
+{ #category : 'accessing' }
+MCPListChangeHistoryEntriesCommand >> historyFileName [
+	"The name of the file execute read the entries from, nil when the session in progress has none."
+
+	^ historyFileName
+]
+
+{ #category : 'accessing' }
+MCPListChangeHistoryEntriesCommand >> log [
+	"The log execute read the entries from."
+
+	^ log
 ]
 
 { #category : 'private' }
@@ -28,16 +80,16 @@ MCPListChangeHistoryEntriesCommand >> matchingEntryPairsFrom: aLog [
 	| pairs |
 	pairs := OrderedCollection new.
 	aLog entries doWithIndex: [ :entry :index |
-			(request codeChangesOnly not or: [ self isCodeChangeEntry: entry ]) ifTrue: [
+			(codeChangesOnly not or: [ self isCodeChangeEntry: entry ]) ifTrue: [
 					pairs add: {
 							index.
 							entry } ] ].
-	request newestFirst ifTrue: [ ^ pairs reversed asOrderedCollection ].
+	newestFirst ifTrue: [ ^ pairs reversed asOrderedCollection ].
 	^ pairs
 ]
 
-{ #category : 'private' }
-MCPListChangeHistoryEntriesCommand >> pageFrom: entryPairs offset: anOffset limit: aLimit [
+{ #category : 'accessing' }
+MCPListChangeHistoryEntriesCommand >> newestFirst: aBoolean [
 
-	^ MCPPaginationResult fromEntries: entryPairs limit: aLimit offset: anOffset
+	newestFirst := aBoolean
 ]

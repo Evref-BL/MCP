@@ -23,5 +23,5 @@ MCPToolRevertChangeHistoryEntries >> changeHistoryToolSpec [
 		  (#description
 		   ->
 		   'Preview or confirm reverting selected Pharo change history entries from the current image. Set confirm=true to perform the previewed changes.').
-		  (#action -> 'revertEntries') } asDictionary
+		  (#action -> 'revert') } asDictionary
 ]

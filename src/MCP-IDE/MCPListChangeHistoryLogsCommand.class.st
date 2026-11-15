@@ -1,28 +1,48 @@
 "
-Command that lists change history files available to the running image.
+Lists the change history files of a directory, the one holding this image's history unless another is named, the most recently modified first.
+
+execute answers the file references; isCurrentFile: then tells which one holds the session in progress.
 "
 Class {
 	#name : 'MCPListChangeHistoryLogsCommand',
 	#superclass : 'MCPChangeHistoryCommand',
+	#instVars : [
+		'directoryPath',
+		'currentFile'
+	],
 	#category : 'MCP-IDE-Commands',
 	#package : 'MCP-IDE',
 	#tag : 'Commands'
 }
 
+{ #category : 'instance creation' }
+MCPListChangeHistoryLogsCommand class >> directoryPath: aPathString [
+	"aPathString names the directory to list, or is nil for the one holding this image's history."
+
+	^ self new
+		  directoryPath: aPathString;
+		  yourself
+]
+
 { #category : 'private' }
-MCPListChangeHistoryLogsCommand >> currentHistoryFileToInclude: currentFile inDirectory: aDirectory [
+MCPListChangeHistoryLogsCommand >> currentHistoryFileToIncludeIn: aDirectory [
 
 	currentFile ifNil: [ ^ nil ].
-	request directoryPath ifNil: [ ^ currentFile ].
+	directoryPath ifNil: [ ^ currentFile ].
 	(self sameFileReference: aDirectory as: currentFile parent) ifFalse: [ ^ nil ].
 	^ currentFile
 ]
 
-{ #category : 'private' }
-MCPListChangeHistoryLogsCommand >> directoryForRequestWithCurrentFile: currentFile [
+{ #category : 'accessing' }
+MCPListChangeHistoryLogsCommand >> directoryPath: aPathString [
 
-	| directory directoryPath |
-	directoryPath := request directoryPath.
+	directoryPath := aPathString
+]
+
+{ #category : 'private' }
+MCPListChangeHistoryLogsCommand >> directoryToList [
+
+	| directory |
 	directoryPath ifNil: [ ^ self historyDirectoryForCurrentFile: currentFile ].
 	directory := directoryPath asFileReference.
 	currentFile ifNotNil: [
@@ -46,30 +66,32 @@ MCPListChangeHistoryLogsCommand >> directoryForRequestWithCurrentFile: currentFi
 
 { #category : 'execution' }
 MCPListChangeHistoryLogsCommand >> execute [
+	"Answer the history files of the directory, the most recently modified first, with the session in progress among them when it is kept there."
 
-	| currentFile directory files includeFile logInfos page resultPage |
+	| directory |
 	currentFile := self currentHistoryFileReference.
-	directory := self directoryForRequestWithCurrentFile: currentFile.
-	includeFile := self currentHistoryFileToInclude: currentFile inDirectory: directory.
-	files := self historyFileReferencesFrom: directory including: includeFile.
-	page := MCPPaginationResult fromEntries: files limit: request limit offset: request offset.
-	logInfos := page entries collect: [ :each |
-		            MCPChangeHistoryLogInfo fromFileReference: each isCurrent: (self sameFileReference: each as: currentFile) ].
-	resultPage := MCPPaginationResult entries: logInfos nextOffset: page nextOffset.
-	^ MCPChangeHistoryListLogsResult directoryPath: (directory ifNotNil: [ directory fullName ]) page: resultPage
+	directory := self directoryToList.
+	^ self historyFileReferencesFrom: directory including: (self currentHistoryFileToIncludeIn: directory)
 ]
 
 { #category : 'private' }
-MCPListChangeHistoryLogsCommand >> historyFileReferencesFrom: aDirectory including: currentFile [
+MCPListChangeHistoryLogsCommand >> historyFileReferencesFrom: aDirectory including: aFile [
 
 	| files |
 	files := aDirectory ifNil: [ #(  ) ] ifNotNil: [ :directory |
 			         directory exists
 				         ifTrue: [ directory files select: [ :each | each extension = 'ombu' ] ]
 				         ifFalse: [ #(  ) ] ].
-	currentFile ifNotNil: [
-		(files anySatisfy: [ :each | self sameFileReference: each as: currentFile ]) ifFalse: [ files := files copyWith: currentFile ] ].
+	aFile ifNotNil: [
+		(files anySatisfy: [ :each | self sameFileReference: each as: aFile ]) ifFalse: [ files := files copyWith: aFile ] ].
 	^ files asArray sort: [ :left :right | self shouldSortFile: left before: right ]
+]
+
+{ #category : 'testing' }
+MCPListChangeHistoryLogsCommand >> isCurrentFile: aFileReference [
+	"Whether aFileReference holds the session in progress, as execute found it."
+
+	^ self sameFileReference: aFileReference as: currentFile
 ]
 
 { #category : 'private' }

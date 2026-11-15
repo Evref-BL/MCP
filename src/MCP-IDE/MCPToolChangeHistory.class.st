@@ -1,7 +1,7 @@
 "
 Shared implementation for change-history tools.
 
-The public API talks about change history rather than Epicea or Ombu; the implementation uses Epicea logs and .ombu files behind the scenes.
+The public API talks about change history rather than Epicea or Ombu; the implementation uses Epicea logs and .ombu files behind the scenes. A tool builds its operation from the request in commandForRequest:, describes what the operation answers with MCPChangeHistoryLogInfo and MCPChangeHistoryEntryInfo in dataFor:, and says what it found in successSummaryForData:.
 "
 Class {
 	#name : 'MCPToolChangeHistory',
@@ -30,37 +30,23 @@ MCPToolChangeHistory >> additionalKeywords [
 ]
 
 { #category : 'private - execution' }
-MCPToolChangeHistory >> commandForRequest: changeHistoryRequest [
+MCPToolChangeHistory >> dataFor: request [
+	"The data the answer carries, read from the image as the request asks."
 
-	changeHistoryRequest operation = 'listFiles' ifTrue: [
-		^ MCPListChangeHistoryLogsCommand tool: self request: changeHistoryRequest ].
-	changeHistoryRequest operation = 'listEntries' ifTrue: [
-		^ MCPListChangeHistoryEntriesCommand tool: self request: changeHistoryRequest ].
-	(#( 'applyEntries' 'revertEntries' ) includes: changeHistoryRequest operation) ifTrue: [
-		^ MCPChangeHistorySelectionCommand tool: self request: changeHistoryRequest ].
-	MCPCommandError
-		signalErrorCode: #UnsupportedChangeHistoryAction
-		message: 'Unsupported change history action: ' , changeHistoryRequest operation
-		details: {
-				(#action -> changeHistoryRequest operation).
-				(#supportedActions -> #( 'listFiles' 'listEntries' 'applyEntries' 'revertEntries' )) } asDictionary
+	^ self subclassResponsibility
 ]
 
 { #category : 'executing' }
 MCPToolChangeHistory >> executeWithRequest: request [
+	"Every history tool answers the data it reads, under a sentence that says what it found."
 
 	^ self
 		  executeParsedRequestFrom: request
-		  do: [ :changeHistoryRequest |
-				  | data result |
-				  result := (self commandForRequest: changeHistoryRequest) execute.
-				  data := result asDictionary.
-				  self successResultText: (self successSummaryForData: data operation: changeHistoryRequest operation) data: data ]
-		  onError: [ :error :ignored |
-				  error
-					  mcpCommandErrorDo: [ :commandError |
-					  self errorResultText: commandError messageText details: commandError structuredDetails ]
-					  otherwise: [ :toolError | self errorResultFor: toolError ] ]
+		  do: [ :arguments |
+				  | data |
+				  data := self dataFor: arguments.
+				  self successResultText: (self successSummaryForData: data) data: data ]
+		  onError: [ :error :arguments | self errorResultFor: error ]
 ]
 
 { #category : 'private - schema' }
@@ -129,26 +115,8 @@ MCPToolChangeHistory >> redundantKeys [
 ]
 
 { #category : 'private - results' }
-MCPToolChangeHistory >> successSummaryForData: data operation: operation [
+MCPToolChangeHistory >> successSummaryForData: data [
+	"The sentence that says what the data holds."
 
-	| action selectedCount performedCount previewCount |
-	operation = 'listFiles' ifTrue: [
-		^ self listedSummaryForCount: (data at: #files ifAbsent: [ #(  ) ]) size noun: 'change history file' data: data ].
-	operation = 'listEntries' ifTrue: [
-		^ self listedSummaryForCount: (data at: #entries ifAbsent: [ #(  ) ]) size noun: 'change history entry' data: data ].
-	(#( 'applyEntries' 'revertEntries' ) includes: operation) ifTrue: [
-			action := data at: #action ifAbsent: [ 'apply' ].
-			selectedCount := data at: #selectedCount ifAbsent: [ 0 ].
-			(data at: #performed ifAbsent: [ false ])
-				ifTrue: [
-						performedCount := data at: #performedCount ifAbsent: [ 0 ].
-						^ String streamContents: [ :stream |
-								  stream << 'Performed ' << action << ' for ' << (self textForCount: performedCount noun: 'previewed change') << ' from '
-								  << (self textForCount: selectedCount noun: 'selected history entry') << '.' ] ]
-				ifFalse: [
-						previewCount := data at: #previewCount ifAbsent: [ 0 ].
-						^ String streamContents: [ :stream |
-								  stream << 'Previewed ' << action << ' for ' << (self textForCount: previewCount noun: 'applicable change') << ' from '
-								  << (self textForCount: selectedCount noun: 'selected history entry') << '.' ] ] ].
-	^ 'Change history operation completed.'
+	^ self subclassResponsibility
 ]

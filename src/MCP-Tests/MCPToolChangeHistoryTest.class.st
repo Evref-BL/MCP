@@ -203,6 +203,26 @@ MCPToolChangeHistoryTest >> testApplyEntriesWithoutConfirmOnlyPreviews [
 ]
 
 { #category : 'tests' }
+MCPToolChangeHistoryTest >> testApplyPreviewDoesNotEchoTheSelection [
+	"An apply previews the very entries it selected, and its selection criteria are the request read back, so its text prints the preview alone. A revert previews the inverse changes, so it prints what it selected as well."
+
+	self withTemporaryRecoveryClassDo: [ :class |
+			| applyText revertText textFor |
+			textFor := [ :action :entryIndex |
+				           ((self callToolWith: {
+						             (#action -> action).
+						             (#indexes -> { entryIndex }) } asDictionary) at: #content) first at: #text ].
+			applyText := textFor value: 'applyEntries' value: (self recordRecoverableMethodAdditionOn: class).
+			self deny: (applyText includesSubstring: 'selectionCriteria').
+			self deny: (applyText includesSubstring: 'selectedEntries').
+			self assert: (applyText includesSubstring: 'previewEntries').
+			revertText := textFor value: 'revertEntries' value: (self recordMethodAdditionOn: class).
+			self deny: (revertText includesSubstring: 'selectionCriteria').
+			self assert: (revertText includesSubstring: 'selectedEntries').
+			self assert: (revertText includesSubstring: 'previewEntries') ]
+]
+
+{ #category : 'tests' }
 MCPToolChangeHistoryTest >> testClassSideEntryReadsAsAClassSideMethod [
 	"Epicea names the behavior of a class-side change with its class suffix. The entry carries the side apart, so it names the class alone, and reads the way Pharo writes a class-side method."
 

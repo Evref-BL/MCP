@@ -38,9 +38,27 @@ MCPToolListChangeHistoryFiles >> buildInputSchema [
 ]
 
 { #category : 'private - execution' }
-MCPToolListChangeHistoryFiles >> commandForRequest: changeHistoryRequest [
+MCPToolListChangeHistoryFiles >> commandForRequest: request [
+	"The listing of the directory the request names, else of the one holding this image's history."
 
-	^ MCPListChangeHistoryLogsCommand tool: self request: changeHistoryRequest
+	^ MCPListChangeHistoryLogsCommand directoryPath: (request stringArgumentNamed: 'directoryPath')
+]
+
+{ #category : 'private - execution' }
+MCPToolListChangeHistoryFiles >> dataFor: request [
+
+	| data operation page |
+	operation := self commandForRequest: request.
+	page := MCPPaginationResult
+		        fromEntries: operation execute
+		        limit: self defaultPageLimit
+		        offset: (request integerArgumentNamed: 'offset').
+	data := Dictionary new.
+	data at: #files put: (page entries
+			 collect: [ :each | (MCPChangeHistoryLogInfo fromFileReference: each isCurrent: (operation isCurrentFile: each)) asDictionary ]
+			 as: Array).
+	page nextOffset ifNotNil: [ :offset | data at: #nextOffset put: offset ].
+	^ data
 ]
 
 { #category : 'metadata' }
@@ -62,10 +80,10 @@ MCPToolListChangeHistoryFiles >> entryNameKeys [
 	^ #( file )
 ]
 
-{ #category : 'private - request' }
-MCPToolListChangeHistoryFiles >> parsedRequestFromToolRequest: request [
+{ #category : 'private - results' }
+MCPToolListChangeHistoryFiles >> successSummaryForData: data [
 
-	^ MCPChangeHistoryListLogsRequest fromRequest: request tool: self
+	^ self listedSummaryForCount: (data at: #files) size noun: 'change history file' data: data
 ]
 
 { #category : 'metadata' }

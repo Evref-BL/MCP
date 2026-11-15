@@ -207,22 +207,22 @@ MCPToolContractsTest >> changeHistoryToolFlowSpecs [
 		  {
 			  (#toolClass -> MCPToolListChangeHistoryFiles).
 			  (#arguments -> Dictionary new).
-			  (#requestClass -> MCPChangeHistoryListLogsRequest).
+			  (#requestClass -> MCPToolRequest).
 			  (#commandClass -> MCPListChangeHistoryLogsCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolListChangeHistoryEntries).
 			  (#arguments -> Dictionary new).
-			  (#requestClass -> MCPChangeHistoryListEntriesRequest).
+			  (#requestClass -> MCPToolRequest).
 			  (#commandClass -> MCPListChangeHistoryEntriesCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolApplyChangeHistoryEntries).
 			  (#arguments -> { (#latestCount -> 1) } asDictionary).
-			  (#requestClass -> MCPChangeHistorySelectionRequest).
+			  (#requestClass -> MCPToolRequest).
 			  (#commandClass -> MCPChangeHistorySelectionCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolRevertChangeHistoryEntries).
 			  (#arguments -> { (#latestCount -> 1) } asDictionary).
-			  (#requestClass -> MCPChangeHistorySelectionRequest).
+			  (#requestClass -> MCPToolRequest).
 			  (#commandClass -> MCPChangeHistorySelectionCommand) } asDictionary }
 ]
 

@@ -1,11 +1,11 @@
 "
-Abstract base for image change-history commands.
+Abstract base for the change-history operations.
 
-It centralizes command construction, current Epicea log access, history-file loading, and small reference predicates shared by change-history list and selection commands.
+It reads the history Epicea keeps for the image, from the session in progress or from a .ombu file in a directory, and holds the steps its subclasses share: finding the current history file and its directory, loading a log, and telling code changes apart. A subclass takes plain arguments and answers history files, entries or a preview log.
 "
 Class {
 	#name : 'MCPChangeHistoryCommand',
-	#superclass : 'MCPToolRequestCommand',
+	#superclass : 'MCPCommand',
 	#category : 'MCP-IDE-Commands',
 	#package : 'MCP-IDE',
 	#tag : 'Commands'
