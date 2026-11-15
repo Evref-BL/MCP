@@ -1,5 +1,5 @@
 "
-Abstract base for repository result DTOs that report a repository transition. It owns the before snapshot, after snapshot, and package summary shared by branch, fetch, pull, and adopt-head operations.
+Abstract base for repository result DTOs that report a change of a repository's state. It keeps the repository as it was before the change and as it is after, and the packages of its working copy after.
 "
 Class {
 	#name : 'MCPRepositoryTransitionResult',

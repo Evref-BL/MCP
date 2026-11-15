@@ -1,5 +1,5 @@
 "
-Concrete repository_commit tool. It creates an Iceberg commit for a registered repository through MCPToolRepositoryOperation.
+Concrete repository_commit tool. It writes the packages of a registered repository to its checkout as repository_export does, then stages and commits every change git sees there, through MCPToolRepositoryOperation.
 "
 Class {
 	#name : 'MCPToolCommitRepository',
