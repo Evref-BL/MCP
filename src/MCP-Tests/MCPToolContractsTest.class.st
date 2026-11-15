@@ -1291,6 +1291,31 @@ MCPToolContractsTest >> testEvaluateThatNeverStartedSaysSo [
 	self assert: command evaluator isTerminated
 ]
 
+{ #category : 'tests - evaluate' }
+MCPToolContractsTest >> testEvaluateTimeoutSecondsIsAnIntegerFromOneToSixHundred [
+	"A limit of 0 would stop the code before it ran, and one above ten minutes would let an evaluation nobody waits for any more cost more. The description says what a limit longer than the client waits costs."
+
+	| property tool |
+	tool := MCPToolEvaluate new.
+	property := self inputPropertyNamed: 'timeoutSeconds' inTool: tool.
+	self assert: property type equals: 'integer'.
+	self assert: (property extraProperties at: #default) equals: 30.
+	self assert: (property extraProperties at: #minimum) equals: 1.
+	self assert: (property extraProperties at: #maximum) equals: 600.
+	self assert: (property description includesSubstring: 'loses the answer').
+	self assert: tool inputSchema required equals: #( 'code' ).
+	self
+		assertResult: (self callDiscoveredToolNamed: 'image_evaluate' withArguments: {
+					 (#code -> '1').
+					 (#timeoutSeconds -> 0) } asDictionary)
+		refusesArgumentsSaying: 'timeoutSeconds must be at least 1, not 0.'.
+	self
+		assert: (tool parsedRequestFromToolRequest: (tool requestFromToolCallArguments: {
+						  (#code -> '1').
+						  (#timeoutSeconds -> 3600) } asDictionary)) timeoutSeconds
+		equals: 600
+]
+
 { #category : 'tests' }
 MCPToolContractsTest >> testEvaluateToolPointsAtTheToolCatalog [
 	"image_evaluate is where an agent lands when it believes no dedicated tool exists, so its description has to name the way out."

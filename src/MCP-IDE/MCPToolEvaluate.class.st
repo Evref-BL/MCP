@@ -32,11 +32,19 @@ MCPToolEvaluate >> buildInputSchema [
 
 	^ MCPStructureInputSchema new
 		  type: 'object';
-		  properties: { (MCPStructureProperties new
-				   name: 'code';
-				   type: 'string';
-				   description: 'Smalltalk code to run.';
-				   yourself) };
+		  properties: {
+				  (MCPStructureProperties new
+					   name: 'code';
+					   type: 'string';
+					   description: 'Smalltalk code to run.';
+					   yourself).
+				  ((self
+					    integerSchemaPropertyNamed: 'timeoutSeconds'
+					    description: self timeoutSecondsDescription
+					    default: self defaultTimeoutSeconds)
+					   minimum: 1;
+					   maximum: self maximumTimeoutSeconds;
+					   yourself) };
 		  required: #( 'code' );
 		  yourself
 ]
@@ -298,6 +306,13 @@ MCPToolEvaluate >> syntaxFailureMessageFor: aNotice line: aLineNumber [
 					  stream
 						  nextPutAll: ' Line ';
 						  print: aLineNumber ] ]
+]
+
+{ #category : 'metadata' }
+MCPToolEvaluate >> timeoutSecondsDescription [
+	"Through a client that waits less than the limit, the answer is lost while the code goes on, so the way to run longer work is said here too."
+
+	^ 'Stop the code after this many seconds; a limit longer than the client waits loses the answer. Fork longer work so that it writes its result to a file.'
 ]
 
 { #category : 'metadata' }
