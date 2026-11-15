@@ -318,7 +318,7 @@ MCPToolContractsTest >> evaluate: aString within: seconds deferringInto: actions
 	"The answer of an evaluation with a time limit, as a call gets it, leaving in actions what the call deferred until after its response."
 
 	^ MCPPostResponseActions value: actions during: [
-			  self callDiscoveredToolNamed: 'image_evaluate' withArguments: {
+			  self callDiscoveredToolNamed: 'evaluate' withArguments: {
 					  (#code -> aString).
 					  (#timeoutSeconds -> seconds) } asDictionary ]
 ]
@@ -1164,7 +1164,7 @@ MCPToolContractsTest >> testEvaluateAnswersThePrintStringAsItsWholeText [
 
 	self
 		assert: (self firstTextFromToolResult:
-				 (self callDiscoveredToolNamed: 'image_evaluate' withArguments: { (#code -> '3 + 4') } asDictionary))
+				 (self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> '3 + 4') } asDictionary))
 		equals: '7'
 ]
 
@@ -1174,7 +1174,7 @@ MCPToolContractsTest >> testEvaluateAnswersWhenTheCodeEndsItsOwnProcess [
 
 	| result |
 	result := self
-		          callDiscoveredToolNamed: 'image_evaluate'
+		          callDiscoveredToolNamed: 'evaluate'
 		          withArguments: { (#code -> 'Processor activeProcess terminate') } asDictionary.
 	self assert: (self resultIndicatesError: result).
 	self
@@ -1189,7 +1189,7 @@ MCPToolContractsTest >> testEvaluateAnswersWhileAForkHoldsItsPriority [
 	self timeLimit: 30 seconds.
 	self underEitherPreemptionRuleDo: [ :yields |
 			| actions before milliseconds |
-			before := self liveProcessesNamed: 'image_evaluate stop'.
+			before := self liveProcessesNamed: 'evaluate stop'.
 			actions := OrderedCollection new.
 			[
 				milliseconds := Time millisecondsToRun: [
@@ -1199,7 +1199,7 @@ MCPToolContractsTest >> testEvaluateAnswersWhileAForkHoldsItsPriority [
 							                deferringInto: actions ] ] ensure: [
 					actions do: #value.
 					(self liveProcessesNamed: 'mcp-evaluate-hog-probe') do: [ :each | each terminate ] ].
-			((self liveProcessesNamed: 'image_evaluate stop') copyWithoutAll: before) do: [ :each | self waitUntilEnded: each ].
+			((self liveProcessesNamed: 'evaluate stop') copyWithoutAll: before) do: [ :each | self waitUntilEnded: each ].
 			self assert: milliseconds < 15000 ]
 ]
 
@@ -1208,7 +1208,7 @@ MCPToolContractsTest >> testEvaluateCatchesHaltAsRuntimeFailure [
 
 	| result text |
 	result := self
-		          callDiscoveredToolNamed: 'image_evaluate'
+		          callDiscoveredToolNamed: 'evaluate'
 		          withArguments: { (#code -> 'Halt signal: ''mcp halt test''') } asDictionary.
 	text := self firstTextFromToolResult: result.
 	self assert: (result at: #isError).
@@ -1222,7 +1222,7 @@ MCPToolContractsTest >> testEvaluateFailureTextNamesSuggestionsAndFrames [
 
 	| lines text |
 	text := self firstTextFromToolResult: (self
-			         callDiscoveredToolNamed: 'image_evaluate'
+			         callDiscoveredToolNamed: 'evaluate'
 			         withArguments: { (#code -> 'OrderedCollection new adAll: #( 1 2 3 )') } asDictionary).
 	lines := text lines.
 	self assert: (lines anySatisfy: [ :each | each beginsWith: 'Did you mean: addAll:' ]).
@@ -1234,7 +1234,7 @@ MCPToolContractsTest >> testEvaluateFailureTextNamesSuggestionsAndFrames [
 MCPToolContractsTest >> testEvaluateIsMarkedAsAdvancedEscapeHatch [
 
 	| description |
-	self assert: (MCPToolEvaluate new asJRPCJSON at: #name) equals: 'image_evaluate'.
+	self assert: (MCPToolEvaluate new asJRPCJSON at: #name) equals: 'evaluate'.
 	description := MCPToolEvaluate new description.
 	self assert: (description includesSubstring: 'escape hatch').
 	self assert: (description includesSubstring: 'arbitrary Smalltalk code')
@@ -1286,7 +1286,7 @@ MCPToolContractsTest >> testEvaluateLetsNotificationsUseTheirDefaultAction [
 
 	| data result |
 	result := self
-		          callDiscoveredToolNamed: 'image_evaluate'
+		          callDiscoveredToolNamed: 'evaluate'
 		          withArguments: { (#code -> 'MCPToolDefaultActionNotification signal') } asDictionary.
 	data := self dataFrom: result.
 	self deny: (result includesKey: #isError).
@@ -1343,7 +1343,7 @@ MCPToolContractsTest >> testEvaluateNotStartedTextTellsAnEvaluationFromAFork [
 
 	| evaluation fork lines summary |
 	evaluation := [ 1 ] newProcess
-		              name: 'image_evaluate';
+		              name: 'evaluate';
 		              yourself.
 	fork := [ 2 ] newProcess
 		        name: 'mcp-fork-probe';
@@ -1376,7 +1376,7 @@ MCPToolContractsTest >> testEvaluateOmitsTruncationFieldsForSmallResults [
 
 	| data |
 	data := self dataFrom:
-		        (self callDiscoveredToolNamed: 'image_evaluate' withArguments: { (#code -> '#( 1 2 3 )') } asDictionary).
+		        (self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> '#( 1 2 3 )') } asDictionary).
 	self deny: (data includesKey: #truncated).
 	self deny: (data includesKey: #resultSize)
 ]
@@ -1389,7 +1389,7 @@ MCPToolContractsTest >> testEvaluateQueuesPostResponseActionsOfTheCall [
 	actions := OrderedCollection new.
 	result := MCPPostResponseActions value: actions during: [
 			          self
-				          callDiscoveredToolNamed: 'image_evaluate'
+				          callDiscoveredToolNamed: 'evaluate'
 				          withArguments: { (#code -> 'MCPPostResponseActions value add: [ 1 ]. #queued') } asDictionary ].
 	self assert: (self firstTextFromToolResult: result) equals: '#queued'.
 	self assert: actions size equals: 1
@@ -1400,7 +1400,7 @@ MCPToolContractsTest >> testEvaluateReportsTheFailingSourceLine [
 	"A character offset makes a caller count through its own source to find the mistake."
 
 	| error result |
-	result := self callDiscoveredToolNamed: 'image_evaluate' withArguments: { (#code -> '| s |
+	result := self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> '| s |
 s := WriteStream on: String new.
 s << cr.
 s contents') } asDictionary.
@@ -1417,7 +1417,7 @@ MCPToolContractsTest >> testEvaluateReportsTruncationAndCollectionSize [
 	| data |
 	data := self dataFrom:
 		        (self
-			         callDiscoveredToolNamed: 'image_evaluate'
+			         callDiscoveredToolNamed: 'evaluate'
 			         withArguments: { (#code -> '(1 to: 40000) asOrderedCollection') } asDictionary).
 	self assert: (data at: #truncated).
 	self assert: (data at: #resultSize) equals: 40000.
@@ -1438,7 +1438,7 @@ MCPToolContractsTest >> testEvaluateResumesNotificationsSignaledByADefaultAction
 
 	| data result |
 	result := self
-		          callDiscoveredToolNamed: 'image_evaluate'
+		          callDiscoveredToolNamed: 'evaluate'
 		          withArguments: { (#code -> 'MCPToolNestedNotification signal') } asDictionary.
 	data := self dataFrom: result.
 	self deny: (result includesKey: #isError).
@@ -1449,7 +1449,7 @@ MCPToolContractsTest >> testEvaluateResumesNotificationsSignaledByADefaultAction
 MCPToolContractsTest >> testEvaluateReturnsCompilationFailureInformation [
 
 	| result text |
-	result := self callDiscoveredToolNamed: 'image_evaluate' withArguments: { (#code -> '1 +') } asDictionary.
+	result := self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> '1 +') } asDictionary.
 	text := self firstTextFromToolResult: result.
 	self assert: (result at: #isError).
 	self assert: (text includesSubstring: 'failed during compilation').
@@ -1461,7 +1461,7 @@ MCPToolContractsTest >> testEvaluateReturnsCompilationFailureInformation [
 MCPToolContractsTest >> testEvaluateReturnsRuntimeFailureInformation [
 
 	| result text |
-	result := self callDiscoveredToolNamed: 'image_evaluate' withArguments: { (#code -> 'Error signal: ''boom''') } asDictionary.
+	result := self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> 'Error signal: ''boom''') } asDictionary.
 	text := self firstTextFromToolResult: result.
 	self assert: (result at: #isError).
 	self assert: (text includesSubstring: 'failed during execution').
@@ -1475,7 +1475,7 @@ MCPToolContractsTest >> testEvaluateRunsJustBelowTheCallingProcess [
 
 	self
 		assert: (self firstTextFromToolResult:
-				 (self callDiscoveredToolNamed: 'image_evaluate' withArguments: { (#code -> 'Processor activePriority') } asDictionary))
+				 (self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> 'Processor activePriority') } asDictionary))
 		equals: (Processor activePriority - 1) printString
 ]
 
@@ -1506,7 +1506,7 @@ MCPToolContractsTest >> testEvaluateStackTraceStopsAtTheEvaluatedCode [
 
 	| error stackTrace |
 	error := self errorFrom:
-		         (self callDiscoveredToolNamed: 'image_evaluate' withArguments: { (#code -> '#( 1 2 3 ) do: [ :each | each frobnicate ]') } asDictionary).
+		         (self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> '#( 1 2 3 ) do: [ :each | each frobnicate ]') } asDictionary).
 	stackTrace := error at: #stackTrace.
 	self assert: stackTrace last equals: 'UndefinedObject>>DoIt'.
 	self deny: (stackTrace anySatisfy: [ :each | each includesSubstring: 'MCP' ]).
@@ -1543,10 +1543,10 @@ MCPToolContractsTest >> testEvaluateStopCollectsGarbageAfterTheAnswer [
 
 	| actions before helpers |
 	self timeLimit: 30 seconds.
-	before := self liveProcessesNamed: 'image_evaluate stop'.
+	before := self liveProcessesNamed: 'evaluate stop'.
 	actions := OrderedCollection new.
 	self evaluate: '[ true ] whileTrue' within: 1 deferringInto: actions.
-	helpers := (self liveProcessesNamed: 'image_evaluate stop') copyWithoutAll: before.
+	helpers := (self liveProcessesNamed: 'evaluate stop') copyWithoutAll: before.
 	[
 		self assert: actions size equals: 1.
 		self assert: helpers size equals: 1.
@@ -1563,7 +1563,7 @@ MCPToolContractsTest >> testEvaluateStopCollectsGarbageOnceTheCodeHasUnwound [
 	| actions before helpers collections |
 	self timeLimit: 30 seconds.
 	MCPEvaluateTestProbe reset.
-	before := self liveProcessesNamed: 'image_evaluate stop'.
+	before := self liveProcessesNamed: 'evaluate stop'.
 	actions := OrderedCollection new.
 	[
 		self
@@ -1572,7 +1572,7 @@ MCPToolContractsTest >> testEvaluateStopCollectsGarbageOnceTheCodeHasUnwound [
 		collections := self fullGarbageCollections.
 		actions do: #value.
 		self assert: self fullGarbageCollections equals: collections.
-		helpers := (self liveProcessesNamed: 'image_evaluate stop') copyWithoutAll: before.
+		helpers := (self liveProcessesNamed: 'evaluate stop') copyWithoutAll: before.
 		self assert: helpers size equals: 1 ] ensure: [
 			MCPEvaluateTestProbe release.
 			MCPEvaluateTestProbe holder ifNotNil: [ :holder | self waitUntilEnded: holder ] ].
@@ -1587,11 +1587,11 @@ MCPToolContractsTest >> testEvaluateStopCollectsGarbageWhenTheAnswerNeverGoesOut
 
 	| actions before collections helpers |
 	self timeLimit: 30 seconds.
-	before := self liveProcessesNamed: 'image_evaluate stop'.
+	before := self liveProcessesNamed: 'evaluate stop'.
 	collections := self fullGarbageCollections.
 	actions := OrderedCollection new.
 	self stoppedTextUnwindingBrieflyOf: '[ true ] whileTrue' deferringInto: actions.
-	helpers := (self liveProcessesNamed: 'image_evaluate stop') copyWithoutAll: before.
+	helpers := (self liveProcessesNamed: 'evaluate stop') copyWithoutAll: before.
 	self assert: helpers size equals: 1.
 	self waitUntilEnded: helpers first.
 	self assert: helpers first isTerminated.
@@ -1650,11 +1650,11 @@ MCPToolContractsTest >> testEvaluateStopsAComputingLoopUnderEitherPreemptionRule
 	self underEitherPreemptionRuleDo: [ :yields |
 			| actions before evaluators lines milliseconds result rule |
 			rule := 'With processPreemptionYields ' , yields printString.
-			before := self processesNamed: 'image_evaluate'.
+			before := self processesNamed: 'evaluate'.
 			actions := OrderedCollection new.
 			[
 				milliseconds := Time millisecondsToRun: [ result := self evaluate: '[ true ] whileTrue' within: 1 deferringInto: actions ].
-				evaluators := (self processesNamed: 'image_evaluate') copyWithoutAll: before ] ensure: [ actions do: #value ].
+				evaluators := (self processesNamed: 'evaluate') copyWithoutAll: before ] ensure: [ actions do: #value ].
 			lines := (self stoppedTextOf: result) lines.
 			self deny: (lines includes: 'Its ensure blocks were still running when this answer was sent.') description: rule.
 			self assert: (lines includes: 'Stopped in:').
@@ -1827,7 +1827,7 @@ MCPToolContractsTest >> testEvaluateTimeoutSecondsIsAnIntegerFromOneToSixHundred
 	self assert: (property description includesSubstring: 'loses the answer').
 	self assert: tool inputSchema required equals: #( 'code' ).
 	self
-		assertResult: (self callDiscoveredToolNamed: 'image_evaluate' withArguments: {
+		assertResult: (self callDiscoveredToolNamed: 'evaluate' withArguments: {
 					 (#code -> '1').
 					 (#timeoutSeconds -> 0) } asDictionary)
 		refusesArgumentsSaying: 'timeoutSeconds must be at least 1, not 0.'.
@@ -1840,10 +1840,10 @@ MCPToolContractsTest >> testEvaluateTimeoutSecondsIsAnIntegerFromOneToSixHundred
 
 { #category : 'tests' }
 MCPToolContractsTest >> testEvaluateToolPointsAtTheToolCatalog [
-	"image_evaluate is where an agent lands when it believes no dedicated tool exists, so its description has to name the way out."
+	"evaluate is where an agent lands when it believes no dedicated tool exists, so its description has to name the way out."
 
 	| tool |
-	tool := self toolRegistry toolNamed: 'image_evaluate' ifAbsent: [ self fail: 'Missing image_evaluate tool' ].
+	tool := self toolRegistry toolNamed: 'evaluate' ifAbsent: [ self fail: 'Missing evaluate tool' ].
 	self assert: (tool description includesSubstring: 'tool_search')
 ]
 
@@ -1983,10 +1983,10 @@ MCPToolContractsTest >> testHandleJSONAnswersMissingRequiredArgumentsAsAToolErro
 
 	| response |
 	response := self handleJSON:
-		            '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"tool_call","arguments":{"name":"image_evaluate","arguments":{}}}}'.
+		            '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"tool_call","arguments":{"name":"evaluate","arguments":{}}}}'.
 	self deny: (response includesSubstring: '"code":-32602').
 	self assert: (response includesSubstring: '"isError":true').
-	self assert: (response includesSubstring: 'Invalid arguments for image_evaluate. code is required.')
+	self assert: (response includesSubstring: 'Invalid arguments for evaluate. code is required.')
 ]
 
 { #category : 'tests - validation' }
@@ -1995,7 +1995,7 @@ MCPToolContractsTest >> testHandleJSONAnswersToolCallArgumentsItRefusesAsAToolEr
 
 	| response |
 	response := self handleJSON:
-		            '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"tool_call","arguments":{"toolName":"image_evaluate","arguments":{}}}}'.
+		            '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"tool_call","arguments":{"toolName":"evaluate","arguments":{}}}}'.
 	self deny: (response includesSubstring: '"code":-32602').
 	self assert: (response includesSubstring: '"isError":true').
 	self assert: (response includesSubstring: 'Invalid arguments for tool_call. name is required.').
@@ -2191,7 +2191,7 @@ MCPToolContractsTest >> testMessageNotUnderstoodSuggestsNearMissSelectors [
 
 	| error |
 	error := self errorFrom: (self
-			         callDiscoveredToolNamed: 'image_evaluate'
+			         callDiscoveredToolNamed: 'evaluate'
 			         withArguments: { (#code -> 'OrderedCollection new adAll: #( 1 2 3 )') } asDictionary).
 	self assert: (error at: #suggestedSelectors) first equals: 'addAll:'
 ]
@@ -2202,7 +2202,7 @@ MCPToolContractsTest >> testMessageNotUnderstoodSuggestsNothingForAnUnrelatedSel
 
 	| error |
 	error := self errorFrom: (self
-			         callDiscoveredToolNamed: 'image_evaluate'
+			         callDiscoveredToolNamed: 'evaluate'
 			         withArguments: { (#code -> 'OrderedCollection new frobnicate') } asDictionary).
 	self deny: (error includesKey: #suggestedSelectors)
 ]
@@ -2548,7 +2548,7 @@ MCPToolContractsTest >> testRPCAdvertisesTheAdvertisedSurfaceOnly [
 	toolNames := (self mcpWithoutObservabilityExport rpcToolsList at: #tools) collect: [ :each | each at: #name ].
 	expectedAdvertisedToolNames := #( 'tool_search' 'tool_get' 'tool_call' 'class_search' 'class_get' 'class_create' 'class_remove'
 	                                  'method_search' 'method_source_search' 'method_reference_search' 'method_get' 'method_compile'
-	                                  'method_remove' 'image_evaluate' 'test_run' ).
+	                                  'method_remove' 'evaluate' 'test_run' ).
 	discoverableToolNames := registry toolNames difference: registry advertisedToolNames.
 	self assert: expectedAdvertisedToolNames size equals: 15.
 	self assert: toolNames asSet equals: registry advertisedToolNames asSet.
@@ -2724,7 +2724,7 @@ MCPToolContractsTest >> testRpcToolCallCatchesUnhandledHaltFromTool [
 MCPToolContractsTest >> testRpcToolCallRefusesAMissingRequiredArgument [
 
 	self
-		assertResult: (self callDiscoveredToolNamed: 'image_evaluate' withArguments: Dictionary new)
+		assertResult: (self callDiscoveredToolNamed: 'evaluate' withArguments: Dictionary new)
 		refusesArgumentsSaying: 'code is required.'
 ]
 
@@ -2749,7 +2749,7 @@ MCPToolContractsTest >> testRpcToolCallRefusesAnInvalidNestedArrayItem [
 MCPToolContractsTest >> testRpcToolCallRefusesAnUnexpectedArgument [
 
 	self
-		assertResult: (self callDiscoveredToolNamed: 'image_evaluate' withArguments: {
+		assertResult: (self callDiscoveredToolNamed: 'evaluate' withArguments: {
 					 (#code -> '1 + 1').
 					 (#unexpected -> true) } asDictionary)
 		refusesArgumentsSaying: 'unexpected is not accepted here; expected one of '

@@ -445,7 +445,7 @@ MCPLocalObservabilityBackendTest >> testTraceSnapshotHasCompactErrorShape [
 	| errorData output record result state |
 	state := MCPLocalObservabilityBackend new.
 	state outputBudgetBytes: 10000.
-	record := state recordToolCallStart: 'image_evaluate'.
+	record := state recordToolCallStart: 'evaluate'.
 	errorData := {
 		             (#message -> 'failed').
 		             (#stackTrace -> #( 'frame one' 'frame two' )).

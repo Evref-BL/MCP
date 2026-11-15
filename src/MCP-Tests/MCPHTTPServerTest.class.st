@@ -86,7 +86,7 @@ MCPHTTPServerTest >> testAComputingEvaluationLeavesOtherCallsAnswered [
 		{
 			(#evaluation -> 0
 			 ->
-			 '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"image_evaluate","arguments":{"code":"[ true ] whileTrue","timeoutSeconds":2}}}').
+			 '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"evaluate","arguments":{"code":"[ true ] whileTrue","timeoutSeconds":2}}}').
 			(#listing -> 500 -> '{"jsonrpc":"2.0","id":2,"method":"tools/list"}') } do: [ :call |
 				[
 					| client |

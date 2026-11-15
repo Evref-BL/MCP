@@ -409,7 +409,7 @@ Against that default, a server is configured directly:
 ```smalltalk
 mcp := MCP new.
 mcp addTool: MyProjectToolListWidgets.          "or addTools: { A. B }"
-mcp removeTool: 'image_evaluate'.
+mcp removeTool: 'evaluate'.
 mcp advertiseTool: MyProjectToolListWidgets.    "adds one to what is advertised"
 mcp advertiseTools: { MyProjectToolListWidgets }. "replaces the advertised set"
 mcp advertiseAllTools.

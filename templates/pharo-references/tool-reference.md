@@ -122,7 +122,7 @@ the running image; both preview, and perform with `confirm=true`.
 
 ## The Escape Hatch
 
-`image_evaluate` runs arbitrary Smalltalk. Prefer a dedicated tool when one
+`evaluate` runs arbitrary Smalltalk. Prefer a dedicated tool when one
 exists: it validates its input and answers structured data. A warning raised
 while the code runs is printed after the value, so a deprecated method's answer
 arrives with the deprecation that qualifies it, and so is what the code wrote to
@@ -135,7 +135,7 @@ a file, which a later call reads.
 
 Compiling is the case that bites. Method source separates lines with CR, and
 `method_compile` normalizes what it is given, while a bare `compile:` from
-`image_evaluate` stores whatever it receives, so source written with LF compares
+`evaluate` stores whatever it receives, so source written with LF compares
 unequal to every other method in the image.
 
 A debugger somebody opened is theirs. Read it, act on what it shows with the

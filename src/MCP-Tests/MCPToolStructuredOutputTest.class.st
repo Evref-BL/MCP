@@ -104,7 +104,7 @@ MCPToolStructuredOutputTest >> testEntryFieldsWithSeparatorsAreQuoted [
 MCPToolStructuredOutputTest >> testEvaluateAnsweringTheSilentTranscriptNamesIt [
 
 	| result |
-	result := self callToolNamed: 'image_evaluate' withArguments: { (#code -> 'Transcript') } asDictionary.
+	result := self callToolNamed: 'evaluate' withArguments: { (#code -> 'Transcript') } asDictionary.
 	self assert: ((result at: #content) first at: #text) equals: 'Transcript'.
 	self deny: ((self dataFrom: result) includesKey: #transcript)
 ]
@@ -114,7 +114,7 @@ MCPToolStructuredOutputTest >> testEvaluateAnswersTranscriptContentsWithWhatItWr
 
 	| result |
 	result := self
-		          callToolNamed: 'image_evaluate'
+		          callToolNamed: 'evaluate'
 		          withArguments: { (#code -> 'Transcript show: ''written''. Transcript contents') } asDictionary.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: ((self dataFrom: result) at: #resultPrintString) equals: '''written'''
@@ -124,7 +124,7 @@ MCPToolStructuredOutputTest >> testEvaluateAnswersTranscriptContentsWithWhatItWr
 MCPToolStructuredOutputTest >> testEvaluateDeclaresAnUndeclaredNameAsAPlaygroundDoes [
 
 	| result |
-	result := self callToolNamed: 'image_evaluate' withArguments: { (#code -> 'total := 3 + 4. total * 2') } asDictionary.
+	result := self callToolNamed: 'evaluate' withArguments: { (#code -> 'total := 3 + 4. total * 2') } asDictionary.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: ((self dataFrom: result) at: #resultPrintString) equals: '14'
 ]
@@ -135,7 +135,7 @@ MCPToolStructuredOutputTest >> testEvaluateEndingOnTheTranscriptAnswersWhatItWro
 
 	| contentText data result truncatedText |
 	result := self
-		          callToolNamed: 'image_evaluate'
+		          callToolNamed: 'evaluate'
 		          withArguments: { (#code -> 'Transcript show: ''Balance: 120''; cr; show: ''Largest Deposit: 100''') } asDictionary.
 	contentText := (result at: #content) first at: #text.
 	data := self dataFrom: result.
@@ -157,8 +157,8 @@ MCPToolStructuredOutputTest >> testEvaluateEndingOnTheTranscriptAnswersWhatItWro
 MCPToolStructuredOutputTest >> testEvaluateForgetsItsVariablesAfterTheCall [
 
 	| result |
-	self callToolNamed: 'image_evaluate' withArguments: { (#code -> 'leftover := 5') } asDictionary.
-	result := self callToolNamed: 'image_evaluate' withArguments: { (#code -> 'leftover') } asDictionary.
+	self callToolNamed: 'evaluate' withArguments: { (#code -> 'leftover := 5') } asDictionary.
+	result := self callToolNamed: 'evaluate' withArguments: { (#code -> 'leftover') } asDictionary.
 	self compilerReadsUndeclaredNamesAsNil ifTrue: [ ^ self assert: ((self dataFrom: result) at: #resultPrintString) equals: 'nil' ].
 	self assert: (result at: #isError).
 	self assert: ((self errorFrom: result) at: #sourceLine) equals: 'leftover'
@@ -168,7 +168,7 @@ MCPToolStructuredOutputTest >> testEvaluateForgetsItsVariablesAfterTheCall [
 MCPToolStructuredOutputTest >> testEvaluateLeavesACapitalizedNameUndeclared [
 
 	| result |
-	result := self callToolNamed: 'image_evaluate' withArguments: { (#code -> 'MCPNoSuchGlobalForThisTest new') } asDictionary.
+	result := self callToolNamed: 'evaluate' withArguments: { (#code -> 'MCPNoSuchGlobalForThisTest new') } asDictionary.
 	self assert: (result at: #isError).
 	self compilerReadsUndeclaredNamesAsNil ifTrue: [ ^ self ].
 	self assert: ((self errorFrom: result) at: #sourceLine) equals: 'MCPNoSuchGlobalForThisTest new'
@@ -179,7 +179,7 @@ MCPToolStructuredOutputTest >> testEvaluateLeavesANameNeverAssignedUndeclared [
 	"A Playground would read it as nil. A name only read is far more often a typo or a missing selector, and the compile error points at it."
 
 	| result |
-	result := self callToolNamed: 'image_evaluate' withArguments: { (#code -> 'neverAssigned isNil') } asDictionary.
+	result := self callToolNamed: 'evaluate' withArguments: { (#code -> 'neverAssigned isNil') } asDictionary.
 	self compilerReadsUndeclaredNamesAsNil ifTrue: [ ^ self deny: (result at: #isError ifAbsent: [ false ]) ].
 	self assert: (result at: #isError).
 	self assert: ((self errorFrom: result) at: #sourceLine) equals: 'neverAssigned isNil'
@@ -191,7 +191,7 @@ MCPToolStructuredOutputTest >> testEvaluatePutsTheTranscriptBackAfterAFailure [
 	| previous result |
 	previous := Smalltalk globals at: #Transcript.
 	result := self
-		          callToolNamed: 'image_evaluate'
+		          callToolNamed: 'evaluate'
 		          withArguments: { (#code -> 'Transcript show: ''before''. Error signal: ''boom''') } asDictionary.
 	self assert: (result at: #isError).
 	self assert: (Smalltalk globals at: #Transcript) identicalTo: previous.
@@ -218,7 +218,7 @@ MCPToolStructuredOutputTest >> testEvaluateReportsADeprecationBesideTheValue [
 			protocol: 'tests'
 			on: (self classNamed: className).
 		result := self
-			          callToolNamed: 'image_evaluate'
+			          callToolNamed: 'evaluate'
 			          withArguments:
 			          { (#code -> '| fixture | fixture := MCPEvaluateDeprecationFixture new. fixture answer + fixture answer') }
 				          asDictionary.
@@ -239,7 +239,7 @@ MCPToolStructuredOutputTest >> testEvaluateReportsAPlainWarningBesideTheValue [
 	"Warning>>defaultAction treats an unhandled warning as an error, so a call over code that only warned used to fail before its value arrived."
 
 	| contentText result warnings |
-	result := self callToolNamed: 'image_evaluate' withArguments: { (#code -> 'Warning signal: ''take care''. 42') } asDictionary.
+	result := self callToolNamed: 'evaluate' withArguments: { (#code -> 'Warning signal: ''take care''. 42') } asDictionary.
 	warnings := self warningsFrom: result.
 	contentText := (result at: #content) first at: #text.
 	self deny: (result at: #isError ifAbsent: [ false ]).
@@ -252,7 +252,7 @@ MCPToolStructuredOutputTest >> testEvaluateReportsAPlainWarningBesideTheValue [
 MCPToolStructuredOutputTest >> testEvaluateReturnsStructuredError [
 
 	| result structured error |
-	result := self callToolNamed: 'image_evaluate' withArguments: { (#code -> '1 +') } asDictionary.
+	result := self callToolNamed: 'evaluate' withArguments: { (#code -> '1 +') } asDictionary.
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
@@ -264,7 +264,7 @@ MCPToolStructuredOutputTest >> testEvaluateReturnsStructuredError [
 MCPToolStructuredOutputTest >> testEvaluateReturnsStructuredRuntimeErrorWithStackTrace [
 
 	| error result stackTrace |
-	result := self callToolNamed: 'image_evaluate' withArguments: { (#code -> 'Error signal: ''boom''') } asDictionary.
+	result := self callToolNamed: 'evaluate' withArguments: { (#code -> 'Error signal: ''boom''') } asDictionary.
 	error := self errorFrom: result.
 	stackTrace := error at: #stackTrace.
 	self assert: (result at: #isError).
@@ -280,7 +280,7 @@ MCPToolStructuredOutputTest >> testEvaluateReturnsStructuredRuntimeErrorWithStac
 MCPToolStructuredOutputTest >> testEvaluateReturnsStructuredSuccess [
 
 	| result data structured |
-	result := self callToolNamed: 'image_evaluate' withArguments: { (#code -> '1 + 2') } asDictionary.
+	result := self callToolNamed: 'evaluate' withArguments: { (#code -> '1 + 2') } asDictionary.
 	structured := self structuredContentFrom: result.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
@@ -294,7 +294,7 @@ MCPToolStructuredOutputTest >> testEvaluateReturnsWhatItWroteToTheTranscript [
 
 	| contentText result |
 	result := self
-		          callToolNamed: 'image_evaluate'
+		          callToolNamed: 'evaluate'
 		          withArguments: { (#code -> 'Transcript show: ''one''; cr; show: 2. 42') } asDictionary.
 	contentText := (result at: #content) first at: #text.
 	self deny: (result at: #isError ifAbsent: [ false ]).
@@ -315,7 +315,7 @@ MCPToolStructuredOutputTest >> testEvaluateStoppedAnswersItsTranscript [
 	| lines previous result |
 	self timeLimit: 30 seconds.
 	previous := Smalltalk globals at: #Transcript.
-	result := self callToolNamed: 'image_evaluate' withArguments: {
+	result := self callToolNamed: 'evaluate' withArguments: {
 			          (#code -> 'Transcript show: ''started''. [ true ] whileTrue').
 			          (#timeoutSeconds -> 1) } asDictionary.
 	lines := ((result at: #content) first at: #text) lines.
@@ -336,7 +336,7 @@ MCPToolStructuredOutputTest >> testEvaluateSurvivesADeprecationInAnImageThatRais
 	result := [
 		          Deprecation raiseWarning: true.
 		          self
-			          callToolNamed: 'image_evaluate'
+			          callToolNamed: 'evaluate'
 			          withArguments: { (#code -> 'Object new deprecated: ''probe explanation.''. 7') } asDictionary ] ensure: [
 		          Deprecation raiseWarning: previous ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
@@ -351,7 +351,7 @@ MCPToolStructuredOutputTest >> testEvaluateTakesTheStepTheWorldGivesTheTranscrip
 	| result |
 	self worldStepsTheTranscript ifFalse: [ ^ self skip: 'The world no longer steps the Transcript.' ].
 	result := self
-		          callToolNamed: 'image_evaluate'
+		          callToolNamed: 'evaluate'
 		          withArguments: { (#code -> 'Transcript show: ''stepped''; stepGlobal. Transcript contents') } asDictionary.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: ((self dataFrom: result) at: #resultPrintString) equals: '''stepped'''

@@ -141,7 +141,7 @@ method_get
 
 Before mutation, inspect the target and use a copied or disposable image.
 Prefer dedicated tools such as `class_create`, `method_compile`, refactoring
-tools, and `test_run` over `image_evaluate`.
+tools, and `test_run` over `evaluate`.
 
 Continue with:
 

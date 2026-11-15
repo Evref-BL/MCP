@@ -94,9 +94,9 @@ MCPObservabilityPresenterTest >> testTheMetricsTableNamesItsTool [
 
 	self
 		assert: (column readObject: (MCPToolCallStats new
-					  toolName: 'image_evaluate';
+					  toolName: 'evaluate';
 					  yourself))
-		equals: 'image_evaluate'
+		equals: 'evaluate'
 ]
 
 { #category : 'tests' }
