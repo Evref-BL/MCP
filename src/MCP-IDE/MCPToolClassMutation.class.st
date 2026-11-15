@@ -267,12 +267,6 @@ MCPToolClassMutation >> mutationActionForErrorFromParsedRequest: mutationRequest
 	^ self mutationAction
 ]
 
-{ #category : 'private - schema' }
-MCPToolClassMutation >> newSlotNameSchemaProperty [
-
-	^ self schemaPropertyNamed: 'newSlot' type: 'string' description: 'The replacement slot name.'
-]
-
 { #category : 'private - request' }
 MCPToolClassMutation >> packageNameForMoveClassNamed: className requestedPackageName: requestedPackageName [
 	"A tag alone retags the class inside its own package. The class is looked up as every class name is, so a global variable that is no class, such as Transcript, is refused rather than asked for its package."
@@ -377,18 +371,6 @@ MCPToolClassMutation >> slotDescriptionForClassSide: aBoolean [
 	^ aBoolean
 		  ifTrue: [ 'class-side slot' ]
 		  ifFalse: [ 'slot' ]
-]
-
-{ #category : 'private - schema' }
-MCPToolClassMutation >> slotNameSchemaProperty [
-
-	^ self schemaPropertyNamed: 'slot' type: 'string' description: 'The slot name.'
-]
-
-{ #category : 'private - schema' }
-MCPToolClassMutation >> slotSideSchemaProperty [
-
-	^ self targetSideSchemaPropertyDescribedAs: 'Which side the slot is on.'
 ]
 
 { #category : 'private - schema' }

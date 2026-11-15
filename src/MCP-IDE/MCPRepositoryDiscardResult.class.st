@@ -36,21 +36,9 @@ MCPRepositoryDiscardResult >> discardedPackageNames [
 ]
 
 { #category : 'accessing' }
-MCPRepositoryDiscardResult >> discardedPackageNames: packageNames [
-
-	discardedPackageNames := packageNames
-]
-
-{ #category : 'accessing' }
 MCPRepositoryDiscardResult >> discardedPaths [
 
 	^ discardedPaths
-]
-
-{ #category : 'accessing' }
-MCPRepositoryDiscardResult >> discardedPaths: paths [
-
-	discardedPaths := paths
 ]
 
 { #category : 'initialization' }

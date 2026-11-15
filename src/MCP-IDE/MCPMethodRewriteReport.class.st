@@ -71,12 +71,6 @@ MCPMethodRewriteReport >> changeInfos [
 	^ changeInfos ifNil: [ #(  ) ]
 ]
 
-{ #category : 'testing' }
-MCPMethodRewriteReport >> didApplyChanges [
-
-	^ self apply and: [ self appliedCount > 0 ]
-]
-
 { #category : 'initialization' }
 MCPMethodRewriteReport >> initializeFromRequest: aRequest changeInfos: changeInfoCollection appliedCount: appliedCountInteger [
 

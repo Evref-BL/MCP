@@ -126,16 +126,6 @@ MCPRunTestsRequest >> coverageRequest [
 ]
 
 { #category : 'initialization' }
-MCPRunTestsRequest >> initializeTestRequests: aCollection timeoutMilliseconds: anInteger [
-
-	^ self
-		  initializeTestRequests: aCollection
-		  timeoutMilliseconds: anInteger
-		  operation: 'run'
-		  coverageRequest: nil
-]
-
-{ #category : 'initialization' }
 MCPRunTestsRequest >> initializeTestRequests: aCollection timeoutMilliseconds: anInteger operation: operationString coverageRequest: aCoverageRequest [
 
 	testRequests := aCollection.

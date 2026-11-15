@@ -66,16 +66,6 @@ MCPMethodRewriteRuleSpec >> initializeFromDictionary: aDictionary request: reque
 	^ self
 ]
 
-{ #category : 'initialization' }
-MCPMethodRewriteRuleSpec >> initializeName: aName match: aMatchPattern replacement: aReplacementPattern isForMethod: aBoolean index: anIndex [
-
-	name := aName.
-	match := aMatchPattern.
-	replacement := aReplacementPattern.
-	isForMethod := aBoolean.
-	ruleIndex := anIndex
-]
-
 { #category : 'accessing' }
 MCPMethodRewriteRuleSpec >> isForMethod [
 

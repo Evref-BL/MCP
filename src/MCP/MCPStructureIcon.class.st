@@ -83,12 +83,6 @@ MCPStructureIcon class >> highScaleFormNamed: anIconSymbol [
 	^ self highScaleIconNamed: anIconSymbol
 ]
 
-{ #category : 'instance creation' }
-MCPStructureIcon class >> horizontallyFlippedPngIconNamed: anIconSymbol [
-
-	^ self iconForForm: (self highScaleFormNamed: anIconSymbol) deepCopy flipHorizontally
-]
-
 { #category : 'cache' }
 MCPStructureIcon class >> iconCache [
 

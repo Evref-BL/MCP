@@ -74,16 +74,6 @@ MCPRepositoryWorkingCopyCommand >> changedPackageNamesForRepository: aRepository
 	^ self sortedStringsFrom: (self imageModifiedPackageNamesFor: aRepository) , (self packageNamesForPaths: paths in: aRepository)
 ]
 
-{ #category : 'private - diff' }
-MCPRepositoryWorkingCopyCommand >> changedPackageNamesFromDiff: aDiff [
-
-	| names |
-	names := OrderedCollection new.
-	aDiff packages do: [ :each |
-		(self packageNameFromDiffPackageNode: each) ifNotNil: [ :name | name isEmpty ifFalse: [ names add: name ] ] ].
-	^ self sortedStringsFrom: names
-]
-
 { #category : 'private - files' }
 MCPRepositoryWorkingCopyCommand >> deletedPathsFrom: before to: after [
 
@@ -170,17 +160,6 @@ MCPRepositoryWorkingCopyCommand >> loadedPackageDirectoriesFor: aRepository [
 ]
 
 { #category : 'private - diff' }
-MCPRepositoryWorkingCopyCommand >> modifiedPathsFromDiff: aDiff [
-
-	| paths |
-	paths := OrderedCollection new.
-	[ self addModifiedPathsFromNode: aDiff tree to: paths ]
-		on: Error
-		do: [ :ignored | ^ #(  ) ].
-	^ self sortedStringsFrom: paths
-]
-
-{ #category : 'private - diff' }
 MCPRepositoryWorkingCopyCommand >> modifiedPathsFromGitStatusIn: aRepository [
 
 	(self repositoryHasGitWorkTree: aRepository) ifFalse: [ ^ #(  ) ].
@@ -204,12 +183,6 @@ MCPRepositoryWorkingCopyCommand >> packageDirectoryPathsFor: aRepository [
 				at: each name asString
 				put: (self pathFromRoot: (self directoryOfPackage: each in: aRepository writer: writerClass) in: aRepository) ].
 	^ paths
-]
-
-{ #category : 'private - diff' }
-MCPRepositoryWorkingCopyCommand >> packageNameFromDiffPackageNode: aNode [
-
-	^ aNode mcpDiffPackageName
 ]
 
 { #category : 'private - paths' }

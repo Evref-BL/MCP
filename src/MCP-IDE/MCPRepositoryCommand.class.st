@@ -143,16 +143,6 @@ MCPRepositoryCommand >> headPhraseFor: aRepository [
 				  ifFalse: [ stream << 'on branch ' << info branchName ] ]
 ]
 
-{ #category : 'private - iceberg state' }
-MCPRepositoryCommand >> loadLoadedPackagesFrom: headCommit in: aRepository [
-
-	| loadedPackageNames workingCopy |
-	workingCopy := aRepository workingCopy.
-	loadedPackageNames := workingCopy loadedPackages collect: [ :package | package name ].
-	workingCopy loadPackagesNamed: loadedPackageNames fromCommit: headCommit.
-	self adoptHeadCommit: headCommit for: aRepository
-]
-
 { #category : 'private - loading' }
 MCPRepositoryCommand >> loadLoadedPackagesFromDiskIn: aRepository [
 

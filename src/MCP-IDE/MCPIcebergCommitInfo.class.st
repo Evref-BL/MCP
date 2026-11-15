@@ -12,14 +12,6 @@ Class {
 }
 
 { #category : 'accessing' }
-MCPIcebergCommitInfo class >> commentStringFrom: aCommit [
-
-	aCommit ifNil: [ ^ '' ].
-	(self isNoCommit: aCommit) ifTrue: [ ^ '' ].
-	^ aCommit comment ifNil: [ '' ]
-]
-
-{ #category : 'accessing' }
 MCPIcebergCommitInfo class >> idStringFrom: aCommit [
 
 	aCommit ifNil: [ ^ '' ].

@@ -556,20 +556,6 @@ MCPUpdateClassCommand >> slotPlansForSide: classSide [
 ]
 
 { #category : 'private - slots' }
-MCPUpdateClassCommand >> successMessageForMoveSlotAction: operation [
-
-	| slotDescription |
-	slotDescription := self tool slotDescriptionForClassSide: self classRequest classSide.
-	operation = 'pullUpSlot' ifTrue: [
-			^ String streamContents: [ :stream |
-					  stream << 'Pulled up ' << slotDescription << ' ' << self classRequest slotName << ' to class '
-					  << self classRequest className << '.' ] ].
-	^ String streamContents: [ :stream |
-			  stream << 'Pushed down ' << slotDescription << ' ' << self classRequest slotName << ' from class '
-			  << self classRequest className << '.' ]
-]
-
-{ #category : 'private - slots' }
 MCPUpdateClassCommand >> successMessageForMoveSlotAction: operation plan: plan [
 
 	| slotDescription |

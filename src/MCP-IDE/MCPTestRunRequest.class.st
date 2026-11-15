@@ -69,12 +69,6 @@ MCPTestRunRequest >> hasTestMethod [
 ]
 
 { #category : 'initialization' }
-MCPTestRunRequest >> initializeClassName: aClassName testMethodName: aTestMethodName [
-
-	self initializePackageName: nil className: aClassName testMethodName: aTestMethodName
-]
-
-{ #category : 'initialization' }
 MCPTestRunRequest >> initializePackageName: aPackageName className: aClassName testMethodName: aTestMethodName [
 
 	packageName := aPackageName.

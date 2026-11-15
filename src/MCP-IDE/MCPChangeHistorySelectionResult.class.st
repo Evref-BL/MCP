@@ -102,21 +102,9 @@ MCPChangeHistorySelectionResult >> performed [
 ]
 
 { #category : 'accessing' }
-MCPChangeHistorySelectionResult >> performed: anObject [
-
-	performed := anObject
-]
-
-{ #category : 'accessing' }
 MCPChangeHistorySelectionResult >> performedCount [
 
 	^ performedCount
-]
-
-{ #category : 'accessing' }
-MCPChangeHistorySelectionResult >> performedCount: anObject [
-
-	performedCount := anObject
 ]
 
 { #category : 'accessing' }

@@ -45,12 +45,6 @@ MCPRepositoryDiffResult >> imageModifiedPackageNames [
 	^ imageModifiedPackageNames ifNil: [ #(  ) ]
 ]
 
-{ #category : 'accessing' }
-MCPRepositoryDiffResult >> imageModifiedPackageNames: aCollection [
-
-	imageModifiedPackageNames := aCollection ifNil: [ #(  ) ]
-]
-
 { #category : 'initialization' }
 MCPRepositoryDiffResult >> initializeRepository: aRepository imageModifiedPackages: imagePackageNames modifiedPaths: paths [
 
@@ -63,10 +57,4 @@ MCPRepositoryDiffResult >> initializeRepository: aRepository imageModifiedPackag
 MCPRepositoryDiffResult >> modifiedPaths [
 
 	^ modifiedPaths ifNil: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
-MCPRepositoryDiffResult >> modifiedPaths: aCollection [
-
-	modifiedPaths := aCollection ifNil: [ #(  ) ]
 ]

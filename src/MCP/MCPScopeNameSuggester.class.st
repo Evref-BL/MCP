@@ -37,19 +37,6 @@ MCPScopeNameSuggester class >> candidatesAmong: someBehaviors [
 				  (#bucket -> (each package ifNil: [ '' ] ifNotNil: [ :package | package name asString ])) } asDictionary ]
 ]
 
-{ #category : 'suggesting' }
-MCPScopeNameSuggester class >> classSuggestionCandidates [
-	"Classes and traits, the two kinds a class name may name."
-
-	^ self candidatesAmong: Smalltalk globals allClassesAndTraits
-]
-
-{ #category : 'suggesting' }
-MCPScopeNameSuggester class >> classSuggestionsFor: aName [
-
-	^ self suggestionsFor: aName candidates: self classSuggestionCandidates max: self defaultLimit
-]
-
 { #category : 'defaults' }
 MCPScopeNameSuggester class >> defaultLimit [
 
