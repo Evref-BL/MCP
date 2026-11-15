@@ -413,12 +413,13 @@ MCPToolSearchClassesTest >> testRowsLeadWithTheClassName [
 
 { #category : 'tests' }
 MCPToolSearchClassesTest >> testScopeEntriesWrittenWithTheirSideSelectTheirClass [
-	"A class search answers whole classes, so Foo class selects Foo, in every scope key, without a warning."
+	"A class search answers whole classes, so Foo class selects Foo, in every scope key, without a warning, and the summary names Foo."
 
 	| result |
 	result := self callToolWith: { (self searchScope: { (#classes -> { (self baseClassName , ' class') }) }) } asDictionary.
 	self assert: (self warningsFrom: result) isEmpty.
 	self assert: (((self dataFrom: result) at: #classes) collect: [ :each | each at: #class ]) equals: { self baseClassName }.
+	self assert: (self summaryFrom: result) equals: '1 class in ' , self baseClassName , '.'.
 	result := self callToolWith: {
 			          (self searchScope: { (#hierarchyOf -> { (self childClassName , ' class') }) }).
 			          (#name -> self fixturePrefix) } asDictionary.
@@ -426,7 +427,8 @@ MCPToolSearchClassesTest >> testScopeEntriesWrittenWithTheirSideSelectTheirClass
 	self assert: (((self dataFrom: result) at: #classes) collect: [ :each | each at: #class ]) equals: {
 			self baseClassName.
 			self childClassName.
-			self grandchildClassName }
+			self grandchildClassName }.
+	self assert: (self summaryFrom: result) equals: '3 classes match in the hierarchy of ' , self childClassName , '.'
 ]
 
 { #category : 'tests' }

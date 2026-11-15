@@ -64,11 +64,14 @@ MCPScopeQuery class >> phraseForNames: someNames one: oneLead several: severalLe
 
 { #category : 'private - resolution' }
 MCPScopeQuery >> classNamed: className inScope: aScopeKey [
-	"A scope entry, read as every class name is, so Foo class selects Foo. What names no class, a scope that must be complete refuses, and any other scope skips with a warning. aScopeKey is the entry's key as the schema spells it, such as scope.classes."
+	"A scope entry, read as every class name is, so Foo class selects Foo. What names no class, a scope that must be complete refuses, and any other scope skips with a warning and leaves out of the phrase for where it looked. aScopeKey is the entry's key as the schema spells it, such as scope.classes."
 
 	^ self requiresCompleteScope
 		  ifTrue: [ MCPImageLookup classNamed: className inScope: aScopeKey ]
-		  ifFalse: [ MCPImageLookup classNamed: className inScope: aScopeKey ifSkipped: [ :warning | self recordWarning: warning ] ]
+		  ifFalse: [
+				  MCPImageLookup classNamed: className inScope: aScopeKey ifSkipped: [ :warning |
+						  self recordMissingName: className inScope: aScopeKey.
+						  self recordWarning: warning ] ]
 ]
 
 { #category : 'accessing' }
@@ -81,6 +84,14 @@ MCPScopeQuery >> classNames [
 MCPScopeQuery >> classNames: aCollection [
 
 	classNames := aCollection
+]
+
+{ #category : 'phrasing' }
+MCPScopeQuery >> existingClassNamesAmong: someNames inScope: aScopeKey [
+	"The class names of someNames, given under aScopeKey, that the last run resolved, once each and without the side they may name: the scope reads Foo class as Foo, so it says Foo."
+
+	^ self class distinctNamesAmong:
+		  ((self existingNamesAmong: someNames inScope: aScopeKey) collect: [ :each | MCPImageLookup baseNameOf: each ])
 ]
 
 { #category : 'phrasing' }
@@ -104,15 +115,6 @@ MCPScopeQuery >> hierarchyClassNames: aCollection [
 	hierarchyClassNames := aCollection
 ]
 
-{ #category : 'private - resolution' }
-MCPScopeQuery >> packageNamed: packageName inScope: aScopeKey [
-	"A scope entry naming a package. A scope that must be complete refuses a missing one; any other scope skips it with a warning. aScopeKey is the entry's key as the schema spells it, such as scope.packages."
-
-	^ self requiresCompleteScope
-		  ifTrue: [ MCPImageLookup packageNamed: packageName inScope: aScopeKey ]
-		  ifFalse: [ MCPImageLookup packageNamed: packageName inScope: aScopeKey ifSkipped: [ :warning | self recordWarning: warning ] ]
-]
-
 { #category : 'accessing' }
 MCPScopeQuery >> missingNamesInScope: scopeName [
 	"The names given as scopeName that the last run could not resolve."
@@ -127,6 +129,18 @@ MCPScopeQuery >> namesNothingThatExists [
 
 	self usesImplicitImageScope ifTrue: [ ^ false ].
 	^ self scopePhraseParts isEmpty
+]
+
+{ #category : 'private - resolution' }
+MCPScopeQuery >> packageNamed: packageName inScope: aScopeKey [
+	"A scope entry naming a package. A scope that must be complete refuses a missing one; any other scope skips it with a warning and leaves it out of the phrase for where it looked. aScopeKey is the entry's key as the schema spells it, such as scope.packages."
+
+	^ self requiresCompleteScope
+		  ifTrue: [ MCPImageLookup packageNamed: packageName inScope: aScopeKey ]
+		  ifFalse: [
+				  MCPImageLookup packageNamed: packageName inScope: aScopeKey ifSkipped: [ :warning |
+						  self recordMissingName: packageName inScope: aScopeKey.
+						  self recordWarning: warning ] ]
 ]
 
 { #category : 'accessing' }
@@ -208,33 +222,33 @@ MCPScopeQuery >> scopePhrase [
 
 { #category : 'phrasing' }
 MCPScopeQuery >> scopePhraseParts [
-	"One phrase per kind of name the scope was given, in a fixed order, each naming only the names that exist as that kind."
+	"One phrase per kind of name the scope was given, in a fixed order, each naming only the names that exist as that kind. A kind's missing names are recorded under its key as the schema spells it."
 
 	| parts |
 	parts := OrderedCollection new.
 	{
 		(self class
-			 phraseForNames: (self existingNamesAmong: self packageNames inScope: 'packages')
+			 phraseForNames: (self existingNamesAmong: self packageNames inScope: 'scope.packages')
 			 one: 'package '
 			 several: 'packages '
 			 many: '{1} packages').
 		(self class
-			 phraseForNames: (self existingNamesAmong: self classNames inScope: 'classes')
+			 phraseForNames: (self existingClassNamesAmong: self classNames inScope: 'scope.classes')
 			 one: ''
 			 several: ''
 			 many: '{1} classes').
 		(self class
-			 phraseForNames: (self existingNamesAmong: self hierarchyClassNames inScope: 'hierarchyClasses')
+			 phraseForNames: (self existingClassNamesAmong: self hierarchyClassNames inScope: 'scope.hierarchyOf')
 			 one: 'the hierarchy of '
 			 several: 'the hierarchies of '
 			 many: 'the hierarchies of {1} classes').
 		(self class
-			 phraseForNames: (self existingNamesAmong: self subclassClassNames inScope: 'subclassClasses')
+			 phraseForNames: (self existingClassNamesAmong: self subclassClassNames inScope: 'scope.subclassesOf')
 			 one: 'the subclasses of '
 			 several: 'the subclasses of '
 			 many: 'the subclasses of {1} classes').
 		(self class
-			 phraseForNames: (self existingNamesAmong: self parentClassNames inScope: 'parentClasses')
+			 phraseForNames: (self existingClassNamesAmong: self parentClassNames inScope: 'scope.superclassesOf')
 			 one: 'the superclasses of '
 			 several: 'the superclasses of '
 			 many: 'the superclasses of {1} classes') } do: [ :each | each ifNotNil: [ parts add: each ] ].
