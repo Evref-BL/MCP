@@ -52,13 +52,14 @@ MCPCompiledMethodScopeQuery >> allMethodsDo: aBlock [
 
 { #category : 'converting' }
 MCPCompiledMethodScopeQuery >> asDictionary [
+	"The scope as the call gave it, under the keys the schema gives them, since answers repeat it."
 
 	^ {
 		  (#packages -> self packageNames).
 		  (#classes -> self classNames).
-		  (#hierarchyClasses -> self hierarchyClassNames).
-		  (#subclassClasses -> self subclassClassNames).
-		  (#parentClasses -> self parentClassNames).
+		  (#hierarchyOf -> self hierarchyClassNames).
+		  (#subclassesOf -> self subclassClassNames).
+		  (#superclassesOf -> self parentClassNames).
 		  (#side -> self side) } asDictionary
 ]
 

@@ -95,6 +95,24 @@ MCPToolRewriteMethodsTest >> tearDown [
 ]
 
 { #category : 'tests' }
+MCPToolRewriteMethodsTest >> testAPreviewRepeatsTheScopeUnderTheKeysTheCallUsed [
+	"The report says the scope back as the call gave it, never under an internal label such as hierarchyClasses."
+
+	| data result |
+	result := self callToolWith: {
+			          (#rules -> { (self rewriteRuleFrom: 'self oldValue' to: 'self newValue') }).
+			          (#scope -> {
+				           (#hierarchyOf -> { self targetClassName }).
+				           (#subclassesOf -> { self targetClassName }) } asDictionary) } asDictionary.
+	data := self dataFrom: result.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: ((data at: #scope) at: #hierarchyOf) equals: { self targetClassName }.
+	self assert: ((data at: #scope) at: #subclassesOf) equals: { self targetClassName }.
+	#( 'hierarchyClasses' 'subclassClasses' 'parentClasses' ) do: [ :each |
+		self deny: ((self textFrom: result) includesSubstring: each) ]
+]
+
+{ #category : 'tests' }
 MCPToolRewriteMethodsTest >> testARuleClassThatNamesNoRuleIsSaidByTheLookup [
 	"A misspelt rule suggests rewrite rules, under a code of its own rather than a missing class's."
 

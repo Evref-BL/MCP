@@ -137,6 +137,22 @@ MCPCompiledMethodScopeQueryTest >> testInvalidSideSignalsErrorWhenQuerying [
 ]
 
 { #category : 'tests' }
+MCPCompiledMethodScopeQueryTest >> testItsDictionaryUsesTheSchemaKeys [
+	"Answers repeat a scope as a dictionary, so its keys are the schema's."
+
+	| dictionary |
+	dictionary := (MCPCompiledMethodScopeQuery new
+		               hierarchyClassNames: #( 'A' );
+		               subclassClassNames: #( 'B' );
+		               parentClassNames: #( 'C' );
+		               yourself) asDictionary.
+	self assert: dictionary keys asSet equals: #( #packages #classes #hierarchyOf #subclassesOf #superclassesOf #side ) asSet.
+	self assert: (dictionary at: #hierarchyOf) equals: #( 'A' ).
+	self assert: (dictionary at: #subclassesOf) equals: #( 'B' ).
+	self assert: (dictionary at: #superclassesOf) equals: #( 'C' )
+]
+
+{ #category : 'tests' }
 MCPCompiledMethodScopeQueryTest >> testPackageScopeIncludesExtensionMethods [
 
 	| methodIdentities query |
