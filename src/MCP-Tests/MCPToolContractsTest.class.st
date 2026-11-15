@@ -734,6 +734,14 @@ MCPToolContractsTest >> stoppedTextUnwindingBrieflyOf: aString deferringInto: ac
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testAOneWordToolShowsItsActionIconAlone [
+	"evaluate names no domain, so it shows #go, its action's icon, and no badge."
+
+	self assert: (MCPToolIconSpec forToolName: 'evaluate') cacheKey equals: (MCPToolIconSpec named: #go) cacheKey.
+	self assert: MCPToolEvaluate toolIconSpec cacheKey equals: (MCPToolIconSpec named: #go) cacheKey
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testAToolDecidesForItselfWhetherDiscoveryServesIt [
 	"Loading the package is the opt-in, so the only knob left is the tool's own answer. A fixture that answers false stays out, a subclass inherits that answer, and overriding it back serves the subclass under the name it inherits."
 
@@ -1893,14 +1901,14 @@ MCPToolContractsTest >> testEveryToolHasAnIconOfItsOwn [
 
 { #category : 'tests' }
 MCPToolContractsTest >> testEveryToolNameMapsToAKnownDomainAndAction [
-	"A name that misses the maps gets the generic tools-and-arrow icon, which says nothing. A new tool either reuses a word the maps know or adds one. This is MCP's own vocabulary: a tool another project ships cannot be spelled out of it, and says what it looks like itself."
+	"A name that misses the maps gets the generic tools-and-arrow icon, which says nothing. A new tool either reuses a word the maps know or adds one; a name of one word is an action alone. This is MCP's own vocabulary: a tool another project ships cannot be spelled out of it, and says what it looks like itself."
 
 	| unmapped |
 	unmapped := self builtInToolClasses
 		            reject: [ :each |
 				            | parts |
 				            parts := each toolName substrings: '_'.
-				            (MCPToolIconSpec domainIconMap includesKey: parts first) and: [
+				            (parts size = 1 or: [ MCPToolIconSpec domainIconMap includesKey: parts first ]) and: [
 					            MCPToolIconSpec actionIconMap includesKey: parts last ] ]
 		            thenCollect: [ :each | each toolName ].
 
@@ -2666,9 +2674,7 @@ MCPToolContractsTest >> testRequestedToolIconsAreSelected [
 	self
 		assert: MCPToolRunTests new icons first asJRPCJSON
 		equals: (MCPStructureIcon compositeBaseIconNamed: #testRunner badgeIconNamed: #play) asJRPCJSON.
-	self
-		assert: MCPToolEvaluate new icons first asJRPCJSON
-		equals: (MCPStructureIcon compositeBaseIconNamed: #pharoHalfScale badgeIconNamed: #go) asJRPCJSON
+	self assert: MCPToolEvaluate new icons first asJRPCJSON equals: (MCPStructureIcon pngIconNamed: #go) asJRPCJSON
 ]
 
 { #category : 'tests' }

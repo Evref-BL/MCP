@@ -102,10 +102,12 @@ MCPToolIconSpec class >> domainIconMap [
 
 { #category : 'instance creation' }
 MCPToolIconSpec class >> forToolName: toolNameString [
+	"A name of one word is an action with no domain to draw, so it shows that action's icon alone."
 
 	| actionIcon baseIcon objectIcon parts |
 	parts := toolNameString asString substrings: '_'.
 	parts ifEmpty: [ ^ self named: #tools ].
+	parts size = 1 ifTrue: [ ^ self named: (self iconNameForAction: parts first) ].
 	baseIcon := self iconNameForDomain: parts first.
 	actionIcon := self actionIconForToolNameParts: parts.
 	objectIcon := self objectIconForToolNameParts: parts.
