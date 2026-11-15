@@ -45,6 +45,29 @@ MCPClassRemovalFactsTest >> testAReferencedClassSaysHowManyMethodsReferToIt [
 ]
 
 { #category : 'tests' }
+MCPClassRemovalFactsTest >> testASubclassAskedForTooIsNotSaidToMove [
+	"From Pharo 12 a subclass named in the same call still blocks its superclass, but force removes it with the class, so nothing says it moves or loses what it inherited."
+
+	| facts |
+	facts := (self factsAbout: {
+				          Set.
+				          IdentitySet })
+		         subclasses: (Dictionary with: 'Set' -> #( 'IdentitySet' 'EvalRect' ));
+		         yourself.
+	self
+		assert: facts message
+		equals:
+		'Removed none of Set, IdentitySet: Set''s subclasses IdentitySet and EvalRect inherit the methods and variables it defines. Reparent IdentitySet and EvalRect with class_update or remove them first, or resend with force to remove the classes anyway: EvalRect will move under HashedCollection without what Set defines.'.
+	self assert: facts forcedWarnings equals: #( 'EvalRect no longer inherits the methods and variables Set defined.' ).
+	facts subclasses: (Dictionary with: 'Set' -> #( 'IdentitySet' )).
+	self
+		assert: facts message
+		equals:
+		'Removed none of Set, IdentitySet: Set''s subclass IdentitySet inherits the methods and variables it defines. Reparent IdentitySet with class_update or remove it first, or resend with force to remove the classes anyway.'.
+	self assert: facts forcedWarnings isEmpty
+]
+
+{ #category : 'tests' }
 MCPClassRemovalFactsTest >> testATraitsUsersAreNamed [
 
 	| facts |

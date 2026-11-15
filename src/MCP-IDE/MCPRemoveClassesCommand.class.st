@@ -126,12 +126,15 @@ MCPRemoveClassesCommand >> resolvedClasses [
 
 { #category : 'private' }
 MCPRemoveClassesCommand >> resultForRemovedClass: aClass [
+	"A subclass asked for in the same call is removed, not reparented."
 
 	| classInfo reparentedSubclassNames wasEmpty |
 	classInfo := MCPClassInfo fromClass: aClass.
 	wasEmpty := self isEmptyClass: aClass.
 	reparentedSubclassNames := (self shouldReparentSubclassesWhenRemoving: aClass wasEmpty: wasEmpty)
-		                           ifTrue: [ classInfo subclassNames ]
+		                           ifTrue: [
+		                           classInfo subclassNames reject: [ :each |
+			                           self resolvedClasses anySatisfy: [ :removed | removed name asString = each ] ] ]
 		                           ifFalse: [ #(  ) ].
 	^ MCPRemoveClassResult
 		  classInfo: classInfo

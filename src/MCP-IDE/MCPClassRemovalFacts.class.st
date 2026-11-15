@@ -77,7 +77,9 @@ MCPClassRemovalFacts >> consequences [
 
 	^ Array streamContents: [ :stream |
 			  referencedBy ifNotEmpty: [ stream nextPut: self referenceConsequence ].
-			  (self namesIn: subclasses) do: [ :each | stream nextPut: (self subclassConsequenceFor: each) ] ]
+			  (self namesIn: subclasses) do: [ :each |
+				  (self subclassesLeftBehindBy: each) ifNotEmpty: [ :names |
+					  stream nextPut: (self subclassConsequenceFor: each leaving: names) ] ] ]
 ]
 
 { #category : 'texts' }
@@ -140,14 +142,12 @@ MCPClassRemovalFacts >> forcedReferenceWarningFor: aClassName [
 ]
 
 { #category : 'private - texts' }
-MCPClassRemovalFacts >> forcedSubclassWarningFor: aClassName [
+MCPClassRemovalFacts >> forcedSubclassWarningFor: aClassName leaving: someNames [
 
-	| names |
-	names := subclasses at: aClassName.
 	^ String streamContents: [ :stream |
 			  stream
-				  nextPutAll: (self joinedNames: names);
-				  nextPutAll: (names size = 1
+				  nextPutAll: (self joinedNames: someNames);
+				  nextPutAll: (someNames size = 1
 						   ifTrue: [ ' no longer inherits' ]
 						   ifFalse: [ ' no longer inherit' ]).
 			  stream << ' the methods and variables ' << aClassName << ' defined.' ]
@@ -160,7 +160,9 @@ MCPClassRemovalFacts >> forcedWarnings [
 	self hasFacts ifFalse: [ ^ { (self cleanedConditionText copyWith: $.) } ].
 	^ Array streamContents: [ :stream |
 			  (self namesIn: referencedBy) do: [ :each | stream nextPut: (self forcedReferenceWarningFor: each) ].
-			  (self namesIn: subclasses) do: [ :each | stream nextPut: (self forcedSubclassWarningFor: each) ] ]
+			  (self namesIn: subclasses) do: [ :each |
+				  (self subclassesLeftBehindBy: each) ifNotEmpty: [ :names |
+					  stream nextPut: (self forcedSubclassWarningFor: each leaving: names) ] ] ]
 ]
 
 { #category : 'testing' }
@@ -362,11 +364,11 @@ MCPClassRemovalFacts >> steps [
 ]
 
 { #category : 'private - texts' }
-MCPClassRemovalFacts >> subclassConsequenceFor: aClassName [
+MCPClassRemovalFacts >> subclassConsequenceFor: aClassName leaving: someNames [
 
 	^ String streamContents: [ :stream |
-			  stream << (self joinedNames: (subclasses at: aClassName)) << ' will move under ' << (self superclassNameOf: aClassName)
-			  << ' without what ' << aClassName << ' defines' ]
+			  stream << (self joinedNames: someNames) << ' will move under ' << (self superclassNameOf: aClassName) << ' without what '
+			  << aClassName << ' defines' ]
 ]
 
 { #category : 'private - texts' }
@@ -405,6 +407,13 @@ MCPClassRemovalFacts >> subclasses: aDictionary [
 	"Class name to the names of the subclasses that block its removal."
 
 	subclasses := aDictionary
+]
+
+{ #category : 'private - names' }
+MCPClassRemovalFacts >> subclassesLeftBehindBy: aClassName [
+	"The subclasses that block the removal of the class named aClassName and outlive it. A subclass asked for in the same call still blocks it from Pharo 12, but a forced removal takes it too, so nothing moves it or leaves it without what it inherited."
+
+	^ (subclasses at: aClassName) reject: [ :each | self classNames includes: each ]
 ]
 
 { #category : 'private - names' }

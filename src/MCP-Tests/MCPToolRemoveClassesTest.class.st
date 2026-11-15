@@ -256,6 +256,38 @@ MCPToolRemoveClassesTest >> testAClassReferencedOnlyFromItsOwnClassSideIsNeverRe
 ]
 
 { #category : 'tests' }
+MCPToolRemoveClassesTest >> testANonEmptyClassNamedWithItsSubclassFollowsPharosCheck [
+	"Before Pharo 12 the subclass check leaves out the classes asked for, so a class goes with its subclass. From 12 it compares the subclasses' names with a dictionary's values, so, as read, naming the subclass does not lift it; force then removes both, and nothing says the subclass moved."
+
+	| error result |
+	result := self callToolWith: (self argumentsForClassNames: {
+				           self nonEmptyParentClassName.
+				           self nonEmptyChildClassName }).
+	self refactoringsRefuseBreakingChanges ifFalse: [
+			error := self errorFrom: result.
+			self assert: (error at: #errorCode) equals: 'ClassRemovalBlocked'.
+			self assert: ((error at: #subclasses) at: self nonEmptyParentClassName) equals: { self nonEmptyChildClassName }.
+			self
+				assert: (error at: #message)
+				equals:
+					('Removed none of {1}, {2}: {1}''s subclass {2} inherits the methods and variables it defines. Reparent {2} with class_update or remove it first, or resend with force to remove the classes anyway.'
+						 format: {
+								 self nonEmptyParentClassName.
+								 self nonEmptyChildClassName }).
+			self assert: (self class environment includesKey: self nonEmptyChildClassName asSymbol).
+			result := self callToolWith: (self
+					           argumentsForClassNames: {
+							           self nonEmptyParentClassName.
+							           self nonEmptyChildClassName }
+					           force: true).
+			self assert: (self warningsFrom: result) isEmpty.
+			self deny: ((self textFrom: result) includesSubstring: 'Reparented') ].
+	self deny: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
+	self deny: (self class environment includesKey: self nonEmptyParentClassName asSymbol).
+	self deny: (self class environment includesKey: self nonEmptyChildClassName asSymbol)
+]
+
+{ #category : 'tests' }
 MCPToolRemoveClassesTest >> testAReferenceListStopsAtFiveMethods [
 	"The text names the first five; method_reference_search lists them all, and the details hold every one."
 
@@ -295,6 +327,21 @@ MCPToolRemoveClassesTest >> testATraitSomeClassUsesNamesItsUsers [
 					 self traitUserClassName }).
 	self assert: ((error at: #users) at: self usedTraitName) equals: { self traitUserClassName }.
 	self assert: (self class environment includesKey: self usedTraitName asSymbol)
+]
+
+{ #category : 'tests' }
+MCPToolRemoveClassesTest >> testAnEmptyClassNamedWithItsSubclassReparentsNothing [
+	"An empty class's subclasses are reparented to its superclass, but one asked for in the same call is removed."
+
+	| data result |
+	result := self callToolWith: (self argumentsForClassNames: {
+				           self emptyParentClassName.
+				           self emptyChildClassName }).
+	data := self dataFrom: result.
+	self deny: (self class environment includesKey: self emptyParentClassName asSymbol).
+	self deny: (self class environment includesKey: self emptyChildClassName asSymbol).
+	self assert: (data at: #reparentedSubclassNames ifAbsent: [ #(  ) ]) isEmpty.
+	self deny: ((self textFrom: result) includesSubstring: 'Reparented')
 ]
 
 { #category : 'tests' }
