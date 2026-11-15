@@ -127,11 +127,13 @@ MCPRewriteMethodsCommand >> sortsChange: leftChange before: rightChange [
 
 { #category : 'private - results' }
 MCPRewriteMethodsCommand >> successSummaryForReport: report [
+	"Previewed 2 method rewrite changes in package Eval-Shapes., naming where it looked as a search does. The scope must name only what exists, so its phrase holds every name."
 
-	| count |
+	| count scopePhrase |
 	count := report apply
 		         ifTrue: [ report appliedCount ]
 		         ifFalse: [ report changeCount ].
+	scopePhrase := self request scopeQuery scopePhrase.
 	^ String streamContents: [ :stream |
 			  stream
 				  nextPutAll: (report apply
@@ -140,6 +142,10 @@ MCPRewriteMethodsCommand >> successSummaryForReport: report [
 				  print: count;
 				  nextPutAll: ' method rewrite change'.
 			  count = 1 ifFalse: [ stream nextPut: $s ].
+			  scopePhrase ifNotNil: [
+					  stream
+						  nextPutAll: ' in ';
+						  nextPutAll: scopePhrase ].
 			  stream nextPut: $..
 			  report skippedTraitMethods ifNotEmpty: [ :skipped |
 					  skipped size = 1
