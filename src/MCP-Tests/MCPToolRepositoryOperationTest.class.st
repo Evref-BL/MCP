@@ -2287,9 +2287,10 @@ MCPToolRepositoryOperationTest >> testUpdateAddsPackageToWorkingCopy [
 			data := self dataFrom: result.
 			self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
 			self assert: (self packageNamesIn: repository) equals: { packageName }.
-			self assert: data keys asSet equals: #( addedPackages updateActions ) asSet.
-			self assert: (data at: #updateActions) equals: #( 'addPackages' ).
-			self assert: (data at: #addedPackages) equals: { packageName } ]
+			self assert: data keys asSet equals: #( addedPackages ) asSet.
+			self assert: (data at: #addedPackages) equals: { packageName }.
+			self assert: (self warningsFrom: result) size equals: 1.
+			self assert: ((self warningsFrom: result) first beginsWith: packageName , ' is in neither the image nor the checkout.') ]
 ]
 
 { #category : 'tests' }
@@ -2308,9 +2309,9 @@ MCPToolRepositoryOperationTest >> testUpdateCanReplacePackageMembership [
 			data := self dataFrom: result.
 			self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
 			self assert: (self packageNamesIn: repository) equals: #( 'MCPToolRepositoryOperationNewC' 'MCPToolRepositoryOperationOldB' ).
-			self assert: (data at: #updateActions) equals: #( 'replacePackages' ).
+			self assert: data keys asSet equals: #( addedPackages removedPackages ) asSet.
 			self assert: (data at: #addedPackages) equals: #( 'MCPToolRepositoryOperationNewC' ).
-			self assert: (data at: #removedPackageNames) equals: #( 'MCPToolRepositoryOperationOldA' ) ]
+			self assert: (data at: #removedPackages) equals: #( 'MCPToolRepositoryOperationOldA' ) ]
 ]
 
 { #category : 'tests' }
@@ -2382,9 +2383,27 @@ MCPToolRepositoryOperationTest >> testUpdateRemovesPackageWithoutUnloading [
 				self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
 				self assert: (self packageNamesIn: repository) equals: #(  ).
 				self assert: (self packageOrganizer hasPackage: packageName).
-				self assert: data keys asSet equals: #( removedPackageNames updateActions ) asSet.
-				self assert: (data at: #updateActions) equals: #( 'removePackages' ).
-				self assert: (data at: #removedPackageNames) equals: { packageName } ] ] ensure: [ self removePackageNamed: packageName ]
+				self assert: data keys asSet equals: #( removedPackages ) asSet.
+				self assert: (data at: #removedPackages) equals: { packageName } ] ] ensure: [ self removePackageNamed: packageName ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testUpdateWithNothingToDoNamesItsArguments [
+
+	| repository result |
+	repository := self
+		              newRepositoryNamed: 'MCP Repository Command Nothing To Do Test'
+		              location: FileLocator imageDirectory
+		              packageNames: #(  ).
+	self withRegisteredRepository: repository do: [
+			result := self callToolWith: {
+					          (#action -> 'update').
+					          (#name -> repository name) } asDictionary.
+			self assert: (self resultIndicatesError: result).
+			self assert: ((self errorFrom: result) at: #errorCode) equals: 'NoRepositoryUpdateRequested'.
+			self
+				assert: (self summaryFrom: result)
+				equals: 'repository_update needs at least one of subdirectory, packages, addPackages or removePackages.' ]
 ]
 
 { #category : 'tests' }

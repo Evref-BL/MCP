@@ -1,11 +1,10 @@
 "
-Result DTO returned by repository_update. It reports the repository after applying package membership or repository metadata changes, plus the package names added and removed during the update.
+Result DTO returned by repository_update. It names the packages the update added to the repository and those it removed.
 "
 Class {
 	#name : 'MCPRepositoryUpdateResult',
 	#superclass : 'MCPRepositorySnapshotResult',
 	#instVars : [
-		'updateActions',
 		'addedPackageNames',
 		'removedPackageNames'
 	],
@@ -15,13 +14,9 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPRepositoryUpdateResult class >> repository: aRepository updateActions: actionNames addedPackageNames: addedNames removedPackageNames: removedNames [
+MCPRepositoryUpdateResult class >> repository: aRepository addedPackageNames: addedNames removedPackageNames: removedNames [
 
-	^ self new
-		  initializeRepository: aRepository
-		  updateActions: actionNames
-		  addedPackageNames: addedNames
-		  removedPackageNames: removedNames
+	^ self new initializeRepository: aRepository addedPackageNames: addedNames removedPackageNames: removedNames
 ]
 
 { #category : 'accessing' }
@@ -41,17 +36,15 @@ MCPRepositoryUpdateResult >> asDictionary [
 
 	| data |
 	data := Dictionary new.
-	self updateActions ifNotEmpty: [ :actions | data at: #updateActions put: actions ].
 	self addedPackageNames ifNotEmpty: [ :names | data at: #addedPackages put: names ].
-	self removedPackageNames ifNotEmpty: [ :names | data at: #removedPackageNames put: names ].
+	self removedPackageNames ifNotEmpty: [ :names | data at: #removedPackages put: names ].
 	^ data
 ]
 
 { #category : 'initialization' }
-MCPRepositoryUpdateResult >> initializeRepository: aRepository updateActions: actionNames addedPackageNames: addedNames removedPackageNames: removedNames [
+MCPRepositoryUpdateResult >> initializeRepository: aRepository addedPackageNames: addedNames removedPackageNames: removedNames [
 
 	self initializeSnapshotFromRepository: aRepository.
-	updateActions := actionNames ifNil: [ #(  ) ].
 	addedPackageNames := addedNames ifNil: [ #(  ) ].
 	removedPackageNames := removedNames ifNil: [ #(  ) ]
 ]
@@ -66,16 +59,4 @@ MCPRepositoryUpdateResult >> removedPackageNames [
 MCPRepositoryUpdateResult >> removedPackageNames: aCollection [
 
 	removedPackageNames := aCollection ifNil: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
-MCPRepositoryUpdateResult >> updateActions [
-
-	^ updateActions ifNil: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
-MCPRepositoryUpdateResult >> updateActions: aCollection [
-
-	updateActions := aCollection ifNil: [ #(  ) ]
 ]

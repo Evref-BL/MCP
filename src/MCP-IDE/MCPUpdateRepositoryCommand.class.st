@@ -42,7 +42,7 @@ MCPUpdateRepositoryCommand >> currentPackageNamesIn: aRepository [
 { #category : 'executing' }
 MCPUpdateRepositoryCommand >> execute [
 
-	| repository result |
+	| packageWarnings repository result |
 	^ self
 		  executeRepositoryAction: 'update'
 		  work: [
@@ -54,15 +54,15 @@ MCPUpdateRepositoryCommand >> execute [
 				  self removePackagesFrom: repository.
 				  result := MCPRepositoryUpdateResult
 					            repository: repository
-					            updateActions: self request requestedRepositoryUpdateActions
 					            addedPackageNames: self sortedAddedPackageNames
-					            removedPackageNames: self sortedRemovedPackageNames ]
+					            removedPackageNames: self sortedRemovedPackageNames.
+				  packageWarnings := self warningsForPackagesNamed: self sortedAddedPackageNames inNeitherImageNorCheckoutOf: repository ]
 		  successResult: [ :warningMessages |
 				  self tool
 					  successResultText: (String streamContents: [ :stream |
 							   stream << 'Updated repository ' << result repositoryInfo name << '.' << (self projectFileNoteFor: repository) ])
 					  data: (self tool dataForRepositoryResult: result)
-					  warnings: warningMessages ]
+					  warnings: warningMessages , packageWarnings ]
 		  failureSummary: [ :error | 'Failed to update repository: ' , (error messageText ifNil: [ error asString ]) ]
 ]
 
@@ -124,7 +124,7 @@ MCPUpdateRepositoryCommand >> signalNoUpdateRequested [
 
 	MCPCommandError
 		signalErrorCode: #NoRepositoryUpdateRequested
-		message: 'repository_update requires subdirectory, packageNames, addPackageNames, or removePackageNames.'
+		message: 'repository_update needs at least one of subdirectory, packages, addPackages or removePackages.'
 		details: self request requestedContext
 ]
 
