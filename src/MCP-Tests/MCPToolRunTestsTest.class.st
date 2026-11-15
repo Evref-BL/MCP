@@ -408,7 +408,7 @@ MCPToolRunTestsTest >> testATestPastItsTimeLimitSaysSo [
 	self
 		assert: (self issueLinesFrom: (self runTests: { (#classes -> #( 'MCPToolRunTestsTimeLimitTarget' )) }))
 		equals:
-		#( 'error MCPToolRunTestsTimeLimitTarget>>#testWaitsTooLong (TestTookTooMuchTime): took longer than its time limit of 1 second' )
+		#( 'error MCPToolRunTestsTimeLimitTarget>>#testWaitsTooLong (TestTookTooMuchTime): took longer than its time limit of 200 milliseconds' )
 ]
 
 { #category : 'tests - timeouts' }

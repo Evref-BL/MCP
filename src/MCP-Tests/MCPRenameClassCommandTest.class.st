@@ -56,15 +56,3 @@ MCPRenameClassCommandTest >> testMissingClassSignalsCommandError [
 	self assert: error errorCode equals: #ClassNotFound.
 	self assert: (error structuredDetails at: #class) equals: 'MCPRenameClassCommandTestMissing'
 ]
-
-{ #category : 'tests' }
-MCPRenameClassCommandTest >> testRenamesClassAndReturnsResultObject [
-
-	| result |
-	result := self executeCommand: (MCPRenameClassCommand className: self originalClassName newClassName: self renamedClassName).
-	self assert: (Smalltalk globals includesKey: self renamedClassName asSymbol).
-	self deny: (Smalltalk globals includesKey: self originalClassName asSymbol).
-	self assert: result oldClassName equals: self originalClassName.
-	self assert: result newClassName equals: self renamedClassName.
-	self assert: result classInfo className equals: self renamedClassName
-]

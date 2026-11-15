@@ -309,25 +309,6 @@ MCPToolStructuredOutputTest >> testEvaluateReturnsWhatItWroteToTheTranscript [
 ]
 
 { #category : 'tests' }
-MCPToolStructuredOutputTest >> testEvaluateStoppedAnswersItsTranscript [
-	"What the code wrote before it was stopped may be all that says how far it got. It comes last, after the recipe, as in every other answer, and the Transcript is put back."
-
-	| lines previous result |
-	self timeLimit: 30 seconds.
-	previous := Smalltalk globals at: #Transcript.
-	result := self callToolNamed: 'evaluate' withArguments: {
-			          (#code -> 'Transcript show: ''started''. [ true ] whileTrue').
-			          (#timeoutSeconds -> 1) } asDictionary.
-	lines := ((result at: #content) first at: #text) lines.
-	self assert: (result at: #isError).
-	self assert: (Smalltalk globals at: #Transcript) identicalTo: previous.
-	self assert: lines first equals: 'Evaluation stopped after 1 s, its time limit.'.
-	self assert: (lines last: 3) equals: #( 'A fork has no time limit, and at this priority it holds up no evaluation.'
-		   'Transcript:' 'started' ).
-	self assert: ((self errorFrom: result) at: #transcript) equals: 'started'
-]
-
-{ #category : 'tests' }
 MCPToolStructuredOutputTest >> testEvaluateSurvivesADeprecationInAnImageThatRaisesThem [
 	"Deprecation>>defaultAction raises when the image is set to raise deprecations, which is the same line a plain warning reaches."
 

@@ -11,5 +11,5 @@ Class {
 { #category : 'private' }
 MCPEvaluateCommandUnwindingBriefly >> unwindingSeconds [
 
-	^ 1
+	^ 0.3
 ]

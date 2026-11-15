@@ -1229,35 +1229,6 @@ MCPToolClassMutationTest >> testUpdateRenameSlotReformatsWithTheFormatterOfTheCl
 ]
 
 { #category : 'tests - update' }
-MCPToolClassMutationTest >> testUpdateRenameUpdatesMethodReferences [
-
-	| reference |
-	self callToolWith: self updateRequestArgumentsForRename.
-	reference := (self classNamed: self referenceClassName) new.
-	self assert: reference referencedClass name asString equals: self renamedClassName.
-	self assert: reference newReferencedInstance class name asString equals: self renamedClassName
-]
-
-{ #category : 'tests - update' }
-MCPToolClassMutationTest >> testUpdateRenameUpdatesSubclassDefinitions [
-
-	self callToolWith: self updateRequestArgumentsForRename.
-	self assert: (self classNamed: self subclassName) superclass name asString equals: self renamedClassName
-]
-
-{ #category : 'tests - update' }
-MCPToolClassMutationTest >> testUpdateRenamesClassAndReturnsStructuredData [
-
-	| data result |
-	result := self callToolWith: self updateRequestArgumentsForRename.
-	data := self dataFrom: result.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (Smalltalk globals includesKey: self renamedClassName asSymbol).
-	self deny: (Smalltalk globals includesKey: self originalClassName asSymbol).
-	self deny: (result at: #isError ifAbsent: [ false ])
-]
-
-{ #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateRenamesClassSideSlotAndPreservesValue [
 
 	| data result target |
@@ -1329,6 +1300,21 @@ MCPToolClassMutationTest >> testUpdateRenamesInstanceSlotAndUpdatesReferences [
 	self assert: instance renamedSlot equals: 37.
 	self assert: instance slotProbe equals: 37.
 	self deny: (result at: #isError ifAbsent: [ false ])
+]
+
+{ #category : 'tests' }
+MCPToolClassMutationTest >> testUpdateRenamesTheClassItsSubclassesAndItsReferences [
+	"A rename is a refactoring that takes a second, so one rename is read every way."
+
+	| reference result |
+	result := self callToolWith: self updateRequestArgumentsForRename.
+	self deny: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
+	self assert: (Smalltalk globals includesKey: self renamedClassName asSymbol).
+	self deny: (Smalltalk globals includesKey: self originalClassName asSymbol).
+	self assert: (self classNamed: self subclassName) superclass name asString equals: self renamedClassName.
+	reference := (self classNamed: self referenceClassName) new.
+	self assert: reference referencedClass name asString equals: self renamedClassName.
+	self assert: reference newReferencedInstance class name asString equals: self renamedClassName
 ]
 
 { #category : 'tests - update' }
