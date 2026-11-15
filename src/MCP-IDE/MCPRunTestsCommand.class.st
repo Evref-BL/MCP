@@ -1,11 +1,11 @@
 "
-Command that validates and runs parsed test_run selections.
+Runs test selections until a deadline: the operation behind test_run and test_coverage_run.
 
-It resolves MCPTestRunRequest objects to MCPValidatedTestRunRequest objects, executes them, and returns MCPRunTestsResult DTOs.
+Every selection is resolved and checked before any test runs. Each test then runs into a result of its own, so that it counts once, until the deadline stops one, and what is left is listed as selections to run next. Given a coverage scope, it also measures which of the scope's methods the tests executed. It answers an MCPRunTestsResult.
 "
 Class {
 	#name : 'MCPRunTestsCommand',
-	#superclass : 'MCPToolRequestCommand',
+	#superclass : 'MCPCommand',
 	#instVars : [
 		'selections',
 		'timeoutMilliseconds',
@@ -96,9 +96,9 @@ MCPRunTestsCommand >> coverageScope [
 ]
 
 { #category : 'private - timeout' }
-MCPRunTestsCommand >> deadlineForTimeoutMilliseconds: timeoutMilliseconds [
+MCPRunTestsCommand >> deadlineForTimeoutMilliseconds: milliseconds [
 
-	^ Time millisecondClockValue + timeoutMilliseconds
+	^ Time millisecondClockValue + milliseconds
 ]
 
 { #category : 'executing' }

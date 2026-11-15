@@ -1,7 +1,7 @@
 "
-Aggregate result DTO produced by test_run and test_coverage_run.
+The tests a test_run or test_coverage_run call ran, counted and grouped for its answer.
 
-It counts each test once, from the outcomes of the selections it ran. It says each issue once: the issues of the same kind, error class, message and places, across tests, are one entry naming every test they hit, and a class whose whole suite ran and failed alike is named as Class, all N tests. It also carries the selections that selected no test, what a timeout left to run as test_run arguments, and coverage when it was measured.
+It counts each test once, from the outcomes of the selections it ran, and says each issue once: the issues of the same kind, error class, message and places, across tests, are one entry naming every test they hit. It also names the selections that selected no test, lists what a timeout left to run as test_run arguments, and carries the coverage when it was measured.
 "
 Class {
 	#name : 'MCPRunTestsResult',
