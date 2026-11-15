@@ -20,6 +20,16 @@ TMCPMethodTool >> behaviorNamed: aClassName classSide: aBoolean [
 		  ifFalse: [ targetClass ]
 ]
 
+{ #category : 'private - searching' }
+TMCPMethodTool >> matchingSelectorReferencesForSelector: aSelectorSymbol inMethods: compiledMethods [
+	"The methods of compiledMethods that send aSelectorSymbol to any receiver: what method_reference_search calls senders, and what method_remove warns of."
+
+	| specialSelectorIndex |
+	specialSelectorIndex := Smalltalk specialSelectorIndexOrNil: aSelectorSymbol.
+	^ (compiledMethods select: [ :eachMethod | eachMethod hasSelector: aSelectorSymbol specialSelectorIndex: specialSelectorIndex ])
+		  asArray
+]
+
 { #category : 'private - methods' }
 TMCPMethodTool >> methodEntryLabel: anEntry [
 

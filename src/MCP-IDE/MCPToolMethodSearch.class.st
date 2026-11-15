@@ -157,15 +157,6 @@ MCPToolMethodSearch >> matchingClassReferencesForClassNamed: aClassName inMethod
 ]
 
 { #category : 'private - searching' }
-MCPToolMethodSearch >> matchingSelectorReferencesForSelector: aSelectorSymbol inMethods: compiledMethods [
-
-	| specialSelectorIndex |
-	specialSelectorIndex := Smalltalk specialSelectorIndexOrNil: aSelectorSymbol.
-	^ (compiledMethods select: [ :eachMethod | eachMethod hasSelector: aSelectorSymbol specialSelectorIndex: specialSelectorIndex ])
-		  asArray
-]
-
-{ #category : 'private - searching' }
 MCPToolMethodSearch >> matchingVariableReferencesNamed: aVariableName scopeQuery: query inMethods: compiledMethods [
 
 	| variables |
