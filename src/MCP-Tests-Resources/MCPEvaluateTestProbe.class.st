@@ -1,5 +1,5 @@
 "
-What code a test evaluates reaches while its evaluation is stopped: whether an ensure block ran, and an ensure block that holds its process until the test releases it, to stand for one that takes long.
+What code a test evaluates reaches while its evaluation is stopped: whether an ensure block ran, an ensure block that holds its process until the test releases it, to stand for one that takes long, and a critical section the test can hold.
 "
 Class {
 	#name : 'MCPEvaluateTestProbe',
@@ -7,7 +7,8 @@ Class {
 	#classInstVars : [
 		'ensureRan',
 		'holder',
-		'semaphore'
+		'semaphore',
+		'mutex'
 	],
 	#category : 'MCP-Tests-Resources',
 	#package : 'MCP-Tests-Resources'
@@ -33,6 +34,13 @@ MCPEvaluateTestProbe class >> holder [
 	^ holder
 ]
 
+{ #category : 'accessing' }
+MCPEvaluateTestProbe class >> mutex [
+	"A critical section the test holds while the evaluated code waits to enter it."
+
+	^ mutex
+]
+
 { #category : 'probing' }
 MCPEvaluateTestProbe class >> noteEnsureRan [
 
@@ -50,5 +58,6 @@ MCPEvaluateTestProbe class >> reset [
 
 	ensureRan := false.
 	semaphore := Semaphore new.
+	mutex := Semaphore forMutualExclusion.
 	holder := nil
 ]

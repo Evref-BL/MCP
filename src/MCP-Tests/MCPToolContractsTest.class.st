@@ -407,6 +407,13 @@ MCPToolContractsTest >> notStartedTextHeldBy: processes [
 			   yourself)
 ]
 
+{ #category : 'private - evaluate' }
+MCPToolContractsTest >> processesNamed: aString [
+	"Terminated or not, as long as something still holds them."
+
+	^ Process allInstances select: [ :each | each name = aString ]
+]
+
 { #category : 'support' }
 MCPToolContractsTest >> readScreenToolFlowSpec [
 
@@ -1352,15 +1359,24 @@ A fork has no time limit, and at this priority it holds up no evaluation.' lines
 
 { #category : 'tests - evaluate' }
 MCPToolContractsTest >> testEvaluateStopsAComputingLoopUnderEitherPreemptionRule [
-	"A loop that computes never yields, so only a process above it can take the processor back, whichever way the virtual machine requeues the process it preempts."
+	"A loop that computes never yields, so only a process above it can take the processor back, whichever way the virtual machine requeues the process it preempts. The process that terminates the loop runs at the loop's priority, so the loop is taken off the run queue first, and has unwound under either rule by the time the answer goes."
 
 	self timeLimit: 30 seconds.
 	self underEitherPreemptionRuleDo: [ :yields |
-			| lines milliseconds result |
-			milliseconds := Time millisecondsToRun: [ result := self evaluate: '[ true ] whileTrue' within: 1 ].
+			| actions before evaluators lines milliseconds result rule |
+			rule := 'With processPreemptionYields ' , yields printString.
+			before := self processesNamed: 'image_evaluate'.
+			actions := OrderedCollection new.
+			[
+				milliseconds := Time millisecondsToRun: [ result := self evaluate: '[ true ] whileTrue' within: 1 deferringInto: actions ].
+				evaluators := (self processesNamed: 'image_evaluate') copyWithoutAll: before ] ensure: [ actions do: #value ].
 			lines := (self stoppedTextOf: result) lines.
+			self deny: (lines includes: 'Its ensure blocks were still running when this answer was sent.') description: rule.
 			self assert: (lines includes: 'Stopped in:').
 			self assert: (lines includes: 'UndefinedObject>>DoIt').
+			self assert: evaluators size equals: 1.
+			self waitUntilEnded: evaluators first.
+			self assert: evaluators first isTerminated description: rule.
 			self assert: milliseconds < 10000 ]
 ]
 
@@ -1379,6 +1395,30 @@ MCPToolContractsTest >> testEvaluateStopsAWaitAndRunsItsEnsureBlocks [
 ]
 
 { #category : 'tests - evaluate' }
+MCPToolContractsTest >> testEvaluateStopsAWaitInACriticalSectionWithoutSignallingIt [
+	"Terminated while it waits to enter a critical section, a process leaves without signalling the semaphore, which it never acquired, but only when terminated from where it waits: suspended first, it would signal on its way out and let a second process in. So a stop leaves a waiting evaluator waiting."
+
+	| holder mutex |
+	self timeLimit: 30 seconds.
+	MCPEvaluateTestProbe reset.
+	mutex := MCPEvaluateTestProbe mutex.
+	holder := [ mutex critical: [ MCPEvaluateTestProbe holdUntilReleased ] ]
+		          forkAt: Processor activePriority + 1
+		          named: 'mcp-evaluate-mutex-holder-probe'.
+	[
+		self deny:
+			((self stoppedTextOf: (self evaluate: 'MCPEvaluateTestProbe mutex critical: [ #entered ]' within: 1)) includesSubstring:
+				 'still running').
+		self deny: mutex isSignaled description: 'The stopped evaluation signalled a semaphore it never acquired.' ] ensure: [
+			MCPEvaluateTestProbe release.
+			self waitUntilEnded: holder ].
+	self assert: holder isTerminated.
+	self assert: mutex isSignaled.
+	mutex wait.
+	self deny: mutex isSignaled description: 'The semaphore admits a second process.'
+]
+
+{ #category : 'tests - evaluate' }
 MCPToolContractsTest >> testEvaluateStopsCodeThatCatchesEveryException [
 	"A limit that signals is caught by the first handler that takes every exception, and the code carries on. Terminating a process signals nothing."
 
@@ -1386,7 +1426,7 @@ MCPToolContractsTest >> testEvaluateStopsCodeThatCatchesEveryException [
 	self timeLimit: 30 seconds.
 	milliseconds := Time millisecondsToRun: [
 		                result := self evaluate: '[ [ true ] whileTrue ] on: Exception do: [ :e | [ true ] whileTrue ]' within: 1 ].
-	self stoppedTextOf: result.
+	self deny: ((self stoppedTextOf: result) includesSubstring: 'still running').
 	self assert: milliseconds < 10000
 ]
 
