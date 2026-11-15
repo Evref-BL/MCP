@@ -9,6 +9,16 @@ Class {
 }
 
 { #category : 'private - calling' }
+MCPToolRepositoryOperationTest >> attachRepositoryNamed: aRepositoryName location: aLocationString packages: packageNames [
+
+	^ self callToolWith: {
+			  (#action -> 'attach').
+			  (#name -> aRepositoryName).
+			  (#location -> aLocationString).
+			  (#packages -> packageNames) } asDictionary
+]
+
+{ #category : 'private - calling' }
 MCPToolRepositoryOperationTest >> callToolNamed: aToolName with: someArguments [
 
 	| request result tool |
@@ -50,6 +60,20 @@ MCPToolRepositoryOperationTest >> commitAllIn: aRepositoryLocation message: aMes
 	self shellCommand: (String streamContents: [ :stream |
 				 stream << 'git -C ' << (self shellQuote: aRepositoryLocation pathString) << ' -c user.name=' << (self shellQuote: 'MCP Test')
 				 << ' -c user.email=' << (self shellQuote: 'mcp-test@example.com') << ' commit -m ' << (self shellQuote: aMessage) ])
+]
+
+{ #category : 'private - calling' }
+MCPToolRepositoryOperationTest >> commitCheckoutNamed: aRepositoryName at: aLocation holding: aPackageName [
+	"A checkout with .project and one commit holding the package under src, left unregistered."
+
+	self
+		createRepositoryNamed: aRepositoryName
+		location: aLocation
+		subdirectory: 'src'
+		packages: { aPackageName }.
+	self exportRepositoryNamed: aRepositoryName.
+	self commitRepositoryNamed: aRepositoryName message: 'Hold the package'.
+	self removeRegisteredRepositoriesNamed: aRepositoryName
 ]
 
 { #category : 'private - calling' }
@@ -384,6 +408,25 @@ MCPToolRepositoryOperationTest >> testAdoptHeadValidatesExpectedBranch [
 ]
 
 { #category : 'tests' }
+MCPToolRepositoryOperationTest >> testAttachDoesNotWarnOfAPackageTheCheckoutHolds [
+	"A package the checkout holds is no name mistyped, even when the image has yet to load it."
+
+	| className location packageName repositoryName result |
+	repositoryName := 'MCP Attach Package In Checkout Test'.
+	packageName := 'MCPToolRepositoryOperationInCheckoutPackage'.
+	className := 'MCPToolRepositoryOperationInCheckoutClass'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestAttachPackageInCheckout'.
+	self withExportPackageNamed: packageName className: className do: [
+			self withCleanRepositoryNamed: repositoryName location: location do: [
+					self commitCheckoutNamed: repositoryName at: location holding: packageName.
+					self removeClassNamed: className.
+					self removePackageNamed: packageName.
+					result := self attachRepositoryNamed: repositoryName location: location pathString packages: { packageName }.
+					self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
+					self assert: (self warningsFrom: result) isEmpty ] ]
+]
+
+{ #category : 'tests' }
 MCPToolRepositoryOperationTest >> testAttachGivesACheckoutWithoutProjectFileItsSubdirectory [
 
 	| location packageName repository repositoryName result |
@@ -441,6 +484,27 @@ MCPToolRepositoryOperationTest >> testAttachGivesAnEmptyCheckoutItsSubdirectory 
 ]
 
 { #category : 'tests' }
+MCPToolRepositoryOperationTest >> testAttachNamesThePackagesItRegistered [
+
+	| location packageName repositoryName result |
+	repositoryName := 'MCP Attach Names Packages Test'.
+	packageName := 'MCPToolRepositoryOperationAttachNamesPackage'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestAttachNamesPackages'.
+	self withExportPackageNamed: packageName className: 'MCPToolRepositoryOperationAttachNamesClass' do: [
+			self withCleanRepositoryNamed: repositoryName location: location do: [
+					self commitCheckoutNamed: repositoryName at: location holding: packageName.
+					result := self attachRepositoryNamed: repositoryName location: location pathString packages: #(  ).
+					self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
+					self
+						assert: (self summaryFrom: result)
+						equals: ('Attached repository {1} at {2}, on branch main, with its sources in src.' format: {
+									 repositoryName.
+									 location fullName }).
+					self assert: ((self dataFrom: result) at: #packages) asArray equals: { packageName }.
+					self assert: (self warningsFrom: result) isEmpty ] ]
+]
+
+{ #category : 'tests' }
 MCPToolRepositoryOperationTest >> testAttachParsesAndDispatchesToAttachCommand [
 
 	| command parsedRequest rawRequest tool |
@@ -488,6 +552,59 @@ MCPToolRepositoryOperationTest >> testAttachReadsThePackagesOfACheckoutWithoutPr
 					self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
 					repository := IceRepository repositories detect: [ :each | each name asString = repositoryName ].
 					self assert: (self packageNamesIn: repository) equals: { packageName } ] ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testAttachRefusesADirectoryThatIsNoCheckout [
+
+	| location repositoryName result |
+	repositoryName := 'MCP Attach No Checkout Test'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestAttachNoCheckout'.
+	self withCleanRepositoryNamed: repositoryName location: location do: [
+			location ensureCreateDirectory.
+			result := self attachRepositoryNamed: repositoryName location: location pathString packages: #(  ).
+			self assert: ((self errorFrom: result) at: #errorCode) equals: 'RepositoryLocationNotGitRoot'.
+			self
+				assert: (self summaryFrom: result)
+				equals:
+					('Cannot attach repository {1}: {2} is not the root of a Git checkout. repository_create starts a repository there if it holds no file; otherwise run git init there first.'
+						 format: {
+								 repositoryName.
+								 location fullName }).
+			self deny: (self isRegistered: repositoryName) ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testAttachRefusesAMissingLocation [
+
+	| location repositoryName result |
+	repositoryName := 'MCP Attach Missing Location Test'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestAttachMissingLocation'.
+	self withCleanRepositoryNamed: repositoryName location: location do: [
+			result := self attachRepositoryNamed: repositoryName location: location pathString packages: #(  ).
+			self assert: ((self errorFrom: result) at: #errorCode) equals: 'RepositoryLocationMissing'.
+			self assert: (self summaryFrom: result) equals: ('Cannot attach repository {1}: {2} does not exist.' format: {
+						 repositoryName.
+						 location fullName }).
+			self deny: (self isRegistered: repositoryName) ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testAttachRefusesARelativeLocation [
+
+	| repositoryName result |
+	repositoryName := 'MCP Attach Relative Location Test'.
+	self removeRegisteredRepositoriesNamed: repositoryName.
+	result := self attachRepositoryNamed: repositoryName location: 'notes' packages: #(  ).
+	self assert: ((self errorFrom: result) at: #errorCode) equals: 'RepositoryLocationNotAbsolute'.
+	self
+		assert: (self summaryFrom: result)
+		equals:
+			('Cannot attach repository {1}: location notes is not an absolute path, and the image would resolve it against its own working directory, {2}. Give the full path.'
+				 format: {
+						 repositoryName.
+						 FileSystem workingDirectory fullName }).
+	self deny: (self isRegistered: repositoryName)
 ]
 
 { #category : 'tests' }
@@ -587,7 +704,69 @@ MCPToolRepositoryOperationTest >> testAttachReportsDuplicateRepository [
 					          (#name -> repositoryName).
 					          (#location -> location pathString) } asDictionary.
 			self assert: (self resultIndicatesError: result).
-			self assert: ((self summaryFrom: result) includesSubstring: 'already registered') ]
+			self
+				assert: (self summaryFrom: result)
+				equals:
+					('Cannot attach repository {1}: a repository of that name is already registered, at {2}. Choose another name.' format: {
+							 repositoryName.
+							 location pathString }) ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testAttachSaysWhenHeadIsDetached [
+
+	| headId location packageName repositoryName result |
+	repositoryName := 'MCP Attach Detached Head Test'.
+	packageName := 'MCPToolRepositoryOperationAttachDetachedPackage'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestAttachDetachedHead'.
+	self withExportPackageNamed: packageName className: 'MCPToolRepositoryOperationAttachDetachedClass' do: [
+			self withCleanRepositoryNamed: repositoryName location: location do: [
+					self commitCheckoutNamed: repositoryName at: location holding: packageName.
+					headId := self git: 'rev-parse HEAD' in: location.
+					self git: 'checkout -q --detach' in: location.
+					result := self attachRepositoryNamed: repositoryName location: location pathString packages: #(  ).
+					self
+						assert: (self summaryFrom: result)
+						equals: ('Attached repository {1} at {2}, on detached HEAD {3}, with its sources in src.' format: {
+									 repositoryName.
+									 location fullName.
+									 (headId first: 7) }) ] ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testAttachWarnsOfAPackageInNeitherTheImageNorTheCheckout [
+	"A package asked for that neither the image nor the checkout holds is likely a name mistyped."
+
+	| location packageName repositoryName result |
+	repositoryName := 'MCP Attach Package Nowhere Test'.
+	packageName := 'MCPToolRepositoryOperationNowherePackage'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestAttachPackageNowhere'.
+	self withCleanRepositoryNamed: repositoryName location: location do: [
+			self shellCommand: 'git init --initial-branch=main ' , (self shellQuote: location pathString).
+			result := self attachRepositoryNamed: repositoryName location: location pathString packages: { packageName }.
+			self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
+			self assert: (self warningsFrom: result) size equals: 1.
+			self assert: ((self warningsFrom: result) first beginsWith: packageName , ' is in neither the image nor the checkout.') ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testAttachWithoutPackagesWarns [
+
+	| location repositoryName result |
+	repositoryName := 'MCP Attach Without Packages Test'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestAttachWithoutPackages'.
+	self withCleanRepositoryNamed: repositoryName location: location do: [
+			self shellCommand: 'git init --initial-branch=main ' , (self shellQuote: location pathString).
+			result := self attachRepositoryNamed: repositoryName location: location pathString packages: #(  ).
+			self
+				assert: (self summaryFrom: result)
+				equals: ('Attached repository {1} at {2}, which has no commit yet, with its sources at its root.' format: {
+							 repositoryName.
+							 location fullName }).
+			self
+				assert: (self warningsFrom: result) asArray
+				equals: { ('Repository {1} has no packages; repository_update addPackages adds them.' format: { repositoryName }) }.
+			self deny: ((self dataFrom: result) includesKey: #packages) ]
 ]
 
 { #category : 'tests' }

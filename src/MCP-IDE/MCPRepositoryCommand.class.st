@@ -32,6 +32,20 @@ MCPRepositoryCommand >> adoptHeadCommit: headCommit for: aRepository markLoadedP
 		ifFalse: [ self markLoadedPackagesDirtyIn: workingCopy ]
 ]
 
+{ #category : 'private - warnings' }
+MCPRepositoryCommand >> checkoutOf: aRepository holdsPackageNamed: aPackageName [
+	"Whether the checkout's source directory has a directory for the registered package, named as the format the checkout declares names it. When that cannot be read, nothing shows the package is missing."
+
+	aRepository location ifNil: [ ^ false ].
+	^ [
+		  (self
+			   directoryOfPackage: (aRepository workingCopy packageNamed: aPackageName)
+			   in: aRepository
+			   writer: (self sourceWriterClassFor: aRepository)) isDirectory ]
+		  on: Error
+		  do: [ true ]
+]
+
 { #category : 'private - iceberg state' }
 MCPRepositoryCommand >> commit: leftCommit equals: rightCommit [
 
@@ -62,6 +76,12 @@ MCPRepositoryCommand >> definitionsAbsentFrom: expectedSnapshot inPackage: aPack
 	| expectedDefinitions |
 	expectedDefinitions := expectedSnapshot definitions asSet.
 	^ aPackage snapshot definitions reject: [ :definition | expectedDefinitions includes: definition ]
+]
+
+{ #category : 'private - paths' }
+MCPRepositoryCommand >> directoryOfPackage: anIcePackage in: aRepository writer: aWriterClass [
+
+	^ (self repositorySourceDirectoryFor: aRepository) / (aWriterClass directoryNameFor: anIcePackage) asString
 ]
 
 { #category : 'private - execution' }
@@ -108,6 +128,19 @@ MCPRepositoryCommand >> gitCommandStringFor: arguments in: aRepository outputFil
 				  nextPutAll: (self shellQuote: outputFile pathString);
 				  space;
 				  nextPutAll: '2>&1' ]
+]
+
+{ #category : 'private - results' }
+MCPRepositoryCommand >> headPhraseFor: aRepository [
+	"Where HEAD is, as attach and reload say it: on a branch, detached at a commit, or before any commit."
+
+	| info |
+	(MCPIcebergCommitInfo isNoCommit: aRepository headCommit) ifTrue: [ ^ 'which has no commit yet' ].
+	info := MCPRepositoryInfo fromRepository: aRepository.
+	^ String streamContents: [ :stream |
+			  info isDetachedHead
+				  ifTrue: [ stream << 'on detached HEAD ' << (self shortCommitId: info headCommitId) ]
+				  ifFalse: [ stream << 'on branch ' << info branchName ] ]
 ]
 
 { #category : 'private - iceberg state' }
@@ -273,6 +306,13 @@ MCPRepositoryCommand >> shellQuote: aString [
 			  stream nextPut: quote ]
 ]
 
+{ #category : 'private - results' }
+MCPRepositoryCommand >> shortCommitId: aCommitId [
+	"The first seven characters, as git log --oneline names a commit."
+
+	^ aCommitId first: (7 min: aCommitId size)
+]
+
 { #category : 'private - git' }
 MCPRepositoryCommand >> signalGitCommandFailed: gitResult action: actionName [
 
@@ -387,6 +427,30 @@ MCPRepositoryCommand >> versionIn: sourceRepository for: anIcePackage writer: aW
 	| directoryName |
 	directoryName := (aWriterClass directoryNameFor: anIcePackage) asString.
 	^ (sourceRepository directory / directoryName) exists ifTrue: [ sourceRepository versionFromFileNamed: directoryName ]
+]
+
+{ #category : 'private - warnings' }
+MCPRepositoryCommand >> warningForPackageInNeitherImageNorCheckoutNamed: aPackageName [
+
+	| suggestions |
+	suggestions := MCPScopeNameSuggester packageSuggestionsFor: aPackageName.
+	^ String streamContents: [ :stream |
+			  stream << aPackageName << ' is in neither the image nor the checkout.'.
+			  suggestions ifNotEmpty: [ stream << ' Did you mean: ' << (', ' join: suggestions) << '.' ] ]
+]
+
+{ #category : 'private - warnings' }
+MCPRepositoryCommand >> warningsForPackagesNamed: packageNames inNeitherImageNorCheckoutOf: aRepository [
+	"A registered package that neither the image nor the checkout holds is likely a name mistyped, so say so, once per package."
+
+	| seen |
+	seen := Set new.
+	^ Array streamContents: [ :stream |
+			  packageNames do: [ :each |
+					  ((seen includes: each) or: [
+						   (self packageOrganizer hasPackage: each) or: [ self checkoutOf: aRepository holdsPackageNamed: each ] ]) ifFalse: [
+						  stream nextPut: (self warningForPackageInNeitherImageNorCheckoutNamed: each) ].
+					  seen add: each ] ]
 ]
 
 { #category : 'private - source format' }

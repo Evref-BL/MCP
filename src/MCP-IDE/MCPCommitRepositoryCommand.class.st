@@ -172,7 +172,7 @@ MCPCommitRepositoryCommand >> summaryForCommit: aCommitId in: aRepository [
 	^ String streamContents: [ :stream |
 			  stream << 'Committed repository ' << aRepository name.
 			  branch ifEmpty: [ stream << ' on detached HEAD: ' ] ifNotEmpty: [ stream << ' on branch ' << branch << ': ' ].
-			  stream << (aCommitId first: (7 min: aCommitId size)) << ' ' << subject ]
+			  stream << (self shortCommitId: aCommitId) << ' ' << subject ]
 ]
 
 { #category : 'private - git' }

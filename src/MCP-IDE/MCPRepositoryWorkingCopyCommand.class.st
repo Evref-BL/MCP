@@ -90,12 +90,6 @@ MCPRepositoryWorkingCopyCommand >> deletedPathsFrom: before to: after [
 	^ self sortedStringsFrom: (before keys reject: [ :each | after includesKey: each ])
 ]
 
-{ #category : 'private - paths' }
-MCPRepositoryWorkingCopyCommand >> directoryOfPackage: anIcePackage in: aRepository writer: aWriterClass [
-
-	^ (self repositorySourceDirectoryFor: aRepository) / (aWriterClass directoryNameFor: anIcePackage) asString
-]
-
 { #category : 'private - files' }
 MCPRepositoryWorkingCopyCommand >> existingLoadedPackageDirectoryPathsFor: aRepository [
 
