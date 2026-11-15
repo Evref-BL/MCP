@@ -78,17 +78,16 @@ MCPRemoveClassesCommand >> isEmptyClass: aClass [
 
 { #category : 'private - facts' }
 MCPRemoveClassesCommand >> referencesOutsideRemoval [
-	"Class name to the methods that access its binding, as method_reference_search finds them, outside the classes asked for, on either side. One scan of the image."
+	"Class name to the methods that refer to it, outside the classes asked for, on either side, found by the test method_reference_search makes. One scan of the image's methods per class asked for."
 
-	| bindings references |
-	bindings := self resolvedClasses collect: [ :each | each binding ].
-	references := Dictionary new.
+	| methods references |
+	methods := OrderedCollection new.
 	Smalltalk globals allBehaviorsDo: [ :behavior |
-			(self resolvedClasses includes: behavior instanceSide) ifFalse: [
-					behavior methodsDo: [ :method |
-							bindings do: [ :binding |
-								(binding isAccessedIn: method) ifTrue: [
-									(references at: binding key asString ifAbsentPut: [ OrderedCollection new ]) add: method ] ] ] ] ].
+		(self resolvedClasses includes: behavior instanceSide) ifFalse: [ behavior methodsDo: [ :method | methods add: method ] ] ].
+	references := Dictionary new.
+	self resolvedClasses do: [ :each |
+			((MCPClassReferenceQuery forClass: each) methodsReferringIn: methods) ifNotEmpty: [ :referring |
+				references at: each name asString put: referring ] ].
 	^ references
 ]
 
