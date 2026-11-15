@@ -1,5 +1,7 @@
 "
 Tool that changes one method's protocol, its selector, or both in one call.
+
+The changes apply in order, protocol first, stopping at the first that fails. A selector change is MCPUpdateMethodCommand's.
 "
 Class {
 	#name : 'MCPToolUpdateMethod',

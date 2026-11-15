@@ -1759,7 +1759,7 @@ MCPToolMethodMutationTest >> testProtocolChangeSaysFromAndTo [
 		assert: (self summaryFrom: (self callToolWith: self instanceChangeArguments))
 		equals: ('{1} is already in accessing.' format: { reference }).
 	self
-		assert: (MCPUpdateMethodCommand new protocolChangeSummaryFor: 'EvalLedger>>audit' from: '' to: 'accounting')
+		assert: (MCPToolUpdateMethod new protocolChangeSummaryFor: 'EvalLedger>>audit' from: '' to: 'accounting')
 		equals: 'Moved EvalLedger>>audit from no protocol to accounting.'
 ]
 
