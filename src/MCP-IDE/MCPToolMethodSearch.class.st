@@ -37,14 +37,6 @@ MCPToolMethodSearch >> additionalKeywords [
 	^ #( 'method' )
 ]
 
-{ #category : 'private - searching' }
-MCPToolMethodSearch >> classBindingForClassName: aClassName [
-
-	| binding |
-	binding := Smalltalk globals associationAt: aClassName asSymbol ifAbsent: [ ^ nil ].
-	^ binding value isBehavior ifTrue: [ binding ]
-]
-
 { #category : 'private - methods' }
 MCPToolMethodSearch >> classReferenceEntriesForClassNamed: className queryRequest: queryRequest [
 
@@ -149,11 +141,7 @@ MCPToolMethodSearch >> matchesFilterOnMethodEntry: anEntry sourceText: sourceTex
 { #category : 'private - searching' }
 MCPToolMethodSearch >> matchingClassReferencesForClassNamed: aClassName inMethods: compiledMethods [
 
-	| classBinding |
-	classBinding := self classBindingForClassName: aClassName.
-	classBinding ifNil: [
-		Error signal: (String streamContents: [ :stream | stream << 'There is no class named ' << aClassName << '.' ]) ].
-	^ (compiledMethods select: [ :eachMethod | self method: eachMethod referencesAnyVariable: { classBinding } ]) asArray
+	^ (MCPClassReferenceQuery forClass: (MCPImageLookup classNamed: aClassName)) methodsReferringIn: compiledMethods
 ]
 
 { #category : 'private - searching' }
@@ -165,13 +153,7 @@ MCPToolMethodSearch >> matchingVariableReferencesNamed: aVariableName scopeQuery
 			Error signal:
 				(String streamContents: [ :stream |
 					 stream << 'No variable named ' << aVariableName << ' is accessible in the requested scope.' ]) ].
-	^ (compiledMethods select: [ :eachMethod | self method: eachMethod referencesAnyVariable: variables ]) asArray
-]
-
-{ #category : 'private - searching' }
-MCPToolMethodSearch >> method: aCompiledMethod referencesAnyVariable: variables [
-
-	^ variables anySatisfy: [ :eachVariable | eachVariable isAccessedIn: aCompiledMethod ]
+	^ (compiledMethods select: [ :eachMethod | MCPClassReferenceQuery method: eachMethod referencesAnyVariable: variables ]) asArray
 ]
 
 { #category : 'private - methods' }

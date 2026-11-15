@@ -47,6 +47,51 @@ MCPToolMethodSearchTest >> testAClassOverridingATraitMethodKeepsItsOwnAnswer [
 ]
 
 { #category : 'tests' }
+MCPToolMethodSearchTest >> testAGlobalThatIsNotAClassIsSkippedFromAScope [
+
+	| result |
+	result := self callToolWith: { (self searchScope: { (#classes -> #( 'Transcript' )) }) } asDictionary.
+	self assert: ((self dataFrom: result) at: #methods) isEmpty.
+	self
+		assert: (self warningsFrom: result)
+		equals: #( 'Transcript is a global variable, not a class, so scope.classes skipped it.' )
+]
+
+{ #category : 'tests' }
+MCPToolMethodSearchTest >> testAHierarchyEntryWrittenWithItsSideSelectsItsHierarchy [
+
+	| plain sided |
+	plain := self dataFrom: (self callToolWith: {
+				          (self searchScope: { (#hierarchyOf -> #( 'MCPToolHierarchyTestMid' )) }).
+				          (#selector -> 'hierarchyProbe') } asDictionary).
+	sided := self callToolWith: {
+			         (self searchScope: { (#hierarchyOf -> #( 'MCPToolHierarchyTestMid class' )) }).
+			         (#selector -> 'hierarchyProbe') } asDictionary.
+	self assert: (self warningsFrom: sided) isEmpty.
+	self assert: ((self dataFrom: sided) at: #methods) equals: (plain at: #methods)
+]
+
+{ #category : 'tests' }
+MCPToolMethodSearchTest >> testAScopeEntryWrittenWithItsSideSelectsItsClass [
+	"A scope sweeps whole classes, and scope.side picks the sides, so Foo class selects Foo, without a warning: the rows print the side."
+
+	| data result |
+	result := self callToolWith: { (self searchScope: { (#classes -> { (self targetClassName , ' class') }) }) } asDictionary.
+	data := self dataFrom: result.
+	self assert: (self warningsFrom: result) isEmpty.
+	self
+		assert: ((data at: #methods) collect: [ :each | each at: #selector ] as: Set)
+		equals: #( 'alphaNeedleSelector' 'betaHelper' 'classNeedleSelector' 'classUtility' 'gammaUtility' ) asSet.
+	result := self callToolWith:
+		          { (self searchScope: { (#classes -> { (self targetClassName , ' class') }) } side: 'class') } asDictionary.
+	data := self dataFrom: result.
+	self assert: (self warningsFrom: result) isEmpty.
+	self deny: (data at: #methods) isEmpty.
+	self assert: ((data at: #methods) allSatisfy: [ :each | (each at: #side) = 'class' ]).
+	self entryForReference: self targetClassName , ' class>>classNeedleSelector' in: (data at: #methods)
+]
+
+{ #category : 'tests' }
 MCPToolMethodSearchTest >> testCanFilterAcrossExplicitProtocolTarget [
 
 	| data result selectors |
@@ -144,6 +189,43 @@ MCPToolMethodSearchTest >> testClassReferenceDoesNotIncludeSelectorSendsNamedLik
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #methods) size equals: 2.
 	self deny: (selectors includes: 'sendExistingClassNamedSelector')
+]
+
+{ #category : 'tests' }
+MCPToolMethodSearchTest >> testClassReferenceFindsAMethodThatNamesTheClassByAnAlias [
+	"A global may hold a class under another name, as Pharo 14's deprecated aliases do, such as RBParser for OCParser. A method that names the alias refers to the class, in its body or in a block, so a search by either name finds it beside the methods that name the class itself. The classes are named by string, so that this test adds no reference to them."
+
+	| aliasName writer writerName |
+	aliasName := 'MCPToolMethodSearchReferenceTargetAlias'.
+	writerName := 'MCPToolMethodSearchAliasWriter'.
+	[
+		Smalltalk globals at: aliasName asSymbol put: (self classNamed: 'MCPToolMethodSearchReferenceTarget').
+		writer := self
+			          createClassNamed: writerName
+			          superclassName: 'Object'
+			          slots: #(  )
+			          classSlots: #(  ).
+		self ensureMethodSource: 'writesAlias ^ ' , aliasName protocol: 'testing' on: writer.
+		self ensureMethodSource: ('writesAliasInABlock ^ [ {1} ] value' format: { aliasName }) protocol: 'testing' on: writer.
+		{
+			'MCPToolMethodSearchReferenceTarget'.
+			aliasName } do: [ :name |
+				| methods result |
+				result := self callToolNamed: 'method_reference_search' withArguments: {
+						          (#name -> name).
+						          (#kind -> 'class').
+						          (self searchScope: { (#classes -> {
+								            writerName.
+								            'MCPToolMethodSearchReferenceFixture' }) }) } asDictionary.
+				self deny: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
+				methods := (self dataFrom: result) at: #methods.
+				self assert: methods size equals: 4.
+				self entryForReference: writerName , '>>writesAlias' in: methods.
+				self entryForReference: writerName , '>>writesAliasInABlock' in: methods.
+				self entryForReference: 'MCPToolMethodSearchReferenceFixture>>referenceExtensionTarget' in: methods.
+				self entryForReference: 'MCPToolMethodSearchReferenceFixture class>>referenceExtensionTarget' in: methods ] ] ensure: [
+			self removeClassNamed: writerName.
+			Smalltalk globals removeKey: aliasName asSymbol ifAbsent: [ ] ]
 ]
 
 { #category : 'tests' }
@@ -314,6 +396,34 @@ MCPToolMethodSearchTest >> testEquivalentSearchMatchesReferencedInstanceSideMeth
 ]
 
 { #category : 'tests' }
+MCPToolMethodSearchTest >> testEquivalentSearchReadsAReferenceClassWrittenWithItsSide [
+
+	| data result subclass subclassName |
+	subclassName := 'MCPToolMethodSearchEquivalentSidedFixture'.
+	self
+		createClassNamed: subclassName
+		superclassName: 'MCPToolMethodSearchReferenceFixture'
+		slots: #(  )
+		classSlots: #(  ).
+	[
+		subclass := self classNamed: subclassName.
+		self
+			ensureMethodSource: 'sharedTarget
+
+	^ ''class-target'''
+			protocol: 'testing'
+			on: subclass classSide.
+		result := self callToolNamed: 'method_equivalent_search' withArguments: {
+				          (self searchScope: { (#classes -> { subclassName }) } side: 'class').
+				          (#class -> 'MCPToolMethodSearchReferenceFixture class').
+				          (#selector -> 'sharedTarget') } asDictionary.
+		data := self dataFrom: result.
+		self assert: (data at: #methods) size equals: 1.
+		self entryForReference: subclassName , ' class>>sharedTarget' in: (data at: #methods) ] ensure: [
+		self removeClassNamed: subclassName ]
+]
+
+{ #category : 'tests' }
 MCPToolMethodSearchTest >> testEquivalentSearchRejectsDifferentAst [
 
 	| data result subclassName |
@@ -475,6 +585,26 @@ MCPToolMethodSearchTest >> testMissingClassScopeReturnsPartialResultsAndWarnings
 	self assert: (selectors includes: 'alphaNeedleSelector').
 	self assert: warnings size equals: 1.
 	self assert: (warnings first includesSubstring: 'MCPDefinitelyMissingMethodSearchClass')
+]
+
+{ #category : 'tests' }
+MCPToolMethodSearchTest >> testMissingScopeEntriesAreNamedByTheirKey [
+	"A warning names the key as the schema spells it, never an internal label."
+
+	| warnings |
+	warnings := self warningsFrom: (self callToolWith: { (self searchScope: {
+					              (#classes -> #( 'Zzqxw' )).
+					              (#hierarchyOf -> #( 'Zzqxw' )).
+					              (#superclassesOf -> #( 'Zzqxw' )).
+					              (#subclassesOf -> #( 'Zzqxw' )).
+					              (#packages -> #( 'Zzqxw-Package' )) }) } asDictionary).
+	self
+		assert: warnings asSet
+		equals:
+			#( 'Class Zzqxw does not exist, so scope.classes skipped it.' 'Class Zzqxw does not exist, so scope.hierarchyOf skipped it.'
+			   'Class Zzqxw does not exist, so scope.superclassesOf skipped it.'
+			   'Class Zzqxw does not exist, so scope.subclassesOf skipped it.'
+			   'Package Zzqxw-Package does not exist, so scope.packages skipped it.' ) asSet
 ]
 
 { #category : 'tests' }

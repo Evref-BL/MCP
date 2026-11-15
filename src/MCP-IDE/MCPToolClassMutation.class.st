@@ -275,9 +275,10 @@ MCPToolClassMutation >> newSlotNameSchemaProperty [
 
 { #category : 'private - request' }
 MCPToolClassMutation >> packageNameForMoveClassNamed: className requestedPackageName: requestedPackageName [
+	"A tag alone retags the class inside its own package. The class is looked up as every class name is, so a global variable that is no class, such as Transcript, is refused rather than asked for its package."
 
 	requestedPackageName ifNotNil: [ ^ requestedPackageName ].
-	^ (Smalltalk globals at: className asSymbol ifAbsent: [ ^ '' ]) packageName asString
+	^ (MCPImageLookup classNamed: className) packageName asString
 ]
 
 { #category : 'private - schema' }

@@ -69,10 +69,11 @@ MCPToolSearchEquivalentMethods >> methodReferenceSpecFromToolRequest: request [
 	className ifNil: [ ^ MCPInvalidToolInput signalMissingRequiredArgumentNamed: 'class' forTool: self ].
 	selector := request stringArgumentNamed: 'selector'.
 	selector ifNil: [ ^ MCPInvalidToolInput signalMissingRequiredArgumentNamed: 'selector' forTool: self ].
-	^ MCPMethodReferenceSpec
+	^ MCPImageLookup
 		  className: className
-		  selector: selector
-		  classSide: ((request stringArgumentNamed: 'side' default: 'instance') = 'class')
+		  side: (request stringArgumentNamed: 'side')
+		  do: [ :baseName :isClassSide :isSideGiven |
+		  MCPMethodReferenceSpec className: baseName selector: selector classSide: isClassSide ]
 ]
 
 { #category : 'private - template' }

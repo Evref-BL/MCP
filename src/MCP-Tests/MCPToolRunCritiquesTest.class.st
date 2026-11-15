@@ -139,6 +139,34 @@ MCPToolRunCritiquesTest >> tearDown [
 ]
 
 { #category : 'tests' }
+MCPToolRunCritiquesTest >> testARuleClassThatNamesNoRuleIsSaidByTheLookup [
+	"A misspelt rule suggests the rules critique_run runs; a global variable and a class that runs no critique each say what they are not."
+
+	| error result |
+	result := self callCritiqueRunWithArguments: {
+			          (#scope -> { (#classes -> { self fixtureClassName }) } asDictionary).
+			          (#ruleClasses -> #( 'ReAssignmentInBlockRul' )) } asDictionary.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (error at: #errorCode) equals: 'CritiqueRuleNotFound'.
+	self assert: (error at: #ruleClass) equals: 'ReAssignmentInBlockRul'.
+	self assert: ((error at: #message) beginsWith: 'Critique rule ReAssignmentInBlockRul does not exist. Did you mean: ').
+	self assert: ((error at: #suggestions) includes: ReAssignmentInBlockRule name).
+	result := self callCritiqueRunWithArguments: {
+			          (#scope -> { (#classes -> { self fixtureClassName }) } asDictionary).
+			          (#ruleClasses -> #( 'Transcript' )) } asDictionary.
+	error := self errorFrom: result.
+	self assert: (error at: #errorCode) equals: 'NotAClass'.
+	self assert: (error at: #message) equals: 'Transcript is a global variable, not a critique rule.'.
+	result := self callCritiqueRunWithArguments: {
+			          (#scope -> { (#classes -> { self fixtureClassName }) } asDictionary).
+			          (#ruleClasses -> #( 'Object' )) } asDictionary.
+	error := self errorFrom: result.
+	self assert: (error at: #errorCode) equals: 'InvalidCritiqueRule'.
+	self assert: (error at: #message) equals: 'Object is not a critique rule class.'
+]
+
+{ #category : 'tests' }
 MCPToolRunCritiquesTest >> testAsksANodeRuleWhetherItWantsTheMethod [
 	"ReDoNotSendSuperInitializeInClassSideRule is about the class side and says so in shouldCheckMethod:. An instance-side initialize sending super initialize is what it exists to leave alone."
 
@@ -628,6 +656,24 @@ MCPToolRunCritiquesTest >> testTextReadsRuleThenHitsByLine [
 	self
 		assert: (String streamContents: [ :stream | tool hitTextOn: stream for: { (#package -> 'Eval-Shapes') } asDictionary ])
 		equals: (String streamContents: [ :stream | stream lf << '  package Eval-Shapes' ])
+]
+
+{ #category : 'tests' }
+MCPToolRunCritiquesTest >> testScopeWarningsNameTheirKey [
+
+	| result warnings |
+	result := self callCritiqueRunWithArguments: {
+			          (#scope -> {
+				           (#classes -> #( 'Zzqxw' )).
+				           (#packages -> #( 'Zzqxw-Package' )) } asDictionary).
+			          (#ruleClasses -> { ReAssignmentInBlockRule name }) } asDictionary.
+	warnings := self warningsFrom: result.
+	self assert: warnings size equals: 2.
+	self
+		assert: warnings asSet
+		equals:
+			#( 'Class Zzqxw does not exist, so scope.classes skipped it.' 'Package Zzqxw-Package does not exist, so scope.packages skipped it.' )
+				asSet
 ]
 
 { #category : 'private' }

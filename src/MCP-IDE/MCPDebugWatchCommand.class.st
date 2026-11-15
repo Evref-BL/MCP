@@ -109,18 +109,10 @@ MCPDebugWatchCommand >> hitLimit [
 MCPDebugWatchCommand >> methodForReference: aReference [
 
 	| behavior |
-	behavior := self class environment at: aReference className asSymbol ifAbsent: [
-		            MCPCommandError signalMissingClassNamed: aReference className ].
-	behavior := aReference classSide
-		            ifTrue: [ behavior class ]
-		            ifFalse: [ behavior ].
+	behavior := MCPImageLookup behaviorNamed: aReference className classSide: aReference classSide.
 	^ behavior
 		  compiledMethodAt: aReference selector asSymbol
-		  ifAbsent: [
-		  MCPCommandError
-			  signalMissingMethodInClassName: aReference className
-			  classSide: aReference classSide
-			  selector: aReference selector ]
+		  ifAbsent: [ MCPCommandError signalMissingMethod: aReference selector in: behavior ]
 ]
 
 { #category : 'private - probes' }

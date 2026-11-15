@@ -62,6 +62,15 @@ MCPScopeQuery class >> phraseForNames: someNames one: oneLead several: severalLe
 							  nextPutAll: (self listPhraseFor: someNames) ] ]
 ]
 
+{ #category : 'private - resolution' }
+MCPScopeQuery >> classNamed: className inScope: aScopeKey [
+	"A scope entry, read as every class name is, so Foo class selects Foo. What names no class, a scope that must be complete refuses, and any other scope skips with a warning. aScopeKey is the entry's key as the schema spells it, such as scope.classes."
+
+	^ self requiresCompleteScope
+		  ifTrue: [ MCPImageLookup classNamed: className inScope: aScopeKey ]
+		  ifFalse: [ MCPImageLookup classNamed: className inScope: aScopeKey ifSkipped: [ :warning | self recordWarning: warning ] ]
+]
+
 { #category : 'accessing' }
 MCPScopeQuery >> classNames [
 
@@ -93,6 +102,15 @@ MCPScopeQuery >> hierarchyClassNames [
 MCPScopeQuery >> hierarchyClassNames: aCollection [
 
 	hierarchyClassNames := aCollection
+]
+
+{ #category : 'private - resolution' }
+MCPScopeQuery >> packageNamed: packageName inScope: aScopeKey [
+	"A scope entry naming a package. A scope that must be complete refuses a missing one; any other scope skips it with a warning. aScopeKey is the entry's key as the schema spells it, such as scope.packages."
+
+	^ self requiresCompleteScope
+		  ifTrue: [ MCPImageLookup packageNamed: packageName inScope: aScopeKey ]
+		  ifFalse: [ MCPImageLookup packageNamed: packageName inScope: aScopeKey ifSkipped: [ :warning | self recordWarning: warning ] ]
 ]
 
 { #category : 'accessing' }
@@ -136,22 +154,6 @@ MCPScopeQuery >> parentClassNames: aCollection [
 ]
 
 { #category : 'private - resolution' }
-MCPScopeQuery >> recordMissingClassNamed: className inScope: scopeName [
-
-	| suggestions |
-	suggestions := MCPScopeNameSuggester classSuggestionsFor: className.
-	self requiresCompleteScope ifTrue: [ ^ MCPCommandError signalMissingClassNamed: className scopeName: scopeName ].
-	warnings ifNil: [ self resetWarnings ].
-	self recordMissingName: className inScope: scopeName.
-	warnings add: (MCPScopeNameSuggester
-			 missingNameWarningForKind: 'Class'
-			 name: className
-			 scope: scopeName
-			 suggestions: suggestions).
-	^ nil
-]
-
-{ #category : 'private - resolution' }
 MCPScopeQuery >> recordMissingName: aName inScope: scopeName [
 	"A name the scope was given as scopeName and could not resolve. Its warning names it; the phrase for where the query looked leaves it out of that kind of entry only, since the same name may exist as another kind: a class that is no package."
 
@@ -160,18 +162,11 @@ MCPScopeQuery >> recordMissingName: aName inScope: scopeName [
 ]
 
 { #category : 'private - resolution' }
-MCPScopeQuery >> recordMissingPackageNamed: packageName inScope: scopeName [
+MCPScopeQuery >> recordWarning: aWarning [
+	"Keep aWarning for the answer, and answer nil: the entry it is about selects nothing."
 
-	| suggestions |
-	suggestions := MCPScopeNameSuggester packageSuggestionsFor: packageName.
-	self requiresCompleteScope ifTrue: [ ^ MCPCommandError signalMissingPackageNamed: packageName scopeName: scopeName ].
 	warnings ifNil: [ self resetWarnings ].
-	self recordMissingName: packageName inScope: scopeName.
-	warnings add: (MCPScopeNameSuggester
-			 missingNameWarningForKind: 'Package'
-			 name: packageName
-			 scope: scopeName
-			 suggestions: suggestions).
+	warnings add: aWarning.
 	^ nil
 ]
 

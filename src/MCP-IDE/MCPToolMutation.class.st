@@ -27,10 +27,11 @@ MCPToolMutation >> actionErrorCodePrefixFor: action [
 
 { #category : 'private - refactoring' }
 MCPToolMutation >> addRefactoringScopeContextFromSpec: scopeSpec toRequestedContext: requestedContext [
+	"Each scope entry under the key the schema gives it."
 
 	scopeSpec packageNames ifNotEmpty: [ requestedContext at: #packages put: scopeSpec packageNames ].
 	scopeSpec classNames ifNotEmpty: [ requestedContext at: #classes put: scopeSpec classNames ].
-	scopeSpec hierarchyClassNames ifNotEmpty: [ requestedContext at: #hierarchyClasses put: scopeSpec hierarchyClassNames ]
+	scopeSpec hierarchyClassNames ifNotEmpty: [ requestedContext at: #hierarchyOf put: scopeSpec hierarchyClassNames ]
 ]
 
 { #category : 'private - errors' }
@@ -85,7 +86,7 @@ MCPToolMutation >> buildInputSchema [
 { #category : 'private - refactoring' }
 MCPToolMutation >> classesRefactoringEnvironmentForClassNames: classNames baseEnvironment: baseEnvironment [
 
-	^ baseEnvironment forClasses: (self resolvedRefactoringScopeClassesFrom: classNames)
+	^ baseEnvironment forClasses: (self resolvedRefactoringScopeClassesFrom: classNames inScope: 'scope.classes')
 ]
 
 { #category : 'private - execution' }
@@ -232,7 +233,7 @@ MCPToolMutation >> forceSchemaProperty [
 MCPToolMutation >> hierarchyRefactoringEnvironmentForClassNames: classNames baseEnvironment: baseEnvironment [
 
 	| environment resolvedClasses |
-	resolvedClasses := self resolvedRefactoringScopeClassesFrom: classNames.
+	resolvedClasses := self resolvedRefactoringScopeClassesFrom: classNames inScope: 'scope.hierarchyOf'.
 	environment := nil.
 	resolvedClasses do: [ :eachClass |
 		environment := self unionRefactoringEnvironment: environment with: (baseEnvironment forClassHierarchy: eachClass) ].
@@ -250,7 +251,7 @@ MCPToolMutation >> impactMessageForRefactoringCondition: aCondition [
 
 	| message |
 	message := String streamContents: [ :stream | aCondition violationMessageOn: stream ].
-	^ self normalizedRefactoringConditionMessage: (self normalizedSingleLineText: message)
+	^ MCPRefactoringText withoutNegation: (MCPRefactoringText singleLine: message)
 ]
 
 { #category : 'private - warnings' }
@@ -265,7 +266,7 @@ MCPToolMutation >> impactMessagesForRefactoringWarning: aWarning [
 					message := self impactMessageForRefactoringCondition: each.
 					message isEmpty ifFalse: [ impactMessages add: message ] ] ].
 	impactMessages ifEmpty: [
-			primaryMessage := self normalizedSingleLineText: aWarning messageText.
+			primaryMessage := MCPRefactoringText singleLine: aWarning messageText.
 			primaryMessage isEmpty ifTrue: [ primaryMessage := aWarning class name asString ].
 			impactMessages add: primaryMessage ].
 	^ impactMessages asArray
@@ -348,25 +349,6 @@ MCPToolMutation >> normalizedCommandErrorForRefactoringWarning: aWarning action:
 		  details: details;
 		  messageText: summary;
 		  yourself
-]
-
-{ #category : 'private - warnings' }
-MCPToolMutation >> normalizedRefactoringConditionMessage: aString [
-
-	(aString beginsWith: 'NOT ') ifTrue: [ ^ (aString allButFirst: 4) trimBoth ].
-	^ aString
-]
-
-{ #category : 'private - warnings' }
-MCPToolMutation >> normalizedSingleLineText: aString [
-
-	| text |
-	text := aString ifNil: [ '' ] ifNotNil: [ aString asString ].
-	text := text copyReplaceAll: '<n>' with: ' '.
-	text := text copyReplaceAll: String cr with: ' '.
-	text := text copyReplaceAll: String lf with: ' '.
-	[ text includesSubstring: '  ' ] whileTrue: [ text := text copyReplaceAll: '  ' with: ' ' ].
-	^ text trimBoth
 ]
 
 { #category : 'private - request' }
@@ -507,9 +489,10 @@ MCPToolMutation >> requiredInputProperties [
 ]
 
 { #category : 'private - request' }
-MCPToolMutation >> resolvedRefactoringScopeClassesFrom: classNames [
+MCPToolMutation >> resolvedRefactoringScopeClassesFrom: classNames inScope: aScopeKey [
+	"A refactoring scope must be complete: an entry that names no class refuses the call, under its key as the schema spells it."
 
-	^ classNames collect: [ :eachName | MCPImageLookup classNamed: eachName ]
+	^ classNames collect: [ :eachName | MCPImageLookup classNamed: eachName inScope: aScopeKey ]
 ]
 
 { #category : 'private - errors' }
@@ -605,7 +588,7 @@ MCPToolMutation >> validateAtLeastOneInputPropertyIn: request [
 { #category : 'private - request' }
 MCPToolMutation >> validateRefactoringScopePackageNamesExist: packageNames [
 
-	packageNames do: [ :eachName | MCPImageLookup packageNamed: eachName ]
+	packageNames do: [ :eachName | MCPImageLookup packageNamed: eachName inScope: 'scope.packages' ]
 ]
 
 { #category : 'validating' }

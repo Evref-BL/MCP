@@ -46,11 +46,9 @@ MCPUpdateMethodCommand >> executeAddArgumentsWithPlan: plan [
 		  requestedContext: plan requestedContext
 		  work: [
 				  behavior := self updateTargetBehavior.
-				  behavior compiledMethodAt: oldSelectorSymbol ifAbsent: [
-						  MCPCommandError
-							  signalMissingMethodInClassName: self request className
-							  classSide: self request classSide
-							  selector: self request selector ].
+				  behavior
+					  compiledMethodAt: oldSelectorSymbol
+					  ifAbsent: [ MCPCommandError signalMissingMethod: self request selector in: behavior ].
 				  refactoringModel := self tool refactoringModelForScopeSpec: self request refactoringScopeSpec anchoredAtBehavior: behavior.
 				  oldMethodReference := self tool methodReferenceForBehavior: behavior selector: oldSelectorSymbol.
 				  refactoring := self tool
@@ -106,11 +104,9 @@ MCPUpdateMethodCommand >> executeChangeProtocolWithPlan: plan [
 		  requestedContext: plan requestedContext
 		  work: [
 				  behavior := self updateTargetBehavior.
-				  oldCompiledMethod := behavior compiledMethodAt: selectorSymbol ifAbsent: [
-						                       MCPCommandError
-							                       signalMissingMethodInClassName: self request className
-							                       classSide: self request classSide
-							                       selector: self request selector ].
+				  oldCompiledMethod := behavior
+					                       compiledMethodAt: selectorSymbol
+					                       ifAbsent: [ MCPCommandError signalMissingMethod: self request selector in: behavior ].
 				  oldProtocol := self protocolNameForMethod: oldCompiledMethod.
 				  (RBMethodProtocolTransformation
 					   protocol: self request protocol
@@ -166,11 +162,9 @@ MCPUpdateMethodCommand >> executeRemoveArgumentsWithPlan: plan [
 		  requestedContext: plan requestedContext
 		  work: [
 				  behavior := self updateTargetBehavior.
-				  behavior compiledMethodAt: oldSelectorSymbol ifAbsent: [
-						  MCPCommandError
-							  signalMissingMethodInClassName: self request className
-							  classSide: self request classSide
-							  selector: self request selector ].
+				  behavior
+					  compiledMethodAt: oldSelectorSymbol
+					  ifAbsent: [ MCPCommandError signalMissingMethod: self request selector in: behavior ].
 				  oldArgumentNames := (behavior parseTreeForSelector: oldSelectorSymbol) argumentNames.
 				  removedArgumentNames := self request removedArgumentNamesInRemovalOrderFor: behavior from: oldArgumentNames.
 				  refactoringModel := self tool refactoringModelForScopeSpec: self request refactoringScopeSpec anchoredAtBehavior: behavior.
@@ -224,11 +218,9 @@ MCPUpdateMethodCommand >> executeRenameWithPlan: plan [
 		  requestedContext: plan requestedContext
 		  work: [
 				  behavior := self updateTargetBehavior.
-				  behavior compiledMethodAt: oldSelectorSymbol ifAbsent: [
-						  MCPCommandError
-							  signalMissingMethodInClassName: self request className
-							  classSide: self request classSide
-							  selector: self request selector ].
+				  behavior
+					  compiledMethodAt: oldSelectorSymbol
+					  ifAbsent: [ MCPCommandError signalMissingMethod: self request selector in: behavior ].
 				  refactoringModel := self tool refactoringModelForScopeSpec: self request refactoringScopeSpec anchoredAtBehavior: behavior.
 				  oldMethodReference := self tool methodReferenceForBehavior: behavior selector: oldSelectorSymbol.
 				  refactoring := self tool

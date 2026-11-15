@@ -195,6 +195,18 @@ MCPToolGetClassTest >> testDescribesATraitAndNamesTheClassesUsingIt [
 ]
 
 { #category : 'tests' }
+MCPToolGetClassTest >> testGetsAClassWrittenWithItsSideAsTheClass [
+	"class_get reports both sides of a class, so Foo class, as MCP's own answers print a class side, reads as Foo and gets what Foo gets."
+
+	| plain sided |
+	plain := self callToolWith: { (#name -> self baseClassName) } asDictionary.
+	sided := self callToolWith: { (#name -> ('{1} class' format: { self baseClassName })) } asDictionary.
+	self deny: (self resultIndicatesError: sided) description: [ self summaryFrom: sided ].
+	self assert: (self summaryFrom: sided) equals: ('Got class {1}.' format: { self baseClassName }).
+	self assert: (self dataFrom: sided) equals: (self dataFrom: plain)
+]
+
+{ #category : 'tests' }
 MCPToolGetClassTest >> testGetsClassMetadata [
 
 	| data result |
@@ -383,20 +395,35 @@ MCPToolGetClassTest >> testRejectsNegativeSubclassDepth [
 { #category : 'tests' }
 MCPToolGetClassTest >> testReturnsStructuredErrorWhenClassIsMissing [
 
-	| error result structured |
+	| error result |
 	result := self callToolWith: { (#name -> self missingClassName) } asDictionary.
-	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
-	self assert: (error at: #class) equals: self missingClassName
+	self assert: (error at: #class) equals: self missingClassName.
+	self assert: ((error at: #message) beginsWith: ('Class {1} does not exist.' format: { self missingClassName })).
+	self deny: (error includesKey: #scope)
 ]
 
 { #category : 'tests' }
 MCPToolGetClassTest >> testToolRequiresNameInSchema [
 
 	self assert: MCPToolGetClass new inputSchema required asSet equals: #( 'name' ) asSet
+]
+
+{ #category : 'tests' }
+MCPToolGetClassTest >> testUpToSuperclassWrittenWithItsSideNamesTheClass [
+
+	| plain sided |
+	plain := self callToolWith: {
+			         (#name -> self grandchildClassName).
+			         (#upToSuperclass -> 'Object') } asDictionary.
+	sided := self callToolWith: {
+			         (#name -> self grandchildClassName).
+			         (#upToSuperclass -> 'Object class') } asDictionary.
+	self deny: (self resultIndicatesError: sided) description: [ self summaryFrom: sided ].
+	self assert: ((self dataFrom: sided) at: #superclasses) equals: ((self dataFrom: plain) at: #superclasses)
 ]
 
 { #category : 'private - calling' }

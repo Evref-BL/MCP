@@ -49,16 +49,19 @@ MCPToolRemoveMethods >> buildInputSchema [
 
 { #category : 'private - errors' }
 MCPToolRemoveMethods >> classNameForErrorFromParsedRequest: removeRequest rawRequest: rawRequest [
+	"The request did not parse, so the class is read from the raw text, without the side it may name."
 
 	removeRequest ifNotNil: [ ^ removeRequest className ].
-	^ (rawRequest stringArgumentNamed: 'class') ifNil: [ '' ]
+	^ (rawRequest stringArgumentNamed: 'class') ifNil: [ '' ] ifNotNil: [ :className | MCPImageLookup baseNameOf: className ]
 ]
 
 { #category : 'private - errors' }
 MCPToolRemoveMethods >> classSideForErrorFromParsedRequest: removeRequest rawRequest: rawRequest [
+	"The request did not parse: the class side is meant when the call said so, by side or by a class written as Foo class."
 
 	removeRequest ifNotNil: [ ^ removeRequest classSide ].
-	^ (rawRequest stringArgumentNamed: 'side' default: 'instance') = 'class'
+	^ (rawRequest stringArgumentNamed: 'side') = 'class' or: [
+		  (rawRequest stringArgumentNamed: 'class') ifNil: [ false ] ifNotNil: [ :className | MCPImageLookup namesClassSide: className ] ]
 ]
 
 { #category : 'private - execution' }

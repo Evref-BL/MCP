@@ -89,16 +89,19 @@ MCPToolGetMethod >> buildInputSchema [
 
 { #category : 'private - errors' }
 MCPToolGetMethod >> classNameForErrorFromParsedRequest: getRequest rawRequest: rawRequest [
+	"The request did not parse, so the class is read from the raw text, without the side it may name."
 
 	getRequest ifNotNil: [ ^ getRequest className ].
-	^ (rawRequest stringArgumentNamed: 'class') ifNil: [ '' ]
+	^ (rawRequest stringArgumentNamed: 'class') ifNil: [ '' ] ifNotNil: [ :className | MCPImageLookup baseNameOf: className ]
 ]
 
 { #category : 'private - errors' }
 MCPToolGetMethod >> classSideForErrorFromParsedRequest: getRequest rawRequest: rawRequest [
+	"The request did not parse: the class side is meant when the call said so, by side or by a class written as Foo class."
 
 	getRequest ifNotNil: [ ^ getRequest classSide ].
-	^ (rawRequest stringArgumentNamed: 'side' default: 'instance') = 'class'
+	^ (rawRequest stringArgumentNamed: 'side') = 'class' or: [
+		  (rawRequest stringArgumentNamed: 'class') ifNil: [ false ] ifNotNil: [ :className | MCPImageLookup namesClassSide: className ] ]
 ]
 
 { #category : 'private - execution' }
@@ -141,7 +144,8 @@ MCPToolGetMethod >> errorResultForError: anError className: className selector: 
 				  details := commandError structuredDetails copy.
 				  details at: #class ifAbsentPut: [ className ].
 				  details at: #selector ifAbsentPut: [ selectorString ].
-				  classSide ifTrue: [ details at: #side put: 'class' ].
+				  "A side the error states, such as the one a ClassSideConflict was sent, is kept."
+				  classSide ifTrue: [ details at: #side ifAbsentPut: [ 'class' ] ].
 				  self errorResultText: commandError messageText details: details ]
 		  otherwise: [ :toolError |
 				  self
@@ -155,7 +159,9 @@ MCPToolGetMethod >> errorResultForError: anError className: className selector: 
 							  (#message -> toolError messageText).
 							  (#class -> className).
 							  (#selector -> selectorString).
-							  (#side -> (classSide ifTrue: [ 'class' ] ifFalse: [ 'instance' ])) } asDictionary ]
+							  (#side -> (classSide
+								    ifTrue: [ 'class' ]
+								    ifFalse: [ 'instance' ])) } asDictionary ]
 ]
 
 { #category : 'executing' }

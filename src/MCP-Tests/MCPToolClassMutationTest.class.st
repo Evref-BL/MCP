@@ -765,6 +765,22 @@ MCPToolClassMutationTest >> testUpdateMovesClassToExistingTag [
 ]
 
 { #category : 'tests - update' }
+MCPToolClassMutationTest >> testUpdateOfAGlobalThatIsNotAClassIsRefused [
+	"A tag alone looks the class up for its package. Transcript used to be asked for its package as if it were a class."
+
+	| error result |
+	result := self callToolWith: {
+			          (#action -> 'update').
+			          (#name -> 'Transcript').
+			          (#tag -> 'X') } asDictionary.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (error at: #errorCode) equals: 'NotAClass'.
+	self assert: (error at: #class) equals: 'Transcript'.
+	self assert: (error at: #message) equals: 'Transcript is a global variable, not a class.'
+]
+
+{ #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdatePreservesSharedVariableValueWhenNameIsKept [
 
 	| createArguments result targetClass |
@@ -1011,6 +1027,34 @@ MCPToolClassMutationTest >> testUpdateRecategorizesWithinCurrentPackageWhenPacka
 	self assert: self moveTargetClass packageName asString equals: self originalMovePackageName.
 	self assert: self currentTagOfMoveTargetClass equals: self destinationTagName.
 	self deny: (result at: #isError ifAbsent: [ false ])
+]
+
+{ #category : 'tests - update' }
+MCPToolClassMutationTest >> testUpdateRefusesAClassSideName [
+	"class_update changes the whole class, so Foo class read as Foo would patch the instance side. It is refused while parsing, before anything changes."
+
+	| error result target |
+	self
+		createClassNamed: 'MCPToolClassMutationTestAddSlotTarget'
+		superclassName: 'Object'
+		slots: #(  )
+		classSlots: #(  ).
+	result := self callToolWith: {
+			          (#action -> 'update').
+			          (#name -> 'MCPToolClassMutationTestAddSlotTarget class').
+			          (#slots -> { (#add -> #( 'made' )) } asDictionary) } asDictionary.
+	error := self errorFrom: result.
+	target := self classNamed: 'MCPToolClassMutationTestAddSlotTarget'.
+	self assert: (result at: #isError).
+	self assert: (error at: #errorCode) equals: 'ClassSideNamed'.
+	self assert: (error at: #class) equals: 'MCPToolClassMutationTestAddSlotTarget'.
+	self assert: (error at: #name) equals: 'MCPToolClassMutationTestAddSlotTarget class'.
+	self
+		assert: (error at: #message)
+		equals:
+		'MCPToolClassMutationTestAddSlotTarget class is the class side of MCPToolClassMutationTestAddSlotTarget. class_update changes the whole class: name MCPToolClassMutationTestAddSlotTarget, and use classSlots for class-side slots.'.
+	self assert: target slots isEmpty.
+	self assert: target classSide slots isEmpty
 ]
 
 { #category : 'tests - update' }
@@ -1419,6 +1463,38 @@ MCPToolClassMutationTest >> testUpdateReplacesTraits [
 ]
 
 { #category : 'tests - update' }
+MCPToolClassMutationTest >> testUpdateReplacingTraitsSuggestsTraitsAndRefusesAClass [
+
+	| createArguments error result |
+	createArguments := self
+		                   createRequestArgumentsForClassName: 'MCPToolClassMutationTestMissingTraitTarget'
+		                   superclassName: 'Object'
+		                   packageName: self generatedPackageName.
+	self callToolWith: createArguments.
+	result := self callToolWith:
+		          (self
+			           updateRequestArgumentsForTraitsInClassNamed: 'MCPToolClassMutationTestMissingTraitTarget'
+			           traits: #( 'TAbleToRotat' )).
+	error := self errorFrom: result.
+	self assert: (error at: #errorCode) equals: 'TraitNotFound'.
+	self assert: ((error at: #suggestions) includes: 'TAbleToRotate').
+	self assert: (error at: #traits) equals: #( 'TAbleToRotat' ).
+	self assert: ((error at: #message) beginsWith: 'Trait TAbleToRotat does not exist. Did you mean: ').
+	result := self callToolWith:
+		          (self updateRequestArgumentsForTraitsInClassNamed: 'MCPToolClassMutationTestMissingTraitTarget' traits: #( 'Object' )).
+	error := self errorFrom: result.
+	self assert: (error at: #errorCode) equals: 'InvalidTrait'.
+	self assert: (error at: #message) equals: 'Object is not a trait.'.
+	result := self callToolWith: (self
+			           updateRequestArgumentsForTraitsInClassNamed: 'MCPToolClassMutationTestMissingTraitTarget'
+			           traits: #( 'TAbleToRotate classTrait' )).
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self
+		assert: ((self classNamed: 'MCPToolClassMutationTestMissingTraitTarget') traits collect: #name as: Array)
+		equals: #( #TAbleToRotate )
+]
+
+{ #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenAddSlotClassIsMissing [
 
 	| error result structured |
@@ -1455,7 +1531,7 @@ MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenCommentClassIsMi
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
 	self assert: (error at: #class) equals: 'MCPToolClassMutationTestMissing'.
-	self assert: (error at: #scope) equals: 'class'.
+	self deny: (error includesKey: #scope).
 	self assert: suggestions size <= 5.
 	self assert: ((error at: #message) includesSubstring: 'MCPToolClassMutationTestMissing does not exist')
 ]
@@ -1542,7 +1618,7 @@ MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenRenameClassIsMis
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
 	self assert: (error at: #class) equals: 'MCPToolClassMutationTestMissing'.
-	self assert: (error at: #scope) equals: 'class'.
+	self deny: (error includesKey: #scope).
 	self assert: suggestions size <= 5.
 	self assert: ((error at: #message) includesSubstring: 'MCPToolClassMutationTestMissing does not exist')
 ]

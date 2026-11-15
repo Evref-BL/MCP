@@ -74,7 +74,7 @@ MCPCreateClassCommand >> ensurePackageNamed: aPackageName [
 MCPCreateClassCommand >> execute [
 
 	| createdClass |
-	(Smalltalk globals includesKey: self className asSymbol) ifTrue: [ MCPCommandError signalClassAlreadyExistsNamed: self className ].
+	MCPImageLookup newClassName: self className.
 	self ensurePackageNamed: self packageName.
 	createdClass := self buildClass.
 	^ MCPCreateClassResult classInfo: (MCPClassInfo fromClass: createdClass)
@@ -111,29 +111,9 @@ MCPCreateClassCommand >> resolvedSharedPools [
 ]
 
 { #category : 'private' }
-MCPCreateClassCommand >> resolvedTraitNamed: aTraitName [
-
-	| behavior traitName |
-	traitName := aTraitName.
-	(traitName endsWith: ' classTrait') ifTrue: [ traitName := traitName copyFrom: 1 to: traitName size - ' classTrait' size ].
-	behavior := Smalltalk globals at: traitName asSymbol ifAbsent: [
-			            MCPCommandError
-				            signalErrorCode: #TraitNotFound
-				            message: (String streamContents: [ :stream | stream << 'Trait ' << traitName << ' does not exist.' ])
-				            details: {
-						            (#class -> self className).
-						            (#trait -> traitName) } asDictionary ].
-	behavior isTrait ifFalse: [
-			MCPCommandError signalErrorCode: #InvalidTrait message: traitName , ' is not a trait.' details: {
-					(#class -> self className).
-					(#trait -> traitName) } asDictionary ].
-	^ behavior
-]
-
-{ #category : 'private' }
 MCPCreateClassCommand >> resolvedTraits [
 
-	^ self traits collect: [ :each | self resolvedTraitNamed: each ] as: Array
+	^ self traits collect: [ :each | MCPImageLookup traitNamed: each details: { (#class -> self className) } ] as: Array
 ]
 
 { #category : 'accessing' }
@@ -175,9 +155,7 @@ MCPCreateClassCommand >> slots: someSlots [
 { #category : 'private' }
 MCPCreateClassCommand >> superclass [
 
-	^ Smalltalk globals
-		  at: self superclassName asSymbol
-		  ifAbsent: [ MCPCommandError signalMissingSuperclassNamed: self superclassName forClassNamed: self className ]
+	^ MCPImageLookup classNamed: self superclassName role: #superclass details: { (#class -> self className) }
 ]
 
 { #category : 'accessing' }

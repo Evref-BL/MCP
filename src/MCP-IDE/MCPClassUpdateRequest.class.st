@@ -116,7 +116,7 @@ MCPClassUpdateRequest >> hasUpdates [
 MCPClassUpdateRequest >> initializeFromRequest: request [
 
 	suppliedProperties := self updatePropertyNames select: [ :each | request hasArgumentNamed: each ].
-	className := request stringArgumentNamed: 'name'.
+	className := MCPImageLookup wholeClassName: (request stringArgumentNamed: 'name') for: 'class_update'.
 	newClassName := request stringArgumentNamed: 'newName'.
 	superclassName := request stringArgumentNamed: 'superclass'.
 	packageName := request stringArgumentNamed: 'package'.

@@ -17,11 +17,7 @@ MCPRemoveMethodsCommand >> execute [
 	selectorSymbols := self request selectors collect: #asSymbol.
 	behavior := self tool behaviorNamed: self request className classSide: self request classSide.
 	selectorSymbols do: [ :selector |
-			behavior compiledMethodAt: selector ifAbsent: [
-					MCPCommandError
-						signalMissingMethodInClassName: self request className
-						classSide: self request classSide
-						selector: selector asString ].
+			behavior compiledMethodAt: selector ifAbsent: [ MCPCommandError signalMissingMethod: selector asString in: behavior ].
 			self tool signalTraitOriginBeforeRemoving: selector in: behavior ].
 	self tool forceRemoveSelectors: selectorSymbols from: behavior.
 	^ MCPRemoveMethodsResult
