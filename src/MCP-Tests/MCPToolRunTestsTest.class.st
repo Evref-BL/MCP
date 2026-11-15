@@ -569,6 +569,28 @@ MCPToolRunTestsTest >> testAnUnexpectedPassIsAFailureThatSaysSo [
 	self assert: (byName at: 'testPassesUnexpectedly') outcome equals: 'failure'
 ]
 
+{ #category : 'tests - answers' }
+MCPToolRunTestsTest >> testCoverageAfterATimeoutIsCoverageSoFar [
+	"Coverage measured over the tests that ran before a timeout is not the coverage of the call's tests."
+
+	| data tool |
+	tool := MCPToolRunTestCoverage new.
+	data := Dictionary new
+		        at: #runCount put: 2;
+		        at: #passedCount put: 2;
+		        at: #coverage put: { (#percentage -> 50) } asDictionary;
+		        yourself.
+	self assert: (tool successSummaryForData: data) equals: 'Ran 2 tests (2 passed). Coverage: 50.00%.'.
+	data
+		at: #timedOut put: true;
+		at: #timeoutMilliseconds put: 2000;
+		at: #notRunCount put: 3.
+	self
+		assert: (tool successSummaryForData: data)
+		equals:
+		'Ran 2 tests (2 passed). Timed out after 2 seconds. 3 tests not run, listed below as test_coverage_run arguments. Coverage so far: 50.00%.'
+]
+
 { #category : 'tests - outcomes' }
 MCPToolRunTestsTest >> testDurationsReadInWholeSecondsOrMilliseconds [
 
