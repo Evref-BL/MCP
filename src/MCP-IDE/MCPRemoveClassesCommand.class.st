@@ -8,7 +8,8 @@ Class {
 	#superclass : 'MCPCommand',
 	#instVars : [
 		'classNames',
-		'force'
+		'force',
+		'resolvedClasses'
 	],
 	#category : 'MCP-IDE-Commands',
 	#package : 'MCP-IDE',
@@ -44,12 +45,12 @@ MCPRemoveClassesCommand >> classNames: someClassNames [
 
 { #category : 'executing' }
 MCPRemoveClassesCommand >> execute [
+	"The refactoring is handed the names of the classes the lookup resolved, not the request's text."
 
-	| refactoring removedClasses removedPackageNames resolvedClasses warningMessages |
-	resolvedClasses := self resolvedClasses.
-	refactoring := self preparedRefactoringForClassNames: self classNames.
+	| refactoring removedClasses removedPackageNames warningMessages |
+	refactoring := self preparedRefactoringForClassNames: (self resolvedClasses collect: [ :each | each name ]).
 	warningMessages := self validatePreparedRefactoring: refactoring.
-	removedClasses := resolvedClasses collect: [ :each | self resultForRemovedClass: each ].
+	removedClasses := self resolvedClasses collect: [ :each | self resultForRemovedClass: each ].
 	self performRemovalWithPreparedRefactoring: refactoring.
 	removedPackageNames := OrderedCollection new.
 	removedClasses do: [ :eachResult |
@@ -75,6 +76,38 @@ MCPRemoveClassesCommand >> isEmptyClass: aClass [
 	^ aClass classVarNames isEmpty and: [ aClass instVarNames isEmpty and: [ aClass selectors isEmpty ] ]
 ]
 
+{ #category : 'private - facts' }
+MCPRemoveClassesCommand >> referencesOutsideRemoval [
+	"Class name to the methods that access its binding, as method_reference_search finds them, outside the classes asked for, on either side. One scan of the image."
+
+	| bindings references |
+	bindings := self resolvedClasses collect: [ :each | each binding ].
+	references := Dictionary new.
+	Smalltalk globals allBehaviorsDo: [ :behavior |
+			(self resolvedClasses includes: behavior instanceSide) ifFalse: [
+					behavior methodsDo: [ :method |
+							bindings do: [ :binding |
+								(binding isAccessedIn: method) ifTrue: [
+									(references at: binding key asString ifAbsentPut: [ OrderedCollection new ]) add: method ] ] ] ] ].
+	^ references
+]
+
+{ #category : 'private - facts' }
+MCPRemoveClassesCommand >> removalFactsFor: anException refactoring: aRefactoring [
+	"What blocks the removal, gathered only once Pharo's check has refused it."
+
+	^ MCPClassRemovalFacts new
+		  classes: self resolvedClasses;
+		  referencedBy: ((self referencesBlockingRemovalBy: anException refactoring: aRefactoring) collect: [ :methods |
+					   MCPClassRemovalFacts referenceTextsOf: methods ]);
+		  subclasses: self subclassesBlockingRemoval;
+		  users: self usersBlockingRemoval;
+		  forced: self force;
+		  forceSupported: anException isResumable;
+		  conditionText: anException messageText;
+		  yourself
+]
+
 { #category : 'private' }
 MCPRemoveClassesCommand >> removePackageIfNowEmptyNamed: aPackageName recordingInto: removedPackageNamesCollection [
 
@@ -88,7 +121,7 @@ MCPRemoveClassesCommand >> removePackageIfNowEmptyNamed: aPackageName recordingI
 { #category : 'private' }
 MCPRemoveClassesCommand >> resolvedClasses [
 
-	^ self classNames collect: [ :each | MCPImageLookup classNamed: each ]
+	^ resolvedClasses ifNil: [ resolvedClasses := self classNames collect: [ :each | MCPImageLookup classNamed: each ] ]
 ]
 
 { #category : 'private' }
@@ -117,18 +150,58 @@ MCPRemoveClassesCommand >> shouldReparentSubclassesWhenRemoving: aClass wasEmpty
 	^ self force or: [ wasEmpty ]
 ]
 
+{ #category : 'private - facts' }
+MCPRemoveClassesCommand >> subclassNamesOf: aClass excluding: someNames [
+	"The names of aClass's direct subclasses that are not among someNames, in order."
+
+	^ ((aClass subclasses collect: [ :each | each name asString ] as: Array) reject: [ :each | someNames includes: each ]) sort
+]
+
+{ #category : 'private - facts' }
+MCPRemoveClassesCommand >> subclassesBlockingRemoval [
+	"Class name to the subclasses that block its removal. Only a class that is not empty is blocked by its subclasses: an empty one's are reparented to its superclass."
+
+	| subclasses |
+	subclasses := Dictionary new.
+	self resolvedClasses do: [ :each |
+			(self isEmptyClass: each) ifFalse: [
+				(self subclassesBlockingRemovalOf: each) ifNotEmpty: [ :names | subclasses at: each name asString put: names ] ] ].
+	^ subclasses
+]
+
+{ #category : 'private - facts' }
+MCPRemoveClassesCommand >> traitUserNamesOf: aClass [
+	"The names of the classes and traits that use aClass, when it is a trait, in order."
+
+	aClass isTrait ifFalse: [ ^ #(  ) ].
+	^ (aClass users collect: [ :each | each name asString ] as: Set) asArray sort
+]
+
+{ #category : 'private - facts' }
+MCPRemoveClassesCommand >> usersBlockingRemoval [
+	"Trait name to the classes using it that block its removal."
+
+	| users |
+	users := Dictionary new.
+	self resolvedClasses do: [ :each |
+		(self usersBlockingRemovalOf: each) ifNotEmpty: [ :names | users at: each name asString put: names ] ].
+	^ users
+]
+
 { #category : 'private' }
 MCPRemoveClassesCommand >> validatePreparedRefactoring: aRefactoring [
+	"Pharo's check decides whether the removal is blocked; what blocks it is said from what the image answers, never from the check's text. Force goes past a warning, and the removal then warns of what it left behind. It cannot go past an error, which is all Pharo 10 and 11 signal."
 
-	| warningMessages |
+	| blocking warningMessages |
 	warningMessages := OrderedCollection new.
-	self force
-		ifTrue: [
-				[ aRefactoring checkPreconditions ]
-					on: RBRefactoringWarning
-					do: [ :warning |
-							warningMessages add: warning messageText.
-							warning resume: true ] ]
-		ifFalse: [ aRefactoring checkPreconditions ].
+	[ aRefactoring checkPreconditions ]
+		on: RBRefactoringWarning , RBRefactoringError
+		do: [ :exception |
+				(self force and: [ exception isResumable ])
+					ifTrue: [
+							warningMessages addAll: (self removalFactsFor: exception refactoring: aRefactoring) forcedWarnings.
+							exception resume: true ]
+					ifFalse: [ blocking := exception ] ].
+	blocking ifNotNil: [ (self removalFactsFor: blocking refactoring: aRefactoring) signalBlocked ].
 	^ warningMessages asArray
 ]

@@ -94,6 +94,16 @@ MCPToolRemoveClasses >> errorResultForError: anError classNames: classNames [
 						  (#classes -> classNames asArray) } asDictionary ]
 ]
 
+{ #category : 'private - results' }
+MCPToolRemoveClasses >> errorTextOn: stream for: error [
+	"A refusal's summary counts the methods that refer to each class; the lines after it name them, the first five of each."
+
+	super errorTextOn: stream for: error.
+	error
+		at: #referencedBy
+		ifPresent: [ :references | self referencedByTextOn: stream for: references classNames: (error at: #classes) ]
+]
+
 { #category : 'executing' }
 MCPToolRemoveClasses >> executeWithRequest: request [
 
@@ -129,15 +139,49 @@ MCPToolRemoveClasses >> failureMessageForClassNames: classNames error: anError [
 
 { #category : 'private - results' }
 MCPToolRemoveClasses >> keysStatedInSummary [
-	"The summary already reads 'Removed class Foo. Removed packages: Bar.'"
+	"The summary already reads 'Removed class Foo. Reparented subclasses: Baz. Removed packages: Bar.'"
 
-	^ #( removedClasses removedPackageNames )
+	^ #( removedClasses removedPackageNames reparentedSubclassNames )
 ]
 
 { #category : 'private - request' }
 MCPToolRemoveClasses >> parsedRequestFromToolRequest: request [
 
 	^ MCPRemoveClassesRequest fromRequest: request tool: self
+]
+
+{ #category : 'private - results' }
+MCPToolRemoveClasses >> referencedByTextOn: stream for: references classNames: classNames [
+	"One class's methods follow the label; several classes get a line each, in the order they were asked for."
+
+	stream
+		nextPut: Character lf;
+		nextPutAll: 'referencedBy:'.
+	classNames size = 1 ifTrue: [
+			^ stream
+				  space;
+				  nextPutAll: (self shortenedReferenceList: (references at: classNames first)) ].
+	classNames do: [ :each |
+			references at: each ifPresent: [ :methods |
+					stream
+						nextPut: Character lf;
+						nextPutAll: '  ';
+						nextPutAll: each;
+						nextPutAll: ': ';
+						nextPutAll: (self shortenedReferenceList: methods) ] ]
+]
+
+{ #category : 'private - results' }
+MCPToolRemoveClasses >> shortenedReferenceList: someMethods [
+	"The first five methods; method_reference_search lists every one."
+
+	^ String streamContents: [ :stream |
+			  stream nextPutAll: (', ' join: (someMethods first: (someMethods size min: 5))).
+			  someMethods size > 5 ifTrue: [
+					  stream
+						  nextPutAll: ', and ';
+						  print: someMethods size - 5;
+						  nextPutAll: ' more (method_reference_search lists them)' ] ]
 ]
 
 { #category : 'private' }
