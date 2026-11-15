@@ -600,8 +600,7 @@ MCPToolContractsTest >> readScreenToolFlowSpec [
 	^ {
 		  (#toolClass -> MCPToolReadScreen).
 		  (#arguments -> Dictionary new).
-		  (#requestClass -> MCPReadScreenRequest).
-		  (#commandClass -> MCPReadScreenCommand) } asDictionary
+		  (#requestClass -> MCPToolRequest) } asDictionary
 ]
 
 { #category : 'support' }
