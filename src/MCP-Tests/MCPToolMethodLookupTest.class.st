@@ -145,7 +145,7 @@ MCPToolMethodLookupTest >> testMethodSourceSearchSearchesSourceText [
 
 { #category : 'tests' }
 MCPToolMethodLookupTest >> testNoHitsForAClassPointToKindClass [
-	"A class or trait name finds no implementor or sender; the answer says that kind class finds what refers to it."
+	"A class or trait name finds no implementor or sender; the answer says that kind class finds what refers to it. The name is read as every class name is, so Foo class names Foo."
 
 	self
 		assert: (self referenceSummaryFor: {
@@ -158,7 +158,13 @@ MCPToolMethodLookupTest >> testNoHitsForAClassPointToKindClass [
 					 (#name -> 'TMCPToolMethodSearchFixture').
 					 (#kind -> 'implementors') })
 		equals:
-		'No implementors of TMCPToolMethodSearchFixture in the image. TMCPToolMethodSearchFixture is a trait; kind: class finds the methods that refer to it.'
+		'No implementors of TMCPToolMethodSearchFixture in the image. TMCPToolMethodSearchFixture is a trait; kind: class finds the methods that refer to it.'.
+	self
+		assert: (self referenceSummaryFor: {
+					 (#name -> 'MCPToolMethodSearchReferenceFixture class').
+					 (#kind -> 'senders') })
+		equals:
+		'No senders of MCPToolMethodSearchReferenceFixture class in the image. MCPToolMethodSearchReferenceFixture is a class; kind: class finds the methods that refer to it.'
 ]
 
 { #category : 'tests' }

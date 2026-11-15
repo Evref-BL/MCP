@@ -207,17 +207,15 @@ MCPToolSearchMethodReferences >> lookupArgumentName [
 
 { #category : 'private - results' }
 MCPToolSearchMethodReferences >> noHitHintForKinds: kinds name: aName [
-	"A name that no method implements or sends may not be a selector at all: a method written with its class, or a class. Answer the sentence that says what to ask instead, or nil."
+	"A name that no method implements or sends may not be a selector at all: a method written with its class, or a class, read as every class name is, so Foo class names Foo. Answer the sentence that says what to ask instead, or nil."
 
-	| global |
 	(self selectorKinds anySatisfy: [ :kind | kinds includes: kind ]) ifFalse: [ ^ nil ].
 	(aName includesSubstring: '>>') ifTrue: [
 			^ String streamContents: [ :stream |
 				  stream << aName << ' names a method; name its selector alone: ' << (self selectorInMethodName: aName) << '.' ] ].
-	global := Smalltalk globals at: aName asSymbol ifAbsent: [ ^ nil ].
-	global isBehavior ifFalse: [ ^ nil ].
+	(MCPImageLookup isClassName: aName) ifFalse: [ ^ nil ].
 	^ String streamContents: [ :stream |
-			  stream << aName << (global isTrait
+			  stream << (MCPImageLookup baseNameOf: aName) << ((MCPImageLookup classNamed: aName) isTrait
 				   ifTrue: [ ' is a trait' ]
 				   ifFalse: [ ' is a class' ]) << '; kind: class finds the methods that refer to it.' ]
 ]
