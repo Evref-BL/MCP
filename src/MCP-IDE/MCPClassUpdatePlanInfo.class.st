@@ -1,7 +1,7 @@
 "
 One change a class_update call asks for, planned before any change is made: its action, the context its errors report and, for a slot change, the slot, its new name and its side.
 
-TMCPSequencedUpdate orders the plans by action and applies them in that order.
+MCPToolUpdateClass orders the plans by action and applies them in that order.
 "
 Class {
 	#name : 'MCPClassUpdatePlanInfo',

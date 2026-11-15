@@ -1,16 +1,11 @@
 "
 Tool that changes one class definition: any of its name, superclass, package, tag, comment, slots, traits, shared variables, shared pools and layout, in one call.
 
-Every change asked for is planned as an MCPClassUpdatePlanInfo before the first is made. TMCPSequencedUpdate then applies the plans in dependency order, stopping at the first that fails. It applies them on a copy of the tool whose updateRequest holds the call's request, because one tool serves every call and the trait asks for the plans' execution without naming the call.
+Every change asked for is planned as an MCPClassUpdatePlanInfo before the first is made. The plans are then applied in dependency order, stopping at the first that fails.
 "
 Class {
 	#name : 'MCPToolUpdateClass',
 	#superclass : 'MCPToolClassMutation',
-	#traits : 'TMCPSequencedUpdate',
-	#classTraits : 'TMCPSequencedUpdate classTrait',
-	#instVars : [
-		'updateRequest'
-	],
 	#category : 'MCP-IDE-Tools',
 	#package : 'MCP-IDE',
 	#tag : 'Tools'
@@ -28,6 +23,22 @@ MCPToolUpdateClass >> actionApplicationOrder [
 
 	^ #( 'reparent' 'replaceLayout' 'replaceDefinition' 'addSlot' 'renameSlot' 'pullUpSlot' 'pushDownSlot' 'removeSlot' 'replaceTraits'
 	     'replaceSharedVariables' 'replaceSharedPools' 'setComment' 'move' 'rename' )
+]
+
+{ #category : 'private - planning' }
+MCPToolUpdateClass >> actionsInApplicationOrder: plans [
+	"Order by what each plan does, keeping plans that do the same thing in the order they were asked for."
+
+	| order |
+	order := self actionApplicationOrder.
+	^ ((plans asArray withIndexCollect: [ :plan :index |
+			    {
+				    (order indexOf: plan updateAction).
+				    index.
+				    plan } ]) sorted: [ :left :right |
+			   left first = right first
+				   ifTrue: [ (left at: 2) <= (right at: 2) ]
+				   ifFalse: [ left first < right first ] ]) collect: [ :each | each last ]
 ]
 
 { #category : 'private - specs' }
@@ -53,6 +64,25 @@ MCPToolUpdateClass >> apply: plan force: aBoolean work: workBlock summary: summa
 		  successResult: [ :warningMessages |
 		  self successResultText: (summaryBlock value: outcome) data: Dictionary new warnings: warningMessages ]
 		  failureSummary: failureSummaryBlock
+]
+
+{ #category : 'private - execution' }
+MCPToolUpdateClass >> applyUpdates: plans of: request [
+	"Apply the plans in order, stopping at the first that fails. They all land on one class and the later ones build on the earlier, so carrying on would apply half a change nobody asked for."
+
+	| applied |
+	applied := OrderedCollection new.
+	plans doWithIndex: [ :plan :index |
+			| result |
+			result := self executePlan: plan of: request.
+			result isError ifTrue: [
+					^ self
+						  resultForFailure: result
+						  of: plan updateAction
+						  applied: (applied collect: [ :each | each key ] as: Array)
+						  skipped: ((plans allButFirst: index) collect: [ :each | each updateAction ]) ].
+			applied add: plan updateAction -> result ].
+	^ self resultForUpdates: applied of: request
 ]
 
 { #category : 'private - arguments' }
@@ -102,15 +132,6 @@ MCPToolUpdateClass >> contextValueOf: propertyName in: request [
 	(#( 'tag' 'layout' ) includes: propertyName) ifTrue: [ ^ request stringArgumentNamed: propertyName default: '' ].
 	propertyName = 'comment' ifTrue: [ ^ self classCommentIn: request ].
 	^ request stringArgumentNamed: propertyName
-]
-
-{ #category : 'private - execution' }
-MCPToolUpdateClass >> copyApplying: request [
-	"TMCPSequencedUpdate asks whoever applies the plans for each plan's execution and for the class they update, without saying which call they belong to. One tool serves every call, so a copy of it holds the call's request."
-
-	^ self copy
-		  updateRequest: request;
-		  yourself
 ]
 
 { #category : 'private - execution' }
@@ -202,11 +223,11 @@ MCPToolUpdateClass >> executeMoveWithPlan: plan request: request [
 ]
 
 { #category : 'private - execution' }
-MCPToolUpdateClass >> executePlan: plan [
+MCPToolUpdateClass >> executePlan: plan of: request [
 
 	| actionBlock |
 	actionBlock := self executeBlockForAction: plan updateAction.
-	actionBlock ifNotNil: [ ^ actionBlock value: plan value: updateRequest ].
+	actionBlock ifNotNil: [ ^ actionBlock value: plan value: request ].
 	^ self
 		  errorResultForCommandError: (MCPCommandError new
 				   errorCode: #UnknownClassUpdateAction;
@@ -597,7 +618,7 @@ MCPToolUpdateClass >> mutateWith: request [
 	[ plans := self updatePlansFor: request ]
 		on: MCPCommandError
 		do: [ :error | ^ self errorResultForCommandError: error action: 'update' requestedContext: (self updateContextFor: request) ].
-	^ (self copyApplying: request) executeActions: plans
+	^ self applyUpdates: plans of: request
 ]
 
 { #category : 'private - errors' }
@@ -637,6 +658,58 @@ MCPToolUpdateClass >> requestedContextFor: request checked: aBoolean [
 	^ aBoolean
 		  ifTrue: [ self updateContextFor: request ]
 		  ifFalse: [ request asDictionary copy ]
+]
+
+{ #category : 'private - results' }
+MCPToolUpdateClass >> resultForFailure: errorResult of: action applied: appliedActions skipped: skippedActions [
+	"A single change fails as it always did. When it was one of several, say which had already landed and which were never attempted, because the class is left part-way."
+
+	| details summary |
+	(appliedActions isEmpty and: [ skippedActions isEmpty ]) ifTrue: [ ^ errorResult ].
+	details := (errorResult structuredContent at: #error ifAbsent: [ Dictionary new ]) copy.
+	details
+		at: #failedUpdate put: action;
+		at: #appliedUpdates put: appliedActions asArray;
+		at: #skippedUpdates put: skippedActions asArray.
+	summary := String streamContents: [ :stream |
+			           stream << (errorResult structuredContent at: #summary ifAbsent: [ '' ]).
+			           stream << ' Update ' << action << ' failed'.
+			           appliedActions ifNotEmpty: [
+					           stream << ', after applying '.
+					           appliedActions do: [ :each | stream << each ] separatedBy: [ stream << ', ' ] ].
+			           skippedActions ifNotEmpty: [
+					           stream << '; not attempted: '.
+					           skippedActions do: [ :each | stream << each ] separatedBy: [ stream << ', ' ] ].
+			           stream << '.' ].
+	^ self errorResultText: summary details: details
+]
+
+{ #category : 'private - results' }
+MCPToolUpdateClass >> resultForUpdates: applied of: request [
+	"One change answers exactly what it answers alone. Several say how many were applied, then what each one answered alone, a line each in the order applied; their data stays under updates."
+
+	| warnings updates |
+	applied size = 1 ifTrue: [ ^ applied first value ].
+	warnings := OrderedCollection new.
+	updates := applied collect: [ :each |
+			           warnings addAll: (self warningsOfResult: each value).
+			           (each value structuredContent at: #data ifAbsent: [ Dictionary new ]) copy
+				           at: #action put: each key;
+				           yourself ].
+	^ self
+		  successResultText: (String streamContents: [ :stream |
+					   stream
+						   nextPutAll: 'Applied ';
+						   print: applied size;
+						   nextPutAll: ' updates to class ';
+						   nextPutAll: (request stringArgumentNamed: 'name');
+						   nextPut: $:.
+					   applied do: [ :each |
+							   stream
+								   nextPut: Character lf;
+								   nextPutAll: (each value structuredContent at: #summary ifAbsent: [ '' ]) ] ])
+		  data: { (#updates -> updates asArray) } asDictionary
+		  warnings: warnings asArray
 ]
 
 { #category : 'private - planning' }
@@ -716,13 +789,6 @@ MCPToolUpdateClass >> suppliedPropertiesIn: request [
 	^ self atLeastOneInputProperties select: [ :each | request hasArgumentNamed: each ]
 ]
 
-{ #category : 'private - execution' }
-MCPToolUpdateClass >> tool [
-	"TMCPSequencedUpdate builds its answers through the tool applying the plans, which is this one."
-
-	^ self
-]
-
 { #category : 'private - errors' }
 MCPToolUpdateClass >> updateContextFor: request [
 	"The class and every property the call supplied, as the update reads them. A property left out is not reported, so an empty list or string the caller gave is told apart from one it did not give."
@@ -748,16 +814,4 @@ MCPToolUpdateClass >> updatePlansFor: request [
 	plans addAll: (self slotPlansIn: request side: true).
 	plans ifEmpty: [ self signalNoUpdateRequestedIn: request ].
 	^ self actionsInApplicationOrder: plans
-]
-
-{ #category : 'accessing' }
-MCPToolUpdateClass >> updateRequest: aRequest [
-
-	updateRequest := aRequest
-]
-
-{ #category : 'private - results' }
-MCPToolUpdateClass >> updateSubjectDescription [
-
-	^ 'class ' , (updateRequest stringArgumentNamed: 'name')
 ]
