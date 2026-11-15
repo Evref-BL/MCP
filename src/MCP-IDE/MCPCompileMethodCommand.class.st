@@ -117,7 +117,7 @@ MCPCompileMethodCommand >> isUnclassified: aCompiledMethod [
 
 { #category : 'private - header' }
 MCPCompileMethodCommand >> methodNodeOfSelectorLine: aSelectorLine [
-	"The method aSelectorLine, the text after a header's separator, parses as on its own, or nil when it is not a method's whole first line, as width:height:color: and >= are not, leaving out their argument names. The parser is the one selectorForMethodSource: uses; Pharo 12 and later signal the error after the block unless it returns."
+	"The method aSelectorLine, the text after a header's separator, parses as on its own, or nil when it is not a method's whole first line, as width:height:color: and >= are not, leaving out their argument names. The parser is the one selectorForMethodSource:in: uses; Pharo 12 and later signal the error after the block unless it returns."
 
 	^ RBParser parseMethod: aSelectorLine onError: [ :message :position | ^ nil ]
 ]
