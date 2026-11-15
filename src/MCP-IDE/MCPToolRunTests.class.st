@@ -34,15 +34,9 @@ MCPToolRunTests >> additionalKeywords [
 { #category : 'metadata' }
 MCPToolRunTests >> buildInputSchema [
 
-	| timeoutProperty |
-	timeoutProperty := self
-		                   integerSchemaPropertyNamed: 'timeoutSeconds'
-		                   description: 'Give up after this many seconds and report what ran by then. 0 answers at once.'
-		                   default: self defaultTimeoutSeconds.
-	timeoutProperty minimum: 0.
 	^ MCPStructureInputSchema new
 		  type: 'object';
-		  properties: self testSelectionInputProperties , { timeoutProperty };
+		  properties: self testSelectionInputProperties , { self timeoutSecondsProperty };
 		  yourself
 ]
 
@@ -114,28 +108,16 @@ MCPToolRunTests >> coveragePercentageTextFor: coverageData [
 
 { #category : 'private - results' }
 MCPToolRunTests >> dataTextOn: stream for: data [
-	"A failed test is read as a line naming it and why, not as a record."
+	"Each issue is read as a line naming the tests it hit, why and where, failures first, then errors, then skips; what a timeout left to run and coverage follow as records."
 
 	| rest |
-	#( failures errors ) do: [ :key |
-			(data at: key ifAbsent: [ #(  ) ]) do: [ :entry |
-					stream
-						nextPut: Character lf;
-						nextPutAll: (key = #failures
-								 ifTrue: [ 'failed ' ]
-								 ifFalse: [ 'error ' ]);
-						nextPutAll: (entry at: #test ifAbsent: [ '?' ]).
-					entry at: #errorClass ifPresent: [ :errorClass |
-							stream
-								nextPutAll: ' (';
-								nextPutAll: errorClass;
-								nextPut: $) ].
-					entry at: #message ifPresent: [ :message |
-							stream
-								nextPutAll: ': ';
-								nextPutAll: message ] ] ].
+	#( #failures 'failed' #errors 'error' #skipped 'skipped' ) pairsDo: [ :key :label |
+		(self valueIn: data at: key) ifNotNil: [ :entries |
+			entries do: [ :entry | self issueLineOn: stream for: entry labelled: label ] ] ].
 	rest := data copy.
-	#( failures errors ) do: [ :key | rest removeKey: key ifAbsent: [ nil ] ].
+	#( failures errors skipped ) do: [ :key |
+			rest removeKey: key ifAbsent: [ nil ].
+			rest removeKey: key asString ifAbsent: [ nil ] ].
 	super dataTextOn: stream for: rest
 ]
 
@@ -204,11 +186,63 @@ MCPToolRunTests >> failureMessageForTestNames: testNames error: anError [
 				  nextPutAll: anError messageText ]
 ]
 
+{ #category : 'private' }
+MCPToolRunTests >> issueCountsOn: stream for: data [
+	"1 failure, 1 error. A count of none is left out, and so is the sentence when both are."
+
+	| parts |
+	parts := OrderedCollection new.
+	#( #failureCount 'failure' #errorCount 'error' ) pairsDo: [ :key :noun |
+		(self valueIn: data at: key) ifNotNil: [ :count | count isZero ifFalse: [ parts add: (self textForCount: count noun: noun) ] ] ].
+	parts ifEmpty: [ ^ self ].
+	stream
+		space;
+		nextPutAll: (', ' join: parts);
+		nextPut: $.
+]
+
+{ #category : 'private - results' }
+MCPToolRunTests >> issueLineOn: stream for: entry labelled: aLabel [
+	"failed <who>[: <message>][, at <statement> | , in <locations>]; error <who> (<ErrorClass>)[: <message>][, in <locations>]; skipped <who>[: <reason>]. A message loses one trailing period when a place follows it."
+
+	| locations message statement |
+	stream
+		nextPut: Character lf;
+		nextPutAll: aLabel;
+		space;
+		nextPutAll: (', ' join: ((self valueIn: entry at: #tests) ifNil: [ #(  ) ])).
+	(self valueIn: entry at: #errorClass) ifNotNil: [ :errorClass | stream << ' (' << errorClass << ')' ].
+	statement := self valueIn: entry at: #statement.
+	locations := (self valueIn: entry at: #locations) ifNil: [ #(  ) ].
+	message := (self valueIn: entry at: #message) ifNil: [ self valueIn: entry at: #reason ].
+	message ifNotNil: [
+			stream
+				nextPutAll: ': ';
+				nextPutAll: ((statement isNil and: [ locations isEmpty ])
+						 ifTrue: [ message ]
+						 ifFalse: [ self textWithoutTrailingPeriod: message ]) ].
+	statement ifNotNil: [ stream << ', at ' << statement ].
+	locations ifNotEmpty: [ stream << ', in ' << (self joinedNames: locations) ]
+]
+
+{ #category : 'private - results' }
+MCPToolRunTests >> joinedNames: someStrings [
+	"A, A and B, A, B and C."
+
+	^ String streamContents: [ :stream |
+			  someStrings withIndexDo: [ :each :index |
+					  index > 1 ifTrue: [
+							  stream nextPutAll: (index = someStrings size
+									   ifTrue: [ ' and ' ]
+									   ifFalse: [ ', ' ]) ].
+					  stream nextPutAll: each ] ]
+]
+
 { #category : 'private - results' }
 MCPToolRunTests >> keysStatedInSummary [
-	"The summary already reads 'Ran 731 tests (728 passed). 3 failures, 0 errors.'"
+	"The summary already says the counts, the selections that held no test and the timeout: 'Ran 2 tests (0 passed). 2 errors. Timed out after 90 seconds, during T>>#testC. 7 tests not run, listed below as test_run arguments.'"
 
-	^ #( runCount passedCount failureCount errorCount skippedCount )
+	^ #( runCount passedCount failureCount errorCount skippedCount withoutTests timedOut timeoutMilliseconds interrupted notRunCount )
 ]
 
 { #category : 'private - request' }
@@ -236,47 +270,34 @@ MCPToolRunTests >> rawTestNamesFromRequest: rawRequest [
 
 { #category : 'private' }
 MCPToolRunTests >> successSummaryForData: data [
+	"Ran <N test(s)> (<P> passed).[ <F failure(s)>, <E error(s)>.][ <S> skipped.][ <selection sentences>][ <timeout sentence>][ Coverage[ so far]: <p>%.] The opening stays on every answer that runs, a timeout's included, since graders read it."
 
-	| coverage errorCount failureCount passedCount runCount skippedCount timedOut unrunCount |
-	runCount := data at: #runCount.
-	passedCount := data at: #passedCount.
-	skippedCount := (data at: #skipped ifAbsent: [ #(  ) ]) size.
-	failureCount := (data at: #failures ifAbsent: [ #(  ) ]) size.
-	errorCount := (data at: #errors ifAbsent: [ #(  ) ]) size.
-	timedOut := data at: #timedOut ifAbsent: [ false ].
-	unrunCount := (data at: #unrunPackages ifAbsent: [ #(  ) ]) size + (data at: #unrunClasses ifAbsent: [ #(  ) ]) size
-	              + (data at: #unrunMethods ifAbsent: [ #(  ) ]) size.
-	coverage := data at: #coverage ifAbsent: [ nil ].
+	| timedOut |
+	timedOut := (self valueIn: data at: #timedOut) = true.
 	^ String streamContents: [ :stream |
-			  timedOut ifTrue: [ stream nextPutAll: 'Timed out. ' ].
 			  stream
 				  nextPutAll: 'Ran ';
-				  nextPutAll: runCount asString;
-				  nextPutAll: ' tests (';
-				  nextPutAll: passedCount asString;
-				  nextPutAll: ' passed'.
-			  skippedCount > 0 ifTrue: [
-					  stream
-						  nextPutAll: ', ';
-						  nextPutAll: skippedCount asString;
-						  nextPutAll: ' skipped' ].
-			  stream nextPutAll: ').'.
-			  failureCount + errorCount > 0 ifTrue: [
+				  nextPutAll: (self textForCount: (self valueIn: data at: #runCount) noun: 'test');
+				  nextPutAll: ' (';
+				  print: (self valueIn: data at: #passedCount);
+				  nextPutAll: ' passed).'.
+			  self issueCountsOn: stream for: data.
+			  (self valueIn: data at: #skippedCount) ifNotNil: [ :count |
 					  stream
 						  space;
-						  nextPutAll: failureCount asString;
-						  nextPutAll: ' failures, ';
-						  nextPutAll: errorCount asString;
-						  nextPutAll: ' errors.' ].
-			  unrunCount > 0 ifTrue: [
+						  print: count;
+						  nextPutAll: ' skipped.' ].
+			  ((self valueIn: data at: #withoutTests) ifNil: [ #(  ) ]) do: [ :entry |
+					  stream space.
+					  self withoutTestsSentenceOn: stream for: entry ].
+			  timedOut ifTrue: [
+					  stream space.
+					  self timeoutSentenceOn: stream for: data ].
+			  (self valueIn: data at: #coverage) ifNotNil: [ :coverageData |
 					  stream
-						  space;
-						  nextPutAll: unrunCount asString;
-						  nextPutAll: ' selections left unrun.' ].
-			  coverage ifNotNil: [ :coverageData |
-					  stream
-						  space;
-						  nextPutAll: 'Coverage: ';
+						  nextPutAll: (timedOut
+								   ifTrue: [ ' Coverage so far: ' ]
+								   ifFalse: [ ' Coverage: ' ]);
 						  nextPutAll: (self coveragePercentageTextFor: coverageData);
 						  nextPutAll: '%.' ] ]
 ]
@@ -303,8 +324,96 @@ MCPToolRunTests >> testSelectionInputProperties [
 		  (self stringArraySchemaNamed: 'methods' description: 'Run these test methods, as Class>>selector.' itemDescription: nil) }
 ]
 
+{ #category : 'private' }
+MCPToolRunTests >> textForPackages: someNames of: aCount [
+	"A, B and C, or past the names said, A, B, C and 2 other packages."
+
+	aCount > someNames size ifFalse: [ ^ self joinedNames: someNames ].
+	^ String streamContents: [ :stream |
+			  stream
+				  nextPutAll: (', ' join: someNames);
+				  nextPutAll: ' and ';
+				  nextPutAll: (self textForCount: aCount - someNames size noun: 'other package') ]
+]
+
+{ #category : 'private - results' }
+MCPToolRunTests >> textWithoutTrailingPeriod: aString [
+	"One period, so that 'Got 1 instead of 2.' reads on into ', at ...' and an ellipsis keeps two."
+
+	^ (aString isNotEmpty and: [ aString last = $. ])
+		  ifTrue: [ aString allButLast ]
+		  ifFalse: [ aString ]
+]
+
+{ #category : 'private - schema' }
+MCPToolRunTests >> timeoutSecondsProperty [
+	"test_run and test_coverage_run give up alike, so they say it alike."
+
+	| property |
+	property := self
+		            integerSchemaPropertyNamed: 'timeoutSeconds'
+		            description: 'Give up after this many seconds and report what ran by then. 0 answers at once.'
+		            default: self defaultTimeoutSeconds.
+	property minimum: 0.
+	^ property
+]
+
+{ #category : 'private' }
+MCPToolRunTests >> timeoutSentenceOn: stream for: data [
+	"Timed out after <duration>[, during <test>[, in <location>]]. <M test(s)> not run, listed below as test_run arguments. A timeout of 0 runs nothing, and says so."
+
+	| milliseconds notRun |
+	milliseconds := self valueIn: data at: #timeoutMilliseconds.
+	notRun := String streamContents: [ :notRunStream |
+			          notRunStream
+				          nextPutAll: (self textForCount: ((self valueIn: data at: #notRunCount) ifNil: [ 0 ]) noun: 'test');
+				          nextPutAll: ' not run, listed below as ';
+				          nextPutAll: self name;
+				          nextPutAll: ' arguments.' ].
+	milliseconds = 0 ifTrue: [
+			stream
+				nextPutAll: 'timeoutSeconds is 0, so nothing ran; ';
+				nextPutAll: notRun.
+			^ self ].
+	stream nextPutAll: 'Timed out'.
+	milliseconds ifNotNil: [
+			stream
+				nextPutAll: ' after ';
+				nextPutAll: (MCPStructuredTestResult textForDuration: (Duration milliSeconds: milliseconds)) ].
+	(self valueIn: data at: #interrupted) ifNotNil: [ :interrupted |
+			stream
+				nextPutAll: ', during ';
+				nextPutAll: (self valueIn: interrupted at: #test).
+			(self valueIn: interrupted at: #location) ifNotNil: [ :location |
+					stream
+						nextPutAll: ', in ';
+						nextPutAll: location ] ].
+	stream
+		nextPutAll: '. ';
+		nextPutAll: notRun
+]
+
 { #category : 'metadata' }
 MCPToolRunTests >> title [
 
 	^ 'Run Tests'
+]
+
+{ #category : 'private' }
+MCPToolRunTests >> withoutTestsSentenceOn: stream for: entry [
+	"Eval-Text holds no test class; test classes in Eval-Text-Tests refer to its classes. EvalLedgerTest has no tests."
+
+	| testPackages |
+	stream
+		nextPutAll: (self valueIn: entry at: #selection);
+		space;
+		nextPutAll: (self valueIn: entry at: #reason).
+	testPackages := (self valueIn: entry at: #testPackages) ifNil: [ #(  ) ].
+	testPackages ifNotEmpty: [
+			stream
+				nextPutAll: '; test classes in ';
+				nextPutAll:
+					(self textForPackages: testPackages of: ((self valueIn: entry at: #testPackageCount) ifNil: [ testPackages size ]));
+				nextPutAll: ' refer to its classes' ].
+	stream nextPut: $.
 ]

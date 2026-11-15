@@ -130,6 +130,13 @@ MCPRunTestsCommand >> notRunRequestsForValidatedRequest: validatedRequest testCa
 						  ifFalse: [ stream nextPutAll: (self methodRequestsForTestCases: each value) ] ] ]
 ]
 
+{ #category : 'private - without tests' }
+MCPRunTestsCommand >> packageDefinesTestClass: aPackageName [
+	"Abstract test classes count: a package of them has no tests, it does not lack test classes."
+
+	^ (MCPImageLookup packageNamed: aPackageName) definedClasses anySatisfy: [ :each | each isTestCase ]
+]
+
 { #category : 'private - coverage' }
 MCPRunTestsCommand >> partiallyCoveredMethodsFromCoverageResult: coverageResult [
 
@@ -141,6 +148,28 @@ MCPRunTestsCommand >> referringTestClassLimit [
 	"Enough referring test classes to pass back, few enough to read."
 
 	^ 5
+]
+
+{ #category : 'private - without tests' }
+MCPRunTestsCommand >> referringTestPackageLimit [
+	"Enough packages to say where a package's tests are, few enough to read."
+
+	^ 3
+]
+
+{ #category : 'private - without tests' }
+MCPRunTestsCommand >> referringTestPackagesOf: aPackageName [
+	"The packages of the test classes that refer to the package's classes, most referring methods first, ties by name."
+
+	| classes counts |
+	classes := (MCPImageLookup packageNamed: aPackageName) definedClasses asArray.
+	classes ifEmpty: [ ^ #(  ) ].
+	counts := Dictionary new.
+	(MCPClassReferenceQuery forClasses: classes) referringTestClasses do: [ :each |
+			each key package ifNotNil: [ :package |
+				counts at: package name asString put: (counts at: package name asString ifAbsent: [ 0 ]) + each value ] ].
+	^ (counts associations sort: [ :left :right |
+		   left value > right value or: [ left value = right value and: [ left key <= right key ] ] ]) collect: [ :each | each key ]
 ]
 
 { #category : 'private - validation' }
@@ -287,6 +316,18 @@ MCPRunTestsCommand >> runTestCase: aTestCase into: aResult deadline: deadline [
 
 { #category : 'private' }
 MCPRunTestsCommand >> runValidatedRequests: validatedRequests deadline: deadline [
+	"Runs the selections in order until the deadline, then lists what was not run. The selections that hold no test are said whatever the deadline, since running cannot change that."
+
+	| result |
+	result := self runValidatedRequestsUntil: deadline from: validatedRequests.
+	^ result
+		  withoutTests: (self withoutTestsIn: validatedRequests);
+		  suiteSizes: (self suiteSizesForOutcomes: result outcomes);
+		  yourself
+]
+
+{ #category : 'private' }
+MCPRunTestsCommand >> runValidatedRequestsUntil: deadline from: validatedRequests [
 	"Runs the selections in order until the deadline, then lists what was not run."
 
 	| notRun notRunCount resultEntries seenTestCaseNames selectionResult |
@@ -348,6 +389,25 @@ MCPRunTestsCommand >> shouldIgnoreMethodForCoverage: aCompiledMethod [
 	aCompiledMethod methodClass instanceSide isTestCase ifTrue: [ ^ true ].
 	aCompiledMethod isAbstract ifTrue: [ ^ true ].
 	^ aCompiledMethod hasPragmaNamed: #ignoreForCoverage
+]
+
+{ #category : 'private' }
+MCPRunTestsCommand >> suiteSizeOfClassNamed: aClassName [
+	"An outcome holds the name of the class whose case ran, and that class is still there."
+
+	^ (Smalltalk globals classNamed: aClassName)
+		  ifNil: [ 0 ]
+		  ifNotNil: [ :testClass | (self testCasesFromSuite: testClass suite) count: [ :each | each class == testClass ] ]
+]
+
+{ #category : 'private' }
+MCPRunTestsCommand >> suiteSizesForOutcomes: someOutcomes [
+	"How many cases the own suite of each class that ran holds, by class name, so that the answer can name a class whose whole suite failed alike."
+
+	| sizes |
+	sizes := Dictionary new.
+	someOutcomes do: [ :each | sizes at: each className ifAbsentPut: [ self suiteSizeOfClassNamed: each className ] ].
+	^ sizes
 ]
 
 { #category : 'private' }
@@ -466,4 +526,41 @@ MCPRunTestsCommand >> validatedRequestsFrom: testRequests [
 	validatedRequests := testRequests collect: [ :each | self resolvedRequestFor: each ].
 	self refuseSelectionsThatAreNotTests: validatedRequests.
 	^ validatedRequests
+]
+
+{ #category : 'private - without tests' }
+MCPRunTestsCommand >> withoutTestsEntryFor: validatedRequest namingTestPackages: aBoolean [
+	"A package that defines no test class holds none; any other selection that selected no case has no tests. A package's test classes are found by the scan a refusal makes, over its classes."
+
+	| entry testPackages |
+	entry := Dictionary new.
+	validatedRequest isPackageRequest ifFalse: [
+			entry at: #selection put: (self selectionTextOf: validatedRequest).
+			entry at: #reason put: 'has no tests'.
+			^ entry ].
+	entry at: #selection put: validatedRequest packageName.
+	(self packageDefinesTestClass: validatedRequest packageName) ifTrue: [
+			entry at: #reason put: 'has no tests'.
+			^ entry ].
+	entry at: #reason put: 'holds no test class'.
+	aBoolean ifFalse: [ ^ entry ].
+	testPackages := self referringTestPackagesOf: validatedRequest packageName.
+	testPackages ifEmpty: [ ^ entry ].
+	entry at: #testPackages put: (testPackages first: (testPackages size min: self referringTestPackageLimit)).
+	entry at: #testPackageCount put: testPackages size.
+	^ entry
+]
+
+{ #category : 'private - without tests' }
+MCPRunTestsCommand >> withoutTestsIn: validatedRequests [
+	"One entry per selection that selected no test, in selection order, counted before an earlier selection takes any of its cases. When the whole call selected none, a package that holds no test class also names the packages of the test classes that refer to its classes."
+
+	| counts nothingSelected |
+	counts := validatedRequests collect: [ :each | (self testCasesForValidatedRequest: each) size ] as: Array.
+	nothingSelected := counts allSatisfy: [ :each | each isZero ].
+	^ Array streamContents: [ :stream |
+			  validatedRequests asArray
+				  with: counts
+				  do: [ :each :count |
+				  count isZero ifTrue: [ stream nextPut: (self withoutTestsEntryFor: each namingTestPackages: nothingSelected) ] ] ]
 ]
