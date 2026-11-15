@@ -92,7 +92,7 @@ MCPEvaluateCommand >> execute [
 		priority: Processor activePriority - 1;
 		name: tool name.
 	self start: evaluator.
-	(done waitTimeoutSeconds: request timeoutSeconds) ifFalse: [ ^ outcome ifNil: [ self endedItsOwnProcessResult ] ].
+	(self timedOutWaitingFor: done seconds: request timeoutSeconds) ifFalse: [ ^ outcome ifNil: [ self endedItsOwnProcessResult ] ].
 	started ifFalse: [ ^ self notStartedResultFor: evaluator ].
 	[ outcome isNil and: [ self isSaving: evaluator ] ] whileTrue: [ done waitTimeoutSeconds: 1 ].
 	outcome ifNotNil: [ ^ outcome ].
@@ -138,6 +138,13 @@ MCPEvaluateCommand >> notStartedResultFor: anEvaluator [
 	^ MCPEvaluateResult
 		  errorSummary: (tool notStartedMessageFor: request timeoutSeconds)
 		  details: (self notStartedDetailsFor: (Processor waitingProcessesAt: priority) asArray)
+]
+
+{ #category : 'private' }
+MCPEvaluateCommand >> pollMilliseconds [
+	"How often the virtual machine is told to look at its sockets while the code runs. Accepting, reading and answering another call each take a look."
+
+	^ 20
 ]
 
 { #category : 'private' }
@@ -214,7 +221,7 @@ MCPEvaluateCommand >> stop: anEvaluator [
 	details := self stoppedDetailsFor: anEvaluator.
 	stopped := Semaphore new.
 	[ [ anEvaluator terminate ] ensure: [ stopped signal ] ] forkAt: anEvaluator priority named: tool name , ' stop'.
-	(stopped waitTimeoutSeconds: self unwindingSeconds) ifTrue: [
+	(self timedOutWaitingFor: stopped seconds: self unwindingSeconds) ifTrue: [
 			details at: #stillUnwinding put: true.
 			transcript ifNotNil: [ :recorder | recorder finish ] ].
 	MCPPostResponseActions defer: [ Smalltalk garbageCollect ].
@@ -252,6 +259,19 @@ MCPEvaluateCommand >> syntaxFailureFor: aNotice [
 			details at: #line put: line.
 			details at: #sourceLine put: (request code lineCorrespondingToIndex: index) ].
 	^ MCPEvaluateResult errorSummary: (tool syntaxFailureMessageFor: aNotice line: line) details: details
+]
+
+{ #category : 'private' }
+MCPEvaluateCommand >> timedOutWaitingFor: aSemaphore seconds: seconds [
+	"Answer whether the time ran out before aSemaphore was signalled, as Semaphore>>waitTimeoutSeconds: does. The virtual machine looks at its sockets only when told to, which the idle process does once nothing else runs: while the code computes, no other call would be accepted until it ends. So the wait is cut into slices, between which this process, running above the code, tells it to look. waitTimeoutSeconds: multiplies by 1000, so a slice of a fraction of a second is a whole number of milliseconds in every Pharo from 10 to 15."
+
+	| deadline |
+	deadline := Time millisecondClockValue + (seconds * 1000).
+	[
+		(aSemaphore waitTimeoutSeconds: self pollMilliseconds / 1000) ifFalse: [ ^ false ].
+		ProcessorScheduler relinquishProcessorForMicroseconds: 0.
+		Time millisecondClockValue < deadline ] whileTrue.
+	^ true
 ]
 
 { #category : 'private' }

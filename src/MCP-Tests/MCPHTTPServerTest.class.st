@@ -35,6 +35,52 @@ MCPHTTPServerTest >> responseForRequest: request using: server [
 ]
 
 { #category : 'tests' }
+MCPHTTPServerTest >> testAComputingEvaluationLeavesOtherCallsAnswered [
+	"An evaluation runs below the process serving its call, so while one computes the server still answers other calls. The clients run at the priority calls are served at, since this test's own process gets no turn while the evaluation computes."
+
+	| answers completed server |
+	self timeLimit: 30 seconds.
+	completed := Semaphore new.
+	answers := SharedQueue new.
+	server := (MCP new
+		           observabilityExportDirectory: nil;
+		           yourself) server.
+	[
+		server port: 0.
+		server start.
+		{
+			(#evaluation -> 0
+			 ->
+			 '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"image_evaluate","arguments":{"code":"[ true ] whileTrue","timeoutSeconds":5}}}').
+			(#listing -> 500 -> '{"jsonrpc":"2.0","id":2,"method":"tools/list"}') } do: [ :call |
+				[
+					| client |
+					client := ZnClient new.
+					[
+						(Delay forMilliseconds: call key value) wait.
+						client
+							url: server localUrl;
+							headerAt: 'Accept' put: 'application/json, text/event-stream';
+							headerAt: 'MCP-Protocol-Version' put: '2025-11-25';
+							entity: (ZnEntity json: call value);
+							post.
+						answers nextPut: call key key -> client response ] ensure: [
+							client close.
+							completed signal ] ] forkAt: Processor lowIOPriority ].
+		2 timesRepeat: [ self deny: (completed waitTimeoutSeconds: 20) description: 'A call got no answer.' ].
+		self assert: answers size equals: 2.
+		answers next in: [ :listing |
+				self assert: listing key equals: #listing.
+				self assert: listing value code equals: 200.
+				self assert: (listing value contents includesSubstring: '"tools"') ].
+		answers next in: [ :evaluation |
+				self assert: evaluation key equals: #evaluation.
+				self assert: evaluation value code equals: 200.
+				self assert: (evaluation value contents includesSubstring: 'Evaluation stopped after 5 s, its time limit.') ] ] ensure: [
+		server stop ]
+]
+
+{ #category : 'tests' }
 MCPHTTPServerTest >> testAcceptsSupportedProtocolVersion [
 
 	| request response |
