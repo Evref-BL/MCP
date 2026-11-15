@@ -1469,6 +1469,27 @@ MCPToolMethodMutationTest >> testMethodToolSchemasDeclareExpectedInputs [
 ]
 
 { #category : 'tests' }
+MCPToolMethodMutationTest >> testProtocolChangeSaysFromAndTo [
+	"A protocol change names the protocol the method left and the one it went to, in the words method_compile uses for a replace that moves a method; asking for the protocol it is in says so, and a method with none was in no protocol."
+
+	| oldProtocol reference |
+	reference := 'MCPToolMethodMutationTestTarget>>' , self instanceProtocolSelector.
+	oldProtocol := (MCPToolMethodMutationTestTarget >> self instanceProtocolSelector) protocolName asString.
+	self deny: oldProtocol equals: 'accessing'.
+	self
+		assert: (self summaryFrom: (self callToolWith: self instanceChangeArguments))
+		equals: ('Moved {1} from {2} to accessing.' format: {
+					 reference.
+					 oldProtocol }).
+	self
+		assert: (self summaryFrom: (self callToolWith: self instanceChangeArguments))
+		equals: ('{1} is already in accessing.' format: { reference }).
+	self
+		assert: (MCPUpdateMethodCommand new protocolChangeSummaryFor: 'EvalLedger>>audit' from: '' to: 'accounting')
+		equals: 'Moved EvalLedger>>audit from no protocol to accounting.'
+]
+
+{ #category : 'tests' }
 MCPToolMethodMutationTest >> testReformatsMethod [
 
 	| reformattedSource result source |
