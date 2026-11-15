@@ -160,6 +160,27 @@ MCPToolSearchRepositoriesTest >> testListsStaleRepositoryAsMissingAndContinues [
 ]
 
 { #category : 'tests' }
+MCPToolSearchRepositoriesTest >> testSearchOmitsAnEmptyLocation [
+	"A repository registered with no location has no location to name, and an empty one would read as a field with no value."
+
+	| data entry located unlocated |
+	unlocated := IceLibgitRepository new
+		             name: 'MCP Unlocated Repository';
+		             yourself.
+	located := self newRepositoryNamed: 'MCP Located Repository' location: FileLocator imageDirectory packageNames: #(  ).
+	self
+		withRepositories: {
+				unlocated.
+				located }
+		do: [
+				data := self dataFrom: (self callToolWith: Dictionary new).
+				entry := self entryNamed: 'MCP Unlocated Repository' in: (data at: #repositories).
+				self deny: (entry includesKey: #location).
+				entry := self entryNamed: 'MCP Located Repository' in: (data at: #repositories).
+				self assert: (entry at: #location) equals: FileLocator imageDirectory pathString ]
+]
+
+{ #category : 'tests' }
 MCPToolSearchRepositoriesTest >> testSummaryCountsTheRepositoriesOfTheImage [
 	"Repositories are registered with the image, so that is where a search looks; a name, a field or a state it keeps makes the count one that matches."
 
