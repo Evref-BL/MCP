@@ -127,6 +127,13 @@ MCPToolMethodMutation >> blockingPreCompileRuleClasses [
 	^ { ReDeadBlockRule }
 ]
 
+{ #category : 'private - arguments' }
+MCPToolMethodMutation >> classNameAndSideOf: request do: aBlock [
+	"aBlock gets the class the call names without its side, whether the class side is meant, and whether the call said which side, by side or by a class written as Foo class. A side that says the other one is refused."
+
+	^ MCPImageLookup className: (request stringArgumentNamed: 'class') side: (request stringArgumentNamed: 'side') do: aBlock
+]
+
 { #category : 'private' }
 MCPToolMethodMutation >> classReferenceNameFor: className classSide: classSide [
 
@@ -370,6 +377,12 @@ MCPToolMethodMutation >> mutationAction [
 ]
 
 { #category : 'private - errors' }
+MCPToolMethodMutation >> mutationActionFor: request checked: aBoolean [
+
+	^ self mutationAction
+]
+
+{ #category : 'private - errors' }
 MCPToolMethodMutation >> mutationActionForErrorFromParsedRequest: mutationRequest rawRequest: rawRequest [
 
 	^ self mutationAction
@@ -414,6 +427,14 @@ MCPToolMethodMutation >> renameRefactoringForSelector: oldSelectorSymbol inBehav
 		  in: aBehavior
 		  to: newSelectorSymbol
 		  permutation: permutation
+]
+
+{ #category : 'private - errors' }
+MCPToolMethodMutation >> requestedContextFor: request checked: aBoolean [
+	"An error raised before the arguments are checked echoes them as the caller wrote them; one raised after, as the tool read them."
+
+	aBoolean ifFalse: [ ^ request asDictionary copy ].
+	^ self requestedContextFor: request
 ]
 
 { #category : 'private - schema' }
