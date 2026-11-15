@@ -26,9 +26,10 @@ MCPCommandErrorTest >> testClassAlreadyExistsErrorCarriesClassName [
 	details := error structuredDetails.
 	self assert: error errorCode equals: #ClassAlreadyExists.
 	self assert: (details at: #class) equals: 'MCPCommandErrorTestExisting'.
-	self assert: (details at: #message) equals: 'Class MCPCommandErrorTestExisting already exists.'.
-	self assert: ((details at: #guidance) includesSubstring: 'Use class_get').
-	self assert: ((details at: #guidance) includesSubstring: 'Do not use class_create')
+	self
+		assert: (details at: #message)
+		equals: 'Class MCPCommandErrorTestExisting already exists. class_update changes it; class_get shows it.'.
+	self deny: (details includesKey: #guidance)
 ]
 
 { #category : 'tests' }
