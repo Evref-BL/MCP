@@ -21,6 +21,23 @@ MCPToolChangeHistoryOperation >> actionName [
 	^ self changeHistoryToolSpec at: #action
 ]
 
+{ #category : 'private - results' }
+MCPToolChangeHistoryOperation >> addEntriesOf: aSelection in: aLog previewedBy: aPreviewLog to: data [
+	"The entries aSelection took from aLog and those aPreviewLog holds, described, with how many of each."
+
+	| previewEntries selectedEntries |
+	selectedEntries := aSelection selectedPairs collect: [ :pair |
+		                   MCPChangeHistoryEntryInfo fromEntry: pair second index: pair first log: aLog ].
+	previewEntries := aPreviewLog entries collectWithIndex: [ :entry :index |
+		                  MCPChangeHistoryEntryInfo fromEntry: entry index: index log: aPreviewLog ].
+	data at: #selectedEntries put: (selectedEntries collect: [ :each | each asDictionary ] as: Array).
+	data at: #previewEntries put: (previewEntries collect: [ :each | each asDictionary ] as: Array).
+	data at: #selectedCount put: selectedEntries size.
+	data at: #selectedCodeChangeCount put: (selectedEntries count: [ :each | each isCodeChange ]).
+	data at: #skippedNonCodeChangeCount put: aSelection skippedNonCodeChangeCount.
+	data at: #previewCount put: previewEntries size
+]
+
 { #category : 'metadata' }
 MCPToolChangeHistoryOperation >> buildInputSchema [
 
@@ -78,30 +95,25 @@ MCPToolChangeHistoryOperation >> checkArguments: request [
 
 { #category : 'private - execution' }
 MCPToolChangeHistoryOperation >> dataFor: request [
+	"Check the selection, read the history it comes from, preview applying or reverting the entries it takes, and carry that out when confirmed."
 
-	| data log logAndFileName performedCount previewEntries previewLog selectedEntries selection |
+	| data logAndFileName performedCount previewLog selection |
 	self checkArguments: request.
 	logAndFileName := self logAndFileNameFor: request.
-	log := logAndFileName first.
-	selection := self selectionFor: request in: log.
+	selection := self selectionFor: request in: logAndFileName first.
 	previewLog := selection execute.
 	performedCount := (request booleanArgumentNamed: 'confirm')
 		                  ifTrue: [ selection performPreviewLog: previewLog ]
 		                  ifFalse: [ 0 ].
-	selectedEntries := selection selectedPairs collect: [ :pair |
-		                   MCPChangeHistoryEntryInfo fromEntry: pair second index: pair first log: log ].
-	previewEntries := previewLog entries collectWithIndex: [ :entry :index |
-		                  MCPChangeHistoryEntryInfo fromEntry: entry index: index log: previewLog ].
 	data := Dictionary new.
 	data at: #action put: self actionName.
 	logAndFileName second ifNotNil: [ :fileName | data at: #historyFile put: fileName ].
 	data at: #selectionCriteria put: (self selectionCriteriaFrom: request).
-	data at: #selectedEntries put: (selectedEntries collect: [ :each | each asDictionary ] as: Array).
-	data at: #previewEntries put: (previewEntries collect: [ :each | each asDictionary ] as: Array).
-	data at: #selectedCount put: selectedEntries size.
-	data at: #selectedCodeChangeCount put: (selectedEntries count: [ :each | each isCodeChange ]).
-	data at: #skippedNonCodeChangeCount put: selection skippedNonCodeChangeCount.
-	data at: #previewCount put: previewEntries size.
+	self
+		addEntriesOf: selection
+		in: logAndFileName first
+		previewedBy: previewLog
+		to: data.
 	data at: #performed put: (request booleanArgumentNamed: 'confirm').
 	data at: #performedCount put: performedCount.
 	^ data
