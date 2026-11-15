@@ -15,6 +15,51 @@ MCPToolSearchMethodReferences class >> toolName [
 	^ 'method_reference_search'
 ]
 
+{ #category : 'private - results' }
+MCPToolSearchMethodReferences >> countTextForQueryRequest: queryRequest page: page [
+	"What was looked for and how much of it was found, counted over every hit rather than the page: 1 implementor and 3 senders of calcArea, 25 of 40 methods refer to EvalRect. Nothing found names the kinds that were looked for."
+
+	| counts name offset |
+	name := queryRequest filterPattern.
+	page totalCount = 0 ifTrue: [ ^ self noHitTextForKinds: (self kindsForName: name request: queryRequest) name: name ].
+	counts := page countsByKind.
+	offset := self offsetFromQueryRequest: queryRequest.
+	^ String streamContents: [ :stream |
+			  offset >= page totalCount
+				  ifTrue: [
+						  stream
+							  nextPutAll: 'No ';
+							  nextPutAll: (self kindNounsTextForCounts: counts);
+							  nextPutAll: ' from offset ';
+							  print: offset;
+							  nextPutAll: '; ' ]
+				  ifFalse: [
+						  (offset = 0 and: [ page nextOffset isNil ]) ifFalse: [
+								  stream
+									  print: page returnedCount;
+									  nextPutAll: ' of ' ] ].
+			  stream nextPutAll: (self hitCountTextForCounts: counts name: name) ]
+]
+
+{ #category : 'private - results' }
+MCPToolSearchMethodReferences >> dataTextOn: stream for: data [
+	"Hits are listed under the kind of reference they are, implementors before senders, in the order of the one list the offset counts, so a page can end inside a group."
+
+	| groups rest |
+	rest := data copy.
+	rest removeKey: #methods ifAbsent: [ nil ].
+	super dataTextOn: stream for: rest.
+	groups := OrderedDictionary new.
+	((self valueIn: data at: #methods) ifNil: [ #(  ) ]) do: [ :each |
+		(groups at: (self groupLabelForKind: (self valueIn: each at: #reference)) ifAbsentPut: [ OrderedCollection new ]) add: each ].
+	groups keysAndValuesDo: [ :label :entries |
+			self
+				entriesTextOn: stream
+				for: entries asArray
+				labelled: label
+				indent: '' ]
+]
+
 { #category : 'metadata' }
 MCPToolSearchMethodReferences >> defaultExposure [
 
@@ -87,6 +132,54 @@ MCPToolSearchMethodReferences >> fallbackKindsFor: kinds [
 	^ #(  )
 ]
 
+{ #category : 'private - results' }
+MCPToolSearchMethodReferences >> groupLabelForKind: aKind [
+	"Implementors and senders are listed under their own names; the methods referring to a class or using a variable are just methods."
+
+	^ (self selectorKinds includes: aKind)
+		  ifTrue: [ aKind ]
+		  ifFalse: [ 'methods' ]
+]
+
+{ #category : 'private - results' }
+MCPToolSearchMethodReferences >> hitCountTextForCounts: counts name: aName [
+	"1 implementor and 3 senders of calcArea, 3 methods refer to EvalRect, 1 method uses total."
+
+	^ String streamContents: [ :stream |
+			  (counts includesKey: 'class')
+				  ifTrue: [
+						  stream
+							  nextPutAll: (self textForCount: (counts at: 'class') noun: 'method');
+							  nextPutAll: ((counts at: 'class') = 1
+									   ifTrue: [ ' refers to ' ]
+									   ifFalse: [ ' refer to ' ]) ]
+				  ifFalse: [
+						  (counts includesKey: 'variable')
+							  ifTrue: [
+									  stream
+										  nextPutAll: (self textForCount: (counts at: 'variable') noun: 'method');
+										  nextPutAll: ((counts at: 'variable') = 1
+												   ifTrue: [ ' uses ' ]
+												   ifFalse: [ ' use ' ]) ]
+							  ifFalse: [
+									  stream
+										  nextPutAll: (' and ' join: (self selectorKinds
+														    select: [ :kind | counts includesKey: kind ]
+														    thenCollect: [ :kind | self textForCount: (counts at: kind) noun: kind allButLast ]));
+										  nextPutAll: ' of ' ] ].
+			  stream nextPutAll: aName ]
+]
+
+{ #category : 'private - results' }
+MCPToolSearchMethodReferences >> kindNounsTextForCounts: counts [
+	"What the hits are, without the name they are of: implementors or senders, or methods."
+
+	| selectorKinds |
+	selectorKinds := self selectorKinds select: [ :kind | counts includesKey: kind ].
+	selectorKinds ifEmpty: [ ^ 'methods' ].
+	^ ' or ' join: selectorKinds
+]
+
 { #category : 'private - lookup' }
 MCPToolSearchMethodReferences >> kindsForName: aName request: request [
 
@@ -109,6 +202,41 @@ MCPToolSearchMethodReferences >> lookupArgumentDescription [
 MCPToolSearchMethodReferences >> lookupArgumentName [
 
 	^ 'name'
+]
+
+{ #category : 'private - results' }
+MCPToolSearchMethodReferences >> noHitHintForKinds: kinds name: aName [
+	"A name that no method implements or sends may not be a selector at all: a method written with its class, or a class. Answer the sentence that says what to ask instead, or nil."
+
+	| global |
+	(self selectorKinds anySatisfy: [ :kind | kinds includes: kind ]) ifFalse: [ ^ nil ].
+	(aName includesSubstring: '>>') ifTrue: [
+			^ String streamContents: [ :stream |
+				  stream << aName << ' names a method; name its selector alone: ' << (self selectorInMethodName: aName) << '.' ] ].
+	global := Smalltalk globals at: aName asSymbol ifAbsent: [ ^ nil ].
+	global isBehavior ifFalse: [ ^ nil ].
+	^ String streamContents: [ :stream |
+			  stream << aName << (global isTrait
+				   ifTrue: [ ' is a trait' ]
+				   ifFalse: [ ' is a class' ]) << '; kind: class finds the methods that refer to it.' ]
+]
+
+{ #category : 'private - results' }
+MCPToolSearchMethodReferences >> noHitTextForKinds: kinds name: aName [
+	"No senders of audit, No implementors or senders of audit, No methods refer to EvalRect, No methods use total."
+
+	^ String streamContents: [ :stream |
+			  (kinds includes: 'class')
+				  ifTrue: [ stream nextPutAll: 'No methods refer to ' ]
+				  ifFalse: [
+						  (kinds includes: 'variable')
+							  ifTrue: [ stream nextPutAll: 'No methods use ' ]
+							  ifFalse: [
+									  stream
+										  nextPutAll: 'No ';
+										  nextPutAll: (' or ' join: (self selectorKinds select: [ :kind | kinds includes: kind ]));
+										  nextPutAll: ' of ' ] ].
+			  stream nextPutAll: aName ]
 ]
 
 { #category : 'private - template' }
@@ -139,6 +267,28 @@ MCPToolSearchMethodReferences >> queryEntriesForQueryRequest: queryRequest [
 	^ entries ifNil: [ #(  ) ]
 ]
 
+{ #category : 'private - pagination' }
+MCPToolSearchMethodReferences >> queryPageForEntries: entries limit: limit offset: offset [
+	"The summary counts every hit of each kind, not only the page's."
+
+	| counts |
+	counts := Dictionary new.
+	entries do: [ :each |
+			| kind |
+			kind := each at: #reference.
+			counts at: kind put: (counts at: kind ifAbsent: [ 0 ]) + 1 ].
+	^ (super queryPageForEntries: entries limit: limit offset: offset)
+		  countsByKind: counts;
+		  yourself
+]
+
+{ #category : 'private - results' }
+MCPToolSearchMethodReferences >> redundantKeys [
+	"Hits are listed under the kind of reference they are, and the protocol says nothing about where a name is used."
+
+	^ super redundantKeys , #( reference protocol )
+]
+
 { #category : 'metadata' }
 MCPToolSearchMethodReferences >> referenceKinds [
 
@@ -160,6 +310,24 @@ MCPToolSearchMethodReferences >> searchRequestFromToolRequest: request [
 	^ searchRequest
 ]
 
+{ #category : 'private - results' }
+MCPToolSearchMethodReferences >> selectorInMethodName: aName [
+	"The selector a method name such as EvalCanvas>>#draw:at: carries: what follows its last >>, without a leading #."
+
+	| selector |
+	selector := (aName splitOn: '>>') last trimBoth.
+	^ (selector beginsWith: '#')
+		  ifTrue: [ selector allButFirst ]
+		  ifFalse: [ selector ]
+]
+
+{ #category : 'private - results' }
+MCPToolSearchMethodReferences >> selectorKinds [
+	"The kinds a selector is looked up as, in the order their hits are listed."
+
+	^ #( 'implementors' 'senders' )
+]
+
 { #category : 'private - lookup' }
 MCPToolSearchMethodReferences >> signalUnknownName: aName failures: failures [
 	"Both readings were tried; what each of them said is kept, so a real failure underneath is not lost."
@@ -171,6 +339,18 @@ MCPToolSearchMethodReferences >> signalUnknownName: aName failures: failures [
 		details: {
 				(#name -> aName).
 				(#attempted -> (failures collect: [ :each | each messageText ] as: Array)) } asDictionary
+]
+
+{ #category : 'private - results' }
+MCPToolSearchMethodReferences >> successSummaryForQueryRequest: queryRequest page: page [
+	"When nothing implements or sends the name, a sentence follows when the name says what was meant instead."
+
+	| hint name summary |
+	summary := super successSummaryForQueryRequest: queryRequest page: page.
+	page totalCount = 0 ifFalse: [ ^ summary ].
+	name := queryRequest filterPattern.
+	hint := (self noHitHintForKinds: (self kindsForName: name request: queryRequest) name: name) ifNil: [ ^ summary ].
+	^ String streamContents: [ :stream | stream << summary << ' ' << hint ]
 ]
 
 { #category : 'metadata' }
