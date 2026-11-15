@@ -2572,6 +2572,28 @@ MCPToolContractsTest >> testToolFlowSelectorNamesSeparateTransportAndParsedInput
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testToolGetTextCarriesOnlyWhatACallNeeds [
+	"A contract is read to build a call. Its annotations, exposure, group and keywords stay in the data for whoever catalogs tools, and the text leaves them out; whether the tool is advertised is said once, in the summary."
+
+	| contract lines result |
+	result := self callToolNamed: 'tool_get' withArguments: { (#name -> 'repository_create') } asDictionary.
+	lines := (self firstTextFromToolResult: result) lines.
+	self assert: lines first equals: 'Tool repository_create (not in the advertised list).'.
+	self assert: lines second equals: 'tool:'.
+	self assert: (lines includes: '  name: repository_create').
+	self assert: (lines anySatisfy: [ :each | each beginsWith: '  description: ' ]).
+	self assert: (lines includes: '  inputSchema:').
+	#( '  annotations:' '  exposure:' '  group:' '  keywords:' ) do: [ :label |
+		self deny: (lines anySatisfy: [ :each | each beginsWith: label ]) description: label ].
+	contract := (self dataFrom: result) at: #tool.
+	self assert: contract keys asSet equals: #( name description group exposure annotations keywords inputSchema ) asSet.
+	result := self callToolNamed: 'tool_get' withArguments: { (#name -> 'class_search') } asDictionary.
+	lines := (self firstTextFromToolResult: result) lines.
+	self assert: lines first equals: 'Tool class_search.'.
+	self assert: (lines includes: '  pageSize: ' , MCPToolSearchClasses new defaultPageLimit printString)
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testToolIconSpecsAreDerivedFromToolNames [
 	"Among MCP's own tools, an icon is read from the name and never picked by hand, so they stay consistent without anyone choosing. A tool from another package cannot be spelled out of MCP's vocabulary, so it is left to declare its own."
 
