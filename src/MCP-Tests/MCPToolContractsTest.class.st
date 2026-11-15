@@ -525,6 +525,23 @@ MCPToolContractsTest >> signalHaltForMCPMessageProcessorTest [
 ]
 
 { #category : 'private - evaluate' }
+MCPToolContractsTest >> stoppedEarlyResultOf: aString bounds: aBlock [
+	"The answer of an evaluation of aString with a limit of 30 s, by a command whose bounds aBlock sets. What the call deferred runs once it has answered, as the server runs it after the response."
+
+	| actions command result tool |
+	tool := MCPToolEvaluate new.
+	command := MCPEvaluateCommandStoppingEarly
+		           tool: tool
+		           request: (MCPEvaluateRequest new initializeCode: aString timeoutSeconds: 30)
+		           resultPreviewCharacterLimit: tool resultPreviewCharacterLimit.
+	aBlock value: command.
+	actions := OrderedCollection new.
+	result := MCPPostResponseActions value: actions during: [ command execute ].
+	actions do: #value.
+	^ result
+]
+
+{ #category : 'private - evaluate' }
 MCPToolContractsTest >> stoppedText: aString [
 	"A text that must be the answer to a stop at a limit of 1 s."
 
@@ -1122,6 +1139,30 @@ MCPToolContractsTest >> testEvaluateLetsNotificationsUseTheirDefaultAction [
 ]
 
 { #category : 'tests - evaluate' }
+MCPToolContractsTest >> testEvaluateLooksAtTheMemoryOnlyOnceTheCodeHasStarted [
+	"Before the code has started, whatever grows the image is not the code, so only the time limit stops it. A bound below any growth stands for one the image passed. Code that has ended is never stopped."
+
+	| command unstarted |
+	command := MCPEvaluateCommandStoppingEarly
+		           tool: MCPToolEvaluate new
+		           request: (MCPEvaluateRequest new initializeCode: '3 + 4' timeoutSeconds: 1)
+		           resultPreviewCharacterLimit: 100.
+	command memoryGrowthLimit: -1024 * 1024 * 1024.
+	unstarted := [ 3 + 4 ] newProcess.
+	self
+		assert: (command watch: unstarted until: Semaphore new started: [ false ])
+		equals: 'Evaluation stopped after 1 s, its time limit.'.
+	self assert: ((command watch: unstarted until: Semaphore new started: [ true ]) beginsWith:
+			 'Evaluation stopped: the image''s memory grew by more than ').
+	self assert: (command
+			 watch: unstarted
+			 until: (Semaphore new
+					  signal;
+					  yourself)
+			 started: [ true ]) isNil
+]
+
+{ #category : 'tests - evaluate' }
 MCPToolContractsTest >> testEvaluateNotStartedTextTellsAnEvaluationFromAFork [
 	"A process named after the tool is an earlier evaluation, which ends at its own limit; any other at the priority evaluations run at was forked by one, and has no limit."
 
@@ -1264,6 +1305,27 @@ MCPToolContractsTest >> testEvaluateRunsJustBelowTheCallingProcess [
 ]
 
 { #category : 'tests - evaluate' }
+MCPToolContractsTest >> testEvaluateStackAndMemoryStopsSayWhy [
+	"Each early stop names what the code passed and how far, and the stack's names what runs that deep."
+
+	| command tool |
+	tool := MCPToolEvaluate new.
+	command := MCPEvaluateCommand
+		           tool: tool
+		           request: (MCPEvaluateRequest new initializeCode: '3 + 4' timeoutSeconds: 30)
+		           resultPreviewCharacterLimit: 100.
+	self
+		assert: (tool stackStoppedMessageFor: command stackDepthLimit)
+		equals: 'Evaluation stopped: its stack passed 1000000 frames, which an endless recursion does.'.
+	self
+		assert: (tool memoryStoppedMessageFor: command memoryGrowthLimit)
+		equals: 'Evaluation stopped: the image''s memory grew by more than 4 GB while it ran.'.
+	self
+		assert: (tool memoryStoppedMessageFor: 16 * 1024 * 1024)
+		equals: 'Evaluation stopped: the image''s memory grew by more than 16 MB while it ran.'
+]
+
+{ #category : 'tests - evaluate' }
 MCPToolContractsTest >> testEvaluateStackTraceStopsAtTheEvaluatedCode [
 	"Below the outermost doIt every frame is compiler and dispatch scaffolding, identical on every failure."
 
@@ -1345,6 +1407,23 @@ MCPToolContractsTest >> testEvaluateStopCollectsGarbageOnceTheCodeHasUnwound [
 ]
 
 { #category : 'tests - evaluate' }
+MCPToolContractsTest >> testEvaluateStopCollectsGarbageWhenTheAnswerNeverGoesOut [
+	"A client that gave up leaves the answer unwritten, and what the call deferred unrun. The process that stopped the code waits for the answer only as long as the answer waits for the unwinding, then collects anyway, rather than keep itself and the garbage forever."
+
+	| actions before collections helpers |
+	self timeLimit: 30 seconds.
+	before := self liveProcessesNamed: 'image_evaluate stop'.
+	collections := self fullGarbageCollections.
+	actions := OrderedCollection new.
+	self stoppedTextUnwindingBrieflyOf: '[ true ] whileTrue' deferringInto: actions.
+	helpers := (self liveProcessesNamed: 'image_evaluate stop') copyWithoutAll: before.
+	self assert: helpers size equals: 1.
+	self waitUntilEnded: helpers first.
+	self assert: helpers first isTerminated.
+	self assert: self fullGarbageCollections > collections
+]
+
+{ #category : 'tests - evaluate' }
 MCPToolContractsTest >> testEvaluateStoppedFramesCollapseARecursion [
 	"A run of equal frame names is one line with its count, and the run that reaches the last frame kept, when the stack goes deeper, counts at least that many."
 
@@ -1412,6 +1491,37 @@ MCPToolContractsTest >> testEvaluateStopsAComputingLoopUnderEitherPreemptionRule
 ]
 
 { #category : 'tests - evaluate' }
+MCPToolContractsTest >> testEvaluateStopsARecursionPastItsStackBound [
+	"An endless recursion grows the image by GBs within its time limit, so the stack is looked at while the code runs, and the code is stopped once it passes a bound, long before the limit. The fixture waits at the bottom of a recursion just past a low bound, so the test grows no memory."
+
+	| fixture lines milliseconds result |
+	self timeLimit: 30 seconds.
+	fixture := self
+		           createClassNamed: 'EvalStopRecursionFixture'
+		           superclassName: 'Object'
+		           slots: #(  )
+		           classSlots: #(  ).
+	[
+		self
+			ensureMethodSource: 'descend: n
+	n = 0 ifTrue: [ ^ (Delay forSeconds: 60) wait ].
+	^ self descend: n - 1'
+			protocol: 'fixture'
+			on: fixture.
+		milliseconds := Time millisecondsToRun: [
+				                result := self
+					                          stoppedEarlyResultOf: 'EvalStopRecursionFixture new descend: 2000'
+					                          bounds: [ :command | command stackDepthLimit: 1000 ] ] ] ensure: [
+		self removeClassNamed: 'EvalStopRecursionFixture' ].
+	self assert: result isError.
+	lines := (self textOfEvaluateResult: result) lines.
+	self assert: (lines first: 2) equals: #( 'Evaluation stopped: its stack passed 1000 frames, which an endless recursion does.'
+		   'What it changed before then stays changed.' ).
+	self assert: (lines anySatisfy: [ :each | each beginsWith: 'EvalStopRecursionFixture>>descend:, at least ' ]).
+	self assert: milliseconds < 10000
+]
+
+{ #category : 'tests - evaluate' }
 MCPToolContractsTest >> testEvaluateStopsAWaitAndRunsItsEnsureBlocks [
 	"A stop unwinds the code as any termination does: its ensure blocks run, and the Transcript it was recording is put back."
 
@@ -1450,6 +1560,32 @@ MCPToolContractsTest >> testEvaluateStopsAWaitInACriticalSectionWithoutSignallin
 ]
 
 { #category : 'tests - evaluate' }
+MCPToolContractsTest >> testEvaluateStopsAnEndlessRecursionWithinASecondOrTwo [
+	"payroll #3's recursion grew the image by more than a GB a second until its time limit, and stopping a stack that deep took longer than the limit. Its stack passes the bound within a fraction of a second, so it is stopped long before the limit, having grown the image by a few hundred MB."
+
+	| fixture milliseconds result |
+	self timeLimit: 30 seconds.
+	fixture := self
+		           createClassNamed: 'EvalStopRecursionFixture'
+		           superclassName: 'Object'
+		           slots: #(  )
+		           classSlots: #(  ).
+	[
+		self
+			ensureMethodSource: 'employees
+	^ self employees sorted'
+			protocol: 'fixture'
+			on: fixture.
+		milliseconds := Time millisecondsToRun: [ result := self evaluate: 'EvalStopRecursionFixture new employees' within: 30 ] ]
+		ensure: [ self removeClassNamed: 'EvalStopRecursionFixture' ].
+	self assert: (self resultIndicatesError: result).
+	self
+		assert: (self firstTextFromToolResult: result) lines first
+		equals: 'Evaluation stopped: its stack passed 1000000 frames, which an endless recursion does.'.
+	self assert: milliseconds < 10000
+]
+
+{ #category : 'tests - evaluate' }
 MCPToolContractsTest >> testEvaluateStopsCodeThatCatchesEveryException [
 	"A limit that signals is caught by the first handler that takes every exception, and the code carries on. Terminating a process signals nothing."
 
@@ -1458,6 +1594,26 @@ MCPToolContractsTest >> testEvaluateStopsCodeThatCatchesEveryException [
 	milliseconds := Time millisecondsToRun: [
 		                result := self evaluate: '[ [ true ] whileTrue ] on: Exception do: [ :e | [ true ] whileTrue ]' within: 1 ].
 	self deny: ((self stoppedTextOf: result) includesSubstring: 'still running').
+	self assert: milliseconds < 10000
+]
+
+{ #category : 'tests - evaluate' }
+MCPToolContractsTest >> testEvaluateStopsCodeThatKeepsMoreMemoryThanItsBound [
+	"Code that keeps what it allocates without recursing passes no stack bound, so the image's memory backs the stack up. The bound is set low and the code keeps 64 MB, then waits, so the test allocates no GBs. A collection beforehand keeps garbage freed meanwhile from hiding the growth."
+
+	| lines milliseconds result |
+	self timeLimit: 30 seconds.
+	Smalltalk garbageCollect.
+	milliseconds := Time millisecondsToRun: [
+			                result := self
+				                          stoppedEarlyResultOf:
+				                          '| kept | kept := (1 to: 8) collect: [ :each | ByteArray new: 8 * 1024 * 1024 ]. (Delay forSeconds: 60) wait. kept size'
+				                          bounds: [ :command | command memoryGrowthLimit: 16 * 1024 * 1024 ] ].
+	self assert: result isError.
+	lines := (self textOfEvaluateResult: result) lines.
+	self assert: (lines first: 2) equals: #( 'Evaluation stopped: the image''s memory grew by more than 16 MB while it ran.'
+		   'What it changed before then stays changed.' ).
+	self assert: (lines includes: 'Stopped in:').
 	self assert: milliseconds < 10000
 ]
 
@@ -3234,6 +3390,16 @@ MCPToolContractsTest >> testUnknownToolNameSuggestsCloseNames [
 	self assert: (error at: #tool) equals: 'method_serch'.
 	self assert: ((error at: #suggestedTools) includes: 'method_source_search').
 	self deny: (error includesKey: #stackTrace)
+]
+
+{ #category : 'private - evaluate' }
+MCPToolContractsTest >> textOfEvaluateResult: aResult [
+	"The text a call gets for an evaluation that failed."
+
+	^ MCPToolEvaluate new contentTextForStructuredContent: (Dictionary new
+			   at: #summary put: aResult summary;
+			   at: #error put: aResult errorDetails;
+			   yourself)
 ]
 
 { #category : 'support' }
