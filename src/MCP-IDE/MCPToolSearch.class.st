@@ -1,5 +1,5 @@
 "
-Shared base class for search-style MCP tools. It centralizes paged result shaping and search-specific error handling.
+Shared base class for search-style MCP tools. A search builds the scope it looks in from its MCPToolRequest, reads the rest of its arguments from the same request as it collects its entries, and answers one page of them. It centralizes paged result shaping and search-specific error handling.
 "
 Class {
 	#name : 'MCPToolSearch',
