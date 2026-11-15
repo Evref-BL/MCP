@@ -36,7 +36,7 @@ MCPToolMethodMutationTest >> assertCompileForClass: aClass methodSource: aMethod
 ]
 
 { #category : 'private' }
-MCPToolMethodMutationTest >> assertHeaderOf: aSource side: aSideOrNil isRefusedSaying: aText [
+MCPToolMethodMutationTest >> assertHeaderIsRefusedIn: aSource side: aSideOrNil [
 
 	| error result |
 	result := self compileSource: aSource into: MCPToolMethodMutationTestTarget name side: aSideOrNil.
@@ -45,7 +45,9 @@ MCPToolMethodMutationTest >> assertHeaderOf: aSource side: aSideOrNil isRefusedS
 	self assert: (error at: #errorCode) equals: 'MethodSourceHeader'.
 	self assert: (error at: #header) equals: aSource lines first trimBoth.
 	self assert: (error at: #class) equals: MCPToolMethodMutationTestTarget name.
-	self assert: (self textFrom: result) equals: aText.
+	self assert: (self textFrom: result) equals: 'The source begins with ' , aSource lines first trimBoth
+		,
+		', a method''s reference. Start it with the method''s selector line, argument names included, then its body; class and side say where it goes.'.
 	#( #headerProbe #headerProbe:with: #headerProbe: #= #'>=' ) do: [ :each |
 			self deny: (MCPToolMethodMutationTestTarget includesSelector: each).
 			self deny: (MCPToolMethodMutationTestTarget classSide includesSelector: each) ].
@@ -120,6 +122,17 @@ MCPToolMethodMutationTest >> compileArgumentsForClass: aClass classSide: aBoolea
 		  (#protocol -> aProtocol) } asDictionary
 ]
 
+{ #category : 'private' }
+MCPToolMethodMutationTest >> compileProbe: aMethodSource [
+	"Compile aMethodSource into the mutation target under tests, answering the result."
+
+	^ self callToolWith: (self
+			   compileArgumentsForClass: MCPToolMethodMutationTestTarget
+			   classSide: false
+			   methodSource: aMethodSource
+			   protocol: 'tests')
+]
+
 { #category : 'private - calling' }
 MCPToolMethodMutationTest >> compileSource: aSource into: aClassName side: aSideOrNil [
 	"method_compile as a caller writes it, with side left out when aSideOrNil is nil."
@@ -131,17 +144,6 @@ MCPToolMethodMutationTest >> compileSource: aSource into: aClassName side: aSide
 	arguments at: #protocol put: 'tests'.
 	aSideOrNil ifNotNil: [ arguments at: #side put: aSideOrNil ].
 	^ self callToolNamed: 'method_compile' withArguments: arguments
-]
-
-{ #category : 'private' }
-MCPToolMethodMutationTest >> compileProbe: aMethodSource [
-	"Compile aMethodSource into the mutation target under tests, answering the result."
-
-	^ self callToolWith: (self
-			   compileArgumentsForClass: MCPToolMethodMutationTestTarget
-			   classSide: false
-			   methodSource: aMethodSource
-			   protocol: 'tests')
 ]
 
 { #category : 'private' }
@@ -424,21 +426,15 @@ MCPToolMethodMutationTest >> testABinaryHeaderKeepsItsSelector [
 MCPToolMethodMutationTest >> testAHeaderWithNothingAfterItIsRefused [
 	"A source that is only a method's reference names the method and writes none of it. Dropping the header would compile an empty method, replacing the body of one that exists, so it is refused and nothing is compiled. A body on the header's own line is a body."
 
-	| error result |
+	| result |
 	[
 		self ensureMethodSource: 'headerProbe ^ 1' protocol: 'tests' on: MCPToolMethodMutationTestTarget.
 		result := self
 			          compileSource: 'MCPToolMethodMutationTestTarget >> #headerProbe'
 			          into: MCPToolMethodMutationTestTarget name
 			          side: nil.
-		error := self errorFrom: result.
 		self assert: (result at: #isError).
-		self assert: (error at: #errorCode) equals: 'MethodSourceHeader'.
-		self assert: (error at: #header) equals: 'MCPToolMethodMutationTestTarget >> #headerProbe'.
-		self
-			assert: (self textFrom: result)
-			equals:
-			'The source holds only MCPToolMethodMutationTestTarget >> #headerProbe, a method''s reference with no body. Write the method itself: its selector line, headerProbe, then its body.'.
+		self assert: ((self errorFrom: result) at: #errorCode) equals: 'MethodSourceHeader'.
 		self assert: (MCPToolMethodMutationTestTarget new perform: #headerProbe) equals: 1.
 
 		result := self
@@ -448,16 +444,10 @@ MCPToolMethodMutationTest >> testAHeaderWithNothingAfterItIsRefused [
 		self deny: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
 		self assert: (MCPToolMethodMutationTestTarget new perform: #headerProbe) equals: 2 ] ensure: [ self removeHeaderProbes ].
 	self
-		assertHeaderOf: 'MCPToolMethodMutationTestTarget class>>headerProbe: a
+		assertHeaderIsRefusedIn: 'MCPToolMethodMutationTestTarget class>>headerProbe: a
 	'
-		side: nil
-		isRefusedSaying:
-		'The source holds only MCPToolMethodMutationTestTarget class>>headerProbe: a, a method''s reference with no body. Write the method itself: its selector line, headerProbe: a, then its body, and pass side class.'.
-	self
-		assertHeaderOf: 'MCPToolMethodMutationTestTarget>>#headerProbe:with:'
-		side: nil
-		isRefusedSaying:
-		'The source holds only MCPToolMethodMutationTestTarget>>#headerProbe:with:, a method''s reference with no body. Write the method itself: its selector line, the selector with its argument names, then its body.'
+		side: nil.
+	self assertHeaderIsRefusedIn: 'MCPToolMethodMutationTestTarget>>#headerProbe:with:' side: nil
 ]
 
 { #category : 'tests' }
@@ -1679,49 +1669,34 @@ MCPToolMethodMutationTest >> testHeaderNamingTheTargetIsDropped [
 ]
 
 { #category : 'tests' }
-MCPToolMethodMutationTest >> testHeaderThatCannotBeDroppedIsRefusedWithTheLineToWrite [
+MCPToolMethodMutationTest >> testHeaderThatCannotBeDroppedIsRefused [
 	"Dropping a header that names another class or side would compile somewhere the call did not say, a selector without its argument names would leave the body's arguments undeclared, and Tonel's brackets would leave a dead block. Each is refused, and nothing is compiled."
 
-	| error |
-	error := self
-		         assertHeaderOf: 'MCPToolMethodMutationTestTarget class>>headerProbe:with:
-	^ 1'
-		         side: nil
-		         isRefusedSaying:
-		         'The source begins with MCPToolMethodMutationTestTarget class>>headerProbe:with:, a method''s reference rather than its first line. Start the source with the selector and its argument names, each keyword followed by the name the body uses for that argument, and pass side class.'.
-	self assert: (error at: #side) equals: 'class'.
 	self
-		assertHeaderOf: 'MCPToolMethodMutationTestTarget>>>=
+		assert: ((self
+				  assertHeaderIsRefusedIn: 'MCPToolMethodMutationTestTarget class>>headerProbe:with:
+	^ 1'
+				  side: nil) at: #side)
+		equals: 'class'.
+	self
+		assertHeaderIsRefusedIn: 'MCPToolMethodMutationTestTarget>>>=
 	^ true'
-		side: nil
-		isRefusedSaying:
-		'The source begins with MCPToolMethodMutationTestTarget>>>=, a method''s reference rather than its first line. Start the source with the selector, followed by the name the body uses for its argument.'.
+		side: nil.
 	self
-		assertHeaderOf: 'MCPToolMethodMutationTestSender >> headerProbe
+		assertHeaderIsRefusedIn: 'MCPToolMethodMutationTestSender >> headerProbe
 	^ 1'
-		side: nil
-		isRefusedSaying:
-		'The source begins with MCPToolMethodMutationTestSender >> headerProbe, which names MCPToolMethodMutationTestSender, but the call''s class is MCPToolMethodMutationTestTarget. Start the source with its selector line, headerProbe, and name the class with class.'.
-	error := self
-		         assertHeaderOf: 'MCPToolMethodMutationTestTarget class >> #headerProbe
-	^ 1'
-		         side: 'instance'
-		         isRefusedSaying:
-		         'The source begins with MCPToolMethodMutationTestTarget class >> #headerProbe, which names the class side, but the call''s side is instance. Start the source with its selector line, headerProbe, and choose the side with side.'.
-	self assert: (error at: #side) equals: 'instance'.
+		side: nil.
 	self
-		assertHeaderOf: 'MCPToolMethodMutationTestTarget class >> #headerProbe:with:
+		assert: ((self
+				  assertHeaderIsRefusedIn: 'MCPToolMethodMutationTestTarget class >> #headerProbe
 	^ 1'
-		side: 'instance'
-		isRefusedSaying:
-		'The source begins with MCPToolMethodMutationTestTarget class >> #headerProbe:with:, which names the class side, but the call''s side is instance. Start the source with its selector line, the selector with its argument names, and choose the side with side.'.
+				  side: 'instance') at: #side)
+		equals: 'instance'.
 	self
-		assertHeaderOf: 'MCPToolMethodMutationTestTarget >> headerProbe [
+		assertHeaderIsRefusedIn: 'MCPToolMethodMutationTestTarget >> headerProbe [
 	^ 1
 ]'
 		side: nil
-		isRefusedSaying:
-		'The source begins with MCPToolMethodMutationTestTarget >> headerProbe [, Tonel''s form of a method. Write the method without Tonel''s brackets: its selector line, headerProbe, then its body.'
 ]
 
 { #category : 'tests' }
