@@ -239,21 +239,15 @@ MCPRepositorySpecTest >> testRepositoryReferenceResolvesByNameAndLocation [
 ]
 
 { #category : 'tests' }
-MCPRepositorySpecTest >> testRepositoryRemoteAndBranchResultsReturnDictionaries [
+MCPRepositorySpecTest >> testRepositoryReloadResultReturnsDictionary [
 
 	MCPTestGitRepositoryFixture withConfig: MCPTestGitRepositoryFixture standardConfig do: [ :repositoryDirectory |
-			| beforeInfo reloadData reloadResult repository |
-			repository := MCPTestIceRepository named: 'MCP Remote Repository' location: repositoryDirectory pathString.
-			repository modifiedPackageNames: #( 'MCP-Modified' ).
-			beforeInfo := MCPRepositoryInfo fromRepository: repository.
-			repository branchName: 'feature'.
-			repository headDescription: 'after'.
-			reloadResult := MCPRepositoryReloadResult repositoryBefore: beforeInfo after: repository.
-			reloadData := reloadResult asDictionary.
-			self assert: reloadData keys asSet equals: #( branch headDescription previousHeadDescription ) asSet.
-			self assert: (reloadData at: #branch) equals: 'feature'.
-			self assert: (reloadData at: #previousHeadDescription) equals: 'initial'.
-			self assert: (reloadData at: #headDescription) equals: 'after' ]
+			| reloadData repository |
+			repository := MCPTestIceRepository named: 'MCP Reload Repository' location: repositoryDirectory pathString.
+			reloadData := (MCPRepositoryReloadResult repository: repository packageNames: #( 'MCP' 'MCP-Tests' )) asDictionary.
+			self assert: reloadData keys asSet equals: #( packages ) asSet.
+			self assert: (reloadData at: #packages) equals: #( 'MCP' 'MCP-Tests' ).
+			self assert: (MCPRepositoryReloadResult repository: repository packageNames: #(  )) asDictionary isEmpty ]
 ]
 
 { #category : 'tests' }

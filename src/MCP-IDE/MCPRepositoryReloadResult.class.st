@@ -1,12 +1,11 @@
 "
-Result DTO returned by repository_reload. It reports the branch and head the image was on before the reload and the ones it holds after.
+Result DTO returned by repository_reload. It names the packages the reload loaded from the checkout's files; where HEAD is goes in the summary.
 "
 Class {
 	#name : 'MCPRepositoryReloadResult',
-	#superclass : 'MCPRepositoryTransitionResult',
+	#superclass : 'MCPRepositorySnapshotResult',
 	#instVars : [
-		'previousHeadDescription',
-		'headDescription'
+		'packageNames'
 	],
 	#category : 'MCP-IDE-Results',
 	#package : 'MCP-IDE',
@@ -14,9 +13,9 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPRepositoryReloadResult class >> repositoryBefore: beforeInfo after: aRepository [
+MCPRepositoryReloadResult class >> repository: aRepository packageNames: names [
 
-	^ self new initializeRepositoryBefore: beforeInfo after: aRepository
+	^ self new initializeRepository: aRepository packageNames: names
 ]
 
 { #category : 'converting' }
@@ -24,28 +23,19 @@ MCPRepositoryReloadResult >> asDictionary [
 
 	| data |
 	data := Dictionary new.
-	data at: #branch put: self repositoryInfoAfter branchName.
-	self previousHeadDescription ifNotEmpty: [ :description | data at: #previousHeadDescription put: description ].
-	self headDescription ifNotEmpty: [ :description | data at: #headDescription put: description ].
+	self packageNames ifNotEmpty: [ :names | data at: #packages put: names asArray ].
 	^ data
 ]
 
-{ #category : 'accessing' }
-MCPRepositoryReloadResult >> headDescription [
-
-	^ headDescription ifNil: [ '' ]
-]
-
 { #category : 'initialization' }
-MCPRepositoryReloadResult >> initializeRepositoryBefore: beforeInfo after: aRepository [
+MCPRepositoryReloadResult >> initializeRepository: aRepository packageNames: names [
 
-	super initializeRepositoryBefore: beforeInfo after: aRepository.
-	previousHeadDescription := beforeInfo headDescription.
-	headDescription := repositoryInfoAfter headDescription
+	self initializeSnapshotFromRepository: aRepository.
+	packageNames := names ifNil: [ #(  ) ]
 ]
 
 { #category : 'accessing' }
-MCPRepositoryReloadResult >> previousHeadDescription [
+MCPRepositoryReloadResult >> packageNames [
 
-	^ previousHeadDescription ifNil: [ '' ]
+	^ packageNames ifNil: [ #(  ) ]
 ]

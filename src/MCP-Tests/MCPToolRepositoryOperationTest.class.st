@@ -2157,6 +2157,33 @@ MCPToolRepositoryOperationTest >> testPathRuleNamesTheRegisteredPackagesOfAPath 
 ]
 
 { #category : 'tests' }
+MCPToolRepositoryOperationTest >> testReloadAnswersBranchAndPackages [
+
+	| location packageName repositoryName result |
+	repositoryName := 'MCP Reload Answers Test'.
+	packageName := 'MCPToolRepositoryOperationReloadAnswersPackage'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestReloadAnswers'.
+	self withExportPackageNamed: packageName className: 'MCPToolRepositoryOperationReloadAnswersClass' do: [
+			self withCleanRepositoryNamed: repositoryName location: location do: [
+					self
+						createRepositoryNamed: repositoryName
+						location: location
+						subdirectory: 'src'
+						packages: { packageName }.
+					self exportRepositoryNamed: repositoryName.
+					self commitRepositoryNamed: repositoryName message: 'Hold the package'.
+					result := self callToolWith: {
+							          (#action -> 'reload').
+							          (#name -> repositoryName) } asDictionary.
+					self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
+					self
+						assert: (self summaryFrom: result)
+						equals: ('Reloaded repository {1} from its files, on branch main.' format: { repositoryName }).
+					self assert: (self dataFrom: result) keys asArray equals: #( packages ).
+					self assert: ((self dataFrom: result) at: #packages) asArray equals: { packageName } ] ]
+]
+
+{ #category : 'tests' }
 MCPToolRepositoryOperationTest >> testReloadRefusesWhenAPackageHasNoSourceOnDisk [
 
 	| location packageDirectory packageName repositoryName result |
