@@ -39,29 +39,19 @@ MCPToolListChangeHistoryEntries >> buildInputSchema [
 ]
 
 { #category : 'private - execution' }
-MCPToolListChangeHistoryEntries >> commandForRequest: request [
-	"The reading of the history file the request names, else of the session in progress."
-
-	^ MCPListChangeHistoryEntriesCommand
-		  directoryPath: (request stringArgumentNamed: 'directoryPath')
-		  historyFile: (request stringArgumentNamed: 'historyFile')
-		  codeChangesOnly: (request booleanArgumentNamed: 'codeChangesOnly')
-		  newestFirst: (request booleanArgumentNamed: 'newestFirst')
-]
-
-{ #category : 'private - execution' }
 MCPToolListChangeHistoryEntries >> dataFor: request [
 
-	| data operation page |
-	operation := self commandForRequest: request.
+	| data log logAndFileName page |
+	logAndFileName := self logAndFileNameFor: request.
+	log := logAndFileName first.
 	page := MCPPaginationResult
-		        fromEntries: operation execute
+		        fromEntries: (self entryPairsFrom: log for: request)
 		        limit: self defaultPageLimit
 		        offset: (request integerArgumentNamed: 'offset').
 	data := Dictionary new.
-	operation historyFileName ifNotNil: [ :fileName | data at: #historyFile put: fileName ].
+	logAndFileName second ifNotNil: [ :fileName | data at: #historyFile put: fileName ].
 	data at: #entries put: (page entries
-			 collect: [ :pair | (MCPChangeHistoryEntryInfo fromEntry: pair second index: pair first log: operation log) asDictionary ]
+			 collect: [ :pair | (MCPChangeHistoryEntryInfo fromEntry: pair second index: pair first log: log) asDictionary ]
 			 as: Array).
 	page nextOffset ifNotNil: [ :offset | data at: #nextOffset put: offset ].
 	^ data
@@ -77,6 +67,22 @@ MCPToolListChangeHistoryEntries >> defaultPageLimit [
 MCPToolListChangeHistoryEntries >> description [
 
 	^ 'List granular entries from the current Pharo image change history or a selected .ombu file. Use history_file_list to locate files, and history_entry_apply or history_entry_revert only when previewing or performing recovery changes.'
+]
+
+{ #category : 'private - entries' }
+MCPToolListChangeHistoryEntries >> entryPairsFrom: aLog for: request [
+	"The entries of aLog the request lists, as pairs of their one-based index and the entry, the oldest first unless newestFirst."
+
+	| codeChangesOnly pairs |
+	codeChangesOnly := request booleanArgumentNamed: 'codeChangesOnly'.
+	pairs := OrderedCollection new.
+	aLog entries doWithIndex: [ :entry :index |
+			(codeChangesOnly not or: [ entry content isCodeChange ]) ifTrue: [
+					pairs add: {
+							index.
+							entry } ] ].
+	(request booleanArgumentNamed: 'newestFirst') ifTrue: [ ^ pairs reversed asOrderedCollection ].
+	^ pairs
 ]
 
 { #category : 'private - results' }

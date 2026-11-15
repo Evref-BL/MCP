@@ -32,3 +32,9 @@ MCPToolApplyChangeHistoryEntries >> redundantKeys [
 
 	^ super redundantKeys , #( selectedEntries )
 ]
+
+{ #category : 'private - actions' }
+MCPToolApplyChangeHistoryEntries >> reverts [
+
+	^ false
+]

@@ -416,6 +416,42 @@ MCPToolChangeHistoryTest >> testRevertEntriesRevertsConfirmedChanges [
 			self deny: (class includesSelector: #rescuedValue) ]
 ]
 
+{ #category : 'tests' }
+MCPToolChangeHistoryTest >> testSelectionResultDataHasExpectedShape [
+
+	| data |
+	data := self dataFrom: (self callToolWith: {
+				         (#action -> 'applyEntries').
+				         (#latestCount -> 1) } asDictionary).
+	self assert: data equals: {
+			(#action -> 'apply').
+			(#historyFile -> 'log.ombu').
+			(#selectionCriteria -> {
+				 (#latestCount -> 1).
+				 (#codeChangesOnly -> true) } asDictionary).
+			(#selectedEntries -> #(  )).
+			(#previewEntries -> #(  )).
+			(#selectedCount -> 0).
+			(#selectedCodeChangeCount -> 0).
+			(#previewCount -> 0).
+			(#skippedNonCodeChangeCount -> 0).
+			(#performed -> false).
+			(#performedCount -> 0) } asDictionary
+]
+
+{ #category : 'tests' }
+MCPToolChangeHistoryTest >> testSelectionToolsRouteToChangeHistorySelectionCommand [
+
+	{
+		(MCPToolApplyChangeHistoryEntries -> 'apply').
+		(MCPToolRevertChangeHistoryEntries -> 'revert') } do: [ :association |
+			| request tool |
+			tool := association key new.
+			request := tool requestFromToolCallArguments: { (#latestCount -> 1) } asDictionary.
+			self assert: (tool selectionFor: request in: EpMonitor current log) class equals: MCPChangeHistorySelectionCommand.
+			self assert: ((self dataFrom: (tool executeWithRequest: request) asJRPCJSON) at: #action) equals: association value ]
+]
+
 { #category : 'private - calling' }
 MCPToolChangeHistoryTest >> toolName [
 

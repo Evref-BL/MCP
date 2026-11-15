@@ -9,21 +9,6 @@ Class {
 }
 
 { #category : 'private' }
-MCPToolChangeHistoryToolsTest >> emptyHistoryFileArgumentsDo: aBlock [
-	"aBlock receives the arguments of a selection from a history file that holds no entry, so a call previews nothing whatever this image's own history holds."
-
-	| directory |
-	directory := FileLocator temp asFileReference / ('mcp-history-selection-' , UUID new asString).
-	[
-		directory ensureCreateDirectory.
-		(directory / 'memory.ombu') ensureCreateFile.
-		aBlock value: {
-				(#directoryPath -> directory fullName).
-				(#historyFile -> 'memory.ombu').
-				(#latestCount -> 1) } asDictionary ] ensure: [ directory ensureDeleteAll ]
-]
-
-{ #category : 'private' }
 MCPToolChangeHistoryToolsTest >> inputPropertyNamesFor: aTool [
 
 	^ aTool inputSchema properties collect: [ :each | each name ]
@@ -121,42 +106,6 @@ MCPToolChangeHistoryToolsTest >> testListSaysWhereTheNextPageStarts [
 					 (#nextOffset -> 25) } asDictionary)
 		equals: 'Listed 25 change history files. Next page: offset 25.'.
 	self assert: (files successSummaryForData: { (#files -> #( 1 )) } asDictionary) equals: 'Listed 1 change history file.'
-]
-
-{ #category : 'tests' }
-MCPToolChangeHistoryToolsTest >> testSelectionResultDataHasExpectedShape [
-
-	self emptyHistoryFileArgumentsDo: [ :arguments |
-			| data |
-			data := self toolNamed: 'history_entry_apply' dataFromArguments: arguments.
-			self assert: data equals: {
-					(#action -> 'apply').
-					(#historyFile -> 'memory.ombu').
-					(#selectionCriteria -> {
-						 (#latestCount -> 1).
-						 (#codeChangesOnly -> true) } asDictionary).
-					(#selectedEntries -> #(  )).
-					(#previewEntries -> #(  )).
-					(#selectedCount -> 0).
-					(#selectedCodeChangeCount -> 0).
-					(#previewCount -> 0).
-					(#skippedNonCodeChangeCount -> 0).
-					(#performed -> false).
-					(#performedCount -> 0) } asDictionary ]
-]
-
-{ #category : 'tests' }
-MCPToolChangeHistoryToolsTest >> testSelectionToolsRouteToChangeHistorySelectionCommand [
-
-	self emptyHistoryFileArgumentsDo: [ :arguments |
-			{
-				(MCPToolApplyChangeHistoryEntries -> 'apply').
-				(MCPToolRevertChangeHistoryEntries -> 'revert') } do: [ :association |
-					| command tool |
-					tool := association key new.
-					command := tool commandForRequest: (tool requestFromToolCallArguments: arguments).
-					self assert: ((self toolNamed: tool name dataFromArguments: arguments) at: #action) equals: association value.
-					self assert: command class equals: MCPChangeHistorySelectionCommand ] ]
 ]
 
 { #category : 'private' }

@@ -1,7 +1,7 @@
 "
 Shared implementation for change-history tools.
 
-The public API talks about change history rather than Epicea or Ombu; the implementation uses Epicea logs and .ombu files behind the scenes. A tool builds its operation from the request in commandForRequest:, describes what the operation answers with MCPChangeHistoryLogInfo and MCPChangeHistoryEntryInfo in dataFor:, and says what it found in successSummaryForData:.
+The public API talks about change history rather than Epicea or Ombu; the implementation uses Epicea logs and .ombu files behind the scenes. This class holds the steps every history tool takes to read one: the file the session in progress writes, the directory that holds it, and loading a log from that session or from a named .ombu file. A tool reads what it needs in dataFor:, describes it with MCPChangeHistoryLogInfo and MCPChangeHistoryEntryInfo, and says what it found in successSummaryForData:.
 "
 Class {
 	#name : 'MCPToolChangeHistory',
@@ -29,6 +29,33 @@ MCPToolChangeHistory >> additionalKeywords [
 	^ #( 'history' 'change' 'epicea' 'ombu' 'recover' )
 ]
 
+{ #category : 'private - history' }
+MCPToolChangeHistory >> currentHistoryFileReference [
+	"The file the session in progress writes its history to, nil without a change history monitor."
+
+	EpMonitor hasCurrent ifFalse: [ ^ nil ].
+	EpMonitor current sessionStore flush.
+	^ EpMonitor current log store writingFileReference
+]
+
+{ #category : 'private - history' }
+MCPToolChangeHistory >> currentLogAndFileName [
+
+	| currentFile log |
+	EpMonitor hasCurrent ifFalse: [
+			MCPCommandError
+				signalErrorCode: #ChangeHistoryUnavailable
+				message: 'No current Pharo change history monitor is available.'
+				details: Dictionary new ].
+	EpMonitor current sessionStore flush.
+	log := EpMonitor current log.
+	log refresh.
+	currentFile := self currentHistoryFileReference.
+	^ {
+		  log.
+		  (currentFile ifNotNil: [ currentFile basename ]) }
+]
+
 { #category : 'private - execution' }
 MCPToolChangeHistory >> dataFor: request [
 	"The data the answer carries, read from the image as the request asks."
@@ -47,6 +74,15 @@ MCPToolChangeHistory >> executeWithRequest: request [
 				  data := self dataFor: arguments.
 				  self successResultText: (self successSummaryForData: data) data: data ]
 		  onError: [ :error :arguments | self errorResultFor: error ]
+]
+
+{ #category : 'private - history' }
+MCPToolChangeHistory >> historyDirectoryForCurrentFile: aFileReference [
+
+	aFileReference ifNotNil: [ ^ aFileReference parent ].
+	^ [ EpMonitor logsDirectory ]
+		  on: Error
+		  do: [ :error | FileLocator localDirectory asFileReference ]
 ]
 
 { #category : 'private - schema' }
@@ -107,11 +143,95 @@ MCPToolChangeHistory >> listedSummaryForCount: anInteger noun: aNoun data: data 
 						  nextPut: $. ] ]
 ]
 
+{ #category : 'private - history' }
+MCPToolChangeHistory >> logAndFileNameFor: request [
+	"The log the request names by directoryPath and historyFile, else the one of the session in progress, and the name of its file."
+
+	^ self
+		  logAndFileNameFromDirectoryPath: (request stringArgumentNamed: 'directoryPath')
+		  fileName: (request stringArgumentNamed: 'historyFile')
+]
+
+{ #category : 'private - history' }
+MCPToolChangeHistory >> logAndFileNameFromDirectoryPath: directoryPath fileName: fileName [
+
+	| currentFile directory file |
+	fileName ifNil: [ ^ self currentLogAndFileName ].
+	currentFile := self currentHistoryFileReference.
+	directory := directoryPath
+		             ifNil: [ self historyDirectoryForCurrentFile: currentFile ]
+		             ifNotNil: [ directoryPath asFileReference ].
+	directory exists ifFalse: [
+			MCPCommandError
+				signalErrorCode: #ChangeHistoryDirectoryNotFound
+				message:
+				(String streamContents: [ :stream | stream << 'Change history directory ' << directory fullName << ' does not exist.' ])
+				details: { (#directoryPath -> directory fullName) } asDictionary ].
+	directory isDirectory ifFalse: [
+			MCPCommandError
+				signalErrorCode: #ChangeHistoryPathNotDirectory
+				message:
+				(String streamContents: [ :stream | stream << 'Change history path ' << directory fullName << ' is not a directory.' ])
+				details: { (#directoryPath -> directory fullName) } asDictionary ].
+	file := directory / fileName.
+	^ self logAndFileNameFromFileReference: file
+]
+
+{ #category : 'private - history' }
+MCPToolChangeHistory >> logAndFileNameFromFileReference: aFileReference [
+
+	| log |
+	aFileReference exists ifFalse: [
+			MCPCommandError
+				signalErrorCode: #ChangeHistoryFileNotFound
+				message:
+				(String streamContents: [ :stream | stream << 'Change history file ' << aFileReference fullName << ' does not exist.' ])
+				details: {
+						(#directoryPath -> aFileReference parent fullName).
+						(#historyFile -> aFileReference basename) } asDictionary ].
+	aFileReference isFile ifFalse: [
+			MCPCommandError
+				signalErrorCode: #ChangeHistoryPathNotFile
+				message:
+				(String streamContents: [ :stream | stream << 'Change history path ' << aFileReference fullName << ' is not a file.' ])
+				details: {
+						(#directoryPath -> aFileReference parent fullName).
+						(#historyFile -> aFileReference basename) } asDictionary ].
+	log := [
+		       | loadedLog |
+		       loadedLog := EpLog freshFromFile: aFileReference.
+		       loadedLog entries size.
+		       loadedLog ]
+		       on: Error
+		       do: [ :error |
+				       MCPCommandError
+					       signalErrorCode: #ChangeHistoryFileUnreadable
+					       message:
+					       (String streamContents: [ :stream |
+						        stream << 'Change history file ' << aFileReference fullName << ' could not be loaded.' ])
+					       details: {
+							       (#directoryPath -> aFileReference parent fullName).
+							       (#historyFile -> aFileReference basename).
+							       (#causeClass -> error class name).
+							       (#causeMessage -> (error messageText ifNil: [ error asString ])) } asDictionary ].
+	^ {
+		  log.
+		  aFileReference basename }
+]
+
 { #category : 'private - results' }
 MCPToolChangeHistory >> redundantKeys [
 	"An entry's summary prints its event class around its behavior and selector, which the entry already names."
 
 	^ #( summary )
+]
+
+{ #category : 'private - history' }
+MCPToolChangeHistory >> sameFileReference: firstFile as: secondFile [
+
+	firstFile ifNil: [ ^ false ].
+	secondFile ifNil: [ ^ false ].
+	^ firstFile fullName = secondFile fullName
 ]
 
 { #category : 'private - results' }

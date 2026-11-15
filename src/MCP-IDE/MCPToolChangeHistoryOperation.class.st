@@ -1,5 +1,5 @@
 "
-Shared implementation for change-history selection tools. It checks the selection the request names, runs it through MCPChangeHistorySelectionCommand, and describes the selected and previewed entries, so apply and revert select, preview, confirm and answer alike.
+Shared implementation for change-history selection tools. It checks the selection the request names, reads the history it comes from, previews it through MCPChangeHistorySelectionCommand and carries it out when confirmed, and describes the selected and previewed entries, so apply and revert select, preview, confirm and answer alike. A subclass says whether it reverts.
 "
 Class {
 	#name : 'MCPToolChangeHistoryOperation',
@@ -30,6 +30,15 @@ MCPToolChangeHistoryOperation >> buildInputSchema [
 		  required: #(  );
 		  additionalProperties: false;
 		  yourself
+]
+
+{ #category : 'private - results' }
+MCPToolChangeHistoryOperation >> changeCountTextForData: data [
+	"How many previewed changes were performed once confirmed, else how many the preview holds."
+
+	^ (data at: #performed)
+		  ifTrue: [ self textForCount: (data at: #performedCount) noun: 'previewed change' ]
+		  ifFalse: [ self textForCount: (data at: #previewCount) noun: 'applicable change' ]
 ]
 
 { #category : 'private - specs' }
@@ -68,43 +77,33 @@ MCPToolChangeHistoryOperation >> checkArguments: request [
 ]
 
 { #category : 'private - execution' }
-MCPToolChangeHistoryOperation >> commandForRequest: request [
-	"The operation that selects the entries the request names, and previews or carries out applying or reverting them."
-
-	^ MCPChangeHistorySelectionCommand
-		  revert: self reverts
-		  directoryPath: (request stringArgumentNamed: 'directoryPath')
-		  historyFile: (request stringArgumentNamed: 'historyFile')
-		  indexes: (request arrayArgumentNamed: 'indexes')
-		  range: (self rangeFrom: request)
-		  latestCount: (request integerArgumentNamed: 'latestCount')
-		  codeChangesOnly: (request booleanArgumentNamed: 'codeChangesOnly')
-		  confirm: (request booleanArgumentNamed: 'confirm')
-]
-
-{ #category : 'private - execution' }
 MCPToolChangeHistoryOperation >> dataFor: request [
 
-	| data operation previewEntries previewLog selectedEntries |
+	| data log logAndFileName performedCount previewEntries previewLog selectedEntries selection |
 	self checkArguments: request.
-	operation := self commandForRequest: request.
-	previewLog := operation execute.
-	selectedEntries := operation selectedPairs collect: [ :pair |
-		                   MCPChangeHistoryEntryInfo fromEntry: pair second index: pair first log: operation log ].
+	logAndFileName := self logAndFileNameFor: request.
+	log := logAndFileName first.
+	selection := self selectionFor: request in: log.
+	previewLog := selection execute.
+	performedCount := (request booleanArgumentNamed: 'confirm')
+		                  ifTrue: [ selection performPreviewLog: previewLog ]
+		                  ifFalse: [ 0 ].
+	selectedEntries := selection selectedPairs collect: [ :pair |
+		                   MCPChangeHistoryEntryInfo fromEntry: pair second index: pair first log: log ].
 	previewEntries := previewLog entries collectWithIndex: [ :entry :index |
 		                  MCPChangeHistoryEntryInfo fromEntry: entry index: index log: previewLog ].
 	data := Dictionary new.
 	data at: #action put: self actionName.
-	operation historyFileName ifNotNil: [ :fileName | data at: #historyFile put: fileName ].
+	logAndFileName second ifNotNil: [ :fileName | data at: #historyFile put: fileName ].
 	data at: #selectionCriteria put: (self selectionCriteriaFrom: request).
 	data at: #selectedEntries put: (selectedEntries collect: [ :each | each asDictionary ] as: Array).
 	data at: #previewEntries put: (previewEntries collect: [ :each | each asDictionary ] as: Array).
 	data at: #selectedCount put: selectedEntries size.
 	data at: #selectedCodeChangeCount put: (selectedEntries count: [ :each | each isCodeChange ]).
-	data at: #skippedNonCodeChangeCount put: operation skippedNonCodeChangeCount.
+	data at: #skippedNonCodeChangeCount put: selection skippedNonCodeChangeCount.
 	data at: #previewCount put: previewEntries size.
 	data at: #performed put: (request booleanArgumentNamed: 'confirm').
-	data at: #performedCount put: operation performedCount.
+	data at: #performedCount put: performedCount.
 	^ data
 ]
 
@@ -149,10 +148,11 @@ MCPToolChangeHistoryOperation >> redundantKeys [
 	^ super redundantKeys , #( selectionCriteria )
 ]
 
-{ #category : 'private - execution' }
+{ #category : 'private - actions' }
 MCPToolChangeHistoryOperation >> reverts [
+	"Whether the tool reverts the entries it selects rather than applies them."
 
-	^ self actionName = 'revert'
+	^ self subclassResponsibility
 ]
 
 { #category : 'private - results' }
@@ -168,6 +168,19 @@ MCPToolChangeHistoryOperation >> selectionCriteriaFrom: request [
 	(request integerArgumentNamed: 'latestCount') ifNotNil: [ :value | criteria at: #latestCount put: value ].
 	criteria at: #codeChangesOnly put: (request booleanArgumentNamed: 'codeChangesOnly').
 	^ criteria
+]
+
+{ #category : 'private - execution' }
+MCPToolChangeHistoryOperation >> selectionFor: request in: aLog [
+	"The operation that selects the entries of aLog the request names, and previews or carries out applying or reverting them."
+
+	^ MCPChangeHistorySelectionCommand
+		  revert: self reverts
+		  log: aLog
+		  indexes: (request arrayArgumentNamed: 'indexes')
+		  range: (self rangeFrom: request)
+		  latestCount: (request integerArgumentNamed: 'latestCount')
+		  codeChangesOnly: (request booleanArgumentNamed: 'codeChangesOnly')
 ]
 
 { #category : 'private - schema' }
@@ -201,16 +214,15 @@ MCPToolChangeHistoryOperation >> signalInvalidSelection: aMessage details: aDict
 
 { #category : 'private - results' }
 MCPToolChangeHistoryOperation >> successSummaryForData: data [
+	"'Previewed apply for 3 applicable changes from 5 selected history entries.' A confirmed call says Performed instead, and counts the previewed changes it carried out."
 
+	| verb |
+	verb := (data at: #performed)
+		        ifTrue: [ 'Performed ' ]
+		        ifFalse: [ 'Previewed ' ].
 	^ String streamContents: [ :stream |
-			  (data at: #performed)
-				  ifTrue: [
-						  stream << 'Performed ' << (data at: #action) << ' for '
-						  << (self textForCount: (data at: #performedCount) noun: 'previewed change') ]
-				  ifFalse: [
-					  stream << 'Previewed ' << (data at: #action) << ' for '
-					  << (self textForCount: (data at: #previewCount) noun: 'applicable change') ].
-			  stream << ' from ' << (self textForCount: (data at: #selectedCount) noun: 'selected history entry') << '.' ]
+			  stream << verb << (data at: #action) << ' for ' << (self changeCountTextForData: data) << ' from '
+			  << (self textForCount: (data at: #selectedCount) noun: 'selected history entry') << '.' ]
 ]
 
 { #category : 'metadata' }
