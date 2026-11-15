@@ -280,11 +280,23 @@ MCPToolContractsTest >> debugWatchToolFlowSpec [
 
 { #category : 'private - evaluate' }
 MCPToolContractsTest >> evaluate: aString within: seconds [
-	"The answer of an evaluation with a time limit, as a call gets it."
+	"The answer of an evaluation with a time limit, as a call gets it: once it has answered, what it deferred runs, as the server runs it after the response. Through test_run a test runs inside a call of its own, which would otherwise hold what the evaluation deferred until the whole run has answered."
 
-	^ self callDiscoveredToolNamed: 'image_evaluate' withArguments: {
-			  (#code -> aString).
-			  (#timeoutSeconds -> seconds) } asDictionary
+	| actions result |
+	actions := OrderedCollection new.
+	result := self evaluate: aString within: seconds deferringInto: actions.
+	actions do: [ :each | each value ].
+	^ result
+]
+
+{ #category : 'private - evaluate' }
+MCPToolContractsTest >> evaluate: aString within: seconds deferringInto: actions [
+	"The answer of an evaluation with a time limit, as a call gets it, leaving in actions what the call deferred until after its response."
+
+	^ MCPPostResponseActions value: actions during: [
+			  self callDiscoveredToolNamed: 'image_evaluate' withArguments: {
+					  (#code -> aString).
+					  (#timeoutSeconds -> seconds) } asDictionary ]
 ]
 
 { #category : 'private' }
@@ -964,11 +976,12 @@ MCPToolContractsTest >> testEvaluateAnswersWhenTheCodeEndsItsOwnProcess [
 
 { #category : 'tests - evaluate' }
 MCPToolContractsTest >> testEvaluateAnswersWhileAForkHoldsItsPriority [
-	"A fork computing at the evaluator's priority may keep the process that terminates the evaluator from ever running, so the answer waits for the termination only so long."
+	"A fork computing at the evaluator's priority may keep the process that terminates the evaluator from ever running, so the answer waits for the termination only so long. The test then waits for its own stopping process, which ends only once the evaluator has."
 
 	self timeLimit: 30 seconds.
 	self underEitherPreemptionRuleDo: [ :yields |
-			| milliseconds result |
+			| before milliseconds result |
+			before := self liveProcessesNamed: 'image_evaluate stop'.
 			[
 				milliseconds := Time millisecondsToRun: [
 						                result := self
@@ -976,7 +989,7 @@ MCPToolContractsTest >> testEvaluateAnswersWhileAForkHoldsItsPriority [
 							                          '[ [ true ] whileTrue ] forkAt: Processor activePriority named: ''mcp-evaluate-hog-probe''. [ true ] whileTrue'
 							                          within: 1 ] ] ensure: [
 				(self liveProcessesNamed: 'mcp-evaluate-hog-probe') do: [ :each | each terminate ] ].
-			(self liveProcessesNamed: 'image_evaluate stop') do: [ :each | self waitUntilEnded: each ].
+			((self liveProcessesNamed: 'image_evaluate stop') copyWithoutAll: before) do: [ :each | self waitUntilEnded: each ].
 			self stoppedTextOf: result.
 			self assert: milliseconds < 15000 ]
 ]
@@ -1259,7 +1272,7 @@ MCPToolContractsTest >> testEvaluateStopCollectsGarbageAfterTheAnswer [
 	self timeLimit: 30 seconds.
 	before := self liveProcessesNamed: 'image_evaluate stop'.
 	actions := OrderedCollection new.
-	MCPPostResponseActions value: actions during: [ self evaluate: '[ true ] whileTrue' within: 1 ].
+	self evaluate: '[ true ] whileTrue' within: 1 deferringInto: actions.
 	helpers := (self liveProcessesNamed: 'image_evaluate stop') copyWithoutAll: before.
 	[
 		self assert: actions size equals: 1.
@@ -1280,9 +1293,7 @@ MCPToolContractsTest >> testEvaluateStopCollectsGarbageOnceTheCodeHasUnwound [
 	before := self liveProcessesNamed: 'image_evaluate stop'.
 	actions := OrderedCollection new.
 	[
-		MCPPostResponseActions
-			value: actions
-			during: [ self evaluate: '[ [ true ] whileTrue ] ensure: [ MCPEvaluateTestProbe holdUntilReleased ]' within: 1 ].
+		self evaluate: '[ [ true ] whileTrue ] ensure: [ MCPEvaluateTestProbe holdUntilReleased ]' within: 1 deferringInto: actions.
 		collections := self fullGarbageCollections.
 		actions do: #value.
 		self assert: self fullGarbageCollections equals: collections.
