@@ -64,7 +64,7 @@ MCPRemoveClassesCommand >> classNames: someClassNames [
 
 { #category : 'executing' }
 MCPRemoveClassesCommand >> execute [
-	"The refactoring is handed the names of the classes the lookup resolved, not the request's text. The subclasses that move up and the packages the classes were in are read before the classes go."
+	"The refactoring is handed the names of the classes the lookup resolved, not the names as given. The subclasses that move up and the packages the classes were in are read before the classes go."
 
 	| refactoring packageNames |
 	refactoring := self preparedRefactoringForClassNames: (self resolvedClasses collect: [ :each | each name ]).
