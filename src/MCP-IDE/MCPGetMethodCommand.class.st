@@ -23,5 +23,5 @@ MCPGetMethodCommand >> execute [
 			methodBehavior := tool behaviorNamed: request className classSide: request classSide.
 			variableReferences := tool variableSummariesForMethod: compiledMethod methodBehavior: methodBehavior.
 			data at: #variableReferences put: variableReferences ].
-	^ MCPGetMethodResult data: data externalVariableCount: nil
+	^ MCPGetMethodResult data: data
 ]
