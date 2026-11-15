@@ -106,6 +106,22 @@ MCPToolChangeHistory >> keysStatedInSummary [
 ]
 
 { #category : 'private - results' }
+MCPToolChangeHistory >> listedSummaryForCount: anInteger noun: aNoun data: data [
+	"A page of files or entries says how many it holds and, when another follows, the offset it starts at: the text leaves nextOffset to this sentence."
+
+	^ String streamContents: [ :stream |
+			  stream
+				  nextPutAll: 'Listed ';
+				  nextPutAll: (self textForCount: anInteger noun: aNoun);
+				  nextPut: $..
+			  data at: #nextOffset ifPresent: [ :offset |
+					  stream
+						  nextPutAll: ' Next page: offset ';
+						  print: offset;
+						  nextPut: $. ] ]
+]
+
+{ #category : 'private - results' }
 MCPToolChangeHistory >> redundantKeys [
 	"An entry's summary prints its event class around its behavior and selector, which the entry already names."
 
@@ -117,19 +133,9 @@ MCPToolChangeHistory >> successSummaryForData: data operation: operation [
 
 	| action selectedCount performedCount previewCount |
 	operation = 'listFiles' ifTrue: [
-			^ String streamContents: [ :stream |
-				  stream << 'Listed ' << (self textForCount: (data at: #files ifAbsent: [ #(  ) ]) size noun: 'change history file') << '.' ] ].
+		^ self listedSummaryForCount: (data at: #files ifAbsent: [ #(  ) ]) size noun: 'change history file' data: data ].
 	operation = 'listEntries' ifTrue: [
-			^ String streamContents: [ :stream |
-					  stream
-						  nextPutAll: 'Listed ';
-						  nextPutAll: (self textForCount: (data at: #entries ifAbsent: [ #(  ) ]) size noun: 'change history entry');
-						  nextPut: $..
-					  data at: #nextOffset ifPresent: [ :offset |
-							  stream
-								  nextPutAll: ' Next page: offset ';
-								  print: offset;
-								  nextPut: $. ] ] ].
+		^ self listedSummaryForCount: (data at: #entries ifAbsent: [ #(  ) ]) size noun: 'change history entry' data: data ].
 	(#( 'applyEntries' 'revertEntries' ) includes: operation) ifTrue: [
 			action := data at: #action ifAbsent: [ 'apply' ].
 			selectedCount := data at: #selectedCount ifAbsent: [ 0 ].

@@ -118,20 +118,31 @@ MCPToolChangeHistoryToolsTest >> testListChangeHistoryFilesReturnsFiles [
 
 { #category : 'tests' }
 MCPToolChangeHistoryToolsTest >> testListSaysWhereTheNextPageStarts [
-	"A page of entries names the offset of the next, in the words every other paged answer uses."
+	"A page of entries or files names the offset of the next, in the words every other paged answer uses: the text leaves nextOffset to the summary."
 
-	| tool |
-	tool := MCPToolListChangeHistoryEntries new.
+	| entries files |
+	entries := MCPToolListChangeHistoryEntries new.
 	self
-		assert: (tool
+		assert: (entries
 				 successSummaryForData: {
 						 (#entries -> (1 to: 25) asArray).
 						 (#nextOffset -> 25) } asDictionary
 				 operation: 'listEntries')
 		equals: 'Listed 25 change history entries. Next page: offset 25.'.
 	self
-		assert: (tool successSummaryForData: { (#entries -> #( 1 )) } asDictionary operation: 'listEntries')
-		equals: 'Listed 1 change history entry.'
+		assert: (entries successSummaryForData: { (#entries -> #( 1 )) } asDictionary operation: 'listEntries')
+		equals: 'Listed 1 change history entry.'.
+	files := MCPToolListChangeHistoryFiles new.
+	self
+		assert: (files
+				 successSummaryForData: {
+						 (#files -> (1 to: 25) asArray).
+						 (#nextOffset -> 25) } asDictionary
+				 operation: 'listFiles')
+		equals: 'Listed 25 change history files. Next page: offset 25.'.
+	self
+		assert: (files successSummaryForData: { (#files -> #( 1 )) } asDictionary operation: 'listFiles')
+		equals: 'Listed 1 change history file.'
 ]
 
 { #category : 'tests' }
