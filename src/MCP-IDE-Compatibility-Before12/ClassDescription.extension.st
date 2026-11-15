@@ -18,11 +18,11 @@ ClassDescription >> mcpCompile: aString classified: aProtocolNameOrNil [
 
 { #category : '*MCP-IDE-Compatibility-Before12' }
 ClassDescription >> mcpTagName [
-	"The name of the tag the class is filed under, or nil when it is not tagged. Before Pharo 12, an untagged class answers nil, an empty name or its package's own name for its tag."
+	"The name of the tag the class is filed under, or nil when it is not tagged. Before Pharo 12, Pharo files an untagged class under a tag named after its package, and PharoBackwardCompatibility, which answers packageTagName there, names that tag Uncategorized, as Pharo 12 does. Nil, an empty name and the package's own name are read as no tag as well."
 
 	| packageName tagName |
-	tagName := self packageTagName ifNil: [ ^ nil ].
+	tagName := (self packageTagName ifNil: [ ^ nil ]) asString.
 	packageName := self package ifNotNil: [ :package | package name asString ].
-	(tagName isEmpty or: [ tagName asString = packageName ]) ifTrue: [ ^ nil ].
-	^ tagName asString
+	(tagName isEmpty or: [ tagName = 'Uncategorized' or: [ tagName = packageName ] ]) ifTrue: [ ^ nil ].
+	^ tagName
 ]
