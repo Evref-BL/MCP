@@ -282,6 +282,17 @@ MCPToolSearch >> matcherForPattern: aPattern mode: aMode caseSensitive: aBoolean
 	Error signal: 'Unsupported filter mode: ' , aMode
 ]
 
+{ #category : 'private - results' }
+MCPToolSearch >> nextPageTextForOffset: anOffset [
+	"Where the next page starts, and the other way to see what it holds."
+
+	^ String streamContents: [ :stream |
+			  stream
+				  nextPutAll: 'Next page: offset ';
+				  print: anOffset;
+				  nextPutAll: ', or narrow the search.' ]
+]
+
 { #category : 'private - filtering' }
 MCPToolSearch >> normalizeFilterString: aValue caseSensitive: aBoolean [
 
@@ -378,6 +389,13 @@ MCPToolSearch >> queryResultDataFrom: baseData page: page entriesKey: entriesKey
 	^ page asDictionaryWithEntriesKey: entriesKey
 ]
 
+{ #category : 'private - results' }
+MCPToolSearch >> readingNoteForPage: page [
+	"A sentence on how to read the rows of page, or nil when they need none."
+
+	^ nil
+]
+
 { #category : 'private - filtering' }
 MCPToolSearch >> regexMatcherForPattern: aPattern caseSensitive: aBoolean [
 
@@ -421,7 +439,7 @@ MCPToolSearch >> searchRequestFromToolRequest: request [
 
 { #category : 'private - results' }
 MCPToolSearch >> searchSummaryForCountText: countText scopePhrase: scopePhrase page: page [
-	"A scope whose names all failed to resolve looked nowhere, which the summary says instead of a place; its warnings name what is missing."
+	"A scope whose names all failed to resolve looked nowhere, which the summary says instead of a place; its warnings name what is missing. A note on reading the rows, when the tool has one, comes before where the next page starts."
 
 	^ String streamContents: [ :stream |
 			  stream nextPutAll: countText.
@@ -430,11 +448,14 @@ MCPToolSearch >> searchSummaryForCountText: countText scopePhrase: scopePhrase p
 						  nextPutAll: ' in ';
 						  nextPutAll: scopePhrase;
 						  nextPut: $. ].
+			  (self readingNoteForPage: page) ifNotNil: [ :note |
+					  stream
+						  space;
+						  nextPutAll: note ].
 			  page nextOffset ifNotNil: [ :offset |
 					  stream
-						  nextPutAll: ' Next page: offset ';
-						  print: offset;
-						  nextPutAll: ', or narrow the search.' ] ]
+						  space;
+						  nextPutAll: (self nextPageTextForOffset: offset) ] ]
 ]
 
 { #category : 'private - template' }
