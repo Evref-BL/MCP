@@ -112,7 +112,7 @@ MCPToolVerifyRepositoryIdentity >> expectedSubdirectoryIn: request [
 ]
 
 { #category : 'private - errors' }
-MCPToolVerifyRepositoryIdentity >> failureSummaryPrefix [
+MCPToolVerifyRepositoryIdentity >> failureSummaryPrefixFor: request [
 
 	^ 'Failed to verify repository identity: '
 ]

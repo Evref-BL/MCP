@@ -386,12 +386,12 @@ MCPCreateRepositoryCommand >> signalLocationRegisteredFor: aRepository among: ma
 { #category : 'private - signaling' }
 MCPCreateRepositoryCommand >> signalNameRegisteredFor: aRepository among: matches [
 
-	| location |
-	location := self repositoryLocationStringFor: aRepository.
+	| registeredLocation |
+	registeredLocation := self repositoryLocationStringFor: aRepository.
 	self
 		signalAlreadyRegistered: (String streamContents: [ :stream |
 					 stream << self refusalPrefix << 'a repository of that name is already registered, '.
-					 location ifEmpty: [ stream << 'with no location' ] ifNotEmpty: [ stream << 'at ' << location ].
+					 registeredLocation ifEmpty: [ stream << 'with no location' ] ifNotEmpty: [ stream << 'at ' << registeredLocation ].
 					 stream << '. Choose another name.' ])
 		among: matches
 ]

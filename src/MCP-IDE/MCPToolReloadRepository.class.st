@@ -29,7 +29,7 @@ MCPToolReloadRepository >> dataForPackageNames: packageNames [
 ]
 
 { #category : 'private - errors' }
-MCPToolReloadRepository >> failureSummaryPrefix [
+MCPToolReloadRepository >> failureSummaryPrefixFor: request [
 
 	^ 'Failed to reload repository: '
 ]

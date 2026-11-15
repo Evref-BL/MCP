@@ -1,7 +1,7 @@
 "
 Iceberg and git steps on a registered repository: reading its source format, loading its packages from the checkout's files, adopting a commit as the working copy's reference, registering and removing packages, setting its source directory, and running git in its checkout. Each step takes the repository it acts on.
 
-The repository tools call these steps on an instance. The operations long enough to be objects of their own, which create, export or commit a repository, are its subclasses and run with execute.
+It is abstract: it runs no operation of its own, so it leaves execute to its subclasses. The repository tools call its steps on an instance, and the operations long enough to be objects of their own, which create or commit a repository, are its subclasses and run with execute.
 "
 Class {
 	#name : 'MCPRepositoryCommand',
@@ -10,6 +10,12 @@ Class {
 	#package : 'MCP-IDE',
 	#tag : 'Commands'
 }
+
+{ #category : 'testing' }
+MCPRepositoryCommand class >> isAbstract [
+
+	^ self = MCPRepositoryCommand
+]
 
 { #category : 'packages' }
 MCPRepositoryCommand >> addPackageNamed: aPackageName to: aRepository [
@@ -162,7 +168,7 @@ MCPRepositoryCommand >> loadVersionsReplacingImageChanges: versions [
 	versions do: [ :version | version workingCopy loaded: version ]
 ]
 
-{ #category : 'private - iceberg state' }
+{ #category : 'iceberg state' }
 MCPRepositoryCommand >> markLoadedPackagesCleanIn: aWorkingCopy [
 
 	aWorkingCopy loadedPackages do: [ :package | package beDirty: false ]

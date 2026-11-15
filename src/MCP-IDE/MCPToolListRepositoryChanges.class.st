@@ -39,7 +39,7 @@ MCPToolListRepositoryChanges >> dataForImageModifiedPackages: packageNames modif
 ]
 
 { #category : 'private - errors' }
-MCPToolListRepositoryChanges >> failureSummaryPrefix [
+MCPToolListRepositoryChanges >> failureSummaryPrefixFor: request [
 
 	^ 'Failed to list repository changes: '
 ]

@@ -2084,7 +2084,7 @@ MCPToolRepositoryOperationTest >> testPathRuleNamesTheRegisteredPackagesOfAPath 
 							(#addPackages -> { absentPackageName }) } asDictionary.
 					self write: 'a' to: location / 'src' / absentPackageName / 'a.st'.
 					repository := IceRepository repositories detect: [ :each | each name asString = repositoryName ].
-					command := MCPExportRepositoryCommand new.
+					command := MCPRepositoryWorkingCopyCommand new.
 					{
 						('src/{1}/{2}.class.st' format: {
 								 packageName.
@@ -2167,7 +2167,7 @@ MCPToolRepositoryOperationTest >> testRestoreOrderOnlyTonelChurnRestoresOriginal
 		original := self tonelClassSourceWithMethods: #( 'alpha' 'beta' ).
 		self write: (self tonelClassSourceWithMethods: #( 'beta' 'alpha' )) to: file.
 		repository := self newRepositoryNamed: 'MCP Order Only Test' location: location packageNames: #(  ).
-		command := MCPExportRepositoryCommand new.
+		command := MCPRepositoryWorkingCopyCommand new.
 		snapshot := Dictionary new.
 		snapshot at: 'MCP-Order/MCPOrderTestClass.class.st' put: original utf8Encoded.
 		restored := command restoreOrderOnlyTonelChurnFor: repository fromSnapshot: snapshot.
@@ -2200,7 +2200,7 @@ MCPToolRepositoryOperationTest >> testSourceFormatSupportsEveryFormatIcebergWrit
 MCPToolRepositoryOperationTest >> testTonelMethodOrderComparisonIgnoresMethodChunkOrder [
 
 	| command original reordered |
-	command := MCPExportRepositoryCommand new.
+	command := MCPRepositoryWorkingCopyCommand new.
 	original := self tonelClassSourceWithMethods: #( 'alpha' 'beta' ).
 	reordered := self tonelClassSourceWithMethods: #( 'beta' 'alpha' ).
 	self assert: (command tonelMethodOrderEquivalent: original to: reordered)
@@ -2210,7 +2210,7 @@ MCPToolRepositoryOperationTest >> testTonelMethodOrderComparisonIgnoresMethodChu
 MCPToolRepositoryOperationTest >> testTonelMethodOrderComparisonKeepsSemanticChanges [
 
 	| changed command original |
-	command := MCPExportRepositoryCommand new.
+	command := MCPRepositoryWorkingCopyCommand new.
 	original := self tonelClassSourceWithMethods: #( 'alpha' 'beta' ).
 	changed := original copyReplaceAll: '^ #beta' with: '^ #changed'.
 	self deny: (command tonelMethodOrderEquivalent: original to: changed)

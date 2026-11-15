@@ -22,11 +22,9 @@ MCPToolAttachRepository >> argumentContextFor: request [
 ]
 
 { #category : 'private - errors' }
-MCPToolAttachRepository >> failureSummaryFor: anError request: request [
+MCPToolAttachRepository >> failureSummaryPrefixFor: request [
 
-	^ String streamContents: [ :stream |
-			  stream << 'Failed to attach repository ' << (request stringArgumentNamed: 'name') << ': '
-			  << (anError messageText ifNil: [ anError asString ]) ]
+	^ String streamContents: [ :stream | stream << 'Failed to attach repository ' << (request stringArgumentNamed: 'name') << ': ' ]
 ]
 
 { #category : 'private - execution' }

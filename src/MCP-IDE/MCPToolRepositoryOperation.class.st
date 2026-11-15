@@ -155,11 +155,12 @@ MCPToolRepositoryOperation >> expectedBranchNameIn: request [
 MCPToolRepositoryOperation >> failureSummaryFor: anError request: request [
 	"What failed, then why."
 
-	^ self failureSummaryPrefix , (anError messageText ifNil: [ anError asString ])
+	^ (self failureSummaryPrefixFor: request) , (anError messageText ifNil: [ anError asString ])
 ]
 
 { #category : 'private - errors' }
-MCPToolRepositoryOperation >> failureSummaryPrefix [
+MCPToolRepositoryOperation >> failureSummaryPrefixFor: request [
+	"What a failed call says before why it failed."
 
 	self subclassResponsibility
 ]

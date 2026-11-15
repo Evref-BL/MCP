@@ -16,7 +16,7 @@ MCPToolDiscardRepositoryChanges class >> toolName [
 ]
 
 { #category : 'private - errors' }
-MCPToolDiscardRepositoryChanges >> failureSummaryPrefix [
+MCPToolDiscardRepositoryChanges >> failureSummaryPrefixFor: request [
 
 	^ 'Failed to discard repository changes: '
 ]

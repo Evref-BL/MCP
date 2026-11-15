@@ -34,7 +34,7 @@ MCPToolCommitRepository >> dataForPackageNames: packageNames otherFiles: otherFi
 ]
 
 { #category : 'private - errors' }
-MCPToolCommitRepository >> failureSummaryPrefix [
+MCPToolCommitRepository >> failureSummaryPrefixFor: request [
 
 	^ 'Failed to commit repository: '
 ]

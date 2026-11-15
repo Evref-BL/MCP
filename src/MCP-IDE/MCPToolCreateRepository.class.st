@@ -22,11 +22,9 @@ MCPToolCreateRepository >> argumentContextFor: request [
 ]
 
 { #category : 'private - errors' }
-MCPToolCreateRepository >> failureSummaryFor: anError request: request [
+MCPToolCreateRepository >> failureSummaryPrefixFor: request [
 
-	^ String streamContents: [ :stream |
-			  stream << 'Failed to create repository ' << (request stringArgumentNamed: 'name') << ': '
-			  << (anError messageText ifNil: [ anError asString ]) ]
+	^ String streamContents: [ :stream | stream << 'Failed to create repository ' << (request stringArgumentNamed: 'name') << ': ' ]
 ]
 
 { #category : 'private - execution' }

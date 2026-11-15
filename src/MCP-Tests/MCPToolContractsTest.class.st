@@ -68,7 +68,6 @@ MCPToolContractsTest >> assertNamesAMissingClassAlike: aCase [
 
 { #category : 'private' }
 MCPToolContractsTest >> assertToolFlowSpec: aSpec [
-	"A spec that names no command class is a tool that reads its arguments from the request it is given and runs its operation itself."
 
 	| parsedRequest rawRequest tool |
 	tool := (aSpec at: #toolClass) new.

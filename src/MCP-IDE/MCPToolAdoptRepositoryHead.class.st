@@ -62,7 +62,7 @@ MCPToolAdoptRepositoryHead >> dataForUnmarkedPackageNames: packageNames [
 ]
 
 { #category : 'private - errors' }
-MCPToolAdoptRepositoryHead >> failureSummaryPrefix [
+MCPToolAdoptRepositoryHead >> failureSummaryPrefixFor: request [
 
 	^ 'Failed to adopt repository HEAD: '
 ]

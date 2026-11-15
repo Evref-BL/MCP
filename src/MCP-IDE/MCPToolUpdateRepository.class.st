@@ -36,7 +36,7 @@ MCPToolUpdateRepository >> argumentContextFor: request [
 ]
 
 { #category : 'private - errors' }
-MCPToolUpdateRepository >> failureSummaryPrefix [
+MCPToolUpdateRepository >> failureSummaryPrefixFor: request [
 
 	^ 'Failed to update repository: '
 ]
