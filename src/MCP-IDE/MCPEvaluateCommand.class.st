@@ -78,9 +78,9 @@ MCPEvaluateCommand >> evaluateWithinCallBoundary [
 
 { #category : 'executing' }
 MCPEvaluateCommand >> execute [
-	"The code runs in a process one priority below this one, which can therefore always take the processor back, however the code computes, and stop it at its time limit. A limit kept at the same priority cannot preempt a computing loop."
+	"The code runs in a process one priority below this one, which can therefore always take the processor back, however the code computes, and stop it at its time limit, or sooner when it runs away. A limit kept at the same priority cannot preempt a computing loop."
 
-	| done evaluator outcome started actions |
+	| done evaluator outcome started actions stop |
 	done := Semaphore new.
 	started := false.
 	actions := MCPPostResponseActions value.
@@ -92,12 +92,13 @@ MCPEvaluateCommand >> execute [
 		priority: Processor activePriority - 1;
 		name: tool name.
 	self start: evaluator.
-	(done waitTimeoutSeconds: request timeoutSeconds) ifFalse: [ ^ outcome ifNil: [ self endedItsOwnProcessResult ] ].
+	stop := self watch: evaluator until: done started: [ started ].
+	stop ifNil: [ ^ outcome ifNil: [ self endedItsOwnProcessResult ] ].
 	started ifFalse: [ ^ self notStartedResultFor: evaluator ].
 	[ outcome isNil and: [ self isSaving: evaluator ] ] whileTrue: [ done waitTimeoutSeconds: 1 ].
 	outcome ifNotNil: [ ^ outcome ].
 	evaluator isTerminated ifTrue: [ ^ self endedItsOwnProcessResult ].
-	^ self stop: evaluator
+	^ self stop: evaluator saying: stop
 ]
 
 { #category : 'initialization' }
@@ -116,6 +117,20 @@ MCPEvaluateCommand >> isSaving: aProcess [
 	| top |
 	top := aProcess suspendedContext ifNil: [ ^ false ].
 	^ (top stackOfSize: self savingFrameLimit) anySatisfy: [ :each | each method == (SessionManager >> #snapshot:andQuit:) ]
+]
+
+{ #category : 'private' }
+MCPEvaluateCommand >> memoryGrowthLimit [
+	"Generous, since it backs the stack bound up rather than stands for a precise one: code that keeps this much more within one evaluation is either running away, filling a collection in a loop that never ends, or doing heavy work, a model load, that belongs in a fork, which has no limit. Much more, and a machine of 16 GB starts to swap."
+
+	^ 4 * 1024 * 1024 * 1024
+]
+
+{ #category : 'private' }
+MCPEvaluateCommand >> memoryInUse [
+	"The bytes the image's objects take in old space, where whatever code keeps ends up. Every Pharo from 10 to 15 reads them the same way."
+
+	^ Smalltalk vm oldSpace - Smalltalk vm freeOldSpaceSize
 ]
 
 { #category : 'private' }
@@ -199,6 +214,26 @@ MCPEvaluateCommand >> sourceIndexFor: aPosition [
 ]
 
 { #category : 'private' }
+MCPEvaluateCommand >> stackDepthLimit [
+	"Far deeper than ordinary code goes, and passed within a fraction of a second by an endless recursion. Compiling and running tests stay within a few hundred frames. Printing a structure that contains itself goes deepest, since printString bounds the characters printed rather than the depth: tens of thousands of frames, more where each level prints little."
+
+	^ 1000000
+]
+
+{ #category : 'private' }
+MCPEvaluateCommand >> stackOf: aProcess isDeeperThan: aNumber [
+	"Its frames are counted only up to the bound, so that a stack millions of frames deep costs no more to look at than one at the bound."
+
+	| frame depth |
+	frame := aProcess suspendedContext.
+	depth := 0.
+	[ frame isNil ] whileFalse: [
+			(depth := depth + 1) > aNumber ifTrue: [ ^ true ].
+			frame := frame sender ].
+	^ false
+]
+
+{ #category : 'private' }
 MCPEvaluateCommand >> start: aProcess [
 	"A method of its own, so that a test double can leave the evaluator unstarted."
 
@@ -206,7 +241,7 @@ MCPEvaluateCommand >> start: aProcess [
 ]
 
 { #category : 'private' }
-MCPEvaluateCommand >> stop: anEvaluator [
+MCPEvaluateCommand >> stop: anEvaluator saying: aSummary [
 	"Where the code is, and what it wrote, are read before it unwinds. A computing evaluator is taken off the run queue here: the helper below runs at its priority, and would otherwise wait behind it for a turn it may never get. One waiting on a semaphore is left waiting, since terminating it from there is what releases a critical section. The helper terminates it, so that its ensure blocks run at its own priority and this process waits for them only so long. What the stopped code grew is garbage only once it has unwound, which may be after the answer, and a full collection of a large heap takes seconds, so the helper collects it once the code has unwound and the answer has gone out."
 
 	| details stopped answered |
@@ -222,7 +257,7 @@ MCPEvaluateCommand >> stop: anEvaluator [
 			details at: #stillUnwinding put: true.
 			transcript ifNotNil: [ :recorder | recorder finish ] ].
 	MCPPostResponseActions defer: [ answered signal ].
-	^ MCPEvaluateResult errorSummary: (tool stoppedMessageFor: request timeoutSeconds) details: details
+	^ MCPEvaluateResult errorSummary: aSummary details: details
 ]
 
 { #category : 'private' }
@@ -263,4 +298,27 @@ MCPEvaluateCommand >> unwindingSeconds [
 	"How long a stopped evaluation's ensure blocks may run before the answer goes without waiting for them."
 
 	^ 5
+]
+
+{ #category : 'private' }
+MCPEvaluateCommand >> watch: anEvaluator until: done started: hasStarted [
+	"Answer nil once the code has ended, or else why it is to be stopped, as the summary of its answer. At every look this process, running above the code, takes the processor back from it and reads what makes runaway code dangerous before its time limit passes: an endless recursion grows its stack by millions of frames a second and the image by GBs, enough to make a machine swap within the limit and the stop itself slow. Before the code has started, what grows the image is not the code."
+
+	| deadline memory |
+	deadline := Time microsecondClockValue + (request timeoutSeconds * 1000000).
+	memory := self memoryInUse.
+	[
+		(done waitTimeoutSeconds: self watchMilliseconds / 1000) ifFalse: [ ^ nil ].
+		(self stackOf: anEvaluator isDeeperThan: self stackDepthLimit) ifTrue: [ ^ tool stackStoppedMessageFor: self stackDepthLimit ].
+		(hasStarted value and: [ self memoryInUse - memory > self memoryGrowthLimit ]) ifTrue: [
+			^ tool memoryStoppedMessageFor: self memoryGrowthLimit ].
+		Time microsecondClockValue < deadline ] whileTrue.
+	^ tool stoppedMessageFor: request timeoutSeconds
+]
+
+{ #category : 'private' }
+MCPEvaluateCommand >> watchMilliseconds [
+	"How often the code's stack and the image's memory are looked at while it runs. An endless recursion grows its stack by millions of frames a second, so this is what decides how far past the bound it gets."
+
+	^ 100
 ]

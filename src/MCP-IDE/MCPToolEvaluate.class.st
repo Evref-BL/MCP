@@ -241,6 +241,16 @@ MCPToolEvaluate >> maximumTimeoutSeconds [
 ]
 
 { #category : 'private' }
+MCPToolEvaluate >> memoryStoppedMessageFor: bytes [
+
+	^ String streamContents: [ :stream |
+			  stream
+				  nextPutAll: 'Evaluation stopped: the image''s memory grew by more than ';
+				  nextPutAll: (self sizeTextFor: bytes);
+				  nextPutAll: ' while it ran.' ]
+]
+
+{ #category : 'private' }
 MCPToolEvaluate >> notStartedMessageFor: seconds [
 
 	^ String streamContents: [ :stream |
@@ -310,6 +320,27 @@ MCPToolEvaluate >> runtimeFailureMessageFor: anError [
 				  nextPutAll: anError class name;
 				  nextPutAll: '): ';
 				  nextPutAll: message ]
+]
+
+{ #category : 'private' }
+MCPToolEvaluate >> sizeTextFor: bytes [
+	"In whole GB from 1 GB up, in whole MB below."
+
+	| megabytes |
+	megabytes := bytes // (1024 * 1024).
+	^ megabytes >= 1024
+		  ifTrue: [ (megabytes // 1024) printString , ' GB' ]
+		  ifFalse: [ megabytes printString , ' MB' ]
+]
+
+{ #category : 'private' }
+MCPToolEvaluate >> stackStoppedMessageFor: frames [
+
+	^ String streamContents: [ :stream |
+			  stream
+				  nextPutAll: 'Evaluation stopped: its stack passed ';
+				  print: frames;
+				  nextPutAll: ' frames, which an endless recursion does.' ]
 ]
 
 { #category : 'private' }
