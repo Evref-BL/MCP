@@ -20,6 +20,38 @@ MCPClassRemovalFactsTest >> factsAbout: someClasses [
 ]
 
 { #category : 'tests' }
+MCPClassRemovalFactsTest >> testAMethodThatGoesWithAClassAskedForIsNotSaidToBeLeftBehind [
+	"Pharo 12 and 13 count a class-side method of a class asked for as a reference to it. It blocks the removal, but force removes it with its class, so neither the refusal's consequences nor the forced warnings say it will refer to an undeclared class."
+
+	| facts |
+	facts := (self factsAbout: { Set })
+		         referencedBy: (Dictionary with: 'Set' -> #( 'EvalA>>a' 'Set class>>withAll:' ));
+		         yourself.
+	self
+		assert: facts message
+		equals:
+		'Did not remove Set: 2 methods refer to it. Change those methods first, or resend with force to remove Set anyway: the method will refer to an undeclared Set.'.
+	self
+		assert: facts forcedWarnings
+		equals: #( '1 method still referred to Set and now refers to an undeclared variable: EvalA>>a.' ).
+	facts referencedBy: (Dictionary with: 'Set' -> #( 'Set class>>withAll:' )).
+	self
+		assert: facts message
+		equals: 'Did not remove Set: 1 method refers to it. Change that method first, or resend with force to remove Set anyway.'.
+	self assert: facts forcedWarnings isEmpty.
+	facts
+		classes: {
+				Set.
+				Bag };
+		referencedBy: (Dictionary with: 'Set' -> #( 'Bag class>>withAll:' )).
+	self
+		assert: facts message
+		equals:
+		'Removed none of Set, Bag: 1 method refers to Set. Change that method first, or resend with force to remove the classes anyway.'.
+	self assert: facts forcedWarnings isEmpty
+]
+
+{ #category : 'tests' }
 MCPClassRemovalFactsTest >> testAReferencedClassSaysHowManyMethodsReferToIt [
 
 	| facts |

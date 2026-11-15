@@ -73,10 +73,10 @@ MCPClassRemovalFacts >> conditionText: aString [
 
 { #category : 'private - texts' }
 MCPClassRemovalFacts >> consequences [
-	"What a forced removal leaves behind. A trait's users block it only before Pharo 12, where force does not get past the check."
+	"What a forced removal leaves behind. A method that goes with a class asked for leaves nothing behind. A trait's users block it only before Pharo 12, where force does not get past the check."
 
 	^ Array streamContents: [ :stream |
-			  referencedBy ifNotEmpty: [ stream nextPut: self referenceConsequence ].
+			  self namesLeavingReferencesBehind ifNotEmpty: [ stream nextPut: self referenceConsequence ].
 			  (self namesIn: subclasses) do: [ :each |
 				  (self subclassesLeftBehindBy: each) ifNotEmpty: [ :names |
 					  stream nextPut: (self subclassConsequenceFor: each leaving: names) ] ] ]
@@ -123,10 +123,10 @@ MCPClassRemovalFacts >> forced: aBoolean [
 
 { #category : 'private - texts' }
 MCPClassRemovalFacts >> forcedReferenceWarningFor: aClassName [
-	"Every method is named: once the class is gone, no search finds them by it."
+	"Every method left behind is named: once the class is gone, no search finds them by it."
 
 	| methods |
-	methods := referencedBy at: aClassName.
+	methods := self referencesLeftBehindBy: aClassName.
 	^ String streamContents: [ :stream |
 			  stream
 				  print: methods size;
@@ -155,11 +155,11 @@ MCPClassRemovalFacts >> forcedSubclassWarningFor: aClassName leaving: someNames 
 
 { #category : 'texts' }
 MCPClassRemovalFacts >> forcedWarnings [
-	"What a removal forced past the check left behind, one warning per fact, in the refusal's order. With no fact, what Pharo's check said."
+	"What a removal forced past the check left behind, one warning per fact, in the refusal's order. A method or subclass that went with a class asked for left nothing behind. With no fact, what Pharo's check said."
 
 	self hasFacts ifFalse: [ ^ { (self cleanedConditionText copyWith: $.) } ].
 	^ Array streamContents: [ :stream |
-			  (self namesIn: referencedBy) do: [ :each | stream nextPut: (self forcedReferenceWarningFor: each) ].
+			  self namesLeavingReferencesBehind do: [ :each | stream nextPut: (self forcedReferenceWarningFor: each) ].
 			  (self namesIn: subclasses) do: [ :each |
 				  (self subclassesLeftBehindBy: each) ifNotEmpty: [ :names |
 					  stream nextPut: (self forcedSubclassWarningFor: each leaving: names) ] ] ]
@@ -273,6 +273,13 @@ MCPClassRemovalFacts >> namesIn: aDictionary [
 	^ self classNames select: [ :each | aDictionary includesKey: each ]
 ]
 
+{ #category : 'private - names' }
+MCPClassRemovalFacts >> namesLeavingReferencesBehind [
+	"The classes asked for that methods outliving the removal refer to, in the order they were asked for."
+
+	^ (self namesIn: referencedBy) select: [ :each | (self referencesLeftBehindBy: each) isNotEmpty ]
+]
+
 { #category : 'private - texts' }
 MCPClassRemovalFacts >> opening [
 
@@ -284,11 +291,12 @@ MCPClassRemovalFacts >> opening [
 
 { #category : 'private - texts' }
 MCPClassRemovalFacts >> referenceConsequence [
+	"What force leaves of the references: the methods that outlive the removal now name a class that is gone."
 
 	| names |
-	names := self namesIn: referencedBy.
+	names := self namesLeavingReferencesBehind.
 	^ String streamContents: [ :stream |
-			  stream nextPutAll: (self referringMethodCount = 1
+			  stream nextPutAll: (self referringMethodCountLeftBehind = 1
 					   ifTrue: [ 'the method will refer to ' ]
 					   ifFalse: [ 'the methods will refer to ' ]).
 			  names size = 1 ifTrue: [ stream nextPutAll: 'an ' ].
@@ -322,12 +330,32 @@ MCPClassRemovalFacts >> referencedBy: aDictionary [
 ]
 
 { #category : 'private - names' }
+MCPClassRemovalFacts >> referencesLeftBehindBy: aClassName [
+	"The methods that refer to the class named aClassName and outlive it. On Pharo 12 and 13 Pharo's check also counts a class-side method of a class asked for, which blocks the removal but goes with its class when force removes it."
+
+	^ (referencedBy at: aClassName ifAbsent: [ #(  ) ]) reject: [ :each |
+		  (MCPMethodReference fromString: each)
+			  ifNil: [ false ]
+			  ifNotNil: [ :reference | self classNames includes: reference className ] ]
+]
+
+{ #category : 'private - names' }
 MCPClassRemovalFacts >> referringMethodCount [
 	"A method that refers to several of the classes asked for counts once."
 
 	| methods |
 	methods := Set new.
 	referencedBy do: [ :each | methods addAll: each ].
+	^ methods size
+]
+
+{ #category : 'private - names' }
+MCPClassRemovalFacts >> referringMethodCountLeftBehind [
+	"The methods that outlive the removal and refer to any of the classes asked for, each counted once."
+
+	| methods |
+	methods := Set new.
+	(self namesIn: referencedBy) do: [ :each | methods addAll: (self referencesLeftBehindBy: each) ].
 	^ methods size
 ]
 

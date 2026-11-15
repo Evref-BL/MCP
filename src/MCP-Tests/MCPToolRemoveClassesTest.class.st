@@ -414,6 +414,22 @@ MCPToolRemoveClassesTest >> testForceRemovesReferencedClassAndReturnsWarnings [
 ]
 
 { #category : 'tests' }
+MCPToolRemoveClassesTest >> testForcingAClassReferencedOnlyFromItsOwnClassSideLeavesNothingBehind [
+	"Pharo 12 and 13 count a class-side method of the class itself as a reference. Force removes that method with its class, so no warning says a method was left referring to an undeclared variable."
+
+	| result |
+	self ensureClassNamed: self selfReferencedClassName superclassName: 'Object'.
+	self withoutEpiceaDuring: [
+			(self classNamed: self selfReferencedClassName) classSide
+				compile: ('make ^ {1} new' format: { self selfReferencedClassName })
+				classified: 'tests' ].
+	result := self callToolWith: (self argumentsForClassNames: { self selfReferencedClassName } force: true).
+	self deny: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
+	self deny: (self class environment includesKey: self selfReferencedClassName asSymbol).
+	self deny: ((self warningsFrom: result) anySatisfy: [ :each | each includesSubstring: 'undeclared' ])
+]
+
+{ #category : 'tests' }
 MCPToolRemoveClassesTest >> testRefusalNamesReferencesAndSubclassesTogether [
 
 	| error result |
