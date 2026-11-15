@@ -114,13 +114,14 @@ MCPToolRunTestsTest >> testAClassWithoutTestsSaysSo [
 
 { #category : 'tests - arguments' }
 MCPToolRunTestsTest >> testACoverageScopeEntryThatNamesNoClassIsSaid [
-	"The coverage scope answers partial results, as a search scope does, so an entry that names nothing is skipped with a warning, not dropped without a word."
+	"The coverage scope answers partial results, as a search scope does, so an entry that names nothing is skipped with a warning, not dropped without a word. Pharo 10 has no coverage to collect and refuses the call."
 
 	| result |
 	result := self callToolNamed: 'test_coverage_run' withArguments: {
 			          (#classes -> #( 'MCPToolCoverageTargetTest' )).
 			          (#coverage -> { (#scope -> { (#classes -> #( 'Zzqxw' 'MCPToolCoverageTarget' )) } asDictionary) } asDictionary) }
 			          asDictionary.
+	self coverageIsAvailable ifFalse: [ ^ self assert: (self resultIndicatesError: result) ].
 	self deny: (self resultIndicatesError: result).
 	self assert: (self warningsFrom: result) asArray equals: #( 'Class Zzqxw does not exist, so scope.classes skipped it.' ).
 	self assert: (((self dataFrom: result) at: #coverage) at: #methodCount) > 0

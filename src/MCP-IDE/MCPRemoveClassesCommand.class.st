@@ -70,6 +70,13 @@ MCPRemoveClassesCommand >> force: aBoolean [
 	force := aBoolean
 ]
 
+{ #category : 'private - facts' }
+MCPRemoveClassesCommand >> forceGoesPast: anException [
+	"Force goes past a refactoring warning, never past an error. Pharo 10 and 11 make their refactoring errors resumable, so whether an exception can be resumed does not tell the two apart."
+
+	^ anException isKindOf: RBRefactoringWarning
+]
+
 { #category : 'private' }
 MCPRemoveClassesCommand >> isEmptyClass: aClass [
 
@@ -102,7 +109,7 @@ MCPRemoveClassesCommand >> removalFactsFor: anException refactoring: aRefactorin
 		  subclasses: self subclassesBlockingRemoval;
 		  users: self usersBlockingRemoval;
 		  forced: self force;
-		  forceSupported: anException isResumable;
+		  forceSupported: (self forceGoesPast: anException);
 		  conditionText: anException messageText;
 		  yourself
 ]
@@ -199,7 +206,7 @@ MCPRemoveClassesCommand >> validatePreparedRefactoring: aRefactoring [
 	[ aRefactoring checkPreconditions ]
 		on: RBRefactoringWarning , RBRefactoringError
 		do: [ :exception |
-				(self force and: [ exception isResumable ])
+				(self force and: [ self forceGoesPast: exception ])
 					ifTrue: [
 							warningMessages addAll: (self removalFactsFor: exception refactoring: aRefactoring) forcedWarnings.
 							exception resume: true ]
