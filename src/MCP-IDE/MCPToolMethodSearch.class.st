@@ -77,6 +77,13 @@ MCPToolMethodSearch >> fieldTextsForMethodEntry: anEntry sourceText: sourceText 
 	^ #(  )
 ]
 
+{ #category : 'private - request' }
+MCPToolMethodSearch >> filterArgumentName [
+	"The argument the caller writes the filter pattern in."
+
+	^ 'filter'
+]
+
 { #category : 'private - filtering' }
 MCPToolMethodSearch >> filterTextsForMethodEntry: anEntry sourceText: sourceText [
 
@@ -191,13 +198,12 @@ MCPToolMethodSearch >> redundantKeys [
 ]
 
 { #category : 'private - request' }
-MCPToolMethodSearch >> requiredFilterPatternFromRequest: request named: anArgumentName [
-	"The pattern the search cannot run without, which the caller wrote as anArgumentName. A blank one is as missing as one left out."
+MCPToolMethodSearch >> requiredFilterPatternFromRequest: request [
+	"The pattern the search cannot run without. A blank one is as missing as one left out."
 
 	| pattern |
 	pattern := self filterPatternFromRequest: request.
-	pattern ifNil: [ ^ MCPInvalidToolInput signalMissingRequiredArgumentNamed: anArgumentName forTool: self ].
-	pattern isEmpty ifTrue: [ ^ MCPInvalidToolInput signalMissingRequiredArgumentNamed: anArgumentName forTool: self ].
+	pattern isEmptyOrNil ifTrue: [ ^ MCPInvalidToolInput signalMissingRequiredArgumentNamed: self filterArgumentName forTool: self ].
 	^ pattern
 ]
 

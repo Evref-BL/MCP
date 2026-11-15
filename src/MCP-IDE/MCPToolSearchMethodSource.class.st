@@ -94,7 +94,7 @@ MCPToolSearchMethodSource >> needsSourceForFiltering [
 { #category : 'private - template' }
 MCPToolSearchMethodSource >> queryEntriesForRequest: request scopeQuery: scopeQuery [
 
-	self requiredFilterPatternFromRequest: request named: 'filter'.
+	self requiredFilterPatternFromRequest: request.
 	^ super queryEntriesForRequest: request scopeQuery: scopeQuery
 ]
 

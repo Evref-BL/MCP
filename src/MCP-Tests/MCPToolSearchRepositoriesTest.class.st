@@ -192,6 +192,27 @@ MCPToolSearchRepositoriesTest >> testListsStaleRepositoryAsMissingAndContinues [
 ]
 
 { #category : 'tests' }
+MCPToolSearchRepositoriesTest >> testPageStopsAtTheToolsOwnSize [
+	"A search wider than one page starts at the first repository and says where the next page starts, without being told a size or an offset."
+
+	| data limit names repositories result |
+	limit := MCPToolSearchRepositories new defaultPageLimit.
+	repositories := (1 to: limit + 1) collect: [ :index |
+			                self
+				                newRepositoryNamed: 'MCP Paged Repository ' , (index printPaddedWith: $0 to: 2)
+				                location: FileLocator imageDirectory
+				                packageNames: #(  ) ].
+	self withRepositories: repositories do: [
+			result := self callToolWith: Dictionary new.
+			data := self dataFrom: result.
+			names := (data at: #repositories) collect: [ :each | each at: #name ].
+			self deny: (result at: #isError ifAbsent: [ false ]).
+			self assert: names equals: ((repositories first: limit) collect: [ :each | each name ] as: Array).
+			self assert: (data at: #nextOffset) equals: limit.
+			self assert: ((data at: #pagination) at: #truncated) ]
+]
+
+{ #category : 'tests' }
 MCPToolSearchRepositoriesTest >> testRowsLeadWithTheRepositoryName [
 
 	| lines located unlocated |

@@ -242,7 +242,7 @@ MCPToolSearchMethodReferences >> noHitTextForKinds: kinds name: aName [
 MCPToolSearchMethodReferences >> queryEntriesForRequest: request scopeQuery: scopeQuery [
 
 	| entries fallback kinds name failures |
-	name := self requiredFilterPatternFromRequest: request named: self lookupArgumentName.
+	name := self requiredFilterPatternFromRequest: request.
 	kinds := self kindsForName: name fromRequest: request.
 	(self requestedKindFromRequest: request) ifNotNil: [ ^ self entriesForKinds: kinds name: name scopeQuery: scopeQuery ].
 	failures := OrderedCollection new.

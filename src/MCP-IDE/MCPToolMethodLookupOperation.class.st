@@ -36,6 +36,12 @@ MCPToolMethodLookupOperation >> extraInputProperties [
 ]
 
 { #category : 'private - request' }
+MCPToolMethodLookupOperation >> filterArgumentName [
+
+	^ self lookupArgumentName
+]
+
+{ #category : 'private - request' }
 MCPToolMethodLookupOperation >> filterPatternFromRequest: request [
 
 	^ (request stringArgumentNamed: self lookupArgumentName) ifNotNil: [ :value | value trimBoth ]

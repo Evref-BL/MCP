@@ -204,7 +204,7 @@ MCPToolSearchRepositories >> title [
 	^ 'Search Repositories'
 ]
 
-{ #category : 'private - template' }
+{ #category : 'private - results' }
 MCPToolSearchRepositories >> warningsForScopeQuery: scopeQuery [
 	"With no scope, there is no name in it that could fail to resolve."
 
