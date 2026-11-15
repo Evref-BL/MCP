@@ -56,11 +56,12 @@ MCPToolRemoveClasses >> classNamesForErrorFromParsedRequest: removeRequest rawRe
 
 { #category : 'private' }
 MCPToolRemoveClasses >> classNamesFromRequest: request [
+	"One class side among the names refuses the whole call, before anything is looked up: read as its class, it would delete the class."
 
 	| classNames |
 	classNames := request uniqueStringCollectionArgumentNamed: 'name'.
 	classNames ifEmpty: [ Error signal: 'name must hold at least one class name.' ].
-	^ classNames
+	^ classNames collect: [ :each | MCPImageLookup wholeClassName: each for: 'class_remove' ]
 ]
 
 { #category : 'private - execution' }

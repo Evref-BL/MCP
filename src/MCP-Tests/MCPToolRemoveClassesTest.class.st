@@ -228,6 +228,26 @@ MCPToolRemoveClassesTest >> testForceRemovesReferencedClassAndReturnsWarnings [
 ]
 
 { #category : 'tests' }
+MCPToolRemoveClassesTest >> testRefusesAClassSideNameAndRemovesNothing [
+	"Read as its class, Foo class would delete the whole class without a word. One such name refuses the call, before anything is looked up."
+
+	| error result |
+	result := self callToolWith: (self argumentsForClassNames: {
+				           self simpleClassName.
+				           (self simpleClassName , ' class') }).
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (error at: #errorCode) equals: 'ClassSideNamed'.
+	self assert: (error at: #class) equals: self simpleClassName.
+	self assert: (error at: #name) equals: self simpleClassName , ' class'.
+	self assert: (error at: #message) equals: (String streamContents: [ :stream |
+				 stream << self simpleClassName << ' class is the class side of ' << self simpleClassName
+				 << ', and goes only with its class. Name ' << self simpleClassName
+				 << ' to remove the class, or use method_remove with side class to remove class-side methods.' ]).
+	self assert: (self class environment includesKey: self simpleClassName asSymbol)
+]
+
+{ #category : 'tests' }
 MCPToolRemoveClassesTest >> testReturnsStructuredErrorWhenClassHasReferences [
 
 	| error result structured |

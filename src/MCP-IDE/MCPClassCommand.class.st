@@ -41,37 +41,12 @@ MCPClassCommand >> currentClass [
 { #category : 'private - resolving' }
 MCPClassCommand >> resolvedLayoutClassNamed: layoutName [
 
-	| behavior |
 	layoutName ifNil: [ ^ nil ].
-	behavior := Smalltalk globals at: layoutName asSymbol ifAbsent: [
-			            MCPCommandError
-				            signalErrorCode: #LayoutClassNotFound
-				            message: (String streamContents: [ :stream | stream << 'Layout class ' << layoutName << ' does not exist.' ])
-				            details: {
-						            (#class -> self className).
-						            (#layout -> layoutName) } asDictionary ].
-	(AbstractLayout withAllSubclasses includes: behavior) ifFalse: [
-			MCPCommandError signalErrorCode: #InvalidLayoutClass message: layoutName , ' not layout class.' details: {
-					(#class -> self className).
-					(#layout -> layoutName) } asDictionary ].
-	^ behavior
+	^ MCPImageLookup classNamed: layoutName role: #layoutClass details: { (#class -> self className) }
 ]
 
 { #category : 'private - resolving' }
 MCPClassCommand >> resolvedSharedPoolNamed: aSharedPoolName [
 
-	| behavior sharedPoolName |
-	sharedPoolName := aSharedPoolName.
-	behavior := Smalltalk globals at: sharedPoolName asSymbol ifAbsent: [
-			            MCPCommandError
-				            signalErrorCode: #SharedPoolNotFound
-				            message: (String streamContents: [ :stream | stream << 'Shared pool ' << sharedPoolName << ' does not exist.' ])
-				            details: {
-						            (#class -> self className).
-						            (#sharedPool -> sharedPoolName) } asDictionary ].
-	(SharedPool withAllSubclasses includes: behavior) ifFalse: [
-			MCPCommandError signalErrorCode: #InvalidSharedPool message: sharedPoolName , ' not shared pool.' details: {
-					(#class -> self className).
-					(#sharedPool -> sharedPoolName) } asDictionary ].
-	^ behavior
+	^ MCPImageLookup classNamed: aSharedPoolName role: #sharedPool details: { (#class -> self className) }
 ]
