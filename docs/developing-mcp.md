@@ -40,9 +40,17 @@ Rules:
 
 - Follow `templates/pharo-references/pharo-coding.md` for what is particular to
   Pharo, and the critiques a compile reports for the rest.
-- Keep tool APIs explicit and testable through request, command, and result
-  objects.
-- Prefer dedicated query/edit command objects over broad evaluation hooks.
+- A tool is one class. Its input schema declares each argument once, with its
+  default and limits, and `executeWithRequest:` reads the arguments from the
+  `MCPToolRequest` it receives (`argumentOrDefaultNamed:` and the typed
+  accessors built on it answer the schema's default).
+- Work on the image goes in an operation object when it is long, has tests of
+  its own, or several tools use it. It takes plain arguments, answers image
+  objects or a report, and knows nothing of the tool, the request or the
+  answer's text.
+- Describe image objects with the shared describers (the `*Info` classes). A
+  result class exists only when it computes something.
+- Prefer dedicated tools and operations over broad evaluation hooks.
 - Preserve structured error reporting; do not hide failures behind `nil`,
   strings, or broad exception swallowing.
 - Keep schema and contract tests close to tool behavior changes.
