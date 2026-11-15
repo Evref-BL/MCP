@@ -186,6 +186,43 @@ MCPToolMethodSearchTest >> testClassReferenceDoesNotIncludeSelectorSendsNamedLik
 ]
 
 { #category : 'tests' }
+MCPToolMethodSearchTest >> testClassReferenceFindsAMethodThatNamesTheClassByAnAlias [
+	"A global may hold a class under another name, as Pharo 14's deprecated aliases do, such as RBParser for OCParser. A method that names the alias refers to the class, in its body or in a block, so a search by either name finds it beside the methods that name the class itself. The classes are named by string, so that this test adds no reference to them."
+
+	| aliasName writer writerName |
+	aliasName := 'MCPToolMethodSearchReferenceTargetAlias'.
+	writerName := 'MCPToolMethodSearchAliasWriter'.
+	[
+		Smalltalk globals at: aliasName asSymbol put: (self classNamed: 'MCPToolMethodSearchReferenceTarget').
+		writer := self
+			          createClassNamed: writerName
+			          superclassName: 'Object'
+			          slots: #(  )
+			          classSlots: #(  ).
+		self ensureMethodSource: 'writesAlias ^ ' , aliasName protocol: 'testing' on: writer.
+		self ensureMethodSource: ('writesAliasInABlock ^ [ {1} ] value' format: { aliasName }) protocol: 'testing' on: writer.
+		{
+			'MCPToolMethodSearchReferenceTarget'.
+			aliasName } do: [ :name |
+				| methods result |
+				result := self callToolNamed: 'method_reference_search' withArguments: {
+						          (#name -> name).
+						          (#kind -> 'class').
+						          (self searchScope: { (#classes -> {
+								            writerName.
+								            'MCPToolMethodSearchReferenceFixture' }) }) } asDictionary.
+				self deny: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
+				methods := (self dataFrom: result) at: #methods.
+				self assert: methods size equals: 4.
+				self entryForReference: writerName , '>>writesAlias' in: methods.
+				self entryForReference: writerName , '>>writesAliasInABlock' in: methods.
+				self entryForReference: 'MCPToolMethodSearchReferenceFixture>>referenceExtensionTarget' in: methods.
+				self entryForReference: 'MCPToolMethodSearchReferenceFixture class>>referenceExtensionTarget' in: methods ] ] ensure: [
+			self removeClassNamed: writerName.
+			Smalltalk globals removeKey: aliasName asSymbol ifAbsent: [ ] ]
+]
+
+{ #category : 'tests' }
 MCPToolMethodSearchTest >> testClassReferenceReturnsInstanceAndClassGlobalReferences [
 
 	| data result |
