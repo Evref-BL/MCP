@@ -30,7 +30,7 @@ MCPCompileMethodCommand >> execute [
 		  work: [
 				  behavior := self tool behaviorNamed: self request className classSide: self request classSide.
 				  methodSource := self request methodSource.
-				  selector := [ self selectorForMethodSource: methodSource ]
+				  selector := [ self selectorForMethodSource: methodSource in: behavior ]
 					              on: Exception
 					              do: [ :error | self signalCompileFailure: error methodSource: methodSource ].
 				  changeKind := (behavior includesSelector: selector)
@@ -86,11 +86,11 @@ MCPCompileMethodCommand >> protocolWarningsFor: aCompiledMethod [
 ]
 
 { #category : 'private' }
-MCPCompileMethodCommand >> selectorForMethodSource: methodSourceString [
+MCPCompileMethodCommand >> selectorForMethodSource: methodSourceString in: aBehavior [
 
 	| methodNode |
 	methodNode := RBParser parseMethod: methodSourceString.
-	self tool signalBlockingCritiquesForMethodNode: methodNode.
+	self tool signalBlockingCritiquesForMethodNode: methodNode in: aBehavior.
 	^ methodNode selector
 ]
 

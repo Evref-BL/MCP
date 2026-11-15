@@ -37,24 +37,18 @@ MCPToolCompileMethod >> batchSummaryVerb [
 
 { #category : 'private - results' }
 MCPToolCompileMethod >> contentTextForStructuredContent: structuredContent [
-	"The summary already names the change and its kind. A critique's description is its rule's generic explanation, the same text on every hit, while the title names the problem actually found."
+	"The summary already names the change and its kind. A critique reads as the line it starts on, what it found and the code there, since its interval counts characters of a source the caller never sees; its description is its rule's generic explanation, the same text on every hit."
 
-	| data |
+	| critiques data |
 	data := structuredContent at: #data ifAbsent: [ ^ super contentTextForStructuredContent: structuredContent ].
 	^ String streamContents: [ :stream |
 			  self summaryAndWarningsOn: stream for: structuredContent.
-			  (data at: #critiques ifAbsent: [ #(  ) ]) do: [ :critique |
+			  critiques := data at: #critiques ifAbsent: [ #(  ) ].
+			  critiques ifNotEmpty: [
 					  stream
 						  nextPut: Character lf;
-						  nextPutAll: (critique at: #ruleClass);
-						  nextPutAll: ' '.
-					  critique at: #start ifPresent: [ :start |
-							  stream
-								  print: start;
-								  nextPut: $-;
-								  print: (critique at: #stop ifAbsent: [ start ]);
-								  nextPutAll: ' ' ].
-					  stream nextPutAll: (critique at: #title) ] ]
+						  nextPutAll: 'critiques (line numbers count the method as stored; method_get shows it):'.
+					  critiques do: [ :critique | self critiqueTextOn: stream for: critique indent: '  ' ] ] ]
 ]
 
 { #category : 'metadata' }

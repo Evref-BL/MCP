@@ -104,6 +104,17 @@ MCPToolMethodMutationTest >> compileArgumentsForClass: aClass classSide: aBoolea
 ]
 
 { #category : 'private' }
+MCPToolMethodMutationTest >> compileProbe: aMethodSource [
+	"Compile aMethodSource into the mutation target under tests, answering the result."
+
+	^ self callToolWith: (self
+			   compileArgumentsForClass: MCPToolMethodMutationTestTarget
+			   classSide: false
+			   methodSource: aMethodSource
+			   protocol: 'tests')
+]
+
+{ #category : 'private' }
 MCPToolMethodMutationTest >> createRenameScopeFixtureClassNamed: aClassName packageName: aPackageName [
 
 	self withoutEpiceaDuring: [
@@ -438,6 +449,40 @@ MCPToolMethodMutationTest >> testBatchCompileWithoutProtocolWarnsOnce [
 ]
 
 { #category : 'tests' }
+MCPToolMethodMutationTest >> testBlockedCompileNamesTheCritique [
+	"A compile a critique blocks is refused with the critique in its text, its lines counting the source as sent, and what to do next."
+
+	| error lines result title |
+	self removeSelector: #deadBlockProbe from: MCPToolMethodMutationTestTarget.
+	result := self compileProbe: 'deadBlockProbe [ self error: ''never run'' ]'.
+	error := self errorFrom: result.
+	title := (error at: #critiques) first at: #title.
+	lines := (self textOf: result) lines.
+	self assert: (lines first: 4) asArray equals: {
+			'Did not compile MCPToolMethodMutationTestTarget>>deadBlockProbe, because a critique blocks compiling it:'.
+			('line 1: ' , title).
+			'  [ self error: ''never run'' ]'.
+			'Correct the source and compile it again.' }.
+	self assert: (error at: #howToProceed) equals: 'Correct the source and compile it again.'.
+	result := self callToolWith: (self
+			           compileArgumentsForClass: MCPToolMethodMutationTestTarget
+			           classSide: true
+			           methodSource: 'deadBlockProbe
+	[ 1 ].
+	[ 2 ]'
+			           protocol: 'tests').
+	lines := (self textOf: result) lines.
+	self
+		assert: lines first
+		equals: 'Did not compile MCPToolMethodMutationTestTarget class>>deadBlockProbe, because 2 critiques block compiling it:'.
+	self
+		assert: (lines select: [ :each | each beginsWith: 'line ' ] thenCollect: [ :each | each copyUpTo: $: ])
+		equals: #( 'line 2' 'line 3' ).
+	self deny: (MCPToolMethodMutationTestTarget includesSelector: #deadBlockProbe).
+	self deny: (MCPToolMethodMutationTestTarget classSide includesSelector: #deadBlockProbe)
+]
+
+{ #category : 'tests' }
 MCPToolMethodMutationTest >> testChangeProtocolReturnsStructuredErrorWhenMethodIsMissing [
 
 	| error result structured |
@@ -680,6 +725,43 @@ MCPToolMethodMutationTest >> testCompileCanReplaceMethodOnToolClass [
 ]
 
 { #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileCritiqueQuotesTheStoredCode [
+	"A method sent on one line is stored reformatted, its body from the third line; its critique counts the stored lines and quotes the stored code, which method_get shows."
+
+	| critique result storedLines |
+	self removeSelector: #storedCodeProbe from: MCPToolMethodMutationTestTarget.
+	[
+		result := self compileProbe: 'storedCodeProbe ^ True = true'.
+		critique := ((self dataFrom: result) at: #critiques) first.
+		storedLines := (MCPToolMethodMutationTestTarget >> #storedCodeProbe) sourceCode lines.
+		self assert: (critique at: #line) equals: 3.
+		self assert: ((storedLines at: 3) includesSubstring: 'True = true').
+		self assert: (critique at: #code) equals: 'True'.
+		self assert: ((self textOf: result) lines includes: '    True') ] ensure: [
+		self removeSelector: #storedCodeProbe from: MCPToolMethodMutationTestTarget ]
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileCritiquesReadAsLines [
+	"A critique reads as the line it starts on and what it found, under a label saying how lines are counted, never as character offsets of a source the caller does not see."
+
+	| lines result |
+	self removeSelector: #critiqueLinesProbe from: MCPToolMethodMutationTestTarget.
+	[
+		result := self compileProbe: 'critiqueLinesProbe ^ ''a'' , self printString , ''b'''.
+		lines := (self textOf: result) lines.
+		self assert: lines first equals: 'Created MCPToolMethodMutationTestTarget>>critiqueLinesProbe.'.
+		self assert: lines second equals: 'critiques (line numbers count the method as stored; method_get shows it):'.
+		self assert: ((lines at: 3) beginsWith: '  line 3: ').
+		self deny: (lines anySatisfy: [ :each | each matchesRegex: '.*\d+-\d+.*' ]).
+		self removeSelector: #critiqueLinesProbe from: MCPToolMethodMutationTestTarget.
+		result := self compileProbe: 'critiqueLinesProbe ^ 1'.
+		self deny: (self resultIndicatesError: result).
+		self deny: ((self textOf: result) includesSubstring: 'critiques') ] ensure: [
+		self removeSelector: #critiqueLinesProbe from: MCPToolMethodMutationTestTarget ]
+]
+
+{ #category : 'tests' }
 MCPToolMethodMutationTest >> testCompileDefaultsToInstanceSideWhenClassSideIsOmitted [
 
 	| data result |
@@ -735,6 +817,44 @@ MCPToolMethodMutationTest >> testCompileMethodReportsReplacedChangeKind [
 		self assertSuccessDataHasMethodShape: data.
 		self assert: MCPToolMethodMutationTestTarget new directReplaceProbe equals: 2 ] ensure: [
 		self removeSelector: selector from: MCPToolMethodMutationTestTarget ]
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileNamesOnlyTheRulesMethodRewriteCanApply [
+	"A critique names its rule class only where method_rewrite can apply the rule, since only there does the name give the caller something to do."
+
+	| concatenation lines result usesTrue |
+	self removeSelector: #fixableProbe from: MCPToolMethodMutationTestTarget.
+	[
+		result := self compileProbe: 'fixableProbe ^ True printString , '' of '' , self printString'.
+		concatenation := ((self dataFrom: result) at: #critiques) detect: [ :each |
+			                 (each at: #ruleClass) = MCPStringConcatenationRule name asString ].
+		usesTrue := ((self dataFrom: result) at: #critiques) detect: [ :each | (each at: #ruleClass) = ReUsesTrueRule name asString ].
+		self assert: (concatenation at: #fixable).
+		self deny: (usesTrue includesKey: #fixable).
+		lines := (self textOf: result) lines select: [ :each | each beginsWith: '  line ' ].
+		self assert: lines size equals: 2.
+		self assert: (lines anySatisfy: [ :each | each endsWith: ' (method_rewrite ruleClasses: MCPStringConcatenationRule)' ]).
+		self deny: (lines anySatisfy: [ :each | each includesSubstring: 'ReUsesTrueRule' ]).
+		self assert: (MCPMethodRewriteNamedRuleSpec canApplyRuleClass: MCPStringConcatenationRule).
+		self deny: (MCPMethodRewriteNamedRuleSpec canApplyRuleClass: ReUsesTrueRule).
+		self deny: (MCPMethodRewriteNamedRuleSpec canApplyRuleClass: Object) ] ensure: [
+		self removeSelector: #fixableProbe from: MCPToolMethodMutationTestTarget ]
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileReportsEachCritiqueOnce [
+	"A rule that checks every node of a concatenation flags each part of it; only the whole is reported."
+
+	| critiques result |
+	self removeSelector: #concatenationOnceProbe from: MCPToolMethodMutationTestTarget.
+	[
+		result := self compileProbe: 'concatenationOnceProbe ^ ''A '' , self printString , '' of area '' , self hash printString'.
+		critiques := (self dataFrom: result) at: #critiques.
+		self assert: critiques size equals: 1.
+		self assert: (critiques first at: #ruleClass) equals: MCPStringConcatenationRule name asString.
+		self assert: ((self textOf: result) lines count: [ :each | each beginsWith: '  line ' ]) equals: 1 ] ensure: [
+		self removeSelector: #concatenationOnceProbe from: MCPToolMethodMutationTestTarget ]
 ]
 
 { #category : 'tests' }
@@ -1701,6 +1821,12 @@ MCPToolMethodMutationTest >> testUpdatingAMethodInstalledFromATraitStopsAndNames
 	self assert: ((error at: #howToProceed) includesSubstring: 'Update TMCPToolMethodSearchFixture>>mcpTraitFixtureValue instead').
 	self assert: (MCPToolMethodSearchTraitUser >> #mcpTraitFixtureValue) isFromTrait.
 	self assert: (MCPToolMethodSearchTraitUser >> #mcpTraitFixtureValue) protocolName asString equals: 'accessing'
+]
+
+{ #category : 'private' }
+MCPToolMethodMutationTest >> textOf: aResult [
+
+	^ (aResult at: #content) first at: #text
 ]
 
 { #category : 'private - calling' }

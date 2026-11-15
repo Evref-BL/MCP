@@ -344,6 +344,24 @@ MCPTool >> buildInputSchema [
 	self subclassResponsibility
 ]
 
+{ #category : 'private - source' }
+MCPTool >> codeQuoteFor: anInterval in: aString [
+	"The code an interval flags, as one line can show it: from its first character to the end of that line or its last character, whichever comes first, trimmed, and cut to its first 60 characters and ... when longer."
+
+	| end code last |
+	(anInterval first between: 1 and: aString size) ifFalse: [ ^ '' ].
+	last := anInterval last min: aString size.
+	end := anInterval first.
+	[ end <= last and: [ ((aString at: end) = Character cr or: [ (aString at: end) = Character lf ]) not ] ] whileTrue: [
+		end := end + 1 ].
+	code := (aString copyFrom: anInterval first to: end - 1) trimBoth.
+	code size > 60 ifFalse: [ ^ code ].
+	^ String streamContents: [ :stream |
+			  stream
+				  nextPutAll: (code first: 60);
+				  nextPutAll: '...' ]
+]
+
 { #category : 'private - execution' }
 MCPTool >> commandForRequest: aToolRequest [
 
@@ -859,6 +877,20 @@ MCPTool >> keywords [
 	normalizedKeywords := OrderedCollection new.
 	keywords do: [ :each | normalizedKeywords addAll: (each asString findTokens: '-_ ') ].
 	^ (normalizedKeywords collect: [ :each | each asLowercase ] as: Set) asArray
+]
+
+{ #category : 'private - source' }
+MCPTool >> lineNumberAt: aPosition in: aString [
+	"The line of aString that holds aPosition, counting from 1. CR, LF and CRLF each end a line, so a source reads the same lines whichever it uses."
+
+	| line |
+	line := 1.
+	1 to: (aPosition - 1 min: aString size) do: [ :index |
+			| character |
+			character := aString at: index.
+			(character = Character cr or: [ character = Character lf and: [ index = 1 or: [ (aString at: index - 1) ~= Character cr ] ] ])
+				ifTrue: [ line := line + 1 ] ].
+	^ line
 ]
 
 { #category : 'metadata' }
