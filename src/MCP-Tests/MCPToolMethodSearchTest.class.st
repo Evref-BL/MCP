@@ -339,6 +339,34 @@ MCPToolMethodSearchTest >> testEquivalentSearchReturnsStructuredErrorWhenReferen
 ]
 
 { #category : 'tests' }
+MCPToolMethodSearchTest >> testEquivalentSearchReadsAReferenceClassWrittenWithItsSide [
+
+	| data result subclass subclassName |
+	subclassName := 'MCPToolMethodSearchEquivalentSidedFixture'.
+	self
+		createClassNamed: subclassName
+		superclassName: 'MCPToolMethodSearchReferenceFixture'
+		slots: #(  )
+		classSlots: #(  ).
+	[
+		subclass := self classNamed: subclassName.
+		self
+			ensureMethodSource: 'sharedTarget
+
+	^ ''class-target'''
+			protocol: 'testing'
+			on: subclass classSide.
+		result := self callToolNamed: 'method_equivalent_search' withArguments: {
+				          (self searchScope: { (#classes -> { subclassName }) } side: 'class').
+				          (#class -> 'MCPToolMethodSearchReferenceFixture class').
+				          (#selector -> 'sharedTarget') } asDictionary.
+		data := self dataFrom: result.
+		self assert: (data at: #methods) size equals: 1.
+		self entryForReference: subclassName , ' class>>sharedTarget' in: (data at: #methods) ] ensure: [
+		self removeClassNamed: subclassName ]
+]
+
+{ #category : 'tests' }
 MCPToolMethodSearchTest >> testEquivalentSearchReturnsStructuredErrorWhenReferenceMethodIsMissing [
 
 	| error result |

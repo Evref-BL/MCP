@@ -36,6 +36,23 @@ MCPToolMethodMutationTest >> assertCompileForClass: aClass methodSource: aMethod
 ]
 
 { #category : 'private' }
+MCPToolMethodMutationTest >> assertHeaderOf: aSource side: aSideOrNil isRefusedSaying: aText [
+
+	| error result |
+	result := self compileSource: aSource into: MCPToolMethodMutationTestTarget name side: aSideOrNil.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (error at: #errorCode) equals: 'MethodSourceHeader'.
+	self assert: (error at: #header) equals: aSource lines first trimBoth.
+	self assert: (error at: #class) equals: MCPToolMethodMutationTestTarget name.
+	self assert: (self textFrom: result) equals: aText.
+	#( #headerProbe #headerProbe:with: #headerProbe: ) do: [ :each |
+			self deny: (MCPToolMethodMutationTestTarget includesSelector: each).
+			self deny: (MCPToolMethodMutationTestTarget classSide includesSelector: each) ].
+	^ error
+]
+
+{ #category : 'private' }
 MCPToolMethodMutationTest >> assertSuccessDataHasMethodShape: data [
 
 	#( selector class package isExtension protocol source side action updateAction oldSelector newSelector
@@ -103,6 +120,19 @@ MCPToolMethodMutationTest >> compileArgumentsForClass: aClass classSide: aBoolea
 		  (#protocol -> aProtocol) } asDictionary
 ]
 
+{ #category : 'private - calling' }
+MCPToolMethodMutationTest >> compileSource: aSource into: aClassName side: aSideOrNil [
+	"method_compile as a caller writes it, with side left out when aSideOrNil is nil."
+
+	| arguments |
+	arguments := Dictionary new.
+	arguments at: #class put: aClassName.
+	arguments at: #source put: aSource.
+	arguments at: #protocol put: 'tests'.
+	aSideOrNil ifNotNil: [ arguments at: #side put: aSideOrNil ].
+	^ self callToolNamed: 'method_compile' withArguments: arguments
+]
+
 { #category : 'private' }
 MCPToolMethodMutationTest >> createRenameScopeFixtureClassNamed: aClassName packageName: aPackageName [
 
@@ -112,6 +142,12 @@ MCPToolMethodMutationTest >> createRenameScopeFixtureClassNamed: aClassName pack
 			builder := Object << aClassName asSymbol.
 			builder package: aPackageName.
 			builder install ]
+]
+
+{ #category : 'private' }
+MCPToolMethodMutationTest >> droppedHeaderWarning [
+
+	^ 'The source began with the method''s reference, which was dropped: a method''s source starts with its selector line.'
 ]
 
 { #category : 'private' }
@@ -220,6 +256,14 @@ MCPToolMethodMutationTest >> methodSourceLineFeedOffendersInPackageNamed: packag
 
 	(self methodDefinitionsInPackageNamed: packageName) do: [ :definition |
 		(definition source includes: Character lf) ifTrue: [ aBlock value: (self methodSourceLineFeedOffenderNameFor: definition) ] ]
+]
+
+{ #category : 'private' }
+MCPToolMethodMutationTest >> removeHeaderProbes [
+
+	#( #headerProbe #headerProbe: #headerProbeTwo #HeaderProbe ) do: [ :each |
+			self removeSelector: each from: MCPToolMethodMutationTestTarget.
+			self removeSelector: each from: MCPToolMethodMutationTestTarget classSide ]
 ]
 
 { #category : 'private' }
@@ -435,6 +479,25 @@ MCPToolMethodMutationTest >> testBatchCompileWithoutProtocolWarnsOnce [
 		self assert: (contentText lines second beginsWith: 'Warning for each: No protocol was named').
 		((self dataFrom: result) at: #results) do: [ :each | self assert: (each at: #warnings) size equals: 1 ] ] ensure: [
 		selectors do: [ :each | self removeSelector: each from: MCPToolMethodMutationTestTarget ] ]
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testBodyErrorAfterAHeaderIsReportedOnItsOwnLine [
+	"The header is replaced by its selector line and the rest is kept as it is, so the lines keep their numbers."
+
+	| error result |
+	[
+		result := self
+			          compileSource: 'MCPToolMethodMutationTestTarget >> #headerProbe
+	^ 1 +'
+			          into: MCPToolMethodMutationTestTarget name
+			          side: nil.
+		error := self errorFrom: result.
+		self assert: (result at: #isError).
+		self assert: (error at: #errorCode) equals: 'CompileSyntaxError'.
+		self assert: (error at: #line) equals: 2.
+		self assert: (error at: #sourceLine) equals: '	^ 1 +'.
+		self deny: (MCPToolMethodMutationTestTarget includesSelector: #headerProbe) ] ensure: [ self removeHeaderProbes ]
 ]
 
 { #category : 'tests' }
@@ -693,6 +756,75 @@ MCPToolMethodMutationTest >> testCompileDefaultsToInstanceSideWhenClassSideIsOmi
 	self deny: (MCPToolMethodMutationTestTarget classSide includesSelector: #instanceAnswer).
 	self assertSuccessDataHasMethodShape: data.
 	self deny: (result at: #isError ifAbsent: [ false ])
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileIntoAClassWrittenWithItsSideCompilesOnTheClassSide [
+	"Foo class names the class side, as Pharo prints it, whether side is left out or says the same."
+
+	#( nil 'class' ) do: [ :side |
+			| result |
+			self removeHeaderProbes.
+			[
+				result := self compileSource: 'headerProbe ^ 1' into: 'MCPToolMethodMutationTestTarget class' side: side.
+				self deny: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
+				self assert: (MCPToolMethodMutationTestTarget classSide includesSelector: #headerProbe).
+				self deny: (MCPToolMethodMutationTestTarget includesSelector: #headerProbe).
+				self assert: (self summaryFrom: result) equals: 'Created MCPToolMethodMutationTestTarget class>>headerProbe.' ] ensure: [
+				self removeHeaderProbes ] ]
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileIntoAClassWrittenWithItsSideRefusesSideInstance [
+	"The two arguments contradict each other, and guessing would put the method on the wrong side."
+
+	| error result |
+	[
+		result := self compileSource: 'headerProbe ^ 1' into: 'MCPToolMethodMutationTestTarget class' side: 'instance'.
+		error := self errorFrom: result.
+		self assert: (result at: #isError).
+		self assert: (error at: #errorCode) equals: 'ClassSideConflict'.
+		self assert: (error at: #class) equals: 'MCPToolMethodMutationTestTarget'.
+		self assert: (error at: #name) equals: 'MCPToolMethodMutationTestTarget class'.
+		self assert: (error at: #side) equals: 'instance'.
+		self
+			assert: (self textFrom: result)
+			equals:
+			'MCPToolMethodMutationTestTarget class names the class side, but side is instance. Pass class MCPToolMethodMutationTestTarget, with side class or instance.'.
+		self deny: (MCPToolMethodMutationTestTarget includesSelector: #headerProbe).
+		self deny: (MCPToolMethodMutationTestTarget classSide includesSelector: #headerProbe) ] ensure: [ self removeHeaderProbes ]
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileIntoAMissingClassSaysToCreateIt [
+	"method_compile is the one tool that writes into the class it names, so a missing class says how to make one, rather than leaking the lookup's KeyNotFound."
+
+	| error result |
+	result := self compileSource: 'zzqxwProbe ^ 1' into: 'Zzqxw' side: nil.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
+	self assert: (error at: #class) equals: 'Zzqxw'.
+	self assert: (error at: #suggestions) equals: #(  ).
+	self deny: (error includesKey: #scope).
+	self assert: (self textFrom: result) equals: 'Class Zzqxw does not exist. Create it with class_create, then compile into it.'.
+	self deny: (Smalltalk globals includesKey: #Zzqxw)
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileIntoAMisspeltClassSuggestsItAndClassCreate [
+
+	| error result text |
+	result := self compileSource: 'headerProbe ^ 1' into: 'MCPToolMethodMutationTestTargt' side: nil.
+	error := self errorFrom: result.
+	text := self textFrom: result.
+	self assert: (result at: #isError).
+	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
+	self assert: ((error at: #suggestions) includes: 'MCPToolMethodMutationTestTarget').
+	self assert: (text beginsWith: 'Class MCPToolMethodMutationTestTargt does not exist. Did you mean: ').
+	self assert: (text includesSubstring: 'MCPToolMethodMutationTestTarget').
+	self assert: (text endsWith: '. If it is a new class, create it with class_create first.').
+	self deny: (MCPToolMethodMutationTestTarget includesSelector: #headerProbe)
 ]
 
 { #category : 'tests' }
@@ -1324,6 +1456,105 @@ MCPToolMethodMutationTest >> testForceDoesNotUpdateAMethodInstalledFromATrait [
 ]
 
 { #category : 'tests' }
+MCPToolMethodMutationTest >> testHeaderNamingTheTargetIsDropped [
+	"A source that begins with the reference of the method it compiles, as the agents copy it from a search result, says nothing the call does not say, so the reference is dropped with a warning."
+
+	| result |
+	[
+		result := self
+			          compileSource: 'MCPToolMethodMutationTestTarget >> #headerProbe
+	^ 1'
+			          into: MCPToolMethodMutationTestTarget name
+			          side: nil.
+		self deny: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
+		self assert: (self summaryFrom: result) equals: 'Created MCPToolMethodMutationTestTarget>>headerProbe.'.
+		self assert: (self warningsFrom: result) equals: { self droppedHeaderWarning }.
+		self assert: (MCPToolMethodMutationTestTarget new perform: #headerProbe) equals: 1.
+		self deny: ((MCPToolMethodMutationTestTarget >> #headerProbe) sourceCode includesSubstring: '>>').
+		self assert: ((MCPToolMethodMutationTestTarget >> #headerProbe) sourceCode beginsWith: 'headerProbe').
+
+		result := self
+			          compileSource: 'MCPToolMethodMutationTestTarget class >> #headerProbe
+	^ 2'
+			          into: MCPToolMethodMutationTestTarget name
+			          side: nil.
+		self assert: (self summaryFrom: result) equals: 'Created MCPToolMethodMutationTestTarget class>>headerProbe.'.
+		self assert: (MCPToolMethodMutationTestTarget perform: #headerProbe) equals: 2.
+
+		result := self
+			          compileSource: 'MCPToolMethodMutationTestTarget >> headerProbe: a
+	^ a'
+			          into: MCPToolMethodMutationTestTarget name
+			          side: nil.
+		self assert: (self summaryFrom: result) equals: 'Created MCPToolMethodMutationTestTarget>>headerProbe:.'.
+		self assert: (MCPToolMethodMutationTestTarget new perform: #headerProbe: with: 3) equals: 3 ] ensure: [ self removeHeaderProbes ]
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testHeaderThatCannotBeDroppedIsRefusedWithTheLineToWrite [
+	"Dropping a header that names another class or side would compile somewhere the call did not say, a selector without its argument names would leave the body's arguments undeclared, and Tonel's brackets would leave a dead block. Each is refused, and nothing is compiled."
+
+	| error |
+	error := self
+		         assertHeaderOf: 'MCPToolMethodMutationTestTarget class>>headerProbe:with:
+	^ 1'
+		         side: nil
+		         isRefusedSaying:
+		         'The source begins with MCPToolMethodMutationTestTarget class>>headerProbe:with:, a method''s reference rather than its first line. Start the source with the selector and its argument names, each keyword followed by the name the body uses for that argument, and pass side class.'.
+	self assert: (error at: #side) equals: 'class'.
+	self
+		assertHeaderOf: 'MCPToolMethodMutationTestTarget>>>=
+	^ true'
+		side: nil
+		isRefusedSaying:
+		'The source begins with MCPToolMethodMutationTestTarget>>>=, a method''s reference rather than its first line. Start the source with the selector, followed by the name the body uses for its argument.'.
+	self
+		assertHeaderOf: 'MCPToolMethodMutationTestSender >> headerProbe
+	^ 1'
+		side: nil
+		isRefusedSaying:
+		'The source begins with MCPToolMethodMutationTestSender >> headerProbe, which names MCPToolMethodMutationTestSender, but the call''s class is MCPToolMethodMutationTestTarget. Start the source with its selector line, headerProbe, and name the class with class.'.
+	error := self
+		         assertHeaderOf: 'MCPToolMethodMutationTestTarget class >> #headerProbe
+	^ 1'
+		         side: 'instance'
+		         isRefusedSaying:
+		         'The source begins with MCPToolMethodMutationTestTarget class >> #headerProbe, which names the class side, but the call''s side is instance. Start the source with its selector line, headerProbe, and choose the side with side.'.
+	self assert: (error at: #side) equals: 'instance'.
+	self
+		assertHeaderOf: 'MCPToolMethodMutationTestTarget class >> #headerProbe:with:
+	^ 1'
+		side: 'instance'
+		isRefusedSaying:
+		'The source begins with MCPToolMethodMutationTestTarget class >> #headerProbe:with:, which names the class side, but the call''s side is instance. Start the source with its selector line, the selector with its argument names, and choose the side with side.'.
+	self
+		assertHeaderOf: 'MCPToolMethodMutationTestTarget >> headerProbe [
+	^ 1
+]'
+		side: nil
+		isRefusedSaying:
+		'The source begins with MCPToolMethodMutationTestTarget >> headerProbe [, Tonel''s form of a method. Write the method without Tonel''s brackets: its selector line, headerProbe, then its body.'
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testHeadersOfABatchWarnOnce [
+
+	| result text |
+	[
+		result := self callToolNamed: 'method_compile' withArguments: {
+				          (#class -> MCPToolMethodMutationTestTarget name).
+				          (#protocol -> 'tests').
+				          (#source -> #( 'MCPToolMethodMutationTestTarget >> #headerProbe
+	^ 1' 'MCPToolMethodMutationTestTarget>>headerProbeTwo
+	^ 2' )) } asDictionary.
+		self deny: (result at: #isError ifAbsent: [ false ]).
+		text := self textFrom: result.
+		self assert: (text allRangesOfSubstring: self droppedHeaderWarning) size equals: 1.
+		self assert: (MCPToolMethodMutationTestTarget includesSelector: #headerProbe).
+		self assert: (MCPToolMethodMutationTestTarget includesSelector: #headerProbeTwo) ] ensure: [ self removeHeaderProbes ]
+]
+
+{ #category : 'tests' }
 MCPToolMethodMutationTest >> testMCPPackageMethodSourcesDoNotContainLineFeeds [
 
 	| offenders |
@@ -1655,6 +1886,22 @@ MCPToolMethodMutationTest >> testRenamesClassSideMethodWithDefaultPermutation [
 ]
 
 { #category : 'tests' }
+MCPToolMethodMutationTest >> testRenamesClassSideMethodOfAClassWrittenWithItsSide [
+	"Foo class with a bare selector names the class-side method, so the summary names the side once."
+
+	| result |
+	result := self callToolWith: {
+			          (#class -> (MCPToolMethodMutationTestTarget name , ' class')).
+			          (#selector -> self classSelector asString).
+			          (#newSelector -> self renamedClassSelector asString) } asDictionary.
+	self deny: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
+	self deny: (MCPToolMethodMutationTestTarget classSide includesSelector: self classSelector).
+	self assert: (MCPToolMethodMutationTestTarget classSide includesSelector: self renamedClassSelector).
+	self assert: ((self summaryFrom: result) includesSubstring: 'MCPToolMethodMutationTestTarget class>>').
+	self deny: ((self summaryFrom: result) includesSubstring: 'class class')
+]
+
+{ #category : 'tests' }
 MCPToolMethodMutationTest >> testRenamesInstanceMethodAndReturnsStructuredData [
 
 	| data result |
@@ -1687,6 +1934,22 @@ MCPToolMethodMutationTest >> testUpdateChangesProtocolAndSelectorInOneCall [
 ]
 
 { #category : 'tests' }
+MCPToolMethodMutationTest >> testSourcesThatBeginWithTheirSelectorLineHaveNoHeader [
+	"A header needs one capitalised word before its separator, so no method's own first line reads as one."
+
+	[
+		#( 'headerProbe ^ #bar' 'HeaderProbe
+	^ 1' 'headerProbe: aStream
+	aStream << #x' ) do: [ :each |
+				| result |
+				result := self compileSource: each into: MCPToolMethodMutationTestTarget name side: nil.
+				self deny: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
+				self deny: ((self warningsFrom: result) includes: self droppedHeaderWarning) ].
+		self assert: (MCPToolMethodMutationTestTarget new perform: #headerProbe) equals: #bar.
+		self assert: (MCPToolMethodMutationTestTarget new perform: #HeaderProbe) equals: 1 ] ensure: [ self removeHeaderProbes ]
+]
+
+{ #category : 'tests' }
 MCPToolMethodMutationTest >> testUpdatingAMethodInstalledFromATraitStopsAndNamesTheTrait [
 	"Changing the protocol of a copy recompiles it into the class as a method of its own, which the next export writes to the file of a class that never had it."
 
@@ -1701,6 +1964,12 @@ MCPToolMethodMutationTest >> testUpdatingAMethodInstalledFromATraitStopsAndNames
 	self assert: ((error at: #howToProceed) includesSubstring: 'Update TMCPToolMethodSearchFixture>>mcpTraitFixtureValue instead').
 	self assert: (MCPToolMethodSearchTraitUser >> #mcpTraitFixtureValue) isFromTrait.
 	self assert: (MCPToolMethodSearchTraitUser >> #mcpTraitFixtureValue) protocolName asString equals: 'accessing'
+]
+
+{ #category : 'private - results' }
+MCPToolMethodMutationTest >> textFrom: aResult [
+
+	^ (aResult at: #content) first at: #text
 ]
 
 { #category : 'private - calling' }

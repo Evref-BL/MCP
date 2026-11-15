@@ -18,9 +18,9 @@ Class {
 
 { #category : 'instance creation' }
 MCPMethodReference class >> fromString: aString [
-	"Answer the method aString names, or nil when it names no class and is therefore a bare selector."
+	"Answer the method aString names, or nil when it names no class and is therefore a bare selector. The side is read as every class name is, so TFoo classTrait>>bar names a class-side method too."
 
-	| text separatorIndex head tail side name |
+	| text separatorIndex head tail baseName |
 	aString ifNil: [ ^ nil ].
 	text := aString asString trimBoth.
 	separatorIndex := self separatorIndexIn: text.
@@ -28,23 +28,17 @@ MCPMethodReference class >> fromString: aString [
 	head := (text first: separatorIndex - 1) trimBoth.
 	tail := (text allButFirst: separatorIndex - 1) trimBoth.
 	[ tail isNotEmpty and: [ '>#' includes: tail first ] ] whileTrue: [ tail := tail allButFirst trimBoth ].
-	side := head asLowercase endsWith: ' class'.
-	name := side
-		        ifTrue: [ (head first: head size - 6) trimBoth ]
-		        ifFalse: [ head ].
-	(self namesAClass: name) ifFalse: [ ^ nil ].
+	baseName := MCPImageLookup baseNameOf: head.
+	(self namesAClass: baseName) ifFalse: [ ^ nil ].
 	tail ifEmpty: [ ^ nil ].
-	^ self new
-		  initializeClassName: name
-		  classSide: side
-		  selector: tail
+	^ self new initializeClassName: baseName classSide: (MCPImageLookup namesClassSide: head) selector: tail
 ]
 
 { #category : 'accessing' }
 MCPMethodReference class >> helpText [
-	"What to tell a caller whose text was meant to name a method and did not."
+	"What to tell a caller whose text was meant to name a method and did not. Only some of the tools that read a reference have a class argument, so this does not mention one."
 
-	^ 'Write a method as Class>>selector, or Class class>>selector for the class side. A bare selector works too when className is given.'
+	^ 'Write a method as Class>>selector, or Class class>>selector for the class side.'
 ]
 
 { #category : 'testing' }

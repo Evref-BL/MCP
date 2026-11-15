@@ -17,10 +17,11 @@ Class {
 { #category : 'instance creation' }
 MCPRemoveMethodsRequest class >> fromRequest: aRequest tool: aTool [
 
-	^ self new
-		  initializeClassName: (aRequest stringArgumentNamed: 'class')
-		  classSide: ((aRequest stringArgumentNamed: 'side' default: 'instance') = 'class')
-		  selectors: (aTool selectorsFromRequest: aRequest)
+	^ MCPImageLookup
+		  className: (aRequest stringArgumentNamed: 'class')
+		  side: (aRequest stringArgumentNamed: 'side')
+		  do: [ :baseName :isClassSide :isSideGiven |
+			  self new initializeClassName: baseName classSide: isClassSide selectors: (aTool selectorsFromRequest: aRequest) ]
 ]
 
 { #category : 'accessing' }

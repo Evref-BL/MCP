@@ -26,6 +26,38 @@ MCPToolGetMethodTest >> testGetMethodMissingClassSuggestsClassNames [
 ]
 
 { #category : 'tests' }
+MCPToolGetMethodTest >> testGetMethodOfAClassWrittenWithItsSide [
+	"Agents copy Foo class from MCP's own answers, so it names the class side, with a bare selector or a reference."
+
+	#( 'readClassSide' 'MCPToolGetMethodTestTarget class>>readClassSide' ) do: [ :selector |
+			| result |
+			result := self callToolWith: {
+					          (#class -> 'MCPToolGetMethodTestTarget class').
+					          (#selector -> selector) } asDictionary.
+			self deny: (self resultIndicatesError: result) description: [ self summaryFrom: result ].
+			self assert: (self summaryFrom: result) equals: 'Got method MCPToolGetMethodTestTarget class>>readClassSide.' ]
+]
+
+{ #category : 'tests' }
+MCPToolGetMethodTest >> testGetMethodOfAClassWrittenWithItsSideRefusesSideInstance [
+
+	| error result |
+	result := self callToolWith: {
+			          (#class -> 'MCPToolGetMethodTestTarget class').
+			          (#side -> 'instance').
+			          (#selector -> 'readClassSide') } asDictionary.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (error at: #errorCode) equals: 'ClassSideConflict'.
+	self assert: (error at: #class) equals: 'MCPToolGetMethodTestTarget'.
+	self assert: (error at: #side) equals: 'instance'.
+	self
+		assert: (error at: #message)
+		equals:
+		'MCPToolGetMethodTestTarget class names the class side, but side is instance. Pass class MCPToolGetMethodTestTarget, with side class or instance.'
+]
+
+{ #category : 'tests' }
 MCPToolGetMethodTest >> testGetMethodReturnsInstanceSideVariableContext [
 
 	| classVariable data globalVariable instanceVariable result selfVariable |
@@ -151,6 +183,21 @@ MCPToolGetMethodTest >> testNamesTheTraitAMethodIsInstalledFrom [
 MCPToolGetMethodTest >> testToolRequiresClassNameAndSelectorInSchema [
 
 	self assert: MCPToolGetMethod new inputSchema required asSet equals: #( 'selector' ) asSet
+]
+
+{ #category : 'tests' }
+MCPToolGetMethodTest >> testUnreadableReferenceTeachesTheSyntaxAndTheClassArgument [
+	"method_get has a class argument for a bare selector, which the help names as the schema spells it."
+
+	| error result |
+	result := self callToolWith: { (#selector -> 'MCPToolGetMethodTestTarget>>') } asDictionary.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (error at: #errorCode) equals: 'MethodReferenceUnreadable'.
+	self
+		assert: (error at: #message)
+		equals:
+		'MCPToolGetMethodTestTarget>> does not name a method. Write a method as Class>>selector, or Class class>>selector for the class side. A bare selector works too when class is given.'
 ]
 
 { #category : 'private - calling' }

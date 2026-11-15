@@ -18,13 +18,16 @@ MCPMethodReferenceTest >> testBareSelectorNamesNoClass [
 
 { #category : 'tests' }
 MCPMethodReferenceTest >> testClassSideIsReadFromTheReference [
+	"The side is read as every class name is: any run of spaces, any case, and a trait's classTrait."
 
-	#( 'MCPTool class>>toolName' 'MCPTool  class  >>  toolName' 'MCPTool class#toolName' ) do: [ :each |
-		| reference |
-		reference := MCPMethodReference fromString: each.
-		self assert: reference className equals: 'MCPTool'.
-		self assert: reference classSide.
-		self assert: reference selector equals: 'toolName' ]
+	#( 'MCPTool class>>toolName' 'MCPTool  class  >>  toolName' 'MCPTool class#toolName' 'MCPTool CLASS>>toolName' ) do: [ :each |
+			| reference |
+			reference := MCPMethodReference fromString: each.
+			self assert: reference className equals: 'MCPTool'.
+			self assert: reference classSide.
+			self assert: reference selector equals: 'toolName' ].
+	self assert: (MCPMethodReference fromString: 'TMCPMethodTool classTrait>>foo') className equals: 'TMCPMethodTool'.
+	self assert: (MCPMethodReference fromString: 'TMCPMethodTool classTrait>>foo') classSide
 ]
 
 { #category : 'tests' }
@@ -37,6 +40,15 @@ MCPMethodReferenceTest >> testEverySpellingOfTheSeparatorIsRead [
 		self assert: reference className equals: 'MCPTool'.
 		self deny: reference classSide.
 		self assert: reference selector equals: 'batchSummaryNoun' ]
+]
+
+{ #category : 'tests' }
+MCPMethodReferenceTest >> testHelpNamesNoArgumentOfItsOwn [
+	"Several tools read a reference, and only method_get has a class argument, so the shared help does not mention one."
+
+	self
+		assert: MCPMethodReference helpText
+		equals: 'Write a method as Class>>selector, or Class class>>selector for the class side.'
 ]
 
 { #category : 'tests' }

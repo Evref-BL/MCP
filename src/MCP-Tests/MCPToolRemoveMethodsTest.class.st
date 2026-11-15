@@ -189,6 +189,21 @@ MCPToolRemoveMethodsTest >> tearDown [
 ]
 
 { #category : 'tests' }
+MCPToolRemoveMethodsTest >> testAClassWrittenWithItsSideAndSideInstanceRemovesNothing [
+
+	| error result |
+	result := self callToolWith: {
+			          (#class -> 'MCPToolRemoveMethodsTestTarget class').
+			          (#side -> 'instance').
+			          (#selector -> self classBatchSelectors) } asDictionary.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (error at: #errorCode) equals: 'ClassSideConflict'.
+	self assert: (error at: #side) equals: 'instance'.
+	self assert: (MCPToolRemoveMethodsTestTarget classSide includesSelector: self firstClassBatchSelector)
+]
+
+{ #category : 'tests' }
 MCPToolRemoveMethodsTest >> testAMissingClassIsSaidByTheLookup [
 
 	| error result |
@@ -276,6 +291,21 @@ MCPToolRemoveMethodsTest >> testRemovesBatchOfInstanceMethods [
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self deny: (MCPToolRemoveMethodsTestTarget includesSelector: self firstInstanceBatchSelector).
 	self deny: (MCPToolRemoveMethodsTestTarget includesSelector: self secondInstanceBatchSelector)
+]
+
+{ #category : 'tests' }
+MCPToolRemoveMethodsTest >> testRemovesClassSideMethodsOfAClassWrittenWithItsSide [
+	"Foo class names the class side, as Pharo prints it and as MCP's own answers print it."
+
+	| result |
+	result := self callToolWith: {
+			          (#class -> 'MCPToolRemoveMethodsTestTarget class').
+			          (#selector -> self classBatchSelectors) } asDictionary.
+	self deny: (result at: #isError ifAbsent: [ false ]) description: [ self firstTextFrom: result ].
+	self assert: ((self firstTextFrom: result) includesSubstring: 'MCPToolRemoveMethodsTestTarget class:').
+	self deny: ((self firstTextFrom: result) includesSubstring: 'class class').
+	self deny: (MCPToolRemoveMethodsTestTarget classSide includesSelector: self firstClassBatchSelector).
+	self deny: (MCPToolRemoveMethodsTestTarget classSide includesSelector: self secondClassBatchSelector)
 ]
 
 { #category : 'tests' }
