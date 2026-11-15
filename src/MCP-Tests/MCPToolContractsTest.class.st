@@ -151,8 +151,7 @@ MCPToolContractsTest >> baseToolFlowSpecs [
 			  (#arguments -> {
 				   (#class -> 'Object').
 				   (#selector -> #( 'class' )) } asDictionary).
-			  (#requestClass -> MCPRemoveMethodsRequest).
-			  (#commandClass -> MCPRemoveMethodsCommand) } asDictionary.
+			  (#requestClass -> MCPToolRequest) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolRunTests).
 			  (#arguments -> { (#classes -> { 'MCPToolContractsTest' }) } asDictionary).
@@ -1100,7 +1099,6 @@ MCPToolContractsTest >> testDictionaryShapedCommandResultsUseDTOClasses [
 		                        (MCPGetClassCommand -> MCPGetClassResult).
 		                        (MCPGetMethodCommand -> MCPGetMethodResult).
 		                        (MCPRewriteMethodsCommand -> MCPMethodRewriteReport).
-		                        (MCPRemoveMethodsCommand -> MCPRemoveMethodsResult).
 		                        (MCPCreateRepositoryCommand -> MCPRepositoryCreateResult).
 		                        (MCPAttachRepositoryCommand -> MCPRepositoryCreateResult).
 		                        (MCPUpdateRepositoryCommand -> MCPRepositoryUpdateResult).

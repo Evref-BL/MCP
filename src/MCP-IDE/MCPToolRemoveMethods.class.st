@@ -47,27 +47,32 @@ MCPToolRemoveMethods >> buildInputSchema [
 		  yourself
 ]
 
-{ #category : 'private - errors' }
-MCPToolRemoveMethods >> classNameForErrorFromParsedRequest: removeRequest rawRequest: rawRequest [
-	"The request did not parse, so the class is read from the raw text, without the side it may name."
+{ #category : 'executing' }
+MCPToolRemoveMethods >> checkArguments: request [
+	"A side that says the other one than the class name is refused, as is a selector list that names none."
 
-	removeRequest ifNotNil: [ ^ removeRequest className ].
-	^ (rawRequest stringArgumentNamed: 'class') ifNil: [ '' ] ifNotNil: [ :className | MCPImageLookup baseNameOf: className ]
+	MCPImageLookup
+		className: (request stringArgumentNamed: 'class')
+		side: (request stringArgumentNamed: 'side')
+		do: [ :className :classSide :sideGiven | self selectorsFromRequest: request ]
 ]
 
 { #category : 'private - errors' }
-MCPToolRemoveMethods >> classSideForErrorFromParsedRequest: removeRequest rawRequest: rawRequest [
-	"The request did not parse: the class side is meant when the call said so, by side or by a class written as Foo class."
+MCPToolRemoveMethods >> classNameFor: request checked: aBoolean [
+	"The class without the side it may name; before the arguments are checked, an empty name when the call gave none."
 
-	removeRequest ifNotNil: [ ^ removeRequest classSide ].
-	^ (rawRequest stringArgumentNamed: 'side') = 'class' or: [
-		  (rawRequest stringArgumentNamed: 'class') ifNil: [ false ] ifNotNil: [ :className | MCPImageLookup namesClassSide: className ] ]
+	| className |
+	className := request stringArgumentNamed: 'class'.
+	aBoolean ifTrue: [ ^ className ifNotNil: [ MCPImageLookup baseNameOf: className ] ].
+	^ className ifNil: [ '' ] ifNotNil: [ MCPImageLookup baseNameOf: className ]
 ]
 
-{ #category : 'private - execution' }
-MCPToolRemoveMethods >> commandForRequest: removeRequest [
+{ #category : 'private' }
+MCPToolRemoveMethods >> classSideOf: request [
+	"The class side is meant when the call says so, by side or by a class written as Foo class."
 
-	^ MCPRemoveMethodsCommand tool: self request: removeRequest
+	^ (request stringArgumentNamed: 'side') = 'class' or: [
+		  (request stringArgumentNamed: 'class') ifNil: [ false ] ifNotNil: [ :className | MCPImageLookup namesClassSide: className ] ]
 ]
 
 { #category : 'metadata' }
@@ -105,22 +110,20 @@ MCPToolRemoveMethods >> errorResultForError: anError className: className classS
 { #category : 'executing' }
 MCPToolRemoveMethods >> executeWithRequest: request [
 
+	| checked |
+	checked := false.
 	^ self
 		  executeParsedRequestFrom: request
-		  do: [ :removeRequest |
-				  | result |
-				  result := (self commandForRequest: removeRequest) execute.
-				  self
-					  successResultText:
-					  (self successSummaryForClassName: result className classSide: result classSide selectors: result selectors)
-					  data: result asDictionary
-					  warnings: result warningMessages ]
-		  onError: [ :error :removeRequest |
+		  do: [ :arguments |
+				  self checkArguments: arguments.
+				  checked := true.
+				  self removeWith: arguments ]
+		  onError: [ :error :arguments |
 				  self
 					  errorResultForError: error
-					  className: (self classNameForErrorFromParsedRequest: removeRequest rawRequest: request)
-					  classSide: (self classSideForErrorFromParsedRequest: removeRequest rawRequest: request)
-					  selectors: (self selectorsForErrorFromParsedRequest: removeRequest rawRequest: request) ]
+					  className: (self classNameFor: request checked: checked)
+					  classSide: (self classSideOf: request)
+					  selectors: (self selectorsFor: request checked: checked) ]
 ]
 
 { #category : 'private' }
@@ -227,17 +230,32 @@ MCPToolRemoveMethods >> lookupFrom: aClassOrNil lost: aSelector removedFrom: aBe
 	^ aClassOrNil isNotNil and: [ (aClassOrNil includesBehavior: aBehavior) and: [ (aClassOrNil canUnderstand: aSelector) not ] ]
 ]
 
-{ #category : 'private - request' }
-MCPToolRemoveMethods >> parsedRequestFromToolRequest: request [
+{ #category : 'executing' }
+MCPToolRemoveMethods >> removeWith: request [
+	"Senders do not stop a removal. Once the methods are gone, the answer warns of the sends they left without a method."
 
-	^ MCPRemoveMethodsRequest fromRequest: request tool: self
+	| behavior className classSide selectorSymbols selectors |
+	className := self classNameFor: request checked: true.
+	classSide := self classSideOf: request.
+	selectors := self selectorsFromRequest: request.
+	selectorSymbols := selectors collect: #asSymbol.
+	behavior := self behaviorNamed: className classSide: classSide.
+	selectorSymbols do: [ :selector |
+			behavior compiledMethodAt: selector ifAbsent: [ MCPCommandError signalMissingMethod: selector asString in: behavior ].
+			self signalTraitOriginBeforeRemoving: selector in: behavior ].
+	self forceRemoveSelectors: selectorSymbols from: behavior.
+	^ self
+		  successResultText: (self successSummaryForClassName: className classSide: classSide selectors: selectors asArray)
+		  data: Dictionary new
+		  warnings: (self warningsForSendsLeftByRemoving: selectorSymbols from: behavior)
 ]
 
 { #category : 'private - errors' }
-MCPToolRemoveMethods >> selectorsForErrorFromParsedRequest: removeRequest rawRequest: rawRequest [
+MCPToolRemoveMethods >> selectorsFor: request checked: aBoolean [
+	"Each selector once after the arguments are checked; before, as the call wrote them."
 
-	removeRequest ifNotNil: [ ^ removeRequest selectors ].
-	^ rawRequest stringCollectionArgumentNamed: 'selector'
+	aBoolean ifTrue: [ ^ self selectorsFromRequest: request ].
+	^ request stringCollectionArgumentNamed: 'selector'
 ]
 
 { #category : 'private' }
