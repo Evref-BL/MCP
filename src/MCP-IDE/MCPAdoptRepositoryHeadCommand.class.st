@@ -12,7 +12,7 @@ Class {
 { #category : 'executing' }
 MCPAdoptRepositoryHeadCommand >> execute [
 
-	| beforeInfo didAdopt headCommit previousReferenceCommit repository result |
+	| beforeInfo didAdopt headCommit repository result |
 	^ self
 		  executeRepositoryAction: 'adoptHead'
 		  work: [
@@ -21,22 +21,19 @@ MCPAdoptRepositoryHeadCommand >> execute [
 				  beforeInfo := MCPRepositoryInfo fromRepository: repository.
 				  headCommit := repository headCommit.
 				  self validateHeadCommit: headCommit for: repository.
-				  previousReferenceCommit := self referenceCommitFor: repository.
-				  didAdopt := (self commit: previousReferenceCommit equals: headCommit) not.
+				  didAdopt := (self commit: (self referenceCommitFor: repository) equals: headCommit) not.
 				  self adoptHeadCommit: headCommit for: repository.
 				  result := MCPRepositoryAdoptHeadResult
 					            repositoryBefore: beforeInfo
 					            after: repository
-					            previousReferenceCommit: previousReferenceCommit
 					            adoptedCommit: headCommit
 					            didAdopt: didAdopt ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText:
-					  (String streamContents: [ :stream | stream << 'Adopted repository HEAD for ' << result repositoryInfo name << '.' ])
+					  successResultText: (self summaryForAdoptHeadResult: result)
 					  data: (self tool dataForRepositoryResult: result)
 					  warnings: warningMessages ]
-		  failureSummary: [ :error | 'Failed adopt repository HEAD: ' , (error messageText ifNil: [ error asString ]) ]
+		  failureSummary: [ :error | 'Failed to adopt repository HEAD: ' , (error messageText ifNil: [ error asString ]) ]
 ]
 
 { #category : 'private - validation' }
@@ -48,6 +45,23 @@ MCPAdoptRepositoryHeadCommand >> signalMissingHeadCommitFor: aRepository [
 		details: (self request requestedContext copy
 				 at: #name put: aRepository name asString;
 				 yourself)
+]
+
+{ #category : 'private - results' }
+MCPAdoptRepositoryHeadCommand >> summaryForAdoptHeadResult: anAdoptHeadResult [
+
+	^ String streamContents: [ :stream |
+			  stream << 'Repository ' << anAdoptHeadResult repositoryInfo name << (anAdoptHeadResult didAdopt
+				   ifTrue: [ ' now refers to ' ]
+				   ifFalse: [ ' already referred to ' ]).
+			  anAdoptHeadResult isDetachedHead
+				  ifTrue: [ stream << 'its detached HEAD ' << (self shortCommitId: anAdoptHeadResult adoptedCommitId) ]
+				  ifFalse: [
+				  stream << 'HEAD ' << (self shortCommitId: anAdoptHeadResult adoptedCommitId) << ' on branch '
+				  << anAdoptHeadResult branchName ].
+			  anAdoptHeadResult unmarkedPackageNames
+				  ifEmpty: [ stream << '.' ]
+				  ifNotEmpty: [ :names | stream << ', and no longer marks ' << (', ' join: names) << ' as modified.' ] ]
 ]
 
 { #category : 'private - validation' }

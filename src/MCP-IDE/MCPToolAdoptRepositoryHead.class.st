@@ -15,6 +15,12 @@ MCPToolAdoptRepositoryHead class >> toolName [
 	^ 'repository_head_adopt'
 ]
 
+{ #category : 'private - results' }
+MCPToolAdoptRepositoryHead >> keysStatedInSummary [
+
+	^ #( unmarkedPackages )
+]
+
 { #category : 'private - specs' }
 MCPToolAdoptRepositoryHead >> repositoryToolSpec [
 

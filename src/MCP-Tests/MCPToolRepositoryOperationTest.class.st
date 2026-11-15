@@ -336,16 +336,11 @@ MCPToolRepositoryOperationTest >> testAdoptHeadAdoptsRepositoryHeadAndReportsBef
 			self assert: repository modifiedPackages isEmpty.
 			self assert: repository workingCopy referenceCommit id equals: 'head-2'.
 			self
-				assert: data keys asSet
-				equals: #( adoptedCommitId branch didAdopt headDescription modifiedPackageNamesBefore previousReferenceCommitId
-					   referenceCommitId ) asSet.
-			self assert: (data at: #modifiedPackageNamesBefore) equals: #( 'MCP' 'MCP-Tests' ).
-			self assert: (data at: #previousReferenceCommitId) equals: 'head-1'.
-			self assert: (data at: #adoptedCommitId) equals: 'head-2'.
-			self assert: (data at: #referenceCommitId) equals: 'head-2'.
-			self assert: (data at: #didAdopt).
-			self assert: (data at: #branch) equals: 'main'.
-			self assert: (data at: #headDescription) equals: 'main' ]
+				assert: (self summaryFrom: result)
+				equals:
+				'Repository MCP Adopt Head Test Repository now refers to HEAD head-2 on branch main, and no longer marks MCP, MCP-Tests as modified.'.
+			self assert: data keys asSet equals: #( unmarkedPackages ) asSet.
+			self assert: (data at: #unmarkedPackages) equals: #( 'MCP' 'MCP-Tests' ) ]
 ]
 
 { #category : 'tests' }
@@ -365,9 +360,30 @@ MCPToolRepositoryOperationTest >> testAdoptHeadClearsModifiedPackagesWhenReferen
 			data := self dataFrom: result.
 			self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
 			self assert: repository modifiedPackages isEmpty.
-			self deny: (data at: #didAdopt).
-			self assert: (data at: #modifiedPackageNamesBefore) equals: #( 'MCP' ).
-			self assert: (data at: #referenceCommitId) equals: 'head-1' ]
+			self
+				assert: (self summaryFrom: result)
+				equals:
+				'Repository MCP Adopt Clean Test Repository already referred to HEAD head-1 on branch main, and no longer marks MCP as modified.'.
+			self assert: (data at: #unmarkedPackages) equals: #( 'MCP' ) ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testAdoptHeadNamesADetachedHead [
+
+	| repository result |
+	repository := self newTestRepositoryNamed: 'MCP Adopt Detached Head Test Repository'.
+	repository headCommitId: '0123456789abcdef'.
+	repository isDetachedHead: true.
+	repository workingCopy referenceCommit: (MCPTestRepositoryCommit id: 'head-1').
+	self withRegisteredRepository: repository do: [
+			result := self callToolWith: {
+					          (#action -> 'adoptHead').
+					          (#name -> repository name) } asDictionary.
+			self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
+			self
+				assert: (self summaryFrom: result)
+				equals: 'Repository MCP Adopt Detached Head Test Repository now refers to its detached HEAD 0123456.'.
+			self assert: (self dataFrom: result) isEmpty ]
 ]
 
 { #category : 'tests' }

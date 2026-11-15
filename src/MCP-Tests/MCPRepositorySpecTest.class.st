@@ -44,30 +44,24 @@ MCPRepositorySpecTest >> testRepositoryAdoptHeadRequestParsesTypedInput [
 
 { #category : 'tests' }
 MCPRepositorySpecTest >> testRepositoryAdoptHeadResultReturnsDictionary [
+	"Adopting clears the marks, so the result names those the info before held and the repository no longer does."
 
-	| data repository result |
+	| beforeInfo data repository result |
 	repository := MCPTestIceRepository named: 'MCP Adopt Head Repository' location: 'memory://adopt-head'.
 	repository modifiedPackageNames: #( 'MCP' ).
-	repository workingCopy referenceCommit: (MCPTestRepositoryCommit id: 'after').
+	beforeInfo := MCPRepositoryInfo fromRepository: repository.
+	repository modifiedPackageNames: #(  ).
 	result := MCPRepositoryAdoptHeadResult
-		          repositoryBefore: (MCPRepositoryInfo fromRepository: repository)
+		          repositoryBefore: beforeInfo
 		          after: repository
-		          previousReferenceCommit: (MCPTestRepositoryCommit id: 'before')
 		          adoptedCommit: (MCPTestRepositoryCommit id: 'after')
 		          didAdopt: true.
 	data := result asDictionary.
-	self
-		assert: data keys asSet
-		equals: #( adoptedCommitId branch didAdopt headDescription modifiedPackageNamesAfter modifiedPackageNamesBefore
-			   previousReferenceCommitId referenceCommitId ) asSet.
-	self assert: (data at: #previousReferenceCommitId) equals: 'before'.
-	self assert: (data at: #referenceCommitId) equals: 'after'.
-	self assert: (data at: #adoptedCommitId) equals: 'after'.
-	self assert: (data at: #didAdopt).
-	self assert: (data at: #modifiedPackageNamesBefore) equals: #( 'MCP' ).
-	self assert: (data at: #modifiedPackageNamesAfter) equals: #( 'MCP' ).
-	self assert: (data at: #branch) equals: 'main'.
-	self assert: (data at: #headDescription) equals: 'initial'
+	self assert: data keys asSet equals: #( unmarkedPackages ) asSet.
+	self assert: (data at: #unmarkedPackages) equals: #( 'MCP' ).
+	self assert: result adoptedCommitId equals: 'after'.
+	self assert: result branchName equals: 'main'.
+	self deny: result isDetachedHead
 ]
 
 { #category : 'tests' }
