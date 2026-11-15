@@ -323,6 +323,30 @@ MCPToolContractsTest >> evaluate: aString within: seconds deferringInto: actions
 					  (#timeoutSeconds -> seconds) } asDictionary ]
 ]
 
+{ #category : 'private - evaluate' }
+MCPToolContractsTest >> evaluateBriefly: aString [
+	"The command's result of an evaluation of aString with the tests' short limit, once what it deferred has run, as the server runs it after the response."
+
+	| actions result |
+	actions := OrderedCollection new.
+	result := self evaluateBriefly: aString deferringInto: actions.
+	actions do: [ :each | each value ].
+	^ result
+]
+
+{ #category : 'private - evaluate' }
+MCPToolContractsTest >> evaluateBriefly: aString deferringInto: actions [
+	"The command's result of an evaluation of aString with the tests' short limit, leaving in actions what the call deferred until after its response."
+
+	| tool |
+	tool := MCPToolEvaluate new.
+	^ MCPPostResponseActions value: actions during: [
+			  (MCPEvaluateCommand
+				   tool: tool
+				   request: (MCPEvaluateRequest new initializeCode: aString timeoutSeconds: self stopLimitSeconds)
+				   resultPreviewCharacterLimit: tool resultPreviewCharacterLimit) execute ]
+]
+
 { #category : 'private' }
 MCPToolContractsTest >> firstTextFromToolResult: aResult [
 
@@ -681,6 +705,13 @@ MCPToolContractsTest >> signalHaltForMCPMessageProcessorTest [
 ]
 
 { #category : 'private - evaluate' }
+MCPToolContractsTest >> stopLimitSeconds [
+	"The time limit of an evaluation a test lets stop: the command takes a fraction of a second, which the tool's schema does not, so these tests wait a fifth of what a whole second would cost."
+
+	^ 0.2
+]
+
+{ #category : 'private - evaluate' }
 MCPToolContractsTest >> stoppedEarlyResultOf: aString bounds: aBlock [
 	"The answer of an evaluation of aString with a limit of 30 s, by a command whose bounds aBlock sets. What the call deferred runs once it has answered, as the server runs it after the response."
 
@@ -699,38 +730,36 @@ MCPToolContractsTest >> stoppedEarlyResultOf: aString bounds: aBlock [
 
 { #category : 'private - evaluate' }
 MCPToolContractsTest >> stoppedText: aString [
-	"A text that must be the answer to a stop at a limit of 1 s."
+	"A text that must be the answer to a stop at the tests' limit."
 
-	self
-		assert: (aString lines first: 2)
-		equals: #( 'Evaluation stopped after 1 s, its time limit.' 'What it changed before then stays changed.' ).
+	self assert: (aString lines first: 2) equals: {
+			('Evaluation stopped after ' , self stopLimitSeconds printString , ' s, its time limit.').
+			'What it changed before then stays changed.' }.
 	^ aString
 ]
 
 { #category : 'private - evaluate' }
 MCPToolContractsTest >> stoppedTextOf: aResult [
-	"The text of an answer that must be a stop at a limit of 1 s."
+	"The text the tool answers for a command's result that must be a stop at the tests' limit."
 
-	self assert: (self resultIndicatesError: aResult).
-	^ self stoppedText: (self firstTextFromToolResult: aResult)
+	self assert: aResult isError.
+	^ self stoppedText: (MCPToolEvaluate new contentTextForStructuredContent: (Dictionary new
+				    at: #summary put: aResult summary;
+				    at: #error put: aResult errorDetails;
+				    yourself))
 ]
 
 { #category : 'private - evaluate' }
 MCPToolContractsTest >> stoppedTextUnwindingBrieflyOf: aString deferringInto: actions [
-	"The text of an evaluation of aString that must be stopped at a limit of 1 s, by a command that waits 1 s rather than 5 for the stopped code to unwind, leaving in actions what the call deferred until after its response. A test whose stopped code unwinds slowly waits that bound in full."
+	"The text of an evaluation of aString that must be stopped at the tests' limit, by a command that waits briefly rather than 5 s for the stopped code to unwind, leaving in actions what the call deferred until after its response. A test whose stopped code unwinds slowly waits that bound in full."
 
-	| command result tool |
+	| command tool |
 	tool := MCPToolEvaluate new.
 	command := MCPEvaluateCommandUnwindingBriefly
 		           tool: tool
-		           request: (MCPEvaluateRequest new initializeCode: aString timeoutSeconds: 1)
+		           request: (MCPEvaluateRequest new initializeCode: aString timeoutSeconds: self stopLimitSeconds)
 		           resultPreviewCharacterLimit: tool resultPreviewCharacterLimit.
-	result := MCPPostResponseActions value: actions during: [ command execute ].
-	self assert: result isError.
-	^ self stoppedText: (tool contentTextForStructuredContent: (Dictionary new
-				    at: #summary put: result summary;
-				    at: #error put: result errorDetails;
-				    yourself))
+	^ self stoppedTextOf: (MCPPostResponseActions value: actions during: [ command execute ])
 ]
 
 { #category : 'tests' }
@@ -1254,10 +1283,8 @@ MCPToolContractsTest >> testEvaluateLeavesTheProcessesItForkedRunning [
 
 	self timeLimit: 30 seconds.
 	[
-		self stoppedTextOf: (self
-				 evaluate:
-				 '[ (Delay forSeconds: 30) wait ] forkAt: Processor userBackgroundPriority named: ''mcp-evaluate-fork-probe''. [ true ] whileTrue'
-				 within: 1).
+		self stoppedTextOf: (self evaluateBriefly:
+				 '[ (Delay forSeconds: 30) wait ] forkAt: Processor userBackgroundPriority named: ''mcp-evaluate-fork-probe''. [ true ] whileTrue').
 		self denyEmpty: (self liveProcessesNamed: 'mcp-evaluate-fork-probe') ] ensure: [
 		(self liveProcessesNamed: 'mcp-evaluate-fork-probe') do: [ :each | each terminate ] ]
 ]
@@ -1309,13 +1336,13 @@ MCPToolContractsTest >> testEvaluateLooksAtTheMemoryOnlyOnceTheCodeHasStarted [
 	| command unstarted |
 	command := MCPEvaluateCommandStoppingEarly
 		           tool: MCPToolEvaluate new
-		           request: (MCPEvaluateRequest new initializeCode: '3 + 4' timeoutSeconds: 1)
+		           request: (MCPEvaluateRequest new initializeCode: '3 + 4' timeoutSeconds: self stopLimitSeconds)
 		           resultPreviewCharacterLimit: 100.
 	command memoryGrowthLimit: -1024 * 1024 * 1024.
 	unstarted := [ 3 + 4 ] newProcess.
 	self
 		assert: (command watch: unstarted until: Semaphore new started: [ false ])
-		equals: 'Evaluation stopped after 1 s, its time limit.'.
+		equals: 'Evaluation stopped after ' , self stopLimitSeconds printString , ' s, its time limit.'.
 	self assert: ((command watch: unstarted until: Semaphore new started: [ true ]) beginsWith:
 			 'Evaluation stopped: the image''s memory grew by more than ').
 	self assert: (command
@@ -1539,7 +1566,7 @@ MCPToolContractsTest >> testEvaluateStopCollapsesARecursion [
 	^ self descend: n - 1'
 			          protocol: 'fixture'
 			          on: fixture.
-		          self evaluate: 'EvalStopRecursionFixture new descend: 100' within: 1 ] ensure: [
+		          self evaluateBriefly: 'EvalStopRecursionFixture new descend: 100' ] ensure: [
 		          self removeClassNamed: 'EvalStopRecursionFixture' ].
 	self assert: ((self stoppedTextOf: result) lines anySatisfy: [ :each |
 			 (each beginsWith: 'EvalStopRecursionFixture>>descend:, at least ') and: [ each endsWith: ' times in a row' ] ])
@@ -1553,7 +1580,7 @@ MCPToolContractsTest >> testEvaluateStopCollectsGarbageAfterTheAnswer [
 	self timeLimit: 30 seconds.
 	before := self liveProcessesNamed: 'evaluate stop'.
 	actions := OrderedCollection new.
-	self evaluate: '[ true ] whileTrue' within: 1 deferringInto: actions.
+	self evaluateBriefly: '[ true ] whileTrue' deferringInto: actions.
 	helpers := (self liveProcessesNamed: 'evaluate stop') copyWithoutAll: before.
 	[
 		self assert: actions size equals: 1.
@@ -1604,6 +1631,22 @@ MCPToolContractsTest >> testEvaluateStopCollectsGarbageWhenTheAnswerNeverGoesOut
 	self waitUntilEnded: helpers first.
 	self assert: helpers first isTerminated.
 	self assert: self fullGarbageCollections > collections
+]
+
+{ #category : 'tests - evaluate' }
+MCPToolContractsTest >> testEvaluateStoppedAnswersItsTranscript [
+	"What the code wrote before it was stopped may be all that says how far it got. It comes last, after the recipe, as in every other answer, and the Transcript is put back."
+
+	| previous result |
+	self timeLimit: 30 seconds.
+	previous := Smalltalk globals at: #Transcript.
+	result := self evaluateBriefly: 'Transcript show: ''started''. [ true ] whileTrue'.
+	self assert: (Smalltalk globals at: #Transcript) identicalTo: previous.
+	self
+		assert: ((self stoppedTextOf: result) lines last: 3)
+		equals: #( 'A fork has no time limit, and at this priority it holds up no evaluation.'
+			   'Transcript:' 'started' ).
+	self assert: (result errorDetails at: #transcript) equals: 'started'
 ]
 
 { #category : 'tests - evaluate' }
@@ -1661,7 +1704,7 @@ MCPToolContractsTest >> testEvaluateStopsAComputingLoopUnderEitherPreemptionRule
 			before := self processesNamed: 'evaluate'.
 			actions := OrderedCollection new.
 			[
-				milliseconds := Time millisecondsToRun: [ result := self evaluate: '[ true ] whileTrue' within: 1 deferringInto: actions ].
+				milliseconds := Time millisecondsToRun: [ result := self evaluateBriefly: '[ true ] whileTrue' deferringInto: actions ].
 				evaluators := (self processesNamed: 'evaluate') copyWithoutAll: before ] ensure: [ actions do: #value ].
 			lines := (self stoppedTextOf: result) lines.
 			self deny: (lines includes: 'Its ensure blocks were still running when this answer was sent.') description: rule.
@@ -1712,7 +1755,7 @@ MCPToolContractsTest >> testEvaluateStopsAWaitAndRunsItsEnsureBlocks [
 	self timeLimit: 30 seconds.
 	MCPEvaluateTestProbe reset.
 	transcript := Smalltalk globals at: #Transcript.
-	result := self evaluate: '[ (Delay forSeconds: 60) wait ] ensure: [ MCPEvaluateTestProbe noteEnsureRan ]' within: 1.
+	result := self evaluateBriefly: '[ (Delay forSeconds: 60) wait ] ensure: [ MCPEvaluateTestProbe noteEnsureRan ]'.
 	self deny: ((self stoppedTextOf: result) includesSubstring: 'still running').
 	self assert: MCPEvaluateTestProbe ensureRan.
 	self assert: (Smalltalk globals at: #Transcript) identicalTo: transcript
@@ -1731,7 +1774,7 @@ MCPToolContractsTest >> testEvaluateStopsAWaitInACriticalSectionWithoutSignallin
 		          named: 'mcp-evaluate-mutex-holder-probe'.
 	[
 		self deny:
-			((self stoppedTextOf: (self evaluate: 'MCPEvaluateTestProbe mutex critical: [ #entered ]' within: 1)) includesSubstring:
+			((self stoppedTextOf: (self evaluateBriefly: 'MCPEvaluateTestProbe mutex critical: [ #entered ]')) includesSubstring:
 				 'still running').
 		self deny: mutex isSignaled description: 'The stopped evaluation signalled a semaphore it never acquired.' ] ensure: [
 			MCPEvaluateTestProbe release.
@@ -1775,7 +1818,7 @@ MCPToolContractsTest >> testEvaluateStopsCodeThatCatchesEveryException [
 	| milliseconds result |
 	self timeLimit: 30 seconds.
 	milliseconds := Time millisecondsToRun: [
-		                result := self evaluate: '[ [ true ] whileTrue ] on: Exception do: [ :e | [ true ] whileTrue ]' within: 1 ].
+		                result := self evaluateBriefly: '[ [ true ] whileTrue ] on: Exception do: [ :e | [ true ] whileTrue ]' ].
 	self deny: ((self stoppedTextOf: result) includesSubstring: 'still running').
 	self assert: milliseconds < 10000
 ]
@@ -1810,14 +1853,16 @@ MCPToolContractsTest >> testEvaluateThatNeverStartedSaysSo [
 	[
 		command := MCPEvaluateCommandNeverStarting
 			           tool: MCPToolEvaluate new
-			           request: (MCPEvaluateRequest new initializeCode: '3 + 4' timeoutSeconds: 1)
+			           request: (MCPEvaluateRequest new initializeCode: '3 + 4' timeoutSeconds: self stopLimitSeconds)
 			           resultPreviewCharacterLimit: 100.
 		result := command execute ] ensure: [ holder terminate ].
 	self assert: result isError.
-	self assert: result summary equals: 'Evaluation did not start within 1 s, its time limit; none of it ran.'.
+	self
+		assert: result summary
+		equals: 'Evaluation did not start within ' , self stopLimitSeconds printString , ' s, its time limit; none of it ran.'.
 	self assert: ((result errorDetails at: #heldBy) anySatisfy: [ :each |
 			 each beginsWith: 'a process an evaluation forked, named mcp-evaluate-holder-probe, in ' ]).
-	self assert: (result errorDetails at: #timeoutSeconds) equals: 1.
+	self assert: (result errorDetails at: #timeoutSeconds) equals: self stopLimitSeconds.
 	self assert: command evaluator isTerminated
 ]
 
