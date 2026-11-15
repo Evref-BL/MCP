@@ -60,6 +60,30 @@ MCPServerLifecycleTest >> testAPortHeldByAnotherServerIsNamedInTheError [
 ]
 
 { #category : 'tests' }
+MCPServerLifecycleTest >> testARunningServerTellsTheMachineToReadItsSockets [
+	"The virtual machine reads its sockets only when told to, so a running server keeps one process telling it, at the priority calls are served at, above every evaluation. Zinc's restart around a save replaces it, and a stop ends it."
+
+	| first second server |
+	server := MCPSocketSafeZnServer new.
+	server
+		bindingAddress: #[ 127 0 0 1 ];
+		port: 0.
+	[
+		server start.
+		first := server socketPoller.
+		self assert: first priority equals: Processor lowIOPriority.
+		self deny: first isTerminated.
+		server stop: false.
+		self assert: first isTerminated.
+		self assert: server socketPoller isNil.
+		server start.
+		second := server socketPoller.
+		self deny: second isTerminated.
+		self deny: second identicalTo: first ] ensure: [ server stop ].
+	self assert: second isTerminated
+]
+
+{ #category : 'tests' }
 MCPServerLifecycleTest >> testAStartedServerIsListedEvenWhenNothingHoldsIt [
 	"A started server is held by its own process and socket, which is what turns a port held by a forgotten server into something visible."
 

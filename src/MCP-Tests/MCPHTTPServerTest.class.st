@@ -35,6 +35,41 @@ MCPHTTPServerTest >> responseForRequest: request using: server [
 ]
 
 { #category : 'tests' }
+MCPHTTPServerTest >> testABackgroundForkLeavesCallsAnswered [
+	"The virtual machine reads its sockets only when the image tells it to, which the idle process does once nothing else runs. Longer work runs in a fork below every evaluation and computes while nothing else does, and a call must still be accepted, read and answered meanwhile."
+
+	| answer client completed fork server |
+	self timeLimit: 30 seconds.
+	completed := Semaphore new.
+	server := (MCP new
+		           observabilityExportDirectory: nil;
+		           yourself) server.
+	[
+		server port: 0.
+		server start.
+		fork := [ [ true ] whileTrue ] forkAt: Processor userBackgroundPriority named: 'mcp-background-fork-probe'.
+		client := [
+			          | znClient |
+			          znClient := ZnClient new.
+			          [
+				          znClient
+					          url: server localUrl;
+					          headerAt: 'Accept' put: 'application/json, text/event-stream';
+					          headerAt: 'MCP-Protocol-Version' put: '2025-11-25';
+					          entity: (ZnEntity json: '{"jsonrpc":"2.0","id":1,"method":"tools/list"}');
+					          post.
+				          answer := znClient response ] ensure: [
+					          znClient close.
+					          completed signal ] ] fork.
+		self deny: (completed waitTimeoutSeconds: 5) description: 'A call got no answer while a fork computed below it.'.
+		self assert: answer code equals: 200.
+		self assert: (answer contents includesSubstring: '"tools"') ] ensure: [
+			client ifNotNil: [ client terminate ].
+			fork ifNotNil: [ fork terminate ].
+			server stop ]
+]
+
+{ #category : 'tests' }
 MCPHTTPServerTest >> testAComputingEvaluationLeavesOtherCallsAnswered [
 	"An evaluation runs below the process serving its call, so while one computes the server still answers other calls. The clients run at the priority calls are served at, since this test's own process gets no turn while the evaluation computes."
 
