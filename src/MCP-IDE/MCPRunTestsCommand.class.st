@@ -80,6 +80,71 @@ MCPRunTestsCommand >> partiallyCoveredMethodsFromCoverageResult: coverageResult 
 	^ (coverageResult methods select: [ :method | (self hasAllSequenceNodesCoveredIn: method) not ]) asArray
 ]
 
+{ #category : 'private - validation' }
+MCPRunTestsCommand >> referringTestClassLimit [
+	"Enough referring test classes to pass back, few enough to read."
+
+	^ 5
+]
+
+{ #category : 'private - validation' }
+MCPRunTestsCommand >> refusalOfSelection: validatedRequest referringByClass: referringByClass [
+	"Nil for a selection that holds tests, or a package; else its sentence and its entry. A test class whose suite holds no case of the method is refused, and so is any class that is not a test class."
+
+	| entry referring selection testClass |
+	validatedRequest isPackageRequest ifTrue: [ ^ nil ].
+	testClass := validatedRequest testClass.
+	selection := self selectionTextOf: validatedRequest.
+	entry := Dictionary new.
+	entry at: #selection put: selection.
+	entry at: #class put: testClass name asString.
+	testClass isTestCase ifTrue: [
+			validatedRequest hasTestMethod ifFalse: [ ^ nil ].
+			(self testCasesForValidatedRequest: validatedRequest) ifNotEmpty: [ ^ nil ].
+			^ (self textForMethod: selection notATestOf: testClass name) -> entry ].
+	referring := referringByClass
+		             at: testClass
+		             ifAbsentPut: [
+		             (MCPClassReferenceQuery forClass: testClass) referringTestClasses collect: [ :each | each key name asString ] ].
+	(referring first: (referring size min: self referringTestClassLimit)) ifNotEmpty: [ :said | entry at: #testClasses put: said ].
+	entry at: #testClassCount put: referring size.
+	^ (String streamContents: [ :stream |
+			   validatedRequest hasTestMethod ifTrue: [ stream << selection << ' is not a test: ' ].
+			   stream << (self textForClassNamed: testClass name notATestClassReferredBy: referring) ]) -> entry
+]
+
+{ #category : 'private - validation' }
+MCPRunTestsCommand >> refuseSelectionsThatAreNotTests: validatedRequests [
+	"One sentence per selection that is no test, in selection order. A class that is no test class names the test classes that refer to it, found once per class."
+
+	| refusals referringByClass |
+	referringByClass := IdentityDictionary new.
+	refusals := OrderedCollection new.
+	validatedRequests do: [ :each |
+		(self refusalOfSelection: each referringByClass: referringByClass) ifNotNil: [ :refusal | refusals add: refusal ] ].
+	refusals ifEmpty: [ ^ self ].
+	MCPCommandError
+		signalErrorCode: ((refusals anySatisfy: [ :each | each value includesKey: #testClassCount ])
+				 ifTrue: [ #NotATestClass ]
+				 ifFalse: [ #NotATest ])
+		message: (' ' join: (refusals collect: [ :each | each key ]))
+		details: { (#notTests -> (refusals collect: [ :each | each value ] as: Array)) } asDictionary
+]
+
+{ #category : 'private - validation' }
+MCPRunTestsCommand >> resolvedRequestFor: aTestRequest [
+	"A method is looked up as its class answers it, so a test the class inherits is found."
+
+	| testClass |
+	aTestRequest isPackageRequest ifTrue: [
+			MCPImageLookup packageNamed: aTestRequest packageName.
+			^ MCPValidatedTestRunRequest request: aTestRequest testClass: nil ].
+	testClass := MCPImageLookup classNamed: aTestRequest className.
+	aTestRequest testMethodName ifNotNil: [ :selector |
+		(testClass lookupSelector: selector asSymbol) ifNil: [ MCPCommandError signalMissingMethod: selector in: testClass ] ].
+	^ MCPValidatedTestRunRequest request: aTestRequest testClass: testClass
+]
+
 { #category : 'private' }
 MCPRunTestsCommand >> resultForValidatedRequest: validatedRequest deadline: deadline seenTestCaseNames: seenTestCaseNames [
 
@@ -155,6 +220,15 @@ MCPRunTestsCommand >> runValidatedRequests: validatedRequests deadline: deadline
 					unrunTests addAll: (self unrunTestsFrom: validatedRequests startingAt: index + 1 seenTestCaseNames: seenTestCaseNames).
 					^ self aggregateDataForResults: resultEntries timedOut: true unrunTests: unrunTests ] ].
 	^ self aggregateDataForResults: resultEntries timedOut: false unrunTests: #(  )
+]
+
+{ #category : 'private - validation' }
+MCPRunTestsCommand >> selectionTextOf: validatedRequest [
+	"A class or method selection as the refusal writes it, by the name of the class it resolved to."
+
+	^ String streamContents: [ :stream |
+			  stream << validatedRequest testClass name.
+			  validatedRequest testMethodName ifNotNil: [ :selector | stream << '>>#' << selector ] ]
 ]
 
 { #category : 'private - coverage' }
@@ -278,6 +352,29 @@ MCPRunTestsCommand >> testRunInfoForTestResult: aResult validatedRequest: valida
 		  issues: issues
 ]
 
+{ #category : 'private - validation' }
+MCPRunTestsCommand >> textForClassNamed: aClassName notATestClassReferredBy: testClassNames [
+	"testClassNames are all the test classes that refer to the class, most referring first. The first few are named, and the rest counted."
+
+	| limit |
+	limit := self referringTestClassLimit.
+	^ String streamContents: [ :stream |
+			  stream << aClassName << ' is not a test class'.
+			  testClassNames ifEmpty: [ stream << ', and no test class refers to it' ] ifNotEmpty: [
+					  stream << '. Test classes that refer to it: ' << (', ' join: (testClassNames first: (testClassNames size min: limit))).
+					  testClassNames size > limit ifTrue: [ stream << ', and ' << (testClassNames size - limit) printString << ' more' ] ].
+			  stream nextPut: $. ]
+]
+
+{ #category : 'private - validation' }
+MCPRunTestsCommand >> textForMethod: aSelectionText notATestOf: aClassName [
+	"The class's tests are the answer, so SUnit's rule for a test selector is not spelt out."
+
+	^ String streamContents: [ :stream |
+			  stream << aSelectionText << ' is not one of ' << aClassName
+			  << '''s tests. Name one of its test methods, or the class to run them all.' ]
+]
+
 { #category : 'private' }
 MCPRunTestsCommand >> uniqueTestCasesForValidatedRequest: validatedRequest seenTestCaseNames: seenTestCaseNames [
 
@@ -327,20 +424,12 @@ MCPRunTestsCommand >> unrunTestsFrom: validatedRequests startingAt: startIndex s
 	^ unrun asArray
 ]
 
-{ #category : 'private' }
+{ #category : 'private - validation' }
 MCPRunTestsCommand >> validatedRequestsFrom: testRequests [
+	"Every name is resolved first, in the order the selections come, packages, classes, methods: the first that names nothing refuses the call alone, in the lookup's words. Then every selection that is no test is refused, all in one refusal. Either way nothing has run."
 
-	^ testRequests collect: [ :each |
-			  each isPackageRequest
-				  ifTrue: [
-						  self testClassesInPackageNamed: each packageName.
-						  MCPValidatedTestRunRequest request: each testClass: nil ]
-				  ifFalse: [
-						  | testClass |
-						  testClass := MCPImageLookup classNamed: each className.
-						  each testMethodName ifNotNil: [ :testMethodName |
-								  testClass
-									  compiledMethodAt: testMethodName asSymbol
-									  ifAbsent: [ MCPCommandError signalMissingMethod: testMethodName in: testClass ] ].
-						  MCPValidatedTestRunRequest request: each testClass: testClass ] ]
+	| validatedRequests |
+	validatedRequests := testRequests collect: [ :each | self resolvedRequestFor: each ].
+	self refuseSelectionsThatAreNotTests: validatedRequests.
+	^ validatedRequests
 ]
