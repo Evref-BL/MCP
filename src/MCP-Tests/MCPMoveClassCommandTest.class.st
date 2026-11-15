@@ -91,11 +91,12 @@ MCPMoveClassCommandTest >> testEnsuresMissingDestinationPackageBeforeMovingClass
 
 	| result |
 	self removeDestinationPackage.
+	self assert: self targetClass packageName asString equals: self originalPackageName.
 	result := self executeCommand:
 		          (MCPMoveClassCommand className: self targetClassName packageName: self destinationPackageName tag: nil).
 	self assert: (self packageOrganizer hasPackage: self destinationPackageName).
 	self assert: self targetClass packageName asString equals: self destinationPackageName.
-	self assert: result oldPackageName equals: self originalPackageName
+	self assert: result identicalTo: self targetClass
 ]
 
 { #category : 'tests' }
@@ -104,6 +105,7 @@ MCPMoveClassCommandTest >> testEnsuresMissingDestinationTagBeforeMovingClass [
 	| package result |
 	self removeDestinationPackage.
 	self withoutEpiceaDuring: [ self packageOrganizer ensurePackage: self destinationPackageName ].
+	self assert: self targetClass packageName asString equals: self originalPackageName.
 	result := self executeCommand:
 		          (MCPMoveClassCommand
 			           className: self targetClassName
@@ -113,7 +115,7 @@ MCPMoveClassCommandTest >> testEnsuresMissingDestinationTagBeforeMovingClass [
 	self assert: (package hasTag: self destinationTagName).
 	self assert: self targetClass packageName asString equals: self destinationPackageName.
 	self assert: self currentTagOfTargetClass equals: self destinationTagName.
-	self assert: result oldPackageName equals: self originalPackageName
+	self assert: result identicalTo: self targetClass
 ]
 
 { #category : 'tests' }
@@ -123,9 +125,11 @@ MCPMoveClassCommandTest >> testMissingDestinationTagSignalsCommandError [
 ]
 
 { #category : 'tests' }
-MCPMoveClassCommandTest >> testMovesClassAndReturnsResultObject [
+MCPMoveClassCommandTest >> testMovesClassAndAnswersIt [
 
 	| result |
+	self assert: self targetClass packageName asString equals: self originalPackageName.
+	self assert: self currentTagOfTargetClass equals: 'Uncategorized'.
 	result := self executeCommand:
 		          (MCPMoveClassCommand
 			           className: self targetClassName
@@ -133,7 +137,5 @@ MCPMoveClassCommandTest >> testMovesClassAndReturnsResultObject [
 			           tag: self destinationTagName).
 	self assert: self targetClass packageName asString equals: self destinationPackageName.
 	self assert: self currentTagOfTargetClass equals: self destinationTagName.
-	self assert: result oldPackageName equals: self originalPackageName.
-	self assert: result oldTag equals: 'Uncategorized'.
-	self assert: result classInfo className equals: self targetClassName
+	self assert: result identicalTo: self targetClass
 ]

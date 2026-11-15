@@ -15,6 +15,19 @@ Class {
 	#tag : 'Commands'
 }
 
+{ #category : 'instance creation' }
+MCPReplaceClassDefinitionCommand class >> className: aClassName slotNames: someSlotNames classSlotNames: someClassSlotNames [
+	"Each list replaces its side of the class. nil leaves that side as it is, where an empty list removes every slot it has."
+
+	^ self new
+		  className: aClassName;
+		  slotNames: someSlotNames;
+		  classSlotNames: someClassSlotNames;
+		  replaceSlots: someSlotNames isNotNil;
+		  replaceClassSlots: someClassSlotNames isNotNil;
+		  yourself
+]
+
 { #category : 'accessing' }
 MCPReplaceClassDefinitionCommand >> classSlotNames [
 
@@ -27,12 +40,6 @@ MCPReplaceClassDefinitionCommand >> classSlotNames: someNames [
 	classSlotNames := someNames ifNil: [ #(  ) ] ifNotNil: [ someNames asArray ]
 ]
 
-{ #category : 'private' }
-MCPReplaceClassDefinitionCommand >> classSlotNamesFromClass: aClass [
-
-	^ aClass classSide slots collect: [ :each | each name asString ] as: Array
-]
-
 { #category : 'accessing' }
 MCPReplaceClassDefinitionCommand >> classSlots [
 
@@ -42,24 +49,7 @@ MCPReplaceClassDefinitionCommand >> classSlots [
 { #category : 'executing' }
 MCPReplaceClassDefinitionCommand >> execute [
 
-	| oldClassSlotNames oldInstanceSlotNames result targetClass updatedClass |
-	targetClass := self targetClass.
-	oldInstanceSlotNames := self instanceSlotNamesFromClass: targetClass.
-	oldClassSlotNames := self classSlotNamesFromClass: targetClass.
-	updatedClass := self replaceDefinitionOn: targetClass.
-	result := MCPReplaceClassDefinitionResult classInfo: (MCPClassInfo fromClass: updatedClass).
-	result
-		oldInstanceSlotNames: oldInstanceSlotNames;
-		newInstanceSlotNames: (self instanceSlotNamesFromClass: updatedClass);
-		oldClassSlotNames: oldClassSlotNames;
-		newClassSlotNames: (self classSlotNamesFromClass: updatedClass).
-	^ result
-]
-
-{ #category : 'private' }
-MCPReplaceClassDefinitionCommand >> instanceSlotNamesFromClass: aClass [
-
-	^ aClass slots collect: [ :each | each name asString ] as: Array
+	^ self replaceDefinitionOn: self targetClass
 ]
 
 { #category : 'accessing' }

@@ -68,14 +68,17 @@ MCPToolContractsTest >> assertNamesAMissingClassAlike: aCase [
 
 { #category : 'private' }
 MCPToolContractsTest >> assertToolFlowSpec: aSpec [
+	"A spec that names no request class is for a tool that reads the request it is given; one that names no command class is for a tool that builds no command."
 
-	| command parsedRequest rawRequest tool |
+	| parsedRequest rawRequest tool |
 	tool := (aSpec at: #toolClass) new.
 	rawRequest := tool requestFromToolCallArguments: (aSpec at: #arguments).
 	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
-	command := tool commandForRequest: parsedRequest.
+	(aSpec includesKey: #requestClass) ifFalse: [ ^ self assert: parsedRequest identicalTo: rawRequest ].
 	self assert: parsedRequest class equals: (aSpec at: #requestClass).
-	self assert: command class equals: (aSpec at: #commandClass)
+	aSpec
+		at: #commandClass
+		ifPresent: [ :commandClass | self assert: (tool commandForRequest: parsedRequest) class equals: commandClass ]
 ]
 
 { #category : 'private' }
@@ -243,16 +246,12 @@ MCPToolContractsTest >> classMutationToolFlowSpecs [
 			  (#arguments -> {
 				   (#name -> 'MCPTemporaryClass').
 				   (#superclass -> 'Object').
-				   (#package -> 'MCP-Tests') } asDictionary).
-			  (#requestClass -> MCPClassCreateRequest).
-			  (#commandClass -> MCPCreateClassToolCommand) } asDictionary.
+				   (#package -> 'MCP-Tests') } asDictionary) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolUpdateClass).
 			  (#arguments -> {
 				   (#name -> 'Object').
-				   (#comment -> '') } asDictionary).
-			  (#requestClass -> MCPClassUpdateRequest).
-			  (#commandClass -> MCPUpdateClassCommand) } asDictionary }
+				   (#comment -> '') } asDictionary) } asDictionary }
 ]
 
 { #category : 'private' }

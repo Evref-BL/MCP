@@ -1,7 +1,5 @@
 "
-Command that changes the class comment of one class.
-
-It records the previous comment and returns an MCPChangeClassCommentResult so class update tools can report exactly what changed.
+Changes the comment of one class and answers the class.
 "
 Class {
 	#name : 'MCPChangeClassCommentCommand',
@@ -37,21 +35,12 @@ MCPChangeClassCommentCommand >> classComment: aString [
 
 { #category : 'executing' }
 MCPChangeClassCommentCommand >> execute [
+	"A comment already as asked is not set again."
 
-	| oldClassComment targetClass updatedClass |
+	| targetClass |
 	targetClass := self targetClass.
-	oldClassComment := targetClass mcpComment.
-	oldClassComment = self classComment ifTrue: [
-			^ MCPChangeClassCommentResult
-				  classInfo: (MCPClassInfo fromClass: targetClass)
-				  oldClassComment: oldClassComment
-				  newClassComment: oldClassComment ].
-	targetClass comment: self classComment.
-	updatedClass := Smalltalk globals at: self className asSymbol.
-	^ MCPChangeClassCommentResult
-		  classInfo: (MCPClassInfo fromClass: updatedClass)
-		  oldClassComment: oldClassComment
-		  newClassComment: updatedClass mcpComment
+	targetClass mcpComment = self classComment ifFalse: [ targetClass comment: self classComment ].
+	^ targetClass
 ]
 
 { #category : 'private' }

@@ -1,7 +1,5 @@
 "
-Command that changes the superclass of one class.
-
-It records the previous superclass and returns MCPReparentClassResult with updated class metadata.
+Changes the superclass of one class and answers the class.
 "
 Class {
 	#name : 'MCPReparentClassCommand',
@@ -25,16 +23,14 @@ MCPReparentClassCommand class >> className: aClassName superclassName: aSupercla
 
 { #category : 'executing' }
 MCPReparentClassCommand >> execute [
+	"A class already under the superclass asked for is not rebuilt."
 
-	| currentClass currentSuperclassName updatedClass superclass |
+	| currentClass currentSuperclassName |
 	currentClass := self currentClass.
 	currentSuperclassName := currentClass superclass ifNil: [ '' ] ifNotNil: [ :aSuperclass | aSuperclass name asString ].
-	currentSuperclassName = self superclassName ifTrue: [
-		^ MCPReparentClassResult classInfo: (MCPClassInfo fromClass: currentClass) oldSuperclassName: currentSuperclassName ].
-	superclass := self newSuperclass.
-	(self builderForReparenting: currentClass toSuperclass: superclass) install.
-	updatedClass := Smalltalk globals at: self className asSymbol.
-	^ MCPReparentClassResult classInfo: (MCPClassInfo fromClass: updatedClass) oldSuperclassName: currentSuperclassName
+	currentSuperclassName = self superclassName ifTrue: [ ^ currentClass ].
+	(self builderForReparenting: currentClass toSuperclass: self newSuperclass) install.
+	^ Smalltalk globals at: self className asSymbol
 ]
 
 { #category : 'private' }

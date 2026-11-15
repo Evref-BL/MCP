@@ -1,7 +1,7 @@
 "
-Command that creates a class from a parsed class creation request.
+Creates a class and answers it.
 
-It owns the class-builder interaction for superclass, package, tag, slots, traits, shared variables, pools, and layout, then returns an MCPCreateClassResult.
+It owns the class-builder interaction for superclass, package, tag, slots, traits, shared variables, pools and layout.
 "
 Class {
 	#name : 'MCPCreateClassCommand',
@@ -73,11 +73,9 @@ MCPCreateClassCommand >> ensurePackageNamed: aPackageName [
 { #category : 'executing' }
 MCPCreateClassCommand >> execute [
 
-	| createdClass |
 	MCPImageLookup newClassName: self className.
 	self ensurePackageNamed: self packageName.
-	createdClass := self buildClass.
-	^ MCPCreateClassResult classInfo: (MCPClassInfo fromClass: createdClass)
+	^ self buildClass
 ]
 
 { #category : 'accessing' }

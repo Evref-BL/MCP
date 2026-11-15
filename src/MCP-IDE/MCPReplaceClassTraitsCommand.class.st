@@ -1,5 +1,5 @@
 "
-Replaces the instance-side trait composition of an existing class and returns a DTO describing the old and new trait lists plus the resulting class state.
+Replaces the instance-side trait composition of an existing class and answers the class.
 "
 Class {
 	#name : 'MCPReplaceClassTraitsCommand',
@@ -24,14 +24,10 @@ MCPReplaceClassTraitsCommand class >> className: aClassName traitNames: someTrai
 { #category : 'executing' }
 MCPReplaceClassTraitsCommand >> execute [
 
-	| oldTraitNames targetClass |
+	| targetClass |
 	targetClass := self targetClass.
-	oldTraitNames := self traitNamesFromClass: targetClass.
 	targetClass setTraitComposition: self resolvedTraits.
-	^ MCPReplaceClassTraitsResult
-		  classInfo: (MCPClassInfo fromClass: targetClass)
-		  oldTraitNames: oldTraitNames
-		  newTraitNames: self traitNames
+	^ targetClass
 ]
 
 { #category : 'private' }
@@ -61,10 +57,4 @@ MCPReplaceClassTraitsCommand >> traitNames [
 MCPReplaceClassTraitsCommand >> traitNames: someNames [
 
 	traitNames := someNames ifNil: [ #(  ) ] ifNotNil: [ someNames asArray ]
-]
-
-{ #category : 'private' }
-MCPReplaceClassTraitsCommand >> traitNamesFromClass: aClass [
-
-	^ aClass traits collect: [ :each | each name asString ] as: Array
 ]

@@ -33,11 +33,17 @@ MCPToolCreateClass >> batchSummaryVerb [
 	^ 'Created'
 ]
 
+{ #category : 'private - arguments' }
+MCPToolCreateClass >> checkArguments: request [
+	"Nothing is refused before the image is asked: the schema has checked every argument, and MCPCreateClassCommand refuses a name no new class can take."
+
+	
+]
+
 { #category : 'private - specs' }
 MCPToolCreateClass >> classToolSpec [
 
 	^ {
-		  (#action -> 'create').
 		  (#title -> 'Create Class').
 		  (#description -> 'Create a class in the running image, or several sharing one definition.').
 		  (#inputProperties -> {
@@ -128,8 +134,100 @@ MCPToolCreateClass >> createTraitsSchemaProperty [
 	^ self stringArraySchemaNamed: 'traits' description: 'Traits the class uses, class side included.' itemDescription: 'Trait name.'
 ]
 
+{ #category : 'private - results' }
+MCPToolCreateClass >> createdSummaryFor: aClass [
+	"A trait is named as one, so asking for a trait is not answered with the word class."
+
+	^ String streamContents: [ :stream |
+			  stream << 'Created ' << (aClass isTrait
+				   ifTrue: [ 'trait ' ]
+				   ifFalse: [ 'class ' ]) << aClass name << '.' ]
+]
+
 { #category : 'metadata' }
 MCPToolCreateClass >> defaultExposure [
 
 	^ 'static'
+]
+
+{ #category : 'private - errors' }
+MCPToolCreateClass >> failureMessageForCreateClassNamed: className superclassName: superclassName packageName: packageName error: anError [
+
+	^ String streamContents: [ :stream |
+			  stream
+				  nextPutAll: 'Unable to create class ';
+				  nextPutAll: className;
+				  nextPutAll: ' < ';
+				  nextPutAll: superclassName;
+				  nextPutAll: ' in package ';
+				  nextPutAll: packageName;
+				  nextPutAll: ': ';
+				  nextPutAll: (self normalizedCauseMessageForMutationError: anError) ]
+]
+
+{ #category : 'private - mutation' }
+MCPToolCreateClass >> mutateWith: request [
+	"The class is made, then given its comment, so that a failure in either reports the definition asked for."
+
+	| className classComment createdClass packageName superclassName |
+	className := request stringArgumentNamed: 'name'.
+	superclassName := self superclassNameIn: request.
+	packageName := request stringArgumentNamed: 'package'.
+	classComment := self classCommentIn: request.
+	^ self
+		  executeMutationAction: 'create'
+		  force: false
+		  requestedContext: (self requestedContextFor: request checked: true)
+		  work: [
+				  createdClass := (MCPCreateClassCommand
+					                   className: className
+					                   superclassName: superclassName
+					                   packageName: packageName
+					                   tag: (request stringArgumentNamed: 'tag')
+					                   slots: (request symbolCollectionArgumentNamed: 'slots')
+					                   classSlots: (request symbolCollectionArgumentNamed: 'classSlots')
+					                   traits: (request stringCollectionArgumentNamed: 'traits')
+					                   sharedVariables: (request stringCollectionArgumentNamed: 'sharedVariables')
+					                   sharedPools: (request stringCollectionArgumentNamed: 'sharedPools')
+					                   layout: (request stringArgumentNamed: 'layout')) execute.
+				  classComment ifNotNil: [ (MCPChangeClassCommentCommand className: className classComment: classComment) execute ] ]
+		  successResult: [ :warningMessages |
+			  self successResultText: (self createdSummaryFor: createdClass) data: Dictionary new warnings: warningMessages ]
+		  failureSummary: [ :error |
+				  self
+					  failureMessageForCreateClassNamed: className
+					  superclassName: superclassName
+					  packageName: packageName
+					  error: error ]
+]
+
+{ #category : 'private - errors' }
+MCPToolCreateClass >> mutationActionFor: request checked: aBoolean [
+
+	^ 'create'
+]
+
+{ #category : 'private - errors' }
+MCPToolCreateClass >> requestedContextFor: request checked: aBoolean [
+	"The definition as the class is made from it. Reading it refuses nothing, so an error reports it the same way whether or not the arguments were checked."
+
+	^ {
+		  (#class -> (request stringArgumentNamed: 'name')).
+		  (#superclass -> (self superclassNameIn: request)).
+		  (#package -> (request stringArgumentNamed: 'package')).
+		  (#tag -> (request stringArgumentNamed: 'tag' default: '')).
+		  (#comment -> ((self classCommentIn: request) ifNil: [ '' ])).
+		  (#slots -> (request stringCollectionArgumentNamed: 'slots')).
+		  (#classSlots -> (request stringCollectionArgumentNamed: 'classSlots')).
+		  (#traits -> (request stringCollectionArgumentNamed: 'traits')).
+		  (#sharedVariables -> (request stringCollectionArgumentNamed: 'sharedVariables')).
+		  (#sharedPools -> (request stringCollectionArgumentNamed: 'sharedPools')).
+		  (#layout -> (request stringArgumentNamed: 'layout' default: '')) } asDictionary
+]
+
+{ #category : 'private - arguments' }
+MCPToolCreateClass >> superclassNameIn: request [
+	"Object when the caller omits it, because that is what a new class subclasses unless it says otherwise. Defaulting here rather than in MCPCreateClassCommand keeps the error details and the failure messages naming the superclass the class actually gets."
+
+	^ request stringArgumentNamed: 'superclass' default: 'Object'
 ]
