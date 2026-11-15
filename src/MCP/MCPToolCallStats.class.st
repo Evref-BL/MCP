@@ -40,32 +40,6 @@ MCPToolCallStats class >> forToolNamed: aToolName [
 ]
 
 { #category : 'converting' }
-MCPToolCallStats >> asDictionary [
-
-	^ {
-		  (#tool -> self toolName).
-		  (#callCount -> self callCount).
-		  (#successCount -> self successCount).
-		  (#errorCount -> self errorCount).
-		  (#errorCountsByClass -> self errorCountsByClass copy).
-		  (#errorCountsByKind -> self errorCountsByKind copy).
-		  (#errorCountsByCode -> self errorCountsByCode copy).
-		  (#averageMilliseconds -> self averageMilliseconds asFloat).
-		  (#minMilliseconds -> (self minMilliseconds ifNil: [ 0 ])).
-		  (#maxMilliseconds -> (self maxMilliseconds ifNil: [ 0 ])).
-		  (#lastMilliseconds -> (self lastMilliseconds ifNil: [ 0 ])).
-		  (#firstCallAt -> self firstCallAt).
-		  (#lastCallAt -> self lastCallAt).
-		  (#averageOutputBytes -> self averageOutputBytes asFloat).
-		  (#maxOutputBytes -> self maxOutputBytes).
-		  (#lastOutputBytes -> self lastOutputBytes).
-		  (#lastApproximateOutputTokens -> self lastApproximateOutputTokens).
-		  (#outputBudgetExceededCount -> self outputBudgetExceededCount).
-		  (#outputBudgetGuidance -> self outputBudgetGuidance).
-		  (#lastOutlierExplanation -> (self lastOutlierExplanation ifNil: [ '' ])) } asDictionary
-]
-
-{ #category : 'converting' }
 MCPToolCallStats >> asMetricsDictionary [
 
 	| dictionary |

@@ -229,7 +229,7 @@ MCPLocalObservabilityBackendTest >> testRecordsOutputBudgetMetadata [
 	state recordToolCallFinish: record result: result error: nil.
 	stats := state metrics first.
 	recordData := record asDictionary.
-	statsData := stats asDictionary.
+	statsData := stats asMetricsDictionary.
 
 	self assert: record outputByteCount > 0.
 	self assert: record inputByteCount equals: 0.
