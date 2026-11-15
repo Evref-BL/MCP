@@ -57,6 +57,13 @@ MCPToolChangeHistoryOperation >> parsedRequestFromToolRequest: request [
 	^ MCPChangeHistorySelectionRequest fromRequest: request tool: self operation: self actionName
 ]
 
+{ #category : 'private - results' }
+MCPToolChangeHistoryOperation >> redundantKeys [
+	"selectionCriteria is the request read back."
+
+	^ super redundantKeys , #( selectionCriteria )
+]
+
 { #category : 'private - schema' }
 MCPToolChangeHistoryOperation >> selectionInputProperties [
 

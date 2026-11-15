@@ -92,6 +92,13 @@ MCPToolChangeHistory >> integerArraySchemaNamed: aName description: aDescription
 ]
 
 { #category : 'private - results' }
+MCPToolChangeHistory >> keyOrder [
+	"index is the handle every history tool takes, so it leads, then what happened and when."
+
+	^ #( index eventClass time )
+]
+
+{ #category : 'private - results' }
 MCPToolChangeHistory >> keysStatedInSummary [
 	"The summary already says how many entries, and the offset the next page starts at."
 
@@ -116,12 +123,13 @@ MCPToolChangeHistory >> successSummaryForData: data operation: operation [
 			^ String streamContents: [ :stream |
 					  stream
 						  nextPutAll: 'Listed ';
-						  nextPutAll: (self textForCount: (data at: #entries ifAbsent: [ #(  ) ]) size noun: 'change history entry').
+						  nextPutAll: (self textForCount: (data at: #entries ifAbsent: [ #(  ) ]) size noun: 'change history entry');
+						  nextPut: $..
 					  data at: #nextOffset ifPresent: [ :offset |
 							  stream
-								  nextPutAll: '. More available at offset ';
-								  print: offset ].
-					  stream nextPut: $. ] ].
+								  nextPutAll: ' Next page: offset ';
+								  print: offset;
+								  nextPut: $. ] ] ].
 	(#( 'applyEntries' 'revertEntries' ) includes: operation) ifTrue: [
 			action := data at: #action ifAbsent: [ 'apply' ].
 			selectedCount := data at: #selectedCount ifAbsent: [ 0 ].

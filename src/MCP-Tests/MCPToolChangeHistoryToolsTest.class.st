@@ -15,6 +15,35 @@ MCPToolChangeHistoryToolsTest >> inputPropertyNamesFor: aTool [
 ]
 
 { #category : 'tests' }
+MCPToolChangeHistoryToolsTest >> testApplyPreviewDoesNotEchoTheSelection [
+	"An apply previews the very entries it selected, and its selection criteria are the request read back, so its text prints the preview alone. A revert previews the inverse changes, so it prints what it selected as well."
+
+	| entry textFor applyText revertText |
+	entry := MCPChangeHistoryEntryInfo fromEvent:
+		         (EpMethodAddition method: MCPToolChangeHistoryToolsTest >> #testApplyPreviewDoesNotEchoTheSelection).
+	textFor := [ :tool :action |
+		           | data |
+		           data := (MCPChangeHistorySelectionResult
+			                    action: action
+			                    historyFileName: 'memory.ombu'
+			                    selectionCriteria: { (#latestCount -> 1) } asDictionary
+			                    selectedEntries: { entry }
+			                    previewEntries: { entry }
+			                    skippedNonCodeChangeCount: 0
+			                    performed: false
+			                    performedCount: 0) asDictionary.
+		           ((tool successResultText: 'Previewed.' data: data) asJRPCJSON at: #content) first at: #text ].
+	applyText := textFor value: MCPToolApplyChangeHistoryEntries new value: 'apply'.
+	self deny: (applyText includesSubstring: 'selectionCriteria').
+	self deny: (applyText includesSubstring: 'selectedEntries').
+	self assert: (applyText includesSubstring: 'previewEntries').
+	revertText := textFor value: MCPToolRevertChangeHistoryEntries new value: 'revert'.
+	self deny: (revertText includesSubstring: 'selectionCriteria').
+	self assert: (revertText includesSubstring: 'selectedEntries').
+	self assert: (revertText includesSubstring: 'previewEntries')
+]
+
+{ #category : 'tests' }
 MCPToolChangeHistoryToolsTest >> testChangeHistoryToolsAreDiscoverableWithExpectedMetadata [
 
 	| metadataByName result toolNames |
@@ -84,6 +113,24 @@ MCPToolChangeHistoryToolsTest >> testListChangeHistoryFilesReturnsFiles [
 	self assert: files isNotEmpty.
 	self assert: (files allSatisfy: [ :each |
 			 (each includesKey: #file) and: [ each keys allSatisfy: [ :key | allowedFileKeys includes: key ] ] ])
+]
+
+{ #category : 'tests' }
+MCPToolChangeHistoryToolsTest >> testListSaysWhereTheNextPageStarts [
+	"A page of entries names the offset of the next, in the words every other paged answer uses."
+
+	| tool |
+	tool := MCPToolListChangeHistoryEntries new.
+	self
+		assert: (tool
+				 successSummaryForData: {
+						 (#entries -> (1 to: 25) asArray).
+						 (#nextOffset -> 25) } asDictionary
+				 operation: 'listEntries')
+		equals: 'Listed 25 change history entries. Next page: offset 25.'.
+	self
+		assert: (tool successSummaryForData: { (#entries -> #( 1 )) } asDictionary operation: 'listEntries')
+		equals: 'Listed 1 change history entry.'
 ]
 
 { #category : 'tests' }

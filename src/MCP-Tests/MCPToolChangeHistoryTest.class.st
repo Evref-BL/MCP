@@ -203,6 +203,26 @@ MCPToolChangeHistoryTest >> testApplyEntriesWithoutConfirmOnlyPreviews [
 ]
 
 { #category : 'tests' }
+MCPToolChangeHistoryTest >> testClassSideEntryReadsAsAClassSideMethod [
+	"Epicea names the behavior of a class-side change with its class suffix. The entry carries the side apart, so it names the class alone, and reads the way Pharo writes a class-side method."
+
+	self withTemporaryRecoveryClassDo: [ :class |
+			| entry result text |
+			class classSide compile: 'rescuedValue ^ 42' classified: 'testing'.
+			EpMonitor current sessionStore flush.
+			result := self callToolWith: {
+					          (#action -> 'listEntries').
+					          (#newestFirst -> true).
+					          (#codeChangesOnly -> true) } asDictionary.
+			entry := ((self dataFrom: result) at: #entries) first.
+			self assert: (entry at: #behavior) equals: class name asString.
+			self assert: (entry at: #side) equals: 'class'.
+			text := (result at: #content) first at: #text.
+			self assert: (text includesSubstring: ('{1} class>>rescuedValue' format: { class name })).
+			self deny: (text includesSubstring: ' class class>>') ]
+]
+
+{ #category : 'tests' }
 MCPToolChangeHistoryTest >> testListEntriesReportsDirectoryPathAsNotFile [
 
 	| directory error result |
