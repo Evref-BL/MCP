@@ -280,12 +280,11 @@ MCPToolContractsTest >> debugWatchToolFlowSpec [
 
 { #category : 'private - evaluate' }
 MCPToolContractsTest >> evaluate: aString within: seconds [
-	"The answer of an evaluation with a time limit, as the command gives it to the tool."
+	"The answer of an evaluation with a time limit, as a call gets it."
 
-	^ (MCPEvaluateCommand
-		   tool: MCPToolEvaluate new
-		   request: (MCPEvaluateRequest new initializeCode: aString timeoutSeconds: seconds)
-		   resultPreviewCharacterLimit: MCPToolEvaluate new resultPreviewCharacterLimit) execute
+	^ self callDiscoveredToolNamed: 'image_evaluate' withArguments: {
+			  (#code -> aString).
+			  (#timeoutSeconds -> seconds) } asDictionary
 ]
 
 { #category : 'private' }
@@ -497,6 +496,19 @@ MCPToolContractsTest >> selfSentNotImplementedCritiquesForMCPMethods [
 MCPToolContractsTest >> signalHaltForMCPMessageProcessorTest [
 
 	(Smalltalk globals at: #Halt) signal: 'mcp processor halt test'
+]
+
+{ #category : 'private - evaluate' }
+MCPToolContractsTest >> stoppedTextOf: aResult [
+	"The text of an answer that must be a stop at a limit of 1 s."
+
+	| text |
+	self assert: (self resultIndicatesError: aResult).
+	text := self firstTextFromToolResult: aResult.
+	self
+		assert: (text lines first: 2)
+		equals: #( 'Evaluation stopped after 1 s, its time limit.' 'What it changed before then stays changed.' ).
+	^ text
 ]
 
 { #category : 'tests' }
@@ -915,8 +927,7 @@ MCPToolContractsTest >> testEvaluateAnswersBeforeASlowUnwindEnds [
 		self assert: (Smalltalk globals at: #Transcript) identicalTo: transcript ] ensure: [
 			MCPEvaluateTestProbe release.
 			MCPEvaluateTestProbe holder ifNotNil: [ :holder | self waitUntilEnded: holder ] ].
-	self assert: result summary equals: 'Evaluation stopped after 1 s, its time limit.'.
-	self assert: (result errorDetails at: #stillUnwinding).
+	self assert: ((self stoppedTextOf: result) lines at: 3) equals: 'Its ensure blocks were still running when this answer was sent.'.
 	self assert: milliseconds < 15000
 ]
 
@@ -959,7 +970,7 @@ MCPToolContractsTest >> testEvaluateAnswersWhileAForkHoldsItsPriority [
 							                          within: 1 ] ] ensure: [
 				(self liveProcessesNamed: 'mcp-evaluate-hog-probe') do: [ :each | each terminate ] ].
 			(self liveProcessesNamed: 'image_evaluate stop') do: [ :each | self waitUntilEnded: each ].
-			self assert: result summary equals: 'Evaluation stopped after 1 s, its time limit.'.
+			self stoppedTextOf: result.
 			self assert: milliseconds < 15000 ]
 ]
 
@@ -1004,14 +1015,12 @@ MCPToolContractsTest >> testEvaluateIsMarkedAsAdvancedEscapeHatch [
 MCPToolContractsTest >> testEvaluateLeavesTheProcessesItForkedRunning [
 	"Forking is how longer work runs, so a stop leaves alone what the code forked."
 
-	| result |
 	self timeLimit: 30 seconds.
 	[
-		result := self
-			          evaluate:
-			          '[ (Delay forSeconds: 30) wait ] forkAt: Processor userBackgroundPriority named: ''mcp-evaluate-fork-probe''. [ true ] whileTrue'
-			          within: 1.
-		self assert: result summary equals: 'Evaluation stopped after 1 s, its time limit.'.
+		self stoppedTextOf: (self
+				 evaluate:
+				 '[ (Delay forSeconds: 30) wait ] forkAt: Processor userBackgroundPriority named: ''mcp-evaluate-fork-probe''. [ true ] whileTrue'
+				 within: 1).
 		self denyEmpty: (self liveProcessesNamed: 'mcp-evaluate-fork-probe') ] ensure: [
 		(self liveProcessesNamed: 'mcp-evaluate-fork-probe') do: [ :each | each terminate ] ]
 ]
@@ -1222,17 +1231,16 @@ MCPToolContractsTest >> testEvaluateStopCollapsesARecursion [
 		           superclassName: 'Object'
 		           slots: #(  )
 		           classSlots: #(  ).
-	[
-		self
-			ensureMethodSource: 'descend: n
+	result := [
+		          self
+			          ensureMethodSource: 'descend: n
 	n = 0 ifTrue: [ ^ (Delay forSeconds: 60) wait ].
 	^ self descend: n - 1'
-			protocol: 'fixture'
-			on: fixture.
-		result := self evaluate: 'EvalStopRecursionFixture new descend: 100' within: 1 ] ensure: [
-		self removeClassNamed: 'EvalStopRecursionFixture' ].
-	self assert: result summary equals: 'Evaluation stopped after 1 s, its time limit.'.
-	self assert: ((result errorDetails at: #stoppedIn) anySatisfy: [ :each |
+			          protocol: 'fixture'
+			          on: fixture.
+		          self evaluate: 'EvalStopRecursionFixture new descend: 100' within: 1 ] ensure: [
+		          self removeClassNamed: 'EvalStopRecursionFixture' ].
+	self assert: ((self stoppedTextOf: result) lines anySatisfy: [ :each |
 			 (each beginsWith: 'EvalStopRecursionFixture>>descend:, at least ') and: [ each endsWith: ' times in a row' ] ])
 ]
 
@@ -1297,11 +1305,11 @@ MCPToolContractsTest >> testEvaluateStopsAComputingLoopUnderEitherPreemptionRule
 
 	self timeLimit: 30 seconds.
 	self underEitherPreemptionRuleDo: [ :yields |
-			| milliseconds result |
+			| lines milliseconds result |
 			milliseconds := Time millisecondsToRun: [ result := self evaluate: '[ true ] whileTrue' within: 1 ].
-			self assert: result isError.
-			self assert: result summary equals: 'Evaluation stopped after 1 s, its time limit.'.
-			self assert: ((result errorDetails at: #stoppedIn) includes: 'UndefinedObject>>DoIt').
+			lines := (self stoppedTextOf: result) lines.
+			self assert: (lines includes: 'Stopped in:').
+			self assert: (lines includes: 'UndefinedObject>>DoIt').
 			self assert: milliseconds < 10000 ]
 ]
 
@@ -1314,8 +1322,7 @@ MCPToolContractsTest >> testEvaluateStopsAWaitAndRunsItsEnsureBlocks [
 	MCPEvaluateTestProbe reset.
 	transcript := Smalltalk globals at: #Transcript.
 	result := self evaluate: '[ (Delay forSeconds: 60) wait ] ensure: [ MCPEvaluateTestProbe noteEnsureRan ]' within: 1.
-	self assert: result summary equals: 'Evaluation stopped after 1 s, its time limit.'.
-	self deny: (result errorDetails includesKey: #stillUnwinding).
+	self deny: ((self stoppedTextOf: result) includesSubstring: 'still running').
 	self assert: MCPEvaluateTestProbe ensureRan.
 	self assert: (Smalltalk globals at: #Transcript) identicalTo: transcript
 ]
@@ -1328,7 +1335,7 @@ MCPToolContractsTest >> testEvaluateStopsCodeThatCatchesEveryException [
 	self timeLimit: 30 seconds.
 	milliseconds := Time millisecondsToRun: [
 		                result := self evaluate: '[ [ true ] whileTrue ] on: Exception do: [ :e | [ true ] whileTrue ]' within: 1 ].
-	self assert: result summary equals: 'Evaluation stopped after 1 s, its time limit.'.
+	self stoppedTextOf: result.
 	self assert: milliseconds < 10000
 ]
 
