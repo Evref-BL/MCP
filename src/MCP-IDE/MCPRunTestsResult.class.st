@@ -10,7 +10,10 @@ Class {
 		'results',
 		'timedOut',
 		'unrunTests',
-		'coverage'
+		'coverage',
+		'interruption',
+		'notRunCount',
+		'timeoutMilliseconds'
 	],
 	#category : 'MCP-IDE-Results',
 	#package : 'MCP-IDE',
@@ -113,6 +116,19 @@ MCPRunTestsResult >> initializeResults: resultCollection timedOut: aBoolean unru
 	^ self
 ]
 
+{ #category : 'accessing' }
+MCPRunTestsResult >> interruption [
+	"The test the timeout interrupted, as an outcome that says where it was, or nil when the deadline fell between tests."
+
+	^ interruption
+]
+
+{ #category : 'accessing' }
+MCPRunTestsResult >> interruption: anOutcomeOrNil [
+
+	interruption := anOutcomeOrNil
+]
+
 { #category : 'converting' }
 MCPRunTestsResult >> issueEntriesOfKind: aKind [
 	"One entry per issue of aKind each test raised, in the order the tests ran."
@@ -120,6 +136,19 @@ MCPRunTestsResult >> issueEntriesOfKind: aKind [
 	^ Array streamContents: [ :stream |
 			  self outcomes do: [ :outcome |
 				  (outcome issuesOfKind: aKind) do: [ :issue | stream nextPut: (self entryForIssue: issue of: outcome) ] ] ]
+]
+
+{ #category : 'accessing' }
+MCPRunTestsResult >> notRunCount [
+	"How many tests a timeout left unrun: the interrupted one, the rest of its selection and the later selections' tests no earlier one ran."
+
+	^ notRunCount ifNil: [ 0 ]
+]
+
+{ #category : 'accessing' }
+MCPRunTestsResult >> notRunCount: anInteger [
+
+	notRunCount := anInteger
 ]
 
 { #category : 'accessing' }
@@ -170,6 +199,19 @@ MCPRunTestsResult >> skippedTestReferences [
 MCPRunTestsResult >> timedOut [
 
 	^ timedOut
+]
+
+{ #category : 'accessing' }
+MCPRunTestsResult >> timeoutMilliseconds [
+	"The call's timeout, once it has fallen."
+
+	^ timeoutMilliseconds
+]
+
+{ #category : 'accessing' }
+MCPRunTestsResult >> timeoutMilliseconds: anInteger [
+
+	timeoutMilliseconds := anInteger
 ]
 
 { #category : 'converting' }

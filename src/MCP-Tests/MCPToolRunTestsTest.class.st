@@ -19,6 +19,20 @@ MCPToolRunTestsTest >> commandResultFor: someArguments [
 	^ (tool commandForRequest: (self parsedRequestForTool: tool arguments: someArguments asDictionary)) execute
 ]
 
+{ #category : 'private - running' }
+MCPToolRunTestsTest >> commandResultForClasses: classNames timeoutMilliseconds: milliseconds [
+	"What test_run's command answers for a timeout finer than timeoutSeconds can say."
+
+	| runTestsRequest tool |
+	tool := MCPToolRunTests new.
+	runTestsRequest := MCPRunTestsRequest new
+		                   initializeTestRequests: (classNames collect: [ :each | MCPTestRunRequest className: each ] as: Array)
+		                   timeoutMilliseconds: milliseconds
+		                   operation: 'run'
+		                   coverageRequest: nil.
+	^ (tool commandForRequest: runTestsRequest) execute
+]
+
 { #category : 'private - fixtures' }
 MCPToolRunTestsTest >> fixtureNamed: aClassName [
 	"A fixture by its name, so that this class adds no reference to it."
@@ -175,6 +189,22 @@ MCPToolRunTestsTest >> testANonTestClassNothingRefersToIsRefusedSayingSo [
 		equals: 'MCPToolRunTestsUnreferencedTarget is not a test class, and no test class refers to it.'
 ]
 
+{ #category : 'tests - timeouts' }
+MCPToolRunTestsTest >> testANotRunSelectionThatLostCasesIsListedByMethod [
+	"The abstract class's suite holds the inheriting class's case, which the first selection already ran, so the abstract class is not passed back whole."
+
+	| result |
+	result := self
+		          commandResultForClasses: #( 'MCPToolRunTestsInheritingTarget' 'MCPToolRunTestsAbstractTarget' )
+		          timeoutMilliseconds: 200.
+	self assert: result timedOut.
+	self assertEmpty: result unrunClassNames.
+	self assert: (result unrunMethodReferences includes: 'MCPToolRunTestsSlowInheritingTarget>>#testWaits').
+	self assert: result interruption name equals: 'MCPToolRunTestsSlowInheritingTarget>>#testWaits'.
+	self assert: result interruption location isNil.
+	self assert: result notRunCount equals: 1
+]
+
 { #category : 'tests - outcomes' }
 MCPToolRunTestsTest >> testAParameterizedCaseIsNamedWithItsParameters [
 
@@ -292,6 +322,34 @@ MCPToolRunTestsTest >> testATestThatFailsThenErrsInTearDownIsOneErroredTest [
 	self assert: (error at: #locations) asArray equals: #( 'MCPToolRunTestsFailThenTearDownTarget>>tearDown' )
 ]
 
+{ #category : 'tests - timeouts' }
+MCPToolRunTestsTest >> testATestThatFinishesBeforeTheTimeoutIsNotInterrupted [
+
+	| data |
+	data := self dataFrom: (self callToolNamed: 'test_run' withArguments: {
+				         (#methods -> #( 'MCPToolRunTestsTimeoutTarget>>#testFastPass' )).
+				         (#timeoutSeconds -> 30) } asDictionary).
+	self assert: (data at: #runCount) equals: 1.
+	self assert: (data at: #passedCount) equals: 1.
+	self deny: (data includesKey: #timedOut)
+]
+
+{ #category : 'tests - timeouts' }
+MCPToolRunTestsTest >> testATestTheDeadlineReachesFirstIsNotRunNorInterrupted [
+
+	| result |
+	result := self commandResultFor: {
+			          (#classes -> #( 'MCPToolStructuredOutputTestTarget' )).
+			          (#methods -> #( 'MCPToolStructuredOutputTestTarget>>#testFails' )).
+			          (#timeoutSeconds -> 0) }.
+	self assert: result timedOut.
+	self assert: result runCount equals: 0.
+	self assert: result interruption isNil.
+	self assert: result unrunClassNames equals: #( 'MCPToolStructuredOutputTestTarget' ).
+	self assertEmpty: result unrunMethodReferences.
+	self assert: result notRunCount equals: 4
+]
+
 { #category : 'tests - outcomes' }
 MCPToolRunTestsTest >> testATimeLimitSaysWhichLimitItWas [
 
@@ -300,6 +358,17 @@ MCPToolRunTestsTest >> testATimeLimitSaysWhichLimitItWas [
 	self assert: (issue at: #errorClass) equals: #TestTookTooMuchTime.
 	self assert: (issue at: #message) equals: 'took longer than its time limit of 1 second'.
 	self assertEmpty: (issue at: #locations)
+]
+
+{ #category : 'tests - timeouts' }
+MCPToolRunTestsTest >> testATimeoutThatLeavesNothingUnrunIsNotReported [
+
+	| data |
+	data := self dataFrom: (self callToolNamed: 'test_run' withArguments: {
+				         (#classes -> #( 'MCPToolRunTestsEmptyTarget' )).
+				         (#timeoutSeconds -> 0) } asDictionary).
+	self assert: (data at: #runCount) equals: 0.
+	self deny: (data includesKey: #timedOut)
 ]
 
 { #category : 'tests - outcomes' }
@@ -331,6 +400,28 @@ MCPToolRunTestsTest >> testAnInheritedTestMethodRuns [
 			         withArguments: { (#methods -> #( 'MCPToolRunTestsInheritingTarget>>#testInherited' )) } asDictionary).
 	self assert: (data at: #runCount) equals: 1.
 	self assert: (data at: #passedCount) equals: 1
+]
+
+{ #category : 'tests - timeouts' }
+MCPToolRunTestsTest >> testAnInterruptedTestIsNotCountedAndDoesNotDelayTheAnswer [
+	"The fixture's tearDown waits 30 seconds and its class's time limit is 5: without the second the interrupted test gets for its tearDown, the answer would take 5 seconds."
+
+	| milliseconds result |
+	milliseconds := [ result := self commandResultForClasses: #( 'MCPToolRunTestsSlowTearDownTarget' ) timeoutMilliseconds: 200 ]
+		                timeToRun asMilliSeconds.
+	self assert: result timedOut.
+	self assert: result runCount equals: 0.
+	self assertEmpty: result outcomes.
+	self assertEmpty: result errorDictionaries.
+	self assert: result interruption name equals: 'MCPToolRunTestsSlowTearDownTarget>>#testWaits'.
+	self assert: result interruption location equals: 'MCPToolRunTestsRaiser>>waitHalfASecond'.
+	self assert: result unrunClassNames equals: #( 'MCPToolRunTestsSlowTearDownTarget' ).
+	self assertEmpty: result unrunMethodReferences.
+	self assert: result notRunCount equals: 1.
+	self assert: result timeoutMilliseconds equals: 200.
+	self
+		assert: milliseconds < 3000
+		description: [ String streamContents: [ :stream | stream << 'took ' << milliseconds printString << ' ms' ] ]
 ]
 
 { #category : 'tests - outcomes' }
@@ -466,4 +557,32 @@ MCPToolRunTestsTest >> testTheSameErrorRaisedTwiceInATestIsOneIssue [
 	self assert: (issue at: #errorClass) equals: #Error.
 	self assert: (issue at: #message) equals: 'fixture broken'.
 	self assert: (issue at: #locations) asArray equals: #( 'MCPToolRunTestsRaiser>>fail' )
+]
+
+{ #category : 'tests - timeouts' }
+MCPToolRunTestsTest >> testWhatAPackageLeavesIsListedByClass [
+	"A class none of whose cases ran or was lost is passed back whole, any other by the methods left."
+
+	| broken command notRun package someFail testCases |
+	command := MCPRunTestsCommand new.
+	package := MCPValidatedTestRunRequest request: (MCPTestRunRequest packageName: 'P') testClass: nil.
+	someFail := (self fixtureNamed: 'MCPToolRunTestsSomeFailTarget') buildSuite tests.
+	broken := (self fixtureNamed: 'MCPToolRunTestsBrokenFixtureTarget') buildSuite tests.
+	testCases := someFail , broken.
+	notRun := [ :uniqueTestCases :startIndex |
+		          (command
+			           notRunRequestsForValidatedRequest: package
+			           testCases: testCases
+			           uniqueTestCases: uniqueTestCases
+			           startingAt: startIndex) collect: [ :each | each displayName ] ].
+	self assert: (notRun value: testCases value: 1) equals: #( 'P' ).
+	self
+		assert: (notRun value: testCases value: 2)
+		equals:
+		#( 'MCPToolRunTestsSomeFailTarget>>#testB' 'MCPToolRunTestsSomeFailTarget>>#testC' 'MCPToolRunTestsBrokenFixtureTarget' ).
+	self assert: (notRun value: testCases value: 4) equals: #( 'MCPToolRunTestsBrokenFixtureTarget' ).
+	self
+		assert: (notRun value: (testCases copyWithout: broken first) value: 2)
+		equals:
+		#( 'MCPToolRunTestsSomeFailTarget>>#testB' 'MCPToolRunTestsSomeFailTarget>>#testC' 'MCPToolRunTestsBrokenFixtureTarget>>#testTwo' )
 ]
