@@ -167,7 +167,7 @@ MCPToolCreateClass >> failureMessageForCreateClassNamed: className superclassNam
 
 { #category : 'private - mutation' }
 MCPToolCreateClass >> mutateWith: request [
-	"The class is made, then given its comment, so that a failure in either reports the definition asked for."
+	"The class is made, then given its comment. A failure in either is reported as a failure to create the class."
 
 	| className classComment createdClass packageName superclassName |
 	className := request stringArgumentNamed: 'name'.

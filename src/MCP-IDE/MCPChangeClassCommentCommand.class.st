@@ -39,8 +39,9 @@ MCPChangeClassCommentCommand >> execute [
 
 	| targetClass |
 	targetClass := self targetClass.
-	targetClass mcpComment = self classComment ifFalse: [ targetClass comment: self classComment ].
-	^ targetClass
+	targetClass mcpComment = self classComment ifTrue: [ ^ targetClass ].
+	targetClass comment: self classComment.
+	^ Smalltalk globals at: self className asSymbol
 ]
 
 { #category : 'private' }
