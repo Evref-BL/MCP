@@ -76,11 +76,8 @@ MCPUserInterfaceToolTest >> testScreenReadStopsAtTheRequestedDepth [
 MCPUserInterfaceToolTest >> testScreenshotNamesTheWindowItCaptured [
 
 	| result |
-	result := (MCPScreenshotCommand
-		           tool: MCPToolCaptureScreen new
-		           request: (MCPScreenshotRequest new initializeWindow: 'Playground')
-		           morph: (self morphOfExtent: 40 @ 30)) execute.
-	self assert: result target equals: 'Playground'
+	result := MCPToolCaptureScreen new resultForCaptureOf: (self morphOfExtent: 40 @ 30) target: 'Playground'.
+	self assert: ((result structuredContent at: #data) at: #target) equals: 'Playground'
 ]
 
 { #category : 'tests' }

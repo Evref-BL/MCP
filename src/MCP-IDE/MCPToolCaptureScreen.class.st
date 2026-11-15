@@ -47,12 +47,6 @@ MCPToolCaptureScreen >> buildInputSchema [
 		  yourself
 ]
 
-{ #category : 'private - execution' }
-MCPToolCaptureScreen >> commandForRequest: screenshotRequest [
-
-	^ MCPScreenshotCommand tool: self request: screenshotRequest morph: (self targetMorphNamed: screenshotRequest window)
-]
-
 { #category : 'metadata' }
 MCPToolCaptureScreen >> description [
 
@@ -74,39 +68,46 @@ MCPToolCaptureScreen >> executeWithRequest: request [
 
 	^ self
 		  executeParsedRequestFrom: request
-		  do: [ :screenshotRequest |
-				  | commandResult structuredContent summary |
-				  commandResult := (self commandForRequest: screenshotRequest) execute.
-				  summary := self successSummaryForResult: commandResult.
-				  structuredContent := Dictionary new
-					                       at: #summary put: summary;
-					                       at: #data put: commandResult asDictionary;
-					                       yourself.
-				  MCPStructureCallToolResult
-					  content: {
-							  (self textContent: summary).
-							  commandResult imageContent }
-					  structuredContent: structuredContent ]
+		  do: [ :arguments |
+				  | window |
+				  window := arguments stringArgumentNamed: 'window'.
+				  self resultForCaptureOf: (self targetMorphNamed: window) target: (window ifNil: [ 'world' ]) ]
 		  onError: [ :error :ignored | self errorResultForError: error ]
 ]
 
-{ #category : 'private - request' }
-MCPToolCaptureScreen >> parsedRequestFromToolRequest: request [
+{ #category : 'private - results' }
+MCPToolCaptureScreen >> resultForCaptureOf: aMorph target: aString [
+	"The capture as a PNG image content block, with what it shows, its size and its MIME type as structured content. Any morph can be captured, so a test needs no window open."
 
-	^ MCPScreenshotRequest fromRequest: request tool: self
+	| form imageContent summary |
+	form := aMorph imageForm.
+	imageContent := MCPStructureImageContent pngFromForm: form.
+	summary := self successSummaryForTarget: aString form: form.
+	^ MCPStructureCallToolResult
+		  content: {
+				  (self textContent: summary).
+				  imageContent }
+		  structuredContent: (Dictionary new
+				   at: #summary put: summary;
+				   at: #data put: {
+						   (#target -> aString).
+						   (#width -> form width).
+						   (#height -> form height).
+						   (#mimeType -> imageContent mimeType) } asDictionary;
+				   yourself)
 ]
 
 { #category : 'private - results' }
-MCPToolCaptureScreen >> successSummaryForResult: aScreenshotResult [
+MCPToolCaptureScreen >> successSummaryForTarget: aString form: aForm [
 
 	^ String streamContents: [ :stream |
 			  stream
 				  nextPutAll: 'Captured ';
-				  nextPutAll: aScreenshotResult target;
+				  nextPutAll: aString;
 				  nextPutAll: ' screenshot (';
-				  print: aScreenshotResult width;
+				  print: aForm width;
 				  nextPutAll: 'x';
-				  print: aScreenshotResult height;
+				  print: aForm height;
 				  nextPutAll: ').' ]
 ]
 

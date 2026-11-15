@@ -69,13 +69,14 @@ MCPToolContractsTest >> assertNamesAMissingClassAlike: aCase [
 { #category : 'private' }
 MCPToolContractsTest >> assertToolFlowSpec: aSpec [
 
-	| command parsedRequest rawRequest tool |
+	| parsedRequest rawRequest tool |
 	tool := (aSpec at: #toolClass) new.
 	rawRequest := tool requestFromToolCallArguments: (aSpec at: #arguments).
 	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
-	command := tool commandForRequest: parsedRequest.
 	self assert: parsedRequest class equals: (aSpec at: #requestClass).
-	self assert: command class equals: (aSpec at: #commandClass)
+	aSpec
+		at: #commandClass
+		ifPresent: [ :commandClass | self assert: (tool commandForRequest: parsedRequest) class equals: commandClass ]
 ]
 
 { #category : 'private' }
@@ -160,8 +161,7 @@ MCPToolContractsTest >> baseToolFlowSpecs [
 		  {
 			  (#toolClass -> MCPToolCaptureScreen).
 			  (#arguments -> Dictionary new).
-			  (#requestClass -> MCPScreenshotRequest).
-			  (#commandClass -> MCPScreenshotCommand) } asDictionary.
+			  (#requestClass -> MCPToolRequest) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolDebugSearch).
 			  (#arguments -> Dictionary new).
@@ -2940,18 +2940,20 @@ MCPToolContractsTest >> testRunTestsRejectsEmptySelection [
 { #category : 'tests' }
 MCPToolContractsTest >> testScreenshotCommandPackagesCapturedFormAsImageContent [
 
-	| command imageJSON request result |
-	request := MCPScreenshotRequest new initializeWindow: nil.
-	command := MCPScreenshotCommand tool: MCPToolCaptureScreen new request: request morph: (Morph new
-			            extent: 2 @ 3;
-			            yourself).
-	result := command execute.
-	imageJSON := result imageContent asJRPCJSON.
-	self assert: result target equals: 'world'.
-	self assert: result width equals: 2.
-	self assert: result height equals: 3.
-	self assert: result imageContent mimeType equals: 'image/png'.
-	self assert: result imageContent data isNotEmpty.
+	| data imageContent imageJSON result |
+	result := MCPToolCaptureScreen new
+		          resultForCaptureOf: (Morph new
+				           extent: 2 @ 3;
+				           yourself)
+		          target: 'world'.
+	data := result structuredContent at: #data.
+	imageContent := result content second.
+	imageJSON := imageContent asJRPCJSON.
+	self assert: (data at: #target) equals: 'world'.
+	self assert: (data at: #width) equals: 2.
+	self assert: (data at: #height) equals: 3.
+	self assert: imageContent mimeType equals: 'image/png'.
+	self assert: imageContent data isNotEmpty.
 	self assert: (imageJSON at: #type) equals: 'image'.
 	self assert: (imageJSON at: #mimeType) equals: 'image/png'
 ]
