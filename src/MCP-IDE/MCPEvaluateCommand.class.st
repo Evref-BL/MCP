@@ -1,12 +1,31 @@
 "
-Command that evaluates Smalltalk code for the evaluate tool and returns a result data dictionary.
+Evaluates Smalltalk code for the evaluate tool, in a process of its own one priority below the caller, and watches it: it stops the code at its time limit, or sooner when its stack or the image's memory runs away, and leaves alone what the code forked.
+
+What happens in the code's process is read there, while it is there to read: the value's preview, within a limit of characters, since printing a value runs its own code; and a failure's description, before its stack unwinds. The code may also never start, end its own process, or be stopped, which this process sees, reading where a stopped evaluation was before it unwinds.
+
+It answers itself, holding how the evaluation ended and what it read. What a call answers for each ending is the tool's to say.
 "
 Class {
 	#name : 'MCPEvaluateCommand',
-	#superclass : 'MCPToolRequestCommand',
+	#superclass : 'MCPCommand',
 	#instVars : [
-		'resultPreviewCharacterLimit',
-		'transcript'
+		'transcript',
+		'code',
+		'timeLimit',
+		'previewLimit',
+		'ending',
+		'answer',
+		'preview',
+		'answerSize',
+		'warnings',
+		'failure',
+		'failureDetails',
+		'transcriptText',
+		'transcriptTruncated',
+		'stopReason',
+		'stoppedFrames',
+		'stillUnwinding',
+		'holders'
 	],
 	#category : 'MCP-IDE-Commands',
 	#package : 'MCP-IDE',
@@ -14,100 +33,205 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPEvaluateCommand class >> tool: aTool request: aRequest resultPreviewCharacterLimit: anInteger [
+MCPEvaluateCommand class >> code: aString timeLimit: seconds previewLimit: anInteger [
+	"Evaluate aString, stopping it after seconds, and preview its value in at most anInteger characters, as many as are kept of what it writes to the Transcript."
 
-	^ self new initializeTool: aTool request: aRequest resultPreviewCharacterLimit: anInteger
+	^ self new initializeCode: aString timeLimit: seconds previewLimit: anInteger
+]
+
+{ #category : 'accessing' }
+MCPEvaluateCommand class >> processName [
+	"What the process an evaluation runs in is called, and how the one that stops it begins: the tool's name, which a person listing processes recognises."
+
+	^ 'evaluate'
+]
+
+{ #category : 'stopping' }
+MCPEvaluateCommand class >> terminate: anEvaluator waiting: seconds [
+	"Terminate anEvaluator in a helper at its priority, so that its ensure blocks run there, and answer whether it was still unwinding after seconds. What the stopped code grew is garbage only once it has unwound, which may be after the answer, and a full collection of a large heap takes seconds, so the helper collects it once the code has unwound and the answer has gone out. Were the call's deferred actions never run, its worker ended first or its caller never running them, waiting for them would keep the helper and the garbage forever, so the helper waits for the answer only as long as the answer waits for the unwinding. The class forks the helper so that it holds nothing of the evaluation, whose frames hold what the stopped code grew."
+
+	| answered stillUnwinding stopped |
+	stopped := Semaphore new.
+	answered := Semaphore new.
+	[
+		[ anEvaluator terminate ] ensure: [ stopped signal ].
+		answered waitTimeoutSeconds: seconds.
+		Smalltalk garbageCollect ] forkAt: anEvaluator priority named: self processName , ' stop'.
+	stillUnwinding := stopped waitTimeoutSeconds: seconds.
+	MCPPostResponseActions defer: [ answered signal ].
+	^ stillUnwinding
+]
+
+{ #category : 'accessing' }
+MCPEvaluateCommand >> answer [
+	"The code's value."
+
+	^ answer
+]
+
+{ #category : 'accessing' }
+MCPEvaluateCommand >> answerSize [
+	"How many elements a collection holds whose preview was cut, or nil."
+
+	^ answerSize
+]
+
+{ #category : 'testing' }
+MCPEvaluateCommand >> answeredTheTranscript [
+	"Code that ends on the Transcript, as a cascade of show: does, answers the recorder that stood in for it while the code ran."
+
+	^ answer == transcript
 ]
 
 { #category : 'private' }
-MCPEvaluateCommand >> addTranscriptTo: aDictionary [
+MCPEvaluateCommand >> callBoundary [
+	"How a call resumes a notification and describes a failure, which MCPTool keeps for every tool. The code runs in a process of its own, so they are re-established there with a tool of no kind in particular: a failure is described while its stack is still there to read, which is only in that process, before it unwinds."
 
-	transcript contents ifEmpty: [ ^ self ].
-	aDictionary at: #transcript put: transcript contents.
-	transcript isTruncated ifTrue: [ aDictionary at: #transcriptTruncated put: true ]
+	^ MCPTool new
+]
+
+{ #category : 'accessing' }
+MCPEvaluateCommand >> code [
+
+	^ code
 ]
 
 { #category : 'private' }
-MCPEvaluateCommand >> endedItsOwnProcessResult [
+MCPEvaluateCommand >> describeFailure: anException [
+	"Read in the process that raised anException, while its stack is still there, and within the time limit, since describing a frame prints what it holds."
+
+	failure := anException.
+	failureDetails := self callBoundary errorDetailsFor: anException
+]
+
+{ #category : 'private' }
+MCPEvaluateCommand >> endedItsOwnProcess [
 	"The code terminated the process it ran in, so there is no value, only what it wrote to the Transcript before."
 
-	| details |
-	details := Dictionary new.
-	transcript ifNotNil: [ self addTranscriptTo: details ].
-	^ MCPEvaluateResult errorSummary: tool endedItsOwnProcessMessage details: details
+	self noteTranscript.
+	ending := #endedItsOwnProcess
+]
+
+{ #category : 'accessing' }
+MCPEvaluateCommand >> ending [
+	"How the evaluation ended: #value, #syntaxFailure, #runtimeFailure, #failure when what failed was not the code's own, #endedItsOwnProcess, #notStarted or #stopped."
+
+	^ ending
 ]
 
 { #category : 'executing' }
 MCPEvaluateCommand >> evaluate [
 	"The code is compiled much as a Playground page compiles it, so a name it assigns without declaring is a variable of this evaluation, and what it writes to the Transcript comes back with its value."
 
-	| answer compiler notice warningDescriptions |
+	| compiler notice result warningDescriptions |
 	compiler := SmalltalkImage current compiler.
-	compiler requestor: (MCPPlaygroundRequestor forCode: request code).
+	compiler requestor: (MCPPlaygroundRequestor forCode: code).
 	notice := nil.
 	warningDescriptions := OrderedCollection new.
 	compiler failBlock: [ :aNotice |
 			notice := aNotice.
 			nil ].
-	transcript := MCPTranscriptRecorder limit: resultPreviewCharacterLimit.
-	answer := [ transcript recordDuring: [ compiler evaluate: request code ] ]
+	transcript := MCPTranscriptRecorder limit: previewLimit.
+	result := [ transcript recordDuring: [ compiler evaluate: code ] ]
 		          on: Exception
 		          do: [ :error |
 				          (error isKindOf: Notification) ifTrue: [ self resumeNotification: error collectingWarningInto: warningDescriptions ].
 				          error mcpSyntaxNotice ifNotNil: [ :syntaxNotice | ^ self syntaxFailureFor: syntaxNotice ].
 				          ^ self runtimeFailureFor: error ].
 	notice ifNotNil: [ ^ self syntaxFailureFor: notice ].
-	^ MCPEvaluateResult okData: (self resultDataFor: answer) warnings: warningDescriptions asArray
+	self resultDataFor: result.
+	warnings := warningDescriptions asArray.
+	ending := #value
 ]
 
 { #category : 'private' }
 MCPEvaluateCommand >> evaluateWithinCallBoundary [
 	"The boundary MCPTool>>executeParsedRequestFrom:do:onError: keeps around a call, in the process the code runs in, so that no exception goes unhandled there, opens a debugger and leaves the call waiting for its limit."
 
-	^ [
-		  [ self evaluate ]
-			  on: Notification
-			  do: [ :notification |
-					  (tool shouldResumeNotification: notification)
-						  ifTrue: [ tool resumeNotification: notification ]
-						  ifFalse: [ notification pass ] ] ]
-		  on: Exception
-		  do: [ :error |
-		  MCPEvaluateResult errorSummary: (error messageText ifNil: [ error asString ]) details: (tool errorDetailsFor: error) ]
+	| boundary |
+	boundary := self callBoundary.
+	[
+		[ self evaluate ]
+			on: Notification
+			do: [ :notification |
+					(boundary shouldResumeNotification: notification)
+						ifTrue: [ boundary resumeNotification: notification ]
+						ifFalse: [ notification pass ] ] ]
+		on: Exception
+		do: [ :error | self failureFor: error ]
 ]
 
 { #category : 'executing' }
 MCPEvaluateCommand >> execute [
-	"The code runs in a process one priority below this one, which can therefore always take the processor back, however the code computes, and stop it at its time limit, or sooner when it runs away. A limit kept at the same priority cannot preempt a computing loop."
+	"The code runs in a process one priority below this one, which can therefore always take the processor back, however the code computes, and stop it at its time limit, or sooner when it runs away. A limit kept at the same priority cannot preempt a computing loop. Answer myself, holding how the evaluation ended."
 
-	| done evaluator outcome started actions stop |
+	| done evaluator started actions stop |
 	done := Semaphore new.
 	started := false.
 	actions := MCPPostResponseActions value.
 	evaluator := [
 		             started := true.
-		             [ outcome := MCPPostResponseActions value: actions during: [ self evaluateWithinCallBoundary ] ] ensure: [
-			             done signal ] ] newProcess.
+		             [ MCPPostResponseActions value: actions during: [ self evaluateWithinCallBoundary ] ] ensure: [ done signal ] ]
+		             newProcess.
 	evaluator
 		priority: Processor activePriority - 1;
-		name: tool name.
+		name: self class processName.
 	self start: evaluator.
 	stop := self watch: evaluator until: done started: [ started ].
-	stop ifNil: [ ^ outcome ifNil: [ self endedItsOwnProcessResult ] ].
-	started ifFalse: [ ^ self notStartedResultFor: evaluator ].
-	[ outcome isNil and: [ self isSaving: evaluator ] ] whileTrue: [ done waitTimeoutSeconds: 1 ].
-	outcome ifNotNil: [ ^ outcome ].
-	evaluator isTerminated ifTrue: [ ^ self endedItsOwnProcessResult ].
-	^ self stop: evaluator saying: stop
+	stop ifNil: [
+			ending ifNil: [ self endedItsOwnProcess ].
+			^ self ].
+	started ifFalse: [ ^ self terminateUnstarted: evaluator ].
+	[ ending isNil and: [ self isSaving: evaluator ] ] whileTrue: [ done waitTimeoutSeconds: 1 ].
+	ending ifNotNil: [ ^ self ].
+	evaluator isTerminated ifTrue: [ ^ self endedItsOwnProcess ].
+	^ self stop: evaluator because: stop
+]
+
+{ #category : 'accessing' }
+MCPEvaluateCommand >> failure [
+	"The exception the evaluation failed with, or the notice its compilation did."
+
+	^ failure
+]
+
+{ #category : 'accessing' }
+MCPEvaluateCommand >> failureDetails [
+	"The failure as a call describes one, read while its stack was still there."
+
+	^ failureDetails
+]
+
+{ #category : 'private' }
+MCPEvaluateCommand >> failureFor: anError [
+	"A failure that is not the code's own, in getting it ready to compile or in previewing its value."
+
+	self describeFailure: anError.
+	ending := #failure
+]
+
+{ #category : 'testing' }
+MCPEvaluateCommand >> hasTruncatedPreview [
+
+	^ preview size >= previewLimit
+]
+
+{ #category : 'accessing' }
+MCPEvaluateCommand >> holders [
+	"The processes that kept the processor from an evaluation that never started."
+
+	^ holders
 ]
 
 { #category : 'initialization' }
-MCPEvaluateCommand >> initializeTool: aTool request: aRequest resultPreviewCharacterLimit: anInteger [
+MCPEvaluateCommand >> initializeCode: aString timeLimit: seconds previewLimit: anInteger [
 
-	tool := aTool.
-	request := aRequest.
-	resultPreviewCharacterLimit := anInteger.
-	^ self
+	code := aString.
+	timeLimit := seconds.
+	previewLimit := anInteger.
+	warnings := #(  ).
+	transcriptTruncated := false.
+	stillUnwinding := false
 ]
 
 { #category : 'private' }
@@ -117,6 +241,19 @@ MCPEvaluateCommand >> isSaving: aProcess [
 	| top |
 	top := aProcess suspendedContext ifNil: [ ^ false ].
 	^ (top stackOfSize: self savingFrameLimit) anySatisfy: [ :each | each method == (SessionManager >> #snapshot:andQuit:) ]
+]
+
+{ #category : 'testing' }
+MCPEvaluateCommand >> isStillUnwinding [
+	"Whether a stopped evaluation's ensure blocks were still running when it answered."
+
+	^ stillUnwinding
+]
+
+{ #category : 'testing' }
+MCPEvaluateCommand >> isTranscriptTruncated [
+
+	^ transcriptTruncated
 ]
 
 { #category : 'private' }
@@ -134,61 +271,43 @@ MCPEvaluateCommand >> memoryInUse [
 ]
 
 { #category : 'private' }
-MCPEvaluateCommand >> notStartedDetailsFor: processes [
+MCPEvaluateCommand >> noteTranscript [
+	"What the code has written to the Transcript by now, read where its answer is decided: what its ensure blocks write while it unwinds is not part of it."
 
-	^ Dictionary new
-		  at: #heldBy put: (tool heldByLinesFor: processes);
-		  at: #hint put: (tool heldByHintLinesFor: processes);
-		  at: #timeoutSeconds put: request timeoutSeconds;
-		  yourself
+	transcript ifNil: [ ^ self ].
+	transcriptText := transcript contents.
+	transcriptTruncated := transcript isTruncated
 ]
 
 { #category : 'private' }
-MCPEvaluateCommand >> notStartedResultFor: anEvaluator [
-	"Other processes kept the processor the whole time, so the evaluator ran nothing and has nothing to unwind: this process terminates it itself. Its priority is read first, since terminating it raises it to this one."
+MCPEvaluateCommand >> noteWhereStopped: anEvaluator [
+	"Where the code is, read before it unwinds, cut at the outermost DoIt as a failure's frames are, and what it wrote by then. The frames are kept, not described: describing one may print what it holds, which would run the stopped code's own printOn:, which may be what never ends, or wait on a lock the stopped process holds."
 
-	| priority |
-	priority := anEvaluator priority.
-	anEvaluator terminate.
-	^ MCPEvaluateResult
-		  errorSummary: (tool notStartedMessageFor: request timeoutSeconds)
-		  details: (self notStartedDetailsFor: (Processor waitingProcessesAt: priority) asArray)
+	| boundary |
+	boundary := self callBoundary.
+	stoppedFrames := anEvaluator suspendedContext
+		                 ifNil: [ #(  ) ]
+		                 ifNotNil: [ :top | boundary framesUpToCallerIn: (top stackOfSize: boundary errorStackTraceLimit + 1) ].
+	self noteTranscript
+]
+
+{ #category : 'accessing' }
+MCPEvaluateCommand >> preview [
+	"The value's print string, cut at the preview limit."
+
+	^ preview
 ]
 
 { #category : 'private' }
 MCPEvaluateCommand >> resultDataFor: anAnswer [
-	"Report what a truncated preview left out. The full length is deliberately not computed: printStringLimitedTo: stops early, and forcing the whole print string is exactly the cost this preview exists to avoid."
+	"Note the value, previewed here, within the time limit, since printing it runs its own code. What a cut preview left out is noted too. The full length is deliberately not computed: printStringLimitedTo: stops early, and forcing the whole print string is exactly the cost this preview exists to avoid. Code that ends on the Transcript answers the recorder that stood in for it, which needs no preview."
 
-	| data printString |
-	anAnswer == transcript ifTrue: [ ^ self resultDataForTheTranscript ].
-	printString := anAnswer printStringLimitedTo: resultPreviewCharacterLimit.
-	data := Dictionary new.
-	data at: #resultClassName put: anAnswer class name asString.
-	data at: #resultPrintString put: printString.
-	self addTranscriptTo: data.
-	printString size < resultPreviewCharacterLimit ifTrue: [ ^ data ].
-	data at: #truncated put: true.
-	(anAnswer isCollection and: [ anAnswer isString not ]) ifTrue: [ data at: #resultSize put: anAnswer size ].
-	^ data
-]
-
-{ #category : 'private' }
-MCPEvaluateCommand >> resultDataForTheTranscript [
-	"Code that ends on the Transcript, as a cascade of show: does, answers the recorder that stood in for it while the code ran. To the caller that is the Transcript, so it is named as the one put back afterwards, and the text can leave the value out for what was written."
-
-	| data |
-	data := Dictionary new.
-	data at: #resultClassName put: transcript mcpTranscriptToRestore class name asString.
-	data at: #resultPrintString put: 'Transcript'.
-	data at: #answeredTranscript put: true.
-	self addTranscriptTo: data.
-	^ data
-]
-
-{ #category : 'accessing' }
-MCPEvaluateCommand >> resultPreviewCharacterLimit [
-
-	^ resultPreviewCharacterLimit
+	answer := anAnswer.
+	anAnswer == transcript ifTrue: [ ^ self noteTranscript ].
+	preview := anAnswer printStringLimitedTo: previewLimit.
+	self noteTranscript.
+	self hasTruncatedPreview ifFalse: [ ^ self ].
+	(anAnswer isCollection and: [ anAnswer isString not ]) ifTrue: [ answerSize := anAnswer size ]
 ]
 
 { #category : 'private' }
@@ -196,17 +315,17 @@ MCPEvaluateCommand >> resumeNotification: aNotification collectingWarningInto: w
 	"A warning is the one notification the caller has to see: the value still arrives, and the warning is what says it is not what it looks like. Pharo's own description names the class first, which is the word that gets read, and the same text is kept once, since a loop over a deprecated method raises one sentence as often as it runs."
 
 	(aNotification isKindOf: Warning) ifTrue: [ warningDescriptions addIfNotPresent: aNotification description ].
-	^ self tool resumeNotification: aNotification
+	^ self callBoundary resumeNotification: aNotification
 ]
 
 { #category : 'private' }
 MCPEvaluateCommand >> runtimeFailureFor: anError [
+	"Described before the code's ensure blocks run and write more to the Transcript."
 
-	| details |
-	details := tool errorDetailsFor: anError.
-	anError mcpAddToolErrorDetailsTo: details.
-	self addTranscriptTo: details.
-	^ MCPEvaluateResult errorSummary: (tool runtimeFailureMessageFor: anError) details: details
+	self describeFailure: anError.
+	anError mcpAddToolErrorDetailsTo: failureDetails.
+	self noteTranscript.
+	ending := #runtimeFailure
 ]
 
 { #category : 'private' }
@@ -214,17 +333,6 @@ MCPEvaluateCommand >> savingFrameLimit [
 	"How deep in the evaluator's stack a save is looked for: deeper than the snapshot and the startup actions that follow it."
 
 	^ 50
-]
-
-{ #category : 'private' }
-MCPEvaluateCommand >> sourceIndexFor: aPosition [
-	"A notice can point one character past the end of the source, where the expression simply stopped, so the position is clamped rather than rejected."
-
-	| source |
-	aPosition ifNil: [ ^ nil ].
-	source := request code.
-	source ifEmpty: [ ^ nil ].
-	^ (aPosition max: 1) min: source size
 ]
 
 { #category : 'private' }
@@ -255,56 +363,61 @@ MCPEvaluateCommand >> start: aProcess [
 ]
 
 { #category : 'private' }
-MCPEvaluateCommand >> stop: anEvaluator saying: aSummary [
-	"Where the code is, and what it wrote, are read before it unwinds. A computing evaluator is taken off the run queue here: the helper below runs at its priority, and would otherwise wait behind it for a turn it may never get. One waiting on a semaphore is left waiting, since terminating it from there is what releases a critical section. The helper terminates it, so that its ensure blocks run at its own priority and this process waits for them only so long. What the stopped code grew is garbage only once it has unwound, which may be after the answer, and a full collection of a large heap takes seconds, so the helper collects it once the code has unwound and the answer has gone out. Were the call's deferred actions never run, its worker ended first or its caller never running them, waiting for them would keep the helper and the garbage forever, so the helper waits for the answer only as long as the answer waits for the unwinding."
+MCPEvaluateCommand >> stop: anEvaluator because: aReason [
+	"Where the code is, and what it wrote, are read before it unwinds. A computing evaluator is taken off the run queue here: the helper that terminates it runs at its priority, and would otherwise wait behind it for a turn it may never get. One waiting on a semaphore is left waiting, since terminating it from there is what releases a critical section. The helper terminates it so that its ensure blocks run at its own priority and this process waits for them only so long."
 
-	| details stopped answered |
 	anEvaluator suspendingList == (Processor waitingProcessesAt: anEvaluator priority) ifTrue: [ anEvaluator suspend ].
-	details := self stoppedDetailsFor: anEvaluator.
-	stopped := Semaphore new.
-	answered := Semaphore new.
-	[
-		[ anEvaluator terminate ] ensure: [ stopped signal ].
-		answered waitTimeoutSeconds: self unwindingSeconds.
-		Smalltalk garbageCollect ] forkAt: anEvaluator priority named: tool name , ' stop'.
-	(stopped waitTimeoutSeconds: self unwindingSeconds) ifTrue: [
-			details at: #stillUnwinding put: true.
-			transcript ifNotNil: [ :recorder | recorder finish ] ].
-	MCPPostResponseActions defer: [ answered signal ].
-	^ MCPEvaluateResult errorSummary: aSummary details: details
+	self noteWhereStopped: anEvaluator.
+	stillUnwinding := self class terminate: anEvaluator waiting: self unwindingSeconds.
+	stillUnwinding ifTrue: [ transcript ifNotNil: [ :recorder | recorder finish ] ].
+	stopReason := aReason.
+	ending := #stopped
 ]
 
-{ #category : 'private' }
-MCPEvaluateCommand >> stoppedDetailsFor: anEvaluator [
-	"Where the code is, read before it unwinds, cut at the outermost DoIt as a failure's frames are. Each frame is printed by its class and method only: printing a value would run the stopped code's own printOn:, which may be what never ends, or wait on a lock the stopped process holds."
+{ #category : 'accessing' }
+MCPEvaluateCommand >> stopReason [
+	"Why a stopped evaluation was stopped: #timeLimit, #stackDepth or #memoryGrowth."
 
-	| details frames limit |
-	limit := tool errorStackTraceLimit.
-	frames := anEvaluator suspendedContext
-		          ifNil: [ #(  ) ]
-		          ifNotNil: [ :top | tool framesUpToCallerIn: (top stackOfSize: limit + 1) ].
-	details := Dictionary new.
-	details at: #stoppedIn put: (tool
-			 collapsedFrameLines: ((frames first: (frames size min: limit)) collect: [ :each | tool frameNameFor: each ] as: Array)
-			 deeper: frames size > limit).
-	details at: #hint put: tool longerWorkHintLines.
-	details at: #timeoutSeconds put: request timeoutSeconds.
-	transcript ifNotNil: [ self addTranscriptTo: details ].
-	^ details
+	^ stopReason
+]
+
+{ #category : 'accessing' }
+MCPEvaluateCommand >> stoppedFrames [
+	"Where a stopped evaluation was, top first, cut at its outermost DoIt, one frame more than a failure shows when the stack goes deeper."
+
+	^ stoppedFrames
 ]
 
 { #category : 'private' }
 MCPEvaluateCommand >> syntaxFailureFor: aNotice [
 
-	| details index line |
-	details := tool errorDetailsFor: aNotice.
-	details at: #description put: 'Compilation failed before evaluation.'.
-	index := self sourceIndexFor: aNotice position.
-	line := index ifNotNil: [ request code lineNumberCorrespondingToIndex: index ].
-	line ifNotNil: [
-			details at: #line put: line.
-			details at: #sourceLine put: (request code lineCorrespondingToIndex: index) ].
-	^ MCPEvaluateResult errorSummary: (tool syntaxFailureMessageFor: aNotice line: line) details: details
+	self describeFailure: aNotice.
+	ending := #syntaxFailure
+]
+
+{ #category : 'private' }
+MCPEvaluateCommand >> terminateUnstarted: anEvaluator [
+	"Other processes kept the processor the whole time, so the evaluator ran nothing and has nothing to unwind: this process terminates it itself. Its priority is read first, since terminating it raises it to this one."
+
+	| priority |
+	priority := anEvaluator priority.
+	anEvaluator terminate.
+	holders := (Processor waitingProcessesAt: priority) asArray.
+	ending := #notStarted
+]
+
+{ #category : 'accessing' }
+MCPEvaluateCommand >> timeLimit [
+	"How long, in seconds, the code may run before it is stopped."
+
+	^ timeLimit
+]
+
+{ #category : 'accessing' }
+MCPEvaluateCommand >> transcriptText [
+	"What the code wrote to the Transcript by the time its answer was decided, or nil when it never ran far enough to write."
+
+	^ transcriptText
 ]
 
 { #category : 'private' }
@@ -314,20 +427,26 @@ MCPEvaluateCommand >> unwindingSeconds [
 	^ 5
 ]
 
+{ #category : 'accessing' }
+MCPEvaluateCommand >> warnings [
+	"What was raised while the code ran, reported beside the value rather than instead of it."
+
+	^ warnings
+]
+
 { #category : 'private' }
 MCPEvaluateCommand >> watch: anEvaluator until: done started: hasStarted [
-	"Answer nil once the code has ended, or else why it is to be stopped, as the summary of its answer. At every look this process, running above the code, takes the processor back from it and reads what makes runaway code dangerous before its time limit passes: an endless recursion grows its stack by millions of frames a second and the image by GBs, enough to make a machine swap within the limit and the stop itself slow. Before the code has started, what grows the image is not the code."
+	"Answer nil once the code has ended, or else why it is to be stopped: #stackDepth, #memoryGrowth or #timeLimit. At every look this process, running above the code, takes the processor back from it and reads what makes runaway code dangerous before its time limit passes: an endless recursion grows its stack by millions of frames a second and the image by GBs, enough to make a machine swap within the limit and the stop itself slow. Before the code has started, what grows the image is not the code."
 
 	| deadline memory |
-	deadline := Time microsecondClockValue + (request timeoutSeconds * 1000000).
+	deadline := Time microsecondClockValue + (timeLimit * 1000000).
 	memory := self memoryInUse.
 	[
 		(done waitTimeoutSeconds: self watchMilliseconds / 1000) ifFalse: [ ^ nil ].
-		(self stackOf: anEvaluator isDeeperThan: self stackDepthLimit) ifTrue: [ ^ tool stackStoppedMessageFor: self stackDepthLimit ].
-		(hasStarted value and: [ self memoryInUse - memory > self memoryGrowthLimit ]) ifTrue: [
-			^ tool memoryStoppedMessageFor: self memoryGrowthLimit ].
+		(self stackOf: anEvaluator isDeeperThan: self stackDepthLimit) ifTrue: [ ^ #stackDepth ].
+		(hasStarted value and: [ self memoryInUse - memory > self memoryGrowthLimit ]) ifTrue: [ ^ #memoryGrowth ].
 		Time microsecondClockValue < deadline ] whileTrue.
-	^ tool stoppedMessageFor: request timeoutSeconds
+	^ #timeLimit
 ]
 
 { #category : 'private' }

@@ -21,10 +21,48 @@ MCPToolEvaluate class >> toolName [
 	^ 'evaluate'
 ]
 
+{ #category : 'private - results' }
+MCPToolEvaluate >> addTranscriptOf: anEvaluation to: aDictionary [
+	"What the evaluation wrote to the Transcript, which its caller cannot see otherwise, and whether some of it was cut."
+
+	anEvaluation transcriptText isEmptyOrNil ifTrue: [ ^ aDictionary ].
+	aDictionary at: #transcript put: anEvaluation transcriptText.
+	anEvaluation isTranscriptTruncated ifTrue: [ aDictionary at: #transcriptTruncated put: true ].
+	^ aDictionary
+]
+
 { #category : 'metadata' }
 MCPToolEvaluate >> additionalKeywords [
 
 	^ #( 'expression' 'smalltalk' )
+]
+
+{ #category : 'private - results' }
+MCPToolEvaluate >> answerFor: anEvaluation [
+	"What a call answers for an evaluation: its value, or why it has none."
+
+	| ending |
+	ending := anEvaluation ending.
+	ending = #value ifTrue: [
+		^ self successResultText: 'Code evaluated successfully.' data: (self dataFor: anEvaluation) warnings: anEvaluation warnings ].
+	ending = #stopped ifTrue: [
+			^ self
+				  errorResultText: (self stopSummaryFor: anEvaluation stopReason of: anEvaluation)
+				  details: (self stoppedDetailsFor: anEvaluation) ].
+	ending = #notStarted ifTrue: [
+			^ self
+				  errorResultText: (self notStartedMessageFor: anEvaluation timeLimit)
+				  details: (self notStartedDetailsFor: anEvaluation holders within: anEvaluation timeLimit) ].
+	ending = #endedItsOwnProcess ifTrue: [
+		^ self errorResultText: self endedItsOwnProcessMessage details: (self addTranscriptOf: anEvaluation to: Dictionary new) ].
+	ending = #syntaxFailure ifTrue: [ ^ self syntaxFailureResultFor: anEvaluation ].
+	ending = #runtimeFailure ifTrue: [
+			^ self
+				  errorResultText: (self runtimeFailureMessageFor: anEvaluation failure)
+				  details: (self addTranscriptOf: anEvaluation to: anEvaluation failureDetails copy) ].
+	^ self
+		  errorResultText: (anEvaluation failure messageText ifNil: [ anEvaluation failure asString ])
+		  details: anEvaluation failureDetails
 ]
 
 { #category : 'metadata' }
@@ -59,12 +97,6 @@ MCPToolEvaluate >> collapsedFrameLines: frameNames deeper: aBoolean [
 		   self frameLineFor: run first count: run size atLeast: (aBoolean and: [ index = runs size ]) ]) asArray
 ]
 
-{ #category : 'private - execution' }
-MCPToolEvaluate >> commandForRequest: evaluateRequest [
-
-	^ MCPEvaluateCommand tool: self request: evaluateRequest resultPreviewCharacterLimit: self resultPreviewCharacterLimit
-]
-
 { #category : 'private - results' }
 MCPToolEvaluate >> contentTextForStructuredContent: structuredContent [
 	"An evaluation answers one value or one failure, and the JSON envelope around it repeats the summary, the class and the signaler context that the text already carries. A warning raised on the way is the exception: the value arrives looking usable, and the warning is what says it is not."
@@ -78,6 +110,26 @@ MCPToolEvaluate >> contentTextForStructuredContent: structuredContent [
 			  String streamContents: [ :stream |
 					  stream << text.
 					  warningDescriptions do: [ :each | stream << String lf << each ] ] ]
+]
+
+{ #category : 'private - results' }
+MCPToolEvaluate >> dataFor: anEvaluation [
+	"The value's class and preview, and what a cut preview left out. Code that ends on the Transcript answers the recorder that stood in for it while the code ran. To the caller that is the Transcript, so it is named as the one put back afterwards, and the text can leave the value out for what was written."
+
+	| data |
+	data := Dictionary new.
+	anEvaluation answeredTheTranscript ifTrue: [
+			data at: #resultClassName put: anEvaluation answer mcpTranscriptToRestore class name asString.
+			data at: #resultPrintString put: 'Transcript'.
+			data at: #answeredTranscript put: true.
+			^ self addTranscriptOf: anEvaluation to: data ].
+	data at: #resultClassName put: anEvaluation answer class name asString.
+	data at: #resultPrintString put: anEvaluation preview.
+	self addTranscriptOf: anEvaluation to: data.
+	anEvaluation hasTruncatedPreview ifFalse: [ ^ data ].
+	data at: #truncated put: true.
+	anEvaluation answerSize ifNotNil: [ :size | data at: #resultSize put: size ].
+	^ data
 ]
 
 { #category : 'metadata' }
@@ -110,13 +162,11 @@ MCPToolEvaluate >> executeWithRequest: request [
 
 	^ self
 		  executeParsedRequestFrom: request
-		  do: [ :evaluateRequest |
-				  | commandResult |
-				  commandResult := (self commandForRequest: evaluateRequest) execute.
-				  commandResult isError
-					  ifTrue: [ self errorResultText: commandResult summary details: commandResult errorDetails ]
-					  ifFalse: [
-					  self successResultText: 'Code evaluated successfully.' data: commandResult data warnings: commandResult warnings ] ]
+		  do: [ :arguments |
+				  self answerFor: (MCPEvaluateCommand
+						   code: (arguments stringArgumentNamed: 'code')
+						   timeLimit: (arguments integerArgumentNamed: 'timeoutSeconds')
+						   previewLimit: self resultPreviewCharacterLimit) execute ]
 		  onError: [ :error :ignored |
 				  self
 					  errorResultText: (error messageText ifNil: [ error asString ] ifNotNil: [ :text | text ])
@@ -222,9 +272,9 @@ MCPToolEvaluate >> heldByLinesFor: processes [
 
 { #category : 'private' }
 MCPToolEvaluate >> isEvaluation: aProcess [
-	"An evaluation runs in a process named after this tool, and so does the process that stops one."
+	"An evaluation runs in a process MCPEvaluateCommand names, and so does the process that stops one."
 
-	^ aProcess name beginsWith: self name
+	^ aProcess name beginsWith: MCPEvaluateCommand processName
 ]
 
 { #category : 'private - results' }
@@ -270,6 +320,17 @@ MCPToolEvaluate >> memoryStoppedMessageFor: bytes [
 				  nextPutAll: ' while it ran.' ]
 ]
 
+{ #category : 'private - results' }
+MCPToolEvaluate >> notStartedDetailsFor: processes within: seconds [
+	"What held the priority evaluations run at, and what to do about it."
+
+	^ Dictionary new
+		  at: #heldBy put: (self heldByLinesFor: processes);
+		  at: #hint put: (self heldByHintLinesFor: processes);
+		  at: #timeoutSeconds put: seconds;
+		  yourself
+]
+
 { #category : 'private' }
 MCPToolEvaluate >> notStartedMessageFor: seconds [
 
@@ -294,12 +355,6 @@ MCPToolEvaluate >> notStartedTextFor: structuredContent [
 						  nextPutAll: 'Holding the priority evaluations run at:'.
 					  self lines: processLines on: stream ].
 			  self lines: (error at: #hint ifAbsent: [ #(  ) ]) on: stream ]
-]
-
-{ #category : 'private - request' }
-MCPToolEvaluate >> parsedRequestFromToolRequest: request [
-
-	^ MCPEvaluateRequest fromRequest: request tool: self
 ]
 
 { #category : 'private' }
@@ -356,6 +411,15 @@ MCPToolEvaluate >> sizeTextFor: bytes [
 		  ifFalse: [ megabytes printString , ' MB' ]
 ]
 
+{ #category : 'private - results' }
+MCPToolEvaluate >> sourceIndexFor: aPosition in: aString [
+	"A notice can point one character past the end of the source, where the expression simply stopped, so the position is clamped rather than rejected."
+
+	aPosition ifNil: [ ^ nil ].
+	aString ifEmpty: [ ^ nil ].
+	^ (aPosition max: 1) min: aString size
+]
+
 { #category : 'private' }
 MCPToolEvaluate >> stackStoppedMessageFor: frames [
 
@@ -364,6 +428,33 @@ MCPToolEvaluate >> stackStoppedMessageFor: frames [
 				  nextPutAll: 'Evaluation stopped: its stack passed ';
 				  print: frames;
 				  nextPutAll: ' frames, which an endless recursion does.' ]
+]
+
+{ #category : 'private - results' }
+MCPToolEvaluate >> stopSummaryFor: aReason of: anEvaluation [
+	"What stopped an evaluation, with the bound it passed."
+
+	aReason = #stackDepth ifTrue: [ ^ self stackStoppedMessageFor: anEvaluation stackDepthLimit ].
+	aReason = #memoryGrowth ifTrue: [ ^ self memoryStoppedMessageFor: anEvaluation memoryGrowthLimit ].
+	^ self stoppedMessageFor: anEvaluation timeLimit
+]
+
+{ #category : 'private - results' }
+MCPToolEvaluate >> stoppedDetailsFor: anEvaluation [
+	"Where the code was when it was stopped, each frame by its class and method only: printing a value would run the stopped code's own printOn:, which may be what never ends, or wait on a lock the stopped process holds."
+
+	| details frames limit |
+	limit := self errorStackTraceLimit.
+	frames := anEvaluation stoppedFrames.
+	details := Dictionary new.
+	details at: #stoppedIn put: (self
+			 collapsedFrameLines: ((frames first: (frames size min: limit)) collect: [ :each | self frameNameFor: each ] as: Array)
+			 deeper: frames size > limit).
+	details at: #hint put: self longerWorkHintLines.
+	details at: #timeoutSeconds put: anEvaluation timeLimit.
+	self addTranscriptOf: anEvaluation to: details.
+	anEvaluation isStillUnwinding ifTrue: [ details at: #stillUnwinding put: true ].
+	^ details
 ]
 
 { #category : 'private' }
@@ -413,6 +504,22 @@ MCPToolEvaluate >> syntaxFailureMessageFor: aNotice line: aLineNumber [
 					  stream
 						  nextPutAll: ' Line ';
 						  print: aLineNumber ] ]
+]
+
+{ #category : 'private - results' }
+MCPToolEvaluate >> syntaxFailureResultFor: anEvaluation [
+	"Compilation failed, so the answer says on which line of the code, and shows it."
+
+	| code details index line |
+	code := anEvaluation code.
+	details := anEvaluation failureDetails copy.
+	details at: #description put: 'Compilation failed before evaluation.'.
+	index := self sourceIndexFor: anEvaluation failure position in: code.
+	line := index ifNotNil: [ code lineNumberCorrespondingToIndex: index ].
+	line ifNotNil: [
+			details at: #line put: line.
+			details at: #sourceLine put: (code lineCorrespondingToIndex: index) ].
+	^ self errorResultText: (self syntaxFailureMessageFor: anEvaluation failure line: line) details: details
 ]
 
 { #category : 'metadata' }
