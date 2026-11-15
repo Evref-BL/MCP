@@ -1,7 +1,7 @@
 "
-Command that removes one or more classes from the image.
+Removes one or more classes from the image in one refactoring, once Pharo's check lets it. Force goes past a warning of that check, never past an error.
 
-It gathers removal warnings, removes now-empty packages when applicable, and returns an MCPRemoveClassesResult describing removed classes and warnings.
+Once executed, it says what the removal changed besides the classes: the subclasses it moved up to a superclass, the packages it left empty and removed, and the facts force went past, as warning messages.
 "
 Class {
 	#name : 'MCPRemoveClassesCommand',
@@ -9,7 +9,10 @@ Class {
 	#instVars : [
 		'classNames',
 		'force',
-		'resolvedClasses'
+		'resolvedClasses',
+		'reparentedSubclassNames',
+		'removedPackageNames',
+		'warningMessages'
 	],
 	#category : 'MCP-IDE-Commands',
 	#package : 'MCP-IDE',
@@ -61,17 +64,17 @@ MCPRemoveClassesCommand >> classNames: someClassNames [
 
 { #category : 'executing' }
 MCPRemoveClassesCommand >> execute [
-	"The refactoring is handed the names of the classes the lookup resolved, not the request's text."
+	"The refactoring is handed the names of the classes the lookup resolved, not the request's text. The subclasses that move up and the packages the classes were in are read before the classes go."
 
-	| refactoring removedClasses removedPackageNames warningMessages |
+	| refactoring packageNames |
 	refactoring := self preparedRefactoringForClassNames: (self resolvedClasses collect: [ :each | each name ]).
 	warningMessages := self validatePreparedRefactoring: refactoring.
-	removedClasses := self resolvedClasses collect: [ :each | self resultForRemovedClass: each ].
+	reparentedSubclassNames := self resolvedClasses flatCollect: [ :each | self subclassNamesReparentedWhenRemoving: each ].
+	packageNames := self resolvedClasses collect: [ :each |
+		                each package ifNil: [ '' ] ifNotNil: [ :package | package name asString ] ].
 	self performRemovalWithPreparedRefactoring: refactoring.
 	removedPackageNames := OrderedCollection new.
-	removedClasses do: [ :eachResult |
-		self removePackageIfNowEmptyNamed: eachResult classInfo packageName recordingInto: removedPackageNames ].
-	^ MCPRemoveClassesResult removedClasses: removedClasses removedPackageNames: removedPackageNames warningMessages: warningMessages
+	packageNames do: [ :each | self removePackageIfNowEmptyNamed: each recordingInto: removedPackageNames ]
 ]
 
 { #category : 'accessing' }
@@ -134,6 +137,20 @@ MCPRemoveClassesCommand >> removePackageIfNowEmptyNamed: aPackageName recordingI
 					(removedPackageNamesCollection includes: aPackageName) ifFalse: [ removedPackageNamesCollection add: aPackageName ] ] ]
 ]
 
+{ #category : 'accessing' }
+MCPRemoveClassesCommand >> removedPackageNames [
+	"The packages execute removed because it left them empty."
+
+	^ removedPackageNames
+]
+
+{ #category : 'accessing' }
+MCPRemoveClassesCommand >> reparentedSubclassNames [
+	"The subclasses execute moved to the superclass of a class it removed."
+
+	^ reparentedSubclassNames
+]
+
 { #category : 'private' }
 MCPRemoveClassesCommand >> resolvedClasses [
 
@@ -141,32 +158,12 @@ MCPRemoveClassesCommand >> resolvedClasses [
 ]
 
 { #category : 'private' }
-MCPRemoveClassesCommand >> resultForRemovedClass: aClass [
-	"A subclass asked for in the same call is removed, not reparented."
-
-	| classInfo reparentedSubclassNames wasEmpty |
-	classInfo := MCPClassInfo fromClass: aClass.
-	wasEmpty := self isEmptyClass: aClass.
-	reparentedSubclassNames := (self shouldReparentSubclassesWhenRemoving: aClass wasEmpty: wasEmpty)
-		                           ifTrue: [
-		                           classInfo subclassNames reject: [ :each |
-			                           self resolvedClasses anySatisfy: [ :removed | removed name asString = each ] ] ]
-		                           ifFalse: [ #(  ) ].
-	^ MCPRemoveClassResult
-		  classInfo: classInfo
-		  wasEmpty: wasEmpty
-		  reparentedToSuperclassName: (reparentedSubclassNames isEmpty
-				   ifTrue: [ '' ]
-				   ifFalse: [ classInfo superclassName ])
-		  reparentedSubclassNames: reparentedSubclassNames
-]
-
-{ #category : 'private' }
-MCPRemoveClassesCommand >> shouldReparentSubclassesWhenRemoving: aClass wasEmpty: wasEmpty [
+MCPRemoveClassesCommand >> shouldReparentSubclassesWhenRemoving: aClass [
+	"An empty class's subclasses move up to its superclass, and with force a non-empty one's too."
 
 	aClass subclasses ifEmpty: [ ^ false ].
 	aClass superclass ifNil: [ ^ false ].
-	^ self force or: [ wasEmpty ]
+	^ self force or: [ self isEmptyClass: aClass ]
 ]
 
 { #category : 'private - facts' }
@@ -198,6 +195,14 @@ MCPRemoveClassesCommand >> subclassNamesOf: aClass excluding: someNames [
 	^ ((aClass subclasses collect: [ :each | each name asString ] as: Array) reject: [ :each | someNames includes: each ]) sort
 ]
 
+{ #category : 'private' }
+MCPRemoveClassesCommand >> subclassNamesReparentedWhenRemoving: aClass [
+	"A subclass asked for in the same call is removed, not reparented."
+
+	(self shouldReparentSubclassesWhenRemoving: aClass) ifFalse: [ ^ #(  ) ].
+	^ self subclassNamesOf: aClass excluding: (self resolvedClasses collect: [ :each | each name asString ])
+]
+
 { #category : 'private - facts' }
 MCPRemoveClassesCommand >> subclassesBlockingRemovalOf: aClass [
 	"An empty class's subclasses are reparented to its superclass; a non-empty one's block its removal, unless they go with it."
@@ -210,16 +215,23 @@ MCPRemoveClassesCommand >> subclassesBlockingRemovalOf: aClass [
 MCPRemoveClassesCommand >> validatePreparedRefactoring: aRefactoring [
 	"Pharo's check decides whether the removal is blocked, and the image says what blocks it. Force goes past a warning, and the removal then warns with the same facts; it cannot go past an error, which is all Pharo 10 and 11 signal."
 
-	| blocking warningMessages |
-	warningMessages := OrderedCollection new.
+	| blocking warnings |
+	warnings := OrderedCollection new.
 	[ aRefactoring checkPreconditions ]
 		on: RBRefactoringWarning , RBRefactoringError
 		do: [ :exception |
 				(self force and: [ self forceGoesPast: exception ])
 					ifTrue: [
-							warningMessages addAll: (self blockingFactsFor: exception).
+							warnings addAll: (self blockingFactsFor: exception).
 							exception resume: true ]
 					ifFalse: [ blocking := exception ] ].
 	blocking ifNotNil: [ self signalBlockedBy: blocking ].
-	^ warningMessages asArray
+	^ warnings asArray
+]
+
+{ #category : 'accessing' }
+MCPRemoveClassesCommand >> warningMessages [
+	"What blocked the removal and force went past, one sentence per fact."
+
+	^ warningMessages
 ]
