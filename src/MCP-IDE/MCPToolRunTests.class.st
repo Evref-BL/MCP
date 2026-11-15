@@ -324,18 +324,6 @@ MCPToolRunTests >> testSelectionInputProperties [
 		  (self stringArraySchemaNamed: 'methods' description: 'Run these test methods, as Class>>selector.' itemDescription: nil) }
 ]
 
-{ #category : 'private' }
-MCPToolRunTests >> textForPackages: someNames of: aCount [
-	"A, B and C, or past the names said, A, B, C and 2 other packages."
-
-	aCount > someNames size ifFalse: [ ^ self joinedNames: someNames ].
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: (', ' join: someNames);
-				  nextPutAll: ' and ';
-				  nextPutAll: (self textForCount: aCount - someNames size noun: 'other package') ]
-]
-
 { #category : 'private - results' }
 MCPToolRunTests >> textWithoutTrailingPeriod: aString [
 	"One period, so that 'Got 1 instead of 2.' reads on into ', at ...' and an ellipsis keeps two."
@@ -408,19 +396,11 @@ MCPToolRunTests >> warningsForRequest: aRunTestsRequest [
 
 { #category : 'private' }
 MCPToolRunTests >> withoutTestsSentenceOn: stream for: entry [
-	"Eval-Text holds no test class; test classes in Eval-Text-Tests refer to its classes. EvalLedgerTest has no tests."
+	"EvalLedgerTest has no tests."
 
-	| testPackages |
 	stream
 		nextPutAll: (self valueIn: entry at: #selection);
 		space;
-		nextPutAll: (self valueIn: entry at: #reason).
-	testPackages := (self valueIn: entry at: #testPackages) ifNil: [ #(  ) ].
-	testPackages ifNotEmpty: [
-			stream
-				nextPutAll: '; test classes in ';
-				nextPutAll:
-					(self textForPackages: testPackages of: ((self valueIn: entry at: #testPackageCount) ifNil: [ testPackages size ]));
-				nextPutAll: ' refer to its classes' ].
-	stream nextPut: $.
+		nextPutAll: (self valueIn: entry at: #reason);
+		nextPut: $.
 ]
