@@ -65,3 +65,10 @@ MCPToolRunTestCoverage >> title [
 
 	^ 'Run Test Coverage'
 ]
+
+{ #category : 'private - results' }
+MCPToolRunTestCoverage >> warningsForRequest: aRunTestsRequest [
+	"The coverage scope answers partial results, as a search scope does: an entry that names nothing is skipped, and the answer says so."
+
+	^ aRunTestsRequest coverageRequest scopeQuery warnings
+]

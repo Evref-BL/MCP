@@ -165,7 +165,7 @@ MCPToolRunTests >> executeWithRequest: request [
 				  | data result |
 				  result := (self commandForRequest: runTestsRequest) execute.
 				  data := result asDictionary.
-				  self successResultText: (self successSummaryForData: data) data: data ]
+				  self successResultText: (self successSummaryForData: data) data: data warnings: (self warningsForRequest: runTestsRequest) ]
 		  onError: [ :error :runTestsRequest |
 			  self errorResultForError: error testNames: (self testNamesForErrorFromParsedRequest: runTestsRequest rawRequest: request) ]
 ]
@@ -397,6 +397,13 @@ MCPToolRunTests >> timeoutSentenceOn: stream for: data [
 MCPToolRunTests >> title [
 
 	^ 'Run Tests'
+]
+
+{ #category : 'private - results' }
+MCPToolRunTests >> warningsForRequest: aRunTestsRequest [
+	"test_run refuses a selection that names nothing before anything runs, so a call that ran has nothing to warn of."
+
+	^ #(  )
 ]
 
 { #category : 'private' }
