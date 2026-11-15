@@ -25,14 +25,15 @@ MCPRunTestsRequest class >> addClassNames: classNames to: requests [
 
 { #category : 'private - parsing' }
 MCPRunTestsRequest class >> addMethodReferences: methodReferences to: requests forTool: aTool [
-	"A method is read in every form method_get reads one, and its side is dropped: test_run reads Foo class as Foo. Every entry that names no method is refused, all in one refusal."
+	"A method is read in every form method_get reads one, and its side is dropped: test_run reads Foo class as Foo. A case of a parameterized test is read as its method, so the name an answer gives it can be passed back. Every entry that names no method is refused, all in one refusal."
 
 	| violations |
 	violations := OrderedCollection new.
 	methodReferences do: [ :each |
 			(MCPMethodReference fromString: each)
 				ifNil: [ violations add: (self violationForMethodReference: each) ]
-				ifNotNil: [ :reference | requests add: (MCPTestRunRequest className: reference className testMethodName: reference selector) ] ].
+				ifNotNil: [ :reference |
+					requests add: (MCPTestRunRequest className: reference className testMethodName: (self testSelectorIn: reference selector)) ] ].
 	violations ifNotEmpty: [ MCPInvalidToolInput signalForTool: aTool violations: violations ]
 ]
 
@@ -89,6 +90,16 @@ MCPRunTestsRequest class >> testRequestsFromToolRequest: request [
 	self addClassNames: classNames to: requests.
 	self addMethodReferences: methodReferences to: requests forTool: request tool.
 	^ requests asArray
+]
+
+{ #category : 'private - parsing' }
+MCPRunTestsRequest class >> testSelectorIn: aSelectorText [
+	"The selector of a test as an answer names it. A case of a parameterized test is named Class>>#selector with its parameters, and a test selector is unary, so what follows the selector's first ' with ' is the case's parameters, and passing that name back runs every case of the method."
+
+	| index |
+	index := aSelectorText indexOfSubCollection: ' with '.
+	index isZero ifTrue: [ ^ aSelectorText ].
+	^ (aSelectorText first: index - 1) trimBoth
 ]
 
 { #category : 'private - parsing' }

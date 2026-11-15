@@ -331,6 +331,20 @@ MCPToolRunTestsTest >> testAPackageWithoutTestClassesSaysSo [
 			(#reason -> 'holds no test class') } asDictionary }
 ]
 
+{ #category : 'tests - arguments' }
+MCPToolRunTestsTest >> testAParameterizedCaseCanBePassedBackAsMethods [
+	"A failing case is named with its parameters, the way the answer tells it apart from the cases that passed. Passing that name back as methods runs the method, every case of it."
+
+	| name result |
+	result := self runTests: { (#methods -> #( 'MCPToolRunTestsParameterizedTarget>>#testFailsOnlyForUTF16' )) }.
+	name := (((self dataFrom: result) at: #failures) first at: #tests) first.
+	self assert: name equals: 'MCPToolRunTestsParameterizedTarget>>#testFailsOnlyForUTF16 with #encoding->''UTF-16'''.
+	result := self runTests: { (#methods -> { name }) }.
+	self deny: (self resultIndicatesError: result) description: [ self textFrom: result ].
+	self assert: (self summaryFrom: result) equals: 'Ran 3 tests (2 passed). 1 failure.'.
+	self assert: (((self dataFrom: result) at: #failures) first at: #tests) equals: { name }
+]
+
 { #category : 'tests - outcomes' }
 MCPToolRunTestsTest >> testAParameterizedCaseIsNamedWithItsParameters [
 
