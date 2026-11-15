@@ -242,7 +242,7 @@ MCPEvaluateCommand >> start: aProcess [
 
 { #category : 'private' }
 MCPEvaluateCommand >> stop: anEvaluator saying: aSummary [
-	"Where the code is, and what it wrote, are read before it unwinds. A computing evaluator is taken off the run queue here: the helper below runs at its priority, and would otherwise wait behind it for a turn it may never get. One waiting on a semaphore is left waiting, since terminating it from there is what releases a critical section. The helper terminates it, so that its ensure blocks run at its own priority and this process waits for them only so long. What the stopped code grew is garbage only once it has unwound, which may be after the answer, and a full collection of a large heap takes seconds, so the helper collects it once the code has unwound and the answer has gone out."
+	"Where the code is, and what it wrote, are read before it unwinds. A computing evaluator is taken off the run queue here: the helper below runs at its priority, and would otherwise wait behind it for a turn it may never get. One waiting on a semaphore is left waiting, since terminating it from there is what releases a critical section. The helper terminates it, so that its ensure blocks run at its own priority and this process waits for them only so long. What the stopped code grew is garbage only once it has unwound, which may be after the answer, and a full collection of a large heap takes seconds, so the helper collects it once the code has unwound and the answer has gone out. Were the call's deferred actions never run, its worker ended first or its caller never running them, waiting for them would keep the helper and the garbage forever, so the helper waits for the answer only as long as the answer waits for the unwinding."
 
 	| details stopped answered |
 	anEvaluator suspendingList == (Processor waitingProcessesAt: anEvaluator priority) ifTrue: [ anEvaluator suspend ].
@@ -251,7 +251,7 @@ MCPEvaluateCommand >> stop: anEvaluator saying: aSummary [
 	answered := Semaphore new.
 	[
 		[ anEvaluator terminate ] ensure: [ stopped signal ].
-		answered wait.
+		answered waitTimeoutSeconds: self unwindingSeconds.
 		Smalltalk garbageCollect ] forkAt: anEvaluator priority named: tool name , ' stop'.
 	(stopped waitTimeoutSeconds: self unwindingSeconds) ifTrue: [
 			details at: #stillUnwinding put: true.
