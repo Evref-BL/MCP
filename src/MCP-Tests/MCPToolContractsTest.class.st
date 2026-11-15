@@ -165,8 +165,7 @@ MCPToolContractsTest >> baseToolFlowSpecs [
 		  {
 			  (#toolClass -> MCPToolDebugSearch).
 			  (#arguments -> Dictionary new).
-			  (#requestClass -> MCPDebugSearchRequest).
-			  (#commandClass -> MCPDebugSearchCommand) } asDictionary.
+			  (#requestClass -> MCPToolRequest) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolEvaluate).
 			  (#arguments -> { (#code -> '1') } asDictionary).
@@ -298,8 +297,7 @@ MCPToolContractsTest >> debugWatchToolFlowSpec [
 		  (#arguments -> {
 			   (#method -> 'MCPToolContractsTest>>testDebuggerToolsAreDiscoverableOnly').
 			   (#run -> '1') } asDictionary).
-		  (#requestClass -> MCPDebugWatchRequest).
-		  (#commandClass -> MCPDebugWatchCommand) } asDictionary
+		  (#requestClass -> MCPToolRequest) } asDictionary
 ]
 
 { #category : 'private - evaluate' }

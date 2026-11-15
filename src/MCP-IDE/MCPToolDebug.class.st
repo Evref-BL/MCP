@@ -1,7 +1,7 @@
 "
 Abstract base for MCP debugger tools.
 
-It centralizes the parse/execute/result wrapper the debugger tools share while subclasses provide request parsing, command creation, schemas, and public metadata.
+It holds the call and error wrapper the debugger tools share, while subclasses provide their schemas, public metadata and resultFor:, what they answer to a call.
 "
 Class {
 	#name : 'MCPToolDebug',
@@ -40,12 +40,6 @@ MCPToolDebug >> buildInputSchema [
 		  yourself
 ]
 
-{ #category : 'private - execution' }
-MCPToolDebug >> commandForRequest: debugRequest [
-
-	self subclassResponsibility
-]
-
 { #category : 'private - errors' }
 MCPToolDebug >> debugErrorDetailsFor: anError [
 
@@ -65,7 +59,7 @@ MCPToolDebug >> executeWithRequest: request [
 
 	^ self
 		  executeParsedRequestFrom: request
-		  do: [ :debugRequest | self resultForCommandResult: (self commandForRequest: debugRequest) execute ]
+		  do: [ :arguments | self resultFor: arguments ]
 		  onError: [ :error :ignored | self errorResultForDebugError: error ]
 ]
 
@@ -88,9 +82,9 @@ MCPToolDebug >> requiredInputProperties [
 	^ #(  )
 ]
 
-{ #category : 'private - execution' }
-MCPToolDebug >> resultForCommandResult: commandResult [
+{ #category : 'executing' }
+MCPToolDebug >> resultFor: request [
+	"The answer to a call whose arguments the schema has checked."
 
-	commandResult isError ifTrue: [ ^ self errorResultText: commandResult summary details: commandResult errorDetails ].
-	^ self successResultText: commandResult summary data: commandResult data warnings: commandResult warnings
+	self subclassResponsibility
 ]
