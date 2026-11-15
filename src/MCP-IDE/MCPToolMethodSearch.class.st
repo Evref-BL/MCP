@@ -25,7 +25,7 @@ MCPToolMethodSearch class >> isAbstract [
 ]
 
 { #category : 'private - methods' }
-MCPToolMethodSearch >> addMatchContextTo: entry sourceText: sourceText matcher: matcher queryRequest: queryRequest [
+MCPToolMethodSearch >> addMatchContextTo: entry sourceText: sourceText matcher: matcher [
 	"What a hit carries beyond the method it names. A tool that matches text says where it matched."
 
 	^ self
@@ -38,11 +38,9 @@ MCPToolMethodSearch >> additionalKeywords [
 ]
 
 { #category : 'private - methods' }
-MCPToolMethodSearch >> classReferenceEntriesForClassNamed: className queryRequest: queryRequest [
+MCPToolMethodSearch >> classReferenceEntriesForClassNamed: className scopeQuery: scopeQuery [
 
-	^ self
-		  methodEntriesFromMethods: (self matchingClassReferencesForClassNamed: className inMethods: queryRequest scopeQuery methods)
-		  queryRequest: queryRequest
+	^ self methodEntriesFromMethods: (self matchingClassReferencesForClassNamed: className inMethods: scopeQuery methods)
 ]
 
 { #category : 'private - methods' }
@@ -86,19 +84,15 @@ MCPToolMethodSearch >> filterTextsForMethodEntry: anEntry sourceText: sourceText
 ]
 
 { #category : 'private - methods' }
-MCPToolMethodSearch >> implementorEntriesForSelector: selectorString queryRequest: queryRequest [
+MCPToolMethodSearch >> implementorEntriesForSelector: selectorString scopeQuery: scopeQuery [
 
-	| compiledMethods selectorSymbol |
-	selectorSymbol := selectorString asSymbol.
-	compiledMethods := self implementorMethodsForSelector: selectorSymbol queryRequest: queryRequest.
-	^ self methodEntriesFromMethods: compiledMethods queryRequest: queryRequest
+	^ self methodEntriesFromMethods: (self implementorMethodsForSelector: selectorString asSymbol scopeQuery: scopeQuery)
 ]
 
 { #category : 'private - methods' }
-MCPToolMethodSearch >> implementorMethodsForSelector: selectorSymbol queryRequest: queryRequest [
+MCPToolMethodSearch >> implementorMethodsForSelector: selectorSymbol scopeQuery: scopeQuery [
 
-	| methods scopeQuery |
-	scopeQuery := queryRequest scopeQuery.
+	| methods |
 	scopeQuery packageNames ifNotEmpty: [
 		^ (scopeQuery methods select: [ :eachMethod | eachMethod selector = selectorSymbol ]) asArray ].
 	methods := OrderedCollection new.
@@ -108,16 +102,6 @@ MCPToolMethodSearch >> implementorMethodsForSelector: selectorSymbol queryReques
 					method := eachBehavior >> selectorSymbol.
 					(scopeQuery isInstalledFromTraitedClass: method) ifFalse: [ methods add: method ] ] ].
 	^ methods asArray
-]
-
-{ #category : 'private - filtering' }
-MCPToolMethodSearch >> matchesFieldFiltersOnMethodEntry: anEntry sourceText: sourceText queryRequest: queryRequest [
-
-	^ self
-		  fieldFilters: queryRequest fieldFilters
-		  matchUsing: [ :fieldName | self fieldTextsForMethodEntry: anEntry sourceText: sourceText fieldName: fieldName ]
-		  mode: queryRequest filterMode
-		  caseSensitive: queryRequest caseSensitive
 ]
 
 { #category : 'private - filtering' }
@@ -145,49 +129,10 @@ MCPToolMethodSearch >> matchingVariableReferencesNamed: aVariableName scopeQuery
 ]
 
 { #category : 'private - methods' }
-MCPToolMethodSearch >> methodEntriesFromMethods: compiledMethods queryRequest: queryRequest [
+MCPToolMethodSearch >> methodEntriesFromMethods: compiledMethods [
 
-	| entries |
-	entries := OrderedCollection new.
-	compiledMethods do: [ :eachMethod |
-			| info |
-			info := MCPCompiledMethodInfo fromMethod: eachMethod.
-			entries add: info asDictionary ].
-	^ self sortedMethodEntries: entries
-]
-
-{ #category : 'private - methods' }
-MCPToolMethodSearch >> methodEntriesFromQueryRequest: queryRequest [
-
-	| entries matcher needsSourceForFiltering |
-	matcher := self
-		           matcherForPattern: queryRequest filterPattern
-		           mode: queryRequest filterMode
-		           caseSensitive: queryRequest caseSensitive.
-	needsSourceForFiltering := self needsSourceForFiltering.
-	entries := OrderedCollection new.
-	queryRequest scopeQuery methodsDo: [ :eachMethod |
-			| entry info matchesFilter sourceText |
-			info := MCPCompiledMethodInfo fromMethod: eachMethod.
-			entry := info asDictionary.
-			sourceText := needsSourceForFiltering ifTrue: [ info source ].
-			matchesFilter := (queryRequest hasFilterPattern not or: [
-				                  self matchesFilterOnMethodEntry: entry sourceText: sourceText matcher: matcher ]) and: [
-				                 self matchesFieldFiltersOnMethodEntry: entry sourceText: sourceText queryRequest: queryRequest ].
-			matchesFilter ifTrue: [
-					self
-						addMatchContextTo: entry
-						sourceText: sourceText
-						matcher: matcher
-						queryRequest: queryRequest.
-					entries add: entry ] ].
-	^ self sortedMethodEntries: entries
-]
-
-{ #category : 'private - results' }
-MCPToolMethodSearch >> methodQueryResultDataForPage: page entriesKey: entriesKey [
-
-	^ self queryResultDataFrom: nil page: page entriesKey: entriesKey
+	^ self sortedMethodEntries:
+		  (compiledMethods collect: [ :eachMethod | (MCPCompiledMethodInfo fromMethod: eachMethod) asDictionary ] as: OrderedCollection)
 ]
 
 { #category : 'private - schema' }
@@ -203,15 +148,39 @@ MCPToolMethodSearch >> needsSourceForFiltering [
 ]
 
 { #category : 'private - template' }
-MCPToolMethodSearch >> queryEntriesForQueryRequest: queryRequest [
+MCPToolMethodSearch >> queryEntriesForRequest: request scopeQuery: scopeQuery [
+	"Every method of the scope whose text matches the filter and whose fields hold the field filters. Case matters."
 
-	^ self methodEntriesFromQueryRequest: queryRequest
+	| entries fieldFilters filterMode filterPattern matcher needsSourceForFiltering |
+	filterPattern := self filterPatternFromRequest: request.
+	filterMode := self filterModeFromRequest: request.
+	fieldFilters := self fieldFiltersFromRequest: request.
+	matcher := self matcherForPattern: filterPattern mode: filterMode caseSensitive: true.
+	needsSourceForFiltering := self needsSourceForFiltering.
+	entries := OrderedCollection new.
+	scopeQuery methodsDo: [ :eachMethod |
+			| entry info matchesFilter sourceText |
+			info := MCPCompiledMethodInfo fromMethod: eachMethod.
+			entry := info asDictionary.
+			sourceText := needsSourceForFiltering ifTrue: [ info source ].
+			matchesFilter := (filterPattern isNil or: [ self matchesFilterOnMethodEntry: entry sourceText: sourceText matcher: matcher ])
+				                 and: [
+						                 self
+							                 fieldFilters: fieldFilters
+							                 matchUsing: [ :fieldName |
+							                 self fieldTextsForMethodEntry: entry sourceText: sourceText fieldName: fieldName ]
+							                 mode: filterMode
+							                 caseSensitive: true ].
+			matchesFilter ifTrue: [
+					self addMatchContextTo: entry sourceText: sourceText matcher: matcher.
+					entries add: entry ] ].
+	^ self sortedMethodEntries: entries
 ]
 
 { #category : 'private - template' }
-MCPToolMethodSearch >> queryResultDataForQueryRequest: queryRequest page: page [
+MCPToolMethodSearch >> queryResultDataForPage: page [
 
-	^ self methodQueryResultDataForPage: page entriesKey: #methods
+	^ page asDictionaryWithEntriesKey: #methods
 ]
 
 { #category : 'private - results' }
@@ -219,6 +188,17 @@ MCPToolMethodSearch >> redundantKeys [
 	"An extension's protocol already names its package with a star, so isExtension says nothing a row does not."
 
 	^ #( isExtension )
+]
+
+{ #category : 'private - request' }
+MCPToolMethodSearch >> requiredFilterPatternFromRequest: request named: anArgumentName [
+	"The pattern the search cannot run without, which the caller wrote as anArgumentName. A blank one is as missing as one left out."
+
+	| pattern |
+	pattern := self filterPatternFromRequest: request.
+	pattern ifNil: [ ^ MCPInvalidToolInput signalMissingRequiredArgumentNamed: anArgumentName forTool: self ].
+	pattern isEmpty ifTrue: [ ^ MCPInvalidToolInput signalMissingRequiredArgumentNamed: anArgumentName forTool: self ].
+	^ pattern
 ]
 
 { #category : 'private - template' }
@@ -234,12 +214,10 @@ MCPToolMethodSearch >> searchedNoun [
 ]
 
 { #category : 'private - methods' }
-MCPToolMethodSearch >> selectorReferenceEntriesForSelector: selectorString queryRequest: queryRequest [
+MCPToolMethodSearch >> selectorReferenceEntriesForSelector: selectorString scopeQuery: scopeQuery [
 
-	^ self
-		  methodEntriesFromMethods:
-		  (self matchingSelectorReferencesForSelector: selectorString asSymbol inMethods: queryRequest scopeQuery methods)
-		  queryRequest: queryRequest
+	^ self methodEntriesFromMethods:
+		  (self matchingSelectorReferencesForSelector: selectorString asSymbol inMethods: scopeQuery methods)
 ]
 
 { #category : 'private - methods' }
@@ -287,13 +265,8 @@ MCPToolMethodSearch >> variableBindingsNamed: aVariableName inBehaviors: behavio
 ]
 
 { #category : 'private - methods' }
-MCPToolMethodSearch >> variableReferenceEntriesForVariableNamed: variableName queryRequest: queryRequest [
+MCPToolMethodSearch >> variableReferenceEntriesForVariableNamed: variableName scopeQuery: scopeQuery [
 
-	^ self
-		  methodEntriesFromMethods:
-		  (self
-			   matchingVariableReferencesNamed: variableName
-			   scopeQuery: queryRequest scopeQuery
-			   inMethods: queryRequest scopeQuery methods)
-		  queryRequest: queryRequest
+	^ self methodEntriesFromMethods:
+		  (self matchingVariableReferencesNamed: variableName scopeQuery: scopeQuery inMethods: scopeQuery methods)
 ]

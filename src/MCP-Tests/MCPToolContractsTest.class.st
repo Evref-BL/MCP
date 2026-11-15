@@ -69,13 +69,14 @@ MCPToolContractsTest >> assertNamesAMissingClassAlike: aCase [
 { #category : 'private' }
 MCPToolContractsTest >> assertToolFlowSpec: aSpec [
 
-	| command parsedRequest rawRequest tool |
+	| parsedRequest rawRequest tool |
 	tool := (aSpec at: #toolClass) new.
 	rawRequest := tool requestFromToolCallArguments: (aSpec at: #arguments).
 	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
-	command := tool commandForRequest: parsedRequest.
 	self assert: parsedRequest class equals: (aSpec at: #requestClass).
-	self assert: command class equals: (aSpec at: #commandClass)
+	aSpec
+		at: #commandClass
+		ifPresent: [ :commandClass | self assert: (tool commandForRequest: parsedRequest) class equals: commandClass ]
 ]
 
 { #category : 'private' }
@@ -102,18 +103,15 @@ MCPToolContractsTest >> baseToolFlowSpecs [
 		  {
 			  (#toolClass -> MCPToolSearchRepositories).
 			  (#arguments -> Dictionary new).
-			  (#requestClass -> MCPRepositoryQuerySpec).
-			  (#commandClass -> MCPSearchToolCommand) } asDictionary.
+			  (#requestClass -> MCPToolRequest) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolSearchPackages).
 			  (#arguments -> Dictionary new).
-			  (#requestClass -> MCPSearchPackagesRequest).
-			  (#commandClass -> MCPSearchToolCommand) } asDictionary.
+			  (#requestClass -> MCPToolRequest) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolSearchClasses).
 			  (#arguments -> Dictionary new).
-			  (#requestClass -> MCPSearchClassesRequest).
-			  (#commandClass -> MCPSearchToolCommand) } asDictionary.
+			  (#requestClass -> MCPToolRequest) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolGetClass).
 			  (#arguments -> { (#name -> 'Object') } asDictionary).
@@ -127,8 +125,7 @@ MCPToolContractsTest >> baseToolFlowSpecs [
 		  {
 			  (#toolClass -> MCPToolSearchMethods).
 			  (#arguments -> Dictionary new).
-			  (#requestClass -> MCPMethodSearchRequest).
-			  (#commandClass -> MCPSearchToolCommand) } asDictionary.
+			  (#requestClass -> MCPToolRequest) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolGetMethod).
 			  (#arguments -> {
@@ -286,8 +283,7 @@ MCPToolContractsTest >> critiqueRunToolFlowSpec [
 	^ {
 		  (#toolClass -> MCPToolRunCritiques).
 		  (#arguments -> { (#ruleClasses -> { ReAssignmentInBlockRule name }) } asDictionary).
-		  (#requestClass -> MCPCritiqueRunRequest).
-		  (#commandClass -> MCPSearchToolCommand) } asDictionary
+		  (#requestClass -> MCPToolRequest) } asDictionary
 ]
 
 { #category : 'support' }
@@ -393,20 +389,17 @@ MCPToolContractsTest >> methodLookupToolFlowSpecs [
 		  {
 			  (#toolClass -> MCPToolSearchMethodSource).
 			  (#arguments -> { (#filter -> 'class') } asDictionary).
-			  (#requestClass -> MCPMethodSearchRequest).
-			  (#commandClass -> MCPSearchToolCommand) } asDictionary.
+			  (#requestClass -> MCPToolRequest) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolSearchEquivalentMethods).
 			  (#arguments -> {
 				   (#class -> 'MCPTool').
 				   (#selector -> 'name') } asDictionary).
-			  (#requestClass -> MCPSearchEquivalentMethodsRequest).
-			  (#commandClass -> MCPSearchToolCommand) } asDictionary.
+			  (#requestClass -> MCPToolRequest) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolSearchMethodReferences).
 			  (#arguments -> { (#name -> 'class') } asDictionary).
-			  (#requestClass -> MCPMethodSearchRequest).
-			  (#commandClass -> MCPSearchToolCommand) } asDictionary }
+			  (#requestClass -> MCPToolRequest) } asDictionary }
 ]
 
 { #category : 'private' }
@@ -3261,6 +3254,21 @@ MCPToolContractsTest >> testSearchToolsRanksMoreMatchedWordsFirst [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testSearchToolsReadTheirArgumentsFromTheRequest [
+	"A search reads its arguments from the request it is given; nothing is parsed out of it first."
+
+	{
+		MCPToolSearchRepositories.
+		MCPToolSearchClasses.
+		MCPToolSearchMethods.
+		MCPToolSearchPackages } do: [ :toolClass |
+			| request tool |
+			tool := toolClass new.
+			request := MCPToolRequest tool: tool arguments: Dictionary new.
+			self assert: (tool parsedRequestFromToolRequest: request) identicalTo: request ]
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testSearchToolsReturnsDiscoverableMetadata [
 
 	| createRepositoryMetadata data names result tools |
@@ -3277,24 +3285,6 @@ MCPToolContractsTest >> testSearchToolsReturnsDiscoverableMetadata [
 	createRepositoryMetadata := tools detect: [ :each | (each at: #name) = 'repository_create' ].
 	self assert: createRepositoryMetadata keys asSet equals: #( name description exposure ) asSet.
 	self assert: (createRepositoryMetadata at: #exposure) equals: 'discoverable'
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testSearchToolsUseTypedRequestObjects [
-
-	| classRequest methodRequest packageRequest repositoryRequest |
-	repositoryRequest := MCPToolSearchRepositories new searchRequestFromToolRequest:
-		                     (MCPToolRequest tool: MCPToolSearchRepositories new arguments: Dictionary new).
-	classRequest := MCPToolSearchClasses new searchRequestFromToolRequest:
-		                (MCPToolRequest tool: MCPToolSearchClasses new arguments: Dictionary new).
-	methodRequest := MCPToolSearchMethods new searchRequestFromToolRequest:
-		                 (MCPToolRequest tool: MCPToolSearchMethods new arguments: Dictionary new).
-	packageRequest := MCPToolSearchPackages new searchRequestFromToolRequest:
-		                  (MCPToolRequest tool: MCPToolSearchPackages new arguments: Dictionary new).
-	self assert: repositoryRequest class equals: MCPRepositoryQuerySpec.
-	self assert: classRequest class equals: MCPSearchClassesRequest.
-	self assert: methodRequest class equals: MCPMethodSearchRequest.
-	self assert: packageRequest class equals: MCPSearchPackagesRequest
 ]
 
 { #category : 'tests' }

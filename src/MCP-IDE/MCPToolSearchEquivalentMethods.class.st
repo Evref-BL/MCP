@@ -32,14 +32,14 @@ MCPToolSearchEquivalentMethods >> buildInputSchema [
 ]
 
 { #category : 'private - results' }
-MCPToolSearchEquivalentMethods >> countTextForQueryRequest: queryRequest page: page [
+MCPToolSearchEquivalentMethods >> countTextForRequest: request page: page [
 	"2 methods equivalent to EvalRect>>area."
 
 	| referenceMethod |
-	referenceMethod := queryRequest referenceMethod.
+	referenceMethod := self referenceMethodFromRequest: request.
 	^ String streamContents: [ :stream |
 			  stream
-				  nextPutAll: (super countTextForQueryRequest: queryRequest page: page);
+				  nextPutAll: (super countTextForRequest: request page: page);
 				  nextPutAll: ' equivalent to ';
 				  nextPutAll: (self methodReferenceForBehavior: referenceMethod methodClass selector: referenceMethod selector) ]
 ]
@@ -48,17 +48,6 @@ MCPToolSearchEquivalentMethods >> countTextForQueryRequest: queryRequest page: p
 MCPToolSearchEquivalentMethods >> description [
 
 	^ 'Search methods whose AST is equivalent to a referenced method.'
-]
-
-{ #category : 'private - methods' }
-MCPToolSearchEquivalentMethods >> equivalentEntriesForQueryRequest: queryRequest [
-
-	| referenceMethod |
-	referenceMethod := queryRequest referenceMethod.
-	^ self
-		  methodEntriesFromMethods:
-		  (queryRequest scopeQuery methods select: [ :eachMethod | eachMethod equivalentTo: referenceMethod ]) asArray
-		  queryRequest: queryRequest
 ]
 
 { #category : 'private - request' }
@@ -77,15 +66,18 @@ MCPToolSearchEquivalentMethods >> methodReferenceSpecFromToolRequest: request [
 ]
 
 { #category : 'private - template' }
-MCPToolSearchEquivalentMethods >> queryEntriesForQueryRequest: queryRequest [
+MCPToolSearchEquivalentMethods >> queryEntriesForRequest: request scopeQuery: scopeQuery [
 
-	^ self equivalentEntriesForQueryRequest: queryRequest
+	| referenceMethod |
+	referenceMethod := self referenceMethodFromRequest: request.
+	^ self methodEntriesFromMethods: (scopeQuery methods select: [ :eachMethod | eachMethod equivalentTo: referenceMethod ]) asArray
 ]
 
-{ #category : 'private - template' }
-MCPToolSearchEquivalentMethods >> searchRequestFromToolRequest: request [
+{ #category : 'private - request' }
+MCPToolSearchEquivalentMethods >> referenceMethodFromRequest: request [
+	"The method the others are compared with."
 
-	^ MCPSearchEquivalentMethodsRequest fromRequest: request tool: self
+	^ (self methodReferenceSpecFromToolRequest: request) compiledMethod
 ]
 
 { #category : 'metadata' }

@@ -38,18 +38,18 @@ MCPToolSearchMethods >> description [
 	^ 'List methods by class, package, selector or protocol; method_source_search finds text, method_reference_search senders.'
 ]
 
+{ #category : 'private - request' }
+MCPToolSearchMethods >> fieldFilterNames [
+
+	^ #( 'selector' 'protocol' )
+]
+
 { #category : 'private - filtering' }
 MCPToolSearchMethods >> fieldTextsForMethodEntry: anEntry sourceText: sourceText fieldName: fieldName [
 
 	fieldName = 'selector' ifTrue: [ ^ { (anEntry at: #selector) } ].
 	fieldName = 'protocol' ifTrue: [ ^ { (anEntry at: #protocol) } ].
 	^ #(  )
-]
-
-{ #category : 'private - request' }
-MCPToolSearchMethods >> metadataFilterFieldNames [
-
-	^ #( 'selector' 'protocol' )
 ]
 
 { #category : 'private - schema' }
@@ -66,31 +66,8 @@ MCPToolSearchMethods >> metadataFilterInputProperties [
 			   description: 'Keep methods whose protocol contains this text. Case matters.') }
 ]
 
-{ #category : 'private - template' }
-MCPToolSearchMethods >> queryEntriesForQueryRequest: queryRequest [
-
-	(self usesExactSelectorLookupForQueryRequest: queryRequest) ifTrue: [
-		^ self implementorEntriesForSelector: (queryRequest fieldFilters at: 'selector') queryRequest: queryRequest ].
-	^ super queryEntriesForQueryRequest: queryRequest
-]
-
-{ #category : 'private - template' }
-MCPToolSearchMethods >> searchRequestFromToolRequest: request [
-
-	^ MCPMethodSearchRequest fromMetadataRequest: request tool: self
-]
-
 { #category : 'metadata' }
 MCPToolSearchMethods >> title [
 
 	^ 'Search Method Metadata'
-]
-
-{ #category : 'testing' }
-MCPToolSearchMethods >> usesExactSelectorLookupForQueryRequest: queryRequest [
-
-	^ queryRequest filterPattern isNil and: [
-			  queryRequest filterMode = 'exact' and: [
-				  queryRequest caseSensitive and: [
-					  queryRequest fieldFilters size = 1 and: [ queryRequest fieldFilters includesKey: 'selector' ] ] ] ]
 ]

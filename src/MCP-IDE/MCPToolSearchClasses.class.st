@@ -31,24 +31,6 @@ MCPToolSearchClasses >> buildInputSchema [
 	^ self queryInputSchemaWithProperties: properties
 ]
 
-{ #category : 'private - filtering' }
-MCPToolSearchClasses >> classEntriesForRequest: queryRequest [
-
-	| entries |
-	entries := OrderedCollection new.
-	queryRequest scopeQuery classes do: [ :eachClass |
-			| entry |
-			entry := (MCPClassInfo fromClass: eachClass) asQueryDictionary.
-			(self matchesFieldFiltersOnClassEntry: entry queryRequest: queryRequest) ifTrue: [ entries add: entry ] ].
-	^ entries asArray
-]
-
-{ #category : 'private - request' }
-MCPToolSearchClasses >> classFilterFieldNames [
-
-	^ #( 'name' 'package' 'tag' )
-]
-
 { #category : 'private - schema' }
 MCPToolSearchClasses >> classFilterInputProperties [
 
@@ -91,6 +73,12 @@ MCPToolSearchClasses >> entryNameKeys [
 	^ #( class )
 ]
 
+{ #category : 'private - request' }
+MCPToolSearchClasses >> fieldFilterNames [
+
+	^ #( 'name' 'package' 'tag' )
+]
+
 { #category : 'private - filtering' }
 MCPToolSearchClasses >> fieldTextsForClassEntry: anEntry fieldName: fieldName [
 
@@ -100,24 +88,26 @@ MCPToolSearchClasses >> fieldTextsForClassEntry: anEntry fieldName: fieldName [
 	^ #(  )
 ]
 
-{ #category : 'private - filtering' }
-MCPToolSearchClasses >> matchesFieldFiltersOnClassEntry: anEntry queryRequest: queryRequest [
+{ #category : 'private - template' }
+MCPToolSearchClasses >> queryEntriesForRequest: request scopeQuery: scopeQuery [
+	"The classes of the scope whose fields hold the field filters, ignoring case."
 
-	^ self
-		  fieldFilters: queryRequest fieldFilters
-		  matchUsing: [ :fieldName | self fieldTextsForClassEntry: anEntry fieldName: fieldName ]
-		  mode: queryRequest filterMode
-		  caseSensitive: queryRequest caseSensitive
+	| entries fieldFilters |
+	fieldFilters := self fieldFiltersFromRequest: request.
+	entries := OrderedCollection new.
+	scopeQuery classes do: [ :eachClass |
+			| entry |
+			entry := (MCPClassInfo fromClass: eachClass) asQueryDictionary.
+			(self
+				 fieldFilters: fieldFilters
+				 matchUsing: [ :fieldName | self fieldTextsForClassEntry: entry fieldName: fieldName ]
+				 mode: self defaultFilterMode
+				 caseSensitive: false) ifTrue: [ entries add: entry ] ].
+	^ entries asArray
 ]
 
 { #category : 'private - template' }
-MCPToolSearchClasses >> queryEntriesForQueryRequest: queryRequest [
-
-	^ self classEntriesForRequest: queryRequest
-]
-
-{ #category : 'private - template' }
-MCPToolSearchClasses >> queryResultDataForQueryRequest: queryRequest page: page [
+MCPToolSearchClasses >> queryResultDataForPage: page [
 
 	| data |
 	data := Dictionary new.
@@ -143,12 +133,6 @@ MCPToolSearchClasses >> queryResultEntryFromClassEntry: anEntry [
 MCPToolSearchClasses >> scopeQueryFromRequest: request [
 
 	^ self classScopeQueryFromRequest: request
-]
-
-{ #category : 'private - template' }
-MCPToolSearchClasses >> searchRequestFromToolRequest: request [
-
-	^ MCPSearchClassesRequest fromRequest: request tool: self
 ]
 
 { #category : 'private - template' }

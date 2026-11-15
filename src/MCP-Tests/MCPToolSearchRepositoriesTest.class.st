@@ -91,6 +91,38 @@ MCPToolSearchRepositoriesTest >> testCanFilterByPackageNameAndModifiedState [
 ]
 
 { #category : 'tests' }
+MCPToolSearchRepositoriesTest >> testKeepsAStateOnlyWhenTheCallerNamesIt [
+	"isModified false keeps the repositories the image holds no changes for, and a state left out keeps every repository, whichever way it is."
+
+	| namesFor |
+	namesFor := [ :arguments |
+		            | result |
+		            result := self callToolWith: arguments.
+		            self deny: (result at: #isError ifAbsent: [ false ]).
+		            ((self dataFrom: result) at: #repositories) collect: [ :each | each at: #name ] ].
+	self
+		withRepositories: {
+				(self newRepositoryNamed: 'MCP Present Repository' location: FileLocator imageDirectory packageNames: #( 'MCP' )).
+				(self
+					 newRepositoryNamed: 'MCP Missing Repository'
+					 location: FileLocator imageDirectory / 'MCPDefinitelyMissingRepositoryLocation'
+					 packageNames: #(  )).
+				(self
+					 newRepositoryNamed: 'Other Repository'
+					 location: FileLocator imageDirectory / 'MCPDefinitelyMissingRepositoryLocation'
+					 packageNames: #(  )) }
+		do: [
+				self
+					assert: (namesFor value: {
+								 (#isModified -> false).
+								 (#name -> 'MCP') } asDictionary)
+					equals: #( 'MCP Missing Repository' ).
+				self
+					assert: (namesFor value: { (#name -> 'MCP') } asDictionary)
+					equals: #( 'MCP Missing Repository' 'MCP Present Repository' ) ]
+]
+
+{ #category : 'tests' }
 MCPToolSearchRepositoriesTest >> testListsRegisteredRepositoriesWithStructuredData [
 
 	| alpha beta data entry result |

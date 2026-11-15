@@ -83,6 +83,12 @@ MCPToolSearchRepositories >> failureScopePhraseFromRequest: request [
 	^ 'the image'
 ]
 
+{ #category : 'private - request' }
+MCPToolSearchRepositories >> fieldFilterNames [
+
+	^ #( 'name' 'location' 'subdirectory' 'package' 'class' 'modifiedPackage' )
+]
+
 { #category : 'private - filtering' }
 MCPToolSearchRepositories >> fieldTextsForRepositoryEntry: anEntry fieldName: fieldName [
 
@@ -96,54 +102,45 @@ MCPToolSearchRepositories >> fieldTextsForRepositoryEntry: anEntry fieldName: fi
 ]
 
 { #category : 'private - template' }
-MCPToolSearchRepositories >> filtersQueryRequest: queryRequest [
+MCPToolSearchRepositories >> filtersRequest: request [
 	"Its filters are its fields and the two states it can keep."
 
-	^ queryRequest hasFieldFilters or: [ queryRequest isModified isNotNil or: [ queryRequest isMissing isNotNil ] ]
-]
-
-{ #category : 'private - filtering' }
-MCPToolSearchRepositories >> matchesFieldFiltersOnRepositoryEntry: anEntry queryRequest: queryRequest [
-
-	^ self
-		  fieldFilters: queryRequest fieldFilters
-		  matchUsing: [ :fieldName | self fieldTextsForRepositoryEntry: anEntry fieldName: fieldName ]
-		  mode: queryRequest filterMode
-		  caseSensitive: false
+	^ (self fieldFiltersFromRequest: request) isNotEmpty or: [
+		  self stateNames anySatisfy: [ :each | request hasArgumentNamed: each ] ]
 ]
 
 { #category : 'private - template' }
-MCPToolSearchRepositories >> queryEntriesForQueryRequest: queryRequest [
+MCPToolSearchRepositories >> queryEntriesForRequest: request scopeQuery: scopeQuery [
+	"The repositories registered with the image that keep the states and hold the field filters, ignoring case, by name."
 
-	^ self repositoryEntriesForRequest: queryRequest
-]
-
-{ #category : 'private - template' }
-MCPToolSearchRepositories >> queryResultDataForQueryRequest: queryRequest page: page [
-
-	^ self queryResultDataFrom: nil page: page entriesKey: #repositories
-]
-
-{ #category : 'private - filtering' }
-MCPToolSearchRepositories >> repositoryEntriesForRequest: queryRequest [
-
-	| entries sortedEntries |
+	| entries fieldFilters |
+	fieldFilters := self fieldFiltersFromRequest: request.
 	entries := OrderedCollection new.
 	IceRepository repositories do: [ :eachRepository |
-			| repositoryInfo queryEntry |
+			| repositoryInfo |
 			repositoryInfo := MCPRepositoryInfo fromRepository: eachRepository.
-			queryEntry := repositoryInfo asQueryDictionary.
-			(self repositoryEntry: queryEntry matchesRequest: queryRequest) ifTrue: [ entries add: repositoryInfo asSearchDictionary ] ].
-	sortedEntries := entries asArray sort: [ :left :right | (left at: #name) <= (right at: #name) ].
-	^ sortedEntries
+			(self repositoryEntry: repositoryInfo asQueryDictionary matches: request fieldFilters: fieldFilters) ifTrue: [
+				entries add: repositoryInfo asSearchDictionary ] ].
+	^ entries asArray sort: [ :left :right | (left at: #name) <= (right at: #name) ]
+]
+
+{ #category : 'private - template' }
+MCPToolSearchRepositories >> queryResultDataForPage: page [
+
+	^ page asDictionaryWithEntriesKey: #repositories
 ]
 
 { #category : 'private - filtering' }
-MCPToolSearchRepositories >> repositoryEntry: anEntry matchesRequest: queryRequest [
+MCPToolSearchRepositories >> repositoryEntry: anEntry matches: request fieldFilters: fieldFilters [
 
-	queryRequest isModified ifNotNil: [ :value | (anEntry at: #isModified) = value ifFalse: [ ^ false ] ].
-	queryRequest isMissing ifNotNil: [ :value | (anEntry at: #isMissing) = value ifFalse: [ ^ false ] ].
-	^ self matchesFieldFiltersOnRepositoryEntry: anEntry queryRequest: queryRequest
+	self stateNames do: [ :stateName |
+			(request hasArgumentNamed: stateName) ifTrue: [
+				(anEntry at: stateName asSymbol) = (request booleanArgumentNamed: stateName) ifFalse: [ ^ false ] ] ].
+	^ self
+		  fieldFilters: fieldFilters
+		  matchUsing: [ :fieldName | self fieldTextsForRepositoryEntry: anEntry fieldName: fieldName ]
+		  mode: self defaultFilterMode
+		  caseSensitive: false
 ]
 
 { #category : 'private - schema' }
@@ -168,12 +165,6 @@ MCPToolSearchRepositories >> repositoryFieldFilterInputProperties [
 			   description: 'Keep repositories holding a modified package whose name contains this text, ignoring case.') }
 ]
 
-{ #category : 'private - request' }
-MCPToolSearchRepositories >> repositoryFilterFieldNames [
-
-	^ #( 'name' 'location' 'subdirectory' 'package' 'class' 'modifiedPackage' )
-]
-
 { #category : 'private - schema' }
 MCPToolSearchRepositories >> repositoryTextFilterPropertyNamed: propertyName description: descriptionString [
 
@@ -181,16 +172,17 @@ MCPToolSearchRepositories >> repositoryTextFilterPropertyNamed: propertyName des
 ]
 
 { #category : 'private - template' }
-MCPToolSearchRepositories >> scopePhraseForQueryRequest: queryRequest [
+MCPToolSearchRepositories >> scopePhraseForScopeQuery: scopeQuery [
 	"Repositories are registered with the image, so the image is where this looks."
 
 	^ 'the image'
 ]
 
 { #category : 'private - template' }
-MCPToolSearchRepositories >> searchRequestFromToolRequest: request [
+MCPToolSearchRepositories >> scopeQueryFromRequest: request [
+	"Repositories are registered with the image, which has no scope to narrow it to."
 
-	^ MCPRepositoryQuerySpec fromRequest: request tool: self
+	^ nil
 ]
 
 { #category : 'private - template' }
@@ -199,8 +191,22 @@ MCPToolSearchRepositories >> searchedNoun [
 	^ 'repository'
 ]
 
+{ #category : 'private - request' }
+MCPToolSearchRepositories >> stateNames [
+	"The states a caller keeps by naming them, true or false. Left out, a state keeps every repository."
+
+	^ #( 'isModified' 'isMissing' )
+]
+
 { #category : 'metadata' }
 MCPToolSearchRepositories >> title [
 
 	^ 'Search Repositories'
+]
+
+{ #category : 'private - template' }
+MCPToolSearchRepositories >> warningsForScopeQuery: scopeQuery [
+	"With no scope, there is no name in it that could fail to resolve."
+
+	^ #(  )
 ]

@@ -62,19 +62,3 @@ MCPToolMethodLookupOperation >> lookupArgumentSchemaProperty [
 		  description: self lookupArgumentDescription;
 		  yourself
 ]
-
-{ #category : 'private - request' }
-MCPToolMethodLookupOperation >> requiredLookupPatternFromQueryRequest: queryRequest [
-
-	| pattern |
-	pattern := queryRequest filterPattern.
-	pattern ifNil: [ ^ MCPInvalidToolInput signalMissingRequiredArgumentNamed: self lookupArgumentName forTool: self ].
-	pattern isEmpty ifTrue: [ ^ MCPInvalidToolInput signalMissingRequiredArgumentNamed: self lookupArgumentName forTool: self ].
-	^ pattern
-]
-
-{ #category : 'private - template' }
-MCPToolMethodLookupOperation >> searchRequestFromToolRequest: request [
-
-	^ MCPMethodSearchRequest fromRequest: request tool: self
-]
