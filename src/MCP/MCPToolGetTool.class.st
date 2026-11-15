@@ -53,6 +53,25 @@ MCPToolGetTool >> buildInputSchema [
 		  yourself
 ]
 
+{ #category : 'private - results' }
+MCPToolGetTool >> callDataFrom: data [
+	"The contract without what the catalog alone uses."
+
+	| contract |
+	contract := (data at: #tool) copy.
+	self catalogOnlyContractKeys do: [ :each | contract removeKey: each ifAbsent: [ ] ].
+	^ data copy
+		  at: #tool put: contract;
+		  yourself
+]
+
+{ #category : 'private - results' }
+MCPToolGetTool >> catalogOnlyContractKeys [
+	"How a tool is annotated, exposed, grouped and found is the catalog's business: the data keeps it, and the text leaves it out, since none of it goes into a call."
+
+	^ #( annotations exposure group keywords )
+]
+
 { #category : 'private - execution' }
 MCPToolGetTool >> commandForRequest: getRequest [
 
@@ -61,14 +80,14 @@ MCPToolGetTool >> commandForRequest: getRequest [
 
 { #category : 'private - results' }
 MCPToolGetTool >> contentTextForStructuredContent: structuredContent [
-	"A contract is read in order to build a call, so it is written as YAML rather than as plain lines: lines cannot say whether a value is a number or the text of one, whether a list holds one item or is a string containing a comma, or where a value with spaces ends."
+	"A contract is read in order to build a call, so it is written as YAML rather than as plain lines: lines cannot say whether a value is a number or the text of one, whether a list holds one item or is a string containing a comma, or where a value with spaces ends. The text carries only what a call needs."
 
 	| data |
 	data := structuredContent at: #data ifAbsent: [ ^ super contentTextForStructuredContent: structuredContent ].
 	^ String streamContents: [ :stream |
 			  self summaryAndWarningsOn: stream for: structuredContent.
 			  stream nextPut: Character lf.
-			  stream nextPutAll: (MCPYamlWriter yamlFor: data indent: '') ]
+			  stream nextPutAll: (MCPYamlWriter yamlFor: (self callDataFrom: data) indent: '') ]
 ]
 
 { #category : 'metadata' }
@@ -89,12 +108,9 @@ MCPToolGetTool >> executeWithRequest: request [
 	^ self
 		  executeParsedRequestFrom: request
 		  do: [ :getRequest |
-				  | contract data |
+				  | data |
 				  data := (self commandForRequest: getRequest) execute.
-				  contract := data at: #tool.
-				  self
-					  successResultText: (String streamContents: [ :stream | stream << 'Tool ' << (contract at: #name) << ' found.' ])
-					  data: data ]
+				  self successResultText: (self summaryForContract: (data at: #tool)) data: data ]
 		  onError: [ :error :parsedRequest | self errorResultFor: error ]
 ]
 
@@ -102,6 +118,16 @@ MCPToolGetTool >> executeWithRequest: request [
 MCPToolGetTool >> parsedRequestFromToolRequest: request [
 
 	^ MCPGetToolRequest fromToolRequest: request
+]
+
+{ #category : 'private - results' }
+MCPToolGetTool >> summaryForContract: aContract [
+	"A client that calls only the tools it lists cannot call one outside that list by its name alone, so the answer says when the tool is one."
+
+	^ String streamContents: [ :stream |
+			  stream << 'Tool ' << (aContract at: #name).
+			  (aContract at: #exposure ifAbsent: [ nil ]) = 'discoverable' ifTrue: [ stream << ' (not in the advertised list)' ].
+			  stream nextPut: $. ]
 ]
 
 { #category : 'metadata' }

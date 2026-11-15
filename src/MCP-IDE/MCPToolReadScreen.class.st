@@ -72,6 +72,13 @@ MCPToolReadScreen >> description [
 	^ 'Answer what is on screen as a tree: the open windows, or one window named by its title with the Spec presenters or morphs inside it. Text a caller can search and assert on, for a fraction of what a screenshot costs.'
 ]
 
+{ #category : 'private - results' }
+MCPToolReadScreen >> entryNameKeys [
+	"A node is the morph or presenter of its class."
+
+	^ #( class )
+]
+
 { #category : 'executing' }
 MCPToolReadScreen >> errorResultForError: anError [
 

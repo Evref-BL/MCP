@@ -110,6 +110,7 @@ MCPToolMethodMutation >> atLeastOneInputProperties [
 
 { #category : 'private' }
 MCPToolMethodMutation >> blockingCritiqueDataForMethodNode: aMethodNode [
+	"Nothing is stored yet, so lines count the source as sent."
 
 	| critiques |
 	critiques := OrderedCollection new.
@@ -117,7 +118,7 @@ MCPToolMethodMutation >> blockingCritiqueDataForMethodNode: aMethodNode [
 			| rule |
 			rule := ruleClass new.
 			aMethodNode nodesDo: [ :node | rule check: node forCritiquesDo: [ :critique | critiques add: critique ] ] ].
-	^ critiques collect: [ :each | self critiqueDataFor: each ]
+	^ self distinctCritiqueData: (critiques collect: [ :each | self critiqueDataFor: each source: aMethodNode source ])
 ]
 
 { #category : 'private' }
@@ -148,7 +149,42 @@ MCPToolMethodMutation >> commandErrorForCompileFailure: anError methodSource: me
 ]
 
 { #category : 'private' }
-MCPToolMethodMutation >> critiqueDataFor: aCritique [
+MCPToolMethodMutation >> critiqueData: aCritique isTheSameAs: anotherCritique [
+	"Two hits of one rule, with one title, on one interval."
+
+	^ #( ruleClass title start stop ) allSatisfy: [ :key |
+		  (aCritique at: key ifAbsent: [ nil ]) = (anotherCritique at: key ifAbsent: [ nil ]) ]
+]
+
+{ #category : 'private' }
+MCPToolMethodMutation >> critiqueData: aCritique liesStrictlyInside: anotherCritique [
+	"A hit of the same rule and title on a part of what another hit already flags, as a rule checking every node of a concatenation flags each of its parts."
+
+	| start stop |
+	((aCritique at: #ruleClass) = (anotherCritique at: #ruleClass) and: [ (aCritique at: #title) = (anotherCritique at: #title) ])
+		ifFalse: [ ^ false ].
+	start := aCritique at: #start ifAbsent: [ ^ false ].
+	stop := aCritique at: #stop.
+	(anotherCritique includesKey: #start) ifFalse: [ ^ false ].
+	(start = (anotherCritique at: #start) and: [ stop = (anotherCritique at: #stop) ]) ifTrue: [ ^ false ].
+	^ (anotherCritique at: #start) <= start and: [ stop <= (anotherCritique at: #stop) ]
+]
+
+{ #category : 'private' }
+MCPToolMethodMutation >> critiqueData: aCritique precedes: anotherCritique [
+	"Critiques without a line first, then by line, then by title; the rule and the place break what is left of a tie, so the order never depends on the order Renraku reported them in."
+
+	#( line title ruleClass start ) do: [ :key |
+			| left right |
+			left := aCritique at: key ifAbsent: [ 0 ].
+			right := anotherCritique at: key ifAbsent: [ 0 ].
+			left = right ifFalse: [ ^ left < right ] ].
+	^ true
+]
+
+{ #category : 'private' }
+MCPToolMethodMutation >> critiqueDataFor: aCritique source: aString [
+	"A critique says where it is by the line of aString its interval starts on and the code there, which the caller can find in the method; its interval stays for a tool that reads offsets. It is fixable when method_rewrite can apply its rule."
 
 	| data interval |
 	data := {
@@ -159,28 +195,57 @@ MCPToolMethodMutation >> critiqueDataFor: aCritique [
 	interval ifNotNil: [
 			data
 				at: #start put: interval first;
-				at: #stop put: interval last ].
+				at: #stop put: interval last.
+			aString ifNotNil: [
+					data at: #line put: (self lineNumberAt: interval first in: aString).
+					(self codeQuoteFor: interval in: aString) ifNotEmpty: [ :code | data at: #code put: code ] ] ].
+	(MCPMethodRewriteNamedRuleSpec canApplyRuleClass: aCritique rule class) ifTrue: [ data at: #fixable put: true ].
 	^ data
 ]
 
 { #category : 'private' }
 MCPToolMethodMutation >> critiqueDataForMethod: aCompiledMethod [
-	"Critiquing runs every rule in the image, from any package. Pharo guards each rule against errors but not warnings, and a warning a rule raises about its own code, such as a deprecation, says nothing about the method just compiled: it is resumed rather than allowed to turn the compile into a failure."
+	"Critiquing runs every rule in the image, from any package. Pharo guards each rule against errors but not warnings, and a warning a rule raises about its own code, such as a deprecation, says nothing about the method just compiled: it is resumed rather than allowed to turn the compile into a failure. Lines count the source as stored, which is what method_get shows."
 
-	^ self critiqueDataFromProperties: ([ self critiquesOfMethod: aCompiledMethod ]
-			   on: Warning
-			   do: [ :warning | warning resume ])
+	^ self
+		  critiqueDataFromProperties: ([ self critiquesOfMethod: aCompiledMethod ]
+				   on: Warning
+				   do: [ :warning | warning resume ])
+		  source: aCompiledMethod sourceCode
 ]
 
 { #category : 'private' }
-MCPToolMethodMutation >> critiqueDataFromProperties: properties [
+MCPToolMethodMutation >> critiqueDataFromProperties: properties source: aString [
 
-	| critiques |
-	critiques := properties select: [ :each | each isCritique and: [ self shouldIncludeCritique: each ] ].
-	^ (critiques asArray sort: [ :left :right |
-			   left title = right title
-				   ifTrue: [ left rule class name < right rule class name ]
-				   ifFalse: [ left title < right title ] ]) collect: [ :each | self critiqueDataFor: each ]
+	^ self distinctCritiqueData: (properties
+			   select: [ :each | each isCritique and: [ self shouldIncludeCritique: each ] ]
+			   thenCollect: [ :each | self critiqueDataFor: each source: aString ])
+]
+
+{ #category : 'private - results' }
+MCPToolMethodMutation >> critiqueTextOn: stream for: critique indent: indent [
+	"line 3: Build strings with a stream, naming the rule only when method_rewrite can apply it, then the code it flags on a line of its own, two spaces further in. A critique without a place has no line and no code."
+
+	stream
+		nextPut: Character lf;
+		nextPutAll: indent.
+	critique at: #line ifPresent: [ :line |
+			stream
+				nextPutAll: 'line ';
+				print: line;
+				nextPutAll: ': ' ].
+	stream nextPutAll: (critique at: #title).
+	(critique at: #fixable ifAbsent: [ false ]) ifTrue: [
+			stream
+				nextPutAll: ' (method_rewrite ruleClasses: ';
+				nextPutAll: (critique at: #ruleClass);
+				nextPut: $) ].
+	critique at: #code ifPresent: [ :code |
+			stream
+				nextPut: Character lf;
+				nextPutAll: indent;
+				nextPutAll: '  ';
+				nextPutAll: code ]
 ]
 
 { #category : 'private' }
@@ -197,6 +262,18 @@ MCPToolMethodMutation >> critiquesOfMethod: aCompiledMethod [
 MCPToolMethodMutation >> description [
 
 	^ self methodToolSpec at: #description
+]
+
+{ #category : 'private' }
+MCPToolMethodMutation >> distinctCritiqueData: critiqueData [
+	"Each problem once, in the order of the method: of equal hits the first is kept, and a hit lying strictly inside another of the same rule and title says nothing that one does not."
+
+	| distinct |
+	distinct := OrderedCollection new.
+	critiqueData do: [ :each |
+		(distinct anySatisfy: [ :kept | self critiqueData: each isTheSameAs: kept ]) ifFalse: [ distinct add: each ] ].
+	^ (distinct reject: [ :each | distinct anySatisfy: [ :other | self critiqueData: each liesStrictlyInside: other ] ]) asArray
+		  sort: [ :left :right | self critiqueData: left precedes: right ]
 ]
 
 { #category : 'private' }
@@ -266,6 +343,12 @@ MCPToolMethodMutation >> failureMessageForRenameClassNamed: className classSide:
 				  nextPutAll: newSelector;
 				  nextPutAll: ': ';
 				  nextPutAll: (self normalizedCauseMessageForMutationError: anError) ]
+]
+
+{ #category : 'private' }
+MCPToolMethodMutation >> howToProceedForBlockedCompile [
+
+	^ 'Correct the source and compile it again.'
 ]
 
 { #category : 'private - schema' }
@@ -352,14 +435,33 @@ MCPToolMethodMutation >> shouldIncludeCritiqueRule: aRule [
 ]
 
 { #category : 'private' }
-MCPToolMethodMutation >> signalBlockingCritiquesForMethodNode: aMethodNode [
+MCPToolMethodMutation >> signalBlockingCritiquesForMethodNode: aMethodNode in: aBehavior [
+	"A critique that blocks a compile is told in the refusal itself, where a caller reading text sees it, with the lines of the source as sent."
 
 	| critiques |
 	critiques := self blockingCritiqueDataForMethodNode: aMethodNode.
 	critiques ifEmpty: [ ^ self ].
-	MCPCommandError signalErrorCode: #CompileBlockedByCritiques message: 'Method compilation blocked by critiques.' details: {
-			(#critiques -> critiques asArray).
-			(#howToProceed -> 'Correct the source and resubmit method_compile.') } asDictionary
+	MCPCommandError
+		signalErrorCode: #CompileBlockedByCritiques
+		message: (String streamContents: [ :stream |
+					 stream
+						 nextPutAll: 'Did not compile ';
+						 nextPutAll: (self methodReferenceForBehavior: aBehavior selector: aMethodNode selector);
+						 nextPutAll: ', because '.
+					 critiques size = 1
+						 ifTrue: [ stream nextPutAll: 'a critique blocks' ]
+						 ifFalse: [
+								 stream
+									 print: critiques size;
+									 nextPutAll: ' critiques block' ].
+					 stream nextPutAll: ' compiling it:'.
+					 critiques do: [ :each | self critiqueTextOn: stream for: each indent: '' ].
+					 stream
+						 nextPut: Character lf;
+						 nextPutAll: self howToProceedForBlockedCompile ])
+		details: {
+				(#critiques -> critiques asArray).
+				(#howToProceed -> self howToProceedForBlockedCompile) } asDictionary
 ]
 
 { #category : 'private' }

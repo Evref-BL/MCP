@@ -200,6 +200,28 @@ MCPToolGetMethodTest >> testUnreadableReferenceTeachesTheSyntaxAndTheClassArgume
 		'MCPToolGetMethodTestTarget>> does not name a method. Write a method as Class>>selector, or Class class>>selector for the class side. A bare selector works too when class is given.'
 ]
 
+{ #category : 'tests' }
+MCPToolGetMethodTest >> testVariableDetailsReadByName [
+	"A variable record opens with its name and leaves out the binding class its kind already says; an argument or a temporary, which the method defines itself, names no owner. The data keeps the binding class."
+
+	| argument data lines result |
+	result := self callToolWith: {
+			          (#class -> 'MCPToolGetMethodTestTarget').
+			          (#selector -> 'readInstanceWith:').
+			          (#includeVariableDetails -> true) } asDictionary.
+	data := self dataFrom: result.
+	argument := self variableNamed: 'anArgument' in: (data at: #variableReferences).
+	self assert: (argument at: #kind) equals: 'argument'.
+	self assert: (argument includesKey: #bindingClass).
+	self deny: (argument includesKey: #ownerName).
+	self deny: ((self variableNamed: 'local' in: (data at: #variableReferences)) includesKey: #ownerName).
+	lines := ((result at: #content) first at: #text) lines.
+	self assert: (lines includes: '  anArgument kind=argument referenceCount=2').
+	self assert: (lines includes: '  local kind=temporary referenceCount=3').
+	self assert: (lines includes: '  instanceCounter kind=instanceVariable ownerName=MCPToolGetMethodTestTarget referenceCount=1').
+	self deny: (lines anySatisfy: [ :each | each includesSubstring: 'bindingClass=' ])
+]
+
 { #category : 'private - calling' }
 MCPToolGetMethodTest >> toolName [
 

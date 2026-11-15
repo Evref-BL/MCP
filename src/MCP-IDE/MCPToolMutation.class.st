@@ -243,7 +243,7 @@ MCPToolMutation >> hierarchyRefactoringEnvironmentForClassNames: classNames base
 { #category : 'private - warnings' }
 MCPToolMutation >> howToProceedForRefactoringWarning [
 
-	^ 'Review impactMessages, then rerun the same request with force=true to continue despite these warnings.'
+	^ 'Rerun the same request with force: true to proceed anyway.'
 ]
 
 { #category : 'private - warnings' }
@@ -456,19 +456,23 @@ MCPToolMutation >> refactoringScopeSpecFromRequest: request [
 
 { #category : 'private - warnings' }
 MCPToolMutation >> refactoringWarningSummaryFor: aWarning action: action requestedContext: requestedContext impactMessages: impactMessages [
+	"Refactoring warning for pullUpSlot on X slot y: <impact>; <impact>. Rerun with force: true to proceed anyway. Every impact is named, since a client reading text sees nothing else of them; one that ends on a question keeps its question mark."
 
+	| sentence |
+	sentence := String streamContents: [ :stream |
+			            stream
+				            nextPutAll: 'Refactoring warning for ';
+				            nextPutAll: action;
+				            nextPutAll: (self targetDescriptionForRequestedContext: requestedContext).
+			            impactMessages isEmpty ifFalse: [
+					            stream nextPutAll: ': '.
+					            impactMessages
+						            do: [ :each | stream nextPutAll: (self textWithoutFinalPeriod: each) ]
+						            separatedBy: [ stream nextPutAll: '; ' ] ] ].
 	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Refactoring warning for ';
-				  nextPutAll: action;
-				  nextPutAll: (self targetDescriptionForRequestedContext: requestedContext).
-			  impactMessages isEmpty ifFalse: [
-					  stream
-						  nextPutAll: ': ';
-						  nextPutAll: impactMessages first ].
-			  stream
-				  nextPutAll: ' ';
-				  nextPutAll: self howToProceedForRefactoringWarning ]
+			  stream nextPutAll: sentence.
+			  ('?!' includes: sentence last) ifFalse: [ stream nextPut: $. ].
+			  stream nextPutAll: ' Rerun with force: true to proceed anyway.' ]
 ]
 
 { #category : 'private - errors' }
@@ -518,6 +522,17 @@ MCPToolMutation >> targetDescriptionForRequestedContext: requestedContext [
 					  stream
 						  nextPutAll: ' slot ';
 						  nextPutAll: slotName ] ]
+]
+
+{ #category : 'private - warnings' }
+MCPToolMutation >> textWithoutFinalPeriod: aString [
+	"An impact message as a clause of a longer sentence."
+
+	| trimmed |
+	trimmed := aString trimRight.
+	^ (trimmed endsWith: '.')
+		  ifTrue: [ trimmed allButLast ]
+		  ifFalse: [ trimmed ]
 ]
 
 { #category : 'private - errors' }

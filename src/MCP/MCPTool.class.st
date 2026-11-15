@@ -344,6 +344,24 @@ MCPTool >> buildInputSchema [
 	self subclassResponsibility
 ]
 
+{ #category : 'private - source' }
+MCPTool >> codeQuoteFor: anInterval in: aString [
+	"The code an interval flags, as one line can show it: from its first character to the end of that line or its last character, whichever comes first, trimmed, and cut to its first 60 characters and ... when longer."
+
+	| end code last |
+	(anInterval first between: 1 and: aString size) ifFalse: [ ^ '' ].
+	last := anInterval last min: aString size.
+	end := anInterval first.
+	[ end <= last and: [ ((aString at: end) = Character cr or: [ (aString at: end) = Character lf ]) not ] ] whileTrue: [
+		end := end + 1 ].
+	code := (aString copyFrom: anInterval first to: end - 1) trimBoth.
+	code size > 60 ifFalse: [ ^ code ].
+	^ String streamContents: [ :stream |
+			  stream
+				  nextPutAll: (code first: 60);
+				  nextPutAll: '...' ]
+]
+
 { #category : 'private - execution' }
 MCPTool >> commandForRequest: aToolRequest [
 
@@ -423,13 +441,10 @@ MCPTool >> description [
 
 { #category : 'private - results' }
 MCPTool >> entriesTextOn: stream for: entries labelled: label indent: indent [
-	"A list of records reads as one entry at a time under the name of the list it belongs to; a list of
-	plain values reads as one line, bracketed so that a list of two is not read as one value containing
-	a comma. A field every record holds with the same value, often one the request fixed, is said once
-	beside the name of the list rather than on every line."
+	"A list of records reads as one entry at a time under the name of the list it belongs to. A list of plain values reads as one line, bracketed so that a list of two is not read as one value containing a comma, unless a value has lines of its own, such as a stack frame and its variables: then each value reads on its own lines under the label. A field every record holds with the same value, often one the request fixed, is said once beside the name of the list rather than on every line."
 
 	| entryIndent sharedKeys |
-	(entries anySatisfy: [ :each | each isDictionary ]) ifFalse: [
+	(entries allSatisfy: [ :each | self isInlineValue: each ]) ifTrue: [
 			stream
 				nextPut: Character lf;
 				nextPutAll: indent;
@@ -458,27 +473,54 @@ MCPTool >> entriesTextOn: stream for: entries labelled: label indent: indent [
 							for: entry
 							indent: entryIndent
 							omitting: sharedKeys ]
-				ifFalse: [
-						stream
-							nextPut: Character lf;
-							nextPutAll: entryIndent;
-							nextPutAll: entry asString ] ]
+				ifFalse: [ self valueLinesOn: stream for: entry indent: entryIndent ] ]
+]
+
+{ #category : 'private - results' }
+MCPTool >> entryLineTextFor: entry omitting: omittedKeys [
+	"A record's own line: its name, then its inline fields as key=value, but for those its list already said for every record."
+
+	| pairs |
+	pairs := OrderedCollection new.
+	(self entryNameTextFor: entry) ifNotNil: [ :name | pairs add: name ].
+	(self inlineKeysOf: entry) do: [ :key |
+		(omittedKeys includes: key) ifFalse: [ pairs add: (self inlinePairTextFor: key in: entry) ] ].
+	^ ' ' join: pairs
+]
+
+{ #category : 'private - results' }
+MCPTool >> entryNameKeyOf: aDictionary [
+	"The key whose value opens the record, or nil. A record naming a method opens with the method reference instead."
+
+	(self methodReferenceTextFor: aDictionary) ifNotNil: [ ^ nil ].
+	^ self entryNameKeys
+		  detect: [ :key | (self valueIn: aDictionary at: key) ifNil: [ false ] ifNotNil: [ :value | self isInlineValue: value ] ]
+		  ifNone: [ nil ]
+]
+
+{ #category : 'private - results' }
+MCPTool >> entryNameKeys [
+	"Answer the keys whose value names a record, as a method reference names a method: the record opens with the first of them it holds, bare. A tool declares its own."
+
+	^ #(  )
+]
+
+{ #category : 'private - results' }
+MCPTool >> entryNameTextFor: aDictionary [
+	"What opens a record's line: the method it names, the way Pharo writes it, or else the value of the first name key it holds."
+
+	^ (self methodReferenceTextFor: aDictionary) ifNil: [
+		  (self entryNameKeyOf: aDictionary) ifNotNil: [ :key | (self valueIn: aDictionary at: key) asString ] ]
 ]
 
 { #category : 'private - results' }
 MCPTool >> entryTextOn: stream for: entry indent: indent omitting: omittedKeys [
-	"What identifies the entry goes on its line, but for the fields its list already said for every entry; anything it carries that has its own shape, such as a method's source or a list of hits, follows on its own lines."
+	"What identifies the entry goes on its line, opening with its name, but for the fields its list already said for every entry; anything it carries that has its own shape, such as a method's source or a list of hits, follows on its own lines."
 
-	| pairs reference |
-	reference := self methodReferenceTextFor: entry.
-	pairs := OrderedCollection new.
-	reference ifNotNil: [ pairs add: reference ].
-	(self inlineKeysOf: entry) do: [ :key |
-		(omittedKeys includes: key) ifFalse: [ pairs add: (self inlinePairTextFor: key in: entry) ] ].
 	stream
 		nextPut: Character lf;
 		nextPutAll: indent;
-		nextPutAll: (' ' join: pairs).
+		nextPutAll: (self entryLineTextFor: entry omitting: omittedKeys).
 	(self shownKeysOf: entry) do: [ :key |
 			(self isInlineValue: (entry at: key)) ifFalse: [
 					self
@@ -710,6 +752,13 @@ MCPTool >> groupName [
 	^ self class groupName
 ]
 
+{ #category : 'private - results' }
+MCPTool >> hasLineBreak: aString [
+	"The server writes its own text with LF and Pharo's sources hold CR; either ends a line."
+
+	^ (aString includes: Character cr) or: [ aString includes: Character lf ]
+]
+
 { #category : 'metadata' }
 MCPTool >> icons [
 
@@ -768,7 +817,7 @@ MCPTool >> integerSchemaPropertyNamed: propertyName description: propertyDescrip
 MCPTool >> isBlockValue: value [
 	"A block is read as a block: text with its own lines, or prose too long to sit in a field. It belongs after the fields that identify the result, not among them."
 
-	^ value isString and: [ (value includesSubstring: String cr) or: [ value size > 160 ] ]
+	^ value isString and: [ (self hasLineBreak: value) or: [ value size > 160 ] ]
 ]
 
 { #category : 'private - results' }
@@ -797,15 +846,14 @@ MCPTool >> keyOrder [
 
 { #category : 'private - results' }
 MCPTool >> keysSharedByEntries: entries [
-	"The inline fields every record of a list holds with the same value, provided each line keeps something that tells its record from the others."
+	"The inline fields every record of a list holds with the same value, provided each line keeps something that tells its record from the others. A record's name tells it apart, and is never said once for all."
 
 	| first shared |
 	(entries size >= 2 and: [ entries allSatisfy: [ :each | each isDictionary ] ]) ifFalse: [ ^ #(  ) ].
 	first := entries first.
 	shared := (self inlineKeysOf: first) select: [ :key |
 		          entries allSatisfy: [ :each | ((self inlineKeysOf: each) includes: key) and: [ (each at: key) = (first at: key) ] ] ].
-	^ (entries allSatisfy: [ :each |
-		   (self methodReferenceTextFor: each) isNotNil or: [ (self inlineKeysOf: each) size > shared size ] ])
+	^ (entries allSatisfy: [ :each | (self entryNameTextFor: each) isNotNil or: [ (self inlineKeysOf: each) size > shared size ] ])
 		  ifTrue: [ shared asArray ]
 		  ifFalse: [ #(  ) ]
 ]
@@ -829,6 +877,20 @@ MCPTool >> keywords [
 	normalizedKeywords := OrderedCollection new.
 	keywords do: [ :each | normalizedKeywords addAll: (each asString findTokens: '-_ ') ].
 	^ (normalizedKeywords collect: [ :each | each asLowercase ] as: Set) asArray
+]
+
+{ #category : 'private - source' }
+MCPTool >> lineNumberAt: aPosition in: aString [
+	"The line of aString that holds aPosition, counting from 1. CR, LF and CRLF each end a line, so a source reads the same lines whichever it uses."
+
+	| line |
+	line := 1.
+	1 to: (aPosition - 1 min: aString size) do: [ :index |
+			| character |
+			character := aString at: index.
+			(character = Character cr or: [ character = Character lf and: [ index = 1 or: [ (aString at: index - 1) ~= Character cr ] ] ])
+				ifTrue: [ line := line + 1 ] ].
+	^ line
 ]
 
 { #category : 'metadata' }
@@ -883,13 +945,12 @@ MCPTool >> methodSearchScopeSchemaProperty [
 
 { #category : 'private - results' }
 MCPTool >> mismatchValueText: value [
-	"One side of a mismatch, on one line. A list is the interesting case: the
-	fields a repository guard compares are often package names."
+	"One side of a mismatch, on one line. A list is the interesting case: the fields a repository guard compares are often package names, and it reads bracketed, like every other list."
 
 	value ifNil: [ ^ 'none' ].
 	(value isCollection and: [ value isString not ]) ifTrue: [
 			value ifEmpty: [ ^ 'none' ].
-			^ String streamContents: [ :stream | stream << '(' << (', ' join: (value collect: [ :each | each asString ])) << ')' ] ].
+			^ String streamContents: [ :stream | stream << '[' << (', ' join: (value collect: [ :each | each asString ])) << ']' ] ].
 	^ value asString
 ]
 
@@ -1110,11 +1171,12 @@ MCPTool >> shouldResumeNotification: aNotification [
 
 { #category : 'private - results' }
 MCPTool >> shownKeysOf: entry [
-	"The keys of a record its text shows, in order: a method reference stands in for the fields that name the method."
+	"The keys of a record its text shows, in order: a method reference stands in for the fields that name the method, and a name opening the record for its own field."
 
 	| skipped |
 	skipped := self redundantKeys asOrderedCollection.
 	(self methodReferenceTextFor: entry) ifNotNil: [ skipped addAll: self methodReferenceKeys ].
+	(self entryNameKeyOf: entry) ifNotNil: [ :key | skipped add: key asSymbol ].
 	^ self orderedKeys: (entry keys reject: [ :key | skipped includes: key asSymbol ])
 ]
 
@@ -1288,6 +1350,17 @@ MCPTool >> valueIn: aDictionary at: aKey [
 ]
 
 { #category : 'private - results' }
+MCPTool >> valueLinesOn: stream for: aValue indent: indent [
+	"Every line of a value after the indent of its list, so that a value with lines of its own still reads as one item."
+
+	(aValue asString lines ifEmpty: [ #( '' ) ]) do: [ :line |
+			stream
+				nextPut: Character lf;
+				nextPutAll: indent;
+				nextPutAll: line ]
+]
+
+{ #category : 'private - results' }
 MCPTool >> valueTextOn: stream for: value labelled: label indent: indent [
 
 	| reference |
@@ -1323,7 +1396,7 @@ MCPTool >> valueTextOn: stream for: value labelled: label indent: indent [
 		nextPutAll: indent;
 		nextPutAll: label;
 		nextPut: $:.
-	(value isString and: [ value includesSubstring: String cr ])
+	(value isString and: [ self hasLineBreak: value ])
 		ifTrue: [
 				stream
 					nextPut: Character lf;

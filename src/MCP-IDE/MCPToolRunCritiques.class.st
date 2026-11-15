@@ -75,13 +75,17 @@ MCPToolRunCritiques >> addEntryForCritique: critique rule: rule fallbackEntity: 
 ]
 
 { #category : 'private - entries' }
-MCPToolRunCritiques >> addIntervalFromAnchor: sourceAnchor toHitData: data [
+MCPToolRunCritiques >> addIntervalFromAnchor: sourceAnchor of: target toHitData: data [
+	"A hit in a method also says the line of the method as stored where it starts, and the code there, as a compile's critiques do; the interval stays for a tool that reads offsets."
 
 	| interval |
 	(sourceAnchor class canUnderstand: #interval) ifFalse: [ ^ self ].
 	interval := sourceAnchor interval.
 	interval ifNil: [ ^ self ].
-	data at: #interval put: (String streamContents: [ :stream | stream << interval first asString << '-' << interval last asString ])
+	data at: #interval put: (String streamContents: [ :stream | stream << interval first asString << '-' << interval last asString ]).
+	(target isNotNil and: [ target isCompiledMethod ]) ifFalse: [ ^ self ].
+	data at: #line put: (self lineNumberAt: interval first in: target sourceCode).
+	(self codeQuoteFor: interval in: target sourceCode) ifNotEmpty: [ :code | data at: #code put: code ]
 ]
 
 { #category : 'private - running' }
@@ -185,18 +189,68 @@ MCPToolRunCritiques >> buildInputSchema [
 			  self offsetInputProperty }
 ]
 
+{ #category : 'private - results' }
+MCPToolRunCritiques >> contentTextForStructuredContent: structuredContent [
+	"Each rule reads as one line naming it, then its hits two spaces in, one line each."
+
+	| data rest |
+	data := structuredContent at: #data ifAbsent: [ ^ super contentTextForStructuredContent: structuredContent ].
+	^ String streamContents: [ :stream |
+			  self summaryAndWarningsOn: stream for: structuredContent.
+			  rest := data copy.
+			  rest removeKey: #rules ifAbsent: [ nil ].
+			  self dataTextOn: stream for: rest.
+			  (data at: #rules ifAbsent: [ #(  ) ]) do: [ :group |
+					  self ruleTextOn: stream for: group.
+					  (group at: #hits) do: [ :hit | self hitTextOn: stream for: hit ] ] ]
+]
+
+{ #category : 'private - results' }
+MCPToolRunCritiques >> countTextForQueryRequest: queryRequest page: page [
+	"7 critique hits, First 20 critique hits, Critique hits 21 to 40, No critique hits from offset 40. Collection stops one hit past the page, so no total is ever counted, and none is stated: a page says which hits it holds."
+
+	| offset returned |
+	offset := self offsetFromQueryRequest: queryRequest.
+	returned := page returnedCount.
+	^ String streamContents: [ :stream |
+			  returned = 0
+				  ifTrue: [
+						  stream nextPutAll: 'No critique hits'.
+						  offset > 0 ifTrue: [
+								  stream
+									  nextPutAll: ' from offset ';
+									  print: offset ] ]
+				  ifFalse: [
+						  offset = 0
+							  ifTrue: [
+									  page nextOffset ifNotNil: [ stream nextPutAll: 'First ' ].
+									  stream nextPutAll: (self textForCount: returned noun: self searchedNoun) ]
+							  ifFalse: [
+									  returned = 1
+										  ifTrue: [
+												  stream
+													  nextPutAll: 'Critique hit ';
+													  print: offset + 1 ]
+										  ifFalse: [
+												  stream
+													  nextPutAll: 'Critique hits ';
+													  print: offset + 1;
+													  nextPutAll: ' to ';
+													  print: offset + returned ] ] ] ]
+]
+
 { #category : 'private - entries' }
 MCPToolRunCritiques >> critiqueEntryFor: critique rule: rule fallbackEntity: fallbackEntity [
 	"The rule class and its title say which rule this is; its rationale is documentation of the rule,
 	not of the hit, and is the same on every one of them. A fixable hit is one whose rule method_rewrite
-	can be given by name."
+	can apply."
 
 	| entry |
 	entry := Dictionary new.
 	entry at: #ruleClass put: rule class name asString.
 	entry at: #title put: rule name asString.
 	rule severity ifNotNil: [ :severity | entry at: #severity put: severity asString ].
-	(rule isKindOf: MCPMethodStyleRule) ifTrue: [ entry at: #fixable put: true ].
+	(MCPMethodRewriteNamedRuleSpec canApplyRuleClass: rule class) ifTrue: [ entry at: #fixable put: true ].
 	entry at: #hit put: (self hitDataForCritique: critique fallbackEntity: fallbackEntity).
 	^ entry
 ]
@@ -211,13 +265,14 @@ MCPToolRunCritiques >> defaultPageLimit [
 { #category : 'metadata' }
 MCPToolRunCritiques >> description [
 
-	^ 'Run Renraku critique rules over a scoped part of the Pharo image and return paginated hits grouped by rule class. A hit marked fixable names a rule method_rewrite can apply.'
+	^ 'Run Renraku critique rules over a scoped part of the Pharo image and return paginated hits grouped by rule. A rule method_rewrite can apply says so.'
 ]
 
 { #category : 'private - template' }
-MCPToolRunCritiques >> failureMessageForScope: scopeSummary error: anError [
+MCPToolRunCritiques >> filtersQueryRequest: queryRequest [
+	"Rules choose what is run, not which hits are kept."
 
-	^ self scopeQueryFailureMessageFor: 'critiques' scope: scopeSummary error: anError
+	^ false
 ]
 
 { #category : 'private - results' }
@@ -254,8 +309,34 @@ MCPToolRunCritiques >> hitDataForCritique: critique fallbackEntity: fallbackEnti
 		          ifNil: [ fallbackEntity ]
 		          ifNotNil: [ :sourceAnchor | self targetEntityFromAnchor: sourceAnchor fallbackEntity: fallbackEntity ].
 	self addTarget: target toHitData: data.
-	anchor ifNotNil: [ self addIntervalFromAnchor: anchor toHitData: data ].
+	anchor ifNotNil: [ self addIntervalFromAnchor: anchor of: target toHitData: data ].
 	^ data
+]
+
+{ #category : 'private - results' }
+MCPToolRunCritiques >> hitTextOn: stream for: hit [
+	"A method, with the line of its stored source where the hit starts and the code there; a class by its name; a package as package Eval-Shapes; anything else as it prints."
+
+	stream
+		nextPut: Character lf;
+		nextPutAll: '  '.
+	hit at: #method ifPresent: [ :method |
+			stream nextPutAll: method.
+			hit at: #line ifPresent: [ :line |
+					stream
+						nextPutAll: ' line ';
+						print: line ].
+			hit at: #code ifPresent: [ :code |
+					stream
+						nextPutAll: ': ';
+						nextPutAll: code ].
+			^ self ].
+	hit at: #class ifPresent: [ :className | ^ stream nextPutAll: className ].
+	hit at: #package ifPresent: [ :packageName |
+			^ stream
+				  nextPutAll: 'package ';
+				  nextPutAll: packageName ].
+	stream nextPutAll: (hit at: #entity ifAbsent: [ '' ])
 ]
 
 { #category : 'private - pagination' }
@@ -291,6 +372,17 @@ MCPToolRunCritiques >> methodScopeQueryFromRequest: request [
 		  parentClassNames: (self searchScopeStringCollectionNamed: 'superclassesOf' fromRequest: request);
 		  side: (self searchScopeSideFromRequest: request);
 		  yourself
+]
+
+{ #category : 'private - results' }
+MCPToolRunCritiques >> nextPageTextForOffset: anOffset [
+	"Where the next page starts; critique_run takes no filter to narrow its hits with."
+
+	^ String streamContents: [ :stream |
+			  stream
+				  nextPutAll: 'Next page: offset ';
+				  print: anOffset;
+				  nextPut: $. ]
 ]
 
 { #category : 'private - scope' }
@@ -331,10 +423,12 @@ MCPToolRunCritiques >> queryResultDataForQueryRequest: queryRequest page: page [
 	^ data
 ]
 
-{ #category : 'private - template' }
-MCPToolRunCritiques >> requestedContextFromRequest: request [
+{ #category : 'private - results' }
+MCPToolRunCritiques >> readingNoteForPage: page [
+	"A hit in a method names a line of the method as stored, which is not the source a caller compiled."
 
-	^ { (#scope -> (self classAndMethodScopeSummaryFromRequest: request)) } asDictionary
+	^ (page entries anySatisfy: [ :entry | (entry at: #hit) includesKey: #line ]) ifTrue: [
+		  'Line numbers count each method as stored; method_get shows it.' ]
 ]
 
 { #category : 'private - rules' }
@@ -380,6 +474,7 @@ MCPToolRunCritiques >> ruleGroupFromEntry: entry [
 	group at: #ruleClass put: (entry at: #ruleClass).
 	group at: #title put: (entry at: #title).
 	entry at: #severity ifPresent: [ :severity | severity isEmpty ifFalse: [ group at: #severity put: severity ] ].
+	entry at: #fixable ifPresent: [ :fixable | group at: #fixable put: fixable ].
 	group at: #hits put: OrderedCollection new.
 	^ group
 ]
@@ -400,10 +495,47 @@ MCPToolRunCritiques >> ruleGroupsFromEntries: entries [
 	^ groups collect: [ :each | self finalizedRuleGroup: each ] as: Array
 ]
 
+{ #category : 'private - results' }
+MCPToolRunCritiques >> ruleTextOn: stream for: group [
+	"MCPStringConcatenationRule: Build strings with a stream. method_rewrite can apply it. Every rule is named by its class, since ruleClasses is how a caller picks rules, and an error says so."
+
+	| title |
+	title := group at: #title.
+	stream
+		nextPut: Character lf;
+		nextPutAll: (group at: #ruleClass).
+	(group at: #severity ifAbsent: [ nil ]) = 'error' ifTrue: [ stream nextPutAll: ' (error)' ].
+	stream nextPutAll: ': '.
+	(group at: #fixable ifAbsent: [ false ]) ifFalse: [ ^ stream nextPutAll: title ].
+	stream
+		nextPutAll: ((title endsWith: '.')
+				 ifTrue: [ title allButLast ]
+				 ifFalse: [ title ]);
+		nextPutAll: '. method_rewrite can apply it.'
+]
+
+{ #category : 'private - template' }
+MCPToolRunCritiques >> scopeQueryFromRequest: request [
+
+	^ self methodScopeQueryFromRequest: request
+]
+
+{ #category : 'private - template' }
+MCPToolRunCritiques >> searchActivityText [
+
+	^ 'run critiques'
+]
+
 { #category : 'private - request' }
 MCPToolRunCritiques >> searchRequestFromToolRequest: request [
 
 	^ MCPCritiqueRunRequest fromRequest: request tool: self
+]
+
+{ #category : 'private - template' }
+MCPToolRunCritiques >> searchedNoun [
+
+	^ 'critique hit'
 ]
 
 { #category : 'private - scope' }
@@ -438,12 +570,6 @@ MCPToolRunCritiques >> sourceAnchorForCritique: critique [
 
 	(critique class canUnderstand: #sourceAnchor) ifFalse: [ ^ nil ].
 	^ critique sourceAnchor
-]
-
-{ #category : 'private - results' }
-MCPToolRunCritiques >> successSummaryForScope: scopeSummary page: page [
-
-	^ self scopeQuerySuccessSummaryFor: 'critique hits' scope: scopeSummary page: page
 ]
 
 { #category : 'private - entries' }

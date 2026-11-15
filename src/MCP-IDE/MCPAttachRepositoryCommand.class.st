@@ -1,5 +1,5 @@
 "
-Command wrapper for repository_attach. It registers an existing Git checkout through IceRepositoryCreator, attaches requested packages to the working copy, and returns an MCPRepositoryCreateResult-shaped payload.
+Command wrapper for repository_attach. It registers an existing Git checkout as it is, without writing to it, and adds the requested packages to its working copy. It shares repository_create's refusals of a relative location and of a name or location already registered, then refuses a location that does not exist or is no Git root. It answers an MCPRepositoryCreateResult naming the repository's packages, says where HEAD is and where the sources are, and warns when it has no packages, when another repository registers them too, and of a package asked for that neither the image nor the checkout holds.
 "
 Class {
 	#name : 'MCPAttachRepositoryCommand',
@@ -9,80 +9,41 @@ Class {
 	#tag : 'Commands'
 }
 
-{ #category : 'private' }
-MCPAttachRepositoryCommand >> createRepository [
+{ #category : 'private - creating' }
+MCPAttachRepositoryCommand >> attachRepository [
 
-	| repository |
-	self signalDuplicateRepositoryIfNeeded.
-	repository := IceLibgitRepository new
-		              name: self request name;
-		              location: self locationReference;
-		              yourself.
-	repository pluginManager repositoryWillBeCreated: repository.
-	repository workingCopy initializePackagesFromRepository.
-	self request subdirectory ifNotNil: [ :value |
-			self setSubdirectory: value on: repository.
-			"A checkout without .project had no source directory to read its packages from until now."
-			repository workingCopy refreshPackages ].
-	repository pluginManager repositoryWasCreated: repository.
-	repository register.
-	^ repository
+	^ self registerCheckoutAt: self locationReference during: [ :repository |
+			  self request subdirectory ifNotNil: [ :value |
+					  self setSubdirectory: value on: repository.
+					  "A checkout without .project had no source directory to read its packages from until now."
+					  repository workingCopy refreshPackages ] ]
 ]
 
 { #category : 'executing' }
 MCPAttachRepositoryCommand >> execute [
 
-	| repository result |
+	| packageWarnings repository result summary |
 	^ self
 		  executeRepositoryAction: 'attach'
 		  work: [
-				  repository := self createRepository.
+				  self refuseRelativeLocation.
+				  self refuseRegisteredNameOrLocation.
+				  repository := self attachRepository.
 				  self addRequestedPackagesTo: repository.
-				  result := MCPRepositoryCreateResult fromRepository: repository ]
+				  result := MCPRepositoryCreateResult fromRepository: repository.
+				  summary := self summaryForAttachedRepository: repository.
+				  packageWarnings := self packageWarningsFor: repository ]
 		  successResult: [ :warningMessages |
-				  self tool
-					  successResultText: (String streamContents: [ :stream |
-							   stream << 'Attached repository ' << self request name << '.' << (self projectFileNoteFor: repository) ])
-					  data: (self tool dataForRepositoryResult: result)
-					  warnings: warningMessages ]
+			  self tool
+				  successResultText: summary
+				  data: (self tool dataForRepositoryResult: result)
+				  warnings: warningMessages , packageWarnings ]
 		  failureSummary: [ :error |
 				  String streamContents: [ :stream |
 					  stream << 'Failed to attach repository ' << self request name << ': ' << (error messageText ifNil: [ error asString ]) ] ]
 ]
 
-{ #category : 'private' }
-MCPAttachRepositoryCommand >> gitDirectoryReferenceFor: gitDirPath relativeTo: aLocation [
-
-	| reference |
-	reference := gitDirPath asFileReference.
-	^ reference isAbsolute
-		  ifTrue: [ reference ]
-		  ifFalse: [ aLocation / gitDirPath ]
-]
-
-{ #category : 'private' }
-MCPAttachRepositoryCommand >> isGitCheckoutRoot: aLocation [
-
-	^ (IceRepositoryCreator isGitRoot: aLocation) or: [ self isLinkedGitWorktreeRoot: aLocation ]
-]
-
-{ #category : 'private' }
-MCPAttachRepositoryCommand >> isLinkedGitWorktreeRoot: aLocation [
-
-	| contents gitDirectoryPath gitFile |
-	aLocation isDirectory ifFalse: [ ^ false ].
-	gitFile := aLocation / '.git'.
-	(gitFile exists and: [ gitFile isFile ]) ifFalse: [ ^ false ].
-	contents := [ gitFile contents trimBoth ]
-		            on: Error
-		            do: [ :ignored | ^ false ].
-	(contents beginsWith: 'gitdir:') ifFalse: [ ^ false ].
-	gitDirectoryPath := (contents allButFirst: 'gitdir:' size) trimBoth.
-	gitDirectoryPath isEmpty ifTrue: [ ^ false ].
-	^ (self gitDirectoryReferenceFor: gitDirectoryPath relativeTo: aLocation) exists
-]
-
-{ #category : 'private' }
+{ #category : 'private - location' }
 MCPAttachRepositoryCommand >> locationReference [
 
 	| location |
@@ -90,42 +51,39 @@ MCPAttachRepositoryCommand >> locationReference [
 	location exists ifFalse: [
 			MCPCommandError
 				signalErrorCode: #RepositoryLocationMissing
-				message: 'repository_attach requires location to exist.'
+				message: (String streamContents: [ :stream | stream << self refusalPrefix << location fullName << ' does not exist.' ])
 				details: self request requestedContext ].
 	(self isGitCheckoutRoot: location) ifFalse: [
 			MCPCommandError
 				signalErrorCode: #RepositoryLocationNotGitRoot
-				message: 'repository_attach requires location to be an existing Git repository root.'
+				message: (String streamContents: [ :stream |
+							 stream << self refusalPrefix << location fullName
+							 <<
+							 ' is not the root of a Git checkout. repository_create starts a repository there if it holds no file; otherwise run git init there first.' ])
 				details: self request requestedContext ].
 	^ location
 ]
 
-{ #category : 'private' }
-MCPAttachRepositoryCommand >> matchingRegisteredRepositories [
+{ #category : 'private - results' }
+MCPAttachRepositoryCommand >> noPackagesWarningFor: aRepository [
 
-	| locationPath |
-	locationPath := self request location asFileReference pathString.
-	^ IceRepository repositories select: [ :each |
-		  each name asString = self request name or: [ (self repositoryLocationPathFor: each) = locationPath ] ]
+	^ String streamContents: [ :stream |
+		  stream << 'Repository ' << aRepository name << ' has no packages; repository_update addPackages adds them.' ]
 ]
 
-{ #category : 'private' }
-MCPAttachRepositoryCommand >> repositoryLocationPathFor: aRepository [
+{ #category : 'private - results' }
+MCPAttachRepositoryCommand >> packageWarningsFor: aRepository [
+	"A package asked for that neither the image nor the checkout holds is likely a name mistyped."
 
-	^ aRepository location ifNil: [ '' ] ifNotNil: [ :repositoryLocation | repositoryLocation mcpRepositoryLocationString ]
+	^ (super packageWarningsFor: aRepository)
+	  , (self warningsForPackagesNamed: self request packageNames inNeitherImageNorCheckoutOf: aRepository)
 ]
 
-{ #category : 'private - signaling' }
-MCPAttachRepositoryCommand >> signalDuplicateRepositoryIfNeeded [
+{ #category : 'private - results' }
+MCPAttachRepositoryCommand >> summaryForAttachedRepository: aRepository [
 
-	| matchingRepositoryNames matches |
-	matches := self matchingRegisteredRepositories.
-	matches isEmpty ifTrue: [ ^ self ].
-	matchingRepositoryNames := (matches collect: [ :each | each name asString ] as: Array) sort.
-	MCPCommandError
-		signalErrorCode: #RepositoryAlreadyRegistered
-		message: 'Repository name or location is already registered in Iceberg.'
-		details: (self request requestedContext copy
-				 at: #matchingRepositories put: matchingRepositoryNames;
-				 yourself)
+	^ String streamContents: [ :stream |
+			  stream << 'Attached repository ' << aRepository name << ' at ' << aRepository location fullName << ', '
+			  << (self headPhraseFor: aRepository) << ', ' << (self sourcesPhraseFor: aRepository) << '.'
+			  << (self projectFileNoteFor: aRepository) ]
 ]

@@ -12,18 +12,19 @@ Class {
 { #category : 'executing' }
 MCPReloadRepositoryCommand >> execute [
 
-	| beforeInfo repository result |
+	| packageNames repository result |
 	^ self
 		  executeRepositoryAction: 'reload'
 		  work: [
 				  repository := self request repository.
-				  beforeInfo := MCPRepositoryInfo fromRepository: repository.
+				  packageNames := self sortedStringsFrom: (repository workingCopy loadedPackages collect: [ :each | each name ]).
 				  self loadLoadedPackagesFromDiskIn: repository.
-				  result := MCPRepositoryReloadResult repositoryBefore: beforeInfo after: repository ]
+				  result := MCPRepositoryReloadResult repository: repository packageNames: packageNames ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText:
-					  (String streamContents: [ :stream | stream << 'Reloaded repository ' << result repositoryInfo name << ' from its files.' ])
+					  successResultText: (String streamContents: [ :stream |
+							   stream << 'Reloaded repository ' << result repositoryInfo name << ' from its files, '
+							   << (self headPhraseFor: repository) << '.' ])
 					  data: (self tool dataForRepositoryResult: result)
 					  warnings: warningMessages ]
 		  failureSummary: [ :error | 'Failed to reload repository: ' , (error messageText ifNil: [ error asString ]) ]

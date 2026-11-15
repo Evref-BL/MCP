@@ -1,15 +1,12 @@
 "
-Result DTO returned by repository_commit. It reports repository state after the commit, changed packages captured before committing, modified packages still reported by Iceberg afterward, and commit/head metadata when available.
+Result DTO returned by repository_commit. It names what the commit at HEAD holds, as git show lists its files: the registered packages those files belong to, and the files that belong to none, such as .project or a file written by hand.
 "
 Class {
 	#name : 'MCPRepositoryCommitResult',
 	#superclass : 'MCPRepositorySnapshotResult',
 	#instVars : [
-		'changedPackageNames',
-		'modifiedPackageNames',
-		'commitId',
-		'headDescription',
-		'commitDescription'
+		'packageNames',
+		'otherFiles'
 	],
 	#category : 'MCP-IDE-Results',
 	#package : 'MCP-IDE',
@@ -17,19 +14,11 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPRepositoryCommitResult class >> repository: aRepository changedPackageNames: packageNames commit: aCommit [
-
-	^ self new initializeRepository: aRepository changedPackageNames: packageNames commit: aCommit
-]
-
-{ #category : 'instance creation' }
-MCPRepositoryCommitResult class >> repository: aRepository changedPackageNames: packageNames commitId: commitId commitDescription: commitDescription [
+MCPRepositoryCommitResult class >> repository: aRepository [
 
 	^ self new
-		  initializeRepository: aRepository
-		  changedPackageNames: packageNames
-		  commitId: commitId
-		  commitDescription: commitDescription
+		  initializeSnapshotFromRepository: aRepository;
+		  yourself
 ]
 
 { #category : 'converting' }
@@ -37,120 +26,31 @@ MCPRepositoryCommitResult >> asDictionary [
 
 	| data |
 	data := Dictionary new.
-	self commitId ifNotEmpty: [ :id | data at: #commitId put: id ].
-	self commitDescription ifNotEmpty: [ :description | data at: #commitDescription put: description ].
-	self headDescription ifNotEmpty: [ :description | data at: #headDescription put: description ].
-	self changedPackageNames ifNotEmpty: [ :names | data at: #changedPackages put: names ].
-	self modifiedPackageNames ifNotEmpty: [ :names | data at: #modifiedPackages put: names ].
+	self packageNames ifNotEmpty: [ :names | data at: #packages put: names ].
+	self otherFiles ifNotEmpty: [ :paths | data at: #otherFiles put: paths ].
 	^ data
 ]
 
 { #category : 'accessing' }
-MCPRepositoryCommitResult >> changedPackageNames [
+MCPRepositoryCommitResult >> otherFiles [
 
-	^ changedPackageNames ifNil: [ #(  ) ]
+	^ otherFiles ifNil: [ #(  ) ]
 ]
 
 { #category : 'accessing' }
-MCPRepositoryCommitResult >> changedPackageNames: aCollection [
+MCPRepositoryCommitResult >> otherFiles: aCollection [
 
-	changedPackageNames := aCollection ifNil: [ #(  ) ]
+	otherFiles := aCollection asArray
 ]
 
 { #category : 'accessing' }
-MCPRepositoryCommitResult >> commitDescription [
+MCPRepositoryCommitResult >> packageNames [
 
-	^ commitDescription ifNil: [ '' ]
+	^ packageNames ifNil: [ #(  ) ]
 ]
 
 { #category : 'accessing' }
-MCPRepositoryCommitResult >> commitDescription: aString [
+MCPRepositoryCommitResult >> packageNames: aCollection [
 
-	commitDescription := aString ifNil: [ '' ]
-]
-
-{ #category : 'private' }
-MCPRepositoryCommitResult >> commitDescriptionFrom: aCommit [
-
-	^ (MCPIcebergCommitInfo commentStringFrom: aCommit) trimBoth
-]
-
-{ #category : 'accessing' }
-MCPRepositoryCommitResult >> commitId [
-
-	^ commitId ifNil: [ '' ]
-]
-
-{ #category : 'accessing' }
-MCPRepositoryCommitResult >> commitId: aString [
-
-	commitId := aString ifNil: [ '' ]
-]
-
-{ #category : 'private' }
-MCPRepositoryCommitResult >> commitIdFrom: aCommit [
-
-	^ MCPIcebergCommitInfo idStringFrom: aCommit
-]
-
-{ #category : 'accessing' }
-MCPRepositoryCommitResult >> headDescription [
-
-	^ headDescription ifNil: [ '' ]
-]
-
-{ #category : 'accessing' }
-MCPRepositoryCommitResult >> headDescription: aString [
-
-	headDescription := aString ifNil: [ '' ]
-]
-
-{ #category : 'initialization' }
-MCPRepositoryCommitResult >> initializeRepository: aRepository changedPackageNames: packageNames commit: aCommit [
-
-	| repositoryPackageNames |
-	packageInfos := self packageInfosFromRepository: aRepository.
-	repositoryPackageNames := packageInfos collect: [ :each | each name ].
-	changedPackageNames := packageNames ifNil: [ #(  ) ].
-	modifiedPackageNames := #(  ).
-	commitId := self commitIdFrom: aCommit.
-	commitDescription := self commitDescriptionFrom: aCommit.
-	headDescription := commitId.
-	repositoryInfo := MCPRepositoryInfo
-		                  commitResultRepository: aRepository
-		                  packageNames: repositoryPackageNames
-		                  modifiedPackageNames: modifiedPackageNames
-		                  headCommitId: commitId
-		                  headDescription: headDescription
-]
-
-{ #category : 'initialization' }
-MCPRepositoryCommitResult >> initializeRepository: aRepository changedPackageNames: packageNames commitId: aCommitId commitDescription: aCommitDescription [
-
-	| repositoryPackageNames |
-	packageInfos := self packageInfosFromRepository: aRepository.
-	repositoryPackageNames := packageInfos collect: [ :each | each name ].
-	changedPackageNames := packageNames ifNil: [ #(  ) ].
-	modifiedPackageNames := #(  ).
-	commitId := aCommitId ifNil: [ '' ].
-	commitDescription := aCommitDescription ifNil: [ '' ].
-	headDescription := commitId.
-	repositoryInfo := MCPRepositoryInfo
-		                  commitResultRepository: aRepository
-		                  packageNames: repositoryPackageNames
-		                  modifiedPackageNames: modifiedPackageNames
-		                  headCommitId: commitId
-		                  headDescription: headDescription
-]
-
-{ #category : 'accessing' }
-MCPRepositoryCommitResult >> modifiedPackageNames [
-
-	^ modifiedPackageNames ifNil: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
-MCPRepositoryCommitResult >> modifiedPackageNames: aCollection [
-
-	modifiedPackageNames := aCollection ifNil: [ #(  ) ]
+	packageNames := aCollection asArray
 ]

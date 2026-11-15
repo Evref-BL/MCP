@@ -31,6 +31,19 @@ MCPToolSearchEquivalentMethods >> buildInputSchema [
 		  yourself
 ]
 
+{ #category : 'private - results' }
+MCPToolSearchEquivalentMethods >> countTextForQueryRequest: queryRequest page: page [
+	"2 methods equivalent to EvalRect>>area."
+
+	| referenceMethod |
+	referenceMethod := queryRequest referenceMethod.
+	^ String streamContents: [ :stream |
+			  stream
+				  nextPutAll: (super countTextForQueryRequest: queryRequest page: page);
+				  nextPutAll: ' equivalent to ';
+				  nextPutAll: (self methodReferenceForBehavior: referenceMethod methodClass selector: referenceMethod selector) ]
+]
+
 { #category : 'metadata' }
 MCPToolSearchEquivalentMethods >> description [
 

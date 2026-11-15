@@ -69,6 +69,13 @@ MCPRepositoryQuerySpec >> hasFieldFilters [
 	^ self fieldFilters isNotEmpty
 ]
 
+{ #category : 'testing' }
+MCPRepositoryQuerySpec >> hasFilterPattern [
+	"A repository search takes no filter pattern, only field filters and states."
+
+	^ false
+]
+
 { #category : 'accessing' }
 MCPRepositoryQuerySpec >> isMissing [
 

@@ -72,6 +72,13 @@ MCPSearchClassesRequest >> hasFieldFilters [
 	^ self fieldFilters isNotEmpty
 ]
 
+{ #category : 'testing' }
+MCPSearchClassesRequest >> hasFilterPattern [
+	"A class search takes no filter pattern, only field filters."
+
+	^ false
+]
+
 { #category : 'accessing' }
 MCPSearchClassesRequest >> limit [
 

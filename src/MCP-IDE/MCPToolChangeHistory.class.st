@@ -92,10 +92,33 @@ MCPToolChangeHistory >> integerArraySchemaNamed: aName description: aDescription
 ]
 
 { #category : 'private - results' }
+MCPToolChangeHistory >> keyOrder [
+	"index is the handle every history tool takes, so it leads, then what happened and when."
+
+	^ #( index eventClass time )
+]
+
+{ #category : 'private - results' }
 MCPToolChangeHistory >> keysStatedInSummary [
 	"The summary already says how many entries, and the offset the next page starts at."
 
 	^ #( nextOffset )
+]
+
+{ #category : 'private - results' }
+MCPToolChangeHistory >> listedSummaryForCount: anInteger noun: aNoun data: data [
+	"A page of files or entries says how many it holds and, when another follows, the offset it starts at: the text leaves nextOffset to this sentence."
+
+	^ String streamContents: [ :stream |
+			  stream
+				  nextPutAll: 'Listed ';
+				  nextPutAll: (self textForCount: anInteger noun: aNoun);
+				  nextPut: $..
+			  data at: #nextOffset ifPresent: [ :offset |
+					  stream
+						  nextPutAll: ' Next page: offset ';
+						  print: offset;
+						  nextPut: $. ] ]
 ]
 
 { #category : 'private - results' }
@@ -110,18 +133,9 @@ MCPToolChangeHistory >> successSummaryForData: data operation: operation [
 
 	| action selectedCount performedCount previewCount |
 	operation = 'listFiles' ifTrue: [
-			^ String streamContents: [ :stream |
-				  stream << 'Listed ' << (self textForCount: (data at: #files ifAbsent: [ #(  ) ]) size noun: 'change history file') << '.' ] ].
+		^ self listedSummaryForCount: (data at: #files ifAbsent: [ #(  ) ]) size noun: 'change history file' data: data ].
 	operation = 'listEntries' ifTrue: [
-			^ String streamContents: [ :stream |
-					  stream
-						  nextPutAll: 'Listed ';
-						  nextPutAll: (self textForCount: (data at: #entries ifAbsent: [ #(  ) ]) size noun: 'change history entry').
-					  data at: #nextOffset ifPresent: [ :offset |
-							  stream
-								  nextPutAll: '. More available at offset ';
-								  print: offset ].
-					  stream nextPut: $. ] ].
+		^ self listedSummaryForCount: (data at: #entries ifAbsent: [ #(  ) ]) size noun: 'change history entry' data: data ].
 	(#( 'applyEntries' 'revertEntries' ) includes: operation) ifTrue: [
 			action := data at: #action ifAbsent: [ 'apply' ].
 			selectedCount := data at: #selectedCount ifAbsent: [ 0 ].

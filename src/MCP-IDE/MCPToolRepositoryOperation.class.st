@@ -1,7 +1,7 @@
 "
-Shared implementation for Iceberg repository operation tools.
+Shared implementation for the tools that act on one registered Iceberg repository.
 
-It defines per-tool repository inputs, dispatches repository commands, and returns structured repository operation results for create, attach, update, identity verification, diff, export, commit, branch, and remote actions.
+It defines the inputs each of them takes, runs its repository command, and answers the command's result as a summary, its warnings and its data.
 "
 Class {
 	#name : 'MCPToolRepositoryOperation',

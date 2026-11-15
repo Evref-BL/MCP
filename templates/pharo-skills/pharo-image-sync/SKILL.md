@@ -40,10 +40,11 @@ commits or exports, so the checkout stays clean while the image holds changes.
    what you expect, which fails rather than guessing.
 2. Read the image-side diff with `repository_change_list` before writing
    anything.
-3. `repository_export` writes the changed packages to Tonel and updates the
-   Iceberg index. It stages and commits nothing.
-4. Read the files it touched with `git diff`. Export writes what the image
-   holds, which includes anything loaded into it that you did not put there.
+3. `repository_export` writes the repository's packages from the image, in
+   the checkout's format, and names the files that changed and anything
+   else left uncommitted. It stages and commits nothing.
+4. Read what it wrote with `git diff`. Export writes what the image holds,
+   which includes anything loaded into it that you did not put there.
 
 ## Into The Image
 

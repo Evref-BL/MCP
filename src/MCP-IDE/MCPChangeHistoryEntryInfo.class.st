@@ -82,6 +82,7 @@ MCPChangeHistoryEntryInfo >> addPackageTagChangeInfoFrom: aPackageTagChange [
 
 { #category : 'converting' }
 MCPChangeHistoryEntryInfo >> asDictionary [
+	"behavior names the class, and side says a change was on its class side, as everywhere else a method is named; the name Epicea keeps, with its class suffix, stays for matching."
 
 	| data |
 	data := Dictionary new.
@@ -92,7 +93,7 @@ MCPChangeHistoryEntryInfo >> asDictionary [
 	time ifNotNil: [ data at: #time put: time ].
 	triggerReference ifNotNil: [ data at: #triggerReference put: triggerReference ].
 	packageName ifNotNil: [ data at: #package put: packageName ].
-	behaviorName ifNotNil: [ data at: #behavior put: behaviorName ].
+	behaviorName ifNotNil: [ data at: #behavior put: self instanceSideBehaviorName ].
 	classSide == true ifTrue: [ data at: #side put: 'class' ].
 	selector ifNotNil: [ data at: #selector put: selector ].
 	protocol ifNotNil: [ data at: #protocol put: protocol ].
@@ -146,6 +147,15 @@ MCPChangeHistoryEntryInfo >> initializeTriggerReferenceFromEntry: anEntry log: a
 		triggererReferenceOf: anEntry
 		ifPresent: [ :aReference | triggerReference := self stringFromReference: aReference ]
 		ifAbsent: [ ]
+]
+
+{ #category : 'private' }
+MCPChangeHistoryEntryInfo >> instanceSideBehaviorName [
+	"Epicea's name for the behavior without the class suffix a class-side change carries."
+
+	^ classSide == true
+		  ifTrue: [ behaviorName allButLast: ' class' size ]
+		  ifFalse: [ behaviorName ]
 ]
 
 { #category : 'accessing' }

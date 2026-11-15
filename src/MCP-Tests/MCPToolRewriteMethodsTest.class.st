@@ -370,6 +370,28 @@ MCPToolRewriteMethodsTest >> testPreviewChangesAreSortedByClassNameClassSideAndS
 ]
 
 { #category : 'tests' }
+MCPToolRewriteMethodsTest >> testPreviewNamesItsScopeOnceAndDoesNotEchoIt [
+	"The summary says where the rewrite looked, as a search does, and the text does not repeat the request's scope under its internal names; the data keeps it."
+
+	| result rule text |
+	rule := self rewriteRuleFrom: 'self oldValue' to: 'self newValue'.
+	result := self callToolWith: (self previewArgumentsForRule: rule).
+	text := (result at: #content) first at: #text.
+	self assert: (self summaryFrom: result) equals: ('Previewed 1 method rewrite change in {1}.' format: { self targetClassName }).
+	self deny: (text includesSubstring: 'scope').
+	self deny: (text includesSubstring: 'hierarchyClasses').
+	self assert: ((self dataFrom: result) includesKey: #scope).
+	result := self callToolWith: {
+			          (#rules -> { (self rewriteRuleFrom: 'self oldSideValue' to: 'self newSideValue') }).
+			          (#scope -> {
+				           (#classes -> { self targetClassName }).
+				           (#side -> 'class') } asDictionary) } asDictionary.
+	self
+		assert: (self summaryFrom: result)
+		equals: ('Previewed 1 method rewrite change in {1}, class side.' format: { self targetClassName })
+]
+
+{ #category : 'tests' }
 MCPToolRewriteMethodsTest >> testPreviewReturnsChangesWithoutMutatingMethod [
 
 	| change data result rule |

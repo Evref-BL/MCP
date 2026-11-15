@@ -7,12 +7,14 @@ here.
 ## Reading An Answer
 
 A call answers text: the summary first, then any warnings, then the payload as
-lines. The fields that identify one record share a line as `key=value` pairs,
-and a value carrying spaces is quoted, as in `protocol="private - results"`. A
-record that names a method opens with the method, written the way Pharo writes
-it: `MCPTool>>batchSummaryNoun`, or `MCPTool class>>toolName` on the class side.
-A list of plain values is bracketed, as in `required: [name, slotName]`, and
-text with its own lines follows under its own label.
+lines. A record opens with what it names: a method the way Pharo writes it,
+`MCPTool>>batchSummaryNoun` or `MCPTool class>>toolName` on the class side, or
+a class, package, file or variable by its name alone. The fields that identify
+it follow on the same line as `key=value` pairs, and a value carrying spaces is
+quoted, as in `protocol="private - results"`. A list of plain values is
+bracketed, as in `required: [name, slotName]`; a list whose values have lines
+of their own, such as stack frames, gives each value its own lines under the
+list's label. Other text with its own lines follows under its own label.
 
 A result does not repeat itself: what the summary states in prose, and what a
 record already says another way, is left out of the lines.
@@ -25,8 +27,8 @@ then also carrying the protocol's own `isError`.
 
 A page is the tool's own size, chosen for what one of its entries costs to
 read, so a page of classes is shorter than a page of repositories. When another
-page exists, `data` carries `nextOffset`; call the same tool again with that
-`offset`.
+page exists, the summary names the offset to ask for: call the same tool again
+with that `offset`. With structured content, `data` also carries `nextOffset`.
 
 A search answers what identifies each hit, not everything known about it.
 `repository_search` says how many packages a repository holds rather than
@@ -55,14 +57,18 @@ Pharo signals a notification for a remark rather than a fault, and every
 have produced and the call proceeds, so a deprecated send, or an undeclared
 variable during a load, does not fail it.
 
-`RBRefactoringWarning` is the exception. It reports a change that breaks
-something, so it stops the call, and the error carries `impactMessages`,
-`howToProceed` and `forceSupported`. Read the impact, then send the same request
-with `force=true` only when the warning is acceptable; forced warnings come back
-in the normal `warnings` array.
+`RBRefactoringWarning` is the exception, and so is `class_remove`'s refusal of a
+class something still needs. They report a change that breaks something, so
+they stop the call; the message names every impact and says whether `force`
+gets past it, and with structured content the error also carries
+`impactMessages`, `howToProceed` and `forceSupported`. Send the same request
+with `force: true` only when the impacts are acceptable; forced warnings come
+back in the normal `warnings`.
 
 A method can compile and still answer critiques. They are review evidence about
-code that now exists, not a transport failure.
+code that now exists, not a transport failure. Their line numbers count the
+method as stored, which `method_get` shows, and a critique names its rule class
+only when `method_rewrite` can apply that rule.
 
 ## Methods A Trait Defines
 
@@ -120,7 +126,8 @@ the running image; both preview, and perform with `confirm=true`.
 exists: it validates its input and answers structured data. A warning raised
 while the code runs is printed after the value, so a deprecated method's answer
 arrives with the deprecation that qualifies it, and so is what the code wrote to
-the Transcript. As in a Playground, a lowercase name the code assigns without
+the Transcript. Code that ends on the Transcript itself answers only what it
+wrote. As in a Playground, a lowercase name the code assigns without
 declaring is a variable of that one call; a name it only reads stays undeclared.
 An evaluation stops at its `timeoutSeconds`; work that takes longer runs in a
 process forked at `Processor userBackgroundPriority` that writes its result to

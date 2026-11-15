@@ -9,7 +9,8 @@ Class {
 	#instVars : [
 		'entries',
 		'nextOffset',
-		'totalCount'
+		'totalCount',
+		'countsByKind'
 	],
 	#category : 'MCP-Results',
 	#package : 'MCP',
@@ -62,6 +63,19 @@ MCPPaginationResult >> asDictionaryWithEntriesKey: entriesKey [
 	data at: #pagination put: self paginationDictionary.
 	self nextOffset ifNotNil: [ :offset | data at: #nextOffset put: offset ].
 	^ data
+]
+
+{ #category : 'accessing' }
+MCPPaginationResult >> countsByKind [
+	"How many of all the entries, not only this page's, are of each kind, for a tool whose entries come in kinds; nil unless the tool sets it."
+
+	^ countsByKind
+]
+
+{ #category : 'accessing' }
+MCPPaginationResult >> countsByKind: aDictionary [
+
+	countsByKind := aDictionary
 ]
 
 { #category : 'accessing' }

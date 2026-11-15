@@ -1,5 +1,5 @@
 "
-Command wrapper for repository_commit. It captures the current IceRepository working-copy diff, commits it, and returns an MCPRepositoryCommitResult.
+Command wrapper for repository_commit. It writes the repository's packages as repository_export does, stages and commits every change git sees in the checkout, and returns an MCPRepositoryCommitResult naming what the commit holds.
 "
 Class {
 	#name : 'MCPCommitRepositoryCommand',
@@ -9,45 +9,62 @@ Class {
 	#tag : 'Commands'
 }
 
+{ #category : 'private - git' }
+MCPCommitRepositoryCommand >> committedPathsIn: aRepository [
+	"The paths the commit at HEAD changed, from the checkout root."
+
+	| output |
+	output := (self
+		           runGitArguments: #( '-c' 'core.quotePath=false' 'show' '--name-only' '--format=' 'HEAD' )
+		           in: aRepository
+		           ifFailed: [ :gitResult | self signalGitCommandFailed: gitResult action: 'show' ]) at: #output.
+	^ self sortedStringsFrom: (output lines reject: [ :each | each isEmpty ] thenCollect: [ :each | self unquotedGitPath: each ])
+]
+
+{ #category : 'private - git' }
+MCPCommitRepositoryCommand >> currentBranchNameIn: aRepository [
+	"The branch HEAD is on, or an empty string when HEAD is detached."
+
+	| gitResult |
+	gitResult := self runGitArguments: #( 'symbolic-ref' '--short' '-q' 'HEAD' ) in: aRepository.
+	(gitResult at: #status) = 0 ifFalse: [ ^ '' ].
+	^ (gitResult at: #output) trimBoth
+]
+
 { #category : 'executing' }
 MCPCommitRepositoryCommand >> execute [
 
-	| changedPackageNames commit commitArguments commitDescription commitId modifiedPaths repository result tonelSnapshot |
+	| commitId commitWarnings committedPaths repository result snapshot summary |
 	^ self
 		  executeRepositoryAction: 'commit'
 		  work: [
 				  repository := self request repository.
-				  (self repositoryHasChangesToCommit: repository) ifFalse: [ IceNothingToCommit signal ].
-				  tonelSnapshot := self snapshotTonelFilesFor: repository.
-				  self exportLoadedPackagesFrom: repository.
-				  self restoreOrderOnlyTonelChurnFor: repository fromSnapshot: tonelSnapshot.
-				  modifiedPaths := self modifiedPathsFromGitStatusIn: repository.
-				  modifiedPaths isEmpty ifTrue: [ IceNothingToCommit signal ].
-				  changedPackageNames := self changedPackageNamesForRepository: repository modifiedPaths: modifiedPaths.
+				  (self repositoryHasChangesToCommit: repository) ifFalse: [ self signalNothingToCommitIn: repository ].
+				  snapshot := self snapshotFilesFor: repository.
+				  commitWarnings := (self warningsForCommitWithoutPackagesIn: repository) , (self exportLoadedPackagesFrom: repository).
+				  self restoreOrderOnlyTonelChurnFor: repository fromSnapshot: snapshot.
+				  (self modifiedPathsFromGitStatusIn: repository) ifEmpty: [ self signalNothingToCommitIn: repository ].
 				  self
 					  runGitArguments: #( 'add' '--all' )
 					  in: repository
 					  ifFailed: [ :gitResult | self signalGitCommandFailed: gitResult action: 'add' ].
-				  commitArguments := self gitCommitArgumentsFor: repository message: self request message.
 				  self
-					  runGitArguments: commitArguments
+					  runGitArguments: (self gitCommitArgumentsFor: repository message: self request message)
 					  in: repository
 					  ifFailed: [ :gitResult | self signalGitCommandFailed: gitResult action: 'commit' ].
 				  commitId := self headCommitIdIn: repository.
-				  commitDescription := self headCommitDescriptionIn: repository.
-				  commit := repository lookupCommit: commitId.
-				  self adoptHeadCommit: commit for: repository.
-				  result := MCPRepositoryCommitResult
-					            repository: repository
-					            changedPackageNames: changedPackageNames
-					            commitId: commitId
-					            commitDescription: commitDescription ]
+				  self adoptHeadCommit: (repository lookupCommit: commitId) for: repository.
+				  summary := self summaryForCommit: commitId in: repository.
+				  committedPaths := self committedPathsIn: repository.
+				  result := MCPRepositoryCommitResult repository: repository.
+				  result
+					  packageNames: (self packageNamesForPaths: committedPaths in: repository);
+					  otherFiles: (self pathsOutsidePackages: committedPaths in: repository) ]
 		  successResult: [ :warningMessages |
-				  self tool
-					  successResultText:
-					  (String streamContents: [ :stream | stream << 'Committed repository ' << result repositoryInfo name << '.' ])
-					  data: (self tool dataForRepositoryResult: result)
-					  warnings: warningMessages ]
+			  self tool
+				  successResultText: summary
+				  data: (self tool dataForRepositoryResult: result)
+				  warnings: warningMessages , commitWarnings ]
 		  failureSummary: [ :error | 'Failed to commit repository: ' , (error messageText ifNil: [ error asString ]) ]
 ]
 
@@ -134,6 +151,30 @@ MCPCommitRepositoryCommand >> repositoryHasNoCommit: aRepository [
 	^ MCPIcebergCommitInfo isNoCommit: aRepository headCommit
 ]
 
+{ #category : 'private - signaling' }
+MCPCommitRepositoryCommand >> signalNothingToCommitIn: aRepository [
+
+	MCPCommandError
+		signalErrorCode: #RepositoryNothingToCommit
+		message: (String streamContents: [ :stream |
+					 stream << 'Repository ' << aRepository name
+					 << ' has nothing to commit: the image matches its files and git sees no change in its checkout.' ])
+		details: { (#repository -> aRepository name) } asDictionary
+]
+
+{ #category : 'private - git' }
+MCPCommitRepositoryCommand >> summaryForCommit: aCommitId in: aRepository [
+	"Name the commit as git log --oneline does, on the branch HEAD is on; the subject is the first line of the message as git stored it."
+
+	| branch subject |
+	branch := self currentBranchNameIn: aRepository.
+	subject := (self headCommitDescriptionIn: aRepository) lines ifEmpty: [ '' ] ifNotEmpty: [ :lines | lines first ].
+	^ String streamContents: [ :stream |
+			  stream << 'Committed repository ' << aRepository name.
+			  branch ifEmpty: [ stream << ' on detached HEAD: ' ] ifNotEmpty: [ stream << ' on branch ' << branch << ': ' ].
+			  stream << (self shortCommitId: aCommitId) << ' ' << subject ]
+]
+
 { #category : 'private - git' }
 MCPCommitRepositoryCommand >> trimmedGitOutputFor: arguments in: aRepository action: actionName [
 
@@ -143,4 +184,12 @@ MCPCommitRepositoryCommand >> trimmedGitOutputFor: arguments in: aRepository act
 		             in: aRepository
 		             ifFailed: [ :failedResult | self signalGitCommandFailed: failedResult action: actionName ].
 	^ (gitResult at: #output) trimBoth
+]
+
+{ #category : 'private - warnings' }
+MCPCommitRepositoryCommand >> warningsForCommitWithoutPackagesIn: aRepository [
+
+	aRepository workingCopy packages ifNotEmpty: [ ^ #(  ) ].
+	^ { (String streamContents: [ :stream |
+		   stream << 'Repository ' << aRepository name << ' has no packages, so this commit holds only what git saw in its checkout.' ]) }
 ]

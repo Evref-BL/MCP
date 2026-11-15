@@ -27,10 +27,7 @@ MCPToolAttachRepository >> repositoryToolSpec [
 		  (#referenceInputProperties -> #(  )).
 		  (#inputProperties -> {
 			   (self schemaPropertyNamed: 'name' type: 'string' description: 'Repository name to register in the image.').
-			   (self
-				    schemaPropertyNamed: 'location'
-				    type: 'string'
-				    description: 'Filesystem path of the existing Git checkout to register.').
+			   (self schemaPropertyNamed: 'location' type: 'string' description: 'Absolute path of the existing Git checkout to register.').
 			   (self
 				    schemaPropertyNamed: 'subdirectory'
 				    type: 'string'

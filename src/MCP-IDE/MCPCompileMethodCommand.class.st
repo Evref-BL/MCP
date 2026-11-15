@@ -42,7 +42,7 @@ MCPCompileMethodCommand >> execute [
 						  behavior := self target: behavior forHeader: header source: methodSource.
 						  methodSource := self source: methodSource withSelectorLine: header selector.
 						  headerWarnings := { self droppedHeaderWarning } ].
-				  selector := [ self selectorForMethodSource: methodSource ]
+				  selector := [ self selectorForMethodSource: methodSource in: behavior ]
 					              on: Exception
 					              do: [ :error | self signalCompileFailure: error methodSource: methodSource in: behavior ].
 				  changeKind := (behavior includesSelector: selector)
@@ -117,7 +117,7 @@ MCPCompileMethodCommand >> isUnclassified: aCompiledMethod [
 
 { #category : 'private - header' }
 MCPCompileMethodCommand >> methodNodeOfSelectorLine: aSelectorLine [
-	"The method aSelectorLine, the text after a header's separator, parses as on its own, or nil when it is not a method's whole first line, as width:height:color: and >= are not, leaving out their argument names. The parser is the one selectorForMethodSource: uses; Pharo 12 and later signal the error after the block unless it returns."
+	"The method aSelectorLine, the text after a header's separator, parses as on its own, or nil when it is not a method's whole first line, as width:height:color: and >= are not, leaving out their argument names. The parser is the one selectorForMethodSource:in: uses; Pharo 12 and later signal the error after the block unless it returns."
 
 	^ RBParser parseMethod: aSelectorLine onError: [ :message :position | ^ nil ]
 ]
@@ -139,11 +139,11 @@ MCPCompileMethodCommand >> protocolWarningsFor: aCompiledMethod [
 ]
 
 { #category : 'private' }
-MCPCompileMethodCommand >> selectorForMethodSource: methodSourceString [
+MCPCompileMethodCommand >> selectorForMethodSource: methodSourceString in: aBehavior [
 
 	| methodNode |
 	methodNode := RBParser parseMethod: methodSourceString.
-	self tool signalBlockingCritiquesForMethodNode: methodNode.
+	self tool signalBlockingCritiquesForMethodNode: methodNode in: aBehavior.
 	^ methodNode selector
 ]
 

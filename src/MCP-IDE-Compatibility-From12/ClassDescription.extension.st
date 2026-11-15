@@ -12,3 +12,10 @@ ClassDescription >> mcpCompile: aString classified: aProtocolNameOrNil [
 
 	^ self compile: aString classified: aProtocolNameOrNil
 ]
+
+{ #category : '*MCP-IDE-Compatibility-From12' }
+ClassDescription >> mcpTagName [
+	"The name of the tag the class is filed under, or nil when it is not tagged. From Pharo 12 on, an untagged class sits in its package's root tag, Uncategorized."
+
+	^ self packageTag ifNotNil: [ :packageTag | packageTag isRoot ifFalse: [ packageTag name asString ] ]
+]

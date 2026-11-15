@@ -95,6 +95,21 @@ MCPToolSearchClassesTest >> tearDown [
 ]
 
 { #category : 'tests' }
+MCPToolSearchClassesTest >> testAnUntaggedClassRowHasNoTag [
+	"An untagged class sits in its package's root tag, which its row leaves out; a filter on that tag still finds it."
+
+	| entry result |
+	result := self callToolWith: { (self searchScope: { (#classes -> #( 'MCPToolGetMethodTestTarget' )) }) } asDictionary.
+	entry := ((self dataFrom: result) at: #classes) first.
+	self deny: (entry includesKey: #tag).
+	self assert: (((result at: #content) first at: #text) lines includes: '  MCPToolGetMethodTestTarget package=MCP-Tests-Resources').
+	result := self callToolWith: {
+			          (self searchScope: { (#classes -> #( 'MCPToolGetMethodTestTarget' )) }).
+			          (#tag -> MCPToolGetMethodTestTarget packageTagName asString) } asDictionary.
+	self assert: ((self dataFrom: result) at: #classes) size equals: 1
+]
+
+{ #category : 'tests' }
 MCPToolSearchClassesTest >> testClassNamesReturnExactClassInfos [
 
 	| baseEntry data result |
@@ -185,8 +200,8 @@ MCPToolSearchClassesTest >> testImageScopeCanFilterAndPaginate [
 
 	| classNames data pagination result summary |
 	result := self callToolWith: {
-		          (#name -> self fixturePrefix).
-		          (#offset -> 1) } asDictionary.
+			          (#name -> self fixturePrefix).
+			          (#offset -> 1) } asDictionary.
 	data := self dataFrom: result.
 	pagination := data at: #pagination.
 	summary := self summaryFrom: result.
@@ -197,7 +212,7 @@ MCPToolSearchClassesTest >> testImageScopeCanFilterAndPaginate [
 	self assert: (pagination at: #returnedCount) equals: 2.
 	self assert: (pagination at: #totalCount) equals: 3.
 	self deny: (pagination at: #truncated).
-	self assert: (summary includesSubstring: 'Showing 2 of 3 classes').
+	self assert: summary equals: '2 of 3 classes match in the image.'.
 	self assert: classNames equals: {
 			self childClassName.
 			self grandchildClassName } asArray
@@ -386,13 +401,25 @@ MCPToolSearchClassesTest >> testReturnsWarningsAndEmptyResultsWhenPackageIsMissi
 ]
 
 { #category : 'tests' }
+MCPToolSearchClassesTest >> testRowsLeadWithTheClassName [
+
+	| lines result |
+	result := self callToolWith: { (#name -> self fixturePrefix) } asDictionary.
+	lines := ((result at: #content) first at: #text) lines.
+	self deny: (self resultIndicatesError: result).
+	self assert: (lines second beginsWith: 'classes (each package=').
+	self assert: (lines allButFirst: 2) equals: (self fixtureClassNames collect: [ :each | '  ' , each ])
+]
+
+{ #category : 'tests' }
 MCPToolSearchClassesTest >> testScopeEntriesWrittenWithTheirSideSelectTheirClass [
-	"A class search answers whole classes, so Foo class selects Foo, in every scope key, without a warning."
+	"A class search answers whole classes, so Foo class selects Foo, in every scope key, without a warning, and the summary names Foo."
 
 	| result |
 	result := self callToolWith: { (self searchScope: { (#classes -> { (self baseClassName , ' class') }) }) } asDictionary.
 	self assert: (self warningsFrom: result) isEmpty.
 	self assert: (((self dataFrom: result) at: #classes) collect: [ :each | each at: #class ]) equals: { self baseClassName }.
+	self assert: (self summaryFrom: result) equals: '1 class in ' , self baseClassName , '.'.
 	result := self callToolWith: {
 			          (self searchScope: { (#hierarchyOf -> { (self childClassName , ' class') }) }).
 			          (#name -> self fixturePrefix) } asDictionary.
@@ -400,7 +427,8 @@ MCPToolSearchClassesTest >> testScopeEntriesWrittenWithTheirSideSelectTheirClass
 	self assert: (((self dataFrom: result) at: #classes) collect: [ :each | each at: #class ]) equals: {
 			self baseClassName.
 			self childClassName.
-			self grandchildClassName }
+			self grandchildClassName }.
+	self assert: (self summaryFrom: result) equals: '3 classes match in the hierarchy of ' , self childClassName , '.'
 ]
 
 { #category : 'tests' }

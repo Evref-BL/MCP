@@ -85,9 +85,10 @@ MCPToolSearchClasses >> description [
 ]
 
 { #category : 'private - results' }
-MCPToolSearchClasses >> failureMessageForScope: scopeSummary error: anError [
+MCPToolSearchClasses >> entryNameKeys [
+	"A row is a class."
 
-	^ self scopeQueryFailureMessageFor: 'classes' scope: scopeSummary error: anError
+	^ #( class )
 ]
 
 { #category : 'private - filtering' }
@@ -128,17 +129,20 @@ MCPToolSearchClasses >> queryResultDataForQueryRequest: queryRequest page: page 
 
 { #category : 'private - results' }
 MCPToolSearchClasses >> queryResultEntryFromClassEntry: anEntry [
+	"A class that is not tagged sits in its package's root tag, which says nothing a row needs."
 
-	^ {
-		  (#class -> (anEntry at: #class)).
-		  (#package -> (anEntry at: #package)).
-		  (#tag -> (anEntry at: #tag)) } asDictionary
+	| entry |
+	entry := {
+		         (#class -> (anEntry at: #class)).
+		         (#package -> (anEntry at: #package)) } asDictionary.
+	(anEntry at: #hasTag) ifTrue: [ entry at: #tag put: (anEntry at: #tag) ].
+	^ entry
 ]
 
 { #category : 'private - template' }
-MCPToolSearchClasses >> requestedContextFromRequest: request [
+MCPToolSearchClasses >> scopeQueryFromRequest: request [
 
-	^ { (#scope -> (self classAndMethodScopeSummaryFromRequest: request)) } asDictionary
+	^ self classScopeQueryFromRequest: request
 ]
 
 { #category : 'private - template' }
@@ -147,10 +151,10 @@ MCPToolSearchClasses >> searchRequestFromToolRequest: request [
 	^ MCPSearchClassesRequest fromRequest: request tool: self
 ]
 
-{ #category : 'private - results' }
-MCPToolSearchClasses >> successSummaryForScope: scopeSummary page: page [
+{ #category : 'private - template' }
+MCPToolSearchClasses >> searchedNoun [
 
-	^ self scopeQuerySuccessSummaryFor: 'classes' scope: scopeSummary page: page
+	^ 'class'
 ]
 
 { #category : 'metadata' }

@@ -25,6 +25,12 @@ MCPToolMethodSearchTest >> entryForReference: aReference in: methods [
 ]
 
 { #category : 'private' }
+MCPToolMethodSearchTest >> referencesOf: methodEntries [
+
+	^ methodEntries collect: [ :each | MCPToolSearchMethods new methodEntryLabel: each ] as: Array
+]
+
+{ #category : 'private' }
 MCPToolMethodSearchTest >> targetClassName [
 
 	^ MCPToolMethodSearchTestTarget name
@@ -250,6 +256,19 @@ MCPToolMethodSearchTest >> testClassReferenceReturnsStructuredErrorWhenClassIsMi
 ]
 
 { #category : 'tests' }
+MCPToolMethodSearchTest >> testClassScopeLeavesOutWhatTraitedClassInstalls [
+	"Pharo installs TraitedClass's methods on the class side of every class using traits. Nobody wrote them there, so a sweep of the class leaves them out and lists what the class and its own traits define."
+
+	| methods |
+	methods := (self dataFrom:
+		            (self callToolWith:
+			             { (self searchScope: { (#classes -> { MCPToolMethodSearchTraitUser name }) } side: 'class') } asDictionary)) at:
+		           #methods.
+	self deny: (methods anySatisfy: [ :each | (each at: #trait ifAbsent: [ '' ]) = 'TraitedClass' ]).
+	self assert: (self referencesOf: methods) equals: #( 'TMCPToolMethodSearchFixture class>>mcpTraitFixtureValue' )
+]
+
+{ #category : 'tests' }
 MCPToolMethodSearchTest >> testDefaultExactSelectorFilterReturnsImplementors [
 
 	| data result |
@@ -467,6 +486,28 @@ MCPToolMethodSearchTest >> testEquivalentSearchReturnsStructuredErrorWhenReferen
 ]
 
 { #category : 'tests' }
+MCPToolMethodSearchTest >> testEquivalentSearchSummaryNamesTheReferenceMethod [
+
+	| result |
+	result := self callToolNamed: 'method_equivalent_search' withArguments: {
+			          (self searchScope: { (#classes -> #( 'MCPToolMethodSearchReferenceFixture' )) } side: 'class').
+			          (#class -> 'MCPToolMethodSearchReferenceFixture').
+			          (#selector -> 'sharedTarget').
+			          (#side -> 'class') } asDictionary.
+	self
+		assert: (self summaryFrom: result)
+		equals:
+		'1 method equivalent to MCPToolMethodSearchReferenceFixture class>>sharedTarget in MCPToolMethodSearchReferenceFixture, class side.'.
+	result := self callToolNamed: 'method_equivalent_search' withArguments: {
+			          (self searchScope: { (#classes -> #( 'MCPToolHierarchyTestMid' )) }).
+			          (#class -> 'MCPToolMethodSearchReferenceFixture').
+			          (#selector -> 'sharedTarget') } asDictionary.
+	self
+		assert: (self summaryFrom: result)
+		equals: 'No methods equivalent to MCPToolMethodSearchReferenceFixture>>sharedTarget in MCPToolHierarchyTestMid.'
+]
+
+{ #category : 'tests' }
 MCPToolMethodSearchTest >> testExactEmptyFilterIsApplied [
 	"A blank filter matches nothing and is not missing either, so the answer says to leave it out."
 
@@ -477,6 +518,16 @@ MCPToolMethodSearchTest >> testExactEmptyFilterIsApplied [
 	error := self errorFrom: result.
 	self assertResult: result refusesArgumentsSaying: 'protocol is blank; leave it out or give it a value.'.
 	self assert: (error at: #errorClass) equals: 'MCPInvalidToolInput'
+]
+
+{ #category : 'tests' }
+MCPToolMethodSearchTest >> testImageScopeLeavesOutWhatTraitedClassInstalls [
+
+	| methods |
+	methods := (self dataFrom: (self callToolWith: {
+				             (self searchScope: {  } side: 'class').
+				             (#selector -> 'findOriginClassOf:') } asDictionary)) at: #methods.
+	self deny: (methods anySatisfy: [ :each | (each at: #trait ifAbsent: [ '' ]) = 'TraitedClass' ])
 ]
 
 { #category : 'tests' }
@@ -505,6 +556,18 @@ MCPToolMethodSearchTest >> testImageScopeReturnsInstanceAndClassImplementors [
 		entryForReference:
 		(String streamContents: [ :stream | stream << MCPToolMethodSearchReferenceFixture name << ' class>>' << selector ])
 		in: entries
+]
+
+{ #category : 'tests' }
+MCPToolMethodSearchTest >> testImplementorsLeaveOutWhatTraitedClassInstalls [
+	"An implementor lookup reads the behaviors of its scope itself, and leaves out the copies TraitedClass installs as a sweep does."
+
+	| result |
+	result := self callToolNamed: 'method_reference_search' withArguments: {
+			          (#kind -> 'implementors').
+			          (#name -> 'allTraits').
+			          (self searchScope: { (#classes -> { MCPToolMethodSearchTraitUser name }) }) } asDictionary.
+	self assert: ((self dataFrom: result) at: #methods) isEmpty
 ]
 
 { #category : 'tests' }
@@ -667,6 +730,19 @@ MCPToolMethodSearchTest >> testReturnsWarningsAndEmptyResultsWhenPackageIsMissin
 ]
 
 { #category : 'tests' }
+MCPToolMethodSearchTest >> testRowsDoNotRepeatExtensionBesideItsProtocol [
+	"An extension's protocol names its package with a star, so its row leaves out isExtension; the data keeps it."
+
+	| contentText result |
+	result := self callToolWith: { (self searchScope: { (#packages -> #( 'MCP-Tests-Resources-Extensions' )) }) } asDictionary.
+	contentText := (result at: #content) first at: #text.
+	self assert:
+		(contentText includesSubstring: 'MCPToolMethodSearchReferenceTarget>>extensionProbe protocol=*MCP-Tests-Resources-Extensions').
+	self deny: (contentText includesSubstring: 'isExtension').
+	self assert: (((self dataFrom: result) at: #methods) anySatisfy: [ :each | each at: #isExtension ifAbsent: [ false ] ])
+]
+
+{ #category : 'tests' }
 MCPToolMethodSearchTest >> testScopeArgumentIsRejected [
 
 	self
@@ -790,6 +866,26 @@ MCPToolMethodSearchTest >> testSelectorReferenceSuperclassAndSubclassScopesSearc
 ]
 
 { #category : 'tests' }
+MCPToolMethodSearchTest >> testSourceHitsReadAsLineNumberAndText [
+	"A source hit reads like grep: the method, then the number and text of the line that matched, unquoted; the data keeps both as fields."
+
+	| contentText result |
+	result := self callToolNamed: 'method_source_search' withArguments: {
+			          (#filter -> 'SharedLimit').
+			          (self searchScope: { (#classes -> #( 'MCPToolGetMethodTestTarget' )) }) } asDictionary.
+	contentText := (result at: #content) first at: #text.
+	self assert: (contentText lines includes:
+			 '  MCPToolGetMethodTestTarget>>readInstanceWith: line 4: local := instanceCounter ifNil: [ SharedLimit ].').
+	self assert: (contentText lines includes:
+			 '  MCPToolGetMethodTestTarget class>>readClassSide line 4: local := classCounter ifNil: [ SharedLimit ].').
+	self deny: (contentText includesSubstring: 'lineNumber=').
+	self deny: (contentText includesSubstring: 'line="').
+	self deny: (contentText includesSubstring: 'protocol=').
+	self assert: (((self dataFrom: result) at: #methods) allSatisfy: [ :each |
+			 (each at: #lineNumber) = 4 and: [ (each includesKey: #line) and: [ each includesKey: #protocol ] ] ])
+]
+
+{ #category : 'tests' }
 MCPToolMethodSearchTest >> testSourceSearchShowsTheLineThatMatched [
 
 	| data result |
@@ -880,6 +976,21 @@ MCPToolMethodSearchTest >> testTraitMethodCopiesAreAnsweredOncePerSide [
 			MCPToolMethodSearchTraitOtherUser name.
 			MCPToolMethodSearchTraitOverrider name.
 			MCPToolMethodSearchTraitUser name }
+]
+
+{ #category : 'tests' }
+MCPToolMethodSearchTest >> testTraitedClassStillListsItsOwnMethods [
+	"TraitedClass's own methods are its own, not copies, so a sweep of TraitedClass lists them."
+
+	| data |
+	(Smalltalk globals includesKey: #TraitedClass) ifFalse: [ ^ self skip: 'This Pharo has no TraitedClass.' ].
+	data := self dataFrom: (self callToolWith: {
+				         (self searchScope: { (#classes -> #( 'TraitedClass' )) } side: 'instance').
+				         (#selector -> 'allTraits') } asDictionary).
+	self assert: ((self referencesOf: (data at: #methods)) includes: 'TraitedClass>>allTraits').
+	data := self dataFrom:
+		        (self callToolWith: { (self searchScope: { (#classes -> #( 'TraitedClass' )) } side: 'instance') } asDictionary).
+	self assert: ((data at: #pagination) at: #totalCount) equals: (Smalltalk globals at: #TraitedClass) localMethods size
 ]
 
 { #category : 'tests' }

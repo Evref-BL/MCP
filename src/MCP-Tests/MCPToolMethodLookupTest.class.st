@@ -25,6 +25,12 @@ MCPToolMethodLookupTest >> entryForReference: aReference in: methods [
 ]
 
 { #category : 'private' }
+MCPToolMethodLookupTest >> referenceSummaryFor: arguments [
+
+	^ self summaryFrom: (self callToolNamed: 'method_reference_search' withArguments: arguments asDictionary)
+]
+
+{ #category : 'private' }
 MCPToolMethodLookupTest >> targetClassName [
 
 	^ MCPToolMethodSearchTestTarget name
@@ -138,6 +144,64 @@ MCPToolMethodLookupTest >> testMethodSourceSearchSearchesSourceText [
 ]
 
 { #category : 'tests' }
+MCPToolMethodLookupTest >> testNoHitsForAClassPointToKindClass [
+	"A class or trait name finds no implementor or sender; the answer says that kind class finds what refers to it. The name is read as every class name is, so Foo class names Foo."
+
+	self
+		assert: (self referenceSummaryFor: {
+					 (#name -> 'MCPToolMethodSearchReferenceFixture').
+					 (#kind -> 'senders') })
+		equals:
+		'No senders of MCPToolMethodSearchReferenceFixture in the image. MCPToolMethodSearchReferenceFixture is a class; kind: class finds the methods that refer to it.'.
+	self
+		assert: (self referenceSummaryFor: {
+					 (#name -> 'TMCPToolMethodSearchFixture').
+					 (#kind -> 'implementors') })
+		equals:
+		'No implementors of TMCPToolMethodSearchFixture in the image. TMCPToolMethodSearchFixture is a trait; kind: class finds the methods that refer to it.'.
+	self
+		assert: (self referenceSummaryFor: {
+					 (#name -> 'MCPToolMethodSearchReferenceFixture class').
+					 (#kind -> 'senders') })
+		equals:
+		'No senders of MCPToolMethodSearchReferenceFixture class in the image. MCPToolMethodSearchReferenceFixture is a class; kind: class finds the methods that refer to it.'
+]
+
+{ #category : 'tests' }
+MCPToolMethodLookupTest >> testNoHitsForAMethodNameTheSelector [
+	"A method written with its class finds no sender; the answer names the selector to ask for instead."
+
+	self
+		assert: (self referenceSummaryFor: {
+					 (#name -> 'MCPToolMethodSearchReferenceFixture>>#sharedTarget').
+					 (#kind -> 'senders') })
+		equals:
+		'No senders of MCPToolMethodSearchReferenceFixture>>#sharedTarget in the image. MCPToolMethodSearchReferenceFixture>>#sharedTarget names a method; name its selector alone: sharedTarget.'
+]
+
+{ #category : 'tests' }
+MCPToolMethodLookupTest >> testNoHitsSayWhatWasLookedFor [
+	"Nothing found names the kinds that were looked for and the name."
+
+	self
+		assert: (self referenceSummaryFor: {
+					 (#name -> 'mcpNoSuchSelectorAnywhere').
+					 (#kind -> 'senders') })
+		equals: 'No senders of mcpNoSuchSelectorAnywhere in the image.'.
+	self
+		assert: (self referenceSummaryFor: {
+					 (#name -> 'trackedSlot').
+					 (#kind -> 'implementors') })
+		equals: 'No implementors of trackedSlot in the image.'.
+	self
+		assert: (self referenceSummaryFor: {
+					 (#name -> 'MCPToolMethodSearchReferenceTarget').
+					 (#kind -> 'class').
+					 (self searchScope: { (#classes -> #( 'MCPToolMethodSearchVariableReferenceTarget' )) }) })
+		equals: 'No methods refer to MCPToolMethodSearchReferenceTarget in MCPToolMethodSearchVariableReferenceTarget.'
+]
+
+{ #category : 'tests' }
 MCPToolMethodLookupTest >> testSearchClassReferencesReturnsClassBindingReferences [
 
 	| data |
@@ -240,6 +304,63 @@ MCPToolMethodLookupTest >> testSourceAndEquivalentSearchSchemasUseDedicatedInput
 	self
 		assert: equivalentPropertyNames asSet
 		equals: #( 'scope' 'selector' 'side' 'class' 'offset' ) asSet
+]
+
+{ #category : 'tests' }
+MCPToolMethodLookupTest >> testSummaryNamesTheKindAndTheName [
+	"The summary says what was looked for and counts every hit of each kind, not only the page."
+
+	| pagedSummary |
+	self
+		assert: (self referenceSummaryFor: { (#name -> 'sharedTarget') })
+		equals: '2 implementors and 2 senders of sharedTarget in the image.'.
+	self
+		assert: (self referenceSummaryFor: {
+					 (#name -> 'sharedTarget').
+					 (#kind -> 'senders') })
+		equals: '2 senders of sharedTarget in the image.'.
+	self
+		assert: (self referenceSummaryFor: { (#name -> 'MCPToolMethodSearchReferenceTarget') })
+		equals: '2 methods refer to MCPToolMethodSearchReferenceTarget in the image.'.
+	self
+		assert: (self referenceSummaryFor: {
+					 (#name -> 'trackedSlot').
+					 (self searchScope: { (#classes -> #( 'MCPToolMethodSearchVariableReferenceTarget' )) } side: 'instance') })
+		equals: '2 methods use trackedSlot in MCPToolMethodSearchVariableReferenceTarget, instance side.'.
+	self
+		assert: (self referenceSummaryFor: {
+					 (#name -> 'sharedTarget').
+					 (#offset -> 30) })
+		equals: 'No implementors or senders from offset 30; 2 implementors and 2 senders of sharedTarget in the image.'.
+	pagedSummary := self referenceSummaryFor: {
+			                (#name -> 'printString').
+			                (#kind -> 'senders') }.
+	self assert: (pagedSummary beginsWith: '25 of ').
+	self assert: (pagedSummary endsWith: ' senders of printString in the image. Next page: offset 25, or narrow the search.')
+]
+
+{ #category : 'tests' }
+MCPToolMethodLookupTest >> testTextGroupsHitsByKind [
+	"Hits read under the kind of reference they are, so no row repeats it; the data keeps reference on each entry."
+
+	| contentText lines result |
+	result := self callToolNamed: 'method_reference_search' withArguments: { (#name -> 'sharedTarget') } asDictionary.
+	contentText := (result at: #content) first at: #text.
+	lines := contentText lines.
+	self assert: (lines at: 2) equals: 'implementors (each package=MCP-Tests-Resources):'.
+	self
+		assert: (lines copyFrom: 3 to: 4) asSet
+		equals:
+		#( '  MCPToolMethodSearchReferenceFixture class>>sharedTarget' '  MCPToolMethodSearchReferenceFixture>>sharedTarget' ) asSet.
+	self assert: (lines at: 5) equals: 'senders (each package=MCP-Tests-Resources):'.
+	self
+		assert: (lines copyFrom: 6 to: 7) asSet
+		equals:
+			#( '  MCPToolMethodSearchReferenceFixture class>>classSendShared'
+			   '  MCPToolMethodSearchReferenceFixture>>instanceSendShared' ) asSet.
+	self deny: (contentText includesSubstring: 'reference=').
+	self deny: (contentText includesSubstring: 'protocol=').
+	self assert: (((self dataFrom: result) at: #methods) allSatisfy: [ :each | each includesKey: #reference ])
 ]
 
 { #category : 'private' }

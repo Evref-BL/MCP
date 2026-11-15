@@ -245,6 +245,16 @@ MCPToolRegistry >> scoreForTool: aTool queryTerms: queryTerms [
 ]
 
 { #category : 'tools' }
+MCPToolRegistry >> searchMetadataForTool: aTool [
+	"A search entry says whether the tool is advertised, as its contract does: a client that calls only the tools it lists has to reach the others another way."
+
+	| metadata |
+	metadata := aTool searchMetadata.
+	metadata at: #exposure put: (self exposureForTool: aTool).
+	^ metadata
+]
+
+{ #category : 'tools' }
 MCPToolRegistry >> singularSearchTermFor: aTerm [
 
 	| term |

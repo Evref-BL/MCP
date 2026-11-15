@@ -160,6 +160,7 @@ MCPEvaluateCommand >> resultDataFor: anAnswer [
 	"Report what a truncated preview left out. The full length is deliberately not computed: printStringLimitedTo: stops early, and forcing the whole print string is exactly the cost this preview exists to avoid."
 
 	| data printString |
+	anAnswer == transcript ifTrue: [ ^ self resultDataForTheTranscript ].
 	printString := anAnswer printStringLimitedTo: resultPreviewCharacterLimit.
 	data := Dictionary new.
 	data at: #resultClassName put: anAnswer class name asString.
@@ -168,6 +169,19 @@ MCPEvaluateCommand >> resultDataFor: anAnswer [
 	printString size < resultPreviewCharacterLimit ifTrue: [ ^ data ].
 	data at: #truncated put: true.
 	(anAnswer isCollection and: [ anAnswer isString not ]) ifTrue: [ data at: #resultSize put: anAnswer size ].
+	^ data
+]
+
+{ #category : 'private' }
+MCPEvaluateCommand >> resultDataForTheTranscript [
+	"Code that ends on the Transcript, as a cascade of show: does, answers the recorder that stood in for it while the code ran. To the caller that is the Transcript, so it is named as the one put back afterwards, and the text can leave the value out for what was written."
+
+	| data |
+	data := Dictionary new.
+	data at: #resultClassName put: transcript mcpTranscriptToRestore class name asString.
+	data at: #resultPrintString put: 'Transcript'.
+	data at: #answeredTranscript put: true.
+	self addTranscriptTo: data.
 	^ data
 ]
 

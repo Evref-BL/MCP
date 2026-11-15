@@ -66,9 +66,9 @@ MCPToolRewriteMethods >> executeWithRequest: request [
 
 { #category : 'private - results' }
 MCPToolRewriteMethods >> keysStatedInSummary [
-	"The summary already reads 'Previewed 3 method rewrite changes.'"
+	"The summary already reads 'Previewed 3 method rewrite changes in package Eval-Shapes.'"
 
-	^ #( apply appliedCount changeCount )
+	^ #( apply appliedCount changeCount scope )
 ]
 
 { #category : 'private - execution' }

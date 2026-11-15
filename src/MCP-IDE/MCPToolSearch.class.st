@@ -15,12 +15,6 @@ MCPToolSearch class >> isAbstract [
 	^ self = MCPToolSearch
 ]
 
-{ #category : 'private - results' }
-MCPToolSearch >> addScopeLabel: aString to: labels [
-
-	(labels includes: aString) ifFalse: [ labels add: aString ]
-]
-
 { #category : 'metadata' }
 MCPToolSearch >> annotations [
 
@@ -41,38 +35,6 @@ MCPToolSearch >> basicRegexMatcherForPattern: aPattern caseSensitive: aBoolean [
 		         ifTrue: [ aPattern asRegex ]
 		         ifFalse: [ aPattern asRegexIgnoringCase ].
 	^ [ :candidate | regex search: (self regexSubjectFrom: candidate) ]
-]
-
-{ #category : 'private - results' }
-MCPToolSearch >> classAndMethodScopeSummaryForScopeQuery: scopeQuery [
-
-	^ self classAndMethodScopeSummaryFromAssociations: {
-			  ('packages' -> scopeQuery packageNames).
-			  ('classes' -> scopeQuery classNames).
-			  ('hierarchies' -> scopeQuery hierarchyClassNames).
-			  ('subclasses' -> scopeQuery subclassClassNames).
-			  ('superclasses' -> scopeQuery parentClassNames) }
-]
-
-{ #category : 'private - results' }
-MCPToolSearch >> classAndMethodScopeSummaryFromAssociations: scopeAssociations [
-
-	| labels |
-	labels := OrderedCollection new.
-	scopeAssociations do: [ :eachAssociation |
-		eachAssociation value isNotEmpty ifTrue: [ self addScopeLabel: eachAssociation key to: labels ] ].
-	^ self scopeSummaryFromLabels: labels
-]
-
-{ #category : 'private - results' }
-MCPToolSearch >> classAndMethodScopeSummaryFromRequest: request [
-
-	^ self classAndMethodScopeSummaryFromAssociations: {
-			  ('packages' -> (self searchScopeStringCollectionNamed: 'packages' fromRequest: request)).
-			  ('classes' -> (self searchScopeStringCollectionNamed: 'classes' fromRequest: request)).
-			  ('hierarchies' -> (self searchScopeStringCollectionNamed: 'hierarchyOf' fromRequest: request)).
-			  ('subclasses' -> (self searchScopeStringCollectionNamed: 'subclassesOf' fromRequest: request)).
-			  ('superclasses' -> (self searchScopeStringCollectionNamed: 'superclassesOf' fromRequest: request)) }
 ]
 
 { #category : 'private - schema' }
@@ -99,6 +61,46 @@ MCPToolSearch >> commandForRequest: searchRequest [
 	^ MCPSearchToolCommand tool: self request: searchRequest
 ]
 
+{ #category : 'private - results' }
+MCPToolSearch >> countTextForPage: page offset: offset noun: aNoun filtering: aBoolean [
+	"No methods, 1 method, 25 of 143563 methods: a page from the start that holds everything counts it, any other page counts what it holds of the total. An offset past the end says so, then counts the whole. A filtered count says that it matches."
+
+	| total |
+	total := page totalCount.
+	^ String streamContents: [ :stream |
+			  total = 0
+				  ifTrue: [
+						  stream
+							  nextPutAll: 'No ';
+							  nextPutAll: (self pluralNounFor: aNoun) ]
+				  ifFalse: [
+						  offset >= total
+							  ifTrue: [
+									  stream
+										  nextPutAll: 'No ';
+										  nextPutAll: (self pluralNounFor: aNoun);
+										  nextPutAll: ' from offset ';
+										  print: offset;
+										  nextPutAll: '; ' ]
+							  ifFalse: [
+									  (offset = 0 and: [ page nextOffset isNil ]) ifFalse: [
+											  stream
+												  print: page returnedCount;
+												  nextPutAll: ' of ' ] ].
+						  stream nextPutAll: (self textForCount: total noun: aNoun) ].
+			  stream nextPutAll: (self matchTextAfterCount: total filtering: aBoolean) ]
+]
+
+{ #category : 'private - results' }
+MCPToolSearch >> countTextForQueryRequest: queryRequest page: page [
+
+	^ self
+		  countTextForPage: page
+		  offset: (self offsetFromQueryRequest: queryRequest)
+		  noun: self searchedNoun
+		  filtering: (self filtersQueryRequest: queryRequest)
+]
+
 { #category : 'private - request' }
 MCPToolSearch >> defaultFilterMode [
 
@@ -119,24 +121,18 @@ MCPToolSearch >> errorClassNameForQueryError: anError [
 ]
 
 { #category : 'private - results' }
-MCPToolSearch >> errorResultForQueryError: anError requestedContext: requestedContext [
+MCPToolSearch >> errorResultForQueryError: anError request: request [
+	"A command error says what went wrong in its own words. Any other failure is told with what was searched and where."
 
-	| normalizedContext |
-	normalizedContext := requestedContext ifNil: [ Dictionary new ].
 	^ anError
-		  mcpCommandErrorDo: [ :commandError |
-				  | details |
-				  details := commandError structuredDetails copy.
-				  normalizedContext associationsDo: [ :each | each value ifNotNil: [ details at: each key put: each value ] ].
-				  self errorResultText: commandError messageText details: details ]
+		  mcpCommandErrorDo: [ :commandError | self errorResultText: commandError messageText details: commandError structuredDetails ]
 		  otherwise: [ :queryError |
 				  | details |
 				  details := {
 					             (#errorClass -> (self errorClassNameForQueryError: queryError)).
 					             (#message -> queryError messageText) } asDictionary.
 				  queryError mcpAddToolErrorDetailsTo: details.
-				  normalizedContext associationsDo: [ :each | each value ifNotNil: [ details at: each key put: each value ] ].
-				  self errorResultText: (self failureMessageForRequestedContext: normalizedContext error: queryError) details: details ]
+				  self errorResultText: (self failureMessageForRequest: request error: queryError) details: details ]
 ]
 
 { #category : 'executing' }
@@ -155,20 +151,32 @@ MCPToolSearch >> executeWithRequest: request [
 					  successResultText: (self successSummaryForQueryRequest: queryRequest page: page)
 					  data: (self queryResultDataForQueryRequest: queryRequest page: page)
 					  warnings: (self warningsForQueryRequest: queryRequest) ]
-		  onError: [ :error :ignored |
-		  self errorResultForQueryError: error requestedContext: (self requestedContextForErrorFromRequest: request) ]
+		  onError: [ :error :ignored | self errorResultForQueryError: error request: request ]
 ]
 
-{ #category : 'private - template' }
-MCPToolSearch >> failureMessageForRequestedContext: requestedContext error: anError [
+{ #category : 'private - results' }
+MCPToolSearch >> failureMessageForRequest: request error: anError [
+	"Unable to search methods in EvalLedger (RegexSyntaxError): the message."
 
-	^ self failureMessageForScope: (requestedContext at: #scope) error: anError
+	^ String streamContents: [ :stream |
+			  stream
+				  nextPutAll: 'Unable to ';
+				  nextPutAll: self searchActivityText;
+				  nextPutAll: ' in ';
+				  nextPutAll: (self failureScopePhraseFromRequest: request);
+				  nextPutAll: ' (';
+				  nextPutAll: (self errorClassNameForQueryError: anError) asString;
+				  nextPutAll: '): ';
+				  nextPutAll: (anError messageText ifNil: [ '' ]) asString ]
 ]
 
-{ #category : 'private - template' }
-MCPToolSearch >> failureMessageForScope: scopeSummary error: anError [
+{ #category : 'private - results' }
+MCPToolSearch >> failureScopePhraseFromRequest: request [
+	"Where the request asked to look, from a scope built from it and never run, so a name that does not exist is named too."
 
-	self subclassResponsibility
+	^ [ (self scopeQueryFromRequest: request) scopePhrase ]
+		  on: Error
+		  do: [ :error | 'the requested scope' ]
 ]
 
 { #category : 'private - filtering' }
@@ -225,6 +233,13 @@ MCPToolSearch >> filterSchemaPropertyWithDescription: filterDescription [
 ]
 
 { #category : 'private - results' }
+MCPToolSearch >> filtersQueryRequest: queryRequest [
+	"Whether the request keeps only the results that hold something, beyond saying where to look: a filter pattern or a field filter. Its count then says that it matches."
+
+	^ queryRequest hasFilterPattern or: [ queryRequest hasFieldFilters ]
+]
+
+{ #category : 'private - results' }
 MCPToolSearch >> isRegexSyntaxError: anError [
 
 	^ anError class = RegexSyntaxError or: [ anError class = PCRE2CompileError ]
@@ -243,6 +258,15 @@ MCPToolSearch >> limitFromQueryRequest: queryRequest [
 	^ queryRequest limit
 ]
 
+{ #category : 'private - results' }
+MCPToolSearch >> matchTextAfterCount: aCount filtering: aBoolean [
+
+	aBoolean ifFalse: [ ^ '' ].
+	^ aCount = 1
+		  ifTrue: [ ' matches' ]
+		  ifFalse: [ ' match' ]
+]
+
 { #category : 'private - filtering' }
 MCPToolSearch >> matcherForPattern: aPattern mode: aMode caseSensitive: aBoolean [
 
@@ -256,6 +280,17 @@ MCPToolSearch >> matcherForPattern: aPattern mode: aMode caseSensitive: aBoolean
 		^ [ :candidate | (self normalizeFilterString: candidate caseSensitive: aBoolean) beginsWith: normalizedPattern ] ].
 	aMode = 'exact' ifTrue: [ ^ [ :candidate | (self normalizeFilterString: candidate caseSensitive: aBoolean) = normalizedPattern ] ].
 	Error signal: 'Unsupported filter mode: ' , aMode
+]
+
+{ #category : 'private - results' }
+MCPToolSearch >> nextPageTextForOffset: anOffset [
+	"Where the next page starts, and the other way to see what it holds."
+
+	^ String streamContents: [ :stream |
+			  stream
+				  nextPutAll: 'Next page: offset ';
+				  print: anOffset;
+				  nextPutAll: ', or narrow the search.' ]
 ]
 
 { #category : 'private - filtering' }
@@ -295,16 +330,6 @@ MCPToolSearch >> packageScopeProjectNamesProperty [
 		  stringArraySchemaNamed: 'projects'
 		  description: 'Projects whose packages are included.'
 		  itemDescription: 'Project name.'
-]
-
-{ #category : 'private - results' }
-MCPToolSearch >> packageScopeSummaryForProjectNames: projectNames packageNames: packageNames [
-
-	| labels |
-	labels := OrderedCollection new.
-	projectNames isNotEmpty ifTrue: [ self addScopeLabel: 'projects' to: labels ].
-	packageNames isNotEmpty ifTrue: [ self addScopeLabel: 'packages' to: labels ].
-	^ self scopeSummaryFromLabels: labels
 ]
 
 { #category : 'private - request' }
@@ -364,6 +389,13 @@ MCPToolSearch >> queryResultDataFrom: baseData page: page entriesKey: entriesKey
 	^ page asDictionaryWithEntriesKey: entriesKey
 ]
 
+{ #category : 'private - results' }
+MCPToolSearch >> readingNoteForPage: page [
+	"A sentence on how to read the rows of page, or nil when they need none."
+
+	^ nil
+]
+
 { #category : 'private - filtering' }
 MCPToolSearch >> regexMatcherForPattern: aPattern caseSensitive: aBoolean [
 
@@ -379,64 +411,24 @@ MCPToolSearch >> regexSubjectFrom: aCandidate [
 ]
 
 { #category : 'private - results' }
-MCPToolSearch >> requestedContextForErrorFromRequest: request [
+MCPToolSearch >> scopePhraseForQueryRequest: queryRequest [
+	"Where the search looked, from the names its scope resolved; nil when none of them exists."
 
-	^ [ self requestedContextFromRequest: request ]
-		  on: Error
-		  do: [ :ignored | Dictionary new ]
+	^ queryRequest scopeQuery scopePhrase
 ]
 
 { #category : 'private - template' }
-MCPToolSearch >> requestedContextFromRequest: request [
+MCPToolSearch >> scopeQueryFromRequest: request [
+	"The scope query the request describes."
 
 	^ self subclassResponsibility
 ]
 
 { #category : 'private - results' }
-MCPToolSearch >> scopeQueryFailureMessageFor: resultKind scope: scopeSummary error: anError [
+MCPToolSearch >> searchActivityText [
+	"What the tool does, for the sentence that says it could not: search methods."
 
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Unable to query ';
-				  nextPutAll: resultKind;
-				  nextPutAll: ' [scope=';
-				  nextPutAll: scopeSummary;
-				  nextPutAll: '] (';
-				  nextPutAll: (self errorClassNameForQueryError: anError) asString;
-				  nextPutAll: '): ';
-				  nextPutAll: anError messageText ]
-]
-
-{ #category : 'private - results' }
-MCPToolSearch >> scopeQuerySuccessSummaryFor: resultKind scope: scopeSummary page: page [
-
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Showing ';
-				  print: page returnedCount;
-				  nextPutAll: ' of ';
-				  print: page totalCount;
-				  space;
-				  nextPutAll: resultKind;
-				  nextPutAll: ' [scope=';
-				  nextPutAll: scopeSummary;
-				  nextPutAll: ']'.
-			  page nextOffset ifNotNil: [ :offset |
-					  stream
-						  nextPutAll: '. More available: use offset ';
-						  print: offset;
-						  nextPutAll: ', or narrow the scope/filter' ].
-			  stream nextPut: $. ]
-]
-
-{ #category : 'private - results' }
-MCPToolSearch >> scopeSummaryFromLabels: labels [
-
-	labels ifEmpty: [ ^ 'image' ].
-	^ String streamContents: [ :stream |
-			  labels doWithIndex: [ :each :index |
-					  index > 1 ifTrue: [ stream nextPut: $+ ].
-					  stream nextPutAll: each ] ]
+	^ 'search ' , (self pluralNounFor: self searchedNoun)
 ]
 
 { #category : 'private - template' }
@@ -445,16 +437,42 @@ MCPToolSearch >> searchRequestFromToolRequest: request [
 	self subclassResponsibility
 ]
 
-{ #category : 'private - template' }
-MCPToolSearch >> successSummaryForQueryRequest: queryRequest page: page [
+{ #category : 'private - results' }
+MCPToolSearch >> searchSummaryForCountText: countText scopePhrase: scopePhrase page: page [
+	"A scope whose names all failed to resolve looked nowhere, which the summary says instead of a place; its warnings name what is missing. A note on reading the rows, when the tool has one, comes before where the next page starts."
 
-	^ self successSummaryForScope: (self classAndMethodScopeSummaryForScopeQuery: queryRequest scopeQuery) page: page
+	^ String streamContents: [ :stream |
+			  stream nextPutAll: countText.
+			  scopePhrase ifNil: [ stream nextPutAll: ': the scope names nothing that exists.' ] ifNotNil: [
+					  stream
+						  nextPutAll: ' in ';
+						  nextPutAll: scopePhrase;
+						  nextPut: $. ].
+			  (self readingNoteForPage: page) ifNotNil: [ :note |
+					  stream
+						  space;
+						  nextPutAll: note ].
+			  page nextOffset ifNotNil: [ :offset |
+					  stream
+						  space;
+						  nextPutAll: (self nextPageTextForOffset: offset) ] ]
 ]
 
-{ #category : 'private - results' }
-MCPToolSearch >> successSummaryForScope: scopeDescription page: page [
+{ #category : 'private - template' }
+MCPToolSearch >> searchedNoun [
+	"What one result is, in the singular: method, class."
 
-	self subclassResponsibility
+	^ self subclassResponsibility
+]
+
+{ #category : 'private - template' }
+MCPToolSearch >> successSummaryForQueryRequest: queryRequest page: page [
+	"How many were found and where, then where the next page starts."
+
+	^ self
+		  searchSummaryForCountText: (self countTextForQueryRequest: queryRequest page: page)
+		  scopePhrase: (self scopePhraseForQueryRequest: queryRequest)
+		  page: page
 ]
 
 { #category : 'private - schema' }

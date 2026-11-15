@@ -393,9 +393,11 @@ MCPToolClassMutationTest >> testCreateReturnsStructuredErrorWhenClassAlreadyExis
 	self assert: (error at: #action) equals: 'create'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'ClassAlreadyExists'.
-	self assert: (error at: #message) equals: 'Class MCPToolClassMutationTestGenerated already exists.'.
-	self assert: ((error at: #guidance) includesSubstring: 'Use class_get').
-	self assert: ((error at: #guidance) includesSubstring: 'Do not use class_create')
+	self
+		assert: (error at: #message)
+		equals: 'Class MCPToolClassMutationTestGenerated already exists. class_update changes it; class_get shows it.'.
+	self assert: (((result at: #content) first at: #text) includesSubstring: 'class_update changes it; class_get shows it.').
+	self deny: (error includesKey: #guidance)
 ]
 
 { #category : 'tests - create' }
@@ -452,6 +454,112 @@ MCPToolClassMutationTest >> testCreateSetsClassComment [
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: createdClass comment equals: 'Created with a comment.'.
 	self deny: (result at: #isError ifAbsent: [ false ])
+]
+
+{ #category : 'tests - update' }
+MCPToolClassMutationTest >> testRefactoringWarningListsEveryImpact [
+	"The text names every impact, each as a clause, and how to get past them, since a client reading text sees nothing of the error's details."
+
+	| error impacts result text |
+	self
+		createClassNamed: 'MCPToolClassMutationTestWarningPullUpTarget'
+		superclassName: 'Object'
+		slots: #(  )
+		classSlots: #(  ).
+	self
+		createClassNamed: 'MCPToolClassMutationTestWarningPullUpChildOne'
+		superclassName: 'MCPToolClassMutationTestWarningPullUpTarget'
+		slots: #( sharedSlot )
+		classSlots: #(  ).
+	self
+		createClassNamed: 'MCPToolClassMutationTestWarningPullUpChildTwo'
+		superclassName: 'MCPToolClassMutationTestWarningPullUpTarget'
+		slots: #(  )
+		classSlots: #(  ).
+	result := self callToolWith: (self
+			           updateRequestArgumentsForSlotAction: 'pullUp'
+			           className: 'MCPToolClassMutationTestWarningPullUpTarget'
+			           slotName: 'sharedSlot'
+			           classSide: false).
+	error := self errorFrom: result.
+	impacts := error at: #impactMessages.
+	text := (result at: #content) first at: #text.
+	self denyEmpty: impacts.
+	self assert:
+		(text beginsWith: 'Refactoring warning for pullUpSlot on MCPToolClassMutationTestWarningPullUpTarget slot sharedSlot: ').
+	self assert: (text lines first endsWith: ' Rerun with force: true to proceed anyway.').
+	impacts do: [ :each |
+			self assert: (text includesSubstring: ((each endsWith: '.')
+						  ifTrue: [ each allButLast ]
+						  ifFalse: [ each ])) ].
+	self
+		assert: (MCPToolUpdateClass new
+				 refactoringWarningSummaryFor: nil
+				 action: 'removeSlot'
+				 requestedContext: {
+						 (#class -> 'EvalShape').
+						 (#slot -> 'color') } asDictionary
+				 impactMessages: #( 'EvalShape>>area reads color.' 'EvalShape>>describe writes color' ))
+		equals:
+		'Refactoring warning for removeSlot on EvalShape slot color: EvalShape>>area reads color; EvalShape>>describe writes color. Rerun with force: true to proceed anyway.'.
+	self
+		assert: (MCPToolUpdateClass new
+				 refactoringWarningSummaryFor: nil
+				 action: 'removeSlot'
+				 requestedContext: { (#class -> 'EvalShape') } asDictionary
+				 impactMessages: #(  ))
+		equals: 'Refactoring warning for removeSlot on EvalShape. Rerun with force: true to proceed anyway.'.
+	self
+		assert: (MCPToolUpdateClass new
+				 refactoringWarningSummaryFor: nil
+				 action: 'pullUpSlot'
+				 requestedContext: { (#class -> 'EvalShape') } asDictionary
+				 impactMessages: #( 'Not all subclasses have it. Pull it up anyway?' ))
+		equals:
+		'Refactoring warning for pullUpSlot on EvalShape: Not all subclasses have it. Pull it up anyway? Rerun with force: true to proceed anyway.'
+]
+
+{ #category : 'tests - update' }
+MCPToolClassMutationTest >> testRetagSummaryNamesTheTag [
+	"A class moved to a tag is named with the tag and the package it lies in; one moved to a package's root, with the package alone."
+
+	self
+		assert: (self summaryFrom: (self callToolWith: self updateRequestArgumentsForRecategorization))
+		equals: ('Moved class {1} to tag {2} of package {3}.' format: {
+					 self moveTargetClassName.
+					 self destinationTagName.
+					 self originalMovePackageName }).
+	self
+		assert: (self summaryFrom: (self callToolWith: self updateRequestArgumentsForMoveToPackage))
+		equals: ('Moved class {1} to package {2}.' format: {
+					 self moveTargetClassName.
+					 self destinationPackageName })
+]
+
+{ #category : 'tests - update' }
+MCPToolClassMutationTest >> testSeveralUpdatesSayEachChange [
+	"Each update says what it did, on a line of its own in the order applied, as it would alone; the text does not list the updates again as data."
+
+	| lines result targetName |
+	targetName := 'MCPToolClassMutationTestFusedTarget'.
+	self
+		createClassNamed: targetName
+		superclassName: 'Object'
+		slots: #( 'kept' )
+		classSlots: #(  ).
+	result := self callToolWith: {
+			          (#name -> targetName).
+			          (#superclass -> 'ProtoObject').
+			          (#slots -> (Dictionary with: 'add' -> #( 'added' ))).
+			          (#comment -> 'fused comment') } asDictionary.
+	self deny: (self resultIndicatesError: result).
+	lines := ((result at: #content) first at: #text) lines.
+	self assert: lines asArray equals: {
+			('Applied 3 updates to class {1}:' format: { targetName }).
+			('Reparented class {1} to superclass ProtoObject.' format: { targetName }).
+			('Added slot added to class {1}.' format: { targetName }).
+			('Set comment for class {1}.' format: { targetName }) }.
+	self assert: ((self dataFrom: result) at: #updates) size equals: 3
 ]
 
 { #category : 'tests - update' }
@@ -814,7 +922,7 @@ MCPToolClassMutationTest >> testUpdatePullUpSlotStopsOnRefactoringWarningByDefau
 	self assert: (error at: #slot) equals: 'sharedSlot'.
 	self assert: (error at: #side) equals: 'instance'.
 	self assert: (error at: #forceSupported) equals: true.
-	self assert: ((error at: #howToProceed) includesSubstring: 'force=true').
+	self assert: ((error at: #howToProceed) includesSubstring: 'force: true').
 	self assert:
 		((error at: #impactMessages) anySatisfy: [ :each | each includesSubstring: 'Not all subclasses have an instance variable named' ]).
 	self assert: (target slots collect: #name as: Array) equals: #(  ).
@@ -983,7 +1091,7 @@ MCPToolClassMutationTest >> testUpdateRemoveSlotStopsOnRefactoringWarningByDefau
 	self assert: (error at: #slot) equals: 'referencedSlot'.
 	self assert: (error at: #side) equals: 'instance'.
 	self assert: (error at: #forceSupported) equals: true.
-	self assert: ((error at: #howToProceed) includesSubstring: 'force=true').
+	self assert: ((error at: #howToProceed) includesSubstring: 'force: true').
 	self assertIncludesReferencedSlotWarning: (error at: #impactMessages).
 	self assert: (target slots collect: #name as: Array) equals: #( #referencedSlot )
 ]

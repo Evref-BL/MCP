@@ -123,12 +123,12 @@ MCPRepositoryVerifyIdentityCommand >> execute [
 				  result := MCPRepositoryVerifyIdentityResult repository: repository checkedFields: (validation at: #checkedFields) ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText:
-					  (String streamContents: [ :stream |
-						   stream << 'Repository identity verification passed for ' << result repositoryInfo name << '.' ])
+					  successResultText: (String streamContents: [ :stream |
+							   stream << 'Verified repository ' << result repositoryInfo name << ': ' << (', ' join: result checkedFields)
+							   << ' as expected.' ])
 					  data: (self tool dataForRepositoryResult: result)
 					  warnings: warningMessages ]
-		  failureSummary: [ :error | 'Failed verify repository identity: ' , (error messageText ifNil: [ error asString ]) ]
+		  failureSummary: [ :error | 'Failed to verify repository identity: ' , (error messageText ifNil: [ error asString ]) ]
 ]
 
 { #category : 'private - resolving' }

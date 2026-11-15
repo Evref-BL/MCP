@@ -31,17 +31,6 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPRepositoryInfo class >> commitResultRepository: aRepository packageNames: packageNames modifiedPackageNames: modifiedPackageNames headCommitId: aHeadCommitId headDescription: aHeadDescription [
-
-	^ self new
-		  initializeCommitResultRepository: aRepository
-		  packageNames: packageNames
-		  modifiedPackageNames: modifiedPackageNames
-		  headCommitId: aHeadCommitId
-		  headDescription: aHeadDescription
-]
-
-{ #category : 'instance creation' }
 MCPRepositoryInfo class >> fromRepository: aRepository [
 
 	^ [ self new initializeFromRepository: aRepository ]
@@ -81,15 +70,15 @@ MCPRepositoryInfo >> asQueryDictionary [
 { #category : 'converting' }
 MCPRepositoryInfo >> asSearchDictionary [
 	"A search says a repository exists, where it is and what is dirty in it. Which packages it holds is
-	what package_search answers."
+	what package_search answers. A repository registered with no location has none to name."
 
 	| data |
 	data := Dictionary new.
 	data
 		at: #name put: self name;
-		at: #location put: self location;
 		at: #isModified put: self isModified;
 		at: #isMissing put: self isMissing.
+	self location ifNotEmpty: [ :value | data at: #location put: value ].
 	self subdirectory ifNotNil: [ :value | value ifNotEmpty: [ data at: #subdirectory put: value ] ].
 	self packageNames ifNotEmpty: [ :names | data at: #packageCount put: names size ].
 	self modifiedPackageNames ifNotEmpty: [ :names | data at: #modifiedPackages put: names ].
@@ -130,28 +119,6 @@ MCPRepositoryInfo >> headCommitId [
 MCPRepositoryInfo >> headDescription [
 
 	^ headDescription
-]
-
-{ #category : 'initialization' }
-MCPRepositoryInfo >> initializeCommitResultRepository: aRepository packageNames: repositoryPackageNames modifiedPackageNames: repositoryModifiedPackageNames headCommitId: aHeadCommitId headDescription: aHeadDescription [
-
-	name := self stringFrom: [ aRepository name ] default: ''.
-	className := aRepository class name asString.
-	location := self repositoryLocationFor: aRepository.
-	subdirectory := self repositorySubdirectoryFor: aRepository.
-	branchName := ''.
-	headDescription := aHeadDescription ifNil: [ '' ].
-	headClassName := ''.
-	headCommitId := aHeadCommitId ifNil: [ '' ].
-	isDetachedHead := false.
-	isMissing := false.
-	isModified := repositoryModifiedPackageNames isNotEmpty.
-	packageNames := repositoryPackageNames ifNil: [ #(  ) ].
-	modifiedPackageNames := repositoryModifiedPackageNames ifNil: [ #(  ) ].
-	remotes := #(  ).
-	upstreamRemoteName := ''.
-	upstreamBranchName := ''.
-	upstreamRemoteUrl := ''
 ]
 
 { #category : 'initialization' }

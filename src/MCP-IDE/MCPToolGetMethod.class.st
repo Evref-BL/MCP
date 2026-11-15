@@ -128,6 +128,13 @@ MCPToolGetMethod >> description [
 	^ 'Get the source of methods named Class>>selector or Class class>>selector, one or several.'
 ]
 
+{ #category : 'private - results' }
+MCPToolGetMethod >> entryNameKeys [
+	"A variable record is the variable of its name."
+
+	^ #( name )
+]
+
 { #category : 'private' }
 MCPToolGetMethod >> errorResultForError: anError className: className selector: selectorString classSide: classSide [
 
@@ -161,24 +168,24 @@ MCPToolGetMethod >> errorResultForError: anError className: className selector: 
 MCPToolGetMethod >> executeWithRequest: request [
 
 	^ self executeBatchedRequest: request do: [ :targetRequest |
-		  self
-			  executeParsedRequestFrom: targetRequest
-			  do: [ :getRequest |
-					  | commandResult |
-					  commandResult := (self commandForRequest: getRequest) execute.
-					  self
-						  successResultText: (self
+			  self
+				  executeParsedRequestFrom: targetRequest
+				  do: [ :getRequest |
+						  | commandResult |
+						  commandResult := (self commandForRequest: getRequest) execute.
+						  self
+							  successResultText:
+							  (self
 								   successSummaryForClassName: getRequest className
 								   selector: getRequest selectorString
-								   classSide: getRequest classSide
-								   externalVariableCount: commandResult externalVariableCount)
-						  data: commandResult data ]
-			  onError: [ :error :getRequest |
-					  self
-						  errorResultForError: error
-						  className: (self classNameForErrorFromParsedRequest: getRequest rawRequest: targetRequest)
-						  selector: (self selectorForErrorFromParsedRequest: getRequest rawRequest: targetRequest)
-						  classSide: (self classSideForErrorFromParsedRequest: getRequest rawRequest: targetRequest) ] ]
+								   classSide: getRequest classSide)
+							  data: commandResult data ]
+				  onError: [ :error :getRequest |
+						  self
+							  errorResultForError: error
+							  className: (self classNameForErrorFromParsedRequest: getRequest rawRequest: targetRequest)
+							  selector: (self selectorForErrorFromParsedRequest: getRequest rawRequest: targetRequest)
+							  classSide: (self classSideForErrorFromParsedRequest: getRequest rawRequest: targetRequest) ] ]
 ]
 
 { #category : 'private - results' }
@@ -241,9 +248,10 @@ MCPToolGetMethod >> newVariableSummaryForNode: aVariableNode kind: aKind methodB
 
 { #category : 'private - analysis' }
 MCPToolGetMethod >> ownerNameForNode: aVariableNode kind: aKind methodBehavior: aBehavior [
+	"Where the variable is defined, for a variable defined outside the method. An argument or a temporary is the method's own, which its kind already says, so it has none."
 
 	| binding definingClassName |
-	(#( 'argument' 'temporary' ) includes: aKind) ifTrue: [ ^ 'method' ].
+	(#( 'argument' 'temporary' ) includes: aKind) ifTrue: [ ^ nil ].
 	(#( 'self' 'super' ) includes: aKind) ifTrue: [ ^ aBehavior name asString ].
 	aKind = 'thisContext' ifTrue: [ ^ 'execution context' ].
 	binding := aVariableNode binding.
@@ -264,6 +272,13 @@ MCPToolGetMethod >> parsedRequestFromToolRequest: request [
 	^ MCPGetMethodRequest fromRequest: request tool: self
 ]
 
+{ #category : 'private - results' }
+MCPToolGetMethod >> redundantKeys [
+	"A variable's binding class restates its kind in Pharo's terms."
+
+	^ #( bindingClass )
+]
+
 { #category : 'private - errors' }
 MCPToolGetMethod >> selectorForErrorFromParsedRequest: getRequest rawRequest: rawRequest [
 
@@ -272,17 +287,13 @@ MCPToolGetMethod >> selectorForErrorFromParsedRequest: getRequest rawRequest: ra
 ]
 
 { #category : 'private - results' }
-MCPToolGetMethod >> successSummaryForClassName: className selector: selector classSide: classSide externalVariableCount: externalVariableCount [
+MCPToolGetMethod >> successSummaryForClassName: className selector: selector classSide: classSide [
 
 	^ String streamContents: [ :stream |
-		  stream
-			  nextPutAll: 'Got method ';
-			  nextPutAll: (self methodReferenceTextForClassName: className selector: selector classSide: classSide).
-		  externalVariableCount ifNotNil: [
-				  stream
-					  nextPutAll: ' with ';
-					  nextPutAll: (self textForCount: externalVariableCount noun: 'external variable reference') ].
-		  stream nextPutAll: '.' ]
+			  stream
+				  nextPutAll: 'Got method ';
+				  nextPutAll: (self methodReferenceTextForClassName: className selector: selector classSide: classSide);
+				  nextPut: $. ]
 ]
 
 { #category : 'metadata' }

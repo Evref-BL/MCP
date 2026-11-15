@@ -162,6 +162,27 @@ MCPPackageScopeQuery >> resolvedProjectsNamed: someProjectNames [
 	^ projects asArray
 ]
 
+{ #category : 'phrasing' }
+MCPPackageScopeQuery >> scopePhrase [
+	"Where the query looks, in words: the image when it was given no name, otherwise its projects and then its packages. A name that does not exist stops the query with an error, so every name is named."
+
+	| parts |
+	parts := OrderedCollection new.
+	{
+		(MCPScopeQuery
+			 phraseForNames: (MCPScopeQuery distinctNamesAmong: self projectNames)
+			 one: 'project '
+			 several: 'projects '
+			 many: '{1} projects').
+		(MCPScopeQuery
+			 phraseForNames: (MCPScopeQuery distinctNamesAmong: self packageNames)
+			 one: 'package '
+			 several: 'packages '
+			 many: '{1} packages') } do: [ :each | each ifNotNil: [ parts add: each ] ].
+	parts ifEmpty: [ ^ 'the image' ].
+	^ ' and ' join: parts
+]
+
 { #category : 'private - testing' }
 MCPPackageScopeQuery >> shouldUseProjectRegistration: aProjectRegistration [
 

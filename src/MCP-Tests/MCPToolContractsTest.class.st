@@ -3060,14 +3060,14 @@ MCPToolContractsTest >> testSearchToolsAnswerEntriesAsLines [
 
 { #category : 'tests' }
 MCPToolContractsTest >> testSearchToolsAnswerPlainTextContent [
-	"A catalog listing is read as prose, so the text block carries one line per tool instead of the canonical JSON."
+	"A catalog listing is read as prose, so the text block carries one line per tool instead of the canonical JSON. class_update is not advertised, which its line says."
 
 	| lines result text |
 	result := self callToolNamed: 'tool_search' withArguments: { (#query -> 'class slots') } asDictionary.
 	text := self firstTextFromToolResult: result.
 	lines := text lines.
 	self assert: lines first equals: (self summaryFrom: result).
-	self assert: (lines anySatisfy: [ :each | each beginsWith: 'class_update - ' ]).
+	self assert: (lines anySatisfy: [ :each | each beginsWith: 'class_update (not in the advertised list) - ' ]).
 	self deny: (text includesSubstring: '"tools"')
 ]
 
@@ -3224,7 +3224,8 @@ MCPToolContractsTest >> testSearchToolsReturnsDiscoverableMetadata [
 	self assert: (names includes: 'repository_reload').
 	self deny: (names includes: 'class_search').
 	createRepositoryMetadata := tools detect: [ :each | (each at: #name) = 'repository_create' ].
-	self assert: createRepositoryMetadata keys asSet equals: #( name description ) asSet
+	self assert: createRepositoryMetadata keys asSet equals: #( name description exposure ) asSet.
+	self assert: (createRepositoryMetadata at: #exposure) equals: 'discoverable'
 ]
 
 { #category : 'tests' }
@@ -3404,6 +3405,28 @@ MCPToolContractsTest >> testToolFlowSelectorNamesSeparateTransportAndParsedInput
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testToolGetTextCarriesOnlyWhatACallNeeds [
+	"A contract is read to build a call. Its annotations, exposure, group and keywords stay in the data for whoever catalogs tools, and the text leaves them out; whether the tool is advertised is said once, in the summary."
+
+	| contract lines result |
+	result := self callToolNamed: 'tool_get' withArguments: { (#name -> 'repository_create') } asDictionary.
+	lines := (self firstTextFromToolResult: result) lines.
+	self assert: lines first equals: 'Tool repository_create (not in the advertised list).'.
+	self assert: lines second equals: 'tool:'.
+	self assert: (lines includes: '  name: repository_create').
+	self assert: (lines anySatisfy: [ :each | each beginsWith: '  description: ' ]).
+	self assert: (lines includes: '  inputSchema:').
+	#( '  annotations:' '  exposure:' '  group:' '  keywords:' ) do: [ :label |
+		self deny: (lines anySatisfy: [ :each | each beginsWith: label ]) description: label ].
+	contract := (self dataFrom: result) at: #tool.
+	self assert: contract keys asSet equals: #( name description group exposure annotations keywords inputSchema ) asSet.
+	result := self callToolNamed: 'tool_get' withArguments: { (#name -> 'class_search') } asDictionary.
+	lines := (self firstTextFromToolResult: result) lines.
+	self assert: lines first equals: 'Tool class_search.'.
+	self assert: (lines includes: '  pageSize: ' , MCPToolSearchClasses new defaultPageLimit printString)
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testToolIconSpecsAreDerivedFromToolNames [
 	"Among MCP's own tools, an icon is read from the name and never picked by hand, so they stay consistent without anyone choosing. A tool from another package cannot be spelled out of MCP's vocabulary, so it is left to declare its own."
 
@@ -3554,6 +3577,52 @@ MCPToolContractsTest >> testToolResponsesDefaultToContentOnly [
 	self assert: (result includesKey: #content).
 	self deny: (result includesKey: #structuredContent).
 	self assert: (text includesSubstring: 'class_search - ')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testToolSearchCountsOneToolInTheSingular [
+
+	| server |
+	server := self mcpWithoutObservabilityExport
+		          onlyTools: {
+				          MCPToolSearchTools.
+				          MCPToolEvaluate.
+				          MCPToolGetClass.
+				          MCPToolSearchClasses };
+		          yourself.
+	self
+		assert: (self summaryFrom: (server rpcToolCall: 'tool_search' withParams: { (#query -> 'evaluate') } asDictionary))
+		equals: '1 tool matched, best first.'.
+	self
+		assert: (self summaryFrom: (server rpcToolCall: 'tool_search' withParams: { (#query -> 'class') } asDictionary))
+		equals: '2 tools matched, best first.'
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testToolSearchMarksToolsNotAdvertised [
+	"A client that calls only the tools it lists cannot call the others by their bare name, so their lines say they are not listed. Every client can reach them some way, so nothing says tool_call is the only one."
+
+	| lines result server summary text |
+	server := self mcpWithoutObservabilityExport.
+	server advertiseTools: #( 'tool_search' 'tool_get' 'tool_call' 'repository_search' ).
+	result := server rpcToolCall: 'tool_search' withParams: { (#query -> 'repository') } asDictionary.
+	text := self firstTextFromToolResult: result.
+	lines := text lines.
+	summary := self summaryFrom: result.
+	self assert: lines first equals: summary.
+	self assert:
+		(summary endsWith: ' Tools not in your list can be called by name, or through tool_call if your client only calls listed tools.').
+	self assert: (lines anySatisfy: [ :each | each beginsWith: 'repository_search - ' ]).
+	self assert: (lines anySatisfy: [ :each | each beginsWith: 'repository_create (not in the advertised list) - ' ]).
+	self deny: (text includesSubstring: '(through tool_call)').
+	self
+		assert: ((((self dataFrom: result) at: #tools) detect: [ :each | (each at: #name) = 'repository_create' ]) at: #exposure)
+		equals: 'discoverable'.
+	server advertiseAllTools.
+	result := server rpcToolCall: 'tool_search' withParams: { (#query -> 'repository') } asDictionary.
+	text := self firstTextFromToolResult: result.
+	self deny: (text includesSubstring: 'not in the advertised list').
+	self deny: (text includesSubstring: 'Tools not in your list')
 ]
 
 { #category : 'tests' }

@@ -421,16 +421,16 @@ MCPToolRunCritiquesTest >> testMCPRulesAnswerOnlyAnAgent [
 { #category : 'tests' }
 MCPToolRunCritiquesTest >> testMarksTheRulesMethodRewriteCanApply [
 
-	| mcpRule renrakuRule |
-	mcpRule := (self dataForArguments: {
-			            (#scope -> { (#classes -> { self fixtureClassName }) } asDictionary).
-			            (#ruleClasses -> { MCPCollectionThenDoRule name }) } asDictionary) at: #rules.
+	| concatenationRule renrakuRule |
+	self compileFixtureMethodSource: self concatenationSource.
+	concatenationRule := self concatenationHitsNamingTheRule: true.
 	renrakuRule := (self dataForArguments: {
-			              (#scope -> { (#classes -> { self fixtureClassName }) } asDictionary).
-			              (#ruleClasses -> { ReAssignmentInBlockRule name }) } asDictionary) at: #rules.
-	"A rule whose patterns method_rewrite can be given by name says so."
-	mcpRule ifNotEmpty: [ :rules | self assert: (rules first at: #fixable) ].
-	"One whose it cannot does not claim it."
+			                (#scope -> { (#classes -> { self fixtureClassName }) } asDictionary).
+			                (#ruleClasses -> { ReAssignmentInBlockRule name }) } asDictionary) at: #rules.
+	"A rule method_rewrite can apply says so."
+	self assert: concatenationRule size equals: 1.
+	self assert: (concatenationRule first at: #fixable).
+	"One it cannot does not claim it."
 	self deny: (renrakuRule first includesKey: #fixable)
 ]
 
@@ -542,7 +542,120 @@ MCPToolRunCritiquesTest >> testRunsSelectedNodeCritiqueAndGroupsHitsByRule [
 	self assert: hits size equals: 2.
 	hit := hits first.
 	self assert: (hit at: #method) equals: self fixtureClassName , '>>assignmentInBlockProbe'.
-	self assert: (hit includesKey: #interval)
+	self assert: (hit includesKey: #interval).
+	self assert: (hit at: #line) equals: 4.
+	"The code is the flagged statement as the method is stored, and the fixture is stored as the image's formatter writes it, which is not the same in every Pharo."
+	self assert: (hit at: #code) equals: (self fixtureClass >> #assignmentInBlockProbe) ast statements first sourceCode
+]
+
+{ #category : 'tests' }
+MCPToolRunCritiquesTest >> testSummaryCountsAPageThatHoldsEveryHit [
+	"A page from the start that holds every hit counts them, in the singular for one. Only a hit with a line brings the sentence on what line numbers count."
+
+	| summaryFor |
+	summaryFor := [ :ruleClass :className |
+		              self summaryFrom: (self callCritiqueRunWithArguments: {
+					               (#scope -> { (#classes -> { className }) } asDictionary).
+					               (#ruleClasses -> { ruleClass name }) } asDictionary) ].
+	self
+		assert: (summaryFor value: ReAssignmentInBlockRule value: self fixtureClassName)
+		equals:
+		('2 critique hits in {1}. Line numbers count each method as stored; method_get shows it.' format: { self fixtureClassName }).
+	self
+		assert: (summaryFor value: ReNoClassCommentRule value: self fixtureClassName)
+		equals: ('1 critique hit in {1}.' format: { self fixtureClassName }).
+	self
+		assert: (summaryFor value: ReUsesTrueRule value: self fixtureClassName)
+		equals: ('No critique hits in {1}.' format: { self fixtureClassName }).
+	self
+		assert: (summaryFor value: ReUsesTrueRule value: 'MCPDefinitelyMissingCritiqueRunClass')
+		equals: 'No critique hits: the scope names nothing that exists.'
+]
+
+{ #category : 'tests' }
+MCPToolRunCritiquesTest >> testSummaryNeverStatesATotalItDidNotCount [
+	"Collection stops one hit past the page, so a page says which hits it holds and never how many there are in all."
+
+	| summaryAt |
+	self compileFixtureMethodSource: (String streamContents: [ :stream |
+				 stream
+					 nextPutAll: 'manyAssignmentsInBlocksProbe';
+					 lf;
+					 lf;
+					 tab;
+					 nextPutAll: '| value |'.
+				 1 to: 45 do: [ :index |
+						 stream
+							 lf;
+							 tab;
+							 nextPutAll: '[ value := ';
+							 print: index;
+							 nextPutAll: ' ] ensure: [  ].' ].
+				 stream
+					 lf;
+					 tab;
+					 nextPutAll: '^ value' ]).
+	summaryAt := [ :offset |
+		             self summaryFrom: (self callCritiqueRunWithArguments: {
+					              (#scope -> { (#classes -> { self fixtureClassName }) } asDictionary).
+					              (#ruleClasses -> { ReAssignmentInBlockRule name }).
+					              (#offset -> offset) } asDictionary) ].
+	self
+		assert: (summaryAt value: 0)
+		equals:
+			('First 20 critique hits in {1}. Line numbers count each method as stored; method_get shows it. Next page: offset 20.' format:
+				 { self fixtureClassName }).
+	self
+		assert: (summaryAt value: 20)
+		equals:
+			('Critique hits 21 to 40 in {1}. Line numbers count each method as stored; method_get shows it. Next page: offset 40.' format:
+				 { self fixtureClassName }).
+	self
+		assert: (summaryAt value: 40)
+		equals:
+		('Critique hits 41 to 47 in {1}. Line numbers count each method as stored; method_get shows it.' format:
+			 { self fixtureClassName }).
+	self
+		assert: (summaryAt value: 46)
+		equals:
+		('Critique hit 47 in {1}. Line numbers count each method as stored; method_get shows it.' format: { self fixtureClassName }).
+	self assert: (summaryAt value: 60) equals: ('No critique hits from offset 60 in {1}.' format: { self fixtureClassName })
+]
+
+{ #category : 'tests' }
+MCPToolRunCritiquesTest >> testTextReadsRuleThenHitsByLine [
+	"A rule reads as its class, whether it is an error, its title, and whether method_rewrite can apply it; its hits follow two spaces in, a method with the line of its stored source and the code there, a class by its name."
+
+	| lines result tool |
+	self compileFixtureMethodSource: 'joinProbe: first with: second ^ first , ''-'' , second'.
+	self compileFixtureMethodSource: 'trueProbe ^ True'.
+	result := self callCritiqueRunWithArguments: {
+			          (#scope -> { (#classes -> { self fixtureClassName }) } asDictionary).
+			          (#ruleClasses -> {
+				           MCPStringConcatenationRule name.
+				           ReNoClassCommentRule name.
+				           ReUsesTrueRule name }) } asDictionary.
+	lines := ((result at: #content) first at: #text) lines allButFirst.
+	self assert: lines asArray equals: {
+			(String streamContents: [ :stream |
+				 stream << 'MCPStringConcatenationRule: ' << MCPStringConcatenationRule new name << '. method_rewrite can apply it.' ]).
+			(String streamContents: [ :stream |
+				 stream << '  ' << self fixtureClassName << '>>joinProbe:with: line 3: first , ''-'' , second' ]).
+			(String streamContents: [ :stream | stream << 'ReNoClassCommentRule: ' << ReNoClassCommentRule new name ]).
+			(String streamContents: [ :stream | stream << '  ' << self fixtureClassName ]).
+			(String streamContents: [ :stream | stream << 'ReUsesTrueRule (error): ' << ReUsesTrueRule new name ]).
+			(String streamContents: [ :stream | stream << '  ' << self fixtureClassName << '>>trueProbe line 3: True' ]) }.
+	tool := MCPToolRunCritiques new.
+	self
+		assert: (String streamContents: [ :stream |
+					 tool ruleTextOn: stream for: {
+							 (#ruleClass -> 'MCPExampleRule').
+							 (#title -> 'Do it this way.').
+							 (#fixable -> true) } asDictionary ])
+		equals: (String streamContents: [ :stream | stream lf << 'MCPExampleRule: Do it this way. method_rewrite can apply it.' ]).
+	self
+		assert: (String streamContents: [ :stream | tool hitTextOn: stream for: { (#package -> 'Eval-Shapes') } asDictionary ])
+		equals: (String streamContents: [ :stream | stream lf << '  package Eval-Shapes' ])
 ]
 
 { #category : 'tests' }

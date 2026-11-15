@@ -159,6 +159,69 @@ MCPToolSearchRepositoriesTest >> testListsStaleRepositoryAsMissingAndContinues [
 				self deny: (entry includesKey: #branch) ]
 ]
 
+{ #category : 'tests' }
+MCPToolSearchRepositoriesTest >> testRowsLeadWithTheRepositoryName [
+
+	| lines located unlocated |
+	unlocated := IceLibgitRepository new
+		             name: 'MCP Unlocated Repository';
+		             yourself.
+	located := self newRepositoryNamed: 'MCP Located Repository' location: FileLocator imageDirectory packageNames: #(  ).
+	self
+		withRepositories: {
+				unlocated.
+				located }
+		do: [
+				lines := (((self callToolWith: Dictionary new) at: #content) first at: #text) lines.
+				self assert: (lines anySatisfy: [ :each | each beginsWith: '  MCP Unlocated Repository isMissing=true' ]).
+				self assert: (lines anySatisfy: [ :each | each beginsWith: '  MCP Located Repository isMissing=false' ]).
+				self deny: (lines anySatisfy: [ :each | each includesSubstring: 'name=' ]).
+				self deny:
+					(lines anySatisfy: [ :each | (each beginsWith: '  MCP Unlocated Repository') and: [ each includesSubstring: 'location=' ] ]) ]
+]
+
+{ #category : 'tests' }
+MCPToolSearchRepositoriesTest >> testSearchOmitsAnEmptyLocation [
+	"A repository registered with no location has no location to name, and an empty one would read as a field with no value."
+
+	| data entry located unlocated |
+	unlocated := IceLibgitRepository new
+		             name: 'MCP Unlocated Repository';
+		             yourself.
+	located := self newRepositoryNamed: 'MCP Located Repository' location: FileLocator imageDirectory packageNames: #(  ).
+	self
+		withRepositories: {
+				unlocated.
+				located }
+		do: [
+				data := self dataFrom: (self callToolWith: Dictionary new).
+				entry := self entryNamed: 'MCP Unlocated Repository' in: (data at: #repositories).
+				self deny: (entry includesKey: #location).
+				entry := self entryNamed: 'MCP Located Repository' in: (data at: #repositories).
+				self assert: (entry at: #location) equals: FileLocator imageDirectory pathString ]
+]
+
+{ #category : 'tests' }
+MCPToolSearchRepositoriesTest >> testSummaryCountsTheRepositoriesOfTheImage [
+	"Repositories are registered with the image, so that is where a search looks; a name, a field or a state it keeps makes the count one that matches."
+
+	| alpha beta |
+	alpha := self newRepositoryNamed: 'MCP Alpha Repository' location: FileLocator imageDirectory packageNames: #( 'MCP' ).
+	beta := self newRepositoryNamed: 'MCP Beta Repository' location: FileLocator imageDirectory packageNames: #( 'Other-Package' ).
+	self
+		withRepositories: {
+				alpha.
+				beta }
+		do: [
+				self assert: (self summaryFrom: (self callToolWith: Dictionary new)) equals: '2 repositories in the image.'.
+				self
+					assert: (self summaryFrom: (self callToolWith: { (#name -> 'Alpha') } asDictionary))
+					equals: '1 repository matches in the image.'.
+				self
+					assert: (self summaryFrom: (self callToolWith: { (#isMissing -> true) } asDictionary))
+					equals: 'No repositories match in the image.' ]
+]
+
 { #category : 'private - calling' }
 MCPToolSearchRepositoriesTest >> toolName [
 

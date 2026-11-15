@@ -1,18 +1,15 @@
 "
-Result DTO returned by repository_head_adopt. It reports repository metadata before and after adopting the head commit, before/after modified package names, the previous and adopted working-copy reference commit ids, and whether the working copy reference changed.
+Result DTO returned by repository_head_adopt. Its data names the packages Iceberg marked modified before the adoption and no longer marks, since adopting clears every loaded package's mark. It keeps for the summary the commit adopted, the branch it is on or that HEAD is detached, and whether the working copy's reference moved.
 "
 Class {
 	#name : 'MCPRepositoryAdoptHeadResult',
 	#superclass : 'MCPRepositoryTransitionResult',
 	#instVars : [
-		'modifiedPackageNamesBefore',
-		'modifiedPackageNamesAfter',
-		'previousReferenceCommitId',
-		'referenceCommitId',
+		'unmarkedPackageNames',
 		'adoptedCommitId',
 		'didAdopt',
 		'branchName',
-		'headDescription'
+		'isDetachedHead'
 	],
 	#category : 'MCP-IDE-Results',
 	#package : 'MCP-IDE',
@@ -20,12 +17,11 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPRepositoryAdoptHeadResult class >> repositoryBefore: beforeInfo after: aRepository previousReferenceCommit: previousCommit adoptedCommit: headCommit didAdopt: aBoolean [
+MCPRepositoryAdoptHeadResult class >> repositoryBefore: beforeInfo after: aRepository adoptedCommit: headCommit didAdopt: aBoolean [
 
 	^ self new
 		  initializeRepositoryBefore: beforeInfo
 		  after: aRepository
-		  previousReferenceCommit: previousCommit
 		  adoptedCommit: headCommit
 		  didAdopt: aBoolean
 ]
@@ -41,14 +37,7 @@ MCPRepositoryAdoptHeadResult >> asDictionary [
 
 	| data |
 	data := Dictionary new.
-	data at: #didAdopt put: self didAdopt.
-	self previousReferenceCommitId ifNotEmpty: [ :id | data at: #previousReferenceCommitId put: id ].
-	self referenceCommitId ifNotEmpty: [ :id | data at: #referenceCommitId put: id ].
-	self adoptedCommitId ifNotEmpty: [ :id | data at: #adoptedCommitId put: id ].
-	self modifiedPackageNamesBefore ifNotEmpty: [ :names | data at: #modifiedPackageNamesBefore put: names ].
-	self modifiedPackageNamesAfter ifNotEmpty: [ :names | data at: #modifiedPackageNamesAfter put: names ].
-	self branchName ifNotEmpty: [ :name | data at: #branch put: name ].
-	self headDescription ifNotEmpty: [ :description | data at: #headDescription put: description ].
+	self unmarkedPackageNames ifNotEmpty: [ :names | data at: #unmarkedPackages put: names ].
 	^ data
 ]
 
@@ -70,52 +59,28 @@ MCPRepositoryAdoptHeadResult >> didAdopt [
 	^ didAdopt ifNil: [ false ]
 ]
 
-{ #category : 'accessing' }
-MCPRepositoryAdoptHeadResult >> headDescription [
-
-	^ headDescription ifNil: [ '' ]
-]
-
 { #category : 'initialization' }
-MCPRepositoryAdoptHeadResult >> initializeRepositoryBefore: beforeInfo after: aRepository previousReferenceCommit: previousCommit adoptedCommit: headCommit didAdopt: aBoolean [
+MCPRepositoryAdoptHeadResult >> initializeRepositoryBefore: beforeInfo after: aRepository adoptedCommit: headCommit didAdopt: aBoolean [
 
+	| stillMarked |
 	super initializeRepositoryBefore: beforeInfo after: aRepository.
-	modifiedPackageNamesBefore := beforeInfo modifiedPackageNames.
-	modifiedPackageNamesAfter := repositoryInfoAfter modifiedPackageNames.
-	previousReferenceCommitId := self commitIdFrom: previousCommit.
-	referenceCommitId := self referenceCommitIdForRepository: aRepository.
+	stillMarked := repositoryInfoAfter modifiedPackageNames.
+	unmarkedPackageNames := (beforeInfo modifiedPackageNames reject: [ :each | stillMarked includes: each ]) asArray.
 	adoptedCommitId := self commitIdFrom: headCommit.
 	didAdopt := aBoolean.
 	branchName := repositoryInfoAfter branchName.
-	headDescription := repositoryInfoAfter headDescription
+	isDetachedHead := repositoryInfoAfter isDetachedHead
 ]
 
 { #category : 'accessing' }
-MCPRepositoryAdoptHeadResult >> modifiedPackageNamesAfter [
+MCPRepositoryAdoptHeadResult >> isDetachedHead [
 
-	^ modifiedPackageNamesAfter ifNil: [ #(  ) ]
+	^ isDetachedHead ifNil: [ false ]
 ]
 
 { #category : 'accessing' }
-MCPRepositoryAdoptHeadResult >> modifiedPackageNamesBefore [
+MCPRepositoryAdoptHeadResult >> unmarkedPackageNames [
+	"The packages Iceberg marked modified before the adoption and no longer marks."
 
-	^ modifiedPackageNamesBefore ifNil: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
-MCPRepositoryAdoptHeadResult >> previousReferenceCommitId [
-
-	^ previousReferenceCommitId ifNil: [ '' ]
-]
-
-{ #category : 'accessing' }
-MCPRepositoryAdoptHeadResult >> referenceCommitId [
-
-	^ referenceCommitId ifNil: [ '' ]
-]
-
-{ #category : 'private' }
-MCPRepositoryAdoptHeadResult >> referenceCommitIdForRepository: aRepository [
-
-	^ self commitIdFrom: aRepository workingCopy referenceCommit
+	^ unmarkedPackageNames ifNil: [ #(  ) ]
 ]

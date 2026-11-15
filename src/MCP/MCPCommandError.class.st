@@ -135,16 +135,12 @@ MCPCommandError class >> oppositeSideMethodSuggestionForClass: targetClass class
 
 { #category : 'signaling' }
 MCPCommandError class >> signalClassAlreadyExistsNamed: aClassName [
+	"The message says which tools work on a class that exists, since a client reading text sees nothing of the details."
 
-	| details message |
-	message := String streamContents: [ :stream | stream << 'Class ' << aClassName << ' already exists.' ].
-	details := {
-		           (#class -> aClassName).
-		           (#guidance
-		            ->
-		            'Use class_get to inspect the existing class, or use the class update tools to modify it. Do not use class_create for existing classes.') }
-		           asDictionary.
-	^ self signalErrorCode: #ClassAlreadyExists message: message details: details
+	^ self
+		  signalErrorCode: #ClassAlreadyExists
+		  message: ('Class {1} already exists. class_update changes it; class_get shows it.' format: { aClassName })
+		  details: { (#class -> aClassName) } asDictionary
 ]
 
 { #category : 'signaling - names' }
@@ -309,10 +305,13 @@ MCPCommandError class >> signalMissingMethod: aSelectorString in: aBehavior [
 
 { #category : 'signaling' }
 MCPCommandError class >> signalMissingProjectNamed: aProjectName [
+	"Projects are named only by package_search's projects, which is where the scope says the name was given."
 
 	| message |
 	message := String streamContents: [ :stream | stream << 'Project ' << aProjectName << ' does not exist.' ].
-	^ self signalErrorCode: #ProjectNotFound message: message details: { (#project -> aProjectName) } asDictionary
+	^ self signalErrorCode: #ProjectNotFound message: message details: {
+			  (#project -> aProjectName).
+			  (#scope -> 'projects') } asDictionary
 ]
 
 { #category : 'signaling' }

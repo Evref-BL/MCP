@@ -70,3 +70,23 @@ MCPToolDebugSearchTest >> testQueryKeepsOnlyTheMatchingDebuggers [
 	self assert: wanted isNotNil.
 	self assert: unwanted isNotNil
 ]
+
+{ #category : 'tests' }
+MCPToolDebugSearchTest >> testStackFramesReadOnePerLine [
+	"A frame and its variables are one item of the stack: its variables stay under it, and the next frame starts its own line."
+
+	| contentText |
+	contentText := MCPToolDebugSearch new contentTextForStructuredContent: (Dictionary new
+			                at: #summary put: '1 open debugger.';
+			                at: #data put: { (#debuggers -> { {
+						                 (#debugger -> 'ZeroDivide').
+						                 (#exception -> 'ZeroDivide: divide by zero').
+						                 (#stack -> {
+								                  (String lf join: #( 'SmallInteger(Number)>>/' '   self=3' '   aNumber=0' )).
+								                  'UndefinedObject>>DoIt' }) } asDictionary }) } asDictionary;
+			                yourself).
+	self
+		assert: contentText lines
+		equals: #( '1 open debugger.' 'debuggers:' '  debugger=ZeroDivide exception="ZeroDivide: divide by zero"'
+			   '    stack:' '      SmallInteger(Number)>>/' '         self=3' '         aNumber=0' '      UndefinedObject>>DoIt' )
+]

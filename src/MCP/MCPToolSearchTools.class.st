@@ -54,14 +54,16 @@ MCPToolSearchTools >> buildInputSchema [
 
 { #category : 'private - results' }
 MCPToolSearchTools >> catalogTextForSummary: aSummary tools: toolMetadataEntries [
-	"Separate entries with a line feed: a carriage return reaches the caller as an escaped character rather than a line break."
+	"Separate entries with a line feed: a carriage return reaches the caller as an escaped character rather than a line break. A tool that is not advertised says so after its name, since a client that calls only what it lists cannot call it by that name alone."
 
 	^ String streamContents: [ :stream |
 			  stream nextPutAll: aSummary.
 			  toolMetadataEntries do: [ :each |
 					  stream
 						  nextPut: Character lf;
-						  nextPutAll: (each at: #name);
+						  nextPutAll: (each at: #name).
+					  (each at: #exposure ifAbsent: [ nil ]) = 'discoverable' ifTrue: [ stream nextPutAll: ' (not in the advertised list)' ].
+					  stream
 						  nextPutAll: ' - ';
 						  nextPutAll: (each at: #description) ] ]
 ]

@@ -5,8 +5,7 @@ Class {
 	#name : 'MCPGetMethodResult',
 	#superclass : 'MCPResult',
 	#instVars : [
-		'data',
-		'externalVariableCount'
+		'data'
 	],
 	#category : 'MCP-IDE-Results',
 	#package : 'MCP-IDE',
@@ -14,18 +13,15 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPGetMethodResult class >> data: aDictionary externalVariableCount: anIntegerOrNil [
+MCPGetMethodResult class >> data: aDictionary [
 
-	^ self new initializeData: aDictionary externalVariableCount: anIntegerOrNil
+	^ self new initializeData: aDictionary
 ]
 
 { #category : 'converting' }
 MCPGetMethodResult >> asDictionary [
 
-	| result |
-	result := self data copy.
-	self externalVariableCount ifNotNil: [ :count | result at: #externalVariableCount put: count ].
-	^ result
+	^ self data copy
 ]
 
 { #category : 'accessing' }
@@ -34,16 +30,8 @@ MCPGetMethodResult >> data [
 	^ data
 ]
 
-{ #category : 'accessing' }
-MCPGetMethodResult >> externalVariableCount [
-
-	^ externalVariableCount
-]
-
 { #category : 'initialization' }
-MCPGetMethodResult >> initializeData: aDictionary externalVariableCount: anIntegerOrNil [
+MCPGetMethodResult >> initializeData: aDictionary [
 
-	data := aDictionary.
-	externalVariableCount := anIntegerOrNil.
-	^ self
+	data := aDictionary
 ]

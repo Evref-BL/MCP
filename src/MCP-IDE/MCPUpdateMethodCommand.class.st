@@ -119,8 +119,10 @@ MCPUpdateMethodCommand >> executeChangeProtocolWithPlan: plan [
 					                  yourself ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText: (String streamContents: [ :stream |
-							   stream << 'Changed protocol for ' << (self tool methodReferenceForBehavior: behavior selector: selectorSymbol) << '.' ])
+					  successResultText: (self
+							   protocolChangeSummaryFor: (self tool methodReferenceForBehavior: behavior selector: selectorSymbol)
+							   from: oldProtocol
+							   to: (self protocolNameForMethod: newCompiledMethod))
 					  data: (self appliedUpdateResultFor: changeResult plan: plan) asDictionary
 					  warnings: warningMessages ]
 		  failureSummary: [ :error |
@@ -258,9 +260,40 @@ MCPUpdateMethodCommand >> planForAction: action [
 ]
 
 { #category : 'private - methods' }
+MCPUpdateMethodCommand >> protocolChangeSummaryFor: methodReference from: oldProtocolName to: newProtocolName [
+	"Moved EvalLedger>>audit from as yet unclassified to accounting., in the words method_compile uses when a replace moves a method; EvalLedger>>audit is already in accounting. when it was there before."
+
+	^ String streamContents: [ :stream |
+			  oldProtocolName = newProtocolName
+				  ifTrue: [
+						  stream
+							  nextPutAll: methodReference;
+							  nextPutAll: ' is already in ';
+							  nextPutAll: (self protocolTextFor: newProtocolName) ]
+				  ifFalse: [
+						  stream
+							  nextPutAll: 'Moved ';
+							  nextPutAll: methodReference;
+							  nextPutAll: ' from ';
+							  nextPutAll: (self protocolTextFor: oldProtocolName);
+							  nextPutAll: ' to ';
+							  nextPutAll: (self protocolTextFor: newProtocolName) ].
+			  stream nextPut: $. ]
+]
+
+{ #category : 'private - methods' }
 MCPUpdateMethodCommand >> protocolNameForMethod: aCompiledMethod [
 
 	^ aCompiledMethod protocolName ifNil: [ '' ] ifNotNil: [ :aProtocol | aProtocol asString ]
+]
+
+{ #category : 'private - methods' }
+MCPUpdateMethodCommand >> protocolTextFor: aProtocolName [
+	"A method filed under no protocol has an empty name, which a sentence calls no protocol."
+
+	^ aProtocolName isEmptyOrNil
+		  ifTrue: [ 'no protocol' ]
+		  ifFalse: [ aProtocolName ]
 ]
 
 { #category : 'private - planning' }

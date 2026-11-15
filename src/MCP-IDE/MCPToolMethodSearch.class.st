@@ -79,12 +79,6 @@ MCPToolMethodSearch >> collapsedTraitEntriesIn: entries [
 	^ collapsed
 ]
 
-{ #category : 'private - results' }
-MCPToolMethodSearch >> failureMessageForScope: scopeSummary error: anError [
-
-	^ self scopeQueryFailureMessageFor: 'methods' scope: scopeSummary error: anError
-]
-
 { #category : 'private - filtering' }
 MCPToolMethodSearch >> fieldTextsForMethodEntry: anEntry sourceText: sourceText fieldName: fieldName [
 
@@ -121,7 +115,10 @@ MCPToolMethodSearch >> implementorMethodsForSelector: selectorSymbol queryReques
 		^ (scopeQuery methods select: [ :eachMethod | eachMethod selector = selectorSymbol ]) asArray ].
 	methods := OrderedCollection new.
 	scopeQuery behaviors do: [ :eachBehavior |
-		(eachBehavior includesSelector: selectorSymbol) ifTrue: [ methods add: eachBehavior >> selectorSymbol ] ].
+			(eachBehavior includesSelector: selectorSymbol) ifTrue: [
+					| method |
+					method := eachBehavior >> selectorSymbol.
+					(scopeQuery isInstalledFromTraitedClass: method) ifFalse: [ methods add: method ] ] ].
 	^ methods asArray
 ]
 
@@ -145,15 +142,6 @@ MCPToolMethodSearch >> matchesFilterOnMethodEntry: anEntry sourceText: sourceTex
 MCPToolMethodSearch >> matchingClassReferencesForClassNamed: aClassName inMethods: compiledMethods [
 
 	^ (MCPClassReferenceQuery forClass: (MCPImageLookup classNamed: aClassName)) methodsReferringIn: compiledMethods
-]
-
-{ #category : 'private - searching' }
-MCPToolMethodSearch >> matchingSelectorReferencesForSelector: aSelectorSymbol inMethods: compiledMethods [
-
-	| specialSelectorIndex |
-	specialSelectorIndex := Smalltalk specialSelectorIndexOrNil: aSelectorSymbol.
-	^ (compiledMethods select: [ :eachMethod | eachMethod hasSelector: aSelectorSymbol specialSelectorIndex: specialSelectorIndex ])
-		  asArray
 ]
 
 { #category : 'private - searching' }
@@ -238,10 +226,23 @@ MCPToolMethodSearch >> queryResultDataForQueryRequest: queryRequest page: page [
 	^ self methodQueryResultDataForPage: page entriesKey: #methods
 ]
 
-{ #category : 'private - template' }
-MCPToolMethodSearch >> requestedContextFromRequest: request [
+{ #category : 'private - results' }
+MCPToolMethodSearch >> redundantKeys [
+	"An extension's protocol already names its package with a star, so isExtension says nothing a row does not."
 
-	^ { (#scope -> (self classAndMethodScopeSummaryFromRequest: request)) } asDictionary
+	^ #( isExtension )
+]
+
+{ #category : 'private - template' }
+MCPToolMethodSearch >> scopeQueryFromRequest: request [
+
+	^ self methodScopeQueryFromRequest: request
+]
+
+{ #category : 'private - template' }
+MCPToolMethodSearch >> searchedNoun [
+
+	^ 'method'
 ]
 
 { #category : 'private - methods' }
@@ -264,12 +265,6 @@ MCPToolMethodSearch >> sortedMethodEntries: entries [
 
 	^ (self collapsedTraitEntriesIn: entries) asArray sort: [ :left :right |
 		  (self methodEntryLabel: left) <= (self methodEntryLabel: right) ]
-]
-
-{ #category : 'private - results' }
-MCPToolMethodSearch >> successSummaryForScope: scopeSummary page: page [
-
-	^ self scopeQuerySuccessSummaryFor: 'methods' scope: scopeSummary page: page
 ]
 
 { #category : 'private - schema' }

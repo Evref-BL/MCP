@@ -83,7 +83,9 @@ MCPToolSearchPackagesTest >> testImageScopeCanPaginateFilteredPackages [
 	self assert: (pagination at: #returnedCount) equals: expected size - 1.
 	self assert: (pagination at: #totalCount) equals: expected size.
 	self deny: (pagination at: #truncated).
-	self assert: (summary includesSubstring: 'Showing ').
+	self assert: summary equals: ('{1} of {2} packages match in the image.' format: {
+				 (expected size - 1).
+				 expected size }).
 	self assert: packageNames equals: expected allButFirst asArray
 ]
 
