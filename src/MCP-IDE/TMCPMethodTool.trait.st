@@ -13,11 +13,7 @@ Trait {
 { #category : 'private - methods' }
 TMCPMethodTool >> behaviorNamed: aClassName classSide: aBoolean [
 
-	| targetClass |
-	targetClass := self class environment at: aClassName asSymbol.
-	^ aBoolean
-		  ifTrue: [ targetClass classSide ]
-		  ifFalse: [ targetClass ]
+	^ MCPImageLookup behaviorNamed: aClassName classSide: aBoolean
 ]
 
 { #category : 'private - methods' }
@@ -32,18 +28,11 @@ TMCPMethodTool >> methodEntryLabel: anEntry [
 { #category : 'private - methods' }
 TMCPMethodTool >> methodForClassNamed: className selector: selectorString classSide: classSide [
 
-	| behavior selectorSymbol targetClass |
-	selectorSymbol := selectorString asSymbol.
-	targetClass := self class environment
-		               at: className asSymbol
-		               ifAbsent: [
-		               MCPCommandError signalMissingMethodInClassName: className classSide: classSide selector: selectorString ].
-	behavior := classSide
-		            ifTrue: [ targetClass classSide ]
-		            ifFalse: [ targetClass ].
-	(behavior includesSelector: selectorSymbol) ifFalse: [
-		MCPCommandError signalMissingMethodInClassName: className classSide: classSide selector: selectorString ].
-	^ behavior compiledMethodAt: selectorSymbol
+	| behavior |
+	behavior := self behaviorNamed: className classSide: classSide.
+	^ behavior
+		  compiledMethodAt: selectorString asSymbol
+		  ifAbsent: [ MCPCommandError signalMissingMethod: selectorString in: behavior ]
 ]
 
 { #category : 'private - schema' }

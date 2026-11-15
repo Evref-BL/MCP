@@ -161,6 +161,7 @@ MCPJSONSchemaViolation >> printOn: aStream [
 MCPJSONSchemaViolation >> printSentenceOn: aStream [
 
 	keyword = 'required' ifTrue: [ ^ aStream << (self placeAt: (path copyWith: expected)) << ' is required.' ].
+	keyword = 'selectionRequired' ifTrue: [ ^ aStream << message ].
 	aStream << (self placeAt: path).
 	keyword = 'notBlank' ifTrue: [ ^ aStream << ' is blank; leave it out or give it a value.' ].
 	keyword = 'notEmpty' ifTrue: [ ^ aStream << ' names nothing to act on; give at least one value that is not blank.' ].

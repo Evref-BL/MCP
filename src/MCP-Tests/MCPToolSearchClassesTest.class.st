@@ -221,6 +221,24 @@ MCPToolSearchClassesTest >> testMissingClassScopeReturnsPartialResultsAndWarning
 ]
 
 { #category : 'tests' }
+MCPToolSearchClassesTest >> testMissingScopeEntriesAreNamedByTheirKey [
+
+	| warnings |
+	warnings := self warningsFrom: (self callToolWith: { (self searchScope: {
+					              (#classes -> #( 'Zzqxw' 'Transcript' )).
+					              (#hierarchyOf -> #( 'Zzqxw' )).
+					              (#superclassesOf -> #( 'Zzqxw' )).
+					              (#subclassesOf -> #( 'Zzqxw' )) }) } asDictionary).
+	self
+		assert: warnings asSet
+		equals:
+			#( 'Class Zzqxw does not exist, so scope.classes skipped it.' 'Transcript is a global variable, not a class, so scope.classes skipped it.'
+			   'Class Zzqxw does not exist, so scope.hierarchyOf skipped it.'
+			   'Class Zzqxw does not exist, so scope.superclassesOf skipped it.'
+			   'Class Zzqxw does not exist, so scope.subclassesOf skipped it.' ) asSet
+]
+
+{ #category : 'tests' }
 MCPToolSearchClassesTest >> testMultipleScopesAreUnioned [
 
 	| classNames data result |
@@ -365,6 +383,24 @@ MCPToolSearchClassesTest >> testReturnsWarningsAndEmptyResultsWhenPackageIsMissi
 	self assert: (data at: #classes) isEmpty.
 	self assert: warnings size equals: 1.
 	self assert: (warnings first includesSubstring: 'MCP-Definitely-Missing')
+]
+
+{ #category : 'tests' }
+MCPToolSearchClassesTest >> testScopeEntriesWrittenWithTheirSideSelectTheirClass [
+	"A class search answers whole classes, so Foo class selects Foo, in every scope key, without a warning."
+
+	| result |
+	result := self callToolWith: { (self searchScope: { (#classes -> { (self baseClassName , ' class') }) }) } asDictionary.
+	self assert: (self warningsFrom: result) isEmpty.
+	self assert: (((self dataFrom: result) at: #classes) collect: [ :each | each at: #class ]) equals: { self baseClassName }.
+	result := self callToolWith: {
+			          (self searchScope: { (#hierarchyOf -> { (self childClassName , ' class') }) }).
+			          (#name -> self fixturePrefix) } asDictionary.
+	self assert: (self warningsFrom: result) isEmpty.
+	self assert: (((self dataFrom: result) at: #classes) collect: [ :each | each at: #class ]) equals: {
+			self baseClassName.
+			self childClassName.
+			self grandchildClassName }
 ]
 
 { #category : 'tests' }

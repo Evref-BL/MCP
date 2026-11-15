@@ -15,51 +15,47 @@ Class {
 	#tag : 'Errors'
 }
 
-{ #category : 'private - suggestions' }
-MCPCommandError class >> detailsWith: associations suggestionsForClassNamed: className scopeName: scopeName [
+{ #category : 'private - names' }
+MCPCommandError class >> detailKeyOfRole: aRole [
 
-	| details suggestions |
-	details := associations asDictionary.
-	suggestions := MCPScopeNameSuggester classSuggestionsFor: className.
-	details
-		at: #class put: className;
-		at: #scope put: scopeName;
-		at: #suggestions put: suggestions.
+	^ (self nameRoles at: aRole) third
+]
+
+{ #category : 'private - names' }
+MCPCommandError class >> detailsNaming: aName role: aRole scope: aScopeKeyOrNil with: someAssociations [
+	"What the caller already reports, the name under its role's key, and the key of the scope it was an entry of: only a scope entry has a scope."
+
+	| details |
+	details := someAssociations asDictionary.
+	details at: (self detailKeyOfRole: aRole) put: aName.
+	aScopeKeyOrNil ifNotNil: [ details at: #scope put: aScopeKeyOrNil ].
 	^ details
 ]
 
-{ #category : 'private - suggestions' }
-MCPCommandError class >> detailsWith: associations suggestionsForPackageNamed: packageName scopeName: scopeName [
+{ #category : 'private - names' }
+MCPCommandError class >> kindOfRole: aRole [
+	"What a global variable given in aRole should have been, as in: not a class."
 
-	| details suggestions |
-	details := associations asDictionary.
-	suggestions := MCPScopeNameSuggester packageSuggestionsFor: packageName.
-	details
-		at: #package put: packageName;
-		at: #scope put: scopeName;
-		at: #suggestions put: suggestions.
-	^ details
+	^ (self nameRoles at: aRole) fourth
 ]
 
-{ #category : 'private - suggestions' }
-MCPCommandError class >> messageForMissingKind: kind name: missingName scopeName: scopeName suggestions: suggestions [
+{ #category : 'texts - names' }
+MCPCommandError class >> messageAbout: aSubject saying: aPredicate scope: aScopeKeyOrNil skipped: isSkipped suggestions: someNames closing: aSentenceOrNil [
+	"The one way MCP says what is wrong with a name it was given. aSubject opens the text: the name, after its role's noun when the text is about what the name names. An entry of a scope names its key as the schema spells it: a scope that must be complete names it as it refuses, one that answers partial results says it skipped the entry. Suggestions, then what is left to say, close the text."
 
 	^ String streamContents: [ :stream |
+			  stream nextPutAll: aSubject.
+			  (aScopeKeyOrNil isNotNil and: [ isSkipped not ]) ifTrue: [ stream << ', in ' << aScopeKeyOrNil << ',' ].
 			  stream
-				  nextPutAll: kind;
 				  space;
-				  nextPutAll: missingName asString;
-				  nextPutAll: ' does not exist'.
-			  scopeName ifNotNil: [
-					  stream
-						  nextPutAll: ' in ';
-						  nextPutAll: scopeName asString;
-						  nextPutAll: ' scope' ].
+				  nextPutAll: aPredicate.
+			  (aScopeKeyOrNil isNotNil and: [ isSkipped ]) ifTrue: [ stream << ', so ' << aScopeKeyOrNil << ' skipped it' ].
 			  stream nextPut: $..
-			  suggestions ifNotEmpty: [
-					  stream nextPutAll: ' Did you mean: '.
-					  suggestions do: [ :each | stream nextPutAll: each ] separatedBy: [ stream nextPutAll: ', ' ].
-					  stream nextPut: $. ] ]
+			  someNames ifNotEmpty: [ stream << ' Did you mean: ' << (', ' join: someNames) << '.' ].
+			  aSentenceOrNil ifNotNil: [
+					  stream
+						  space;
+						  nextPutAll: aSentenceOrNil ] ]
 ]
 
 { #category : 'private - suggestions' }
@@ -99,6 +95,33 @@ MCPCommandError class >> methodSuggestionsForClass: targetClass classSide: class
 				  stream nextPut: suggestion ] ]
 ]
 
+{ #category : 'private - names' }
+MCPCommandError class >> nameRoles [
+	"What the texts say of a name given in each role: the noun they open with, the code a missing name answers, the detail key that holds the name, and what a global variable given for it is not. A package is no class, but a missing one is said the same way."
+
+	^ Dictionary newFrom: {
+			  (#class -> #( 'Class' #ClassNotFound #class 'a class' )).
+			  (#superclass -> #( 'Superclass' #SuperclassNotFound #superclass 'a class' )).
+			  (#trait -> #( 'Trait' #TraitNotFound #trait 'a trait' )).
+			  (#sharedPool -> #( 'Shared pool' #SharedPoolNotFound #sharedPool 'a shared pool' )).
+			  (#layoutClass -> #( 'Layout class' #LayoutClassNotFound #layout 'a layout class' )).
+			  (#critiqueRule -> #( 'Critique rule' #CritiqueRuleNotFound #ruleClass 'a critique rule' )).
+			  (#rewriteRule -> #( 'Rewrite rule' #RewriteRuleNotFound #ruleClass 'a rewrite rule' )).
+			  (#package -> #( 'Package' #PackageNotFound #package nil )) }
+]
+
+{ #category : 'private - names' }
+MCPCommandError class >> notFoundCodeOfRole: aRole [
+
+	^ (self nameRoles at: aRole) second
+]
+
+{ #category : 'private - names' }
+MCPCommandError class >> nounOfRole: aRole [
+
+	^ (self nameRoles at: aRole) first
+]
+
 { #category : 'private - suggestions' }
 MCPCommandError class >> oppositeSideMethodSuggestionForClass: targetClass classSide: classSide selector: selectorSymbol [
 
@@ -124,6 +147,61 @@ MCPCommandError class >> signalClassAlreadyExistsNamed: aClassName [
 	^ self signalErrorCode: #ClassAlreadyExists message: message details: details
 ]
 
+{ #category : 'signaling - names' }
+MCPCommandError class >> signalClassNameIsAList: aName scope: aScopeKeyOrNil details: someAssociations [
+
+	| details |
+	details := someAssociations asDictionary.
+	details at: #name put: aName.
+	aScopeKeyOrNil ifNotNil: [ details at: #scope put: aScopeKeyOrNil ].
+	^ self
+		  signalErrorCode: #ClassNameIsAList
+		  message: (self textForClassNameIsAList: aName scope: aScopeKeyOrNil skipped: false)
+		  details: details
+]
+
+{ #category : 'signaling' }
+MCPCommandError class >> signalClassRemovalBlocked: aMessage details: aDictionary [
+	"Pharo's removal check refused class_remove. aMessage says what blocks it, from what the image answers rather than from the check's own text; aDictionary carries classes, referencedBy, subclasses, users, impactMessages, howToProceed and forceSupported."
+
+	^ self signalErrorCode: #ClassRemovalBlocked message: aMessage details: aDictionary
+]
+
+{ #category : 'signaling - names' }
+MCPCommandError class >> signalClassSideConflict: aName baseName: aBaseName side: aSide [
+	"aName, such as Foo class, names the class side, and the call's side says the other: guessing would put a method on the wrong side."
+
+	^ self
+		  signalErrorCode: #ClassSideConflict
+		  message: (String streamContents: [ :stream |
+					   stream << aName << ' names the class side, but side is ' << aSide << '. Pass class ' << aBaseName
+					   << ', with side class or instance.' ])
+		  details: {
+				  (#class -> aBaseName).
+				  (#name -> aName).
+				  (#side -> aSide) } asDictionary
+]
+
+{ #category : 'signaling - names' }
+MCPCommandError class >> signalClassSideNamed: aName baseName: aBaseName for: aToolName [
+	"aName, such as Foo class, names a class side where aToolName, class_create, class_update or class_remove, works on a whole class definition: reading it as Foo would change the call's effect."
+
+	^ self
+		  signalErrorCode: #ClassSideNamed
+		  message: (String streamContents: [ :stream |
+					   stream << aName << ' is the class side of ' << aBaseName.
+					   aToolName = 'class_remove' ifTrue: [
+							   stream << ', and goes only with its class. Name ' << aBaseName
+							   << ' to remove the class, or use method_remove with side class to remove class-side methods.' ].
+					   aToolName = 'class_update' ifTrue: [
+						   stream << '. class_update changes the whole class: name ' << aBaseName << ', and use classSlots for class-side slots.' ].
+					   aToolName = 'class_create' ifTrue: [
+						   stream << ', which class_create makes with the class. Name ' << aBaseName << ', and give class-side slots in classSlots.' ] ])
+		  details: {
+				  (#class -> aBaseName).
+				  (#name -> aName) } asDictionary
+]
+
 { #category : 'signaling' }
 MCPCommandError class >> signalErrorCode: anErrorCode message: aMessage details: aDictionary [
 
@@ -134,121 +212,99 @@ MCPCommandError class >> signalErrorCode: anErrorCode message: aMessage details:
 		  signal
 ]
 
-{ #category : 'signaling' }
-MCPCommandError class >> signalMissingClassNamed: aClassName [
+{ #category : 'signaling - names' }
+MCPCommandError class >> signalGlobalAlreadyExistsNamed: aName [
+	"class_create was asked for a class under a name a global variable already holds."
 
-	| details suggestions |
-	details := self detailsWith: #(  ) suggestionsForClassNamed: aClassName scopeName: 'class'.
-	suggestions := details at: #suggestions.
 	^ self
-		  signalErrorCode: #ClassNotFound
+		  signalErrorCode: #GlobalAlreadyExists
 		  message: (self
-				   messageForMissingKind: 'Class'
-				   name: aClassName
-				   scopeName: nil
-				   suggestions: suggestions)
-		  details: details
+				   messageAbout: aName
+				   saying: 'already names a global variable'
+				   scope: nil
+				   skipped: false
+				   suggestions: #(  )
+				   closing: 'Choose another class name.')
+		  details: { (#class -> aName) } asDictionary
 ]
 
 { #category : 'signaling' }
-MCPCommandError class >> signalMissingClassNamed: aClassName scopeName: scopeName [
+MCPCommandError class >> signalMethodSourceHeader: aHeader message: aMessage className: aClassName side: aSide [
+	"A method_compile source began with a method's reference, aHeader, that the call cannot simply drop. aMessage says what to write instead; nothing is compiled."
 
-	| details suggestions |
-	details := self detailsWith: #(  ) suggestionsForClassNamed: aClassName scopeName: scopeName.
-	suggestions := details at: #suggestions.
+	^ self signalErrorCode: #MethodSourceHeader message: aMessage details: {
+			  (#header -> aHeader).
+			  (#class -> aClassName).
+			  (#side -> aSide) } asDictionary
+]
+
+{ #category : 'signaling - names' }
+MCPCommandError class >> signalMissing: aName role: aRole scope: aScopeKeyOrNil suggestions: someNames details: someAssociations [
+	"aName, given in aRole, names nothing. Each role answers its own code; the suggestions are names of the role's kind."
+
+	| details |
+	details := self
+		           detailsNaming: aName
+		           role: aRole
+		           scope: aScopeKeyOrNil
+		           with: someAssociations.
+	details at: #suggestions put: someNames asArray.
 	^ self
-		  signalErrorCode: #ClassNotFound
+		  signalErrorCode: (self notFoundCodeOfRole: aRole)
 		  message: (self
-				   messageForMissingKind: 'Class'
-				   name: aClassName
-				   scopeName: scopeName
-				   suggestions: suggestions)
+				   textForMissing: aName
+				   role: aRole
+				   scope: aScopeKeyOrNil
+				   skipped: false
+				   suggestions: someNames)
 		  details: details
 ]
 
-{ #category : 'signaling' }
-MCPCommandError class >> signalMissingMethodInClassName: aClassName classSide: aBoolean selector: aSelectorString [
+{ #category : 'signaling - names' }
+MCPCommandError class >> signalMissingCompileTarget: aName suggestions: someNames [
+	"method_compile is the one tool that writes into the class it names, so a missing one says how to make it."
 
-	| details message selectorSymbol suggestions targetClass |
-	selectorSymbol := aSelectorString asSymbol.
-	targetClass := Smalltalk globals at: aClassName asSymbol ifAbsent: [
-			               message := String streamContents: [ :stream |
-					                          stream << 'Class ' << aClassName << ' does not exist; cannot look up method '
-					                          << (self methodReferenceForClassName: aClassName selector: aSelectorString classSide: aBoolean)
-					                          << '.' ].
-			               ^ self signalErrorCode: #ClassNotFound message: message details: {
-					                 (#class -> aClassName).
-					                 (#side -> (aBoolean
-						                   ifTrue: [ 'class' ]
-						                   ifFalse: [ 'instance' ])).
-					                 (#selector -> aSelectorString) } asDictionary ].
-	suggestions := self methodSuggestionsForClass: targetClass classSide: aBoolean selector: selectorSymbol.
+	^ self
+		  signalErrorCode: #ClassNotFound
+		  message: (self
+				   messageAbout: (String streamContents: [ :stream | stream << (self nounOfRole: #class) << ' ' << aName ])
+				   saying: 'does not exist'
+				   scope: nil
+				   skipped: false
+				   suggestions: someNames
+				   closing: (someNames
+						    ifEmpty: [ 'Create it with class_create, then compile into it.' ]
+						    ifNotEmpty: [ 'If it is a new class, create it with class_create first.' ]))
+		  details: {
+				  (#class -> aName).
+				  (#suggestions -> someNames asArray) } asDictionary
+]
+
+{ #category : 'signaling' }
+MCPCommandError class >> signalMissingMethod: aSelectorString in: aBehavior [
+	"aBehavior, which the caller has resolved, has no method aSelectorString of its own. The methods of that selector the caller may have meant are named: on the other side, or the first one up the hierarchy."
+
+	| className classSide details message suggestions |
+	className := aBehavior instanceSide name asString.
+	classSide := aBehavior isClassSide.
+	suggestions := self methodSuggestionsForClass: aBehavior instanceSide classSide: classSide selector: aSelectorString asSymbol.
 	message := String streamContents: [ :stream |
-			           stream << 'Method ' << (self methodReferenceForClassName: aClassName selector: aSelectorString classSide: aBoolean)
-			           << ' does not exist.' ].
-	suggestions ifNotEmpty: [
-			message := String streamContents: [ :stream |
-					           stream << message << ' Exact matches: ' << (', ' join: (suggestions collect: [ :each |
-								             self
-									             methodReferenceForClassName: (each at: #class)
-									             selector: (each at: #selector)
-									             classSide: (each at: #side ifAbsent: [ 'instance' ]) = 'class' ])) << '.' ] ].
+			           stream << 'Method ' << (self methodReferenceForClassName: className selector: aSelectorString classSide: classSide)
+			           << ' does not exist.'.
+			           suggestions ifNotEmpty: [
+					           stream << ' Exact matches: ' << (', ' join: (suggestions collect: [ :each |
+							             self
+								             methodReferenceForClassName: (each at: #class)
+								             selector: (each at: #selector)
+								             classSide: (each at: #side) = 'class' ])) << '.' ] ].
 	details := {
-		           (#class -> aClassName).
-		           (#side -> (aBoolean
+		           (#class -> className).
+		           (#side -> (classSide
 			             ifTrue: [ 'class' ]
 			             ifFalse: [ 'instance' ])).
-		           (#selector -> aSelectorString) } asDictionary.
+		           (#selector -> aSelectorString asString) } asDictionary.
 	suggestions ifNotEmpty: [ :matches | details at: #suggestions put: matches ].
 	^ self signalErrorCode: #MethodNotFound message: message details: details
-]
-
-{ #category : 'signaling' }
-MCPCommandError class >> signalMissingPackageNamed: aPackageName [
-
-	| details suggestions |
-	details := self detailsWith: #(  ) suggestionsForPackageNamed: aPackageName scopeName: 'package'.
-	suggestions := details at: #suggestions.
-	^ self
-		  signalErrorCode: #PackageNotFound
-		  message: (self
-				   messageForMissingKind: 'Package'
-				   name: aPackageName
-				   scopeName: nil
-				   suggestions: suggestions)
-		  details: details
-]
-
-{ #category : 'signaling' }
-MCPCommandError class >> signalMissingPackageNamed: aPackageName forClassNamed: aClassName [
-
-	| details suggestions |
-	details := self detailsWith: { (#class -> aClassName) } suggestionsForPackageNamed: aPackageName scopeName: 'package'.
-	suggestions := details at: #suggestions.
-	^ self
-		  signalErrorCode: #PackageNotFound
-		  message: (self
-				   messageForMissingKind: 'Package'
-				   name: aPackageName
-				   scopeName: nil
-				   suggestions: suggestions)
-		  details: details
-]
-
-{ #category : 'signaling' }
-MCPCommandError class >> signalMissingPackageNamed: aPackageName scopeName: scopeName [
-
-	| details suggestions |
-	details := self detailsWith: #(  ) suggestionsForPackageNamed: aPackageName scopeName: scopeName.
-	suggestions := details at: #suggestions.
-	^ self
-		  signalErrorCode: #PackageNotFound
-		  message: (self
-				   messageForMissingKind: 'Package'
-				   name: aPackageName
-				   scopeName: scopeName
-				   suggestions: suggestions)
-		  details: details
 ]
 
 { #category : 'signaling' }
@@ -257,16 +313,6 @@ MCPCommandError class >> signalMissingProjectNamed: aProjectName [
 	| message |
 	message := String streamContents: [ :stream | stream << 'Project ' << aProjectName << ' does not exist.' ].
 	^ self signalErrorCode: #ProjectNotFound message: message details: { (#project -> aProjectName) } asDictionary
-]
-
-{ #category : 'signaling' }
-MCPCommandError class >> signalMissingSuperclassNamed: aSuperclassName forClassNamed: aClassName [
-
-	| message |
-	message := String streamContents: [ :stream | stream << 'Superclass ' << aSuperclassName << ' does not exist.' ].
-	^ self signalErrorCode: #SuperclassNotFound message: message details: {
-			  (#class -> aClassName).
-			  (#superclass -> aSuperclassName) } asDictionary
 ]
 
 { #category : 'signaling' }
@@ -292,6 +338,46 @@ MCPCommandError class >> signalMissingTag: aTag packageName: aPackageName forCla
 			  (#tag -> aTag) } asDictionary
 ]
 
+{ #category : 'signaling - names' }
+MCPCommandError class >> signalNotAClass: aName role: aRole scope: aScopeKeyOrNil details: someAssociations [
+	"aName, given in aRole, is a global variable that is no class or trait."
+
+	^ self
+		  signalErrorCode: #NotAClass
+		  message: (self
+				   textForNotAClass: aName
+				   role: aRole
+				   scope: aScopeKeyOrNil
+				   skipped: false)
+		  details: (self
+				   detailsNaming: aName
+				   role: aRole
+				   scope: aScopeKeyOrNil
+				   with: someAssociations)
+]
+
+{ #category : 'signaling - names' }
+MCPCommandError class >> signalWrongKind: aName role: aRole details: someAssociations [
+	"aName names a class, but not of the kind aRole needs."
+
+	| wrongKind |
+	wrongKind := self wrongKinds at: aRole.
+	^ self
+		  signalErrorCode: wrongKind first
+		  message: (self
+				   messageAbout: aName
+				   saying: wrongKind second
+				   scope: nil
+				   skipped: false
+				   suggestions: #(  )
+				   closing: wrongKind third)
+		  details: (self
+				   detailsNaming: aName
+				   role: aRole
+				   scope: nil
+				   with: someAssociations)
+]
+
 { #category : 'private - suggestions' }
 MCPCommandError class >> superclassMethodSuggestionForClass: targetClass classSide: classSide selector: selectorSymbol [
 
@@ -303,6 +389,57 @@ MCPCommandError class >> superclassMethodSuggestionForClass: targetClass classSi
 			(behavior includesSelector: selectorSymbol) ifTrue: [ ^ self methodSuggestionForBehavior: behavior selector: selectorSymbol ].
 			behavior := behavior superclass ].
 	^ nil
+]
+
+{ #category : 'texts - names' }
+MCPCommandError class >> textForClassNameIsAList: aName scope: aScopeKeyOrNil skipped: isSkipped [
+	"Splitting the list would guess at a format the schema does not offer, and an array is one edit away."
+
+	^ self
+		  messageAbout: aName
+		  saying: 'is a list written as one string, not a class name'
+		  scope: aScopeKeyOrNil
+		  skipped: isSkipped
+		  suggestions: #(  )
+		  closing: 'Pass several names as an array of strings.'
+]
+
+{ #category : 'texts - names' }
+MCPCommandError class >> textForMissing: aName role: aRole scope: aScopeKeyOrNil skipped: isSkipped suggestions: someNames [
+
+	^ self
+		  messageAbout: (String streamContents: [ :stream | stream << (self nounOfRole: aRole) << ' ' << aName ])
+		  saying: 'does not exist'
+		  scope: aScopeKeyOrNil
+		  skipped: isSkipped
+		  suggestions: someNames
+		  closing: nil
+]
+
+{ #category : 'texts - names' }
+MCPCommandError class >> textForNotAClass: aName role: aRole scope: aScopeKeyOrNil skipped: isSkipped [
+
+	^ self
+		  messageAbout: aName
+		  saying: 'is a global variable, not ' , (self kindOfRole: aRole)
+		  scope: aScopeKeyOrNil
+		  skipped: isSkipped
+		  suggestions: #(  )
+		  closing: nil
+]
+
+{ #category : 'private - names' }
+MCPCommandError class >> wrongKinds [
+	"For each role that needs a class of some kind, the code and what the text says of a class that is not of that kind."
+
+	^ Dictionary newFrom: {
+			  (#trait -> #( #InvalidTrait 'is not a trait' nil )).
+			  (#sharedPool -> #( #InvalidSharedPool 'is not a shared pool: a pool is a subclass of SharedPool'
+			      nil )).
+			  (#layoutClass -> #( #InvalidLayoutClass 'is not a layout class: name a subclass of AbstractLayout, such as VariableLayout'
+			      nil )).
+			  (#critiqueRule -> #( #InvalidCritiqueRule 'is not a critique rule class' nil )).
+			  (#rewriteRule -> #( #RewriteRuleClassHasNoPatterns 'is not a rewrite rule' 'Name a subclass of ReNodeRewriteRule.' )) }
 ]
 
 { #category : 'accessing' }

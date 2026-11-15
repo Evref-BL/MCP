@@ -96,11 +96,15 @@ MCPToolDebugWatchTest >> testReportsTheFailureOfTheWatchedCodeAsItsResult [
 
 { #category : 'tests' }
 MCPToolDebugWatchTest >> testUnreadableMethodReferenceTeachesTheSyntax [
+	"debug_watch has no class argument, so the help mentions none."
 
 	| result |
-	result := self watchWith: { (#method -> 'not a method'). (#run -> '1') } asDictionary.
+	result := self watchWith: {
+			          (#method -> 'not a method').
+			          (#run -> '1') } asDictionary.
 	self assert: (self resultIndicatesError: result).
-	self assert: ((self summaryFrom: result) includesSubstring: 'Class>>selector')
+	self assert:
+		((self summaryFrom: result) endsWith: 'Write a method as Class>>selector, or Class class>>selector for the class side.')
 ]
 
 { #category : 'tests' }

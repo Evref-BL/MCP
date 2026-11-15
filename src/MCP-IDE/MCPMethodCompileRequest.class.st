@@ -11,7 +11,8 @@ Class {
 		'classSide',
 		'methodSource',
 		'protocol',
-		'force'
+		'force',
+		'sideGiven'
 	],
 	#category : 'MCP-IDE-Requests',
 	#package : 'MCP-IDE',
@@ -51,8 +52,13 @@ MCPMethodCompileRequest >> force [
 { #category : 'initialization' }
 MCPMethodCompileRequest >> initializeFromRequest: request tool: aTool [
 
-	className := request stringArgumentNamed: 'class'.
-	classSide := (request stringArgumentNamed: 'side' default: 'instance') = 'class'.
+	MCPImageLookup
+		className: (request stringArgumentNamed: 'class')
+		side: (request stringArgumentNamed: 'side')
+		do: [ :baseName :isClassSide :isSideGiven |
+				className := baseName.
+				classSide := isClassSide.
+				sideGiven := isSideGiven ].
 	methodSource := request
 		                argumentNamed: 'source'
 		                ifAbsent: [ MCPInvalidToolInput signalMissingRequiredArgumentNamed: 'source' forTool: aTool ].
@@ -79,4 +85,11 @@ MCPMethodCompileRequest >> requestedContext [
 	^ {
 		  (#class -> self className).
 		  (#side -> (self classSide ifTrue: [ 'class' ] ifFalse: [ 'instance' ])) } asDictionary
+]
+
+{ #category : 'accessing' }
+MCPMethodCompileRequest >> sideGiven [
+	"Whether the call said which side, by side or by a class written as Foo class. A method source's header may name a side only when the call did not."
+
+	^ sideGiven = true
 ]

@@ -11,6 +11,7 @@ Class {
 
 { #category : 'executing' }
 MCPGetClassCommand >> execute [
+	"The result names the class found, not the name asked for: Foo class reads as Foo, and the summary says Foo."
 
 	| data subclasses superclasses targetClass |
 	targetClass := tool resolvedClassNamed: request className.
@@ -22,7 +23,7 @@ MCPGetClassCommand >> execute [
 	subclasses ifNotEmpty: [
 		data at: #subclasses put: (tool descriptionDictionariesForClasses: subclasses includeComment: request includeComment) ].
 	^ MCPGetClassResult
-		  className: request className
+		  className: targetClass name asString
 		  data: data
 		  superclasses: superclasses
 		  subclasses: subclasses
@@ -47,9 +48,9 @@ MCPGetClassCommand >> superclassesForClass: aClass [
 	| targetSuperclass targetSuperclassName |
 	targetSuperclassName := request upToSuperclassName.
 	targetSuperclassName ifNil: [ ^ #(  ) ].
-	targetSuperclass := Smalltalk globals
-		                    at: targetSuperclassName asSymbol
-		                    ifAbsent: [
-		                    MCPCommandError signalMissingSuperclassNamed: targetSuperclassName forClassNamed: aClass name asString ].
+	targetSuperclass := MCPImageLookup
+		                    classNamed: targetSuperclassName
+		                    role: #superclass
+		                    details: { (#class -> aClass name asString) }.
 	^ aClass allSuperclasses asArray copyUpTo: targetSuperclass
 ]

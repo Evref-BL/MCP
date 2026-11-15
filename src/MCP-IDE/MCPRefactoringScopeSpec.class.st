@@ -25,11 +25,12 @@ MCPRefactoringScopeSpec class >> packageNames: packageNamesCollection classNames
 
 { #category : 'converting' }
 MCPRefactoringScopeSpec >> asDictionary [
+	"The scope as the call gave it, under the keys the schema gives them, since answers repeat it."
 
 	^ {
 		  (#packages -> self packageNames).
 		  (#classes -> self classNames).
-		  (#hierarchyClasses -> self hierarchyClassNames) } asDictionary
+		  (#hierarchyOf -> self hierarchyClassNames) } asDictionary
 ]
 
 { #category : 'accessing' }

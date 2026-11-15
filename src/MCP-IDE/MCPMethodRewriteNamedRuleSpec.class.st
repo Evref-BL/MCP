@@ -50,12 +50,7 @@ MCPMethodRewriteNamedRuleSpec >> initializeName: aName index: anIndex [
 
 	name := aName.
 	ruleIndex := anIndex.
-	ruleClass := MCPImageLookup classNamed: aName.
-	(ruleClass inheritsFrom: ReNodeRewriteRule) ifFalse: [
-			MCPCommandError
-				signalErrorCode: #RewriteRuleClassHasNoPatterns
-				message: aName asString , ' is not a rewrite rule. Name a subclass of ReNodeRewriteRule.'
-				details: { (#ruleClass -> aName) } asDictionary ]
+	ruleClass := MCPImageLookup classNamed: aName role: #rewriteRule details: #(  )
 ]
 
 { #category : 'accessing' }

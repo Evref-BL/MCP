@@ -29,19 +29,6 @@ MCPTestRunRequest class >> className: aClassName testMethodName: aTestMethodName
 ]
 
 { #category : 'instance creation' }
-MCPTestRunRequest class >> fromMethodReference: aString [
-
-	| className delimiterIndex selector |
-	delimiterIndex := aString findString: '>>' startingAt: 1.
-	delimiterIndex isZero ifTrue: [ Error signal: 'methods must use Class>>#selector references.' ].
-	className := (aString copyFrom: 1 to: delimiterIndex - 1) trimBoth.
-	selector := (aString copyFrom: delimiterIndex + 2 to: aString size) trimBoth.
-	(selector isNotEmpty and: [ selector first = $# ]) ifTrue: [ selector := selector allButFirst ].
-	(className isEmpty or: [ selector isEmpty ]) ifTrue: [ Error signal: 'methods must use Class>>#selector references.' ].
-	^ self className: className testMethodName: selector
-]
-
-{ #category : 'instance creation' }
 MCPTestRunRequest class >> packageName: aPackageName [
 
 	^ self new initializePackageName: aPackageName className: nil testMethodName: nil

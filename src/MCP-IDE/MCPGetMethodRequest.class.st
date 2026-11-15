@@ -32,14 +32,21 @@ MCPGetMethodRequest class >> fromRequest: aRequest tool: aTool [
 			MCPCommandError
 				signalErrorCode: #MethodReferenceUnreadable
 				message: (String streamContents: [ :stream |
-						 stream << (text ifNil: [ 'A method' ] ifNotNil: [ :each | each ]) << ' does not name a method. '
-						 << MCPMethodReference helpText ])
+						 stream << (text ifNil: [ 'A method' ] ifNotNil: [ :each | each ]) << ' does not name a method. ' << self helpText ])
 				details: { (#selector -> text) } asDictionary ].
-	^ self new
-		  initializeClassName: className
-		  selectorString: text
-		  classSide: (aRequest stringArgumentNamed: 'side' default: 'instance') = 'class'
-		  includeVariableDetails: (aRequest booleanArgumentNamed: 'includeVariableDetails' default: false)
+	^ MCPImageLookup className: className side: (aRequest stringArgumentNamed: 'side') do: [ :baseName :isClassSide :isSideGiven |
+			  self new
+				  initializeClassName: baseName
+				  selectorString: text
+				  classSide: isClassSide
+				  includeVariableDetails: (aRequest booleanArgumentNamed: 'includeVariableDetails' default: false) ]
+]
+
+{ #category : 'accessing' }
+MCPGetMethodRequest class >> helpText [
+	"method_get, unlike the other tools that read a method's reference, has a class argument for a bare selector."
+
+	^ MCPMethodReference helpText , ' A bare selector works too when class is given.'
 ]
 
 { #category : 'accessing' }

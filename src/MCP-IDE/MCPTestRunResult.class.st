@@ -1,7 +1,7 @@
 "
 Result DTO for one test_run selection.
 
-It carries the structured result entry when any tests ran, timeout state, and remaining test requests for resume output.
+It carries the outcomes of the tests the selection ran, whether the deadline stopped it, the test the timeout interrupted, and what is left of the selection to run, as test_run arguments, with how many tests that is.
 "
 Class {
 	#name : 'MCPTestRunResult',
@@ -9,7 +9,9 @@ Class {
 	#instVars : [
 		'timedOut',
 		'unrunTestRequests',
-		'resultInfo'
+		'resultInfo',
+		'interruption',
+		'notRunCount'
 	],
 	#category : 'MCP-IDE-Results',
 	#package : 'MCP-IDE',
@@ -33,12 +35,6 @@ MCPTestRunResult >> asDictionary [
 	^ data
 ]
 
-{ #category : 'testing' }
-MCPTestRunResult >> hasResult [
-
-	^ self resultInfo isNotNil
-]
-
 { #category : 'initialization' }
 MCPTestRunResult >> initializeResultInfo: resultInfoOrNil timedOut: aBoolean unrunTestRequests: testRequests [
 
@@ -46,6 +42,32 @@ MCPTestRunResult >> initializeResultInfo: resultInfoOrNil timedOut: aBoolean unr
 	timedOut := aBoolean.
 	unrunTestRequests := testRequests ifNil: [ #(  ) ].
 	^ self
+]
+
+{ #category : 'accessing' }
+MCPTestRunResult >> interruption [
+	"The test the timeout interrupted in this selection, or nil."
+
+	^ interruption
+]
+
+{ #category : 'accessing' }
+MCPTestRunResult >> interruption: anOutcomeOrNil [
+
+	interruption := anOutcomeOrNil
+]
+
+{ #category : 'accessing' }
+MCPTestRunResult >> notRunCount [
+	"How many of the selection's tests were left unrun, the interrupted one included."
+
+	^ notRunCount ifNil: [ 0 ]
+]
+
+{ #category : 'accessing' }
+MCPTestRunResult >> notRunCount: anInteger [
+
+	notRunCount := anInteger
 ]
 
 { #category : 'accessing' }
