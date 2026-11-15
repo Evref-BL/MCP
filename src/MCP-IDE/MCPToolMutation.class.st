@@ -250,7 +250,7 @@ MCPToolMutation >> impactMessageForRefactoringCondition: aCondition [
 
 	| message |
 	message := String streamContents: [ :stream | aCondition violationMessageOn: stream ].
-	^ self normalizedRefactoringConditionMessage: (self normalizedSingleLineText: message)
+	^ MCPRefactoringText withoutNegation: (MCPRefactoringText singleLine: message)
 ]
 
 { #category : 'private - warnings' }
@@ -265,7 +265,7 @@ MCPToolMutation >> impactMessagesForRefactoringWarning: aWarning [
 					message := self impactMessageForRefactoringCondition: each.
 					message isEmpty ifFalse: [ impactMessages add: message ] ] ].
 	impactMessages ifEmpty: [
-			primaryMessage := self normalizedSingleLineText: aWarning messageText.
+			primaryMessage := MCPRefactoringText singleLine: aWarning messageText.
 			primaryMessage isEmpty ifTrue: [ primaryMessage := aWarning class name asString ].
 			impactMessages add: primaryMessage ].
 	^ impactMessages asArray
@@ -348,25 +348,6 @@ MCPToolMutation >> normalizedCommandErrorForRefactoringWarning: aWarning action:
 		  details: details;
 		  messageText: summary;
 		  yourself
-]
-
-{ #category : 'private - warnings' }
-MCPToolMutation >> normalizedRefactoringConditionMessage: aString [
-
-	(aString beginsWith: 'NOT ') ifTrue: [ ^ (aString allButFirst: 4) trimBoth ].
-	^ aString
-]
-
-{ #category : 'private - warnings' }
-MCPToolMutation >> normalizedSingleLineText: aString [
-
-	| text |
-	text := aString ifNil: [ '' ] ifNotNil: [ aString asString ].
-	text := text copyReplaceAll: '<n>' with: ' '.
-	text := text copyReplaceAll: String cr with: ' '.
-	text := text copyReplaceAll: String lf with: ' '.
-	[ text includesSubstring: '  ' ] whileTrue: [ text := text copyReplaceAll: '  ' with: ' ' ].
-	^ text trimBoth
 ]
 
 { #category : 'private - request' }
