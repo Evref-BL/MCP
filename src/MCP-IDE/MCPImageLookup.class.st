@@ -46,9 +46,9 @@ MCPImageLookup class >> behaviorNamed: aName classSide: aBoolean [
 
 { #category : 'private - resolving' }
 MCPImageLookup class >> candidatesForRole: aRole [
-	"The behaviours a name given in aRole could have meant, so that a misspelt trait suggests traits and a misspelt pool suggests pools."
+	"The behaviours a name given in aRole could have meant, so that a misspelt trait suggests traits and a misspelt pool suggests pools. Pharo counts a trait among its classes, and a trait is no superclass."
 
-	aRole = #superclass ifTrue: [ ^ Smalltalk globals allClasses ].
+	aRole = #superclass ifTrue: [ ^ Smalltalk globals allClasses reject: [ :each | each isTrait ] ].
 	aRole = #trait ifTrue: [ ^ Smalltalk globals allTraits ].
 	aRole = #sharedPool ifTrue: [ ^ SharedPool allSubclasses ].
 	aRole = #layoutClass ifTrue: [ ^ AbstractLayout allSubclasses ].

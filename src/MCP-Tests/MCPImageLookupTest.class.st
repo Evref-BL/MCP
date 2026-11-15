@@ -73,6 +73,23 @@ MCPImageLookupTest >> testAGlobalThatIsNotAClassIsSaidSo [
 ]
 
 { #category : 'tests' }
+MCPImageLookupTest >> testAGlobalThatIsNotAClassIsSaidSoInEachRolesWords [
+	"A global variable given in a role says what the role needed instead, and keeps its name under the role's key."
+
+	{
+		#( #superclass 'a class' #superclass ).
+		#( #sharedPool 'a shared pool' #sharedPool ).
+		#( #layoutClass 'a layout class' #layout ).
+		#( #critiqueRule 'a critique rule' #ruleClass ).
+		#( #rewriteRule 'a rewrite rule' #ruleClass ) } do: [ :each |
+			| error |
+			error := self capture: [ MCPImageLookup classNamed: 'Transcript' role: each first details: #(  ) ].
+			self assert: error errorCode equals: #NotAClass.
+			self assert: error messageText equals: ('Transcript is a global variable, not {1}.' format: { each second }).
+			self assert: (error structuredDetails at: each third) equals: 'Transcript' ]
+]
+
+{ #category : 'tests' }
 MCPImageLookupTest >> testAListWrittenAsOneNameIsRefused [
 
 	#( '["MCPImageLookup","MCPCommandError"]' '{"MCPImageLookup","MCPCommandError"}' ) do: [ :each |
@@ -273,6 +290,27 @@ MCPImageLookupTest >> testClassNamedAnswersTheClassWhicheverSideTheNameSays [
 ]
 
 { #category : 'tests' }
+MCPImageLookupTest >> testEachRoleAnswersItsCodeUnderItsKey [
+	"A missing name answers the code of the role it was given in and holds the name, without its side, under that role's key. It is no scope entry, so it has no scope."
+
+	{
+		#( #class #ClassNotFound #class ).
+		#( #superclass #SuperclassNotFound #superclass ).
+		#( #trait #TraitNotFound #trait ).
+		#( #sharedPool #SharedPoolNotFound #sharedPool ).
+		#( #layoutClass #LayoutClassNotFound #layout ).
+		#( #critiqueRule #CritiqueRuleNotFound #ruleClass ).
+		#( #rewriteRule #RewriteRuleNotFound #ruleClass ) } do: [ :each |
+			| details error |
+			error := self capture: [ MCPImageLookup classNamed: 'Zzqxw class' role: each first details: #(  ) ].
+			details := error structuredDetails.
+			self assert: error errorCode equals: each second.
+			self assert: (details at: each third) equals: 'Zzqxw'.
+			self assert: (details at: #suggestions) isEmpty.
+			self deny: (details includesKey: #scope) ]
+]
+
+{ #category : 'tests' }
 MCPImageLookupTest >> testEachRoleOpensWithItsNoun [
 
 	{
@@ -285,4 +323,46 @@ MCPImageLookupTest >> testEachRoleOpensWithItsNoun [
 			| error |
 			error := self capture: [ MCPImageLookup classNamed: 'Zzqxw' role: each key details: #(  ) ].
 			self assert: error messageText equals: each value , ' Zzqxw does not exist.' ]
+]
+
+{ #category : 'tests' }
+MCPImageLookupTest >> testEachRoleSuggestsNamesOfItsKind [
+	"A misspelt name is matched only against what its role could have meant: a misspelt layout suggests layouts, and a superclass never suggests a trait, though Pharo counts traits among its classes."
+
+	{
+		{
+			#superclass.
+			'TMCPToolMethodSearchFixtur'.
+			nil.
+			[ :each | each isTrait not ] }.
+		{
+			#sharedPool.
+			'ChronologyConstant'.
+			'ChronologyConstants'.
+			[ :each | each inheritsFrom: SharedPool ] }.
+		{
+			#layoutClass.
+			'Varible'.
+			'VariableLayout'.
+			[ :each | each inheritsFrom: AbstractLayout ] }.
+		{
+			#critiqueRule.
+			'MCPRespondsToUsageRul'.
+			'MCPRespondsToUsageRule'.
+			[ :each | ReRuleManager visibleRuleClasses includes: each ] }.
+		{
+			#rewriteRule.
+			'MCPIsNotNilRul'.
+			'MCPIsNotNilRule'.
+			[ :each | each inheritsFrom: ReNodeRewriteRule ] } } do: [ :each |
+			| error suggestions |
+			error := self capture: [ MCPImageLookup classNamed: each second role: each first details: #(  ) ].
+			suggestions := error structuredDetails at: #suggestions.
+			self deny: suggestions isEmpty description: each first.
+			each third ifNotNil: [ :expected | self assert: (suggestions includes: expected) description: each first ].
+			self
+				assert: (suggestions allSatisfy: [ :name | each fourth value: (self classNamed: name) ])
+				description: ('{1} suggested {2}' format: {
+							 each first.
+							 (', ' join: suggestions) }) ]
 ]
