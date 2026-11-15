@@ -27,10 +27,11 @@ MCPToolMutation >> actionErrorCodePrefixFor: action [
 
 { #category : 'private - refactoring' }
 MCPToolMutation >> addRefactoringScopeContextFromSpec: scopeSpec toRequestedContext: requestedContext [
+	"Each scope entry under the key the schema gives it."
 
 	scopeSpec packageNames ifNotEmpty: [ requestedContext at: #packages put: scopeSpec packageNames ].
 	scopeSpec classNames ifNotEmpty: [ requestedContext at: #classes put: scopeSpec classNames ].
-	scopeSpec hierarchyClassNames ifNotEmpty: [ requestedContext at: #hierarchyClasses put: scopeSpec hierarchyClassNames ]
+	scopeSpec hierarchyClassNames ifNotEmpty: [ requestedContext at: #hierarchyOf put: scopeSpec hierarchyClassNames ]
 ]
 
 { #category : 'private - errors' }

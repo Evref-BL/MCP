@@ -43,6 +43,30 @@ MCPToolContractsTest >> addUnimplementedResponsibilitiesFor: aClass behavior: aB
 ]
 
 { #category : 'private' }
+MCPToolContractsTest >> assertNamesAMissingClassAlike: aCase [
+	"aCase is one row of missingClassCases. The whole answer is read for leaks, structured content included, since a client may show either."
+
+	| answer call result text |
+	result := self callToolNamed: aCase first withArguments: aCase second asDictionary.
+	text := self firstTextFromToolResult: result.
+	answer := STONJSON toString: result.
+	call := [
+		        '{1} {2}: {3}' format: {
+				        aCase first.
+				        aCase second printString.
+				        answer } ].
+	aCase third
+		ifNil: [
+				self deny: (self resultIndicatesError: result) description: call.
+				self assert: ((self warningsFrom: result) anySatisfy: [ :each | each beginsWith: aCase fourth ]) description: call ]
+		ifNotNil: [ :code |
+				self assert: (self resultIndicatesError: result) description: call.
+				self assert: ((self errorFrom: result) at: #errorCode) equals: code.
+				self assert: (text beginsWith: aCase fourth) description: call ].
+	self missingClassLeaks do: [ :each | self deny: (answer includesSubstring: each) description: call ]
+]
+
+{ #category : 'private' }
 MCPToolContractsTest >> assertToolFlowSpec: aSpec [
 
 	| command parsedRequest rawRequest tool |
@@ -355,6 +379,138 @@ MCPToolContractsTest >> methodSendsSubclassResponsibility: aCompiledMethod [
 	(aCompiledMethod sendsSelector: #subclassResponsibility) ifFalse: [ ^ false ].
 	aCompiledMethod ast nodesDo: [ :node | (node isMessage and: [ node selector = #subclassResponsibility ]) ifTrue: [ ^ true ] ].
 	^ false
+]
+
+{ #category : 'private' }
+MCPToolContractsTest >> missingClassCases [
+	"Every argument that takes a class, each naming the missing class Zzqxw: the tool, its arguments, the code it answers, or nil for a scope that skips the entry with a warning, and how the text opens."
+
+	| cases rename target |
+	target := self missingClassTargetName.
+	rename := {
+		          (#selector -> 'probe').
+		          (#newSelector -> 'probeRenamed') }.
+	cases := OrderedCollection new.
+	{
+		('method_compile' -> { (#source -> 'probe ^ 1') }).
+		('method_get' -> { (#selector -> 'probe') }).
+		('method_update' -> rename).
+		('method_remove' -> { (#selector -> 'probe') }).
+		('method_equivalent_search' -> { (#selector -> 'probe') }) } do: [ :each |
+			cases add: {
+					each key.
+					({ (#class -> 'Zzqxw') } , each value).
+					'ClassNotFound'.
+					'Class Zzqxw' } ].
+	{
+		('class_get' -> #(  )).
+		('class_update' -> { (#comment -> 'Never set.') }).
+		('class_remove' -> #(  )) } do: [ :each |
+			cases add: {
+					each key.
+					({ (#name -> 'Zzqxw') } , each value).
+					'ClassNotFound'.
+					'Class Zzqxw' } ].
+	{
+		#( #superclass 'Zzqxw' 'SuperclassNotFound' 'Superclass Zzqxw' ).
+		#( #traits #( 'Zzqxw' ) 'TraitNotFound' 'Trait Zzqxw' ).
+		#( #sharedPools #( 'Zzqxw' ) 'SharedPoolNotFound' 'Shared pool Zzqxw' ).
+		#( #layout 'Zzqxw' 'LayoutClassNotFound' 'Layout class Zzqxw' ) } do: [ :each |
+			cases add: {
+					'class_create'.
+					{
+						(#name -> self missingClassNewClassName).
+						(#package -> self generatedPackageName).
+						(each first -> each second) }.
+					each third.
+					each fourth }.
+			cases add: {
+					'class_update'.
+					{
+						(#name -> target).
+						(each first -> each second) }.
+					each third.
+					each fourth } ].
+	cases
+		add: {
+				'class_get'.
+				{
+					(#name -> target).
+					(#upToSuperclass -> 'Zzqxw') }.
+				'SuperclassNotFound'.
+				'Superclass Zzqxw' };
+		add: {
+				'test_run'.
+				{ (#classes -> #( 'Zzqxw' )) }.
+				'ClassNotFound'.
+				'Class Zzqxw' };
+		add: {
+				'test_run'.
+				{ (#methods -> #( 'Zzqxw>>#testProbe' )) }.
+				'ClassNotFound'.
+				'Class Zzqxw' };
+		add: {
+				'critique_run'.
+				{
+					(#ruleClasses -> #( 'Zzqxw' )).
+					(self searchScope: { (#classes -> { target }) }) }.
+				'CritiqueRuleNotFound'.
+				'Critique rule Zzqxw' };
+		add: {
+				'method_rewrite'.
+				{
+					(#ruleClasses -> #( 'Zzqxw' )).
+					(self searchScope: { (#classes -> { target }) }) }.
+				'RewriteRuleNotFound'.
+				'Rewrite rule Zzqxw' };
+		add: {
+				'method_reference_search'.
+				{
+					(#name -> 'Zzqxw').
+					(#kind -> 'class') }.
+				'ClassNotFound'.
+				'Class Zzqxw' };
+		add: {
+				'debug_watch'.
+				{
+					(#method -> 'Zzqxw>>probe').
+					(#run -> '1') }.
+				'ClassNotFound'.
+				'Class Zzqxw' }.
+	#( #classes #hierarchyOf ) do: [ :each |
+			cases add: {
+					'method_update'.
+					({ (#class -> target) } , rename , { (self searchScope: { (each -> #( 'Zzqxw' )) }) }).
+					'ClassNotFound'.
+					'Class Zzqxw' } ].
+	#( 'method_search' 'class_search' ) do: [ :tool |
+			#( #classes #hierarchyOf #superclassesOf #subclassesOf ) do: [ :each |
+					cases add: {
+							tool.
+							{ (self searchScope: { (each -> #( 'Zzqxw' )) }) }.
+							nil.
+							'Class Zzqxw' } ] ].
+	^ cases asArray
+]
+
+{ #category : 'private' }
+MCPToolContractsTest >> missingClassLeaks [
+	"How a lookup made outside MCPImageLookup used to show through: Pharo's own lookup errors, and the internal labels scopes once had."
+
+	^ #( 'SystemEnvironment' 'key #' 'KeyNotFound' 'hierarchyClasses' 'parentClasses' 'subclassClasses' 'class scope' 'classes scope' )
+]
+
+{ #category : 'private' }
+MCPToolContractsTest >> missingClassNewClassName [
+
+	^ 'MCPToolContractsNeverMadeClass'
+]
+
+{ #category : 'private' }
+MCPToolContractsTest >> missingClassTargetName [
+	"A class the missing-class cases change or read beside the missing one, made by the test so that a case that went through would change nothing else."
+
+	^ 'MCPToolContractsMissingClassTarget'
 ]
 
 { #category : 'support' }
@@ -1093,6 +1249,22 @@ MCPToolContractsTest >> testEveryToolNameMapsToAKnownDomainAndAction [
 		            thenCollect: [ :each | each toolName ].
 
 	self assert: unmapped asArray sorted equals: #(  )
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testEveryToolNamesAMissingClassAlike [
+	"Every argument that takes a class says a missing one in the same words: the noun of the role the name had, then the name, with that role's code, or a warning naming the scope key that skipped it. None shows how a lookup is made."
+
+	| target |
+	target := self
+		          createClassNamed: self missingClassTargetName
+		          superclassName: 'Object'
+		          slots: #(  )
+		          classSlots: #(  ).
+	self withoutEpiceaDuring: [ target compile: 'probe ^ 1' classified: 'probing' ].
+	[ self missingClassCases do: [ :each | self assertNamesAMissingClassAlike: each ] ] ensure: [
+			self removeClassNamed: self missingClassNewClassName.
+			self removeClassNamed: self missingClassTargetName ]
 ]
 
 { #category : 'tests' }
