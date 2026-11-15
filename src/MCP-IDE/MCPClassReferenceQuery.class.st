@@ -66,29 +66,3 @@ MCPClassReferenceQuery >> methodsReferringIn: compiledMethods [
 	bindings := self bindings.
 	^ (compiledMethods select: [ :each | self class method: each accessesAnyOf: bindings ]) asArray
 ]
-
-{ #category : 'private' }
-MCPClassReferenceQuery >> referringMethodCountIn: aBehavior bindings: bindings [
-
-	| count |
-	count := 0.
-	aBehavior methodsDo: [ :method | (self class method: method accessesAnyOf: bindings) ifTrue: [ count := count + 1 ] ].
-	^ count
-]
-
-{ #category : 'querying' }
-MCPClassReferenceQuery >> referringTestClasses [
-	"Every test class with methods that refer to any of the classes, as an association to how many of its methods do, on both sides, most first and ties by name. Only test classes are scanned: they are what test_run can run."
-
-	| bindings counts |
-	bindings := self bindings.
-	bindings ifEmpty: [ ^ #(  ) ].
-	counts := OrderedCollection new.
-	TestCase allSubclasses do: [ :testClass |
-			| count |
-			count := (self referringMethodCountIn: testClass bindings: bindings)
-			         + (self referringMethodCountIn: testClass classSide bindings: bindings).
-			count > 0 ifTrue: [ counts add: testClass -> count ] ].
-	^ counts asArray sort: [ :left :right |
-		  left value > right value or: [ left value = right value and: [ left key name <= right key name ] ] ]
-]

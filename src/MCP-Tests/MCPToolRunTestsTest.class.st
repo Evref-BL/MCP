@@ -89,13 +89,6 @@ MCPToolRunTestsTest >> testABlankOnlyArgumentNamesNothingToActOn [
 ]
 
 { #category : 'tests - refusals' }
-MCPToolRunTestsTest >> testAClassNothingRefersToHasNoReferringTestClass [
-
-	self assertEmpty:
-		(MCPClassReferenceQuery forClass: (self fixtureNamed: 'MCPToolRunTestsUnreferencedTarget')) referringTestClasses
-]
-
-{ #category : 'tests - refusals' }
 MCPToolRunTestsTest >> testAClassReadWithItsSideRunsTheClassTests [
 
 	| data |
@@ -155,7 +148,8 @@ MCPToolRunTestsTest >> testAFixtureThatFailsTwiceCountsEachTestOnce [
 	self assert: ((self summaryFrom: result) beginsWith: 'Ran 2 tests (0 passed). 2 errors.').
 	lines := self issueLinesFrom: result.
 	self assert: lines size equals: 1.
-	self assert: (lines first beginsWith: 'error MCPToolRunTestsBrokenFixtureTarget, all 2 tests (MessageNotUnderstood)').
+	self assert: (lines first beginsWith:
+			 'error MCPToolRunTestsBrokenFixtureTarget>>#testOne, MCPToolRunTestsBrokenFixtureTarget>>#testTwo (MessageNotUnderstood)').
 	self assert:
 		(lines first endsWith: ', in MCPToolRunTestsBrokenFixtureTarget>>setUp and MCPToolRunTestsBrokenFixtureTarget>>tearDown').
 	outcomes := (self commandResultFor: { (#classes -> #( 'MCPToolRunTestsBrokenFixtureTarget' )) }) outcomes.
@@ -220,10 +214,7 @@ MCPToolRunTestsTest >> testAMethodOfANonTestClassIsRefused [
 		           (self
 			            callToolNamed: 'test_run'
 			            withArguments: { (#methods -> #( 'MCPToolCoverageTarget>>#coveredMethod' )) } asDictionary).
-	self
-		assert: (summary beginsWith:
-				 'MCPToolCoverageTarget>>#coveredMethod is not a test: MCPToolCoverageTarget is not a test class. Test classes that refer to it: ')
-		description: summary
+	self assert: summary equals: 'MCPToolCoverageTarget>>#coveredMethod is not a test: MCPToolCoverageTarget is not a test class.'
 ]
 
 { #category : 'tests - refusals' }
@@ -251,30 +242,14 @@ MCPToolRunTestsTest >> testAMissingNameIsRefusedBeforeAnyTestCheck [
 	self deny: ((self summaryFrom: result) includesSubstring: 'is not a test class')
 ]
 
-{ #category : 'tests - refusals' }
-MCPToolRunTestsTest >> testANonTestClassIsRefusedNamingTheTestClassesThatReferToIt [
-
-	| error result summary |
-	result := self callToolNamed: 'test_run' withArguments: { (#classes -> #( 'MCPToolCoverageTarget' )) } asDictionary.
-	summary := self summaryFrom: result.
-	error := self errorFrom: result.
-	self assert: (self resultIndicatesError: result).
-	self assert: (error at: #errorCode) equals: 'NotATestClass'.
-	self
-		assert: (summary beginsWith: 'MCPToolCoverageTarget is not a test class. Test classes that refer to it: ')
-		description: summary.
-	self assert: (summary includesSubstring: 'MCPToolCoverageTargetTest') description: summary
-]
-
-{ #category : 'tests - refusals' }
-MCPToolRunTestsTest >> testANonTestClassNothingRefersToIsRefusedSayingSo [
+{ #category : 'tests' }
+MCPToolRunTestsTest >> testANonTestClassIsRefused [
 
 	| result |
 	result := self callToolNamed: 'test_run' withArguments: { (#classes -> #( 'MCPToolRunTestsUnreferencedTarget' )) } asDictionary.
 	self assert: (self resultIndicatesError: result).
-	self
-		assert: (self summaryFrom: result)
-		equals: 'MCPToolRunTestsUnreferencedTarget is not a test class, and no test class refers to it.'
+	self assert: ((self errorFrom: result) at: #errorCode) equals: 'NotATestClass'.
+	self assert: (self summaryFrom: result) equals: 'MCPToolRunTestsUnreferencedTarget is not a test class.'
 ]
 
 { #category : 'tests - timeouts' }
@@ -304,20 +279,7 @@ MCPToolRunTestsTest >> testAPackageWithoutTestClassesBesideOthersIsOnlyNamed [
 		equals: (String streamContents: [ :stream |
 					 stream << 'Ran ' << (MCPToolRunTests new textForCount: count noun: 'test') << ' ('.
 					 stream print: count.
-					 stream << ' passed). MCP-Tests-Resources-Extensions holds no test class.' ])
-]
-
-{ #category : 'tests - selections without tests' }
-MCPToolRunTestsTest >> testAPackageWithoutTestClassesNamesWhereItsTestsAre [
-
-	| entry summary |
-	summary := self summaryFrom: (self runTests: { (#packages -> #( 'MCP' )) }).
-	self assert: (summary beginsWith: 'Ran 0 tests (0 passed). MCP holds no test class; test classes in ') description: summary.
-	self assert: (summary includesSubstring: 'MCP-Tests') description: summary.
-	self assert: (summary endsWith: ' refer to its classes.') description: summary.
-	entry := ((self dataFrom: (self runTests: { (#packages -> #( 'MCP' )) })) at: #withoutTests) first.
-	self assert: ((entry at: #testPackages) includes: 'MCP-Tests').
-	self assert: (entry at: #testPackageCount) >= (entry at: #testPackages) size
+					 stream << ' passed). MCP-Tests-Resources-Extensions has no tests.' ])
 ]
 
 { #category : 'tests - selections without tests' }
@@ -326,10 +288,10 @@ MCPToolRunTestsTest >> testAPackageWithoutTestClassesSaysSo [
 	| result |
 	result := self runTests: { (#packages -> #( 'MCP-Tests-Resources-Extensions' )) }.
 	self deny: (self resultIndicatesError: result).
-	self assert: (self summaryFrom: result) equals: 'Ran 0 tests (0 passed). MCP-Tests-Resources-Extensions holds no test class.'.
+	self assert: (self summaryFrom: result) equals: 'Ran 0 tests (0 passed). MCP-Tests-Resources-Extensions has no tests.'.
 	self assert: ((self dataFrom: result) at: #withoutTests) equals: { {
 			(#selection -> 'MCP-Tests-Resources-Extensions').
-			(#reason -> 'holds no test class') } asDictionary }
+			(#reason -> 'has no tests') } asDictionary }
 ]
 
 { #category : 'tests - arguments' }
@@ -363,18 +325,6 @@ MCPToolRunTestsTest >> testAReferenceInAnyFormMethodGetAcceptsRuns [
 	#( 'MCPToolRunTestsTimeoutTarget#testFastPass' 'MCPToolRunTestsTimeoutTarget >> testFastPass'
 	   'MCPToolRunTestsTimeoutTarget class>>#testFastPass' ) do: [ :reference |
 		self assert: (self summaryFrom: (self runTests: { (#methods -> { reference }) })) equals: 'Ran 1 test (1 passed).' ]
-]
-
-{ #category : 'tests - refusals' }
-MCPToolRunTestsTest >> testARefusalNamesTheReferringTestClassesItSaid [
-
-	| entry |
-	entry := ((self errorFrom:
-		           (self callToolNamed: 'test_run' withArguments: { (#classes -> #( 'MCPToolCoverageTarget' )) } asDictionary)) at:
-		          #notTests) first.
-	self assert: (entry at: #selection) equals: 'MCPToolCoverageTarget'.
-	self assert: (entry at: #testClasses) first equals: 'MCPToolCoverageTargetTest'.
-	self assert: (entry at: #testClassCount) equals: (entry at: #testClasses) size
 ]
 
 { #category : 'tests - refusals' }
@@ -499,34 +449,6 @@ MCPToolRunTestsTest >> testATimeoutThatLeavesNothingUnrunIsNotReported [
 	self deny: (data includesKey: #timedOut)
 ]
 
-{ #category : 'tests - selections without tests' }
-MCPToolRunTestsTest >> testAWholeCallThatSelectsTestsNamesNoTestPackages [
-	"Only a call that selected no test at all says where a package's tests are, so a mixed call does not pay for the scan."
-
-	| entry |
-	entry := ((self dataFrom: (self runTests: {
-				            (#packages -> #( 'MCP' )).
-				            (#methods -> #( 'MCPToolRunTestsTimeoutTarget>>#testFastPass' )) })) at: #withoutTests) first.
-	self assert: entry equals: {
-			(#selection -> 'MCP').
-			(#reason -> 'holds no test class') } asDictionary
-]
-
-{ #category : 'tests - answers' }
-MCPToolRunTestsTest >> testAWholeSuiteIsNamedOnlyWhenItAllRanHere [
-	"A class is named as all its tests whatever selections ran them, but only when every one of them ran in this call."
-
-	| lines |
-	lines := self issueLinesFrom: (self runTests:
-			          { (#methods -> #( 'MCPToolRunTestsBrokenFixtureTarget>>#testOne' 'MCPToolRunTestsBrokenFixtureTarget>>#testTwo' )) }).
-	self assert: lines size equals: 1.
-	self assert: (lines first beginsWith: 'error MCPToolRunTestsBrokenFixtureTarget, all 2 tests (').
-	self
-		assert:
-		((self dataFrom: (self runTests: { (#classes -> #( 'MCPToolRunTestsBrokenFixtureTarget' )) })) at: #errors) first keys asSet
-		equals: #( #tests #errorClass #message #locations ) asSet
-]
-
 { #category : 'tests - answers' }
 MCPToolRunTestsTest >> testAnErrorInTheTestMethodNamesNoLocation [
 
@@ -642,12 +564,11 @@ MCPToolRunTestsTest >> testEveryBadSelectionIsNamedInOneRefusal [
 	self
 		assert: (self summaryFrom: result)
 		equals:
-		'MCPToolRunTestsUnreferencedTarget is not a test class, and no test class refers to it. MCPToolStructuredOutputTestTarget>>#setUp is not one of MCPToolStructuredOutputTestTarget''s tests. Name one of its test methods, or the class to run them all.'.
+		'MCPToolRunTestsUnreferencedTarget is not a test class. MCPToolStructuredOutputTestTarget>>#setUp is not one of MCPToolStructuredOutputTestTarget''s tests. Name one of its test methods, or the class to run them all.'.
 	self assert: notTests size equals: 2.
 	self assert: notTests first equals: {
 			(#selection -> 'MCPToolRunTestsUnreferencedTarget').
-			(#class -> 'MCPToolRunTestsUnreferencedTarget').
-			(#testClassCount -> 0) } asDictionary.
+			(#class -> 'MCPToolRunTestsUnreferencedTarget') } asDictionary.
 	self assert: notTests second equals: {
 			(#selection -> 'MCPToolStructuredOutputTestTarget>>#setUp').
 			(#class -> 'MCPToolStructuredOutputTestTarget') } asDictionary
@@ -671,11 +592,11 @@ MCPToolRunTestsTest >> testIdenticalErrorsInSeveralTestsAreSaidOnce [
 	| lines |
 	lines := self issueLinesFrom: (self runTests: { (#classes -> #( 'MCPToolRunTestsBrokenFixtureTarget' )) }).
 	self assert: lines size equals: 1.
-	self assert: (lines first includesSubstring: 'MCPToolRunTestsBrokenFixtureTarget, all 2 tests').
+	self assert:
+		(lines first includesSubstring: 'MCPToolRunTestsBrokenFixtureTarget>>#testOne, MCPToolRunTestsBrokenFixtureTarget>>#testTwo').
 	lines := self issueLinesFrom: (self runTests: { (#methods -> #( 'MCPToolRunTestsBrokenFixtureTarget>>#testOne' )) }).
 	self assert: lines size equals: 1.
-	self assert: (lines first beginsWith: 'error MCPToolRunTestsBrokenFixtureTarget>>#testOne (').
-	self deny: (lines first includesSubstring: 'all')
+	self assert: (lines first beginsWith: 'error MCPToolRunTestsBrokenFixtureTarget>>#testOne (')
 ]
 
 { #category : 'tests - arguments' }
@@ -687,57 +608,6 @@ MCPToolRunTestsTest >> testNoSelectionAsksForOne [
 	self
 		assert: (self summaryFrom: (self callToolNamed: 'test_run' withArguments: Dictionary new))
 		equals: 'Invalid arguments for test_run. Name at least one package, class or method to run.'
-]
-
-{ #category : 'tests - refusals' }
-MCPToolRunTestsTest >> testPastFiveReferringTestClassesTheRestAreCounted [
-
-	| command names |
-	command := MCPRunTestsCommand new.
-	names := (1 to: 7) collect: [ :each | 'T' , each printString ].
-	self
-		assert: (command textForClassNamed: 'C' notATestClassReferredBy: names)
-		equals: 'C is not a test class. Test classes that refer to it: T1, T2, T3, T4, T5, and 2 more.'.
-	self
-		assert: (command textForClassNamed: 'C' notATestClassReferredBy: (names first: 2))
-		equals: 'C is not a test class. Test classes that refer to it: T1, T2.'
-]
-
-{ #category : 'tests - selections without tests' }
-MCPToolRunTestsTest >> testPastThreeTestPackagesTheRestAreCounted [
-
-	| summary |
-	summary := [ :packages :count |
-		           MCPToolRunTests new successSummaryForData: {
-				           (#runCount -> 0).
-				           (#passedCount -> 0).
-				           (#withoutTests -> { {
-					            (#selection -> 'P').
-					            (#reason -> 'holds no test class').
-					            (#testPackages -> packages).
-					            (#testPackageCount -> count) } asDictionary }) } asDictionary ].
-	self
-		assert: (summary value: #( 'A' 'B' 'C' ) value: 5)
-		equals: 'Ran 0 tests (0 passed). P holds no test class; test classes in A, B, C and 2 other packages refer to its classes.'.
-	self
-		assert: (summary value: #( 'A' 'B' 'C' ) value: 4)
-		equals: 'Ran 0 tests (0 passed). P holds no test class; test classes in A, B, C and 1 other package refer to its classes.'.
-	self
-		assert: (summary value: #( 'A' 'B' ) value: 2)
-		equals: 'Ran 0 tests (0 passed). P holds no test class; test classes in A and B refer to its classes.'.
-	self
-		assert: (summary value: #( 'A' ) value: 1)
-		equals: 'Ran 0 tests (0 passed). P holds no test class; test classes in A refer to its classes.'
-]
-
-{ #category : 'tests - refusals' }
-MCPToolRunTestsTest >> testReferringTestClassesComeMostReferringFirst [
-
-	| referring |
-	referring := (MCPClassReferenceQuery forClass: (self fixtureNamed: 'MCPToolCoverageTarget')) referringTestClasses collect: [
-		             :each | each key name asString -> each value ].
-	self assert: referring first equals: 'MCPToolCoverageTargetTest' -> 2.
-	self assert: referring second equals: 'MCPToolStructuredOutputTest' -> 1
 ]
 
 { #category : 'tests - arguments' }

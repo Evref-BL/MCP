@@ -14,8 +14,7 @@ Class {
 		'interruption',
 		'notRunCount',
 		'timeoutMilliseconds',
-		'withoutTests',
-		'suiteSizes'
+		'withoutTests'
 	],
 	#category : 'MCP-IDE-Results',
 	#package : 'MCP-IDE',
@@ -243,42 +242,11 @@ MCPRunTestsResult >> skippedDictionaries [
 	^ self issueEntriesOfKind: 'skipped'
 ]
 
-{ #category : 'accessing' }
-MCPRunTestsResult >> suiteSizeOf: aClassName [
-	"How many cases the class's own suite holds, for a class that ran."
-
-	^ self suiteSizes at: aClassName ifAbsent: [ 0 ]
-]
-
-{ #category : 'accessing' }
-MCPRunTestsResult >> suiteSizes [
-	"The number of cases each class that ran holds in its own suite, by class name."
-
-	^ suiteSizes ifNil: [ Dictionary new ]
-]
-
-{ #category : 'accessing' }
-MCPRunTestsResult >> suiteSizes: aDictionary [
-
-	suiteSizes := aDictionary
-]
-
 { #category : 'converting' }
 MCPRunTestsResult >> testNamesOf: someOutcomes [
-	"The tests' names, each once, in the order they ran. A class all of whose outcomes are here, whose whole suite ran in this call, and that has more than one test, is named once, where its first test was: Class, all N tests."
+	"The tests' names, each once, in the order they ran."
 
-	| said wholeSuites |
-	wholeSuites := self wholeSuiteClassNamesIn: someOutcomes.
-	said := Set new.
-	^ Array streamContents: [ :stream |
-			  someOutcomes do: [ :each |
-					  | name |
-					  name := (wholeSuites includes: each className)
-						          ifTrue: [ self wholeSuiteNameOf: each className ]
-						          ifFalse: [ each name ].
-					  (said includes: name) ifFalse: [
-							  said add: name.
-							  stream nextPut: name ] ] ]
+	^ self uniqueStringsFrom: (someOutcomes collect: [ :each | each name ])
 ]
 
 { #category : 'accessing' }
@@ -340,32 +308,9 @@ MCPRunTestsResult >> unrunTests [
 	^ unrunTests
 ]
 
-{ #category : 'converting' }
-MCPRunTestsResult >> wholeSuiteClassNamesIn: someOutcomes [
-	"The classes that someOutcomes hold every outcome of, whose whole suite ran in this call, and that have more than one test."
-
-	| inGroup inRun |
-	inGroup := Bag withAll: (someOutcomes collect: [ :each | each className ]).
-	inRun := Bag withAll: (self outcomes collect: [ :each | each className ]).
-	^ inGroup asSet select: [ :each |
-			  | size |
-			  size := self suiteSizeOf: each.
-			  size > 1 and: [ (inGroup occurrencesOf: each) = size and: [ (inRun occurrencesOf: each) = size ] ] ]
-]
-
-{ #category : 'converting' }
-MCPRunTestsResult >> wholeSuiteNameOf: aClassName [
-	"Class, all N tests."
-
-	^ String streamContents: [ :stream |
-			  stream << aClassName << ', all '.
-			  stream print: (self suiteSizeOf: aClassName).
-			  stream << ' tests' ]
-]
-
 { #category : 'accessing' }
 MCPRunTestsResult >> withoutTests [
-	"One entry per selection that selected no test, in selection order: its selection, why, and the packages of the test classes that refer to it when the call selected no test at all."
+	"One entry per selection that selected no test, in selection order: its selection and why."
 
 	^ withoutTests ifNil: [ #(  ) ]
 ]
