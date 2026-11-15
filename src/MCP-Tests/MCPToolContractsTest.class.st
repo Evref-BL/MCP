@@ -68,14 +68,16 @@ MCPToolContractsTest >> assertNamesAMissingClassAlike: aCase [
 
 { #category : 'private' }
 MCPToolContractsTest >> assertToolFlowSpec: aSpec [
+	"A tool that reads its arguments from the request it is given builds no command, so its spec names none."
 
-	| command parsedRequest rawRequest tool |
+	| parsedRequest rawRequest tool |
 	tool := (aSpec at: #toolClass) new.
 	rawRequest := tool requestFromToolCallArguments: (aSpec at: #arguments).
 	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
-	command := tool commandForRequest: parsedRequest.
 	self assert: parsedRequest class equals: (aSpec at: #requestClass).
-	self assert: command class equals: (aSpec at: #commandClass)
+	aSpec
+		at: #commandClass
+		ifPresent: [ :commandClass | self assert: (tool commandForRequest: parsedRequest) class equals: commandClass ]
 ]
 
 { #category : 'private' }
@@ -117,8 +119,7 @@ MCPToolContractsTest >> baseToolFlowSpecs [
 		  {
 			  (#toolClass -> MCPToolGetClass).
 			  (#arguments -> { (#name -> 'Object') } asDictionary).
-			  (#requestClass -> MCPGetClassRequest).
-			  (#commandClass -> MCPGetClassCommand) } asDictionary.
+			  (#requestClass -> MCPToolRequest) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolRemoveClasses).
 			  (#arguments -> { (#name -> #( 'Object' )) } asDictionary).
@@ -1098,7 +1099,6 @@ MCPToolContractsTest >> testDictionaryShapedCommandResultsUseDTOClasses [
 
 	| commandResultClasses |
 	commandResultClasses := {
-		                        (MCPGetClassCommand -> MCPGetClassResult).
 		                        (MCPGetMethodCommand -> MCPGetMethodResult).
 		                        (MCPRewriteMethodsCommand -> MCPMethodRewriteReport).
 		                        (MCPRemoveMethodsCommand -> MCPRemoveMethodsResult).
