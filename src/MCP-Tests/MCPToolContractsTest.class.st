@@ -69,13 +69,14 @@ MCPToolContractsTest >> assertNamesAMissingClassAlike: aCase [
 { #category : 'private' }
 MCPToolContractsTest >> assertToolFlowSpec: aSpec [
 
-	| command parsedRequest rawRequest tool |
+	| parsedRequest rawRequest tool |
 	tool := (aSpec at: #toolClass) new.
 	rawRequest := tool requestFromToolCallArguments: (aSpec at: #arguments).
 	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
-	command := tool commandForRequest: parsedRequest.
 	self assert: parsedRequest class equals: (aSpec at: #requestClass).
-	self assert: command class equals: (aSpec at: #commandClass)
+	aSpec
+		at: #commandClass
+		ifPresent: [ :commandClass | self assert: (tool commandForRequest: parsedRequest) class equals: commandClass ]
 ]
 
 { #category : 'private' }
@@ -155,8 +156,7 @@ MCPToolContractsTest >> baseToolFlowSpecs [
 		  {
 			  (#toolClass -> MCPToolRunTests).
 			  (#arguments -> { (#classes -> { 'MCPToolContractsTest' }) } asDictionary).
-			  (#requestClass -> MCPToolRequest).
-			  (#commandClass -> MCPRunTestsCommand) } asDictionary.
+			  (#requestClass -> MCPToolRequest) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolCaptureScreen).
 			  (#arguments -> Dictionary new).
@@ -276,8 +276,7 @@ MCPToolContractsTest >> coverageToolFlowSpec [
 		  (#arguments -> {
 			   (#classes -> { 'MCPToolContractsTest' }).
 			   (#coverage -> { (#scope -> { (#classes -> #( 'MCPToolContractsTest' )) } asDictionary) } asDictionary) } asDictionary).
-		  (#requestClass -> MCPToolRequest).
-		  (#commandClass -> MCPRunTestsCommand) } asDictionary
+		  (#requestClass -> MCPToolRequest) } asDictionary
 ]
 
 { #category : 'private' }

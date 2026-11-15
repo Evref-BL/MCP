@@ -25,6 +25,21 @@ MCPToolRunTests class >> toolName [
 	^ 'test_run'
 ]
 
+{ #category : 'private - arguments' }
+MCPToolRunTests >> addMethodSelectionsFrom: methodReferences to: aStream [
+	"A method is read in every form method_get reads one, and its side is dropped: test_run reads Foo class as Foo. A case of a parameterized test is read as its method, so the name an answer gives it can be passed back. Every entry that names no method is refused, all in one refusal."
+
+	| violations |
+	violations := OrderedCollection new.
+	methodReferences do: [ :each |
+			(MCPMethodReference fromString: each)
+				ifNil: [ violations add: (self violationForMethodReference: each) ]
+				ifNotNil: [ :reference |
+					aStream nextPut:
+						(MCPTestSelectionSpec className: reference className testMethodName: (self testSelectorIn: reference selector)) ] ].
+	violations ifNotEmpty: [ MCPInvalidToolInput signalForTool: self violations: violations ]
+]
+
 { #category : 'metadata' }
 MCPToolRunTests >> additionalKeywords [
 
@@ -45,13 +60,6 @@ MCPToolRunTests >> checkArguments: request [
 	"What the schema cannot check: that the call names something to run, and that every method reference names a method."
 
 	self testSelectionsFrom: request
-]
-
-{ #category : 'private - execution' }
-MCPToolRunTests >> commandForRequest: request [
-	"MCPToolContractsTest>>#testAllToolsUseParsedRequestsAndCommands still asks every tool for its command through this hook. Nothing else sends it."
-
-	^ self operationFor: request
 ]
 
 { #category : 'private - coverage schema' }
@@ -228,22 +236,6 @@ MCPToolRunTests >> keysStatedInSummary [
 	^ #( runCount passedCount failureCount errorCount skippedCount withoutTests timedOut timeoutMilliseconds interrupted notRunCount )
 ]
 
-{ #category : 'private - arguments' }
-MCPToolRunTests >> methodSelectionsFrom: methodReferences [
-	"A method is read in every form method_get reads one, and its side is dropped: test_run reads Foo class as Foo. A case of a parameterized test is read as its method, so the name an answer gives it can be passed back. Every entry that names no method is refused, all in one refusal."
-
-	| violations |
-	violations := OrderedCollection new.
-	^ Array streamContents: [ :stream |
-			  methodReferences do: [ :each |
-					  (MCPMethodReference fromString: each)
-						  ifNil: [ violations add: (self violationForMethodReference: each) ]
-						  ifNotNil: [ :reference |
-							  stream nextPut:
-								  (MCPTestSelectionSpec className: reference className testMethodName: (self testSelectorIn: reference selector)) ] ].
-			  violations ifNotEmpty: [ MCPInvalidToolInput signalForTool: self violations: violations ] ]
-]
-
 { #category : 'private - execution' }
 MCPToolRunTests >> operationFor: request [
 	"The run the checked arguments ask for."
@@ -354,8 +346,10 @@ MCPToolRunTests >> testSelectionsFrom: request [
 	methodReferences := request uniqueStringCollectionArgumentNamed: 'methods'.
 	(packageNames isEmpty and: [ classNames isEmpty and: [ methodReferences isEmpty ] ]) ifTrue: [
 		self refuseEmptySelectionIn: request ].
-	^ (packageNames collect: [ :each | MCPTestSelectionSpec packageName: each ])
-	  , (classNames collect: [ :each | MCPTestSelectionSpec className: each ]) , (self methodSelectionsFrom: methodReferences)
+	^ Array streamContents: [ :stream |
+			  packageNames do: [ :each | stream nextPut: (MCPTestSelectionSpec packageName: each) ].
+			  classNames do: [ :each | stream nextPut: (MCPTestSelectionSpec className: each) ].
+			  self addMethodSelectionsFrom: methodReferences to: stream ]
 ]
 
 { #category : 'private - arguments' }

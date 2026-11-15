@@ -9,7 +9,8 @@ Class {
 	#instVars : [
 		'packageName',
 		'className',
-		'testMethodName'
+		'testMethodName',
+		'testClass'
 	],
 	#category : 'MCP-IDE-Requests',
 	#package : 'MCP-IDE',
@@ -98,9 +99,9 @@ MCPTestSelectionSpec >> resolvedName [
 
 { #category : 'resolving' }
 MCPTestSelectionSpec >> testClass [
-	"The class a class or method selection names, on its instance side, refused in the lookup's words when it names none."
+	"The class a class or method selection names, on its instance side, refused in the lookup's words when it names none. It is looked up the first time it is asked, before anything runs, and kept: the run uses the class its selection was checked against, and its own lookups stay out of the coverage it measures."
 
-	^ MCPImageLookup classNamed: className
+	^ testClass ifNil: [ testClass := MCPImageLookup classNamed: className ]
 ]
 
 { #category : 'accessing' }

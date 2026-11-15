@@ -537,6 +537,19 @@ MCPToolRunTestsTest >> testCoverageAfterATimeoutIsCoverageSoFar [
 		'Ran 2 tests (2 passed). Timed out after 2 seconds. 3 tests not run, listed below as test_coverage_run arguments. Coverage so far: 50.00%.'
 ]
 
+{ #category : 'tests - answers' }
+MCPToolRunTestsTest >> testCoverageLeavesOutTheRunnersOwnLookups [
+	"A selection's class is looked up before the coverage collector is installed, so the runner's lookups never count as executed: MCPToolCoverageTargetTest's tests reach no method of MCPImageLookup. Pharo 10 has no coverage to collect and refuses the call."
+
+	| result |
+	result := self callToolNamed: 'test_coverage_run' withArguments: {
+			          (#classes -> #( 'MCPToolCoverageTargetTest' )).
+			          (#coverage -> { (#scope -> { (#classes -> #( 'MCPImageLookup' )) } asDictionary) } asDictionary) } asDictionary.
+	self coverageIsAvailable ifFalse: [ ^ self assert: (self resultIndicatesError: result) ].
+	self deny: (self resultIndicatesError: result).
+	self assert: (((self dataFrom: result) at: #coverage) at: #coveredMethodCount) equals: 0
+]
+
 { #category : 'tests - outcomes' }
 MCPToolRunTestsTest >> testDurationsReadInWholeSecondsOrMilliseconds [
 
