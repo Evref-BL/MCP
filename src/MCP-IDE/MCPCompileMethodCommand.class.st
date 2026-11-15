@@ -148,15 +148,6 @@ MCPCompileMethodCommand >> selectorForMethodSource: methodSourceString in: aBeha
 ]
 
 { #category : 'private - header' }
-MCPCompileMethodCommand >> selectorLinePhrase: aSelectorLine whole: isWhole [
-	"What a refusal tells the caller to start the source with. A selector line that leaves out its argument names is not quoted as one, since writing it would not compile either."
-
-	^ isWhole
-		  ifTrue: [ 'its selector line, ' , aSelectorLine ]
-		  ifFalse: [ 'its selector line, the selector with its argument names' ]
-]
-
-{ #category : 'private - header' }
 MCPCompileMethodCommand >> sideNameFor: isClassSide [
 
 	^ isClassSide
@@ -173,27 +164,6 @@ MCPCompileMethodCommand >> signalCompileFailure: anError methodSource: methodSou
 				 methodSource: methodSource
 				 requestedContext: self request requestedContext
 				 summary: (self failureSummaryFor: compileError in: aBehaviorOrNil)) signal ]
-]
-
-{ #category : 'private - header' }
-MCPCompileMethodCommand >> signalHeader: aLine message: aMessage classSide: isClassSide [
-	"Refuse a source that begins with aLine, a method's reference that cannot simply be dropped, saying aMessage. Nothing is compiled."
-
-	^ MCPCommandError
-		  signalMethodSourceHeader: aLine
-		  message: aMessage
-		  className: self request className
-		  side: (self sideNameFor: isClassSide)
-]
-
-{ #category : 'private - header' }
-MCPCompileMethodCommand >> signalHeader: aLine saying: aRest classSide: isClassSide [
-	"Refuse a source that begins with aLine, a method's reference that cannot simply be dropped. Nothing is compiled."
-
-	^ self
-		  signalHeader: aLine
-		  message: (String streamContents: [ :stream | stream << 'The source begins with ' << aLine << aRest ])
-		  classSide: isClassSide
 ]
 
 { #category : 'private - header' }
@@ -231,62 +201,24 @@ MCPCompileMethodCommand >> summaryFor: changeKind of: methodReference from: prev
 
 { #category : 'private - header' }
 MCPCompileMethodCommand >> target: aBehavior forHeader: aReference source: aSource [
-	"The behaviour a source that begins with the method's reference aReference compiles into. The header is dropped only when it says what the call says and a body follows it, since dropping any other would compile somewhere the call did not say, and dropping one with nothing after it would compile an empty method; otherwise the refusal gives the first line to write. The checks go in order: Tonel's form, another class, another side, no body, then a selector line that is not a whole first line. When the call gave no side, the header's is used."
+	"The behaviour a source that begins with the method's reference aReference compiles into. The header is dropped only when it names the call's class and side and a whole method follows its separator: dropping any other would compile where the call did not say, leave the body's arguments undeclared, or empty a method. Otherwise nothing is compiled. When the call gave no side, the header's is used."
 
-	| className line selectorLine selectorLineNode isTonel isWhole targetSide |
-	className := aBehavior instanceSide name asString.
+	| line selectorLineNode targetSide |
 	line := self firstLineOf: aSource.
 	targetSide := self request sideGiven
 		              ifTrue: [ self request classSide ]
 		              ifFalse: [ aReference classSide ].
-	isTonel := line last = $[.
-	selectorLine := isTonel
-		                ifTrue: [ aReference selector allButLast trimBoth ]
-		                ifFalse: [ aReference selector ].
-	selectorLineNode := self methodNodeOfSelectorLine: selectorLine.
-	isWhole := selectorLineNode isNotNil.
-	isTonel ifTrue: [
-			self
-				signalHeader: line
-				saying: (String streamContents: [ :stream |
-							 stream << ', Tonel''s form of a method. Write the method without Tonel''s brackets: '
-							 << (self selectorLinePhrase: selectorLine whole: isWhole) << ', then its body.' ])
-				classSide: targetSide ].
-	aReference className = className ifFalse: [
-			self
-				signalHeader: line
-				saying: (String streamContents: [ :stream |
-							 stream << ', which names ' << aReference className << ', but the call''s class is ' << className
-							 << '. Start the source with ' << (self selectorLinePhrase: selectorLine whole: isWhole)
-							 << ', and name the class with class.' ])
-				classSide: targetSide ].
-	aReference classSide = targetSide ifFalse: [
-			self
-				signalHeader: line
-				saying: (String streamContents: [ :stream |
-							 stream << ', which names the ' << (self sideNameFor: aReference classSide) << ' side, but the call''s side is '
-							 << (self sideNameFor: targetSide) << '. Start the source with ' << (self selectorLinePhrase: selectorLine whole: isWhole)
-							 << ', and choose the side with side.' ])
-				classSide: targetSide ].
-	(self source: aSource holdsNoBodyAfterSelectorLine: selectorLineNode) ifTrue: [
-			self
-				signalHeader: line
-				message: (String streamContents: [ :stream |
-							 stream << 'The source holds only ' << line << ', a method''s reference with no body. Write the method itself: '
-							 << (self selectorLinePhrase: selectorLine whole: isWhole) << ', then its body'.
-							 (aReference classSide and: [ self request sideGiven not ]) ifTrue: [ stream << ', and pass side class' ].
-							 stream nextPut: $. ])
-				classSide: targetSide ].
-	isWhole ifFalse: [
-			self
-				signalHeader: line
-				saying: (String streamContents: [ :stream |
-							 stream << ', a method''s reference rather than its first line. Start the source with ' << ((selectorLine includes: $:)
-								  ifTrue: [ 'the selector and its argument names, each keyword followed by the name the body uses for that argument' ]
-								  ifFalse: [ 'the selector, followed by the name the body uses for its argument' ]).
-							 (aReference classSide and: [ self request sideGiven not ]) ifTrue: [ stream << ', and pass side class' ].
-							 stream nextPut: $. ])
-				classSide: targetSide ].
+	selectorLineNode := self methodNodeOfSelectorLine: aReference selector.
+	(aReference className = aBehavior instanceSide name asString and: [
+			 aReference classSide = targetSide and: [
+				 selectorLineNode notNil and: [ (self source: aSource holdsNoBodyAfterSelectorLine: selectorLineNode) not ] ] ]) ifFalse: [
+			MCPCommandError
+				signalMethodSourceHeader: line
+				message: 'The source begins with ' , line
+					,
+					', a method''s reference. Start it with the method''s selector line, argument names included, then its body; class and side say where it goes.'
+				className: self request className
+				side: (self sideNameFor: targetSide) ].
 	^ targetSide
 		  ifTrue: [ aBehavior instanceSide classSide ]
 		  ifFalse: [ aBehavior instanceSide ]
