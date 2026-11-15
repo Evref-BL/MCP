@@ -1,5 +1,7 @@
 "
-Command wrapper for repository_export. It refuses a repository that registers no package, or none the image holds. Otherwise it reads the files export may write, writes each loaded package and .project, puts back the files the writer only reordered, and reads the same files again: what differs is what it wrote or deleted. What git sees besides is answered as left uncommitted. Nothing is staged or committed.
+Writes a registered repository's packages to its checkout, for repository_export. It refuses a repository that registers no package, or none the image holds. Otherwise it reads the files export may write, writes each loaded package and .project, puts back the files the writer only reordered, and reads the same files again: what differs is what it wrote or deleted, and the packages those files belong to are the ones it wrote. What git sees besides is left uncommitted. Nothing is staged or committed.
+
+After execute, it answers what it wrote, and the registered packages the image lacks, whose files it left as they are.
 "
 Class {
 	#name : 'MCPExportRepositoryCommand',

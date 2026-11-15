@@ -1,5 +1,11 @@
 "
-Command wrapper for repository_create. It starts a repository with no history where nothing is yet: Iceberg's creator makes a location that does not exist; a directory that holds no file gets git init; and that directory, like a Git repository with no commit that holds no file, is then registered as repository_attach registers a checkout, with a source directory made for it. Before writing anything it refuses a relative location, a name or location already registered, a package the image lacks, and any other location. It answers an MCPRepositoryCreateResult naming the repository's packages, and warns when it has none or when another repository registers them too. repository_attach shares the first two refusals.
+Creates or attaches a repository, for repository_create and repository_attach.
+
+execute starts a repository with no history where nothing is yet: Iceberg's creator makes a location that does not exist; a directory that holds no file gets git init; and that directory, like a Git repository with no commit that holds no file, is then registered as attach registers a checkout, with a source directory made for it. Before writing anything it refuses a relative location, a name or location already registered, a package the image lacks, and any other location.
+
+attach registers an existing Git checkout as it is, without writing to it, after the first two refusals and those of a location that does not exist or is no Git root.
+
+Each adds the requested packages to the repository and answers it.
 "
 Class {
 	#name : 'MCPCreateRepositoryCommand',
@@ -239,32 +245,6 @@ MCPCreateRepositoryCommand >> matchingRegisteredRepositories [
 		  each name asString = name or: [ (self repositoryLocationStringFor: each) = locationPath ] ]
 ]
 
-{ #category : 'private - results' }
-MCPCreateRepositoryCommand >> noPackagesWarningFor: aRepository [
-
-	^ String streamContents: [ :stream |
-		  stream << 'Repository ' << aRepository name << ' has no packages yet; repository_update addPackages adds them.' ]
-]
-
-{ #category : 'private - results' }
-MCPCreateRepositoryCommand >> packageNamesRegisteredIn: aRepository [
-	"A registration whose working copy cannot be read registers nothing this can name."
-
-	^ [ aRepository workingCopy packageNames collect: [ :each | each asString ] ]
-		  on: Error
-		  do: [ #(  ) ]
-]
-
-{ #category : 'private - results' }
-MCPCreateRepositoryCommand >> packageWarningsFor: aRepository [
-	"Say when the repository has no packages, and name every other repository that registers some of them: two registrations claiming one package is a hazard."
-
-	| packageNames |
-	packageNames := self sortedStringsFrom: aRepository workingCopy packageNames.
-	packageNames ifEmpty: [ ^ { (self noPackagesWarningFor: aRepository) } ].
-	^ self warningsForPackages: packageNames alsoRegisteredBesides: aRepository
-]
-
 { #category : 'private - signaling' }
 MCPCreateRepositoryCommand >> refusalPrefix [
 
@@ -430,41 +410,4 @@ MCPCreateRepositoryCommand >> signalPackageNotInImageNamed: aPackageName [
 		details: {
 				(#package -> aPackageName).
 				(#suggestions -> suggestions) } asDictionary
-]
-
-{ #category : 'private - results' }
-MCPCreateRepositoryCommand >> sourcesPhraseFor: aRepository [
-
-	| subdirectory |
-	subdirectory := (aRepository subdirectory ifNil: [ '' ]) asString.
-	subdirectory isEmpty ifTrue: [ ^ 'with its sources at its root' ].
-	^ 'with its sources in ' , subdirectory
-]
-
-{ #category : 'private - results' }
-MCPCreateRepositoryCommand >> summaryForRepository: aRepository createdIn: aLocationState [
-
-	^ String streamContents: [ :stream |
-			  stream << 'Created repository ' << aRepository name << (aLocationState = #emptyCheckout
-				   ifTrue: [ ' in the empty Git repository at ' ]
-				   ifFalse: [ ' at ' ]) << aRepository location fullName << ', ' << (self sourcesPhraseFor: aRepository)
-			  << '; repository_export writes its packages there.' ]
-]
-
-{ #category : 'private - results' }
-MCPCreateRepositoryCommand >> warningsForPackages: packageNames alsoRegisteredBesides: aRepository [
-	"One warning per other registered repository that registers some of these packages, in the order of their names."
-
-	| others |
-	others := (IceRepository repositories reject: [ :each | each == aRepository ]) asArray sort: [ :left :right |
-		          left name asString <= right name asString ].
-	^ Array streamContents: [ :stream |
-			  others do: [ :other |
-					  | shared |
-					  shared := self sortedStringsFrom: ((self packageNamesRegisteredIn: other) select: [ :each | packageNames includes: each ]).
-					  shared ifNotEmpty: [
-							  stream nextPut: (String streamContents: [ :text |
-										   text << (', ' join: shared) << (shared size = 1
-											    ifTrue: [ ' is' ]
-											    ifFalse: [ ' are' ]) << ' also registered in repository ' << other name << '.' ]) ] ] ]
 ]

@@ -1,5 +1,5 @@
 "
-Tests for repository request/spec and DTO classes used by repository management tools.
+Tests for the repository specs and package describer, and for what the repository tools read from their request and put in their answers.
 "
 Class {
 	#name : 'MCPRepositorySpecTest',
@@ -17,14 +17,6 @@ MCPRepositorySpecTest >> newRepositoryNamed: aRepositoryName location: aFileRefe
 	repository location: aFileReference.
 	somePackageNames do: [ :each | repository workingCopy addPackageNamed: each ].
 	^ repository
-]
-
-{ #category : 'private' }
-MCPRepositorySpecTest >> requestWithArguments: aDictionary [
-
-	^ MCPToolRequest new
-		  arguments: aDictionary;
-		  yourself
 ]
 
 { #category : 'tests' }

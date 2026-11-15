@@ -1,5 +1,7 @@
 "
-Command wrapper for repository_commit. It writes the repository's packages as repository_export does, stages and commits every change git sees in the checkout, and returns an MCPRepositoryCommitResult naming what the commit holds.
+Commits a registered repository, for repository_commit. It writes the repository's packages as an export does, stages and commits every change git sees in the checkout, and adopts the new commit as the working copy's reference.
+
+After execute, it answers the commit, the branch HEAD is on, the first line of the commit's message, the registered packages and other files the commit holds, whether the repository registers no package, and the registered packages the image lacks.
 "
 Class {
 	#name : 'MCPCommitRepositoryCommand',
@@ -224,19 +226,6 @@ MCPCommitRepositoryCommand >> subject [
 ]
 
 { #category : 'private - git' }
-MCPCommitRepositoryCommand >> summaryForCommit: aCommitId in: aRepository [
-	"Name the commit as git log --oneline does, on the branch HEAD is on; the subject is the first line of the message as git stored it."
-
-	| branch subject |
-	branch := self currentBranchNameIn: aRepository.
-	subject := (self headCommitDescriptionIn: aRepository) lines ifEmpty: [ '' ] ifNotEmpty: [ :lines | lines first ].
-	^ String streamContents: [ :stream |
-			  stream << 'Committed repository ' << aRepository name.
-			  branch ifEmpty: [ stream << ' on detached HEAD: ' ] ifNotEmpty: [ stream << ' on branch ' << branch << ': ' ].
-			  stream << (self shortCommitId: aCommitId) << ' ' << subject ]
-]
-
-{ #category : 'private - git' }
 MCPCommitRepositoryCommand >> trimmedGitOutputFor: arguments in: aRepository action: actionName [
 
 	| gitResult |
@@ -251,14 +240,6 @@ MCPCommitRepositoryCommand >> trimmedGitOutputFor: arguments in: aRepository act
 MCPCommitRepositoryCommand >> unloadedPackageNames [
 
 	^ unloadedPackageNames
-]
-
-{ #category : 'private - warnings' }
-MCPCommitRepositoryCommand >> warningsForCommitWithoutPackagesIn: aRepository [
-
-	aRepository workingCopy packages ifNotEmpty: [ ^ #(  ) ].
-	^ { (String streamContents: [ :stream |
-		   stream << 'Repository ' << aRepository name << ' has no packages, so this commit holds only what git saw in its checkout.' ]) }
 ]
 
 { #category : 'private - committing' }

@@ -1,7 +1,7 @@
 "
-Abstract base for repository commands that read or write the checkout's files: repository_change_list, repository_change_discard, repository_export and repository_commit.
+The steps that read or write the checkout's files, which repository_change_list, repository_change_discard, repository_export and repository_commit take.
 
-It writes the loaded packages, reads the bytes of the files export may write, answers which registered packages a path belongs to, and reads what git sees in the checkout. Every path counts from the checkout root, its segments joined with a slash.
+It writes the loaded packages, reads the bytes of the files export may write, answers which registered packages a path belongs to, compares the image's packages with the files, and reads what git sees in the checkout. Every path counts from the checkout root, its segments joined with a slash.
 "
 Class {
 	#name : 'MCPRepositoryWorkingCopyCommand',
@@ -10,12 +10,6 @@ Class {
 	#package : 'MCP-IDE',
 	#tag : 'Commands'
 }
-
-{ #category : 'testing' }
-MCPRepositoryWorkingCopyCommand class >> isAbstract [
-
-	^ self = MCPRepositoryWorkingCopyCommand
-]
 
 { #category : 'private - diff' }
 MCPRepositoryWorkingCopyCommand >> addModifiedPathsFromNode: aNode to: paths [
@@ -33,7 +27,7 @@ MCPRepositoryWorkingCopyCommand >> alsoUncommittedFrom: uncommittedPaths written
 				  written anySatisfy: [ :each | path = each or: [ (each endsWith: '/') and: [ path beginsWith: each ] ] ] ] ]
 ]
 
-{ #category : 'private - diff' }
+{ #category : 'discarding' }
 MCPRepositoryWorkingCopyCommand >> assertRepositoryCleanAfterDiscard: aRepository [
 
 	| remainingPackageNames remainingPaths |
@@ -79,7 +73,7 @@ MCPRepositoryWorkingCopyCommand >> bytesOf: aFileReference [
 	^ aFileReference binaryReadStreamDo: [ :stream | stream upToEnd ]
 ]
 
-{ #category : 'private - diff' }
+{ #category : 'diff' }
 MCPRepositoryWorkingCopyCommand >> changedPackageNamesForRepository: aRepository modifiedPaths: paths [
 	"The packages Iceberg marks and those the paths belong to."
 
@@ -102,15 +96,14 @@ MCPRepositoryWorkingCopyCommand >> existingLoadedPackageDirectoryPathsFor: aRepo
 
 { #category : 'private - export' }
 MCPRepositoryWorkingCopyCommand >> exportLoadedPackagesFrom: aRepository [
-	"Write .project and each loaded package, and answer the warning that names the registered packages the image lacks, whose files are left as they are."
+	"Write .project and each loaded package. The files of the registered packages the image lacks are left as they are."
 
 	| sourceDirectory writerClass |
 	writerClass := self sourceWriterClassFor: aRepository.
 	self exportProjectFileFor: aRepository.
 	sourceDirectory := self repositorySourceDirectoryFor: aRepository.
 	sourceDirectory ensureCreateDirectory.
-	aRepository workingCopy loadedPackages do: [ :package | self exportPackage: package in: aRepository through: writerClass ].
-	^ self warningsForPackagesNotInImageOf: aRepository
+	aRepository workingCopy loadedPackages do: [ :package | self exportPackage: package in: aRepository through: writerClass ]
 ]
 
 { #category : 'private - export' }
@@ -137,7 +130,7 @@ MCPRepositoryWorkingCopyCommand >> gitStatusLinesFor: aRepository [
 	^ output lines
 ]
 
-{ #category : 'private - diff' }
+{ #category : 'diff' }
 MCPRepositoryWorkingCopyCommand >> imageDifferingPackageNamesFor: aRepository [
 	"The packages Iceberg marks modified whose contents in the image differ from the checkout's files. Iceberg marks a package on any change and clears the mark only when it writes the package, so an edit undone, or a test that compiles a method and removes it, leaves a mark over nothing. When the files cannot be read at all, the marks are all there is to answer with."
 
@@ -190,7 +183,7 @@ MCPRepositoryWorkingCopyCommand >> loadedPackageDirectoriesFor: aRepository [
 	^ aRepository workingCopy loadedPackages collect: [ :each | self directoryOfPackage: each in: aRepository writer: writerClass ]
 ]
 
-{ #category : 'private - diff' }
+{ #category : 'diff' }
 MCPRepositoryWorkingCopyCommand >> modifiedPathsFromGitStatusIn: aRepository [
 
 	(self repositoryHasGitWorkTree: aRepository) ifFalse: [ ^ #(  ) ].
@@ -411,25 +404,6 @@ MCPRepositoryWorkingCopyCommand >> unquotedGitPath: aString [
 									bytes nextPut: (self byteForGitEscape: (aString at: index + 1)).
 									index := index + 2 ] ] ].
 	^ bytes contents utf8Decoded
-]
-
-{ #category : 'private - export' }
-MCPRepositoryWorkingCopyCommand >> warningsForPackagesNotInImageOf: aRepository [
-
-	| names |
-	names := self sortedStringsFrom:
-		         (aRepository workingCopy packages reject: [ :each | each isLoaded ] thenCollect: [ :each | each name ]).
-	names ifEmpty: [ ^ #(  ) ].
-	^ { (String streamContents: [ :stream |
-			   names size = 1
-				   ifTrue: [
-						   stream << names first << ' is registered in repository ' << aRepository name
-						   <<
-						   ' but not in the image, so export did not write it; its files in the checkout are left as they are. If it no longer belongs to the repository, repository_update removePackages drops it.' ]
-				   ifFalse: [
-						   stream << (', ' join: names) << ' are registered in repository ' << aRepository name
-						   <<
-						   ' but not in the image, so export did not write them; their files in the checkout are left as they are. If they no longer belong to the repository, repository_update removePackages drops them.' ] ]) }
 ]
 
 { #category : 'private - execution' }

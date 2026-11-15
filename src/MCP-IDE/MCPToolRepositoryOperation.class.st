@@ -1,7 +1,7 @@
 "
-Shared implementation for the tools that act on one registered Iceberg repository.
+Shared implementation for the tools that act on one Iceberg repository.
 
-It defines the inputs each of them takes, runs its repository command, and answers the command's result as a summary, its warnings and its data.
+It defines the inputs each of them takes and runs every call the same way: a tool reads its arguments from the request, does its work in mutateWith: inside the mutation boundary, and answers a summary, its warnings and its data. An error answers with the tool's action and the arguments it read. The Iceberg and git steps come from MCPRepositoryCommand and its subclasses.
 "
 Class {
 	#name : 'MCPToolRepositoryOperation',
@@ -70,10 +70,10 @@ MCPToolRepositoryOperation >> creationFor: request [
 MCPToolRepositoryOperation >> dataForPackagesOf: aRepository [
 	"The packages the repository registers, by name."
 
-	^ self dataKeepingNonEmpty: { (#packages
-		   ->
-			   (((aRepository workingCopy packages asArray sort: [ :left :right | left name asString <= right name asString ]) collect: [
-				     :each | MCPRepositoryPackageInfo fromPackage: each ]) collect: [ :each | each name ] as: Array)) }
+	| packages |
+	packages := aRepository workingCopy packages asArray sort: [ :left :right | left name asString <= right name asString ].
+	^ self dataKeepingNonEmpty:
+		  { (#packages -> (packages collect: [ :each | (MCPRepositoryPackageInfo fromPackage: each) name ] as: Array)) }
 ]
 
 { #category : 'private - results' }
