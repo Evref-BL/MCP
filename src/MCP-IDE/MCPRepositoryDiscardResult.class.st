@@ -1,14 +1,12 @@
 "
-Result describing repository changes that were present before a discard operation ran.
+Result describing what a discard found before it ran: the packages Iceberg marked or the changed paths belong to, and the paths git saw changed.
 "
 Class {
 	#name : 'MCPRepositoryDiscardResult',
 	#superclass : 'MCPResult',
 	#instVars : [
 		'discardedPackageNames',
-		'discardedPaths',
-		'changeCount',
-		'isEmpty'
+		'discardedPaths'
 	],
 	#category : 'MCP-IDE-Results',
 	#package : 'MCP-IDE',
@@ -26,24 +24,9 @@ MCPRepositoryDiscardResult >> asDictionary [
 
 	| data |
 	data := Dictionary new.
-	data
-		at: #changeCount put: self changeCount;
-		at: #isEmpty put: self isEmpty.
 	self discardedPackageNames ifNotEmpty: [ :names | data at: #discardedPackages put: names ].
 	self discardedPaths ifNotEmpty: [ :paths | data at: #discardedPaths put: paths ].
 	^ data
-]
-
-{ #category : 'accessing' }
-MCPRepositoryDiscardResult >> changeCount [
-
-	^ changeCount
-]
-
-{ #category : 'accessing' }
-MCPRepositoryDiscardResult >> changeCount: anInteger [
-
-	changeCount := anInteger
 ]
 
 { #category : 'accessing' }
@@ -74,19 +57,5 @@ MCPRepositoryDiscardResult >> discardedPaths: paths [
 MCPRepositoryDiscardResult >> initializeDiscardedPackageNames: packageNames discardedPaths: paths [
 
 	discardedPackageNames := packageNames ifNil: [ #(  ) ].
-	discardedPaths := paths ifNil: [ #(  ) ].
-	changeCount := discardedPackageNames size + discardedPaths size.
-	isEmpty := changeCount = 0
-]
-
-{ #category : 'accessing' }
-MCPRepositoryDiscardResult >> isEmpty [
-
-	^ isEmpty
-]
-
-{ #category : 'accessing' }
-MCPRepositoryDiscardResult >> isEmpty: aBoolean [
-
-	isEmpty := aBoolean
+	discardedPaths := paths ifNil: [ #(  ) ]
 ]

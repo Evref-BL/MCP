@@ -21,8 +21,7 @@ MCPRepositoryDiffCommand >> execute [
 				  repository := self request repository.
 				  imagePackageNames := self imageDifferingPackageNamesFor: repository.
 				  modifiedPaths := self modifiedPathsFromGitStatusIn: repository.
-				  changedPackageNames := self sortedStringsFrom:
-					                         imagePackageNames , (self packageNamesFromModifiedPaths: modifiedPaths in: repository).
+				  changedPackageNames := self sortedStringsFrom: imagePackageNames , (self packageNamesForPaths: modifiedPaths in: repository).
 				  result := MCPRepositoryDiffResult
 					            repository: repository
 					            changedPackageNames: changedPackageNames

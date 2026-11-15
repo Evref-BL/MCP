@@ -178,15 +178,6 @@ MCPRepositoryCommand >> normalizedSystemStatusFrom: anInteger [
 	^ anInteger
 ]
 
-{ #category : 'private - source format' }
-MCPRepositoryCommand >> packageNameFromDirectoryName: aName writer: aWriterClass [
-	"Each format names a package directory its own way: Tonel after the package
-	itself, filetree with a .package extension. The writer the checkout declares
-	knows which, so a changed path reports the package and not its directory."
-
-	^ (aWriterClass packageNameFromDirectory: aName asFileReference) asString
-]
-
 { #category : 'private' }
 MCPRepositoryCommand >> projectFileNoteFor: aRepository [
 	"The caller did not write the .project file the next export writes, so say it is coming when the image's project differs from the one at the checkout's HEAD."

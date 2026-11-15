@@ -93,10 +93,15 @@ MCPRepositorySpecTest >> testRepositoryCommitResultReturnsDictionary [
 
 	| data repository result |
 	repository := self newRepositoryNamed: 'MCP Commit Repository' location: FileLocator imageDirectory packageNames: #( 'MCP' ).
-	result := MCPRepositoryCommitResult repository: repository changedPackageNames: #( 'MCP' ) commit: nil.
+	result := (MCPRepositoryCommitResult repository: repository)
+		          packageNames: #( 'MCP' );
+		          otherFiles: #( '.project' );
+		          yourself.
 	data := result asDictionary.
-	self assert: data keys asSet equals: #( changedPackages ) asSet.
-	self assert: (data at: #changedPackages) equals: #( 'MCP' )
+	self assert: data keys asSet equals: #( packages otherFiles ) asSet.
+	self assert: (data at: #packages) equals: #( 'MCP' ).
+	self assert: (data at: #otherFiles) equals: #( '.project' ).
+	self assert: (MCPRepositoryCommitResult repository: repository) asDictionary isEmpty
 ]
 
 { #category : 'tests' }
@@ -174,13 +179,19 @@ MCPRepositorySpecTest >> testRepositoryExportResultReturnsDictionary [
 
 	| data repository result |
 	repository := self newRepositoryNamed: 'MCP Export Repository' location: FileLocator imageDirectory packageNames: #( 'MCP' ).
-	result := MCPRepositoryExportResult repository: repository changedPackageNames: #( 'MCP' ) modifiedPaths: #( 'src/MCP.package' ).
-	result didChange: true.
+	result := (MCPRepositoryExportResult repository: repository)
+		          packageNames: #( 'MCP' );
+		          writtenPaths: #( 'src/MCP/MCPTool.class.st' );
+		          deletedPaths: #( 'src/MCP/MCPGone.class.st' );
+		          alsoUncommittedPaths: #( 'README.md' );
+		          yourself.
 	data := result asDictionary.
-	self assert: data keys asSet equals: #( changedPackages didChange modifiedPaths ) asSet.
-	self assert: (data at: #changedPackages) equals: #( 'MCP' ).
-	self assert: (data at: #modifiedPaths) equals: #( 'src/MCP.package' ).
-	self assert: (data at: #didChange) equals: true
+	self assert: data keys asSet equals: #( packages written deleted alsoUncommitted ) asSet.
+	self assert: (data at: #packages) equals: #( 'MCP' ).
+	self assert: (data at: #written) equals: #( 'src/MCP/MCPTool.class.st' ).
+	self assert: (data at: #deleted) equals: #( 'src/MCP/MCPGone.class.st' ).
+	self assert: (data at: #alsoUncommitted) equals: #( 'README.md' ).
+	self assert: (MCPRepositoryExportResult repository: repository) asDictionary isEmpty
 ]
 
 { #category : 'tests' }

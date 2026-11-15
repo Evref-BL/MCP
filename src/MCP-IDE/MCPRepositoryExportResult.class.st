@@ -1,14 +1,14 @@
 "
-Result DTO returned by repository_export. It reports the repository synchronized to disk, changed package names, changed relative paths when Iceberg exposes them, order-only Tonel paths restored after export, and whether the diff contained changes.
+Result DTO returned by repository_export. It names what export wrote and nothing else: the packages it wrote, the files it created or changed (a package directory that did not exist before as one path ending in a slash), the files it deleted, and what git sees besides in the checkout, every path counted from the checkout root.
 "
 Class {
 	#name : 'MCPRepositoryExportResult',
 	#superclass : 'MCPRepositorySnapshotResult',
 	#instVars : [
-		'changedPackageNames',
-		'modifiedPaths',
-		'didChange',
-		'restoredOrderOnlyPaths'
+		'packageNames',
+		'writtenPaths',
+		'deletedPaths',
+		'alsoUncommittedPaths'
 	],
 	#category : 'MCP-IDE-Results',
 	#package : 'MCP-IDE',
@@ -16,9 +16,23 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPRepositoryExportResult class >> repository: aRepository changedPackageNames: packageNames modifiedPaths: paths [
+MCPRepositoryExportResult class >> repository: aRepository [
 
-	^ self new initializeRepository: aRepository changedPackageNames: packageNames modifiedPaths: paths
+	^ self new
+		  initializeSnapshotFromRepository: aRepository;
+		  yourself
+]
+
+{ #category : 'accessing' }
+MCPRepositoryExportResult >> alsoUncommittedPaths [
+
+	^ alsoUncommittedPaths ifNil: [ #(  ) ]
+]
+
+{ #category : 'accessing' }
+MCPRepositoryExportResult >> alsoUncommittedPaths: aCollection [
+
+	alsoUncommittedPaths := aCollection asArray
 ]
 
 { #category : 'converting' }
@@ -26,66 +40,45 @@ MCPRepositoryExportResult >> asDictionary [
 
 	| data |
 	data := Dictionary new.
-	data at: #didChange put: self didChange.
-	self changedPackageNames ifNotEmpty: [ :names | data at: #changedPackages put: names ].
-	self modifiedPaths ifNotEmpty: [ :paths | data at: #modifiedPaths put: paths ].
-	self restoredOrderOnlyPaths ifNotEmpty: [ :paths | data at: #restoredOrderOnlyPaths put: paths ].
+	self packageNames ifNotEmpty: [ :names | data at: #packages put: names ].
+	self writtenPaths ifNotEmpty: [ :paths | data at: #written put: paths ].
+	self deletedPaths ifNotEmpty: [ :paths | data at: #deleted put: paths ].
+	self alsoUncommittedPaths ifNotEmpty: [ :paths | data at: #alsoUncommitted put: paths ].
 	^ data
 ]
 
 { #category : 'accessing' }
-MCPRepositoryExportResult >> changedPackageNames [
+MCPRepositoryExportResult >> deletedPaths [
 
-	^ changedPackageNames ifNil: [ #(  ) ]
+	^ deletedPaths ifNil: [ #(  ) ]
 ]
 
 { #category : 'accessing' }
-MCPRepositoryExportResult >> changedPackageNames: aCollection [
+MCPRepositoryExportResult >> deletedPaths: aCollection [
 
-	changedPackageNames := aCollection ifNil: [ #(  ) ]
+	deletedPaths := aCollection asArray
 ]
 
 { #category : 'accessing' }
-MCPRepositoryExportResult >> didChange [
+MCPRepositoryExportResult >> packageNames [
 
-	^ didChange ifNil: [ false ]
+	^ packageNames ifNil: [ #(  ) ]
 ]
 
 { #category : 'accessing' }
-MCPRepositoryExportResult >> didChange: aBoolean [
+MCPRepositoryExportResult >> packageNames: aCollection [
 
-	didChange := aBoolean
-]
-
-{ #category : 'initialization' }
-MCPRepositoryExportResult >> initializeRepository: aRepository changedPackageNames: packageNames modifiedPaths: paths [
-
-	self initializeSnapshotFromRepository: aRepository.
-	changedPackageNames := packageNames ifNil: [ #(  ) ].
-	modifiedPaths := paths ifNil: [ #(  ) ].
-	didChange := changedPackageNames isNotEmpty or: [ modifiedPaths isNotEmpty ]
+	packageNames := aCollection asArray
 ]
 
 { #category : 'accessing' }
-MCPRepositoryExportResult >> modifiedPaths [
+MCPRepositoryExportResult >> writtenPaths [
 
-	^ modifiedPaths ifNil: [ #(  ) ]
+	^ writtenPaths ifNil: [ #(  ) ]
 ]
 
 { #category : 'accessing' }
-MCPRepositoryExportResult >> modifiedPaths: aCollection [
+MCPRepositoryExportResult >> writtenPaths: aCollection [
 
-	modifiedPaths := aCollection ifNil: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
-MCPRepositoryExportResult >> restoredOrderOnlyPaths [
-
-	^ restoredOrderOnlyPaths ifNil: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
-MCPRepositoryExportResult >> restoredOrderOnlyPaths: aCollection [
-
-	restoredOrderOnlyPaths := aCollection ifNil: [ #(  ) ]
+	writtenPaths := aCollection asArray
 ]
