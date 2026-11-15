@@ -45,12 +45,9 @@ MCPMethodReferenceSpec >> classSide [
 { #category : 'resolving' }
 MCPMethodReferenceSpec >> compiledMethod [
 
-	| behavior selectorSymbol |
+	| behavior |
 	behavior := self behavior.
-	selectorSymbol := self selector asSymbol.
-	(behavior includesSelector: selectorSymbol) ifFalse: [
-		MCPCommandError signalMissingMethodInClassName: self className classSide: self classSide selector: self selector ].
-	^ behavior compiledMethodAt: selectorSymbol
+	^ behavior compiledMethodAt: self selector asSymbol ifAbsent: [ MCPCommandError signalMissingMethod: self selector in: behavior ]
 ]
 
 { #category : 'initialization' }

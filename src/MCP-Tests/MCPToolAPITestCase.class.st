@@ -192,6 +192,13 @@ MCPToolAPITestCase >> testReferenceForMethod: aCompiledMethod [
 		  stream << aCompiledMethod methodClass name asString << '>>#' << aCompiledMethod selector asString ]
 ]
 
+{ #category : 'private - results' }
+MCPToolAPITestCase >> textFrom: aResult [
+	"The text a caller reads: the summary, then the data as lines."
+
+	^ (aResult at: #content) first at: #text
+]
+
 { #category : 'support' }
 MCPToolAPITestCase >> toolRegistry [
 

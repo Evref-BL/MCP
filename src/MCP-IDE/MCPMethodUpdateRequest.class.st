@@ -173,8 +173,12 @@ MCPMethodUpdateRequest >> identityPermutationForSelector: aSelector [
 MCPMethodUpdateRequest >> initializeFromRequest: request [
 
 	suppliedProperties := self updatePropertyNames select: [ :each | request hasArgumentNamed: each ].
-	className := request stringArgumentNamed: 'class'.
-	classSide := (request stringArgumentNamed: 'side' default: 'instance') = 'class'.
+	MCPImageLookup
+		className: (request stringArgumentNamed: 'class')
+		side: (request stringArgumentNamed: 'side')
+		do: [ :baseName :isClassSide :isSideGiven |
+				className := baseName.
+				classSide := isClassSide ].
 	selector := request stringArgumentNamed: 'selector'.
 	newSelector := request stringArgumentNamed: 'newSelector'.
 	protocol := request stringArgumentNamed: 'protocol'.

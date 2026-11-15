@@ -31,6 +31,42 @@ MCPToolMethodLookupTest >> targetClassName [
 ]
 
 { #category : 'tests' }
+MCPToolMethodLookupTest >> testAClassNameThatNamesNoClassIsSaidByTheLookup [
+
+	| error result |
+	result := self callToolNamed: 'method_reference_search' withArguments: {
+			          (#kind -> 'class').
+			          (#name -> 'MCPToolMethodSearchReferenceTargt') } asDictionary.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
+	self assert: ((error at: #message) beginsWith: 'Class MCPToolMethodSearchReferenceTargt does not exist. Did you mean: ').
+	self assert: ((error at: #suggestions) includes: 'MCPToolMethodSearchReferenceTarget').
+	result := self callToolNamed: 'method_reference_search' withArguments: {
+			          (#kind -> 'class').
+			          (#name -> 'Transcript') } asDictionary.
+	error := self errorFrom: result.
+	self assert: (error at: #errorCode) equals: 'NotAClass'.
+	self assert: (error at: #message) equals: 'Transcript is a global variable, not a class.'
+]
+
+{ #category : 'tests' }
+MCPToolMethodLookupTest >> testAClassSideNameAnswersReferencesToItsClass [
+	"Foo class names no global of its own, so its spelling alone would read it as a variable. Its base name decides, and the references are those of Foo."
+
+	| data references |
+	data := self
+		        toolNamed: 'method_reference_search'
+		        dataFromArguments: { (#name -> 'MCPToolMethodSearchReferenceTarget class') } asDictionary.
+	references := self
+		              toolNamed: 'method_reference_search'
+		              dataFromArguments: { (#name -> 'MCPToolMethodSearchReferenceTarget') } asDictionary.
+	self denyEmpty: (data at: #methods).
+	(data at: #methods) do: [ :each | self assert: (each at: #reference) equals: 'class' ].
+	self assert: (data at: #methods) equals: (references at: #methods)
+]
+
+{ #category : 'tests' }
 MCPToolMethodLookupTest >> testClassNameAnswersClassReferences [
 
 	| data |

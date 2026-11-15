@@ -11,6 +11,25 @@ Class {
 	#tag : 'Commands'
 }
 
+{ #category : 'private - not run' }
+MCPRunTestsCommand >> addNotRunOf: validatedRequests startingAt: startIndex seenTestCaseNames: seenTestCaseNames to: requests [
+	"The selections after the one a timeout fell in, each whole when none of its cases was lost to an earlier selection, else its cases as methods. Answers how many tests they hold."
+
+	| count |
+	count := 0.
+	startIndex to: validatedRequests size do: [ :index |
+			| testCases uniqueTestCases validatedRequest |
+			validatedRequest := validatedRequests at: index.
+			testCases := self testCasesForValidatedRequest: validatedRequest.
+			uniqueTestCases := self uniqueTestCasesFrom: testCases seenTestCaseNames: seenTestCaseNames.
+			count := count + uniqueTestCases size.
+			uniqueTestCases ifNotEmpty: [
+					requests addAll: (uniqueTestCases size = testCases size
+							 ifTrue: [ { validatedRequest testRunRequest } ]
+							 ifFalse: [ self methodRequestsForTestCases: uniqueTestCases ]) ] ].
+	^ count
+]
+
 { #category : 'private' }
 MCPRunTestsCommand >> addTestCasesFrom: aTestOrSuite to: testCases [
 
@@ -69,9 +88,53 @@ MCPRunTestsCommand >> hasTimedOutAt: deadline [
 ]
 
 { #category : 'private - timeout' }
+MCPRunTestsCommand >> locationOf: aContext in: aTestCase [
+	"Where the test was running when the timeout fell, unless that was the test method."
+
+	^ MCPStructuredTestResult locationOf: aContext in: aTestCase
+]
+
+{ #category : 'private - not run' }
+MCPRunTestsCommand >> methodRequestsForTestCases: someTestCases [
+	"One method each, in order, so that the cases of a parameterized test name their method once."
+
+	| names |
+	names := Set new.
+	^ Array streamContents: [ :stream |
+			  someTestCases do: [ :each |
+					  | methodRequest |
+					  methodRequest := self testRequestForTestCase: each.
+					  (names includes: methodRequest displayName) ifFalse: [
+							  names add: methodRequest displayName.
+							  stream nextPut: methodRequest ] ] ]
+]
+
+{ #category : 'private - timeout' }
 MCPRunTestsCommand >> millisecondsRemainingUntil: deadline [
 
 	^ 0 max: deadline - Time millisecondClockValue
+]
+
+{ #category : 'private - not run' }
+MCPRunTestsCommand >> notRunRequestsForValidatedRequest: validatedRequest testCases: testCases uniqueTestCases: uniqueTestCases startingAt: startIndex [
+	"What is left of the selection a timeout fell in, as test_run arguments: the selection itself when none of its cases ran or was lost to an earlier selection; else, for a package, each class from the interrupted one on, whole when none of its cases ran or was lost, else its cases left as methods; for a class or a method, its cases left as methods."
+
+	| left |
+	(startIndex = 1 and: [ uniqueTestCases size = testCases size ]) ifTrue: [ ^ { validatedRequest testRunRequest } ].
+	left := uniqueTestCases allButFirst: startIndex - 1.
+	validatedRequest isPackageRequest ifFalse: [ ^ self methodRequestsForTestCases: left ].
+	^ Array streamContents: [ :stream |
+			  (self testCasesByClassIn: left) do: [ :each |
+					  (testCases count: [ :testCase | testCase class == each key ]) = each value size
+						  ifTrue: [ stream nextPut: (MCPTestRunRequest className: each key name asString) ]
+						  ifFalse: [ stream nextPutAll: (self methodRequestsForTestCases: each value) ] ] ]
+]
+
+{ #category : 'private - without tests' }
+MCPRunTestsCommand >> packageDefinesTestClass: aPackageName [
+	"Abstract test classes count: a package of them has no tests, it does not lack test classes."
+
+	^ (MCPImageLookup packageNamed: aPackageName) definedClasses anySatisfy: [ :each | each isTestCase ]
 ]
 
 { #category : 'private - coverage' }
@@ -80,24 +143,130 @@ MCPRunTestsCommand >> partiallyCoveredMethodsFromCoverageResult: coverageResult 
 	^ (coverageResult methods select: [ :method | (self hasAllSequenceNodesCoveredIn: method) not ]) asArray
 ]
 
+{ #category : 'private - validation' }
+MCPRunTestsCommand >> referringTestClassLimit [
+	"Enough referring test classes to pass back, few enough to read."
+
+	^ 5
+]
+
+{ #category : 'private - without tests' }
+MCPRunTestsCommand >> referringTestPackageLimit [
+	"Enough packages to say where a package's tests are, few enough to read."
+
+	^ 3
+]
+
+{ #category : 'private - without tests' }
+MCPRunTestsCommand >> referringTestPackagesOf: aPackageName [
+	"The packages of the test classes that refer to the package's classes, most referring methods first, ties by name."
+
+	| classes counts |
+	classes := (MCPImageLookup packageNamed: aPackageName) definedClasses asArray.
+	classes ifEmpty: [ ^ #(  ) ].
+	counts := Dictionary new.
+	(MCPClassReferenceQuery forClasses: classes) referringTestClasses do: [ :each |
+			each key package ifNotNil: [ :package |
+				counts at: package name asString put: (counts at: package name asString ifAbsent: [ 0 ]) + each value ] ].
+	^ (counts associations sort: [ :left :right |
+		   left value > right value or: [ left value = right value and: [ left key <= right key ] ] ]) collect: [ :each | each key ]
+]
+
+{ #category : 'private - validation' }
+MCPRunTestsCommand >> refusalOfSelection: validatedRequest referringByClass: referringByClass [
+	"Nil for a selection that holds tests, or a package; else its sentence and its entry. A test class whose suite holds no case of the method is refused, and so is any class that is not a test class."
+
+	| entry referring selection testClass |
+	validatedRequest isPackageRequest ifTrue: [ ^ nil ].
+	testClass := validatedRequest testClass.
+	selection := self selectionTextOf: validatedRequest.
+	entry := Dictionary new.
+	entry at: #selection put: selection.
+	entry at: #class put: testClass name asString.
+	testClass isTestCase ifTrue: [
+			validatedRequest hasTestMethod ifFalse: [ ^ nil ].
+			(self testCasesForValidatedRequest: validatedRequest) ifNotEmpty: [ ^ nil ].
+			^ (self textForMethod: selection notATestOf: testClass name) -> entry ].
+	referring := referringByClass
+		             at: testClass
+		             ifAbsentPut: [
+		             (MCPClassReferenceQuery forClass: testClass) referringTestClasses collect: [ :each | each key name asString ] ].
+	(referring first: (referring size min: self referringTestClassLimit)) ifNotEmpty: [ :said | entry at: #testClasses put: said ].
+	entry at: #testClassCount put: referring size.
+	^ (String streamContents: [ :stream |
+			   validatedRequest hasTestMethod ifTrue: [ stream << selection << ' is not a test: ' ].
+			   stream << (self textForClassNamed: testClass name notATestClassReferredBy: referring) ]) -> entry
+]
+
+{ #category : 'private - validation' }
+MCPRunTestsCommand >> refuseSelectionsThatAreNotTests: validatedRequests [
+	"One sentence per selection that is no test, in selection order. A class that is no test class names the test classes that refer to it, found once per class."
+
+	| refusals referringByClass |
+	referringByClass := IdentityDictionary new.
+	refusals := OrderedCollection new.
+	validatedRequests do: [ :each |
+		(self refusalOfSelection: each referringByClass: referringByClass) ifNotNil: [ :refusal | refusals add: refusal ] ].
+	refusals ifEmpty: [ ^ self ].
+	MCPCommandError
+		signalErrorCode: ((refusals anySatisfy: [ :each | each value includesKey: #testClassCount ])
+				 ifTrue: [ #NotATestClass ]
+				 ifFalse: [ #NotATest ])
+		message: (' ' join: (refusals collect: [ :each | each key ]))
+		details: { (#notTests -> (refusals collect: [ :each | each value ] as: Array)) } asDictionary
+]
+
+{ #category : 'private - validation' }
+MCPRunTestsCommand >> resolvedRequestFor: aTestRequest [
+	"A method is looked up as its class answers it, so a test the class inherits is found."
+
+	| testClass |
+	aTestRequest isPackageRequest ifTrue: [
+			MCPImageLookup packageNamed: aTestRequest packageName.
+			^ MCPValidatedTestRunRequest request: aTestRequest testClass: nil ].
+	testClass := MCPImageLookup classNamed: aTestRequest className.
+	aTestRequest testMethodName ifNotNil: [ :selector |
+		(testClass lookupSelector: selector asSymbol) ifNil: [ MCPCommandError signalMissingMethod: selector in: testClass ] ].
+	^ MCPValidatedTestRunRequest request: aTestRequest testClass: testClass
+]
+
+{ #category : 'private' }
+MCPRunTestsCommand >> resultForResults: resultEntries interruption: anOutcomeOrNil notRun: testRequests notRunCount: aCount [
+	"After a timeout. One that leaves no test unrun is not reported."
+
+	aCount isZero ifTrue: [ ^ self aggregateDataForResults: resultEntries timedOut: false unrunTests: #(  ) ].
+	^ (self aggregateDataForResults: resultEntries timedOut: true unrunTests: testRequests)
+		  interruption: anOutcomeOrNil;
+		  notRunCount: aCount;
+		  timeoutMilliseconds: request timeoutMilliseconds;
+		  yourself
+]
+
 { #category : 'private' }
 MCPRunTestsCommand >> resultForValidatedRequest: validatedRequest deadline: deadline seenTestCaseNames: seenTestCaseNames [
+	"Each test runs into a result of its own, so that SUnit counts it once however many exceptions it raised. The first test the deadline stops ends the selection, and what is left of it is listed to run next."
 
-	| includeResult result resultInfo selectedTestCount testCases timedOutIndex unrunTestRequests |
-	testCases := self uniqueTestCasesForValidatedRequest: validatedRequest seenTestCaseNames: seenTestCaseNames.
-	selectedTestCount := testCases size.
-	result := MCPStructuredTestResult new.
-	timedOutIndex := nil.
-	testCases doWithIndex: [ :testCase :index |
-		timedOutIndex ifNil: [ (self runTestCase: testCase into: result deadline: deadline) ifTrue: [ timedOutIndex := index ] ] ].
-	includeResult := self shouldIncludeTestResult: result selectedTestCount: selectedTestCount timedOutIndex: timedOutIndex.
-	resultInfo := includeResult ifTrue: [
-		              self testRunInfoForTestResult: result validatedRequest: validatedRequest selectedTestCount: selectedTestCount ].
-	unrunTestRequests := timedOutIndex
-		                     ifNil: [ #(  ) ]
-		                     ifNotNil: [
-		                     self unrunRequestsForValidatedRequest: validatedRequest testCases: testCases startingAt: timedOutIndex ].
-	^ MCPTestRunResult resultInfo: resultInfo timedOut: timedOutIndex isNotNil unrunTestRequests: unrunTestRequests
+	| index info outcome outcomes stopped testCases uniqueTestCases |
+	testCases := self testCasesForValidatedRequest: validatedRequest.
+	uniqueTestCases := self uniqueTestCasesFrom: testCases seenTestCaseNames: seenTestCaseNames.
+	outcomes := OrderedCollection new.
+	index := 0.
+	[ stopped isNil and: [ index < uniqueTestCases size ] ] whileTrue: [
+			index := index + 1.
+			outcome := self runTestCase: (uniqueTestCases at: index) into: MCPStructuredTestResult new deadline: deadline.
+			outcome isFinished
+				ifTrue: [ outcomes add: outcome ]
+				ifFalse: [ stopped := outcome ] ].
+	info := MCPTestRunInfo validatedRequest: validatedRequest selectedTestCount: uniqueTestCases size outcomes: outcomes.
+	stopped ifNil: [ ^ MCPTestRunResult resultInfo: info timedOut: false unrunTestRequests: #(  ) ].
+	^ (MCPTestRunResult resultInfo: info timedOut: true unrunTestRequests: (self
+				    notRunRequestsForValidatedRequest: validatedRequest
+				    testCases: testCases
+				    uniqueTestCases: uniqueTestCases
+				    startingAt: index))
+		  interruption: (stopped isInterrupted ifTrue: [ stopped ]);
+		  notRunCount: uniqueTestCases size - index + 1;
+		  yourself
 ]
 
 { #category : 'private - coverage' }
@@ -125,36 +294,92 @@ MCPRunTestsCommand >> runCoverageForValidatedRequests: validatedRequests deadlin
 
 { #category : 'private - timeout' }
 MCPRunTestsCommand >> runTestCase: aTestCase into: aResult deadline: deadline [
+	"The test's outcome. When the deadline falls while it runs, an outcome that says it was interrupted and where it was, its result discarded since it never finished; when the deadline has already passed, one that says it never started. The flag is set before the timeout unwinds the test, so a time limit SUnit enforces during the unwinding cannot undo it."
 
-	| remaining |
+	| interrupted location remaining timed |
 	remaining := self millisecondsRemainingUntil: deadline.
-	remaining <= 0 ifTrue: [ ^ true ].
-	^ [
-		  aTestCase run: aResult.
-		  false ] valueWithinMilliseconds: remaining onTimeout: [ true ]
+	remaining <= 0 ifTrue: [ ^ MCPTestOutcome notStarted: aTestCase ].
+	interrupted := false.
+	timed := [
+		         [ aTestCase run: aResult ]
+			         on: TimedOut
+			         do: [ :timeout |
+					         timeout tag == timed ifTrue: [ location := self locationOf: timeout signalerContext in: aTestCase ].
+					         timeout pass ] ].
+	timed valueWithinMilliseconds: remaining onTimeout: [
+			interrupted := true.
+			self shortenTimeLimitOf: aTestCase ].
+	^ interrupted
+		  ifTrue: [ MCPTestOutcome interrupted: aTestCase location: location ]
+		  ifFalse: [ MCPTestOutcome testCase: aTestCase result: aResult ]
 ]
 
 { #category : 'private' }
 MCPRunTestsCommand >> runValidatedRequests: validatedRequests deadline: deadline [
+	"Runs the selections in order until the deadline, then lists what was not run. The selections that hold no test are said whatever the deadline, since running cannot change that."
 
-	| outcome resultEntries seenTestCaseNames unrunTests |
+	| result |
+	result := self runValidatedRequestsUntil: deadline from: validatedRequests.
+	^ result
+		  withoutTests: (self withoutTestsIn: validatedRequests);
+		  suiteSizes: (self suiteSizesForOutcomes: result outcomes);
+		  yourself
+]
+
+{ #category : 'private' }
+MCPRunTestsCommand >> runValidatedRequestsUntil: deadline from: validatedRequests [
+	"Runs the selections in order until the deadline, then lists what was not run."
+
+	| notRun notRunCount resultEntries seenTestCaseNames selectionResult |
 	resultEntries := OrderedCollection new.
 	seenTestCaseNames := Set new.
 	1 to: validatedRequests size do: [ :index |
 			(self hasTimedOutAt: deadline) ifTrue: [
-					unrunTests := self unrunTestsFrom: validatedRequests startingAt: index seenTestCaseNames: seenTestCaseNames.
-					^ self aggregateDataForResults: resultEntries timedOut: true unrunTests: unrunTests ].
-			outcome := self
-				           resultForValidatedRequest: (validatedRequests at: index)
-				           deadline: deadline
-				           seenTestCaseNames: seenTestCaseNames.
-			outcome hasResult ifTrue: [ resultEntries add: outcome resultInfo ].
-			outcome timedOut ifTrue: [
-					unrunTests := OrderedCollection new.
-					unrunTests addAll: outcome unrunTestRequests.
-					unrunTests addAll: (self unrunTestsFrom: validatedRequests startingAt: index + 1 seenTestCaseNames: seenTestCaseNames).
-					^ self aggregateDataForResults: resultEntries timedOut: true unrunTests: unrunTests ] ].
+					notRun := OrderedCollection new.
+					notRunCount := self
+						               addNotRunOf: validatedRequests
+						               startingAt: index
+						               seenTestCaseNames: seenTestCaseNames
+						               to: notRun.
+					^ self
+						  resultForResults: resultEntries
+						  interruption: nil
+						  notRun: notRun
+						  notRunCount: notRunCount ].
+			selectionResult := self
+				                   resultForValidatedRequest: (validatedRequests at: index)
+				                   deadline: deadline
+				                   seenTestCaseNames: seenTestCaseNames.
+			resultEntries add: selectionResult resultInfo.
+			selectionResult timedOut ifTrue: [
+					notRun := OrderedCollection withAll: selectionResult unrunTestRequests.
+					notRunCount := selectionResult notRunCount + (self
+						                addNotRunOf: validatedRequests
+						                startingAt: index + 1
+						                seenTestCaseNames: seenTestCaseNames
+						                to: notRun).
+					^ self
+						  resultForResults: resultEntries
+						  interruption: selectionResult interruption
+						  notRun: notRun
+						  notRunCount: notRunCount ] ].
 	^ self aggregateDataForResults: resultEntries timedOut: false unrunTests: #(  )
+]
+
+{ #category : 'private - validation' }
+MCPRunTestsCommand >> selectionTextOf: validatedRequest [
+	"A class or method selection as the refusal writes it, by the name of the class it resolved to."
+
+	^ String streamContents: [ :stream |
+			  stream << validatedRequest testClass name.
+			  validatedRequest testMethodName ifNotNil: [ :selector | stream << '>>#' << selector ] ]
+]
+
+{ #category : 'private - timeout' }
+MCPRunTestsCommand >> shortenTimeLimitOf: aTestCase [
+	"The test a timeout interrupts gets a second for its tearDown: SUnit's own watchdog then stops a tearDown that hangs, and the call answers about a second late. A deadline that falls outside the test's managed run has no limit to shorten."
+
+	aTestCase executionEnvironment isTest ifTrue: [ aTestCase timeLimit: 1 second ]
 ]
 
 { #category : 'private - coverage' }
@@ -167,13 +392,22 @@ MCPRunTestsCommand >> shouldIgnoreMethodForCoverage: aCompiledMethod [
 ]
 
 { #category : 'private' }
-MCPRunTestsCommand >> shouldIncludeTestResult: aResult selectedTestCount: selectedTestCount timedOutIndex: timedOutIndex [
+MCPRunTestsCommand >> suiteSizeOfClassNamed: aClassName [
+	"An outcome holds the name of the class whose case ran, and that class is still there."
 
-	selectedTestCount isZero ifTrue: [ ^ false ].
-	timedOutIndex ifNil: [ ^ true ].
-	aResult runCount > 0 ifTrue: [ ^ true ].
-	aResult skippedCount > 0 ifTrue: [ ^ true ].
-	^ aResult issueDetails isNotEmpty
+	^ (Smalltalk globals classNamed: aClassName)
+		  ifNil: [ 0 ]
+		  ifNotNil: [ :testClass | (self testCasesFromSuite: testClass suite) count: [ :each | each class == testClass ] ]
+]
+
+{ #category : 'private' }
+MCPRunTestsCommand >> suiteSizesForOutcomes: someOutcomes [
+	"How many cases the own suite of each class that ran holds, by class name, so that the answer can name a class whose whole suite failed alike."
+
+	| sizes |
+	sizes := Dictionary new.
+	someOutcomes do: [ :each | sizes at: each className ifAbsentPut: [ self suiteSizeOfClassNamed: each className ] ].
+	^ sizes
 ]
 
 { #category : 'private' }
@@ -186,6 +420,20 @@ MCPRunTestsCommand >> testCaseDeduplicationKeyFor: aTestCase [
 				  nextPutAll: aTestCase selector asString;
 				  nextPut: $/;
 				  nextPutAll: aTestCase nameForReport ]
+]
+
+{ #category : 'private - not run' }
+MCPRunTestsCommand >> testCasesByClassIn: someTestCases [
+	"Each class of someTestCases, in order, with its cases among them."
+
+	| groups |
+	groups := OrderedCollection new.
+	someTestCases do: [ :each |
+			groups
+				detect: [ :group | group key == each class ]
+				ifFound: [ :group | group value add: each ]
+				ifNone: [ groups add: each class -> (OrderedCollection with: each) ] ].
+	^ groups
 ]
 
 { #category : 'private' }
@@ -222,7 +470,7 @@ MCPRunTestsCommand >> testCasesFromSuite: aSuite [
 MCPRunTestsCommand >> testClassesInPackageNamed: packageName [
 
 	| package |
-	package := MCPImageLookup packageNamed: packageName scopeName: 'packages'.
+	package := MCPImageLookup packageNamed: packageName.
 	^ (package definedClasses select: [ :each | each isTestCase and: [ each isAbstract not ] ]) asArray sort: [ :left :right |
 		  left name <= right name ]
 ]
@@ -233,55 +481,27 @@ MCPRunTestsCommand >> testRequestForTestCase: aTestCase [
 	^ MCPTestRunRequest className: aTestCase class name asString testMethodName: aTestCase selector asString
 ]
 
-{ #category : 'private' }
-MCPRunTestsCommand >> testRequestsByClassForTestCases: testCases startingAt: startIndex [
+{ #category : 'private - validation' }
+MCPRunTestsCommand >> textForClassNamed: aClassName notATestClassReferredBy: testClassNames [
+	"testClassNames are all the test classes that refer to the class, most referring first. The first few are named, and the rest counted."
 
-	| firstClass requests seenClassNames |
-	requests := OrderedCollection new.
-	seenClassNames := Set new.
-	firstClass := (testCases at: startIndex) class.
-	startIndex to: testCases size do: [ :index |
-			| className testCase |
-			testCase := testCases at: index.
-			className := testCase class name asString.
-			testCase class = firstClass
-				ifTrue: [ requests add: (self testRequestForTestCase: testCase) ]
-				ifFalse: [
-						(seenClassNames includes: className) ifFalse: [
-								seenClassNames add: className.
-								requests add: (MCPTestRunRequest className: className) ] ] ].
-	^ requests asArray
+	| limit |
+	limit := self referringTestClassLimit.
+	^ String streamContents: [ :stream |
+			  stream << aClassName << ' is not a test class'.
+			  testClassNames ifEmpty: [ stream << ', and no test class refers to it' ] ifNotEmpty: [
+					  stream << '. Test classes that refer to it: ' << (', ' join: (testClassNames first: (testClassNames size min: limit))).
+					  testClassNames size > limit ifTrue: [ stream << ', and ' << (testClassNames size - limit) printString << ' more' ] ].
+			  stream nextPut: $. ]
 ]
 
-{ #category : 'private' }
-MCPRunTestsCommand >> testRequestsForTestCases: testCases startingAt: startIndex [
+{ #category : 'private - validation' }
+MCPRunTestsCommand >> textForMethod: aSelectionText notATestOf: aClassName [
+	"The class's tests are the answer, so SUnit's rule for a test selector is not spelt out."
 
-	| requests |
-	requests := OrderedCollection new.
-	startIndex to: testCases size do: [ :index | requests add: (self testRequestForTestCase: (testCases at: index)) ].
-	^ requests asArray
-]
-
-{ #category : 'private - tests' }
-MCPRunTestsCommand >> testRunInfoForTestResult: aResult validatedRequest: validatedRequest selectedTestCount: selectedTestCount [
-
-	| issues |
-	issues := (aResult issueDetails asArray sort: [ :left :right | (left at: #test) <= (right at: #test) ]) collect: [ :each |
-			          | issue |
-			          issue := each copy.
-			          issue removeKey: #test ifAbsent: [ ].
-			          issue ].
-	^ MCPTestRunInfo
-		  validatedRequest: validatedRequest
-		  selectedTestCount: selectedTestCount
-		  result: aResult
-		  issues: issues
-]
-
-{ #category : 'private' }
-MCPRunTestsCommand >> uniqueTestCasesForValidatedRequest: validatedRequest seenTestCaseNames: seenTestCaseNames [
-
-	^ self uniqueTestCasesFrom: (self testCasesForValidatedRequest: validatedRequest) seenTestCaseNames: seenTestCaseNames
+	^ String streamContents: [ :stream |
+			  stream << aSelectionText << ' is not one of ' << aClassName
+			  << '''s tests. Name one of its test methods, or the class to run them all.' ]
 ]
 
 { #category : 'private' }
@@ -298,49 +518,49 @@ MCPRunTestsCommand >> uniqueTestCasesFrom: testCases seenTestCaseNames: seenTest
 	^ uniqueTestCases asArray
 ]
 
-{ #category : 'private' }
-MCPRunTestsCommand >> unrunRequestsForValidatedRequest: validatedRequest seenTestCaseNames: seenTestCaseNames [
-
-	| testCases uniqueTestCases |
-	testCases := self testCasesForValidatedRequest: validatedRequest.
-	uniqueTestCases := self uniqueTestCasesFrom: testCases seenTestCaseNames: seenTestCaseNames.
-	uniqueTestCases ifEmpty: [ ^ #(  ) ].
-	(validatedRequest hasTestMethod not and: [ uniqueTestCases size = testCases size ]) ifTrue: [
-		^ { validatedRequest testRunRequest } ].
-	^ self testRequestsForTestCases: uniqueTestCases startingAt: 1
-]
-
-{ #category : 'private' }
-MCPRunTestsCommand >> unrunRequestsForValidatedRequest: validatedRequest testCases: testCases startingAt: startIndex [
-
-	validatedRequest isPackageRequest ifTrue: [ ^ self testRequestsByClassForTestCases: testCases startingAt: startIndex ].
-	^ self testRequestsForTestCases: testCases startingAt: startIndex
-]
-
-{ #category : 'private' }
-MCPRunTestsCommand >> unrunTestsFrom: validatedRequests startingAt: startIndex seenTestCaseNames: seenTestCaseNames [
-
-	| unrun |
-	unrun := OrderedCollection new.
-	startIndex to: validatedRequests size do: [ :index |
-		unrun addAll: (self unrunRequestsForValidatedRequest: (validatedRequests at: index) seenTestCaseNames: seenTestCaseNames) ].
-	^ unrun asArray
-]
-
-{ #category : 'private' }
+{ #category : 'private - validation' }
 MCPRunTestsCommand >> validatedRequestsFrom: testRequests [
+	"Every name is resolved first, in the order the selections come, packages, classes, methods: the first that names nothing refuses the call alone, in the lookup's words. Then every selection that is no test is refused, all in one refusal. Either way nothing has run."
 
-	^ testRequests collect: [ :each |
-			  each isPackageRequest
-				  ifTrue: [
-						  self testClassesInPackageNamed: each packageName.
-						  MCPValidatedTestRunRequest request: each testClass: nil ]
-				  ifFalse: [
-						  | testClass |
-						  testClass := MCPImageLookup classNamed: each className.
-						  each testMethodName ifNotNil: [ :testMethodName |
-								  testClass
-									  compiledMethodAt: testMethodName asSymbol
-									  ifAbsent: [ MCPCommandError signalMissingMethodInClassName: each className classSide: false selector: testMethodName ] ].
-						  MCPValidatedTestRunRequest request: each testClass: testClass ] ]
+	| validatedRequests |
+	validatedRequests := testRequests collect: [ :each | self resolvedRequestFor: each ].
+	self refuseSelectionsThatAreNotTests: validatedRequests.
+	^ validatedRequests
+]
+
+{ #category : 'private - without tests' }
+MCPRunTestsCommand >> withoutTestsEntryFor: validatedRequest namingTestPackages: aBoolean [
+	"A package that defines no test class holds none; any other selection that selected no case has no tests. A package's test classes are found by the scan a refusal makes, over its classes."
+
+	| entry testPackages |
+	entry := Dictionary new.
+	validatedRequest isPackageRequest ifFalse: [
+			entry at: #selection put: (self selectionTextOf: validatedRequest).
+			entry at: #reason put: 'has no tests'.
+			^ entry ].
+	entry at: #selection put: validatedRequest packageName.
+	(self packageDefinesTestClass: validatedRequest packageName) ifTrue: [
+			entry at: #reason put: 'has no tests'.
+			^ entry ].
+	entry at: #reason put: 'holds no test class'.
+	aBoolean ifFalse: [ ^ entry ].
+	testPackages := self referringTestPackagesOf: validatedRequest packageName.
+	testPackages ifEmpty: [ ^ entry ].
+	entry at: #testPackages put: (testPackages first: (testPackages size min: self referringTestPackageLimit)).
+	entry at: #testPackageCount put: testPackages size.
+	^ entry
+]
+
+{ #category : 'private - without tests' }
+MCPRunTestsCommand >> withoutTestsIn: validatedRequests [
+	"One entry per selection that selected no test, in selection order, counted before an earlier selection takes any of its cases. When the whole call selected none, a package that holds no test class also names the packages of the test classes that refer to its classes."
+
+	| counts nothingSelected |
+	counts := validatedRequests collect: [ :each | (self testCasesForValidatedRequest: each) size ] as: Array.
+	nothingSelected := counts allSatisfy: [ :each | each isZero ].
+	^ Array streamContents: [ :stream |
+			  validatedRequests asArray
+				  with: counts
+				  do: [ :each :count |
+				  count isZero ifTrue: [ stream nextPut: (self withoutTestsEntryFor: each namingTestPackages: nothingSelected) ] ] ]
 ]

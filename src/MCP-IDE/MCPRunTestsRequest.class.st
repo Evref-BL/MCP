@@ -24,9 +24,17 @@ MCPRunTestsRequest class >> addClassNames: classNames to: requests [
 ]
 
 { #category : 'private - parsing' }
-MCPRunTestsRequest class >> addMethodReferences: methodReferences to: requests [
+MCPRunTestsRequest class >> addMethodReferences: methodReferences to: requests forTool: aTool [
+	"A method is read in every form method_get reads one, and its side is dropped: test_run reads Foo class as Foo. A case of a parameterized test is read as its method, so the name an answer gives it can be passed back. Every entry that names no method is refused, all in one refusal."
 
-	methodReferences do: [ :methodReference | requests add: (MCPTestRunRequest fromMethodReference: methodReference) ]
+	| violations |
+	violations := OrderedCollection new.
+	methodReferences do: [ :each |
+			(MCPMethodReference fromString: each)
+				ifNil: [ violations add: (self violationForMethodReference: each) ]
+				ifNotNil: [ :reference |
+					requests add: (MCPTestRunRequest className: reference className testMethodName: (self testSelectorIn: reference selector)) ] ].
+	violations ifNotEmpty: [ MCPInvalidToolInput signalForTool: aTool violations: violations ]
 ]
 
 { #category : 'private - parsing' }
@@ -53,26 +61,62 @@ MCPRunTestsRequest class >> fromRequest: aRequest tool: aTool operation: operati
 ]
 
 { #category : 'private - parsing' }
+MCPRunTestsRequest class >> refuseEmptySelectionIn: request [
+	"An argument that names nothing once blank values are dropped is named, the first of packages, classes and methods. With none given at all, the call names nothing to run."
+
+	#( 'packages' 'classes' 'methods' ) do: [ :argumentName |
+			(request argumentNamed: argumentName ifAbsent: [ nil ]) ifNotNil: [
+				MCPInvalidToolInput signalEmptyArgumentNamed: argumentName forTool: request tool ] ].
+	MCPInvalidToolInput signalForTool: request tool violations: { (MCPJSONSchemaViolation
+			 path: #(  )
+			 keyword: #selectionRequired
+			 message: 'Name at least one package, class or method to run.'
+			 expected: nil
+			 actual: nil) }
+]
+
+{ #category : 'private - parsing' }
 MCPRunTestsRequest class >> testRequestsFromToolRequest: request [
+	"Every selection, in the order packages, classes, methods. The refusals answer like the schema's, in the request's tool's name."
 
 	| classNames methodReferences packageNames requests |
 	packageNames := request uniqueStringCollectionArgumentNamed: 'packages' default: #(  ).
 	classNames := request uniqueStringCollectionArgumentNamed: 'classes' default: #(  ).
 	methodReferences := request uniqueStringCollectionArgumentNamed: 'methods' default: #(  ).
 	(packageNames isEmpty and: [ classNames isEmpty and: [ methodReferences isEmpty ] ]) ifTrue: [
-		Error signal: 'Provide at least one package, class, or method.' ].
+		self refuseEmptySelectionIn: request ].
 	requests := OrderedCollection new.
 	self addPackageNames: packageNames to: requests.
 	self addClassNames: classNames to: requests.
-	self addMethodReferences: methodReferences to: requests.
-	requests ifEmpty: [ Error signal: 'No test classes or methods matched request.' ].
+	self addMethodReferences: methodReferences to: requests forTool: request tool.
 	^ requests asArray
+]
+
+{ #category : 'private - parsing' }
+MCPRunTestsRequest class >> testSelectorIn: aSelectorText [
+	"The selector of a test as an answer names it. A case of a parameterized test is named Class>>#selector with its parameters, and a test selector is unary, so what follows the selector's first ' with ' is the case's parameters, and passing that name back runs every case of the method."
+
+	| index |
+	index := aSelectorText indexOfSubCollection: ' with '.
+	index isZero ifTrue: [ ^ aSelectorText ].
+	^ (aSelectorText first: index - 1) trimBoth
 ]
 
 { #category : 'private - parsing' }
 MCPRunTestsRequest class >> timeoutMillisecondsFromToolRequest: request defaultSeconds: defaultSeconds [
 
 	^ (request nonNegativeIntegerArgumentNamed: 'timeoutSeconds' default: defaultSeconds) * 1000
+]
+
+{ #category : 'private - parsing' }
+MCPRunTestsRequest class >> violationForMethodReference: aString [
+
+	^ MCPJSONSchemaViolation
+		  path: #( 'methods' )
+		  keyword: #methodReference
+		  message: aString , ' is not a method reference; write it as Class>>#selector.'
+		  expected: nil
+		  actual: aString
 ]
 
 { #category : 'accessing' }
