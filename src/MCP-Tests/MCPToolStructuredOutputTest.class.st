@@ -1004,6 +1004,27 @@ MCPToolStructuredOutputTest >> testSearchSummaryCountsOneInTheSingular [
 ]
 
 { #category : 'tests' }
+MCPToolStructuredOutputTest >> testSearchSummaryLeavesOutANameOnlyWhereItIsMissing [
+	"A name given under two kinds of scope entry may exist as one and not the other: the summary names it where it exists, and the warning where it does not."
+
+	| result |
+	result := self callToolNamed: 'class_search' withArguments: { (self searchScope: {
+				           (#packages -> #( 'MCPToolHierarchyTestMid' )).
+				           (#classes -> #( 'MCPToolHierarchyTestMid' )) }) } asDictionary.
+	self assert: (self summaryFrom: result) equals: '1 class in MCPToolHierarchyTestMid.'.
+	self assert: (self warningsFrom: result) size equals: 1.
+	self assert: ((self warningsFrom: result) first includesSubstring: 'Package MCPToolHierarchyTestMid').
+	result := self callToolNamed: 'method_search' withArguments: {
+			          (self searchScope: {
+					           (#packages -> #( 'MCP-Tests-Resources' )).
+					           (#hierarchyOf -> #( 'MCP-Tests-Resources' )) }).
+			          (#selector -> 'classNeedleSelector') } asDictionary.
+	self assert: (self summaryFrom: result) equals: '1 method matches in package MCP-Tests-Resources.'.
+	self assert: (self warningsFrom: result) size equals: 1.
+	self assert: ((self warningsFrom: result) first includesSubstring: 'Class MCP-Tests-Resources')
+]
+
+{ #category : 'tests' }
 MCPToolStructuredOutputTest >> testSearchSummaryLeavesOutANameThatDoesNotExist [
 	"The warning names a missing name; the summary says where the search did look."
 

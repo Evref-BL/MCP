@@ -75,10 +75,12 @@ MCPScopeQuery >> classNames: aCollection [
 ]
 
 { #category : 'phrasing' }
-MCPScopeQuery >> existingNamesAmong: someNames [
-	"The names of someNames the last run resolved, once each, in the order given."
+MCPScopeQuery >> existingNamesAmong: someNames inScope: scopeName [
+	"The names of someNames, given as scopeName, that the last run resolved, once each, in the order given."
 
-	^ (self class distinctNamesAmong: someNames) reject: [ :each | self missingNames includes: each ]
+	| missing |
+	missing := self missingNamesInScope: scopeName.
+	^ (self class distinctNamesAmong: someNames) reject: [ :each | missing includes: each ]
 ]
 
 { #category : 'accessing' }
@@ -94,10 +96,11 @@ MCPScopeQuery >> hierarchyClassNames: aCollection [
 ]
 
 { #category : 'accessing' }
-MCPScopeQuery >> missingNames [
-	"The names the last run could not resolve."
+MCPScopeQuery >> missingNamesInScope: scopeName [
+	"The names given as scopeName that the last run could not resolve."
 
-	^ missingNames ifNil: [ #(  ) ]
+	missingNames ifNil: [ ^ #(  ) ].
+	^ missingNames at: scopeName ifAbsent: [ #(  ) ]
 ]
 
 { #category : 'phrasing' }
@@ -139,7 +142,7 @@ MCPScopeQuery >> recordMissingClassNamed: className inScope: scopeName [
 	suggestions := MCPScopeNameSuggester classSuggestionsFor: className.
 	self requiresCompleteScope ifTrue: [ ^ MCPCommandError signalMissingClassNamed: className scopeName: scopeName ].
 	warnings ifNil: [ self resetWarnings ].
-	self recordMissingName: className.
+	self recordMissingName: className inScope: scopeName.
 	warnings add: (MCPScopeNameSuggester
 			 missingNameWarningForKind: 'Class'
 			 name: className
@@ -149,11 +152,11 @@ MCPScopeQuery >> recordMissingClassNamed: className inScope: scopeName [
 ]
 
 { #category : 'private - resolution' }
-MCPScopeQuery >> recordMissingName: aName [
-	"A name the scope was given and could not resolve. Its warning names it; the phrase for where the query looked leaves it out."
+MCPScopeQuery >> recordMissingName: aName inScope: scopeName [
+	"A name the scope was given as scopeName and could not resolve. Its warning names it; the phrase for where the query looked leaves it out of that kind of entry only, since the same name may exist as another kind: a class that is no package."
 
-	missingNames ifNil: [ missingNames := Set new ].
-	missingNames add: aName asString
+	missingNames ifNil: [ missingNames := Dictionary new ].
+	(missingNames at: scopeName ifAbsentPut: [ Set new ]) add: aName asString
 ]
 
 { #category : 'private - resolution' }
@@ -163,7 +166,7 @@ MCPScopeQuery >> recordMissingPackageNamed: packageName inScope: scopeName [
 	suggestions := MCPScopeNameSuggester packageSuggestionsFor: packageName.
 	self requiresCompleteScope ifTrue: [ ^ MCPCommandError signalMissingPackageNamed: packageName scopeName: scopeName ].
 	warnings ifNil: [ self resetWarnings ].
-	self recordMissingName: packageName.
+	self recordMissingName: packageName inScope: scopeName.
 	warnings add: (MCPScopeNameSuggester
 			 missingNameWarningForKind: 'Package'
 			 name: packageName
@@ -194,7 +197,7 @@ MCPScopeQuery >> requiresCompleteScope: aBoolean [
 MCPScopeQuery >> resetWarnings [
 
 	warnings := OrderedCollection new.
-	missingNames := Set new
+	missingNames := Dictionary new
 ]
 
 { #category : 'phrasing' }
@@ -210,33 +213,33 @@ MCPScopeQuery >> scopePhrase [
 
 { #category : 'phrasing' }
 MCPScopeQuery >> scopePhraseParts [
-	"One phrase per kind of name the scope was given, in a fixed order, each naming only the names that exist."
+	"One phrase per kind of name the scope was given, in a fixed order, each naming only the names that exist as that kind."
 
 	| parts |
 	parts := OrderedCollection new.
 	{
 		(self class
-			 phraseForNames: (self existingNamesAmong: self packageNames)
+			 phraseForNames: (self existingNamesAmong: self packageNames inScope: 'packages')
 			 one: 'package '
 			 several: 'packages '
 			 many: '{1} packages').
 		(self class
-			 phraseForNames: (self existingNamesAmong: self classNames)
+			 phraseForNames: (self existingNamesAmong: self classNames inScope: 'classes')
 			 one: ''
 			 several: ''
 			 many: '{1} classes').
 		(self class
-			 phraseForNames: (self existingNamesAmong: self hierarchyClassNames)
+			 phraseForNames: (self existingNamesAmong: self hierarchyClassNames inScope: 'hierarchyClasses')
 			 one: 'the hierarchy of '
 			 several: 'the hierarchies of '
 			 many: 'the hierarchies of {1} classes').
 		(self class
-			 phraseForNames: (self existingNamesAmong: self subclassClassNames)
+			 phraseForNames: (self existingNamesAmong: self subclassClassNames inScope: 'subclassClasses')
 			 one: 'the subclasses of '
 			 several: 'the subclasses of '
 			 many: 'the subclasses of {1} classes').
 		(self class
-			 phraseForNames: (self existingNamesAmong: self parentClassNames)
+			 phraseForNames: (self existingNamesAmong: self parentClassNames inScope: 'parentClasses')
 			 one: 'the superclasses of '
 			 several: 'the superclasses of '
 			 many: 'the superclasses of {1} classes') } do: [ :each | each ifNotNil: [ parts add: each ] ].
