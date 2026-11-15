@@ -293,6 +293,13 @@ MCPToolContractsTest >> firstTextFromToolResult: aResult [
 	^ (aResult at: #content) first at: #text
 ]
 
+{ #category : 'private - evaluate' }
+MCPToolContractsTest >> fullGarbageCollections [
+	"How many full collections the VM has made since it started."
+
+	^ Smalltalk vm parameterAt: 7
+]
+
 { #category : 'private' }
 MCPToolContractsTest >> handleJSON: aJSONString [
 
@@ -1246,13 +1253,46 @@ MCPToolContractsTest >> testEvaluateStopCollapsesARecursion [
 
 { #category : 'tests - evaluate' }
 MCPToolContractsTest >> testEvaluateStopCollectsGarbageAfterTheAnswer [
-	"What a stopped evaluation grew is garbage once it ends. A full collection of a large heap takes seconds, so it waits for the answer to go out instead of holding it back."
+	"What a stopped evaluation grew is garbage once it ends. A full collection of a large heap takes seconds, so the process that stopped it collects only once the answer has gone out, which the call's post-response action tells it, and until then it waits."
 
-	| actions |
+	| actions before helpers |
 	self timeLimit: 30 seconds.
+	before := self liveProcessesNamed: 'image_evaluate stop'.
 	actions := OrderedCollection new.
 	MCPPostResponseActions value: actions during: [ self evaluate: '[ true ] whileTrue' within: 1 ].
-	self assert: actions size equals: 1
+	helpers := (self liveProcessesNamed: 'image_evaluate stop') copyWithoutAll: before.
+	[
+		self assert: actions size equals: 1.
+		self assert: helpers size equals: 1.
+		(Delay forMilliseconds: 100) wait.
+		self deny: helpers first isTerminated ] ensure: [ actions do: #value ].
+	self waitUntilEnded: helpers first.
+	self assert: helpers first isTerminated
+]
+
+{ #category : 'tests - evaluate' }
+MCPToolContractsTest >> testEvaluateStopCollectsGarbageOnceTheCodeHasUnwound [
+	"The answer may go out while the stopped code still unwinds, and what it grew stays reachable until it has, so the collection waits for the unwinding as well as for the answer."
+
+	| actions before helpers collections |
+	self timeLimit: 30 seconds.
+	MCPEvaluateTestProbe reset.
+	before := self liveProcessesNamed: 'image_evaluate stop'.
+	actions := OrderedCollection new.
+	[
+		MCPPostResponseActions
+			value: actions
+			during: [ self evaluate: '[ [ true ] whileTrue ] ensure: [ MCPEvaluateTestProbe holdUntilReleased ]' within: 1 ].
+		collections := self fullGarbageCollections.
+		actions do: #value.
+		self assert: self fullGarbageCollections equals: collections.
+		helpers := (self liveProcessesNamed: 'image_evaluate stop') copyWithoutAll: before.
+		self assert: helpers size equals: 1 ] ensure: [
+			MCPEvaluateTestProbe release.
+			MCPEvaluateTestProbe holder ifNotNil: [ :holder | self waitUntilEnded: holder ] ].
+	self waitUntilEnded: helpers first.
+	self assert: helpers first isTerminated.
+	self assert: self fullGarbageCollections > collections
 ]
 
 { #category : 'tests - evaluate' }

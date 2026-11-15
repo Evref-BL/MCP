@@ -214,17 +214,21 @@ MCPEvaluateCommand >> start: aProcess [
 
 { #category : 'private' }
 MCPEvaluateCommand >> stop: anEvaluator [
-	"Where the code is, and what it wrote, are read before it unwinds. A computing evaluator is taken off the run queue here: the helper below runs at its priority, and would otherwise wait behind it for a turn it may never get. One waiting on a semaphore is left waiting, since terminating it from there is what releases a critical section. The helper terminates it, so that its ensure blocks run at its own priority and this process waits for them only so long. What the stopped code grew is collected after the answer, since a full collection of a large heap takes seconds."
+	"Where the code is, and what it wrote, are read before it unwinds. A computing evaluator is taken off the run queue here: the helper below runs at its priority, and would otherwise wait behind it for a turn it may never get. One waiting on a semaphore is left waiting, since terminating it from there is what releases a critical section. The helper terminates it, so that its ensure blocks run at its own priority and this process waits for them only so long. What the stopped code grew is garbage only once it has unwound, which may be after the answer, and a full collection of a large heap takes seconds, so the helper collects it once the code has unwound and the answer has gone out."
 
-	| details stopped |
+	| details stopped answered |
 	anEvaluator suspendingList == (Processor waitingProcessesAt: anEvaluator priority) ifTrue: [ anEvaluator suspend ].
 	details := self stoppedDetailsFor: anEvaluator.
 	stopped := Semaphore new.
-	[ [ anEvaluator terminate ] ensure: [ stopped signal ] ] forkAt: anEvaluator priority named: tool name , ' stop'.
+	answered := Semaphore new.
+	[
+		[ anEvaluator terminate ] ensure: [ stopped signal ].
+		answered wait.
+		Smalltalk garbageCollect ] forkAt: anEvaluator priority named: tool name , ' stop'.
 	(self timedOutWaitingFor: stopped seconds: self unwindingSeconds) ifTrue: [
 			details at: #stillUnwinding put: true.
 			transcript ifNotNil: [ :recorder | recorder finish ] ].
-	MCPPostResponseActions defer: [ Smalltalk garbageCollect ].
+	MCPPostResponseActions defer: [ answered signal ].
 	^ MCPEvaluateResult errorSummary: (tool stoppedMessageFor: request timeoutSeconds) details: details
 ]
 
