@@ -2220,8 +2220,8 @@ MCPToolContractsTest >> testRunTestsRejectsEmptySelection [
 	rawRequest := tool requestFromToolCallArguments: Dictionary new.
 	self
 		should: [ tool parsedRequestFromToolRequest: rawRequest ]
-		raise: Error
-		whoseDescriptionIncludes: 'Provide at least one package, class, or method'
+		raise: MCPInvalidToolInput
+		whoseDescriptionIncludes: 'Name at least one package, class or method to run.'
 		description: 'test_run requires at least one compact selection.'
 ]
 

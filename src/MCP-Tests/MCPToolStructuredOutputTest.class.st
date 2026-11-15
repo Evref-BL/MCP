@@ -710,14 +710,9 @@ MCPToolStructuredOutputTest >> testRunTestsParameterizedMethodFailureIncludesCas
 { #category : 'tests' }
 MCPToolStructuredOutputTest >> testRunTestsParseErrorReturnsStructuredToolError [
 
-	| error result structured |
-	result := self callToolNamed: 'test_run' withArguments: { (#methods -> #( 'NotAMethodReference' )) } asDictionary.
-	structured := self structuredContentFrom: result.
-	error := self errorFrom: result.
-	self assert: (result at: #isError).
-	self assert: (error at: #errorClass) equals: #Error.
-	self deny: (error includesKey: #tests).
-	self assert: ((error at: #message) includesSubstring: 'Class>>#selector')
+	self
+		assertResult: (self callToolNamed: 'test_run' withArguments: { (#methods -> #( 'NotAMethodReference' )) } asDictionary)
+		refusesArgumentsSaying: 'methods: NotAMethodReference is not a method reference; write it as Class>>#selector.'
 ]
 
 { #category : 'tests' }
