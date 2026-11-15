@@ -263,14 +263,14 @@ MCPEvaluateCommand >> syntaxFailureFor: aNotice [
 
 { #category : 'private' }
 MCPEvaluateCommand >> timedOutWaitingFor: aSemaphore seconds: seconds [
-	"Answer whether the time ran out before aSemaphore was signalled, as Semaphore>>waitTimeoutSeconds: does. The virtual machine looks at its sockets only when told to, which the idle process does once nothing else runs: while the code computes, no other call would be accepted until it ends. So the wait is cut into slices, between which this process, running above the code, tells it to look. waitTimeoutSeconds: multiplies by 1000, so a slice of a fraction of a second is a whole number of milliseconds in every Pharo from 10 to 15."
+	"Answer whether the time ran out before aSemaphore was signalled, as Semaphore>>waitTimeoutSeconds: does. The virtual machine looks at its sockets only when told to, which the idle process does once nothing else runs: while the code computes, no other call would be accepted until it ends. So the wait is cut into slices, between which this process, running above the code, tells it to look. waitTimeoutSeconds: multiplies by 1000, so a slice of a fraction of a second is a whole number of milliseconds in every Pharo from 10 to 15. The deadline is on the microsecond clock, since the millisecond clock wraps every six days or so."
 
 	| deadline |
-	deadline := Time millisecondClockValue + (seconds * 1000).
+	deadline := Time microsecondClockValue + (seconds * 1000000).
 	[
 		(aSemaphore waitTimeoutSeconds: self pollMilliseconds / 1000) ifFalse: [ ^ false ].
 		ProcessorScheduler relinquishProcessorForMicroseconds: 0.
-		Time millisecondClockValue < deadline ] whileTrue.
+		Time microsecondClockValue < deadline ] whileTrue.
 	^ true
 ]
 

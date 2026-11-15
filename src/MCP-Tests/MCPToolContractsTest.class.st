@@ -1394,6 +1394,25 @@ MCPToolContractsTest >> testEvaluateToolPointsAtTheToolCatalog [
 	self assert: (tool description includesSubstring: 'tool_search')
 ]
 
+{ #category : 'tests - evaluate' }
+MCPToolContractsTest >> testEvaluateWaitsInSlicesUpToItsLimit [
+	"The process serving the call waits for the evaluation in slices, so that the machine looks at its sockets between them, and answers as one wait would: false once the evaluation signals, true once the limit has passed."
+
+	| command milliseconds signalled |
+	command := MCPEvaluateCommand
+		           tool: MCPToolEvaluate new
+		           request: (MCPEvaluateRequest new initializeCode: '3 + 4' timeoutSeconds: 1)
+		           resultPreviewCharacterLimit: 100.
+	signalled := Semaphore new.
+	[
+		(Delay forMilliseconds: 100) wait.
+		signalled signal ] fork.
+	self deny: (command timedOutWaitingFor: signalled seconds: 5).
+	milliseconds := Time millisecondsToRun: [ self assert: (command timedOutWaitingFor: Semaphore new seconds: 1) ].
+	self assert: milliseconds >= 1000.
+	self assert: milliseconds < 5000
+]
+
 { #category : 'tests' }
 MCPToolContractsTest >> testEveryAdvertisedToolSaysWhatItDoesWithinACatalogLine [
 	"A host that lists tools one line each, as OpenCode's code mode does, shows the first 120 characters of a description. A first sentence longer than that is cut before it has said what the tool is for."
