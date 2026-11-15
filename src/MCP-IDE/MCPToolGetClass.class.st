@@ -188,7 +188,7 @@ MCPToolGetClass >> failureMessageForClassName: className error: anError [
 MCPToolGetClass >> keyOrder [
 	"What a class is, then where it lives, then how big it is. The comment is not named, so it lands after the inline values like any block of text."
 
-	^ #( superclass layout package tag classMethods methods )
+	^ #( superclass package tag layout methods classMethods traits instanceSlots classSlots sharedVariables sharedPools users )
 ]
 
 { #category : 'private - results' }

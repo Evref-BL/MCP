@@ -147,7 +147,7 @@ MCPToolGetClassTest >> testClampsSubclassDepthAboveMaximum [
 
 { #category : 'tests' }
 MCPToolGetClassTest >> testClassFieldsReadInOrderAndAreNotRepeated [
-	"The summary already names the class, so a class: field would say it twice, and a reader wants what the class is before how big it is."
+	"The summary already names the class, so a class: field would say it twice, and a reader wants what the class is and where it lives before how big it is."
 
 	| labels text |
 	text := ((self callToolNamed: 'class_get' withArguments: { (#name -> self baseClassName) } asDictionary) at: #content) first at:
@@ -156,9 +156,23 @@ MCPToolGetClassTest >> testClassFieldsReadInOrderAndAreNotRepeated [
 		          asArray.
 	self assert: text lines first equals: (String streamContents: [ :stream | stream << 'Got class ' << self baseClassName << '.' ]).
 	self deny: (labels includes: 'class').
-	self assert: (labels copyFrom: 1 to: 2) equals: #( 'superclass' 'layout' ).
-	self assert: ((labels indexOf: 'package') between: 1 and: (labels indexOf: 'classMethods')).
-	self assert: (labels indexOf: 'classMethods') < (labels indexOf: 'methods')
+	self assert: (labels copyFrom: 1 to: 3) equals: #( 'superclass' 'package' 'tag' ).
+	self assert: (labels indexOf: 'methods') < (labels indexOf: 'classMethods')
+]
+
+{ #category : 'tests' }
+MCPToolGetClassTest >> testCountsOnlyTheMethodsTheClassDefines [
+	"A class using a trait gets the trait's methods, and its class side also holds what Pharo installs from TraitedClass; neither is the class's own."
+
+	| data |
+	self assert: MCPToolMethodSearchTraitUser selectors isNotEmpty.
+	self assert: MCPToolMethodSearchTraitUser classSide selectors isNotEmpty.
+	data := self dataFrom: (self callToolWith: { (#name -> MCPToolMethodSearchTraitUser name) } asDictionary).
+	self assert: (data at: #methods) equals: 0.
+	self assert: (data at: #classMethods) equals: 0.
+	data := self dataFrom: (self callToolWith: { (#name -> TMCPToolMethodSearchFixture name) } asDictionary).
+	self assert: (data at: #methods) equals: 1.
+	self assert: (data at: #classMethods) equals: 1
 ]
 
 { #category : 'tests' }
@@ -183,10 +197,9 @@ MCPToolGetClassTest >> testDescribesATraitAndNamesTheClassesUsingIt [
 { #category : 'tests' }
 MCPToolGetClassTest >> testGetsClassMetadata [
 
-	| data expectedLayoutClassName result |
+	| data result |
 	result := self callToolWith: { (#name -> self baseClassName) } asDictionary.
 	data := self dataFrom: result.
-	expectedLayoutClassName := (self classNamed: self baseClassName) classLayout class name asString.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self deny: (self resultIndicatesError: result).
 	self assert: (data at: #class) equals: self baseClassName.
@@ -202,7 +215,7 @@ MCPToolGetClassTest >> testGetsClassMetadata [
 	self deny: (data includesKey: #classTraitComposition).
 	self deny: (data includesKey: #sharedPools).
 	self assert: (data at: #sharedVariables) equals: #( 'AlphaShared' 'BetaShared' ).
-	self assert: (data at: #layout) equals: expectedLayoutClassName.
+	self deny: (data includesKey: #layout).
 	self assert: (data at: #methods) equals: 1.
 	self assert: (data at: #classMethods) equals: 1.
 	self deny: (data includesKey: #superclasses).
@@ -296,7 +309,7 @@ MCPToolGetClassTest >> testIncludesTraitNamesForTraitUsingClass [
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: ((data at: #traits) anySatisfy: [ :each | each includesSubstring: 'TAbleToRotate' ]).
-	self assert: ((data at: #classTraits) anySatisfy: [ :each | each includesSubstring: 'TAbleToRotate' ])
+	self deny: (data includesKey: #classTraits)
 ]
 
 { #category : 'tests' }
@@ -307,6 +320,43 @@ MCPToolGetClassTest >> testKeepsATraitCompositionThatExcludesAMethod [
 	data := self dataFrom: result.
 	self assert: ((data at: #traitComposition) includesSubstring: 'mcpTraitFixtureValue').
 	self assert: ((data at: #classTraitComposition) includesSubstring: 'mcpTraitFixtureValue')
+]
+
+{ #category : 'tests' }
+MCPToolGetClassTest >> testLeavesOutClassTraitsThatMirrorTheTraits [
+	"Using a trait gives the class side the trait's class side; classTraits is named only when the class side says something else."
+
+	| data |
+	data := self dataFrom: (self callToolWith: { (#name -> MCPToolMethodSearchTraitUser name) } asDictionary).
+	self assert: (data at: #traits) equals: { TMCPToolMethodSearchFixture name asString }.
+	self deny: (data includesKey: #classTraits).
+	self assert:
+		(MCPClassDescriptionInfo new classSideTraitsOf: MCPToolMethodSearchTraitUser mirrorTheTraits: { TMCPToolMethodSearchFixture }).
+	self deny: (MCPClassDescriptionInfo new classSideTraitsOf: MCPToolMethodSearchTraitUser mirrorTheTraits: #(  ))
+]
+
+{ #category : 'tests' }
+MCPToolGetClassTest >> testLeavesOutTheTagOfAnUntaggedClass [
+	"An untagged class sits in its package's root tag, which says nothing; a tagged one names its tag."
+
+	| data result |
+	result := self callToolWith: { (#name -> MCPToolGetMethodTestTarget name) } asDictionary.
+	data := self dataFrom: result.
+	self deny: (data includesKey: #tag).
+	self deny: (((result at: #content) first at: #text) includesSubstring: 'tag:').
+	self assert: MCPToolGetMethodTestTarget mcpTagName isNil.
+	self assert: (self classNamed: self baseClassName) mcpTagName equals: self generatedTagName
+]
+
+{ #category : 'tests' }
+MCPToolGetClassTest >> testNamesALayoutOnlyWhenItIsNotFixed [
+
+	| data |
+	data := self dataFrom: (self callToolWith: { (#name -> 'Array') } asDictionary).
+	self assert: (data at: #layout) equals: Array classLayout class name asString.
+	data := self dataFrom: (self callToolWith: { (#name -> MCPToolGetMethodTestTarget name) } asDictionary).
+	self assert: MCPToolGetMethodTestTarget classLayout class equals: FixedLayout.
+	self deny: (data includesKey: #layout)
 ]
 
 { #category : 'tests' }

@@ -354,7 +354,7 @@ MCPToolStructuredOutputTest >> testGetClassReturnsStructuredSuccess [
 	self assert: (data at: #methods) equals: 1.
 	self assert: (data at: #classMethods) equals: 1.
 	self assert: (data at: #sharedVariables) equals: expectedSharedVariableNames.
-	self assert: (data includesKey: #layout).
+	self deny: (data includesKey: #layout).
 	self deny: (data includesKey: #traitComposition).
 	self deny: (data includesKey: #classTraitComposition).
 	self deny: (data includesKey: #comment).
@@ -540,9 +540,9 @@ MCPToolStructuredOutputTest >> testRecordListsCarryTheirLabel [
 	self deny: (self resultIndicatesError: result).
 	subclasses := lines findFirst: [ :each | each beginsWith: 'subclasses' ].
 	superclasses := lines findFirst: [ :each | each beginsWith: 'superclasses' ].
-	self assert: subclasses > 0.
-	self assert: subclasses < superclasses.
-	self assert: (lines indexOf: 'className: MCPToolMutation') < subclasses
+	self assert: (lines first beginsWith: 'Got class MCPToolMutation.').
+	self assert: subclasses > 1.
+	self assert: subclasses < superclasses
 ]
 
 { #category : 'tests' }
