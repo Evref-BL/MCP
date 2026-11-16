@@ -168,12 +168,13 @@ MCPToolGetMethod >> executeWithRequest: request [
 			  self
 				  executeRequest: targetRequest
 				  do: [
-						  self methodNamedIn: targetRequest do: [ :className :selector :classSide |
+						  self methodNamedIn: targetRequest do: [ :className :selector :classSide :isSideGiven |
 								  checked := true.
 								  self
 									  getMethod: selector
 									  in: className
 									  classSide: classSide
+									  sideGiven: isSideGiven
 									  includeVariableDetails: (targetRequest booleanArgumentNamed: 'includeVariableDetails') ] ]
 				  onError: [ :error |
 						  self
@@ -197,10 +198,12 @@ MCPToolGetMethod >> failureMessageForClassNamed: className selector: selectorStr
 ]
 
 { #category : 'private - execution' }
-MCPToolGetMethod >> getMethod: selector in: className classSide: classSide includeVariableDetails: includeVariableDetails [
+MCPToolGetMethod >> getMethod: selector in: className classSide: classSide sideGiven: isSideGiven includeVariableDetails: includeVariableDetails [
+	"A bare selector given no side is read on the instance side, unless only the class side has it: it then names one method, which is read there."
 
-	| compiledMethod data |
-	compiledMethod := self methodForClassNamed: className selector: selector classSide: classSide.
+	| compiledMethod data isClassSide |
+	isClassSide := classSide or: [ isSideGiven not and: [ self isOnClassSideOnly: selector in: className ] ].
+	compiledMethod := self methodForClassNamed: className selector: selector classSide: isClassSide.
 	data := {
 		        (#protocol -> (compiledMethod protocolName ifNil: [ '' ] ifNotNil: [ :protocol | protocol asString ])).
 		        (#source -> (compiledMethod sourceCode ifNil: [ '' ])) } asDictionary.
@@ -208,14 +211,28 @@ MCPToolGetMethod >> getMethod: selector in: className classSide: classSide inclu
 	includeVariableDetails ifTrue: [
 			data
 				at: #variableReferences
-				put: (self variableSummariesForMethod: compiledMethod methodBehavior: (self behaviorNamed: className classSide: classSide)) ].
-	^ self successResultText: (self successSummaryForClassName: className selector: selector classSide: classSide) data: data
+				put: (self variableSummariesForMethod: compiledMethod methodBehavior: (self behaviorNamed: className classSide: isClassSide)) ].
+	^ self
+		  successResultText: (self
+				   successSummaryForClassName: className
+				   selector: selector
+				   classSide: isClassSide
+				   sideGiven: isSideGiven)
+		  data: data
 ]
 
 { #category : 'private - analysis' }
 MCPToolGetMethod >> incrementReferenceCountInSummary: aSummary [
 
 	aSummary at: #referenceCount put: (aSummary at: #referenceCount) + 1
+]
+
+{ #category : 'private - execution' }
+MCPToolGetMethod >> isOnClassSideOnly: selector in: className [
+	"Whether the class side of className has a method selector of its own, while its instance side does not understand selector, by a method of its own or an inherited one. A bare selector then names one method."
+
+	^ ((self behaviorNamed: className classSide: false) canUnderstand: selector asSymbol) not and: [
+		  (self behaviorNamed: className classSide: true) includesSelector: selector asSymbol ]
 ]
 
 { #category : 'private - results' }
@@ -236,12 +253,16 @@ MCPToolGetMethod >> matchingSummaryForNodeName: aName kind: aKind ownerName: anO
 
 { #category : 'private - request' }
 MCPToolGetMethod >> methodNamedIn: request do: aBlock [
-	"Give aBlock the class name without its side, the selector and whether the class side is meant, for the method the arguments name. A selector written as a reference names it alone; a bare one needs class, and a class written with its side must agree with side."
+	"Give aBlock the class name without its side, the selector, whether the class side is meant and, to a block that takes it, whether the call said which side. A selector written as a reference names it alone, and its side with it; a bare one needs class, and a class written with its side must agree with side."
 
 	| className text |
 	text := self selectorStringFromRequest: request.
 	(MCPMethodReference fromString: text) ifNotNil: [ :reference |
-		^ aBlock value: reference className value: reference selector value: reference classSide ].
+			^ aBlock
+				  cull: reference className
+				  cull: reference selector
+				  cull: reference classSide
+				  cull: true ].
 	className := request stringArgumentNamed: 'class'.
 	((MCPMethodReference looksLikeAReference: text) or: [ className isNil ]) ifTrue: [
 			MCPCommandError
@@ -249,10 +270,12 @@ MCPToolGetMethod >> methodNamedIn: request do: aBlock [
 				message: (String streamContents: [ :stream |
 						 stream << (text ifNil: [ 'A method' ]) << ' does not name a method. ' << self referenceHelpText ])
 				details: { (#selector -> text) } asDictionary ].
-	^ MCPImageLookup
-		  className: className
-		  side: (request stringArgumentNamed: 'side')
-		  do: [ :baseName :isClassSide :isSideGiven | aBlock value: baseName value: text value: isClassSide ]
+	^ MCPImageLookup className: className side: (request stringArgumentNamed: 'side') do: [ :baseName :isClassSide :isSideGiven |
+			  aBlock
+				  cull: baseName
+				  cull: text
+				  cull: isClassSide
+				  cull: isSideGiven ]
 ]
 
 { #category : 'private - results' }
@@ -321,13 +344,15 @@ MCPToolGetMethod >> selectorFor: request checked: aBoolean [
 ]
 
 { #category : 'private - results' }
-MCPToolGetMethod >> successSummaryForClassName: className selector: selector classSide: classSide [
+MCPToolGetMethod >> successSummaryForClassName: className selector: selector classSide: classSide sideGiven: isSideGiven [
+	"The class side of a call that gave no side was read because only it has the method, which the answer says, since the side the call left out reads as the instance side."
 
 	^ String streamContents: [ :stream |
 			  stream
 				  nextPutAll: 'Got method ';
 				  nextPutAll: (self methodReferenceTextForClassName: className selector: selector classSide: classSide);
-				  nextPut: $. ]
+				  nextPut: $..
+			  (classSide and: [ isSideGiven not ]) ifTrue: [ stream nextPutAll: ' It is on the class side, the only side that has it.' ] ]
 ]
 
 { #category : 'metadata' }

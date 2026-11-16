@@ -280,7 +280,14 @@ MCPCommandError class >> signalMissingCompileTarget: aName suggestions: someName
 
 { #category : 'signaling' }
 MCPCommandError class >> signalMissingMethod: aSelectorString in: aBehavior [
-	"aBehavior, which the caller has resolved, has no method aSelectorString of its own. The methods of that selector the caller may have meant are named: on the other side, or the first one up the hierarchy."
+	"aBehavior, which the caller has resolved, has no method aSelectorString of its own."
+
+	^ self signalMissingMethod: aSelectorString in: aBehavior closing: nil
+]
+
+{ #category : 'signaling' }
+MCPCommandError class >> signalMissingMethod: aSelectorString in: aBehavior closing: aStringOrNil [
+	"aBehavior, which the caller has resolved, has no method aSelectorString of its own. The methods of that selector the caller may have meant are named: on the other side, or the first one up the hierarchy. aStringOrNil, when given, ends the message with what the caller's tool offers instead."
 
 	| className classSide details message suggestions |
 	className := aBehavior instanceSide name asString.
@@ -294,7 +301,8 @@ MCPCommandError class >> signalMissingMethod: aSelectorString in: aBehavior [
 							             self
 								             methodReferenceForClassName: (each at: #class)
 								             selector: (each at: #selector)
-								             classSide: (each at: #side) = 'class' ])) << '.' ] ].
+								             classSide: (each at: #side) = 'class' ])) << '.' ].
+			           aStringOrNil ifNotNil: [ :closing | stream << ' ' << closing ] ].
 	details := {
 		           (#class -> className).
 		           (#side -> (classSide

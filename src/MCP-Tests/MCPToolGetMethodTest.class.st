@@ -9,6 +9,23 @@ Class {
 }
 
 { #category : 'tests' }
+MCPToolGetMethodTest >> testGetMethodMissSaysWhereTheClassMethodsAreListed [
+	"A selector the class does not have, such as a guess at a wildcard, is refused with the tool that lists the methods it does have."
+
+	| error result |
+	result := self callToolWith: {
+			          (#class -> 'MCPToolGetMethodTestTarget').
+			          (#selector -> '*') } asDictionary.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (error at: #errorCode) equals: 'MethodNotFound'.
+	self
+		assert: (error at: #message)
+		equals:
+		'Method MCPToolGetMethodTestTarget>>* does not exist. method_search with scope.classes lists the methods of MCPToolGetMethodTestTarget.'
+]
+
+{ #category : 'tests' }
 MCPToolGetMethodTest >> testGetMethodMissingClassSuggestsClassNames [
 
 	| error result |
@@ -55,6 +72,26 @@ MCPToolGetMethodTest >> testGetMethodOfAClassWrittenWithItsSideRefusesSideInstan
 		assert: (error at: #message)
 		equals:
 		'MCPToolGetMethodTestTarget class names the class side, but side is instance. Pass class MCPToolGetMethodTestTarget, with side class or instance.'
+]
+
+{ #category : 'tests' }
+MCPToolGetMethodTest >> testGetMethodReadsABareSelectorOnTheOnlySideThatHasIt [
+	"A bare selector given no side that only the class side has names one method, so it is read there, with its variables, and the answer says which side it is on."
+
+	| data result |
+	result := self callToolWith: {
+			          (#class -> 'MCPToolGetMethodTestTarget').
+			          (#selector -> 'readClassSide').
+			          (#includeVariableDetails -> true) } asDictionary.
+	self deny: (self resultIndicatesError: result) description: [ self summaryFrom: result ].
+	self
+		assert: (self summaryFrom: result)
+		equals: 'Got method MCPToolGetMethodTestTarget class>>readClassSide. It is on the class side, the only side that has it.'.
+	data := self dataFrom: result.
+	self assert: ((data at: #source) beginsWith: 'readClassSide').
+	self
+		assert: ((self variableNamed: 'classCounter' in: (data at: #variableReferences)) at: #ownerName)
+		equals: 'MCPToolGetMethodTestTarget class'
 ]
 
 { #category : 'tests' }
@@ -115,12 +152,29 @@ MCPToolGetMethodTest >> testGetMethodReturnsStructuredErrorForMissingSelector [
 ]
 
 { #category : 'tests' }
+MCPToolGetMethodTest >> testGetMethodStaysOnAnInstanceSideThatInheritsTheSelector [
+	"A bare selector given no side that the instance side inherits stays a miss there, though the class side has a method of its own: the caller may mean either."
+
+	| error result |
+	result := self callToolWith: {
+			          (#class -> 'MCPToolRunTestsTimeLimitTarget').
+			          (#selector -> 'defaultTimeLimit') } asDictionary.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (error at: #errorCode) equals: 'MethodNotFound'.
+	self assert: (error at: #side) equals: 'instance'.
+	self assert: ((error at: #suggestions) anySatisfy: [ :each | (each at: #side) = 'class' ])
+]
+
+{ #category : 'tests' }
 MCPToolGetMethodTest >> testGetMethodSuggestsExactOppositeSideSelector [
+	"A side the call gives is kept, so a selector only the other side has is a miss that names it."
 
 	| error result suggestions |
 	result := self callToolWith: {
 			          (#class -> 'MCPToolGetMethodTestTarget').
-			          (#selector -> 'readClassSide') } asDictionary.
+			          (#selector -> 'readClassSide').
+			          (#side -> 'instance') } asDictionary.
 	error := self errorFrom: result.
 	suggestions := error at: #suggestions.
 	self assert: (result at: #isError).
