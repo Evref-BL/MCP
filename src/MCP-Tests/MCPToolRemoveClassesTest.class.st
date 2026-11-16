@@ -37,6 +37,12 @@ MCPToolRemoveClassesTest >> emptyChildClassName [
 ]
 
 { #category : 'private' }
+MCPToolRemoveClassesTest >> emptyGrandchildClassName [
+
+	^ self fixturePrefix , 'EmptyGrandchild'
+]
+
+{ #category : 'private' }
 MCPToolRemoveClassesTest >> emptyParentClassName [
 
 	^ self fixturePrefix , 'EmptyParent'
@@ -83,7 +89,9 @@ MCPToolRemoveClassesTest >> fixtureClassNames [
 		  self senderClassName.
 		  self mutualFirstClassName.
 		  self mutualSecondClassName.
-		  self packageCleanupClassName } asArray
+		  self packageCleanupClassName.
+		  self simpleChildClassName.
+		  self emptyGrandchildClassName } asArray
 ]
 
 { #category : 'private' }
@@ -198,6 +206,12 @@ MCPToolRemoveClassesTest >> setUp [
 ]
 
 { #category : 'private' }
+MCPToolRemoveClassesTest >> simpleChildClassName [
+
+	^ self fixturePrefix , 'SimpleChild'
+]
+
+{ #category : 'private' }
 MCPToolRemoveClassesTest >> simpleClassName [
 
 	^ self fixturePrefix , 'Simple'
@@ -305,6 +319,28 @@ MCPToolRemoveClassesTest >> testClassesThatReferOnlyToEachOtherAreRemovedTogethe
 	self deny: (result at: #isError ifAbsent: [ false ]) description: (self textFrom: result).
 	self deny: (self class environment includesKey: self mutualFirstClassName asSymbol).
 	self deny: (self class environment includesKey: self mutualSecondClassName asSymbol)
+]
+
+{ #category : 'tests' }
+MCPToolRemoveClassesTest >> testEachSuperclassTheSubclassesMoveToIsNamed [
+	"Subclasses that move to different classes are named class by class, in the order of the classes removed."
+
+	| result |
+	self ensureClassNamed: self simpleChildClassName superclassName: self simpleClassName.
+	self ensureClassNamed: self emptyGrandchildClassName superclassName: self emptyChildClassName.
+	result := self callToolWith: (self argumentsForClassNames: {
+				           self simpleClassName.
+				           self emptyChildClassName }).
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (self classNamed: self emptyGrandchildClassName) superclass name asString equals: self emptyParentClassName.
+	self
+		assert: (self textFrom: result)
+		equals: ('Removed 2 classes: {1}, {2}. {3} now inherits from Object. {4} now inherits from {5}.' format: {
+					 self simpleClassName.
+					 self emptyChildClassName.
+					 self simpleChildClassName.
+					 self emptyGrandchildClassName.
+					 self emptyParentClassName })
 ]
 
 { #category : 'tests' }

@@ -118,6 +118,26 @@ MCPCreateClassCommandTest >> testANameAGlobalVariableHoldsIsRefused [
 ]
 
 { #category : 'tests' }
+MCPCreateClassCommandTest >> testAPackageIsRemovedOnlyWhileItDefinesNoClass [
+	"A create that fails removes the package it made by the rule class_remove follows: a class may have landed in it before the build failed, and the package then stays with it."
+
+	| command |
+	command := MCPCreateClassCommand new.
+	self executeCommand: (MCPCreateClassCommand
+			 className: 'MCPCreateClassCommandTestGenerated'
+			 superclassName: 'Object'
+			 packageName: self generatedPackageName
+			 tag: nil
+			 slots: nil
+			 classSlots: nil).
+	self deny: (self aroundCommandExecution: [ command removePackageIfEmptyNamed: self generatedPackageName ]).
+	self assert: (self packageOrganizer hasPackage: self generatedPackageName).
+	self withoutEpiceaDuring: [ (self classNamed: 'MCPCreateClassCommandTestGenerated') removeFromSystem ].
+	self assert: (self aroundCommandExecution: [ command removePackageIfEmptyNamed: self generatedPackageName ]).
+	self deny: (self packageOrganizer hasPackage: self generatedPackageName)
+]
+
+{ #category : 'tests' }
 MCPCreateClassCommandTest >> testClassesOfTheWrongKindAreRefusedSayingWhatTheRoleNeeds [
 
 	| error |

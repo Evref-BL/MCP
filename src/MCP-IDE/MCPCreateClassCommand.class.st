@@ -78,7 +78,7 @@ MCPCreateClassCommand >> execute [
 	MCPImageLookup newClassName: self className.
 	packageIsNew := (self packageOrganizer hasPackage: self packageName) not.
 	self ensurePackageNamed: self packageName.
-	^ [ self buildClass ] ifCurtailed: [ packageIsNew ifTrue: [ self removePackageNamed: self packageName ] ]
+	^ [ self buildClass ] ifCurtailed: [ packageIsNew ifTrue: [ self removePackageIfEmptyNamed: self packageName ] ]
 ]
 
 { #category : 'accessing' }
@@ -103,15 +103,6 @@ MCPCreateClassCommand >> packageName [
 MCPCreateClassCommand >> packageName: aString [
 
 	packageName := aString
-]
-
-{ #category : 'private' }
-MCPCreateClassCommand >> removePackageNamed: aPackageName [
-	"Only while it holds no class: one may have landed in it before the build failed."
-
-	self packageOrganizer
-		packageNamed: aPackageName
-		ifPresent: [ :package | package definedClasses ifEmpty: [ self packageOrganizer removePackage: package ] ]
 ]
 
 { #category : 'private' }

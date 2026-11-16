@@ -22,3 +22,15 @@ MCPCommand >> execute [
 
 	self subclassResponsibility
 ]
+
+{ #category : 'private' }
+MCPCommand >> removePackageIfEmptyNamed: aPackageName [
+	"Whether the package named aPackageName was removed: only while it defines no class, and never the one Pharo keeps for classes in no package."
+
+	aPackageName = '_UnpackagedPackage' ifTrue: [ ^ false ].
+	self packageOrganizer packageNamed: aPackageName ifPresent: [ :package |
+			package definedClasses ifEmpty: [
+					self packageOrganizer removePackage: package.
+					^ true ] ].
+	^ false
+]

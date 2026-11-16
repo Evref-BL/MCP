@@ -149,11 +149,8 @@ MCPRemoveClassesCommand >> referencesOutsideRemoval [
 { #category : 'private' }
 MCPRemoveClassesCommand >> removePackageIfNowEmptyNamed: aPackageName recordingInto: removedPackageNamesCollection [
 
-	aPackageName = '_UnpackagedPackage' ifTrue: [ ^ self ].
-	self packageOrganizer packageNamed: aPackageName ifPresent: [ :package |
-			package definedClasses isEmpty ifTrue: [
-					self packageOrganizer removePackage: package.
-					(removedPackageNamesCollection includes: aPackageName) ifFalse: [ removedPackageNamesCollection add: aPackageName ] ] ]
+	(self removePackageIfEmptyNamed: aPackageName) ifTrue: [
+		(removedPackageNamesCollection includes: aPackageName) ifFalse: [ removedPackageNamesCollection add: aPackageName ] ]
 ]
 
 { #category : 'accessing' }

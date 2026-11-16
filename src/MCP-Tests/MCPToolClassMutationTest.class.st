@@ -453,7 +453,7 @@ MCPToolClassMutationTest >> testCreateRefusalOfAnExistingClassSaysHowToReachClas
 
 { #category : 'tests - create' }
 MCPToolClassMutationTest >> testCreateRefusesAListWrittenAsOneName [
-	"A client may send a list as the one string of an array. In the arguments whose names the class builder takes as they are, it is named as a list, and nothing is made: no class, no package."
+	"A client may send a list as the one string of an array. In the arguments whose names the class builder takes as they are, it is named as a list, with the string under name as for a class name, and nothing is made: no class, no package."
 
 	{
 		#( 'slots' 'a slot name' ).
@@ -468,7 +468,7 @@ MCPToolClassMutationTest >> testCreateRefusesAListWrittenAsOneName [
 			self assert: (result at: #isError).
 			self assert: (error at: #errorCode) equals: 'NameIsAList'.
 			self assert: (error at: #argument) equals: each first.
-			self assert: (error at: #list) equals: '["Title" "Text"]'.
+			self assert: (error at: #name) equals: '["Title" "Text"]'.
 			self
 				assert: (error at: #message)
 				equals:

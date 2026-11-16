@@ -330,7 +330,7 @@ MCPCommandError class >> signalMissingTag: aTag packageName: aPackageName forCla
 
 { #category : 'signaling - names' }
 MCPCommandError class >> signalNameIsAList: aString kind: aKind argument: anArgumentName [
-	"aString, an entry of anArgumentName that takes one name per entry, such as a slot name, is several names written as one string. aKind is what the entry should have been, with its article. A class name that is a list answers ClassNameIsAList instead."
+	"aString, an entry of anArgumentName that takes one name per entry, such as a slot name, is several names written as one string. aKind is what the entry should have been, with its article. A class name that is a list answers ClassNameIsAList instead, which keeps the string under name too."
 
 	^ self
 		  signalErrorCode: #NameIsAList
@@ -341,7 +341,7 @@ MCPCommandError class >> signalNameIsAList: aString kind: aKind argument: anArgu
 				   skipped: false)
 		  details: {
 				  (#argument -> anArgumentName).
-				  (#list -> aString) } asDictionary
+				  (#name -> aString) } asDictionary
 ]
 
 { #category : 'signaling - names' }
