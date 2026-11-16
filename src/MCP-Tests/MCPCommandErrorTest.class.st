@@ -300,7 +300,9 @@ MCPCommandErrorTest >> testMissingMethodErrorSuggestsFirstExactSuperclassMatch [
 	self assert: (suggestions first at: #class) equals: 'Object'.
 	self assert: (suggestions first at: #side) equals: 'instance'.
 	self assert: (suggestions first at: #selector) equals: 'yourself'.
-	self assert: ((details at: #message) includesSubstring: 'Exact matches: Object>>yourself')
+	self
+		assert: (details at: #message)
+		equals: 'Method MCPToolGetMethodTestTarget>>yourself does not exist. MCPToolGetMethodTestTarget inherits Object>>yourself.'
 ]
 
 { #category : 'tests' }

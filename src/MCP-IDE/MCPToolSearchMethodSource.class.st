@@ -105,6 +105,22 @@ MCPToolSearchMethodSource >> redundantKeys [
 	^ #( isExtension protocol line lineNumber )
 ]
 
+{ #category : 'private - results' }
+MCPToolSearchMethodSource >> successSummaryForRequest: request scopeQuery: scopeQuery page: page [
+	"Source writes a selector's keywords apart, each with its argument, so a filter spelled as a selector of several keywords, such as draw:at:, misses every method that implements or sends it. When it finds nothing, the summary names the tools that look for a selector, with the scope the call gave."
+
+	| selector summary |
+	summary := super successSummaryForRequest: request scopeQuery: scopeQuery page: page.
+	page totalCount = 0 ifFalse: [ ^ summary ].
+	selector := self filterPatternFromRequest: request.
+	selector numArgs > 1 ifFalse: [ ^ summary ].
+	^ String streamContents: [ :stream |
+			  stream << summary << ' ' << selector << ' is a selector, and source separates its keywords with arguments. '.
+			  (request hasArgumentNamed: 'scope') ifTrue: [ stream << 'With the same scope, ' ].
+			  stream << 'method_reference_search with name ' << selector
+			  << ' finds its implementors and senders, method_search with selector ' << selector << ' its implementors.' ]
+]
+
 { #category : 'private - schema' }
 MCPToolSearchMethodSource >> supportedFilterModes [
 

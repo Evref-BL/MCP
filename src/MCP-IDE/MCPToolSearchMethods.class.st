@@ -66,6 +66,19 @@ MCPToolSearchMethods >> metadataFilterInputProperties [
 			   description: 'Keep methods whose protocol contains this text. Case matters.') }
 ]
 
+{ #category : 'private - results' }
+MCPToolSearchMethods >> successSummaryForRequest: request scopeQuery: scopeQuery page: page [
+	"A search given no scope, selector or protocol lists every method in the image. A client that drops an argument the schema does not have, such as class, sends exactly that, so the summary says what narrows it."
+
+	| summary |
+	summary := super successSummaryForRequest: request scopeQuery: scopeQuery page: page.
+	((request hasArgumentNamed: 'scope') or: [ self filtersRequest: request ]) ifTrue: [ ^ summary ].
+	^ String streamContents: [ :stream |
+			  stream << summary
+			  <<
+			  ' This search names no scope, selector or protocol: scope.classes keeps the methods of the classes it names, and selector the methods whose selector contains its text.' ]
+]
+
 { #category : 'metadata' }
 MCPToolSearchMethods >> title [
 

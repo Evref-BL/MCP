@@ -83,6 +83,16 @@ MCPCommandError class >> methodReferenceForClassName: className selector: select
 ]
 
 { #category : 'private - suggestions' }
+MCPCommandError class >> methodReferenceForSuggestion: aSuggestion [
+	"The method a suggestion names, written as Foo>>bar or Foo class>>bar."
+
+	^ self
+		  methodReferenceForClassName: (aSuggestion at: #class)
+		  selector: (aSuggestion at: #selector)
+		  classSide: (aSuggestion at: #side) = 'class'
+]
+
+{ #category : 'private - suggestions' }
 MCPCommandError class >> methodSuggestionForBehavior: aBehavior selector: aSelectorSymbol [
 
 	| protocolName |
@@ -96,16 +106,6 @@ MCPCommandError class >> methodSuggestionForBehavior: aBehavior selector: aSelec
 			    ifFalse: [ 'instance' ])).
 		  (#selector -> aSelectorSymbol asString).
 		  (#protocol -> protocolName) } asDictionary
-]
-
-{ #category : 'private - suggestions' }
-MCPCommandError class >> methodSuggestionsForClass: targetClass classSide: classSide selector: selectorSymbol [
-
-	^ Array streamContents: [ :stream |
-			  (self oppositeSideMethodSuggestionForClass: targetClass classSide: classSide selector: selectorSymbol) ifNotNil: [
-				  :suggestion | stream nextPut: suggestion ].
-			  (self superclassMethodSuggestionForClass: targetClass classSide: classSide selector: selectorSymbol) ifNotNil: [ :suggestion |
-				  stream nextPut: suggestion ] ]
 ]
 
 { #category : 'private - names' }
@@ -395,21 +395,24 @@ MCPCommandError class >> signalMissingMethod: aSelectorString in: aBehavior [
 
 { #category : 'signaling' }
 MCPCommandError class >> signalMissingMethod: aSelectorString in: aBehavior closingWhenNoMatch: aStringOrNil [
-	"aBehavior, which the caller has resolved, has no method aSelectorString of its own. The methods of that selector the caller may have meant are named: on the other side, or the first one up the hierarchy. When none is, aStringOrNil, if given, ends the message with what the caller's tool offers instead; a method named is already the next step."
+	"aBehavior, which the caller has resolved, has no method aSelectorString of its own. The methods of that selector the caller may have meant are named: the one on the other side as a match, and the first one up the hierarchy as the one aBehavior inherits, since a send to it runs that one. When none is, aStringOrNil, if given, ends the message with what the caller's tool offers instead; a method named is already the next step."
 
-	| className classSide details message suggestions |
+	| className classSide details inherited message opposite selector suggestions |
 	className := aBehavior instanceSide name asString.
 	classSide := aBehavior isClassSide.
-	suggestions := self methodSuggestionsForClass: aBehavior instanceSide classSide: classSide selector: aSelectorString asSymbol.
+	selector := aSelectorString asSymbol.
+	opposite := self oppositeSideMethodSuggestionForClass: aBehavior instanceSide classSide: classSide selector: selector.
+	inherited := self superclassMethodSuggestionForClass: aBehavior instanceSide classSide: classSide selector: selector.
+	suggestions := {
+		               opposite.
+		               inherited } select: [ :each | each isNotNil ].
 	message := String streamContents: [ :stream |
 			           stream << 'Method ' << (self methodReferenceForClassName: className selector: aSelectorString classSide: classSide)
 			           << ' does not exist.'.
-			           suggestions ifEmpty: [ aStringOrNil ifNotNil: [ :closing | stream << ' ' << closing ] ] ifNotEmpty: [
-					           stream << ' Exact matches: ' << (', ' join: (suggestions collect: [ :each |
-							             self
-								             methodReferenceForClassName: (each at: #class)
-								             selector: (each at: #selector)
-								             classSide: (each at: #side) = 'class' ])) << '.' ] ].
+			           opposite ifNotNil: [ stream << ' Exact matches: ' << (self methodReferenceForSuggestion: opposite) << '.' ].
+			           inherited ifNotNil: [
+				           stream << ' ' << aBehavior name << ' inherits ' << (self methodReferenceForSuggestion: inherited) << '.' ].
+			           suggestions ifEmpty: [ aStringOrNil ifNotNil: [ :closing | stream << ' ' << closing ] ] ].
 	details := {
 		           (#class -> className).
 		           (#side -> (classSide

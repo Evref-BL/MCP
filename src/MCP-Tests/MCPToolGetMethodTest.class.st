@@ -75,6 +75,24 @@ MCPToolGetMethodTest >> testGetMethodOfAClassWrittenWithItsSideRefusesSideInstan
 ]
 
 { #category : 'tests' }
+MCPToolGetMethodTest >> testGetMethodOfAnInheritedMethodNamesTheClassItIsInheritedFrom [
+	"A class with no method of its own for a selector may still understand it: the miss says which class it inherits the method from, on either side."
+
+	| result |
+	result := self callToolWith: {
+			          (#class -> 'MCPToolGetMethodTestTarget').
+			          (#selector -> 'printOn:') } asDictionary.
+	self assert: (self resultIndicatesError: result).
+	self
+		assert: ((self errorFrom: result) at: #message)
+		equals: 'Method MCPToolGetMethodTestTarget>>printOn: does not exist. MCPToolGetMethodTestTarget inherits Object>>printOn:.'.
+	result := self callToolWith: { (#selector -> 'MCPToolGetMethodTestTarget class>>new') } asDictionary.
+	self
+		assert: ((self errorFrom: result) at: #message)
+		equals: 'Method MCPToolGetMethodTestTarget class>>new does not exist. MCPToolGetMethodTestTarget class inherits Behavior>>new.'
+]
+
+{ #category : 'tests' }
 MCPToolGetMethodTest >> testGetMethodReadsABareSelectorOnTheOnlySideThatHasIt [
 	"A bare selector given no side that only the class side has names one method, so it is read there, with its variables, and the answer says which side it is on."
 
