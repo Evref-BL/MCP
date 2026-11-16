@@ -31,6 +31,15 @@ MCPToolMethodSearchTest >> referencesOf: methodEntries [
 ]
 
 { #category : 'private' }
+MCPToolMethodSearchTest >> summaryOf: aTool forArguments: arguments page: page [
+	"The summary aTool gives a call with these arguments that found page, built without running the search."
+
+	| request |
+	request := aTool requestFromToolCallArguments: arguments.
+	^ aTool successSummaryForRequest: request scopeQuery: (aTool scopeQueryFromRequest: request) page: page
+]
+
+{ #category : 'private' }
 MCPToolMethodSearchTest >> targetClassName [
 
 	^ MCPToolMethodSearchTestTarget name
@@ -93,29 +102,34 @@ MCPToolMethodSearchTest >> testAScopeEntryWrittenWithItsSideSelectsItsClass [
 
 { #category : 'tests' }
 MCPToolMethodSearchTest >> testASearchGivenNothingToNarrowItSaysWhatNarrowsIt [
-	"A search given no scope, selector or protocol lists every method in the image, which is what a call sends when its client drops an argument the schema does not have, such as class. The answer names what narrows it. A page built here stands in for a sweep of the image."
+	"A search whose scope selects no class or package, and that keeps no selector or protocol, lists every method in the image, which is what a call sends when its client drops an argument the schema does not have. The answer names what narrows it, also when the scope keeps one side. A page built here stands in for a sweep of the image."
 
-	| page scopeQuery tool |
+	| hint page tool |
 	tool := MCPToolSearchMethods new.
-	scopeQuery := MCPCompiledMethodScopeQuery new.
 	page := tool queryPageForEntries: (1 to: 30) asArray limit: 25 offset: 0.
+	hint := ' This search names no class, package, selector or protocol: scope.classes keeps the methods of the classes it names, and selector the methods whose selector contains its text.'.
 	self
-		assert: (tool successSummaryForRequest: (tool requestFromToolCallArguments: Dictionary new) scopeQuery: scopeQuery page: page)
-		equals:
-		'25 of 30 methods in the image. Next page: offset 25, or narrow the search. This search names no scope, selector or protocol: scope.classes keeps the methods of the classes it names, and selector the methods whose selector contains its text.'.
+		assert: (self summaryOf: tool forArguments: Dictionary new page: page)
+		equals: '25 of 30 methods in the image. Next page: offset 25, or narrow the search.' , hint.
 	self
-		assert: (tool
-				 successSummaryForRequest: (tool requestFromToolCallArguments: { (#protocol -> 'printing') } asDictionary)
-				 scopeQuery: scopeQuery
+		assert: (self summaryOf: tool forArguments: { (self searchScope: { (#side -> 'class') }) } asDictionary page: page)
+		equals: '25 of 30 methods in the image, class side. Next page: offset 25, or narrow the search.' , hint.
+	self
+		assert: (self summaryOf: tool forArguments: { (#protocol -> 'printing') } asDictionary page: page)
+		equals: '25 of 30 methods match in the image. Next page: offset 25, or narrow the search.'.
+	self
+		assert: (self
+				 summaryOf: tool
+				 forArguments: { (self searchScope: { (#classes -> #( 'MCPToolMethodSearchTestTarget' )) }) } asDictionary
 				 page: page)
-		equals: '25 of 30 methods match in the image. Next page: offset 25, or narrow the search.'
+		equals: '25 of 30 methods in MCPToolMethodSearchTestTarget. Next page: offset 25, or narrow the search.'
 ]
 
 { #category : 'tests' }
 MCPToolMethodSearchTest >> testASourceSearchForASelectorThatFindsNothingNamesTheSelectorSearches [
-	"Source writes a selector's keywords apart, each with its argument, so a filter spelled as a selector of several keywords misses the methods that send it. The answer names the tools that look for a selector, with the scope the call gave. A filter that is no selector misses with nothing more to say."
+	"Source writes an argument after each keyword of a selector, so a filter spelled as a selector of several keywords misses the methods that send it. The answer says why and names the tools that look for a selector, with the scope the call gave, if any; an empty page stands in for a sweep of the image. A filter that is no selector misses with nothing more to say."
 
-	| result |
+	| result tool |
 	result := self callToolNamed: 'method_source_search' withArguments: {
 			          (#filter -> 'with:with:with:').
 			          (self searchScope: { (#classes -> #( 'MCPToolGetMethodTestTarget' )) }) } asDictionary.
@@ -123,7 +137,15 @@ MCPToolMethodSearchTest >> testASourceSearchForASelectorThatFindsNothingNamesThe
 	self
 		assert: (self summaryFrom: result)
 		equals:
-		'No methods match in MCPToolGetMethodTestTarget. with:with:with: is a selector, and source separates its keywords with arguments. With the same scope, method_reference_search with name with:with:with: finds its implementors and senders, method_search with selector with:with:with: its implementors.'.
+		'No methods match in MCPToolGetMethodTestTarget. with:with:with: is a selector: source writes an argument after each of its keywords, so a method that implements or sends it does not contain that text. With the same scope, method_reference_search with name with:with:with: finds its implementors and senders, and method_search with selector with:with:with: finds its implementors.'.
+	tool := MCPToolSearchMethodSource new.
+	self
+		assert: (self
+				 summaryOf: tool
+				 forArguments: { (#filter -> 'with:with:with:') } asDictionary
+				 page: (tool queryPageForEntries: #(  ) limit: 25 offset: 0))
+		equals:
+		'No methods match in the image. with:with:with: is a selector: source writes an argument after each of its keywords, so a method that implements or sends it does not contain that text. method_reference_search with name with:with:with: finds its implementors and senders, and method_search with selector with:with:with: finds its implementors.'.
 	result := self callToolNamed: 'method_source_search' withArguments: {
 			          (#filter -> 'with: nothing with:').
 			          (self searchScope: { (#classes -> #( 'MCPToolGetMethodTestTarget' )) }) } asDictionary.

@@ -107,7 +107,7 @@ MCPToolSearchMethodSource >> redundantKeys [
 
 { #category : 'private - results' }
 MCPToolSearchMethodSource >> successSummaryForRequest: request scopeQuery: scopeQuery page: page [
-	"Source writes a selector's keywords apart, each with its argument, so a filter spelled as a selector of several keywords, such as draw:at:, misses every method that implements or sends it. When it finds nothing, the summary names the tools that look for a selector, with the scope the call gave."
+	"Source writes an argument after each keyword of a selector, so a filter spelled as a selector of several keywords misses every method that implements or sends it. When it finds nothing, the summary says why and names the tools that look for a selector, with the scope the call gave."
 
 	| selector summary |
 	summary := super successSummaryForRequest: request scopeQuery: scopeQuery page: page.
@@ -115,10 +115,12 @@ MCPToolSearchMethodSource >> successSummaryForRequest: request scopeQuery: scope
 	selector := self filterPatternFromRequest: request.
 	selector numArgs > 1 ifFalse: [ ^ summary ].
 	^ String streamContents: [ :stream |
-			  stream << summary << ' ' << selector << ' is a selector, and source separates its keywords with arguments. '.
+			  stream << summary << ' ' << selector
+			  <<
+			  ' is a selector: source writes an argument after each of its keywords, so a method that implements or sends it does not contain that text. '.
 			  (request hasArgumentNamed: 'scope') ifTrue: [ stream << 'With the same scope, ' ].
 			  stream << 'method_reference_search with name ' << selector
-			  << ' finds its implementors and senders, method_search with selector ' << selector << ' its implementors.' ]
+			  << ' finds its implementors and senders, and method_search with selector ' << selector << ' finds its implementors.' ]
 ]
 
 { #category : 'private - schema' }
