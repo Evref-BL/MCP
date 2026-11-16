@@ -151,7 +151,7 @@ MCPToolSearch >> executeWithRequest: request [
 
 { #category : 'private - results' }
 MCPToolSearch >> failureMessageForRequest: request error: anError [
-	"Unable to search methods in EvalLedger (RegexSyntaxError): the message."
+	"Unable to search methods in ZooKeeper (RegexSyntaxError): the message."
 
 	^ String streamContents: [ :stream |
 			  stream

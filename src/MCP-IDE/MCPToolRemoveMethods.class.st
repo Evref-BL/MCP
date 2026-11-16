@@ -151,7 +151,7 @@ MCPToolRemoveMethods >> failureMessageForClassNamed: className classSide: classS
 
 { #category : 'private - warnings' }
 MCPToolRemoveMethods >> hierarchySendWarningFor: aSelector sends: brokenSends from: aBehavior [
-	"EvalPayroll>>lines and EvalPayroll>>total still send employees to self, which EvalPayroll no longer understands."
+	"ZooKeeper>>roster and ZooKeeper>>feedAll still send animals to self, which ZooKeeper no longer understands."
 
 	| receivers |
 	receivers := Set new.
@@ -281,7 +281,7 @@ MCPToolRemoveMethods >> sendersInImageOf: aSelector [
 
 { #category : 'private' }
 MCPToolRemoveMethods >> successSummaryForClassName: className classSide: classSide selectors: selectors [
-	"Removed EvalPayroll>>employees. for one method, Removed 2 methods from EvalRect class: calcArea, describe. for several."
+	"Removed ZooKeeper>>animals. for one method, Removed 2 methods from ZooLion class: dailyRation, roar. for several."
 
 	^ String streamContents: [ :stream |
 			  stream nextPutAll: 'Removed '.

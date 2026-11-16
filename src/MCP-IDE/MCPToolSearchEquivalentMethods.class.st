@@ -33,7 +33,7 @@ MCPToolSearchEquivalentMethods >> buildInputSchema [
 
 { #category : 'private - results' }
 MCPToolSearchEquivalentMethods >> countTextForRequest: request page: page [
-	"2 methods equivalent to EvalRect>>area."
+	"2 methods equivalent to ZooLion>>dailyRation."
 
 	| referenceMethod |
 	referenceMethod := self referenceMethodFromRequest: request.

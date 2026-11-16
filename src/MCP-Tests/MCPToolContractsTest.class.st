@@ -1384,7 +1384,7 @@ MCPToolContractsTest >> testEvaluateStoppedTextNamesTheLimitAndTheWayToRunLonger
 	text := tool contentTextForStructuredContent: (Dictionary new
 			         at: #summary put: (tool stoppedMessageFor: 30);
 			         at: #error put: (Dictionary new
-					          at: #stoppedIn put: (tool collapsedFrameLines: (Array new: 20 withAll: 'EvalPayroll>>employees') deeper: true);
+					          at: #stoppedIn put: (tool collapsedFrameLines: (Array new: 20 withAll: 'ZooKeeper>>animals') deeper: true);
 					          at: #hint put: tool longerWorkHintLines;
 					          at: #timeoutSeconds put: 30;
 					          yourself);
@@ -1392,7 +1392,7 @@ MCPToolContractsTest >> testEvaluateStoppedTextNamesTheLimitAndTheWayToRunLonger
 	self assert: text equals: (String lf join: 'Evaluation stopped after 30 s, its time limit.
 What it changed before then stays changed.
 Stopped in:
-EvalPayroll>>employees, at least 20 times in a row
+ZooKeeper>>animals, at least 20 times in a row
 Run longer work in a forked process that writes its result to a file:
 [ | file result |
 	file := FileLocator imageDirectory / ''result.txt''.
@@ -1513,7 +1513,7 @@ MCPToolContractsTest >> testEvaluateStopsAWaitInACriticalSectionWithoutSignallin
 
 { #category : 'tests - evaluate' }
 MCPToolContractsTest >> testEvaluateStopsAnEndlessRecursionWithinASecondOrTwo [
-	"payroll #3's recursion grew the image by more than a GB a second until its time limit, and stopping a stack that deep took longer than the limit. Its stack passes the bound within a fraction of a second, so it is stopped long before the limit, having grown the image by a few hundred MB."
+	"An eval run's recursion grew the image by more than a GB a second until its time limit, and stopping a stack that deep took longer than the limit. Its stack passes the bound within a fraction of a second, so it is stopped long before the limit, having grown the image by a few hundred MB."
 
 	| fixture milliseconds result |
 	self timeLimit: 30 seconds.
@@ -1524,11 +1524,11 @@ MCPToolContractsTest >> testEvaluateStopsAnEndlessRecursionWithinASecondOrTwo [
 		           classSlots: #(  ).
 	[
 		self
-			ensureMethodSource: 'employees
-	^ self employees sorted'
+			ensureMethodSource: 'members
+	^ self members sorted'
 			protocol: 'fixture'
 			on: fixture.
-		milliseconds := Time millisecondsToRun: [ result := self evaluate: 'EvalStopRecursionFixture new employees' within: 30 ] ]
+		milliseconds := Time millisecondsToRun: [ result := self evaluate: 'EvalStopRecursionFixture new members' within: 30 ] ]
 		ensure: [ self removeClassNamed: 'EvalStopRecursionFixture' ].
 	self assert: (self resultIndicatesError: result).
 	self

@@ -246,7 +246,7 @@ MCPToolRunCritiques >> hitDataForCritique: critique rule: rule fallbackEntity: f
 
 { #category : 'private - results' }
 MCPToolRunCritiques >> hitTextOn: stream for: hit [
-	"A method, with the line of its stored source where the hit starts and the code there; a class by its name; a package as package Eval-Shapes; anything else as it prints."
+	"A method, with the line of its stored source where the hit starts and the code there; a class by its name; a package as package Zoo-Animals; anything else as it prints."
 
 	stream
 		nextPut: Character lf;

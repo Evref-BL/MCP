@@ -93,7 +93,7 @@ MCPStructuredTestResult class >> locationOf: aContext in: aTestCase [
 
 { #category : 'locations' }
 MCPStructuredTestResult class >> locationTextOf: aContext [
-	"The receiver's class, the method's class in parentheses when it differs, and the selector: EvalPerishableItem class(EvalStockItem class)>>register:."
+	"The receiver's class, the method's class in parentheses when it differs, and the selector: ZooLion class(ZooAnimal class)>>arrivedOn:."
 
 	| method receiverClass |
 	method := self homeMethodOf: aContext.

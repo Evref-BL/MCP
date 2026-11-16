@@ -17,7 +17,7 @@ MCPToolSearchMethodReferences class >> toolName [
 
 { #category : 'private - results' }
 MCPToolSearchMethodReferences >> countTextForRequest: request page: page [
-	"What was looked for and how much of it was found, counted over every hit rather than the page: 1 implementor and 3 senders of calcArea, 25 of 40 methods refer to EvalRect. Nothing found names the kinds that were looked for."
+	"What was looked for and how much of it was found, counted over every hit rather than the page: 1 implementor and 3 senders of dailyRation, 25 of 40 methods refer to ZooLion. Nothing found names the kinds that were looked for."
 
 	| counts name offset |
 	name := self filterPatternFromRequest: request.
@@ -143,7 +143,7 @@ MCPToolSearchMethodReferences >> groupLabelForKind: aKind [
 
 { #category : 'private - results' }
 MCPToolSearchMethodReferences >> hitCountTextForCounts: counts name: aName [
-	"1 implementor and 3 senders of calcArea, 3 methods refer to EvalRect, 1 method uses total."
+	"1 implementor and 3 senders of dailyRation, 3 methods refer to ZooLion, 1 method uses weight."
 
 	^ String streamContents: [ :stream |
 			  (counts includesKey: 'class')
@@ -229,7 +229,7 @@ MCPToolSearchMethodReferences >> noHitHintForKinds: kinds name: aName [
 
 { #category : 'private - results' }
 MCPToolSearchMethodReferences >> noHitTextForKinds: kinds name: aName [
-	"No senders of audit, No implementors or senders of audit, No methods refer to EvalRect, No methods use total."
+	"No senders of feed, No implementors or senders of feed, No methods refer to ZooLion, No methods use weight."
 
 	^ String streamContents: [ :stream |
 			  (kinds includes: 'class')
@@ -312,7 +312,7 @@ MCPToolSearchMethodReferences >> requestedKindFromRequest: request [
 
 { #category : 'private - results' }
 MCPToolSearchMethodReferences >> selectorInMethodName: aName [
-	"The selector a method name such as EvalCanvas>>#draw:at: carries: what follows its last >>, without a leading #."
+	"The selector a method name such as ZooKeeper>>#feed:at: carries: what follows its last >>, without a leading #."
 
 	| selector |
 	selector := (aName splitOn: '>>') last trimBoth.

@@ -612,26 +612,26 @@ MCPToolClassMutationTest >> testRefactoringWarningListsEveryImpact [
 				 refactoringWarningSummaryFor: nil
 				 action: 'removeSlot'
 				 requestedContext: {
-						 (#class -> 'EvalShape').
-						 (#slot -> 'color') } asDictionary
-				 impactMessages: #( 'EvalShape>>area reads color.' 'EvalShape>>describe writes color' ))
+						 (#class -> 'ZooAnimal').
+						 (#slot -> 'weight') } asDictionary
+				 impactMessages: #( 'ZooAnimal>>dailyRation reads weight.' 'ZooAnimal>>weigh: writes weight' ))
 		equals:
-		'Refactoring warning for removeSlot on EvalShape slot color: EvalShape>>area reads color; EvalShape>>describe writes color. Rerun with force: true to proceed anyway.'.
+		'Refactoring warning for removeSlot on ZooAnimal slot weight: ZooAnimal>>dailyRation reads weight; ZooAnimal>>weigh: writes weight. Rerun with force: true to proceed anyway.'.
 	self
 		assert: (MCPToolUpdateClass new
 				 refactoringWarningSummaryFor: nil
 				 action: 'removeSlot'
-				 requestedContext: { (#class -> 'EvalShape') } asDictionary
+				 requestedContext: { (#class -> 'ZooAnimal') } asDictionary
 				 impactMessages: #(  ))
-		equals: 'Refactoring warning for removeSlot on EvalShape. Rerun with force: true to proceed anyway.'.
+		equals: 'Refactoring warning for removeSlot on ZooAnimal. Rerun with force: true to proceed anyway.'.
 	self
 		assert: (MCPToolUpdateClass new
 				 refactoringWarningSummaryFor: nil
 				 action: 'pullUpSlot'
-				 requestedContext: { (#class -> 'EvalShape') } asDictionary
+				 requestedContext: { (#class -> 'ZooAnimal') } asDictionary
 				 impactMessages: #( 'Not all subclasses have it. Pull it up anyway?' ))
 		equals:
-		'Refactoring warning for pullUpSlot on EvalShape: Not all subclasses have it. Pull it up anyway? Rerun with force: true to proceed anyway.'
+		'Refactoring warning for pullUpSlot on ZooAnimal: Not all subclasses have it. Pull it up anyway? Rerun with force: true to proceed anyway.'
 ]
 
 { #category : 'tests - update' }
@@ -1096,19 +1096,19 @@ MCPToolClassMutationTest >> testUpdatePullUpSlotNamedOnItsHolderSaysWhichClassTo
 	self
 		createClassNamed: 'MCPToolClassMutationTestPullUpChild'
 		superclassName: 'MCPToolClassMutationTestPullUpParent'
-		slots: #( colour )
+		slots: #( weight )
 		classSlots: #(  ).
 	result := self callToolWith: (self
 			           updateRequestArgumentsForSlotAction: 'pullUp'
 			           className: 'MCPToolClassMutationTestPullUpChild'
-			           slotName: 'colour'
+			           slotName: 'weight'
 			           classSide: false).
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (error at: #errorCode) equals: 'PullUpSlotRefactoringError'.
 	self assert: ((error at: #message) includesSubstring:
-			 'name MCPToolClassMutationTestPullUpParent to move colour up from MCPToolClassMutationTestPullUpChild').
-	self assert: (self classNamed: 'MCPToolClassMutationTestPullUpChild') slotNames equals: #( colour )
+			 'name MCPToolClassMutationTestPullUpParent to move weight up from MCPToolClassMutationTestPullUpChild').
+	self assert: (self classNamed: 'MCPToolClassMutationTestPullUpChild') slotNames equals: #( weight )
 ]
 
 { #category : 'tests - update' }
@@ -1119,8 +1119,8 @@ MCPToolClassMutationTest >> testUpdatePullUpSlotRefusesASlotATraitSupplies [
 	self withoutEpiceaDuring: [
 			| trait |
 			self packageOrganizer ensurePackage: self generatedPackageName.
-			trait := (Trait << #MCPToolClassMutationTestPullUpColoured)
-				         slots: #( colour );
+			trait := (Trait << #MCPToolClassMutationTestPullUpWeighted)
+				         slots: #( weight );
 				         package: self generatedPackageName;
 				         tag: self generatedTagName;
 				         install.
@@ -1132,12 +1132,12 @@ MCPToolClassMutationTest >> testUpdatePullUpSlotRefusesASlotATraitSupplies [
 	result := self callToolWith: (self
 			           updateRequestArgumentsForSlotAction: 'pullUp'
 			           className: 'MCPToolClassMutationTestPullUpTraitUser'
-			           slotName: 'colour'
+			           slotName: 'weight'
 			           classSide: false).
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (error at: #errorCode) equals: 'PullUpSlotRefactoringError'.
-	self assert: ((error at: #message) includesSubstring: 'which the trait MCPToolClassMutationTestPullUpColoured supplies').
+	self assert: ((error at: #message) includesSubstring: 'which the trait MCPToolClassMutationTestPullUpWeighted supplies').
 	self deny: ((error at: #message) includesSubstring: ': name ')
 ]
 
