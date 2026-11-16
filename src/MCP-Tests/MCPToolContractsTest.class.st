@@ -1963,6 +1963,55 @@ MCPToolContractsTest >> testMCPsOwnTestFixturesAreNotServed [
 ]
 
 { #category : 'tests - evaluate' }
+MCPToolContractsTest >> testMessageNotUnderstoodByAClassSaysItsInstancesUnderstandIt [
+	"A constructor compiled on the instance side, then sent to the class, was answered with the class side's selectors that resembled it."
+
+	| error |
+	error := self errorFrom:
+		         (self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> 'OrderedCollection addFirst: 1') } asDictionary).
+	self
+		assert: (error at: #note)
+		equals:
+		'Instances of OrderedCollection understand addFirst:, but OrderedCollection itself does not: addFirst: is an instance-side method. Send it to an instance, or compile it with method_compile and side class to send it to OrderedCollection.'.
+	self deny: (error includesKey: #suggestedSelectors)
+]
+
+{ #category : 'tests - evaluate' }
+MCPToolContractsTest >> testMessageNotUnderstoodByAnInstanceSaysItsClassUnderstandsIt [
+	"Every class understands name, which Class implements, so an instance that does not lacks an accessor rather than was sent a class-side message: only a method a class side of its own hierarchy defines says so."
+
+	| error |
+	error := self errorFrom:
+		         (self
+			          callDiscoveredToolNamed: 'evaluate'
+			          withArguments: { (#code -> 'OrderedCollection new withAll: #( 1 )') } asDictionary).
+	self
+		assert: (error at: #note)
+		equals:
+		'OrderedCollection itself understands withAll:, but its instances do not: withAll: is a class-side method. Send it to OrderedCollection, or compile it with method_compile and side instance to send it to an instance.'.
+	error := self errorFrom: (self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> 'Object new name') } asDictionary).
+	self deny: (error includesKey: #note)
+]
+
+{ #category : 'tests - evaluate' }
+MCPToolContractsTest >> testMessageNotUnderstoodSaysTwoKeywordMessagesRunTogether [
+	"sorted:collect:, which nothing implements, was meant as sorted: then collect:. The selectors it resembles, sorted: among them, read as blaming the receiver; the compile critique says what was meant, and so does the failure, in place of them."
+
+	| error result |
+	result := self
+		          callDiscoveredToolNamed: 'evaluate'
+		          withArguments:
+		          { (#code -> '#( 3 1 2 ) asOrderedCollection sorted: [ :a :b | a < b ] collect: [ :each | each ]') } asDictionary.
+	error := self errorFrom: result.
+	self
+		assert: (error at: #note)
+		equals:
+		'sorted:collect: is one message. To send collect: to what sorted: answers, put the sorted: send in parentheses: (... sorted: ...) collect: ...'.
+	self deny: (error includesKey: #suggestedSelectors).
+	self assert: (self firstTextFromToolResult: result) lines second equals: (error at: #note)
+]
+
+{ #category : 'tests - evaluate' }
 MCPToolContractsTest >> testMessageNotUnderstoodSuggestsNearMissSelectors [
 	"Thirty-five failures in a day of real use were guesses at an API; the receiver knows which selectors the guess resembles."
 
@@ -2008,6 +2057,31 @@ MCPToolContractsTest >> testMessageProcessorUsesSubclassJRPCHandlerOverride [
 	result := response result.
 	self assert: response class equals: JRPCSuccessResponseObject.
 	self assert: (result at: #source) equals: 'subclass'
+]
+
+{ #category : 'tests - evaluate' }
+MCPToolContractsTest >> testMessageSentToNilNamesTheMethodThatSentIt [
+	"nil's own selectors, such as addModelItemsToWindowMenu: for add:, are nobody's guess. Which method sent the message says where the nil came from."
+
+	| error result |
+	result := self
+		          callDiscoveredToolNamed: 'evaluate'
+		          withArguments: { (#code -> 'MCPToolRunTestsRaiser new addToNil') } asDictionary.
+	error := self errorFrom: result.
+	self assert: (error at: #note) equals: 'MCPToolRunTestsRaiser>>addToNil sent + to nil.'.
+	self deny: (error includesKey: #suggestedSelectors).
+	self assert: (self firstTextFromToolResult: result) lines second equals: (error at: #note)
+]
+
+{ #category : 'tests - evaluate' }
+MCPToolContractsTest >> testMessageSentToNilNamesTheVariableThatHeldIt [
+	"The variable that held nil is what was never set."
+
+	| error |
+	error := self errorFrom: (self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> '| names |
+names add: 3') } asDictionary).
+	self assert: (error at: #note) equals: 'The code sent add: to names, which is nil.'.
+	self deny: (error includesKey: #suggestedSelectors)
 ]
 
 { #category : 'tests' }

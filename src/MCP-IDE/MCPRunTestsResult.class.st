@@ -80,7 +80,7 @@ MCPRunTestsResult >> coverage: aCoverageResult [
 
 { #category : 'converting' }
 MCPRunTestsResult >> entryForIssueGroup: someTestIssues [
-	"The tests an issue hit, each once, and what it says. A statement is said only for a group of one test, so that tests failing the same way still group. Empty fields are left out."
+	"The tests an issue hit, each once, and what it says. A statement is said only for a group of one test, so that tests failing the same way still group. A note follows from the error class and message, so it is the group's. Empty fields are left out."
 
 	| data issue |
 	issue := someTestIssues first value.
@@ -93,6 +93,7 @@ MCPRunTestsResult >> entryForIssueGroup: someTestIssues [
 	(issue at: #message) ifNotEmpty: [ :message | data at: #message put: message ].
 	(issue at: #locations) ifNotEmpty: [ :locations | data at: #locations put: locations asArray ].
 	someTestIssues size = 1 ifTrue: [ issue at: #statement ifPresent: [ :statement | data at: #statement put: statement ] ].
+	issue at: #note ifPresent: [ :note | data at: #note put: note ].
 	^ data
 ]
 

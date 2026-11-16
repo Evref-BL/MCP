@@ -38,9 +38,9 @@ MCPToolMethodMutation >> addChainedSendNoteAt: anInterval flaggedBy: aRuleClassN
 				keywords := send selector keywords.
 				(1 to: keywords size - 1)
 					detect: [ :split |
-							(self isImplementedSelector: ('' join: (keywords first: split))) and: [
-								self isImplementedSelector: ('' join: (keywords allButFirst: split)) ] ]
-					ifFound: [ :split | data at: #note put: (self chainedSendNote: send selector splitAt: split) ] ]
+							(MCPNotUnderstoodNote isImplementedSelector: ('' join: (keywords first: split))) and: [
+								MCPNotUnderstoodNote isImplementedSelector: ('' join: (keywords allButFirst: split)) ] ]
+					ifFound: [ :split | data at: #note put: (MCPNotUnderstoodNote chainedSend: send selector splitAt: split) ] ]
 		ifNone: [ ]
 ]
 
@@ -171,22 +171,6 @@ MCPToolMethodMutation >> blockingCritiqueDataForMethodNode: aMethodNode in: aBeh
 MCPToolMethodMutation >> blockingPreCompileRuleClasses [
 
 	^ { ReDeadBlockRule }
-]
-
-{ #category : 'private' }
-MCPToolMethodMutation >> chainedSendNote: aSelector splitAt: anIndex [
-	"As in: sorted:collect: is one message. To send collect: to what sorted: answers, put the sorted: send in parentheses: (... sorted: ...) collect: ..."
-
-	| first firstSelector rest |
-	first := aSelector keywords first: anIndex.
-	rest := aSelector keywords allButFirst: anIndex.
-	firstSelector := '' join: first.
-	^ String streamContents: [ :stream |
-			  stream << aSelector << ' is one message. To send ' << ('' join: rest) << ' to what ' << firstSelector << ' answers, put the '
-			  << firstSelector << ' send in parentheses: (...'.
-			  first do: [ :each | stream << ' ' << each << ' ...' ].
-			  stream nextPut: $).
-			  rest do: [ :each | stream << ' ' << each << ' ...' ] ]
 ]
 
 { #category : 'private - arguments' }
@@ -516,15 +500,6 @@ MCPToolMethodMutation >> instanceSideNoteFor: aSend of: aClass in: aBehavior [
 							   inTheProjectOf: (aBehavior instanceSide package ifNotNil: [ :package | package name ])) ifTrue: [
 							  stream << ', or compile ' << selector << ' with side class' ].
 						  stream << '.' ] ]
-]
-
-{ #category : 'private' }
-MCPToolMethodMutation >> isImplementedSelector: aString [
-	"Whether a method somewhere in the image has aString as its selector. A string no symbol was ever made of is no method's selector."
-
-	| selector |
-	selector := Symbol findInterned: aString.
-	^ selector isNotNil and: [ (SystemNavigation default allImplementorsOf: selector) isNotEmpty ]
 ]
 
 { #category : 'private' }

@@ -664,10 +664,14 @@ MCPTool >> errorStackTraceVariableLimit [
 
 { #category : 'private - results' }
 MCPTool >> errorTextOn: stream for: error [
-	"The summary already carries the class, the message, and any suggestion the command phrased into it. What it does not carry is what a comparison found, where the failure happened, or the selectors a receiver would have understood."
+	"The summary already carries the class, the message, and any suggestion the command phrased into it. What it does not carry is what a comparison found, where the failure happened, what a message not understood was meant to be or the selectors a receiver would have understood."
 
 	error at: #mismatches ifPresent: [ :mismatches | self mismatchesTextOn: stream for: mismatches ].
 	(error includesKey: #sourceLine) ifTrue: [ self sourceLineTextOn: stream for: error ].
+	error at: #note ifPresent: [ :note |
+			stream
+				nextPut: Character lf;
+				nextPutAll: note ].
 	error at: #suggestedSelectors ifPresent: [ :selectors |
 			stream
 				nextPut: Character lf;

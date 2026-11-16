@@ -43,3 +43,10 @@ Exception >> mcpSyntaxNotice [
 
 	^ nil
 ]
+
+{ #category : '*MCP-IDE' }
+Exception >> mcpTestIssueNote [
+	"What a test_run issue says beside the exception's message: nothing, unless the exception says what was meant."
+
+	^ nil
+]

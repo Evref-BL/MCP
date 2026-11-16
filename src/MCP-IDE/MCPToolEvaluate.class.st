@@ -175,7 +175,7 @@ MCPToolEvaluate >> executeWithRequest: request [
 
 { #category : 'private - results' }
 MCPToolEvaluate >> failureTextFor: structuredContent [
-	"A stopped evaluation and one that never started have layouts of their own; every other failure reads as its summary, the failing line, the suggestions, the Transcript and the frames."
+	"A stopped evaluation and one that never started have layouts of their own; every other failure reads as its summary, the failing line, what a message not understood was meant to be or the suggestions, the Transcript and the frames."
 
 	| error |
 	error := structuredContent at: #error ifAbsent: [ ^ super contentTextForStructuredContent: structuredContent ].
@@ -187,6 +187,10 @@ MCPToolEvaluate >> failureTextFor: structuredContent [
 					  stream
 						  nextPut: Character lf;
 						  nextPutAll: sourceLine ].
+			  error at: #note ifPresent: [ :note |
+					  stream
+						  nextPut: Character lf;
+						  nextPutAll: note ].
 			  error at: #suggestedSelectors ifPresent: [ :selectors |
 					  stream
 						  nextPut: Character lf;
@@ -493,13 +497,14 @@ MCPToolEvaluate >> stoppedTextFor: structuredContent [
 
 { #category : 'private' }
 MCPToolEvaluate >> syntaxFailureMessageFor: aNotice line: aLineNumber [
+	"An undeclared variable is named by MCP itself: Pharo 13's notice says only Undeclared variable, and Pharo 14's names it in the DoIt the code was compiled as, which the caller never wrote."
 
 	^ String streamContents: [ :stream |
 			  stream
 				  nextPutAll: 'Evaluation failed during compilation (';
 				  nextPutAll: aNotice class name;
 				  nextPutAll: '): ';
-				  nextPutAll: aNotice messageText.
+				  nextPutAll: (aNotice mcpNoticeNode ifNil: [ aNotice messageText ] ifNotNil: [ :node | 'Undeclared variable: ' , node name ]).
 			  aLineNumber ifNotNil: [
 					  stream
 						  nextPutAll: ' Line ';
