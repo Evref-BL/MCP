@@ -37,7 +37,7 @@ TMCPMethodTool >> methodEntryLabel: anEntry [
 
 { #category : 'private - methods' }
 TMCPMethodTool >> methodForClassNamed: className selector: selectorString classSide: classSide [
-	"A method the class does not have is refused with the tool that lists the methods it has."
+	"A method the class does not have is refused with the methods of that selector the caller may have meant or, when there is none, with the tool that lists the methods the class has."
 
 	| behavior |
 	behavior := self behaviorNamed: className classSide: classSide.
@@ -45,7 +45,7 @@ TMCPMethodTool >> methodForClassNamed: className selector: selectorString classS
 			  MCPCommandError
 				  signalMissingMethod: selectorString
 				  in: behavior
-				  closing:
+				  closingWhenNoMatch:
 				  (String streamContents: [ :stream | stream << 'method_search with scope.classes lists the methods of ' << className << '.' ]) ]
 ]
 

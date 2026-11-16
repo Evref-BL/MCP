@@ -282,12 +282,12 @@ MCPCommandError class >> signalMissingCompileTarget: aName suggestions: someName
 MCPCommandError class >> signalMissingMethod: aSelectorString in: aBehavior [
 	"aBehavior, which the caller has resolved, has no method aSelectorString of its own."
 
-	^ self signalMissingMethod: aSelectorString in: aBehavior closing: nil
+	^ self signalMissingMethod: aSelectorString in: aBehavior closingWhenNoMatch: nil
 ]
 
 { #category : 'signaling' }
-MCPCommandError class >> signalMissingMethod: aSelectorString in: aBehavior closing: aStringOrNil [
-	"aBehavior, which the caller has resolved, has no method aSelectorString of its own. The methods of that selector the caller may have meant are named: on the other side, or the first one up the hierarchy. aStringOrNil, when given, ends the message with what the caller's tool offers instead."
+MCPCommandError class >> signalMissingMethod: aSelectorString in: aBehavior closingWhenNoMatch: aStringOrNil [
+	"aBehavior, which the caller has resolved, has no method aSelectorString of its own. The methods of that selector the caller may have meant are named: on the other side, or the first one up the hierarchy. When none is, aStringOrNil, if given, ends the message with what the caller's tool offers instead; a method named is already the next step."
 
 	| className classSide details message suggestions |
 	className := aBehavior instanceSide name asString.
@@ -296,13 +296,12 @@ MCPCommandError class >> signalMissingMethod: aSelectorString in: aBehavior clos
 	message := String streamContents: [ :stream |
 			           stream << 'Method ' << (self methodReferenceForClassName: className selector: aSelectorString classSide: classSide)
 			           << ' does not exist.'.
-			           suggestions ifNotEmpty: [
+			           suggestions ifEmpty: [ aStringOrNil ifNotNil: [ :closing | stream << ' ' << closing ] ] ifNotEmpty: [
 					           stream << ' Exact matches: ' << (', ' join: (suggestions collect: [ :each |
 							             self
 								             methodReferenceForClassName: (each at: #class)
 								             selector: (each at: #selector)
-								             classSide: (each at: #side) = 'class' ])) << '.' ].
-			           aStringOrNil ifNotNil: [ :closing | stream << ' ' << closing ] ].
+								             classSide: (each at: #side) = 'class' ])) << '.' ] ].
 	details := {
 		           (#class -> className).
 		           (#side -> (classSide

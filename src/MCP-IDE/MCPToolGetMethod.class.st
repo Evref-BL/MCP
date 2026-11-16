@@ -104,6 +104,21 @@ MCPToolGetMethod >> classSideFor: request checked: aBoolean [
 		  (request stringArgumentNamed: 'class') ifNil: [ false ] ifNotNil: [ :className | MCPImageLookup namesClassSide: className ] ]
 ]
 
+{ #category : 'private - results' }
+MCPToolGetMethod >> classSideNoteForClassName: className selector: selector [
+	"What a call that gave no side is told when the class side was read, since the side it left out reads as the instance side. A method the instance side inherits is named, in case it was the one meant."
+
+	^ ((self behaviorNamed: className classSide: false) lookupSelector: selector asSymbol)
+		  ifNil: [ 'It is on the class side, the only side that has it.' ]
+		  ifNotNil: [ :inheritedMethod |
+				  String streamContents: [ :stream |
+						  stream
+							  nextPutAll: 'It is on the class side, the only side that has one of its own. The instance side inherits ';
+							  nextPutAll:
+								  (self methodReferenceTextForClassName: inheritedMethod methodClass name asString selector: selector classSide: false);
+							  nextPut: $. ] ]
+]
+
 { #category : 'metadata' }
 MCPToolGetMethod >> defaultExposure [
 
@@ -199,7 +214,7 @@ MCPToolGetMethod >> failureMessageForClassNamed: className selector: selectorStr
 
 { #category : 'private - execution' }
 MCPToolGetMethod >> getMethod: selector in: className classSide: classSide sideGiven: isSideGiven includeVariableDetails: includeVariableDetails [
-	"A bare selector given no side is read on the instance side, unless only the class side has it: it then names one method, which is read there."
+	"A bare selector given no side is read on the instance side, unless only the class side has a method of its own: it then names one method, which is read there."
 
 	| compiledMethod data isClassSide |
 	isClassSide := classSide or: [ isSideGiven not and: [ self isOnClassSideOnly: selector in: className ] ].
@@ -229,9 +244,9 @@ MCPToolGetMethod >> incrementReferenceCountInSummary: aSummary [
 
 { #category : 'private - execution' }
 MCPToolGetMethod >> isOnClassSideOnly: selector in: className [
-	"Whether the class side of className has a method selector of its own, while its instance side does not understand selector, by a method of its own or an inherited one. A bare selector then names one method."
+	"Whether the class side of className has a method selector of its own while its instance side has none. method_get reads no inherited method, so a bare selector then names one method it can read, even when the instance side inherits one."
 
-	^ ((self behaviorNamed: className classSide: false) canUnderstand: selector asSymbol) not and: [
+	^ ((self behaviorNamed: className classSide: false) includesSelector: selector asSymbol) not and: [
 		  (self behaviorNamed: className classSide: true) includesSelector: selector asSymbol ]
 ]
 
@@ -345,14 +360,17 @@ MCPToolGetMethod >> selectorFor: request checked: aBoolean [
 
 { #category : 'private - results' }
 MCPToolGetMethod >> successSummaryForClassName: className selector: selector classSide: classSide sideGiven: isSideGiven [
-	"The class side of a call that gave no side was read because only it has the method, which the answer says, since the side the call left out reads as the instance side."
+	"The class side of a call that gave no side was read because only it has a method of its own, which the answer says."
 
 	^ String streamContents: [ :stream |
 			  stream
 				  nextPutAll: 'Got method ';
 				  nextPutAll: (self methodReferenceTextForClassName: className selector: selector classSide: classSide);
 				  nextPut: $..
-			  (classSide and: [ isSideGiven not ]) ifTrue: [ stream nextPutAll: ' It is on the class side, the only side that has it.' ] ]
+			  (classSide and: [ isSideGiven not ]) ifTrue: [
+					  stream
+						  space;
+						  nextPutAll: (self classSideNoteForClassName: className selector: selector) ] ]
 ]
 
 { #category : 'metadata' }

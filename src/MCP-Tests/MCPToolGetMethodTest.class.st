@@ -95,6 +95,38 @@ MCPToolGetMethodTest >> testGetMethodReadsABareSelectorOnTheOnlySideThatHasIt [
 ]
 
 { #category : 'tests' }
+MCPToolGetMethodTest >> testGetMethodReadsTheClassSideOfASelectorTheInstanceSideOnlyInherits [
+	"method_get reads no inherited method, so a bare selector given no side that the class side has and the instance side only inherits names one method. The answer names the inherited one, in case it was meant."
+
+	| result |
+	result := self callToolWith: {
+			          (#class -> 'MCPToolRunTestsTimeLimitTarget').
+			          (#selector -> 'defaultTimeLimit') } asDictionary.
+	self deny: (self resultIndicatesError: result) description: [ self summaryFrom: result ].
+	self
+		assert: (self summaryFrom: result)
+		equals:
+		'Got method MCPToolRunTestsTimeLimitTarget class>>defaultTimeLimit. It is on the class side, the only side that has one of its own. The instance side inherits TestCase>>defaultTimeLimit.'.
+	self assert: (((self dataFrom: result) at: #source) beginsWith: 'defaultTimeLimit')
+]
+
+{ #category : 'tests' }
+MCPToolGetMethodTest >> testGetMethodReferenceKeepsItsSide [
+	"A reference names its side, so one to the instance side that only the class side has is a miss. The match it names is the next step, so the miss says nothing more."
+
+	| error result |
+	result := self callToolWith: { (#selector -> 'MCPToolGetMethodTestTarget>>readClassSide') } asDictionary.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (error at: #errorCode) equals: 'MethodNotFound'.
+	self assert: (error at: #side) equals: 'instance'.
+	self
+		assert: (error at: #message)
+		equals:
+		'Method MCPToolGetMethodTestTarget>>readClassSide does not exist. Exact matches: MCPToolGetMethodTestTarget class>>readClassSide.'
+]
+
+{ #category : 'tests' }
 MCPToolGetMethodTest >> testGetMethodReturnsInstanceSideVariableContext [
 
 	| classVariable data globalVariable instanceVariable result selfVariable |
@@ -152,18 +184,16 @@ MCPToolGetMethodTest >> testGetMethodReturnsStructuredErrorForMissingSelector [
 ]
 
 { #category : 'tests' }
-MCPToolGetMethodTest >> testGetMethodStaysOnAnInstanceSideThatInheritsTheSelector [
-	"A bare selector given no side that the instance side inherits stays a miss there, though the class side has a method of its own: the caller may mean either."
+MCPToolGetMethodTest >> testGetMethodStaysOnTheInstanceSideWhenBothSidesHaveTheSelector [
+	"A bare selector given no side that the instance side has is read there, with no note, though the class side has one too."
 
-	| error result |
+	| result |
 	result := self callToolWith: {
-			          (#class -> 'MCPToolRunTestsTimeLimitTarget').
-			          (#selector -> 'defaultTimeLimit') } asDictionary.
-	error := self errorFrom: result.
-	self assert: (result at: #isError).
-	self assert: (error at: #errorCode) equals: 'MethodNotFound'.
-	self assert: (error at: #side) equals: 'instance'.
-	self assert: ((error at: #suggestions) anySatisfy: [ :each | (each at: #side) = 'class' ])
+			          (#class -> 'MCPToolMethodSearchReferenceFixture').
+			          (#selector -> 'sharedTarget') } asDictionary.
+	self deny: (self resultIndicatesError: result) description: [ self summaryFrom: result ].
+	self assert: (self summaryFrom: result) equals: 'Got method MCPToolMethodSearchReferenceFixture>>sharedTarget.'.
+	self assert: (((self dataFrom: result) at: #source) includesSubstring: 'instance-target')
 ]
 
 { #category : 'tests' }
@@ -198,6 +228,7 @@ MCPToolGetMethodTest >> testGetMethodSupportsClassSideContext [
 	classInstanceVariable := self variableNamed: 'classCounter' in: (data at: #variableReferences).
 	thisContextVariable := self variableNamed: 'thisContext' in: (data at: #variableReferences).
 	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (self summaryFrom: result) equals: 'Got method MCPToolGetMethodTestTarget class>>readClassSide.'.
 	self assert: (classInstanceVariable at: #kind) equals: 'classInstanceVariable'.
 	self assert: (classInstanceVariable at: #ownerName) equals: 'MCPToolGetMethodTestTarget class'.
 	self assert: (thisContextVariable at: #kind) equals: 'thisContext'.
