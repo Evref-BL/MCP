@@ -1025,6 +1025,42 @@ MCPToolMethodMutationTest >> testCompileMethodReportsReplacedChangeKind [
 ]
 
 { #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileNamesASourceHoldingSeveralMethods [
+	"Methods written one after the other in one source fail where the second begins, the compiler reading its selector line as a name it does not know or as a keyword without a receiver. The answer names the source for what it is, and says how several methods are passed."
+
+	[
+		{
+			('probeFirst
+
+	self yourself.
+
+probeSecond
+
+	self yourself'
+			 ->
+			 'The source holds more than one method: probeSecond starts another at line 5. Pass each method as its own string in a source array.').
+			('probeFirst
+
+	self yourself.
+
+probeSecond: anObject
+
+	self yourself'
+			 ->
+			 'The source holds more than one method: probeSecond: starts another at line 5. Pass each method as its own string in a source array.') }
+			do: [ :each |
+					| error result |
+					result := self compileSource: each key into: MCPToolMethodMutationTestTarget name side: nil.
+					error := self errorFrom: result.
+					self assert: (result at: #isError).
+					self assert: (error at: #errorCode) equals: 'MethodSourceHoldsSeveralMethods'.
+					self assert: (error at: #line) equals: 5.
+					self assert: (self textFrom: result) equals: each value ].
+		self deny: (MCPToolMethodMutationTestTarget includesSelector: #probeFirst) ] ensure: [
+		self removeSelector: #probeFirst from: MCPToolMethodMutationTestTarget ]
+]
+
+{ #category : 'tests' }
 MCPToolMethodMutationTest >> testCompileNamesOnlyTheRulesMethodRewriteCanApply [
 	"A critique names its rule class only where method_rewrite can apply the rule, since only there does the name give the caller something to do."
 
@@ -1563,6 +1599,45 @@ MCPToolMethodMutationTest >> testCompileStatesAnUnimplementedSendToSuperOnce [
 ]
 
 { #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileSaysAnUndeclaredNameIsASlotOfTheOtherSide [
+	"A slot one side of a class defines is undeclared in the methods of the other side, and nothing in the source says which side it was written for. The class side's own slots are the class's, not those every class has from Class."
+
+	| className |
+	className := 'MCPToolCompileSideProbe'.
+	self
+		createClassNamed: className
+		superclassName: 'Object'
+		slots: #( #probeQuantity )
+		classSlots: #( #probeMade ).
+	[
+		self
+			assert: (self summaryFrom: (self
+						  compileSource: 'probeReset
+	probeMade := 0'
+						  into: className
+						  side: nil))
+			equals:
+			'Unable to compile method on MCPToolCompileSideProbe: Undeclared variable: probeMade. probeMade is a class-side slot of MCPToolCompileSideProbe, which instance-side methods do not see. Compile this method with side class, or reach probeMade through a class-side method.'.
+		self
+			assert: (self summaryFrom: (self
+						  compileSource: 'probeReset
+	probeQuantity := 0'
+						  into: className
+						  side: 'class'))
+			equals:
+			'Unable to compile method on MCPToolCompileSideProbe class: Undeclared variable: probeQuantity. probeQuantity is an instance-side slot of MCPToolCompileSideProbe, which class-side methods do not see. Compile this method with side instance, or reach probeQuantity through an instance-side method.'.
+		self
+			assert: (self summaryFrom: (self
+						  compileSource: 'probeName
+	^ name'
+						  into: className
+						  side: nil))
+			equals: 'Unable to compile method on MCPToolCompileSideProbe: Undeclared variable: name'.
+		self deny: ((self classNamed: className) includesSelector: #probeReset).
+		self deny: ((self classNamed: className) classSide includesSelector: #probeReset) ] ensure: [ self removeClassNamed: className ]
+]
+
+{ #category : 'tests' }
 MCPToolMethodMutationTest >> testCompileSucceedsWhenACritiqueRuleRaisesAWarning [
 
 	| result selector |
@@ -1685,6 +1760,30 @@ MCPToolMethodMutationTest >> testCompilesInstanceSideMethod [
 	self assert: (MCPToolMethodMutationTestTarget >> #instanceAnswer) protocolName equals: #tests.
 	self assertSuccessDataHasMethodShape: data.
 	self deny: (result at: #isError ifAbsent: [ false ])
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testCompilingAClassSideInitializeSaysCompilingDoesNotRunIt [
+	"Pharo runs a class-side initialize when it loads the class, so compiling one leaves the class as it was, and nothing else in the answer says so. An instance-side initialize runs for every new instance and needs no word."
+
+	[
+		self
+			assert: (self summaryFrom: (self
+						  compileSource: 'initialize
+	^ self'
+						  into: MCPToolMethodMutationTestTarget name
+						  side: 'class'))
+			equals:
+			'Created MCPToolMethodMutationTestTarget class>>initialize. Compiling it does not run it: Pharo runs it when it loads the class. Evaluate MCPToolMethodMutationTestTarget initialize to run it now.'.
+		self
+			assert: (self summaryFrom: (self
+						  compileSource: 'initialize
+	^ self'
+						  into: MCPToolMethodMutationTestTarget name
+						  side: nil))
+			equals: 'Created MCPToolMethodMutationTestTarget>>initialize.' ] ensure: [
+			self removeSelector: #initialize from: MCPToolMethodMutationTestTarget.
+			self removeSelector: #initialize from: MCPToolMethodMutationTestTarget classSide ]
 ]
 
 { #category : 'tests' }

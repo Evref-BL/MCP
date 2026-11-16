@@ -92,13 +92,17 @@ MCPToolCompileMethod >> droppedHeaderWarning [
 
 { #category : 'private - errors' }
 MCPToolCompileMethod >> failureSummaryFor: anError in: aBehaviorOrNil of: request [
-	"Names the side compiled into, which a header may have chosen when the call did not."
+	"Names the side compiled into, which a header may have chosen when the call did not, and says when a name it did not find is a slot of the other side."
 
-	^ self classNameAndSideOf: request do: [ :className :classSide :sideGiven |
-			  self
-				  failureMessageForCompileClassNamed: className
-				  classSide: (aBehaviorOrNil ifNil: [ classSide ] ifNotNil: [ :behavior | behavior isClassSide ])
-				  error: anError ]
+	| summary |
+	summary := self classNameAndSideOf: request do: [ :className :classSide :sideGiven |
+			           self
+				           failureMessageForCompileClassNamed: className
+				           classSide: (aBehaviorOrNil ifNil: [ classSide ] ifNotNil: [ :behavior | behavior isClassSide ])
+				           error: anError ].
+	^ (self otherSideSlotTextFor: anError in: aBehaviorOrNil)
+		  ifNil: [ summary ]
+		  ifNotNil: [ :slotText | String streamContents: [ :stream | stream << summary << '. ' << slotText ] ]
 ]
 
 { #category : 'private - header' }
@@ -239,12 +243,30 @@ MCPToolCompileMethod >> mutateWith: request [
 				  self
 					  successResultText: (self
 							   summaryFor: changeKind
-							   of: methodReference
-							   from: previousProtocolName
-							   to: (self protocolNameOf: compiledMethod))
+							   of: compiledMethod
+							   named: methodReference
+							   from: previousProtocolName)
 					  data: (self dataForChange: changeKind critiques: critiques)
 					  warnings: warningMessages , headerWarnings , (self protocolWarningsFor: compiledMethod from: previousProtocolName) ]
 		  failureSummary: [ :error | self failureSummaryFor: error in: behavior of: request ]
+]
+
+{ #category : 'private - errors' }
+MCPToolCompileMethod >> otherSideSlotTextFor: anError in: aBehaviorOrNil [
+	"When the name anError found undeclared is a slot of the other side of aBehaviorOrNil's class or of a superclass, what to do about it; nil otherwise. The source alone does not show which side it was written for. A class side's own slots are its class's, not the ones every class has from Class."
+
+	| name slotName |
+	aBehaviorOrNil ifNil: [ ^ nil ].
+	name := self undeclaredVariableNameFor: (self mutationFailureCauseFor: anError).
+	name ifNil: [ ^ nil ].
+	slotName := name asSymbol.
+	^ aBehaviorOrNil instanceSide withAllSuperclasses
+		  detect: [ :each |
+				  (aBehaviorOrNil isClassSide
+					   ifTrue: [ each ]
+					   ifFalse: [ each classSide ]) slots anySatisfy: [ :slot | slot name = slotName ] ]
+		  ifFound: [ :owner | self textForSlotNamed: name of: owner compiledOnClassSide: aBehaviorOrNil isClassSide ]
+		  ifNone: [ nil ]
 ]
 
 { #category : 'private' }
@@ -281,6 +303,22 @@ MCPToolCompileMethod >> selectorForMethodSource: methodSourceString in: aBehavio
 	^ methodNode selector
 ]
 
+{ #category : 'private - errors' }
+MCPToolCompileMethod >> selectorLineOfAnotherMethodAt: details in: aSource [
+	"The selector line of the failure's line, parsed as a method, when the source holds another method from that line on: the line holds a whole selector line and nothing else, from its first column, and what comes before it is a whole method. The compiler fails there, reading the selector as a name it does not know or as a keyword without a receiver. Nil otherwise."
+
+	| line node |
+	(details at: #line ifAbsent: [ 1 ]) > 1 ifFalse: [ ^ nil ].
+	line := details at: #sourceLine.
+	(line isEmpty or: [ line first isSeparator ]) ifTrue: [ ^ nil ].
+	node := self methodNodeOfSelectorLine: line.
+	(node isNotNil and: [ node body statements isEmpty and: [ node pragmas isEmpty ] ]) ifFalse: [ ^ nil ].
+	RBParser
+		parseMethod: (aSource asString first: (details at: #position) - (details at: #column))
+		onError: [ :message :position | ^ nil ].
+	^ node
+]
+
 { #category : 'private - header' }
 MCPToolCompileMethod >> sideNameFor: isClassSide [
 
@@ -291,13 +329,35 @@ MCPToolCompileMethod >> sideNameFor: isClassSide [
 
 { #category : 'private - errors' }
 MCPToolCompileMethod >> signalCompileFailure: anError methodSource: methodSource in: aBehaviorOrNil of: request [
+	"A failure on a line that starts another method says that the source holds several, rather than what the compiler made of that method's selector."
 
 	anError mcpCommandErrorDo: [ :commandError | commandError signal ] otherwise: [ :compileError |
-			(self
-				 commandErrorForCompileFailure: compileError
-				 methodSource: methodSource
-				 requestedContext: (self requestedContextFor: request)
-				 summary: (self failureSummaryFor: compileError in: aBehaviorOrNil of: request)) signal ]
+			| commandError details |
+			commandError := self
+				                commandErrorForCompileFailure: compileError
+				                methodSource: methodSource
+				                requestedContext: (self requestedContextFor: request)
+				                summary: (self failureSummaryFor: compileError in: aBehaviorOrNil of: request).
+			details := commandError details.
+			(self selectorLineOfAnotherMethodAt: details in: methodSource) ifNotNil: [ :selectorLine |
+				self signalSeveralMethodsFrom: selectorLine atLine: (details at: #line) ].
+			commandError signal ]
+]
+
+{ #category : 'private - errors' }
+MCPToolCompileMethod >> signalSeveralMethodsFrom: aSelectorLineNode atLine: aLineNumber [
+	"A source holding more than one method is refused, naming the line the second begins on, where the compiler failed on its selector. Nothing is compiled."
+
+	| selector |
+	selector := aSelectorLineNode selector asString.
+	^ MCPCommandError
+		  signalErrorCode: #MethodSourceHoldsSeveralMethods
+		  message: (String streamContents: [ :stream |
+					   stream << 'The source holds more than one method: ' << selector << ' starts another at line ' << aLineNumber printString
+					   << '. Pass each method as its own string in a source array.' ])
+		  details: {
+				  (#line -> aLineNumber).
+				  (#nextSelector -> selector) } asDictionary
 ]
 
 { #category : 'private - header' }
@@ -322,15 +382,20 @@ MCPToolCompileMethod >> source: aSource withSelectorLine: aSelectorLine [
 ]
 
 { #category : 'private' }
-MCPToolCompileMethod >> summaryFor: changeKind of: methodReference from: previousProtocolName to: protocolName [
-	"A method that changed protocol says so. Before protocol was optional, replacing a method's body meant naming a protocol, and naming another one moved the method without a word."
+MCPToolCompileMethod >> summaryFor: changeKind of: aCompiledMethod named: methodReference from: previousProtocolName [
+	"A method that changed protocol says so. Before protocol was optional, replacing a method's body meant naming a protocol, and naming another one moved the method without a word. A class-side initialize says that compiling did not run it: Pharo runs one when it loads the class, so what it sets stays as it was until it is run."
 
+	| protocolName |
+	protocolName := self protocolNameOf: aCompiledMethod.
 	^ String streamContents: [ :stream |
 			  stream << (self changeSummaryVerbFor: changeKind) << ' ' << methodReference.
 			  (changeKind = 'replaced' and: [ previousProtocolName ~= protocolName ]) ifTrue: [
 					  stream << ', moving it from ' << (previousProtocolName ifNil: [ 'no protocol' ]) << ' to '
 					  << (protocolName ifNil: [ 'no protocol' ]) ].
-			  stream << '.' ]
+			  stream << '.'.
+			  (aCompiledMethod methodClass isClassSide and: [ aCompiledMethod selector = #initialize ]) ifTrue: [
+					  stream << ' Compiling it does not run it: Pharo runs it when it loads the class. Evaluate '
+					  << aCompiledMethod methodClass instanceSide name << ' initialize to run it now.' ] ]
 ]
 
 { #category : 'private - header' }
@@ -357,4 +422,19 @@ MCPToolCompileMethod >> target: aBehavior forHeader: aReference source: aSource 
 			  targetSide
 				  ifTrue: [ aBehavior instanceSide classSide ]
 				  ifFalse: [ aBehavior instanceSide ] ]
+]
+
+{ #category : 'private - errors' }
+MCPToolCompileMethod >> textForSlotNamed: aName of: aClass compiledOnClassSide: classSide [
+	"What to do about aName, a slot aClass defines on the side other than the one compiled into, the class side when classSide is true: the methods of the side compiled into do not see it."
+
+	| article otherSide |
+	otherSide := self sideNameFor: classSide not.
+	article := classSide
+		           ifTrue: [ 'an' ]
+		           ifFalse: [ 'a' ].
+	^ String streamContents: [ :stream |
+			  stream << aName << ' is ' << article << ' ' << otherSide << '-side slot of ' << aClass name << ', which '
+			  << (self sideNameFor: classSide) << '-side methods do not see. Compile this method with side ' << otherSide << ', or reach '
+			  << aName << ' through ' << article << ' ' << otherSide << '-side method.' ]
 ]
