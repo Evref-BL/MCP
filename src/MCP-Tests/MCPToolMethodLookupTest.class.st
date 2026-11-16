@@ -74,12 +74,27 @@ MCPToolMethodLookupTest >> testAClassSideNameAnswersReferencesToItsClass [
 
 { #category : 'tests' }
 MCPToolMethodLookupTest >> testALowercaseNameNothingUsesFindsNoImplementorsOrSenders [
-	"A lowercase name reads as a selector, which any name can be, and then as a variable. When nothing implements or sends it and no variable has that name, nothing was found: the answer says so, rather than that the name is unknown."
+	"A lowercase name reads as a selector, and then as a variable. When nothing implements or sends it and no variable has that name, nothing was found: the answer says so, rather than that the name is unknown."
 
 	| result |
 	result := self callToolNamed: 'method_reference_search' withArguments: { (#name -> 'mcpNoSuchSelectorAnywhere') } asDictionary.
 	self deny: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
 	self assert: (self summaryFrom: result) equals: 'No implementors or senders of mcpNoSuchSelectorAnywhere in the image.'
+]
+
+{ #category : 'tests' }
+MCPToolMethodLookupTest >> testANameThatIsNotASelectorIsUnknownRatherThanUnused [
+	"A name with no letter first, or one with a space, is read as a selector but is not one: nothing implements or sends #printString, although printString is sent everywhere. Saying that nothing uses it would be false, so the name is unknown, as a name no reading resolves is."
+
+	#( '#printString' 'self printString' ) do: [ :name |
+			| error result |
+			result := self callToolNamed: 'method_reference_search' withArguments: { (#name -> name) } asDictionary.
+			self assert: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
+			error := self errorFrom: result.
+			self assert: (error at: #errorCode) equals: 'ReferenceSubjectNotFound'.
+			self
+				assert: (error at: #message)
+				equals: ('There is no class, variable or selector named {1} in the requested scope.' format: { name }) ]
 ]
 
 { #category : 'tests' }

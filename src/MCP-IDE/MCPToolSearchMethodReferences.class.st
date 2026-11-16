@@ -170,6 +170,13 @@ MCPToolSearchMethodReferences >> hitCountTextForCounts: counts name: aName [
 			  stream nextPutAll: aName ]
 ]
 
+{ #category : 'private - lookup' }
+MCPToolSearchMethodReferences >> isSelectorName: aName [
+	"Whether aName can be a selector, as audit, at:put: and + can, and #audit, self audit and audit.total cannot."
+
+	^ aName numArgs >= 0
+]
+
 { #category : 'private - results' }
 MCPToolSearchMethodReferences >> kindNounsTextForCounts: counts [
 	"What the hits are, without the name they are of: implementors or senders, or methods."
@@ -240,7 +247,7 @@ MCPToolSearchMethodReferences >> noHitTextForKinds: kinds name: aName [
 
 { #category : 'private - template' }
 MCPToolSearchMethodReferences >> queryEntriesForRequest: request scopeQuery: scopeQuery [
-	"The name is read as its spelling says, then the other way when that finds nothing. When neither finds anything, the first reading answers: no hits when it resolved, as a selector always does, and an error only when it did not."
+	"The name is read as its spelling says, then the other way when that finds nothing. When neither finds anything and a reading failed, the name is unknown, except for a selector: a selector always resolves, so its first reading answers that nothing implements or sends it. A name read as a selector that cannot be one, such as #audit, is still unknown."
 
 	| entries fallback kinds name failures |
 	name := self requiredFilterPatternFromRequest: request.
@@ -263,7 +270,9 @@ MCPToolSearchMethodReferences >> queryEntriesForRequest: request scopeQuery: sco
 				            failures add: error.
 				            nil ].
 	(fallback isNotNil and: [ fallback isNotEmpty ]) ifTrue: [ ^ fallback ].
-	^ entries ifNil: [ self signalUnknownName: name failures: failures ]
+	^ (failures isEmpty or: [ entries isNotNil and: [ self isSelectorName: name ] ])
+		  ifTrue: [ entries ]
+		  ifFalse: [ self signalUnknownName: name failures: failures ]
 ]
 
 { #category : 'private - pagination' }
