@@ -586,6 +586,29 @@ MCPToolClassMutationTest >> testCreateRefusalNamingAnotherSuperclassAddsNoSlotTh
 ]
 
 { #category : 'tests - create' }
+MCPToolClassMutationTest >> testCreateRefusalOfAClassOfAnotherProjectWritesNoUpdate [
+	"A class of another project, as Pharo's Stack in Collections-Stack, is not the caller's to change: the class_update call written from a class_create of the caller's own Stack would move Pharo's into the caller's package, reparent it and give it the caller's slots and comment, breaking whatever uses it. The refusal names the package the class is in and asks for another name, and writes no call."
+
+	| error stack |
+	stack := Smalltalk globals at: #Stack.
+	error := self errorFrom: (self callToolWith: (self createRequestArgumentsWith: {
+					           (#name -> 'Stack').
+					           (#superclass -> 'Object').
+					           (#package -> self generatedPackageName).
+					           (#slots -> #( 'items' )).
+					           (#comment -> 'A stack of items.') })).
+	self assert: (error at: #errorCode) equals: 'ClassAlreadyExists'.
+	self
+		assert: (error at: #message)
+		equals:
+			('Class Stack already exists in package {1}, which belongs to another project than {2}. Choose another name for your class, such as one with your project''s prefix.'
+				 format: {
+						 stack package name.
+						 self generatedPackageName }).
+	self assert: (error at: #package) equals: stack package name asString
+]
+
+{ #category : 'tests - create' }
 MCPToolClassMutationTest >> testCreateRefusalOfAClassThatHasItAllSaysNothingNeedsChanging [
 	"A class that already has everything the call asks for needs no class_update call: the refusal says so rather than write one that changes nothing."
 

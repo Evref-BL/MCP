@@ -276,9 +276,15 @@ MCPToolCreateClass >> newSuperclassNameOf: aClass in: request [
 
 { #category : 'private - errors' }
 MCPToolCreateClass >> refuseExisting: aClass from: request [
-	"class_create's refusal of a class that exists. class_update makes no class a trait and no trait a class, so a call that names a superclass asking for the other kind, Trait where a class exists or a class where a trait does, is told which kind exists; one that names none asks for neither. A call that names a superclass with a slot the class or one of its subclasses defines is told so, since class_update would refuse that move. Otherwise the refusal writes the class_update call that gives the class what the call asks for and it lacks, and names what the class has that a list the call gives leaves out, which that call keeps."
+	"class_create's refusal of a class that exists. A class of another project than the package the call names, as one of Pharo's own, is not the caller's to change, so the call is asked for another name and given no class_update call. class_update makes no class a trait and no trait a class, so a call that names a superclass asking for the other kind, Trait where a class exists or a class where a trait does, is told which kind exists; one that names none asks for neither. A call that names a superclass with a slot the class or one of its subclasses defines is told so, since class_update would refuse that move. Otherwise the refusal writes the class_update call that gives the class what the call asks for and it lacks, and names what the class has that a list the call gives leaves out, which that call keeps."
 
-	| superclassName |
+	| packageName superclassName |
+	packageName := aClass package ifNotNil: [ :package | package name asString ].
+	(self isPackageNamed: packageName inTheProjectOf: (request stringArgumentNamed: 'package')) ifFalse: [
+			^ MCPCommandError
+				  signalClassAlreadyExistsNamed: aClass name asString
+				  package: packageName
+				  otherProjectThan: (request stringArgumentNamed: 'package') ].
 	superclassName := request stringArgumentNamed: 'superclass'.
 	(superclassName isNotNil and: [ aClass isTrait ~= (superclassName = 'Trait') ]) ifTrue: [
 		^ MCPCommandError signalClassAlreadyExistsNamed: aClass name asString askedForATrait: superclassName = 'Trait' ].

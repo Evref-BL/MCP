@@ -182,6 +182,23 @@ MCPCommandError class >> signalClassAlreadyExistsNamed: aClassName askedForATrai
 ]
 
 { #category : 'signaling' }
+MCPCommandError class >> signalClassAlreadyExistsNamed: aClassName package: aPackageName otherProjectThan: aRequestedPackageName [
+	"class_create's refusal of a class that exists in a package of another project than the one the call names, as Pharo's Stack, in Collections-Stack, for a call that makes a Stack of its own. That class is not the caller's to change: the class_update call written for a class of the caller's own would move it into the caller's package, reparent it and replace its comment, breaking whatever uses it. So no call is written, and the caller is asked for another name."
+
+	^ self
+		  signalErrorCode: #ClassAlreadyExists
+		  message:
+			  ('Class {1} already exists in package {2}, which belongs to another project than {3}. Choose another name for your class, such as one with your project''s prefix.'
+				   format: {
+						   aClassName.
+						   aPackageName.
+						   aRequestedPackageName })
+		  details: {
+				  (#class -> aClassName).
+				  (#package -> aPackageName) } asDictionary
+]
+
+{ #category : 'signaling' }
 MCPCommandError class >> signalClassAlreadyExistsNamed: aClassName superclass: aSuperclassName definedSlots: someAssociations [
 	"class_create's refusal of a class that exists, when the call names a superclass that already has slots the class or its subclasses define. A class cannot define a slot one of its superclasses has, so class_update refuses to move the class there, and no call to it is written: the refusal says which class defines which of those slots. someAssociations map each class that defines some, the class first and then its subclasses, to their names."
 

@@ -281,6 +281,13 @@ MCPToolMutation >> inputProperties [
 	self subclassResponsibility
 ]
 
+{ #category : 'private' }
+MCPToolMutation >> isPackageNamed: aName inTheProjectOf: anotherName [
+	"Whether two packages, by their names, are of one project, by the convention that names a project's packages with its name and then a dash, as MCP, MCP-IDE and MCP-Tests. A class of another project, as one of Pharo's own, is not the caller's to change. Code in no package, whose package name is nil, is of no project. Names rather than packages, since the package a call names may not exist yet."
+
+	^ aName isNotNil and: [ anotherName isNotNil and: [ (aName asString copyUpTo: $-) = (anotherName asString copyUpTo: $-) ] ]
+]
+
 { #category : 'private - errors' }
 MCPToolMutation >> methodNodeFromError: anError [
 
