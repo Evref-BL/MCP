@@ -88,9 +88,10 @@ MCPReparentClassCommandTest >> testMissingSuperclassSignalsCommandError [
 ]
 
 { #category : 'tests' }
-MCPReparentClassCommandTest >> testReparentsClassAndReturnsResultObject [
+MCPReparentClassCommandTest >> testReparentsClassAndAnswersIt [
 
 	| result target |
+	self assert: (self classNamed: self reparentTargetClassName) superclass name asString equals: 'Object'.
 	result := self executeCommand:
 		          (MCPReparentClassCommand className: self reparentTargetClassName superclassName: self reparentSuperclassName).
 	target := self classNamed: self reparentTargetClassName.
@@ -98,7 +99,5 @@ MCPReparentClassCommandTest >> testReparentsClassAndReturnsResultObject [
 	self assert: target new probeMethod equals: 41.
 	self assert: target comment equals: 'reparent comment'.
 	self assert: (target slots collect: #name as: Array) equals: #( #alphaSlot ).
-	self assert: result oldSuperclassName equals: 'Object'.
-	self assert: result classInfo className equals: self reparentTargetClassName.
-	self assert: result classInfo superclassName equals: self reparentSuperclassName
+	self assert: result identicalTo: target
 ]

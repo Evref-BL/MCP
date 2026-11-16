@@ -1,11 +1,11 @@
 "
-DTO for the class update action selected from an update request before the action is applied.
+One change a class_update call asks for, planned before any change is made: its action, the context its errors report and, for a slot change, the slot, its new name and its side.
 
-It records the selected update action and the request context used for validation and error reporting.
+MCPToolUpdateClass orders the plans by action and applies them in that order.
 "
 Class {
 	#name : 'MCPClassUpdatePlanInfo',
-	#superclass : 'MCPDataTransferObject',
+	#superclass : 'Object',
 	#instVars : [
 		'requestedContext',
 		'updateAction',
@@ -25,14 +25,6 @@ MCPClassUpdatePlanInfo class >> updateAction: anUpdateAction requestedContext: a
 		  updateAction: anUpdateAction;
 		  requestedContext: aDictionary;
 		  yourself
-]
-
-{ #category : 'converting' }
-MCPClassUpdatePlanInfo >> asDictionary [
-
-	^ {
-		  (#updateAction -> self updateAction).
-		  (#requestedContext -> self requestedContext) } asDictionary
 ]
 
 { #category : 'accessing' }

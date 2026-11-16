@@ -22,12 +22,8 @@ MCPAddSlotCommand class >> className: aClassName slotName: aSlotName classSide: 
 { #category : 'executing' }
 MCPAddSlotCommand >> execute [
 
-	| currentClass refactoringBehavior updatedClass |
-	currentClass := self currentClass.
-	refactoringBehavior := self refactoringBehaviorForClass: currentClass.
-	(self refactoringForBehavior: refactoringBehavior) execute.
-	updatedClass := Smalltalk globals at: self className asSymbol.
-	^ MCPSlotResult classInfo: (MCPClassInfo fromClass: updatedClass) slotName: self slotName classSide: self classSide
+	(self refactoringForBehavior: (self refactoringBehaviorForClass: self currentClass)) execute.
+	^ Smalltalk globals at: self className asSymbol
 ]
 
 { #category : 'private' }

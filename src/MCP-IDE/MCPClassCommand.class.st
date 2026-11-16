@@ -1,7 +1,7 @@
 "
-Abstract command for operations targeting one existing or newly defined class.
+Abstract operation on one class, existing or about to be made, named by className.
 
-Subclasses provide #class and implement their command-specific execution.
+Executing it answers the class as it is after the change.
 "
 Class {
 	#name : 'MCPClassCommand',

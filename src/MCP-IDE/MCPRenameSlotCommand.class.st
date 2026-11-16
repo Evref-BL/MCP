@@ -42,11 +42,7 @@ MCPRenameSlotCommand >> execute [
 	self renameSlotInBehavior: (self classSide
 			 ifTrue: [ self currentClass classSide ]
 			 ifFalse: [ self currentClass ]).
-	^ MCPRenameSlotResult
-		  classInfo: (MCPClassInfo fromClass: (Smalltalk globals at: self className asSymbol))
-		  oldSlotName: self slotName
-		  newSlotName: self newSlotName
-		  classSide: self classSide
+	^ Smalltalk globals at: self className asSymbol
 ]
 
 { #category : 'private' }

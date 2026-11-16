@@ -1,7 +1,7 @@
 "
-Command that moves a slot up or down a class hierarchy.
+Moves a slot up or down a class hierarchy and answers the class.
 
-It performs pull-up or push-down refactorings for instance-side or class-side slots and returns the affected class names.
+It performs pull-up or push-down refactorings for instance-side or class-side slots.
 "
 Class {
 	#name : 'MCPMoveSlotCommand',
@@ -25,20 +25,6 @@ MCPMoveSlotCommand class >> className: aClassName slotName: aSlotName direction:
 		  yourself
 ]
 
-{ #category : 'private' }
-MCPMoveSlotCommand >> affectedClassNamesFor: aBehavior [
-
-	| behaviors |
-	behaviors := self direction = 'pullUpSlot'
-		             ifTrue: [
-		             aBehavior allSubclasses select: [ :each | self directlyDefinesSlotNamed: self slotName inBehavior: each ] ]
-		             ifFalse: [
-				             self direction = 'pushDownSlot'
-					             ifTrue: [ aBehavior subclasses ]
-					             ifFalse: [ Error signal: 'direction must be pullUpSlot or pushDownSlot.' ] ].
-	^ (behaviors collect: [ :each | self normalizedAffectedClassNameFor: each ] as: Array) sort: [ :left :right | left <= right ]
-]
-
 { #category : 'accessing' }
 MCPMoveSlotCommand >> direction [
 
@@ -51,28 +37,14 @@ MCPMoveSlotCommand >> direction: aDirection [
 	direction := aDirection
 ]
 
-{ #category : 'private' }
-MCPMoveSlotCommand >> directlyDefinesSlotNamed: aSlotName inBehavior: aBehavior [
-
-	^ aBehavior slots anySatisfy: [ :each | each name asString = aSlotName ]
-]
-
 { #category : 'executing' }
 MCPMoveSlotCommand >> execute [
 
-	| affectedClassNames currentClass refactoring refactoringBehavior updatedClass |
-	currentClass := self currentClass.
-	refactoringBehavior := self refactoringBehaviorForClass: currentClass.
+	| refactoringBehavior |
+	refactoringBehavior := self refactoringBehaviorForClass: self currentClass.
 	self validatePullUpInto: refactoringBehavior.
-	affectedClassNames := self affectedClassNamesFor: refactoringBehavior.
-	refactoring := self refactoringForBehavior: refactoringBehavior.
-	refactoring execute.
-	updatedClass := Smalltalk globals at: self className asSymbol.
-	^ MCPMoveSlotResult
-		  classInfo: (MCPClassInfo fromClass: updatedClass)
-		  slotName: self slotName
-		  classSide: self classSide
-		  affectedClassNames: affectedClassNames
+	(self refactoringForBehavior: refactoringBehavior) execute.
+	^ Smalltalk globals at: self className asSymbol
 ]
 
 { #category : 'private' }

@@ -1,5 +1,5 @@
 "
-Replaces the class variables of an existing class using the Shift class installer and returns a DTO describing the old and new shared variable name lists plus the resulting class state.
+Replaces the class variables of an existing class using the Shift class installer and answers the updated class.
 "
 Class {
 	#name : 'MCPReplaceClassSharedVariablesCommand',
@@ -24,14 +24,7 @@ MCPReplaceClassSharedVariablesCommand class >> className: aClassName sharedVaria
 { #category : 'executing' }
 MCPReplaceClassSharedVariablesCommand >> execute [
 
-	| oldSharedVariableNames targetClass updatedClass |
-	targetClass := self targetClass.
-	oldSharedVariableNames := self sharedVariableNamesFromClass: targetClass.
-	updatedClass := self replaceSharedVariablesOn: targetClass.
-	^ MCPReplaceClassSharedVariablesResult
-		  classInfo: (MCPClassInfo fromClass: updatedClass)
-		  oldSharedVariableNames: oldSharedVariableNames
-		  newSharedVariableNames: self sharedVariableNames
+	^ self replaceSharedVariablesOn: self targetClass
 ]
 
 { #category : 'accessing' }
@@ -44,12 +37,6 @@ MCPReplaceClassSharedVariablesCommand >> sharedVariableNames [
 MCPReplaceClassSharedVariablesCommand >> sharedVariableNames: someNames [
 
 	sharedVariableNames := someNames ifNil: [ #(  ) ] ifNotNil: [ someNames asArray ]
-]
-
-{ #category : 'private' }
-MCPReplaceClassSharedVariablesCommand >> sharedVariableNamesFromClass: aClass [
-
-	^ aClass classVarNames collect: [ :each | each asString ] as: Array
 ]
 
 { #category : 'accessing' }
