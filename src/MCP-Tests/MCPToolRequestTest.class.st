@@ -31,6 +31,25 @@ MCPToolRequestTest >> testAnArgumentLeftOutAnswersTheDefaultItsSchemaDeclares [
 ]
 
 { #category : 'tests' }
+MCPToolRequestTest >> testBlankRequiredArgumentIsRefusedByEveryTool [
+	"The mutations always refused a blank required argument. Every other tool read it as nil and failed deep inside Pharo, naming neither the tool nor the argument."
+
+	{
+		(MCPToolEvaluate -> { (#code -> '   ') }).
+		(MCPToolGetMethod -> {
+			 (#class -> 'Object').
+			 (#selector -> '   ') }) } do: [ :each |
+			| error |
+			error := nil.
+			[ MCPToolRequest tool: each key new arguments: each value asDictionary ]
+				on: MCPInvalidToolInput
+				do: [ :signalledError | error := signalledError ].
+			self assert: error isNotNil.
+			self assert: error violations first keyword equals: 'required'.
+			self assert: error violations first expected equals: each value last key asString ]
+]
+
+{ #category : 'tests' }
 MCPToolRequestTest >> testBlankRequiredArgumentIsRefusedLikeAMissingOne [
 	"A blank required argument used to pass validation and reach the image as nil, where it failed deep inside Pharo instead of naming the argument that was wrong."
 

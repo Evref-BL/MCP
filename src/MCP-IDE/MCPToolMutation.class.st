@@ -606,10 +606,9 @@ MCPToolMutation >> validateRefactoringScopePackageNamesExist: packageNames [
 
 { #category : 'validating' }
 MCPToolMutation >> validateRequest: request [
-	"A required argument holding only whitespace is not supplied. Every tool reads it with stringArgumentNamed:, which answers nil for a blank, so accepting it here lets nil reach the image and fail deep inside Pharo, far from the argument that caused it."
+	"A mutation names at least one of the properties its tool lists as such, beyond the required ones."
 
-	self requiredInputProperties do: [ :each |
-		(request stringArgumentNamed: each) ifNil: [ MCPInvalidToolInput signalMissingRequiredArgumentNamed: each forTool: self ] ].
+	super validateRequest: request.
 	self validateAtLeastOneInputPropertyIn: request
 ]
 

@@ -1293,8 +1293,10 @@ MCPTool >> title [
 
 { #category : 'validating' }
 MCPTool >> validateRequest: aToolRequest [
+	"A required argument holding only whitespace is not supplied. A tool reads it with stringArgumentNamed:, which answers nil for a blank, so accepting it here would let nil reach the image and fail deep inside Pharo, far from the argument that caused it."
 
-	^ self
+	(self inputSchema required ifNil: [ #(  ) ]) do: [ :each |
+		(aToolRequest stringArgumentNamed: each) ifNil: [ MCPInvalidToolInput signalMissingRequiredArgumentNamed: each forTool: self ] ]
 ]
 
 { #category : 'private - results' }

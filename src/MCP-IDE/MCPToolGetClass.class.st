@@ -92,10 +92,7 @@ MCPToolGetClass >> buildInputSchema [
 { #category : 'private - request' }
 MCPToolGetClass >> classNameFromRequest: request [
 
-	| className |
-	className := request stringArgumentNamed: 'name'.
-	className ifNil: [ Error signal: 'name must be a non-empty string.' ].
-	^ className
+	^ request stringArgumentNamed: 'name'
 ]
 
 { #category : 'metadata' }
