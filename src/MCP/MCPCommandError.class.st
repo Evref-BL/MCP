@@ -135,11 +135,13 @@ MCPCommandError class >> oppositeSideMethodSuggestionForClass: targetClass class
 
 { #category : 'signaling' }
 MCPCommandError class >> signalClassAlreadyExistsNamed: aClassName [
-	"The message says which tools work on a class that exists, since a client reading text sees nothing of the details."
+	"The message says which tools work on a class that exists, since a client reading text sees nothing of the details. class_update is not in every client's list, and a client that calls only what it lists reaches it through tool_call alone, so the message gives that call. A backslash keeps a brace of the call from being read as a placeholder."
 
 	^ self
 		  signalErrorCode: #ClassAlreadyExists
-		  message: ('Class {1} already exists. class_update changes it; class_get shows it.' format: { aClassName })
+		  message:
+			  ('Class {1} already exists. Change it with class_update, through tool_call when class_update is not in your list: tool_call \{"name": "class_update", "arguments": \{"name": "{1}", ...}}. class_get shows it.'
+				   format: { aClassName })
 		  details: { (#class -> aClassName) } asDictionary
 ]
 

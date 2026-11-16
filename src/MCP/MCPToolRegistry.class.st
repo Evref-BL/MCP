@@ -246,11 +246,16 @@ MCPToolRegistry >> scoreForTool: aTool queryTerms: queryTerms [
 
 { #category : 'tools' }
 MCPToolRegistry >> searchMetadataForTool: aTool [
-	"A search entry says whether the tool is advertised, as its contract does: a client that calls only the tools it lists has to reach the others another way."
+	"A search entry says whether the tool is advertised, as its contract does: a client that calls only the tools it lists has to reach the others another way. It has no schema for them either, so their entries also name their arguments, in the order the schema declares them, and the ones it requires."
 
-	| metadata |
+	| metadata schema |
 	metadata := aTool searchMetadata.
 	metadata at: #exposure put: (self exposureForTool: aTool).
+	(self isToolAdvertised: aTool) ifTrue: [ ^ metadata ].
+	schema := aTool inputSchema.
+	metadata
+		at: #arguments put: ((schema properties ifNil: [ #(  ) ]) collect: [ :each | each name ] as: Array);
+		at: #requiredArguments put: (schema required ifNil: [ #(  ) ]) asArray.
 	^ metadata
 ]
 
