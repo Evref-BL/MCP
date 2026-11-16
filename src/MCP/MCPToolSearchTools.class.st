@@ -40,6 +40,23 @@ MCPToolSearchTools >> annotations [
 	^ MCPStructureToolAnnotations readOnly
 ]
 
+{ #category : 'private - results' }
+MCPToolSearchTools >> argumentsTextOn: aStream for: aSearchEntry [
+	"Name the arguments of a tool the caller has no schema for, the required ones marked, so that its first call through tool_call can be right."
+
+	| names required |
+	names := aSearchEntry at: #arguments.
+	names ifEmpty: [ ^ aStream nextPutAll: ' It takes no arguments.' ].
+	required := aSearchEntry at: #requiredArguments ifAbsent: [ #(  ) ].
+	aStream nextPutAll: ' Arguments: '.
+	names
+		do: [ :each |
+				aStream nextPutAll: each.
+				(required includes: each) ifTrue: [ aStream nextPutAll: ' (required)' ] ]
+		separatedBy: [ aStream nextPutAll: ', ' ].
+	aStream nextPut: $.
+]
+
 { #category : 'metadata' }
 MCPToolSearchTools >> buildInputSchema [
 
@@ -79,7 +96,7 @@ MCPToolSearchTools >> catalogOverviewText [
 
 { #category : 'private - results' }
 MCPToolSearchTools >> catalogTextForSummary: aSummary tools: toolMetadataEntries [
-	"Separate entries with a line feed: a carriage return reaches the caller as an escaped character rather than a line break. A tool that is not advertised says so after its name, since a client that calls only what it lists cannot call it by that name alone."
+	"Separate entries with a line feed: a carriage return reaches the caller as an escaped character rather than a line break. A tool that is not advertised says so after its name, since a client that calls only what it lists cannot call it by that name alone, and names its arguments after its description, since that client has no schema for it either."
 
 	^ String streamContents: [ :stream |
 			  stream nextPutAll: aSummary.
@@ -90,7 +107,8 @@ MCPToolSearchTools >> catalogTextForSummary: aSummary tools: toolMetadataEntries
 					  (each at: #exposure ifAbsent: [ nil ]) = 'discoverable' ifTrue: [ stream nextPutAll: ' (not in the advertised list)' ].
 					  stream
 						  nextPutAll: ' - ';
-						  nextPutAll: (each at: #description) ] ]
+						  nextPutAll: (each at: #description).
+					  (each includesKey: #arguments) ifTrue: [ self argumentsTextOn: stream for: each ] ] ]
 ]
 
 { #category : 'private - results' }
@@ -143,7 +161,7 @@ MCPToolSearchTools >> resultLimit [
 
 { #category : 'private - results' }
 MCPToolSearchTools >> summaryForQuery: aQuery matching: matchingTools shown: shownTools [
-	"Every registered tool is callable by name; only a client that calls nothing but the tools it lists needs tool_call to reach the others, so the summary says so when it shows one of them."
+	"A host may let a model call only the tools in its own list, and the model cannot tell whether its host is one. So when the answer shows a tool outside that list, the summary gives the route every client has, tool_call, with that tool's name in it."
 
 	matchingTools ifEmpty: [
 			^ aQuery isEmptyOrNil
@@ -155,9 +173,9 @@ MCPToolSearchTools >> summaryForQuery: aQuery matching: matchingTools shown: sho
 				  ifFalse: [
 						  stream << shownTools size asString << ' of ' << matchingTools size asString
 						  << ' matching tools, best first. Add words to narrow the search.' ].
-			  (shownTools anySatisfy: [ :each | (self toolRegistry isToolAdvertised: each) not ]) ifTrue: [
-				  stream nextPutAll:
-					  ' Tools not in your list can be called by name, or through tool_call if your client only calls listed tools.' ] ]
+			  shownTools detect: [ :each | (self toolRegistry isToolAdvertised: each) not ] ifFound: [ :unlisted |
+					  stream << ' Call a tool not in your list through tool_call, with the arguments its line names: tool_call {"name": "'
+					  << unlisted name << '", "arguments": {...}}.' ] ]
 ]
 
 { #category : 'metadata' }

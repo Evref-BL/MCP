@@ -2962,7 +2962,7 @@ MCPToolContractsTest >> testSearchToolsReturnsDiscoverableMetadata [
 	self assert: (names includes: 'repository_reload').
 	self deny: (names includes: 'class_search').
 	createRepositoryMetadata := tools detect: [ :each | (each at: #name) = 'repository_create' ].
-	self assert: createRepositoryMetadata keys asSet equals: #( name description exposure ) asSet.
+	self assert: createRepositoryMetadata keys asSet equals: #( name description exposure arguments requiredArguments ) asSet.
 	self assert: (createRepositoryMetadata at: #exposure) equals: 'discoverable'
 ]
 
@@ -3310,7 +3310,7 @@ MCPToolContractsTest >> testToolSearchCountsOneToolInTheSingular [
 
 { #category : 'tests' }
 MCPToolContractsTest >> testToolSearchMarksToolsNotAdvertised [
-	"A client that calls only the tools it lists cannot call the others by their bare name, so their lines say they are not listed. Every client can reach them some way, so nothing says tool_call is the only one."
+	"A client that calls only the tools it lists cannot call the others by their bare name, so their lines say they are not listed. Once every tool is advertised, nothing is marked and no route is given."
 
 	| lines result server summary text |
 	server := self mcpWithoutObservabilityExport.
@@ -3320,8 +3320,6 @@ MCPToolContractsTest >> testToolSearchMarksToolsNotAdvertised [
 	lines := text lines.
 	summary := self summaryFrom: result.
 	self assert: lines first equals: summary.
-	self assert:
-		(summary endsWith: ' Tools not in your list can be called by name, or through tool_call if your client only calls listed tools.').
 	self assert: (lines anySatisfy: [ :each | each beginsWith: 'repository_search - ' ]).
 	self assert: (lines anySatisfy: [ :each | each beginsWith: 'repository_create (not in the advertised list) - ' ]).
 	self deny: (text includesSubstring: '(through tool_call)').
@@ -3332,7 +3330,44 @@ MCPToolContractsTest >> testToolSearchMarksToolsNotAdvertised [
 	result := server rpcToolCall: 'tool_search' withParams: { (#query -> 'repository') } asDictionary.
 	text := self firstTextFromToolResult: result.
 	self deny: (text includesSubstring: 'not in the advertised list').
-	self deny: (text includesSubstring: 'Tools not in your list')
+	self deny: (text includesSubstring: 'not in your list').
+	self deny: (text includesSubstring: 'Arguments:')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testToolSearchNamesTheArgumentsOfAToolNotAdvertised [
+	"A client has no schema for a tool outside its list, so that tool's line names its arguments, the required ones marked. A listed tool's line stays as it was: its schema is already in the client's list."
+
+	| lines result server |
+	server := self mcpWithoutObservabilityExport.
+	server addTool: MCPExternalTestTool.
+	server advertiseTools: #( 'tool_search' 'tool_call' ).
+	result := server rpcToolCall: 'tool_search' withParams: { (#query -> 'tool external') } asDictionary.
+	lines := (self firstTextFromToolResult: result) lines.
+	self assert: (lines includes:
+			 'tool_get (not in the advertised list) - Get a tool''s description and input schema by name. Arguments: name (required).').
+	self assert: (lines includes:
+			 'external_test_tool (not in the advertised list) - Test fixture for external MCP tool extensions. It takes no arguments.').
+	self assert: (lines includes: 'tool_search - Search the whole tool catalog, best match first, including tools not in your list.').
+	self
+		assert: ((((self dataFrom: result) at: #tools) detect: [ :each | (each at: #name) = 'tool_get' ]) at: #requiredArguments)
+		equals: #( 'name' )
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testToolSearchSendsAToolNotAdvertisedThroughToolCall [
+	"A host may let a model call only the tools its own list holds, and the model cannot tell whether its host is one. The route every client has, tool_call, is the one the answer gives, shown with the first unlisted tool it lists."
+
+	| result server summary unlisted |
+	server := self mcpWithoutObservabilityExport.
+	server advertiseTools: #( 'tool_search' 'tool_get' 'tool_call' 'repository_search' ).
+	result := server rpcToolCall: 'tool_search' withParams: { (#query -> 'repository') } asDictionary.
+	summary := self summaryFrom: result.
+	unlisted := ((self dataFrom: result) at: #tools) detect: [ :each | (each at: #exposure) = 'discoverable' ].
+	self assert: (summary endsWith:
+			 ' Call a tool not in your list through tool_call, with the arguments its line names: tool_call {"name": "'
+			 , (unlisted at: #name) , '", "arguments": {...}}.').
+	self deny: (summary includesSubstring: 'by name')
 ]
 
 { #category : 'tests' }

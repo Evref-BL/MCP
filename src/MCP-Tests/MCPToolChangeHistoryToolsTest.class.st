@@ -27,7 +27,7 @@ MCPToolChangeHistoryToolsTest >> testChangeHistoryToolsAreDiscoverableWithExpect
 			tool := self toolRegistry toolNamed: toolName ifAbsent: [ self fail: 'Missing tool ' , toolName ].
 			self assert: tool defaultExposure equals: 'discoverable'.
 			metadata := metadataByName at: toolName.
-			self assert: metadata keys asSet equals: #( name description exposure ) asSet.
+			self assert: metadata keys asSet equals: #( name description exposure arguments requiredArguments ) asSet.
 			self assert: (metadata at: #exposure) equals: 'discoverable' ]
 ]
 

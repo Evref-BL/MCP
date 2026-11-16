@@ -437,6 +437,21 @@ MCPToolClassMutationTest >> testCreateNamesATraitATrait [
 ]
 
 { #category : 'tests - create' }
+MCPToolClassMutationTest >> testCreateRefusalOfAnExistingClassSaysHowToReachClassUpdate [
+	"class_update is not in every client's list, and a client that calls only what it lists cannot call it by its name. The refusal gives the call every client can make, with the class already named in it."
+
+	| arguments text |
+	arguments := self
+		             createRequestArgumentsForClassName: 'MCPToolClassMutationTestGenerated'
+		             superclassName: 'Object'
+		             packageName: self generatedPackageName.
+	self callToolWith: arguments.
+	text := self textFrom: (self callToolWith: arguments).
+	self assert: (text includesSubstring:
+			 'Change it with class_update, through tool_call when class_update is not in your list: tool_call {"name": "class_update", "arguments": {"name": "MCPToolClassMutationTestGenerated", ...}}.')
+]
+
+{ #category : 'tests - create' }
 MCPToolClassMutationTest >> testCreateReturnsStructuredErrorWhenClassAlreadyExists [
 
 	| arguments error result |
@@ -451,10 +466,8 @@ MCPToolClassMutationTest >> testCreateReturnsStructuredErrorWhenClassAlreadyExis
 	self assert: (error at: #action) equals: 'create'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'ClassAlreadyExists'.
-	self
-		assert: (error at: #message)
-		equals: 'Class MCPToolClassMutationTestGenerated already exists. class_update changes it; class_get shows it.'.
-	self assert: (((result at: #content) first at: #text) includesSubstring: 'class_update changes it; class_get shows it.').
+	self assert: ((error at: #message) beginsWith: 'Class MCPToolClassMutationTestGenerated already exists. ').
+	self assert: (((result at: #content) first at: #text) includesSubstring: (error at: #message)).
 	self deny: (error includesKey: #guidance)
 ]
 
