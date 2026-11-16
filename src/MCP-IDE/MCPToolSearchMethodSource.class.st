@@ -65,7 +65,7 @@ MCPToolSearchMethodSource >> description [
 
 { #category : 'private - results' }
 MCPToolSearchMethodSource >> entryLineTextFor: entry omitting: omittedKeys [
-	"EvalShape>>summary line 3: ^ self describe , ' of area '. The line is written as it is, unquoted, since nothing follows it on the row."
+	"ZooAnimal>>plaque line 3: ^ self nickname , ' of the pen '. The line is written as it is, unquoted, since nothing follows it on the row."
 
 	| lineNumber text |
 	text := super entryLineTextFor: entry omitting: omittedKeys.

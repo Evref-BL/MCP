@@ -166,7 +166,7 @@ MCPToolCompileMethod >> forceSchemaProperty [
 
 { #category : 'private - header' }
 MCPToolCompileMethod >> headerIn: aSource [
-	"The method's reference a source begins with, as in EvalRectangle >> #calcArea, read the way method_get reads one; nil when the first line is the method's own. A real method cannot begin with one: a body cannot start with a binary operator, Name >> parses only as a method named Name sending >>, and a reference needs one capitalised word before its separator."
+	"The method's reference a source begins with, as in ZooLion >> #dailyRation, read the way method_get reads one; nil when the first line is the method's own. A real method cannot begin with one: a body cannot start with a binary operator, Name >> parses only as a method named Name sending >>, and a reference needs one capitalised word before its separator."
 
 	^ MCPMethodReference fromString: (self firstLineOf: aSource)
 ]

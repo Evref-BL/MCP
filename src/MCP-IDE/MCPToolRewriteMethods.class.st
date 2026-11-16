@@ -81,7 +81,7 @@ MCPToolRewriteMethods >> executeWithRequest: request [
 
 { #category : 'private - results' }
 MCPToolRewriteMethods >> keysStatedInSummary [
-	"The summary already reads 'Previewed 3 method rewrite changes in package Eval-Shapes.'"
+	"The summary already reads 'Previewed 3 method rewrite changes in package Zoo-Animals.'"
 
 	^ #( apply appliedCount changeCount scope )
 ]
@@ -212,7 +212,7 @@ MCPToolRewriteMethods >> rewriteWith: request [
 
 { #category : 'private - results' }
 MCPToolRewriteMethods >> successSummaryForChangeCount: count applied: apply scopeQuery: aScopeQuery skippedTraitMethods: skippedTraitMethods [
-	"Previewed 2 method rewrite changes in package Eval-Shapes., naming where it looked as a search does. The scope must name only what exists, so its phrase holds every name."
+	"Previewed 2 method rewrite changes in package Zoo-Animals., naming where it looked as a search does. The scope must name only what exists, so its phrase holds every name."
 
 	| scopePhrase |
 	scopePhrase := aScopeQuery scopePhrase.

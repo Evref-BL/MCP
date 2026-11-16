@@ -112,19 +112,19 @@ MCPImageLookupTest >> testAMethodToolReadsTheSideOnce [
 					        baseName.
 					        classSide.
 					        sideGiven } ] ].
-	self assert: (read value: 'EvalStockItem class' value: nil) equals: #( 'EvalStockItem' true true ).
-	self assert: (read value: 'EvalStockItem class' value: 'class') equals: #( 'EvalStockItem' true true ).
-	self assert: (read value: 'TEvalPriced classTrait' value: nil) equals: #( 'TEvalPriced' true true ).
-	self assert: (read value: 'EvalStockItem' value: nil) equals: #( 'EvalStockItem' false false ).
-	self assert: (read value: 'EvalStockItem' value: 'instance') equals: #( 'EvalStockItem' false true ).
-	self assert: (read value: 'EvalStockItem' value: 'class') equals: #( 'EvalStockItem' true true ).
-	error := self capture: [ read value: 'EvalStockItem class' value: 'instance' ].
+	self assert: (read value: 'ZooLion class' value: nil) equals: #( 'ZooLion' true true ).
+	self assert: (read value: 'ZooLion class' value: 'class') equals: #( 'ZooLion' true true ).
+	self assert: (read value: 'TZooFeedable classTrait' value: nil) equals: #( 'TZooFeedable' true true ).
+	self assert: (read value: 'ZooLion' value: nil) equals: #( 'ZooLion' false false ).
+	self assert: (read value: 'ZooLion' value: 'instance') equals: #( 'ZooLion' false true ).
+	self assert: (read value: 'ZooLion' value: 'class') equals: #( 'ZooLion' true true ).
+	error := self capture: [ read value: 'ZooLion class' value: 'instance' ].
 	self assert: error errorCode equals: #ClassSideConflict.
 	self
 		assert: error messageText
-		equals: 'EvalStockItem class names the class side, but side is instance. Pass class EvalStockItem, with side class or instance.'.
-	self assert: (error structuredDetails at: #class) equals: 'EvalStockItem'.
-	self assert: (error structuredDetails at: #name) equals: 'EvalStockItem class'.
+		equals: 'ZooLion class names the class side, but side is instance. Pass class ZooLion, with side class or instance.'.
+	self assert: (error structuredDetails at: #class) equals: 'ZooLion'.
+	self assert: (error structuredDetails at: #name) equals: 'ZooLion class'.
 	self assert: (error structuredDetails at: #side) equals: 'instance'
 ]
 
@@ -192,14 +192,14 @@ MCPImageLookupTest >> testANewClassNameMustBeFree [
 
 	| error |
 	self assert: (MCPImageLookup newClassName: 'MCPImageLookupTestNeverMade') equals: 'MCPImageLookupTestNeverMade'.
-	error := self capture: [ MCPImageLookup newClassName: '["EvalShape","EvalRect"]' ].
+	error := self capture: [ MCPImageLookup newClassName: '["ZooAnimal","ZooLion"]' ].
 	self assert: error errorCode equals: #ClassNameIsAList.
-	error := self capture: [ MCPImageLookup newClassName: 'EvalStockItem class' ].
+	error := self capture: [ MCPImageLookup newClassName: 'ZooLion class' ].
 	self assert: error errorCode equals: #ClassSideNamed.
 	self
 		assert: error messageText
 		equals:
-		'EvalStockItem class is the class side of EvalStockItem, which class_create makes with the class. Name EvalStockItem, and give class-side slots in classSlots.'.
+		'ZooLion class is the class side of ZooLion, which class_create makes with the class. Name ZooLion, and give class-side slots in classSlots.'.
 	error := self capture: [ MCPImageLookup newClassName: 'Transcript' ].
 	self assert: error errorCode equals: #GlobalAlreadyExists.
 	self assert: error messageText equals: 'Transcript already names a global variable. Choose another class name.'.
@@ -253,18 +253,18 @@ MCPImageLookupTest >> testAScopeEntryNamesItsKey [
 MCPImageLookupTest >> testAWholeClassToolRefusesAClassSide [
 
 	| error |
-	self assert: (MCPImageLookup wholeClassName: 'EvalShape' for: 'class_remove') equals: 'EvalShape'.
-	error := self capture: [ MCPImageLookup wholeClassName: 'EvalShape class' for: 'class_remove' ].
+	self assert: (MCPImageLookup wholeClassName: 'ZooAnimal' for: 'class_remove') equals: 'ZooAnimal'.
+	error := self capture: [ MCPImageLookup wholeClassName: 'ZooAnimal class' for: 'class_remove' ].
 	self assert: error errorCode equals: #ClassSideNamed.
 	self
 		assert: error messageText
 		equals:
-		'EvalShape class is the class side of EvalShape, and goes only with its class. Name EvalShape to remove the class, or use method_remove with side class to remove class-side methods.'.
-	error := self capture: [ MCPImageLookup wholeClassName: 'EvalStockItem class' for: 'class_update' ].
+		'ZooAnimal class is the class side of ZooAnimal, and goes only with its class. Name ZooAnimal to remove the class, or use method_remove with side class to remove class-side methods.'.
+	error := self capture: [ MCPImageLookup wholeClassName: 'ZooLion class' for: 'class_update' ].
 	self
 		assert: error messageText
 		equals:
-		'EvalStockItem class is the class side of EvalStockItem. class_update changes the whole class: name EvalStockItem, and use classSlots for class-side slots.'
+		'ZooLion class is the class side of ZooLion. class_update changes the whole class: name ZooLion, and use classSlots for class-side slots.'
 ]
 
 { #category : 'tests' }

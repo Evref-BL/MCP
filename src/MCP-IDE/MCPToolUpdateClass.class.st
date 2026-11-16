@@ -575,7 +575,7 @@ MCPToolUpdateClass >> moveSlotSummaryFor: plan ofClassNamed: className [
 
 { #category : 'private - results' }
 MCPToolUpdateClass >> moveSummaryForClassInfo: aClassInfo [
-	"Moved class EvalCanvas to tag Rendering of package Eval-Shapes. It says where the class is after the move: a class filed under a tag is named with the tag and its package, one at its package's root with the package alone."
+	"Moved class ZooKeeper to tag People of package Zoo-Core. It says where the class is after the move: a class filed under a tag is named with the tag and its package, one at its package's root with the package alone."
 
 	^ String streamContents: [ :stream |
 			  stream

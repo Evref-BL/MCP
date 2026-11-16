@@ -451,7 +451,7 @@ MCPToolRunTests >> warningsFor: anOperation [
 
 { #category : 'private' }
 MCPToolRunTests >> withoutTestsSentenceOn: stream for: entry [
-	"EvalLedgerTest has no tests."
+	"ZooKeeperTest has no tests."
 
 	stream
 		nextPutAll: (self valueIn: entry at: #selection);

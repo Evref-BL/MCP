@@ -706,8 +706,8 @@ MCPToolRunCritiquesTest >> testTextReadsRuleThenHitsByLine [
 							 (#fixable -> true) } asDictionary ])
 		equals: (String streamContents: [ :stream | stream lf << 'MCPExampleRule: Do it this way. method_rewrite can apply it.' ]).
 	self
-		assert: (String streamContents: [ :stream | tool hitTextOn: stream for: { (#package -> 'Eval-Shapes') } asDictionary ])
-		equals: (String streamContents: [ :stream | stream lf << '  package Eval-Shapes' ])
+		assert: (String streamContents: [ :stream | tool hitTextOn: stream for: { (#package -> 'Zoo-Animals') } asDictionary ])
+		equals: (String streamContents: [ :stream | stream lf << '  package Zoo-Animals' ])
 ]
 
 { #category : 'private' }

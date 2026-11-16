@@ -22,8 +22,8 @@ MCPCommandErrorTest >> capture: aBlock [
 MCPCommandErrorTest >> testAClassOfTheWrongKindSaysWhatKindIsNeeded [
 
 	{
-		{ #trait. 'EvalUnits'. #InvalidTrait. 'EvalUnits is not a trait.' }.
-		{ #sharedPool. 'EvalStockItem'. #InvalidSharedPool. 'EvalStockItem is not a shared pool: a pool is a subclass of SharedPool.' }.
+		{ #trait. 'ZooDiet'. #InvalidTrait. 'ZooDiet is not a trait.' }.
+		{ #sharedPool. 'ZooLion'. #InvalidSharedPool. 'ZooLion is not a shared pool: a pool is a subclass of SharedPool.' }.
 		{ #layoutClass. 'Object'. #InvalidLayoutClass. 'Object is not a layout class: name a subclass of AbstractLayout, such as VariableLayout.' }.
 		{ #critiqueRule. 'Object'. #InvalidCritiqueRule. 'Object is not a critique rule class.' }.
 		{ #rewriteRule. 'Object'. #RewriteRuleClassHasNoPatterns. 'Object is not a rewrite rule. Name a subclass of ReNodeRewriteRule.' } }
@@ -40,13 +40,13 @@ MCPCommandErrorTest >> testAClassRemovalBlockCarriesItsDetails [
 
 	| details error |
 	error := self capture: [
-			         MCPCommandError signalClassRemovalBlocked: 'Did not remove EvalRect: 1 method refers to it.' details: {
-					         (#classes -> #( 'EvalRect' )).
+			         MCPCommandError signalClassRemovalBlocked: 'Did not remove ZooLion: 1 method refers to it.' details: {
+					         (#classes -> #( 'ZooLion' )).
 					         (#forceSupported -> true) } asDictionary ].
 	details := error structuredDetails.
 	self assert: error errorCode equals: #ClassRemovalBlocked.
-	self assert: error messageText equals: 'Did not remove EvalRect: 1 method refers to it.'.
-	self assert: (details at: #classes) equals: #( 'EvalRect' ).
+	self assert: error messageText equals: 'Did not remove ZooLion: 1 method refers to it.'.
+	self assert: (details at: #classes) equals: #( 'ZooLion' ).
 	self assert: (details at: #forceSupported)
 ]
 
@@ -54,15 +54,14 @@ MCPCommandErrorTest >> testAClassRemovalBlockCarriesItsDetails [
 MCPCommandErrorTest >> testAClassSideAgainstSideInstanceIsAConflict [
 
 	| details error |
-	error := self capture: [
-		         MCPCommandError signalClassSideConflict: 'EvalStockItem class' baseName: 'EvalStockItem' side: 'instance' ].
+	error := self capture: [ MCPCommandError signalClassSideConflict: 'ZooLion class' baseName: 'ZooLion' side: 'instance' ].
 	details := error structuredDetails.
 	self assert: error errorCode equals: #ClassSideConflict.
 	self
 		assert: error messageText
-		equals: 'EvalStockItem class names the class side, but side is instance. Pass class EvalStockItem, with side class or instance.'.
-	self assert: (details at: #class) equals: 'EvalStockItem'.
-	self assert: (details at: #name) equals: 'EvalStockItem class'.
+		equals: 'ZooLion class names the class side, but side is instance. Pass class ZooLion, with side class or instance.'.
+	self assert: (details at: #class) equals: 'ZooLion'.
+	self assert: (details at: #name) equals: 'ZooLion class'.
 	self assert: (details at: #side) equals: 'instance'
 ]
 
@@ -72,21 +71,21 @@ MCPCommandErrorTest >> testAClassSideGivenToAWholeClassToolSaysWhatToName [
 	{
 		('class_remove'
 		 ->
-		 'EvalShape class is the class side of EvalShape, and goes only with its class. Name EvalShape to remove the class, or use method_remove with side class to remove class-side methods.').
+		 'ZooAnimal class is the class side of ZooAnimal, and goes only with its class. Name ZooAnimal to remove the class, or use method_remove with side class to remove class-side methods.').
 		('class_update'
 		 ->
-		 'EvalShape class is the class side of EvalShape. class_update changes the whole class: name EvalShape, and use classSlots for class-side slots.').
+		 'ZooAnimal class is the class side of ZooAnimal. class_update changes the whole class: name ZooAnimal, and use classSlots for class-side slots.').
 		('class_create'
 		 ->
-		 'EvalShape class is the class side of EvalShape, which class_create makes with the class. Name EvalShape, and give class-side slots in classSlots.') }
+		 'ZooAnimal class is the class side of ZooAnimal, which class_create makes with the class. Name ZooAnimal, and give class-side slots in classSlots.') }
 		do: [ :each |
 				| details error |
-				error := self capture: [ MCPCommandError signalClassSideNamed: 'EvalShape class' baseName: 'EvalShape' for: each key ].
+				error := self capture: [ MCPCommandError signalClassSideNamed: 'ZooAnimal class' baseName: 'ZooAnimal' for: each key ].
 				details := error structuredDetails.
 				self assert: error errorCode equals: #ClassSideNamed.
 				self assert: error messageText equals: each value.
-				self assert: (details at: #class) equals: 'EvalShape'.
-				self assert: (details at: #name) equals: 'EvalShape class' ]
+				self assert: (details at: #class) equals: 'ZooAnimal'.
+				self assert: (details at: #name) equals: 'ZooAnimal class' ]
 ]
 
 { #category : 'tests' }
@@ -103,13 +102,13 @@ MCPCommandErrorTest >> testAGlobalVariableKeepsItsName [
 MCPCommandErrorTest >> testAListInOneNameIsRefusedSayingToPassAnArray [
 
 	| details error |
-	error := self capture: [ MCPCommandError signalClassNameIsAList: '{"EvalShape","EvalRect"}' scope: nil details: #(  ) ].
+	error := self capture: [ MCPCommandError signalClassNameIsAList: '{"ZooAnimal","ZooLion"}' scope: nil details: #(  ) ].
 	details := error structuredDetails.
 	self assert: error errorCode equals: #ClassNameIsAList.
 	self
 		assert: error messageText
-		equals: '{"EvalShape","EvalRect"} is a list written as one string, not a class name. Pass several names as an array of strings.'.
-	self assert: (details at: #name) equals: '{"EvalShape","EvalRect"}'.
+		equals: '{"ZooAnimal","ZooLion"} is a list written as one string, not a class name. Pass several names as an array of strings.'.
+	self assert: (details at: #name) equals: '{"ZooAnimal","ZooLion"}'.
 	self deny: (details includesKey: #scope)
 ]
 
@@ -119,15 +118,15 @@ MCPCommandErrorTest >> testAMethodSourceHeaderCarriesTheHeaderItsClassAndSide [
 	| details error |
 	error := self capture: [
 			         MCPCommandError
-				         signalMethodSourceHeader: 'EvalShape >> #area'
-				         message: 'The source begins with EvalShape >> #area.'
-				         className: 'EvalRectangle'
+				         signalMethodSourceHeader: 'ZooAnimal >> #dailyRation'
+				         message: 'The source begins with ZooAnimal >> #dailyRation.'
+				         className: 'ZooLion'
 				         side: 'instance' ].
 	details := error structuredDetails.
 	self assert: error errorCode equals: #MethodSourceHeader.
-	self assert: error messageText equals: 'The source begins with EvalShape >> #area.'.
-	self assert: (details at: #header) equals: 'EvalShape >> #area'.
-	self assert: (details at: #class) equals: 'EvalRectangle'.
+	self assert: error messageText equals: 'The source begins with ZooAnimal >> #dailyRation.'.
+	self assert: (details at: #header) equals: 'ZooAnimal >> #dailyRation'.
+	self assert: (details at: #class) equals: 'ZooLion'.
 	self assert: (details at: #side) equals: 'instance'
 ]
 
@@ -135,15 +134,15 @@ MCPCommandErrorTest >> testAMethodSourceHeaderCarriesTheHeaderItsClassAndSide [
 MCPCommandErrorTest >> testAMissingCompileTargetSaysHowToMakeIt [
 
 	| error |
-	error := self capture: [ MCPCommandError signalMissingCompileTarget: 'EvalSpike' suggestions: #(  ) ].
+	error := self capture: [ MCPCommandError signalMissingCompileTarget: 'ZooAviary' suggestions: #(  ) ].
 	self assert: error errorCode equals: #ClassNotFound.
-	self assert: error messageText equals: 'Class EvalSpike does not exist. Create it with class_create, then compile into it.'.
-	self assert: (error structuredDetails at: #class) equals: 'EvalSpike'.
-	error := self capture: [ MCPCommandError signalMissingCompileTarget: 'EvalSpkie' suggestions: #( 'EvalSpike' ) ].
+	self assert: error messageText equals: 'Class ZooAviary does not exist. Create it with class_create, then compile into it.'.
+	self assert: (error structuredDetails at: #class) equals: 'ZooAviary'.
+	error := self capture: [ MCPCommandError signalMissingCompileTarget: 'ZooAvairy' suggestions: #( 'ZooAviary' ) ].
 	self
 		assert: error messageText
-		equals: 'Class EvalSpkie does not exist. Did you mean: EvalSpike. If it is a new class, create it with class_create first.'.
-	self assert: (error structuredDetails at: #suggestions) equals: #( 'EvalSpike' )
+		equals: 'Class ZooAvairy does not exist. Did you mean: ZooAviary. If it is a new class, create it with class_create first.'.
+	self assert: (error structuredDetails at: #suggestions) equals: #( 'ZooAviary' )
 ]
 
 { #category : 'tests' }
@@ -151,12 +150,12 @@ MCPCommandErrorTest >> testASkippedScopeEntryNamesTheKeyThatSkippedIt [
 
 	self
 		assert: (MCPCommandError
-				 textForMissing: 'EvalRect'
+				 textForMissing: 'ZooTigr'
 				 role: #class
 				 scope: 'scope.classes'
 				 skipped: true
-				 suggestions: #( 'EvalRectangle' 'EvalCircle' ))
-		equals: 'Class EvalRect does not exist, so scope.classes skipped it. Did you mean: EvalRectangle, EvalCircle.'.
+				 suggestions: #( 'ZooTiger' 'ZooTapir' ))
+		equals: 'Class ZooTigr does not exist, so scope.classes skipped it. Did you mean: ZooTiger, ZooTapir.'.
 	self
 		assert: (MCPCommandError
 				 textForNotAClass: 'Transcript'
@@ -166,16 +165,16 @@ MCPCommandErrorTest >> testASkippedScopeEntryNamesTheKeyThatSkippedIt [
 		equals: 'Transcript is a global variable, not a class, so scope.classes skipped it.'.
 	self
 		assert: (MCPCommandError
-				 textForMissing: 'Eval-Txt'
+				 textForMissing: 'Zoo-Animls'
 				 role: #package
 				 scope: 'scope.packages'
 				 skipped: true
-				 suggestions: #( 'Eval-Text' ))
-		equals: 'Package Eval-Txt does not exist, so scope.packages skipped it. Did you mean: Eval-Text.'.
+				 suggestions: #( 'Zoo-Animals' ))
+		equals: 'Package Zoo-Animls does not exist, so scope.packages skipped it. Did you mean: Zoo-Animals.'.
 	self
-		assert: (MCPCommandError textForClassNameIsAList: '["EvalShape","EvalRect"]' scope: 'scope.classes' skipped: true)
+		assert: (MCPCommandError textForClassNameIsAList: '["ZooAnimal","ZooLion"]' scope: 'scope.classes' skipped: true)
 		equals:
-		'["EvalShape","EvalRect"] is a list written as one string, not a class name, so scope.classes skipped it. Pass several names as an array of strings.'
+		'["ZooAnimal","ZooLion"] is a list written as one string, not a class name, so scope.classes skipped it. Pass several names as an array of strings.'
 ]
 
 { #category : 'tests' }
@@ -184,13 +183,13 @@ MCPCommandErrorTest >> testAStrictScopeEntryNamesItsKeyAsItRefuses [
 	| details error |
 	error := self capture: [
 			         MCPCommandError
-				         signalMissing: 'EvalRect'
+				         signalMissing: 'ZooTigr'
 				         role: #class
 				         scope: 'scope.hierarchyOf'
-				         suggestions: #( 'EvalRectangle' )
+				         suggestions: #( 'ZooTiger' )
 				         details: #(  ) ].
 	details := error structuredDetails.
-	self assert: error messageText equals: 'Class EvalRect, in scope.hierarchyOf, does not exist. Did you mean: EvalRectangle.'.
+	self assert: error messageText equals: 'Class ZooTigr, in scope.hierarchyOf, does not exist. Did you mean: ZooTiger.'.
 	self assert: (details at: #scope) equals: 'scope.hierarchyOf'.
 	error := self capture: [
 			         MCPCommandError

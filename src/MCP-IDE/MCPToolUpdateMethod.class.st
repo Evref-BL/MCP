@@ -253,7 +253,7 @@ MCPToolUpdateMethod >> permutationFor: request [
 
 { #category : 'private - results' }
 MCPToolUpdateMethod >> protocolChangeSummaryFor: methodReference from: oldProtocolName to: newProtocolName [
-	"Moved EvalLedger>>audit from as yet unclassified to accounting., in the words method_compile uses when a replace moves a method; EvalLedger>>audit is already in accounting. when it was there before."
+	"Moved ZooKeeper>>feed from as yet unclassified to feeding., in the words method_compile uses when a replace moves a method; ZooKeeper>>feed is already in feeding. when it was there before."
 
 	^ String streamContents: [ :stream |
 			  oldProtocolName = newProtocolName
@@ -377,7 +377,7 @@ MCPToolUpdateMethod >> updateArgumentNames [
 
 { #category : 'private - results' }
 MCPToolUpdateMethod >> updateSubjectDescriptionFor: request [
-	"What the summary of several updates calls the method: method EvalLedger>>audit, its class named without its side."
+	"What the summary of several updates calls the method: method ZooKeeper>>feed, its class named without its side."
 
 	^ String streamContents: [ :stream |
 			  stream

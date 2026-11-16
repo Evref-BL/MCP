@@ -1256,7 +1256,7 @@ MCPToolContractsTest >> testEvaluateStopCollapsesARecursion [
 	| fixture result |
 	self timeLimit: 30 seconds.
 	fixture := self
-		           createClassNamed: 'EvalStopRecursionFixture'
+		           createClassNamed: 'StopRecursionFixture'
 		           superclassName: 'Object'
 		           slots: #(  )
 		           classSlots: #(  ).
@@ -1267,10 +1267,10 @@ MCPToolContractsTest >> testEvaluateStopCollapsesARecursion [
 	^ self descend: n - 1'
 			          protocol: 'fixture'
 			          on: fixture.
-		          self evaluateBriefly: 'EvalStopRecursionFixture new descend: 100' ] ensure: [
-		          self removeClassNamed: 'EvalStopRecursionFixture' ].
+		          self evaluateBriefly: 'StopRecursionFixture new descend: 100' ] ensure: [
+		          self removeClassNamed: 'StopRecursionFixture' ].
 	self assert: ((self stoppedTextOf: result) lines anySatisfy: [ :each |
-			 (each beginsWith: 'EvalStopRecursionFixture>>descend:, at least ') and: [ each endsWith: ' times in a row' ] ])
+			 (each beginsWith: 'StopRecursionFixture>>descend:, at least ') and: [ each endsWith: ' times in a row' ] ])
 ]
 
 { #category : 'tests - evaluate' }
@@ -1368,8 +1368,8 @@ MCPToolContractsTest >> testEvaluateStoppedFramesCollapseARecursion [
 
 	| lines tool |
 	tool := MCPToolEvaluate new.
-	lines := tool collapsedFrameLines: (Array new: 20 withAll: 'EvalStopRecursionFixture>>descend:') deeper: true.
-	self assert: lines equals: #( 'EvalStopRecursionFixture>>descend:, at least 20 times in a row' ).
+	lines := tool collapsedFrameLines: (Array new: 20 withAll: 'StopRecursionFixture>>descend:') deeper: true.
+	self assert: lines equals: #( 'StopRecursionFixture>>descend:, at least 20 times in a row' ).
 	self assert: (tool collapsedFrameLines: #( 'a' 'b' 'b' 'c' 'b' ) deeper: false) equals: #( 'a' 'b, 2 times in a row'
 	   'c' 'b' ).
 	self assert: (tool collapsedFrameLines: #( 'a' 'b' ) deeper: true) equals: #( 'a' 'b' )
@@ -1384,7 +1384,7 @@ MCPToolContractsTest >> testEvaluateStoppedTextNamesTheLimitAndTheWayToRunLonger
 	text := tool contentTextForStructuredContent: (Dictionary new
 			         at: #summary put: (tool stoppedMessageFor: 30);
 			         at: #error put: (Dictionary new
-					          at: #stoppedIn put: (tool collapsedFrameLines: (Array new: 20 withAll: 'EvalPayroll>>employees') deeper: true);
+					          at: #stoppedIn put: (tool collapsedFrameLines: (Array new: 20 withAll: 'ZooKeeper>>animals') deeper: true);
 					          at: #hint put: tool longerWorkHintLines;
 					          at: #timeoutSeconds put: 30;
 					          yourself);
@@ -1392,7 +1392,7 @@ MCPToolContractsTest >> testEvaluateStoppedTextNamesTheLimitAndTheWayToRunLonger
 	self assert: text equals: (String lf join: 'Evaluation stopped after 30 s, its time limit.
 What it changed before then stays changed.
 Stopped in:
-EvalPayroll>>employees, at least 20 times in a row
+ZooKeeper>>animals, at least 20 times in a row
 Run longer work in a forked process that writes its result to a file:
 [ | file result |
 	file := FileLocator imageDirectory / ''result.txt''.
@@ -1449,7 +1449,7 @@ MCPToolContractsTest >> testEvaluateStopsARecursionPastItsStackBound [
 	| fixture lines milliseconds result |
 	self timeLimit: 30 seconds.
 	fixture := self
-		           createClassNamed: 'EvalStopRecursionFixture'
+		           createClassNamed: 'StopRecursionFixture'
 		           superclassName: 'Object'
 		           slots: #(  )
 		           classSlots: #(  ).
@@ -1461,15 +1461,15 @@ MCPToolContractsTest >> testEvaluateStopsARecursionPastItsStackBound [
 			protocol: 'fixture'
 			on: fixture.
 		milliseconds := Time millisecondsToRun: [
-				                result := self
-					                          stoppedEarlyResultOf: 'EvalStopRecursionFixture new descend: 2000'
-					                          bounds: [ :command | command stackDepthLimit: 1000 ] ] ] ensure: [
-		self removeClassNamed: 'EvalStopRecursionFixture' ].
+			                result := self
+				                          stoppedEarlyResultOf: 'StopRecursionFixture new descend: 2000'
+				                          bounds: [ :command | command stackDepthLimit: 1000 ] ] ] ensure: [
+		self removeClassNamed: 'StopRecursionFixture' ].
 	self assert: result isError.
 	lines := (self textOfEvaluateResult: result) lines.
 	self assert: (lines first: 2) equals: #( 'Evaluation stopped: its stack passed 1000 frames, which an endless recursion does.'
 		   'What it changed before then stays changed.' ).
-	self assert: (lines anySatisfy: [ :each | each beginsWith: 'EvalStopRecursionFixture>>descend:, at least ' ]).
+	self assert: (lines anySatisfy: [ :each | each beginsWith: 'StopRecursionFixture>>descend:, at least ' ]).
 	self assert: milliseconds < 10000
 ]
 
@@ -1513,23 +1513,23 @@ MCPToolContractsTest >> testEvaluateStopsAWaitInACriticalSectionWithoutSignallin
 
 { #category : 'tests - evaluate' }
 MCPToolContractsTest >> testEvaluateStopsAnEndlessRecursionWithinASecondOrTwo [
-	"payroll #3's recursion grew the image by more than a GB a second until its time limit, and stopping a stack that deep took longer than the limit. Its stack passes the bound within a fraction of a second, so it is stopped long before the limit, having grown the image by a few hundred MB."
+	"An eval run's recursion grew the image by more than a GB a second until its time limit, and stopping a stack that deep took longer than the limit. Its stack passes the bound within a fraction of a second, so it is stopped long before the limit, having grown the image by a few hundred MB."
 
 	| fixture milliseconds result |
 	self timeLimit: 30 seconds.
 	fixture := self
-		           createClassNamed: 'EvalStopRecursionFixture'
+		           createClassNamed: 'StopRecursionFixture'
 		           superclassName: 'Object'
 		           slots: #(  )
 		           classSlots: #(  ).
 	[
 		self
-			ensureMethodSource: 'employees
-	^ self employees sorted'
+			ensureMethodSource: 'members
+	^ self members sorted'
 			protocol: 'fixture'
 			on: fixture.
-		milliseconds := Time millisecondsToRun: [ result := self evaluate: 'EvalStopRecursionFixture new employees' within: 30 ] ]
-		ensure: [ self removeClassNamed: 'EvalStopRecursionFixture' ].
+		milliseconds := Time millisecondsToRun: [ result := self evaluate: 'StopRecursionFixture new members' within: 30 ] ] ensure: [
+		self removeClassNamed: 'StopRecursionFixture' ].
 	self assert: (self resultIndicatesError: result).
 	self
 		assert: (self firstTextFromToolResult: result) lines first
