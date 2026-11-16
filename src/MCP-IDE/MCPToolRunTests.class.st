@@ -63,26 +63,35 @@ MCPToolRunTests >> checkArguments: request [
 ]
 
 { #category : 'private' }
-MCPToolRunTests >> classDefinedAgainSentenceFor: entry [
-	"<class> exists again, but <methods> still refer(s) to its removed copy: compile that method|those methods again with method_compile, unchanged, and it|they will refer to the current <class>. A references search finds only the current class's references, so the methods are named."
+MCPToolRunTests >> classesDefinedAgainSentenceFor: someEntries [
+	"<classes> exist(s) again, but <methods> still refer(s) to its|their removed copy|copies: compile that method|those methods again with method_compile, unchanged, and it|they will refer to the current <classes>. A references search finds only the current classes' references, so the methods are named, each once."
 
-	| className methods |
-	className := self valueIn: entry at: #class.
-	methods := self valueIn: entry at: #methods.
+	| classNames methods |
+	classNames := someEntries collect: [ :each | self valueIn: each at: #class ].
+	methods := OrderedCollection new.
+	someEntries do: [ :each | (self valueIn: each at: #methods) do: [ :method | methods addIfNotPresent: method ] ].
 	^ String streamContents: [ :stream |
 			  stream
-				  nextPutAll: className;
-				  nextPutAll: ' exists again, but ';
+				  nextPutAll: (self joinedNames: classNames);
+				  nextPutAll: (classNames size = 1
+						   ifTrue: [ ' exists again, but ' ]
+						   ifFalse: [ ' exist again, but ' ]);
 				  nextPutAll: (self joinedNames: methods);
 				  nextPutAll: (methods size = 1
-						   ifTrue: [ ' still refers to its removed copy: compile that method' ]
-						   ifFalse: [ ' still refer to its removed copy: compile those methods' ]);
+						   ifTrue: [ ' still refers to ' ]
+						   ifFalse: [ ' still refer to ' ]);
+				  nextPutAll: (classNames size = 1
+						   ifTrue: [ 'its removed copy' ]
+						   ifFalse: [ 'their removed copies' ]);
+				  nextPutAll: (methods size = 1
+						   ifTrue: [ ': compile that method' ]
+						   ifFalse: [ ': compile those methods' ]);
 				  nextPutAll: ' again with method_compile, unchanged, and ';
 				  nextPutAll: (methods size = 1
 						   ifTrue: [ 'it' ]
 						   ifFalse: [ 'they' ]);
 				  nextPutAll: ' will refer to the current ';
-				  nextPutAll: className;
+				  nextPutAll: (self joinedNames: classNames);
 				  nextPut: $. ]
 ]
 
@@ -338,7 +347,7 @@ MCPToolRunTests >> removedClassReferenceSentenceFor: entry [
 
 { #category : 'private' }
 MCPToolRunTests >> removedClassReferencesSentencesOn: stream for: data [
-	"One sentence per set of removed classes that tests refer to, then: Create <the classes nothing has the name of> again with class_create, or change the test(s). Then one sentence per class that exists again, naming the methods that still refer to its removed copy."
+	"One sentence per set of removed classes that tests refer to, then: Create <the classes nothing has the name of> again with class_create, or change the test(s). Then one sentence for the classes that exist again, naming each method that still refers to a removed copy once."
 
 	| classesDefinedAgain missingClassNames namesDefinedAgain sentences testCount |
 	classesDefinedAgain := (self valueIn: data at: #classesDefinedAgain) ifNil: [ #(  ) ].
@@ -360,7 +369,7 @@ MCPToolRunTests >> removedClassReferencesSentencesOn: stream for: data [
 							 nextPutAll: (testCount = 1
 									  ifTrue: [ 'test.' ]
 									  ifFalse: [ 'tests.' ]) ]) ].
-	classesDefinedAgain do: [ :each | sentences add: (self classDefinedAgainSentenceFor: each) ].
+	classesDefinedAgain ifNotEmpty: [ sentences add: (self classesDefinedAgainSentenceFor: classesDefinedAgain) ].
 	stream nextPutAll: (' ' join: sentences)
 ]
 

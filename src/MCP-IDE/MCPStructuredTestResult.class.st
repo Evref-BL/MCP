@@ -3,7 +3,7 @@ The result of one test case run by test_run, so that SUnit's own bookkeeping cou
 
 It records each issue while the stack that raised it is still live: its kind, as SUnit sorts the exception, its error class and message, the first frame past the helpers that only pass an error on (the location), and, for a failure in the test method, the statement that failed. A location in Pharo's kernel or SUnit says where the error was noticed, so it also names the code under test that called it, at the line it was running. An issue raised again with the same kind, error class and message, as a broken fixture raises it in setUp and again in tearDown, adds its location to the first.
 
-A class removed since is named by its own name, not by the one Pharo gives its obsolete copy, with the article before it to match, and the issue lists it among the classes it names that were removed. A name quoted in a string or a symbol is left as it is.
+A class removed since is named by its own name, not by the one Pharo gives its obsolete copy, with the article before it to match, and the issue lists it among the classes it names that were removed. A name right after a quote or #, or after a quote and its article as in a quoted printString, is the text of a string or a symbol, and is left as it is.
 "
 Class {
 	#name : 'MCPStructuredTestResult',
@@ -203,9 +203,9 @@ MCPStructuredTestResult class >> locationTextOf: aContext [
 
 { #category : 'private - removed classes' }
 MCPStructuredTestResult class >> removedClassNamePattern [
-	"A class Pharo removes is renamed AnObsolete followed by its name, once more each time it is removed again. The match takes the article before the name, which the class's own name may change, and the quote or # before it that makes it the text of a string or a symbol."
+	"A class Pharo removes is renamed AnObsolete followed by its name, once more each time it is removed again. The match takes the article before the name, which the class's own name may change, and the quote or # before either that makes them the text of a string or a symbol, as an instance's printString quoted reads 'an AnObsoleteZooLion'."
 
-	^ '(\b[Aa]n? )?[''#]?\b(AnObsolete)+[A-Z][A-Za-z0-9_]*'
+	^ '(''?\b[Aa]n? )?[''#]?\b(AnObsolete)+[A-Z][A-Za-z0-9_]*'
 ]
 
 { #category : 'locations' }
@@ -246,13 +246,13 @@ MCPStructuredTestResult class >> textForDuration: aDuration [
 
 { #category : 'removed classes' }
 MCPStructuredTestResult class >> textNamingRemovedClassesIn: aString into: someNames [
-	"aString with each removed class named by its own name, not by the one Pharo gives it on removal, and with the article before it agreeing with that name: an AnObsoleteZooLion reads a ZooLion. Each such name goes into someNames once. A name in a string or a symbol, after a quote or #, is what the code compared or printed, and stays as it is."
+	"aString with each removed class named by its own name, not by the one Pharo gives it on removal, and with the article before it agreeing with that name: an AnObsoleteZooLion reads a ZooLion. Each such name goes into someNames once. A name in a string or a symbol, right after a quote or #, or after a quote and its article, is what the code compared or printed, and stays as it is."
 
 	^ aString copyWithRegex: self removedClassNamePattern matchesTranslatedUsing: [ :match |
 			  | article className index |
 			  index := match indexOfSubCollection: 'AnObsolete'.
 			  article := match first: index - 1.
-			  ((article endsWith: '''') or: [ article endsWith: '#' ])
+			  ((article beginsWith: '''') or: [ (article endsWith: '''') or: [ article endsWith: '#' ] ])
 				  ifTrue: [ match ]
 				  ifFalse: [
 						  className := match allButFirst: index - 1.

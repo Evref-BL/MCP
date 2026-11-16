@@ -80,9 +80,13 @@ MCPTestOutcome class >> ownMethodsOf: aTestCase [
 
 { #category : 'private' }
 MCPTestOutcome class >> referenceTextOf: aMethod [
-	"The method as a test names it: ZooKeeperTest>>#testFeeding."
+	"The method as method_compile takes it, in the class or trait that defines it: ZooKeeperTest>>#testFeeding, or TZooFeedingTest>>#testFeeding for a method a class gets from that trait, since compiling the class's copy would leave the trait, and the other classes that use it, as they were. An alias has no method of its selector in its trait, so it is named in its class."
 
-	^ String streamContents: [ :stream | stream << aMethod methodClass name << '>>#' << aMethod selector ]
+	| definingClass |
+	definingClass := (aMethod isFromTrait and: [ aMethod origin includesSelector: aMethod selector ])
+		                 ifTrue: [ aMethod origin ]
+		                 ifFalse: [ aMethod methodClass ].
+	^ String streamContents: [ :stream | stream << definingClass name << '>>#' << aMethod selector ]
 ]
 
 { #category : 'removed classes' }
