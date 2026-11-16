@@ -42,9 +42,12 @@ MCPRepositoryWorkingCopyCommand >> assertRepositoryCleanAfterDiscard: aRepositor
 	remainingPaths := self modifiedPathsFromGitStatusIn: aRepository.
 	remainingPackageNames := self changedPackageNamesForRepository: aRepository modifiedPaths: remainingPaths.
 	(remainingPackageNames isEmpty and: [ remainingPaths isEmpty ]) ifFalse: [
-			MCPCommandError signalErrorCode: 'RepositoryDiscardIncomplete' message: 'Repository changes remain after discard.' details: {
-					(#remainingPackageNames -> remainingPackageNames).
-					(#remainingPaths -> remainingPaths) } asDictionary ]
+			MCPCommandError
+				signalErrorCode: 'RepositoryDiscardIncomplete'
+				message: (self remainingAfterDiscardMessageFor: aRepository paths: remainingPaths packageNames: remainingPackageNames)
+				details: {
+						(#remainingPackageNames -> remainingPackageNames).
+						(#remainingPaths -> remainingPaths) } asDictionary ]
 ]
 
 { #category : 'private - diff' }
@@ -292,6 +295,27 @@ MCPRepositoryWorkingCopyCommand >> pathsOutsidePackages: paths in: aRepository [
 	^ paths select: [ :each | (self packageNamesForPath: each among: directories in: aRepository) isEmpty ]
 ]
 
+{ #category : 'private - discarding' }
+MCPRepositoryWorkingCopyCommand >> remainingAfterDiscardMessageFor: aRepository paths: remainingPaths packageNames: remainingPackageNames [
+	"Discard reverts the image and writes no file, so what git sees changed in the checkout stays: name each path, marking those git does not track. With no path left, what remains is the packages Iceberg still marks."
+
+	^ String streamContents: [ :stream |
+			  stream << 'Repository changes remain after discard: '.
+			  remainingPaths
+				  ifEmpty: [ stream << 'Iceberg still marks ' << (', ' join: remainingPackageNames) << ' modified.' ]
+				  ifNotEmpty: [
+						  | untrackedPaths |
+						  untrackedPaths := self untrackedPathsFromGitStatusIn: aRepository.
+						  remainingPaths
+							  do: [ :each |
+									  stream << each.
+									  (untrackedPaths includes: each) ifTrue: [ stream << ' (untracked)' ] ]
+							  separatedBy: [ stream << ', ' ].
+						  stream
+						  <<
+						  '. Discard reverts the image and leaves the checkout''s files as they are; it does not restore a changed file or delete an untracked one.' ] ]
+]
+
 { #category : 'tonel order' }
 MCPRepositoryWorkingCopyCommand >> restoreOrderOnlyTonelChurnFor: aRepository fromSnapshot: aSnapshot [
 	"Write back whole, from the snapshot, each Tonel class or extension file the writer changed only by putting its methods in another order, and answer their paths from the checkout root. The file is deleted first: a write stream on an existing file would keep whatever a shorter contents leaves past its end."
@@ -412,6 +436,16 @@ MCPRepositoryWorkingCopyCommand >> unquotedGitPath: aString [
 									bytes nextPut: (self byteForGitEscape: (aString at: index + 1)).
 									index := index + 2 ] ] ].
 	^ bytes contents utf8Decoded
+]
+
+{ #category : 'diff' }
+MCPRepositoryWorkingCopyCommand >> untrackedPathsFromGitStatusIn: aRepository [
+	"The paths git status marks untracked, named as modifiedPathsFromGitStatusIn: names them: a wholly untracked tree by its top directory and a trailing slash."
+
+	(self repositoryHasGitWorkTree: aRepository) ifFalse: [ ^ #(  ) ].
+	^ self sortedStringsFrom: ((self gitStatusLinesFor: aRepository)
+			   select: [ :line | line beginsWith: '?? ' ]
+			   thenCollect: [ :line | self pathFromGitStatusLine: line ])
 ]
 
 { #category : 'export' }

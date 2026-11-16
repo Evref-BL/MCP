@@ -1549,6 +1549,53 @@ MCPToolRepositoryOperationTest >> testDiscardNamesNoPackageForAnUnregisteredDire
 ]
 
 { #category : 'tests' }
+MCPToolRepositoryOperationTest >> testDiscardNamesThePackagesIcebergStillMarks [
+	"When no file is left changed but Iceberg still marks packages modified after a discard, those packages are what the failure names."
+
+	| error repository |
+	repository := self newTestRepositoryNamed: 'MCP Discard Marks Remain Test Repository'.
+	repository modifiedPackageNames: #( 'MCP-Test-Dirty' ).
+	self withRegisteredRepository: repository do: [
+			error := [
+				         MCPRepositoryWorkingCopyCommand new assertRepositoryCleanAfterDiscard: repository.
+				         nil ]
+				         on: MCPCommandError
+				         do: [ :caught | caught ] ].
+	self assert: error errorCode equals: 'RepositoryDiscardIncomplete'.
+	self assert: error messageText equals: 'Repository changes remain after discard: Iceberg still marks MCP-Test-Dirty modified.'
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testDiscardNamesWhatRemainsAndWhatGitDoesNotTrack [
+	"Discard reverts the image and leaves the checkout's files as they are, so a file changed or added by hand remains and the call fails. The failure names each path that remains, and marks those git does not track."
+
+	| location packageName repositoryName result |
+	repositoryName := 'MCP Discard Names What Remains Test'.
+	packageName := 'MCPToolRepositoryOperationDiscardRemainsPackage'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestDiscardRemains'.
+	self withExportPackageNamed: packageName className: 'MCPToolRepositoryOperationDiscardRemainsClass' do: [
+			self withCleanRepositoryNamed: repositoryName location: location do: [
+					self
+						createRepositoryNamed: repositoryName
+						location: location
+						subdirectory: 'src'
+						packages: { packageName }.
+					self write: '# Notes' to: location / 'README.md'.
+					self commitRepositoryNamed: repositoryName message: 'Write the package'.
+					self write: '# Notes, changed' to: location / 'README.md'.
+					self write: 'x' to: location / 'notes.txt'.
+					result := self callToolWith: {
+							          (#action -> 'discard').
+							          (#name -> repositoryName) } asDictionary.
+					self assert: (self resultIndicatesError: result).
+					self assert: ((self errorFrom: result) at: #errorCode) equals: 'RepositoryDiscardIncomplete'.
+					self
+						assert: (self summaryFrom: result)
+						equals:
+						'Repository changes remain after discard: README.md, notes.txt (untracked). Discard reverts the image and leaves the checkout''s files as they are; it does not restore a changed file or delete an untracked one.' ] ]
+]
+
+{ #category : 'tests' }
 MCPToolRepositoryOperationTest >> testDiscardReadsItsRequest [
 
 	| request tool |
@@ -2143,6 +2190,54 @@ MCPToolRepositoryOperationTest >> testReloadRefusesWhenAPackageHasNoSourceOnDisk
 						assert: (self resultIndicatesError: result)
 						description: 'Reloading a package with no source on disk must not report success.'.
 					self assert: ((self summaryFrom: result) includesSubstring: 'has no source on disk for ' , packageName) ] ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testReloadSaysItLoadedNothingWhenTheImageHasNoneOfItsPackages [
+	"Reload reloads only the packages the image has. When the image has none of those the repository registers, it does not answer that it reloaded: it names them and says it loaded nothing."
+
+	| className location packageName repositoryName result |
+	repositoryName := 'MCP Reload Nothing In Image Test'.
+	packageName := 'MCPToolRepositoryOperationReloadNothingPackage'.
+	className := 'MCPToolRepositoryOperationReloadNothingClass'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestReloadNothingInImage'.
+	self withExportPackageNamed: packageName className: className do: [
+			self withCleanRepositoryNamed: repositoryName location: location do: [
+					self commitCheckoutNamed: repositoryName at: location holding: packageName.
+					self removeClassNamed: className.
+					self removePackageNamed: packageName.
+					self attachRepositoryNamed: repositoryName location: location pathString packages: { packageName }.
+					result := self callToolWith: {
+							          (#action -> 'reload').
+							          (#name -> repositoryName) } asDictionary.
+					self
+						assert: (self summaryFrom: result)
+						equals:
+							('None of the packages repository {1} registers is in the image: {2}. Reload reloads only the packages the image has, so it loaded nothing; it does not load a package only the checkout holds.'
+								 format: {
+										 repositoryName.
+										 packageName }).
+					self assert: (self dataFrom: result) isEmpty.
+					self deny: (self packageOrganizer hasPackage: packageName) ] ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testReloadSaysItLoadedNothingWhenTheRepositoryHasNoPackages [
+
+	| location repositoryName result |
+	repositoryName := 'MCP Reload No Packages Test'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestReloadNoPackages'.
+	self withCleanRepositoryNamed: repositoryName location: location do: [
+			self shellCommand: 'git init --initial-branch=main ' , (self shellQuote: location pathString).
+			self attachRepositoryNamed: repositoryName location: location pathString packages: #(  ).
+			result := self callToolWith: {
+					          (#action -> 'reload').
+					          (#name -> repositoryName) } asDictionary.
+			self
+				assert: (self summaryFrom: result)
+				equals: ('Repository {1} has no packages, so reload loaded nothing. Add them with repository_update addPackages.' format:
+						 { repositoryName }).
+			self assert: (self dataFrom: result) isEmpty ]
 ]
 
 { #category : 'tests' }
