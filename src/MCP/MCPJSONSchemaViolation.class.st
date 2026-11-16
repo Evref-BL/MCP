@@ -9,7 +9,9 @@ Class {
 		'keyword',
 		'message',
 		'expected',
-		'actual'
+		'actual',
+		'keys',
+		'example'
 	],
 	#category : 'MCP-Schema',
 	#package : 'MCP',
@@ -64,7 +66,22 @@ MCPJSONSchemaViolation >> asDictionary [
 		              (#message -> self message) } asDictionary.
 	self expected ifNotNil: [ dictionary at: #expected put: self expected ].
 	self actual ifNotNil: [ dictionary at: #actual put: self actual ].
+	self keys ifNotEmpty: [ :names | dictionary at: #keys put: names ].
+	self example ifNotNil: [ :anObject | dictionary at: #example put: anObject ].
 	^ dictionary
+]
+
+{ #category : 'accessing' }
+MCPJSONSchemaViolation >> example [
+	"An object of the expected shape, made of what was sent, or nil when none could be made of it."
+
+	^ example
+]
+
+{ #category : 'accessing' }
+MCPJSONSchemaViolation >> example: aDictionary [
+
+	example := aDictionary
 ]
 
 { #category : 'accessing' }
@@ -93,6 +110,19 @@ MCPJSONSchemaViolation >> jsonFor: anObject [
 	^ [ STONJSON toString: anObject ]
 		  on: Error
 		  do: [ :error | anObject printString ]
+]
+
+{ #category : 'accessing' }
+MCPJSONSchemaViolation >> keys [
+	"The keys of the object the schema expected where another type was sent, sorted, or none when it expected no object or names no keys."
+
+	^ keys ifNil: [ #(  ) ]
+]
+
+{ #category : 'accessing' }
+MCPJSONSchemaViolation >> keys: someNames [
+
+	keys := someNames asArray
 ]
 
 { #category : 'accessing' }
@@ -169,7 +199,9 @@ MCPJSONSchemaViolation >> printSentenceOn: aStream [
 			aStream << ' is not accepted here'.
 			expected isEmptyOrNil ifFalse: [ aStream << '; expected one of ' << (', ' join: expected) ].
 			^ aStream nextPut: $. ].
-	keyword = 'type' ifTrue: [ ^ aStream << ' must be ' << (self alternatives: expected) << ', not ' << actual asString << '.' ].
+	keyword = 'type' ifTrue: [
+			aStream << ' must be ' << (self alternatives: expected) << ', not ' << actual asString << '.'.
+			^ self printShapeOn: aStream ].
 	keyword = 'enum' ifTrue: [
 			^ aStream << ' must be ' << (self alternatives: (expected collect: [ :each | self jsonFor: each ])) << ', not '
 			  << (self jsonFor: actual) << '.' ].
@@ -179,6 +211,16 @@ MCPJSONSchemaViolation >> printSentenceOn: aStream [
 	keyword = 'minimum' ifTrue: [ ^ aStream << ' must be at least ' << expected printString << ', not ' << actual printString << '.' ].
 	keyword = 'maximum' ifTrue: [ ^ aStream << ' must be at most ' << expected printString << ', not ' << actual printString << '.' ].
 	aStream << ': ' << message
+]
+
+{ #category : 'printing' }
+MCPJSONSchemaViolation >> printShapeOn: aStream [
+	"The keys of the object expected, with an example where there is one: a caller that sent a list or a string where an object goes seldom knows its shape."
+
+	self keys ifEmpty: [ ^ self ].
+	aStream << ' Give it as an object with the keys ' << (self alternatives: self keys).
+	self example ifNotNil: [ :anObject | aStream << ', for example ' << (self jsonFor: anObject) ].
+	aStream nextPut: $.
 ]
 
 { #category : 'printing' }

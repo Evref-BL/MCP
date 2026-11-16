@@ -67,6 +67,37 @@ MCPToolCreateClass >> classToolSpec [
 		  (#requiredProperties -> #( 'name' 'package' )) } asDictionary
 ]
 
+{ #category : 'private - errors' }
+MCPToolCreateClass >> classUpdateArgumentsFor: aClass from: request [
+	"What class_update needs besides the name to give aClass what this call asked class_create for, in the order class_create takes its arguments: each one the call gave that aClass does not have. The slots aClass lacks are added, and a list class_update replaces whole keeps what aClass has, so nothing is removed. A superclass is left out for a trait, since class_update makes no class a trait nor a trait a class."
+
+	| arguments |
+	arguments := OrderedDictionary new.
+	(request stringArgumentNamed: 'superclass') ifNotNil: [ :name |
+			(aClass isTrait or: [ name = 'Trait' or: [ name = (aClass superclass ifNotNil: [ :superclass | superclass name asString ]) ] ])
+				ifFalse: [ arguments at: 'superclass' put: name ] ].
+	(request stringArgumentNamed: 'package') ifNotNil: [ :name |
+		name = (aClass package ifNotNil: [ :package | package name asString ]) ifFalse: [ arguments at: 'package' put: name ] ].
+	(request stringArgumentNamed: 'tag') ifNotNil: [ :name |
+		((arguments includesKey: 'package') or: [ name ~= aClass mcpTagName ]) ifTrue: [ arguments at: 'tag' put: name ] ].
+	{
+		('slots' -> aClass).
+		('classSlots' -> aClass classSide) } do: [ :each |
+			(self namesIn: request argumentNamed: each key lackedFrom: each value allInstVarNames) ifNotEmpty: [ :names |
+				arguments at: each key put: { ('add' -> names asArray) } asDictionary ] ].
+	{
+		('traits' -> (aClass traits collect: [ :each | each name ])).
+		('sharedVariables' -> aClass classVarNames).
+		('sharedPools' -> (aClass sharedPools collect: [ :each | each name ])) } do: [ :each |
+			(self namesIn: request argumentNamed: each key lackedFrom: each value) ifNotEmpty: [ :names |
+				arguments at: each key put: (each value collect: [ :name | name asString ] as: Array) , names asArray ] ].
+	(request stringArgumentNamed: 'layout') ifNotNil: [ :name |
+		name = aClass classLayout class name asString ifFalse: [ arguments at: 'layout' put: name ] ].
+	(self classCommentIn: request) ifNotNil: [ :comment |
+		comment lines = (aClass mcpComment ifNil: [ '' ]) asString lines ifFalse: [ arguments at: 'comment' put: comment ] ].
+	^ arguments
+]
+
 { #category : 'private - schema' }
 MCPToolCreateClass >> createClassNameSchemaProperty [
 
@@ -141,13 +172,15 @@ MCPToolCreateClass >> createTraitsSchemaProperty [
 ]
 
 { #category : 'private - results' }
-MCPToolCreateClass >> createdSummaryFor: aClass [
-	"A trait is named as one, so asking for a trait is not answered with the word class."
+MCPToolCreateClass >> createdSummaryFor: aClass from: request [
+	"A trait is named as one, so asking for a trait is not answered with the word class. A class made with no superclass given is said to subclass Object: a caller that meant another, as for a test class, would not see it otherwise."
 
 	^ String streamContents: [ :stream |
 			  stream << 'Created ' << (aClass isTrait
 				   ifTrue: [ 'trait ' ]
-				   ifFalse: [ 'class ' ]) << aClass name << '.' ]
+				   ifFalse: [ 'class ' ]) << aClass name.
+			  (request stringArgumentNamed: 'superclass') ifNil: [ stream << ', a subclass of ' << aClass superclass name ].
+			  stream nextPut: $. ]
 ]
 
 { #category : 'metadata' }
@@ -173,7 +206,7 @@ MCPToolCreateClass >> failureMessageForCreateClassNamed: className superclassNam
 
 { #category : 'private - mutation' }
 MCPToolCreateClass >> mutateWith: request [
-	"The class is made, then given its comment. A failure in either is reported as a failure to create the class."
+	"The class is made, then given its comment. A failure in either is reported as a failure to create the class. A class that exists is refused with the class_update call that gives it what this call asks for."
 
 	| className classComment createdClass packageName superclassName |
 	className := request stringArgumentNamed: 'name'.
@@ -185,6 +218,10 @@ MCPToolCreateClass >> mutateWith: request [
 		  force: false
 		  requestedContext: (self requestedContextFor: request)
 		  work: [
+				  MCPImageLookup newClassName: className ifClassExists: [ :existingClass |
+					  MCPCommandError
+						  signalClassAlreadyExistsNamed: className
+						  update: (self classUpdateArgumentsFor: existingClass from: request) ].
 				  createdClass := (MCPCreateClassCommand
 					                   className: className
 					                   superclassName: superclassName
@@ -198,7 +235,7 @@ MCPToolCreateClass >> mutateWith: request [
 					                   layout: (request stringArgumentNamed: 'layout')) execute.
 				  classComment ifNotNil: [ (MCPChangeClassCommentCommand className: className classComment: classComment) execute ] ]
 		  successResult: [ :warningMessages |
-			  self successResultText: (self createdSummaryFor: createdClass) data: Dictionary new warnings: warningMessages ]
+			  self successResultText: (self createdSummaryFor: createdClass from: request) data: Dictionary new warnings: warningMessages ]
 		  failureSummary: [ :error |
 				  self
 					  failureMessageForCreateClassNamed: className
@@ -211,6 +248,15 @@ MCPToolCreateClass >> mutateWith: request [
 MCPToolCreateClass >> mutationActionFor: request checked: aBoolean [
 
 	^ 'create'
+]
+
+{ #category : 'private - errors' }
+MCPToolCreateClass >> namesIn: request argumentNamed: anArgumentName lackedFrom: someNames [
+	"The names the argument gives, each once and in order, that someNames, strings or symbols, does not hold."
+
+	| present |
+	present := someNames collect: [ :each | each asString ] as: Set.
+	^ (request uniqueStringCollectionArgumentNamed: anArgumentName) reject: [ :each | present includes: each ]
 ]
 
 { #category : 'private - errors' }

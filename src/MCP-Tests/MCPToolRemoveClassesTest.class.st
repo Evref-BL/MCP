@@ -238,11 +238,12 @@ MCPToolRemoveClassesTest >> testAForcedRemovalSaysWhichClassTheSubclassesNowInhe
 			self assert: (result at: #isError).
 			^ self assert: ((self errorFrom: result) at: #errorCode) equals: 'ClassRemovalBlocked' ].
 	self assert: (self textFrom: result) lines equals: {
-			('Force-removed 2 classes: {1}, {2}. {3} and {4} now inherit from Object.' format: {
-					 self emptyParentClassName.
-					 self nonEmptyParentClassName.
-					 self emptyChildClassName.
-					 self nonEmptyChildClassName }).
+			('Force-removed 2 classes: {1}, {2}. Their method {2}>>marker was removed with them. {3} and {4} now inherit from Object.'
+				 format: {
+						 self emptyParentClassName.
+						 self nonEmptyParentClassName.
+						 self emptyChildClassName.
+						 self nonEmptyChildClassName }).
 			('Warning: {1} lost what it inherited from {2}.' format: {
 					 self nonEmptyChildClassName.
 					 self nonEmptyParentClassName }) }
@@ -376,6 +377,20 @@ MCPToolRemoveClassesTest >> testForceRemovesWhatBlocksAndWarnsOfIt [
 ]
 
 { #category : 'tests' }
+MCPToolRemoveClassesTest >> testManyMethodsThatGoWithTheClassesAreCounted [
+	"Past ten methods, the answer says how many went, without naming them: the count is what tells a caller it removed more than it meant to."
+
+	1 to: 6 do: [ :index | self ensureMethodSource: ('first{1} ^ 1' format: { index }) onClassNamed: self simpleClassName ].
+	1 to: 5 do: [ :index | self ensureMethodSource: ('second{1} ^ 1' format: { index }) onClassNamed: self packageCleanupClassName ].
+	self
+		assert: (self textFrom: (self callToolWith: (self argumentsForClassNames: self batchClassNames)))
+		equals: ('Removed 2 classes: {1}, {2}. Their 11 methods were removed with them. Removed packages: {3}.' format: {
+					 self simpleClassName.
+					 self packageCleanupClassName.
+					 self packageCleanupPackageName })
+]
+
+{ #category : 'tests' }
 MCPToolRemoveClassesTest >> testRefusesAClassSideNameAndRemovesNothing [
 	"Read as its class, Foo class would delete the whole class without a word. One such name refuses the call, before anything is looked up."
 
@@ -437,6 +452,25 @@ MCPToolRemoveClassesTest >> testSafelyRemovesSimpleClass [
 	self deny: (self class environment includesKey: self packageCleanupClassName asSymbol).
 	self deny: (self packageOrganizer hasPackage: self packageCleanupPackageName).
 	self assert: (data at: #removedPackageNames ifAbsent: [ #(  ) ]) equals: { self packageCleanupPackageName } asArray
+]
+
+{ #category : 'tests' }
+MCPToolRemoveClassesTest >> testTheMethodsThatGoWithTheClassesAreSaid [
+	"Removing a class removes its methods, on both sides, which method_remove would have named one by one. The answer names them when there are few, each as Pharo writes it."
+
+	self ensureMethodSource: 'beta ^ 2' onClassNamed: self simpleClassName.
+	self ensureMethodSource: 'alpha ^ 1' onClassNamed: self simpleClassName.
+	self withoutEpiceaDuring: [ (self classNamed: self simpleClassName) classSide compile: 'make ^ self new' classified: 'tests' ].
+	self ensureMethodSource: 'gamma ^ 3' onClassNamed: self packageCleanupClassName.
+	self
+		assert: (self textFrom: (self callToolWith: (self argumentsForClassNames: { self simpleClassName })))
+		equals: ('Removed class {1}. Its 3 methods were removed with it: {1}>>alpha, {1}>>beta and {1} class>>make.' format:
+				 { self simpleClassName }).
+	self
+		assert: (self textFrom: (self callToolWith: (self argumentsForClassNames: { self packageCleanupClassName })))
+		equals: ('Removed class {1}. Its method {1}>>gamma was removed with it. Removed packages: {2}.' format: {
+					 self packageCleanupClassName.
+					 self packageCleanupPackageName })
 ]
 
 { #category : 'tests' }

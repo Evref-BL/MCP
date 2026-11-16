@@ -25,6 +25,24 @@ MCPJSONSchemaValidator class >> violationsFor: aValue schema: aSchema [
 ]
 
 { #category : 'private - violations' }
+MCPJSONSchemaValidator >> addTypeViolationAt: path for: aValue against: schema [
+	"A value of the wrong type. Where the schema wants an object, the violation names the object's keys, with an example made of the value."
+
+	| violation |
+	violation := MCPJSONSchemaViolation
+		             path: path
+		             keyword: #type
+		             message: 'Value has the wrong JSON type.'
+		             expected: (self keywordNamed: #type in: schema ifAbsent: [ nil ])
+		             actual: (self typeNameFor: aValue).
+	(self value: Dictionary new matchesType: violation expected) ifTrue: [
+			violation
+				keys: (self propertyNamesIn: schema) asArray sort;
+				example: (self exampleObjectOf: aValue against: schema) ].
+	violations add: violation
+]
+
+{ #category : 'private - violations' }
 MCPJSONSchemaValidator >> addViolationAt: path keyword: aKeyword message: aMessage expected: expectedValue actual: actualValue [
 
 	violations add: (MCPJSONSchemaViolation
@@ -33,6 +51,33 @@ MCPJSONSchemaValidator >> addViolationAt: path keyword: aKeyword message: aMessa
 			 message: aMessage
 			 expected: expectedValue
 			 actual: actualValue)
+]
+
+{ #category : 'private - object validation' }
+MCPJSONSchemaValidator >> exampleObjectOf: aValue against: schema [
+	"An object of schema's shape made of aValue, which is not one: aValue, or failing that aValue in a list, under the first property by name that takes it, provided the object then matches schema. Nil when no property takes it, and when aValue names a property, since the caller then sent a key where an object goes."
+
+	| names properties |
+	properties := self keywordNamed: #properties in: schema ifAbsent: [ ^ nil ].
+	names := self propertyNamesIn: schema.
+	(names includes: aValue) ifTrue: [ ^ nil ].
+	names asArray sort do: [ :name |
+			| propertySchema |
+			propertySchema := self
+				                  propertyValueNamed: name
+				                  in: properties
+				                  ifPresent: [ :each | each ]
+				                  ifAbsent: [ nil ].
+			{
+				aValue.
+				{ aValue } } do: [ :candidate |
+					| example |
+					example := Dictionary new
+						           at: name put: candidate;
+						           yourself.
+					((self schema: propertySchema matchesValue: candidate) and: [ self schema: schema matchesValue: example ]) ifTrue: [
+						^ example ] ] ].
+	^ nil
 ]
 
 { #category : 'private - schema' }
@@ -351,12 +396,7 @@ MCPJSONSchemaValidator >> validateValue: aValue againstSchema: aSchemaObject atP
 	type := self keywordNamed: #type in: schema ifAbsent: [ nil ].
 	type ifNotNil: [
 			(self value: aValue matchesType: type) ifFalse: [
-					self
-						addViolationAt: path
-						keyword: #type
-						message: 'Value has the wrong JSON type.'
-						expected: type
-						actual: (self typeNameFor: aValue).
+					self addTypeViolationAt: path for: aValue against: schema.
 					^ self ] ].
 	(aValue isDictionary or: [ self hasObjectKeywordsIn: schema ]) ifTrue: [
 		aValue isDictionary ifTrue: [ self validateObject: aValue againstSchema: schema atPath: path ] ].

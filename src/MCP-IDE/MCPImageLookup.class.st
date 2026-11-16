@@ -212,9 +212,16 @@ MCPImageLookup class >> namesClassSide: aName [
 MCPImageLookup class >> newClassName: aName [
 	"class_create's name for the class it makes. A list, a class side and a name already taken are refused: an existing class says so, and any other global variable keeps its name."
 
+	^ self newClassName: aName ifClassExists: [ :existingClass | MCPCommandError signalClassAlreadyExistsNamed: aName ]
+]
+
+{ #category : 'reading names' }
+MCPImageLookup class >> newClassName: aName ifClassExists: aBlock [
+	"class_create's name for the class it makes. A list, a class side and the name of a global variable that is no class are refused. The name of a class answers what aBlock answers for that class, which may refuse it with more to say."
+
 	(self isListInOneName: aName) ifTrue: [ MCPCommandError signalClassNameIsAList: aName scope: nil details: #(  ) ].
 	self wholeClassName: aName for: 'class_create'.
-	(Smalltalk globals classNamed: aName) ifNotNil: [ MCPCommandError signalClassAlreadyExistsNamed: aName ].
+	(Smalltalk globals classNamed: aName) ifNotNil: [ :existingClass | ^ aBlock value: existingClass ].
 	(Smalltalk globals includesKey: aName asSymbol) ifTrue: [ MCPCommandError signalGlobalAlreadyExistsNamed: aName ].
 	^ aName
 ]

@@ -12,7 +12,8 @@ Class {
 		'resolvedClasses',
 		'reparentedSubclassNames',
 		'removedPackageNames',
-		'warningMessages'
+		'warningMessages',
+		'removedMethodNames'
 	],
 	#category : 'MCP-IDE-Commands',
 	#package : 'MCP-IDE',
@@ -56,12 +57,13 @@ MCPRemoveClassesCommand >> classNames: someClassNames [
 
 { #category : 'executing' }
 MCPRemoveClassesCommand >> execute [
-	"The refactoring is handed the names of the classes the lookup resolved, not the names as given. The subclasses that move up and the packages the classes were in are read before the classes go."
+	"The refactoring is handed the names of the classes the lookup resolved, not the names as given. The subclasses that move up, the methods that go with the classes and the packages the classes were in are read before the classes go."
 
 	| refactoring packageNames |
 	refactoring := self preparedRefactoringForClassNames: (self resolvedClasses collect: [ :each | each name ]).
 	warningMessages := self validatePreparedRefactoring: refactoring.
 	reparentedSubclassNames := self resolvedClasses flatCollect: [ :each | self subclassNamesReparentedWhenRemoving: each ].
+	removedMethodNames := self resolvedClasses flatCollect: [ :each | self methodNamesOf: each ].
 	packageNames := self resolvedClasses collect: [ :each |
 		                each package ifNil: [ '' ] ifNotNil: [ :package | package name asString ] ].
 	self performRemovalWithPreparedRefactoring: refactoring.
@@ -121,6 +123,18 @@ MCPRemoveClassesCommand >> isEmptyClass: aClass [
 	^ aClass classVarNames isEmpty and: [ aClass instVarNames isEmpty and: [ aClass selectors isEmpty ] ]
 ]
 
+{ #category : 'private' }
+MCPRemoveClassesCommand >> methodNamesOf: aClass [
+	"The methods aClass defines itself, instance side then class side, each sorted, as Pharo writes them. What a trait gives it is the trait's, and stays."
+
+	^ {
+		  aClass.
+		  aClass classSide } flatCollect: [ :behavior |
+			  (behavior localMethods
+				   collect: [ :each | String streamContents: [ :stream | stream << behavior name << '>>' << each selector ] ]
+				   as: Array) sort ]
+]
+
 { #category : 'private - facts' }
 MCPRemoveClassesCommand >> referenceListOf: someMethods [
 	"The first five, then how many more: method_reference_search lists them all."
@@ -151,6 +165,13 @@ MCPRemoveClassesCommand >> removePackageIfNowEmptyNamed: aPackageName recordingI
 
 	(self removePackageIfEmptyNamed: aPackageName) ifTrue: [
 		(removedPackageNamesCollection includes: aPackageName) ifFalse: [ removedPackageNamesCollection add: aPackageName ] ]
+]
+
+{ #category : 'accessing' }
+MCPRemoveClassesCommand >> removedMethodNames [
+	"The methods that went with the classes execute removed, as Pharo writes them."
+
+	^ removedMethodNames
 ]
 
 { #category : 'accessing' }

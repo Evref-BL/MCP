@@ -437,18 +437,76 @@ MCPToolClassMutationTest >> testCreateNamesATraitATrait [
 ]
 
 { #category : 'tests - create' }
+MCPToolClassMutationTest >> testCreateRefusalOfAClassThatHasItAllSaysNothingNeedsChanging [
+	"A class that already has everything the call asks for needs no class_update call: the refusal says so rather than write one that changes nothing."
+
+	| arguments error |
+	arguments := self createRequestArgumentsWith: {
+			             (#name -> 'MCPToolClassMutationTestGenerated').
+			             (#superclass -> 'Object').
+			             (#package -> self generatedPackageName).
+			             (#slots -> #( 'a' )) }.
+	self callToolWith: arguments.
+	error := self errorFrom: (self callToolWith: arguments).
+	self assert: (error at: #errorCode) equals: 'ClassAlreadyExists'.
+	self
+		assert: (error at: #message)
+		equals:
+		'Class MCPToolClassMutationTestGenerated already exists and already has everything this call asks for. class_get shows it.'
+]
+
+{ #category : 'tests - create' }
 MCPToolClassMutationTest >> testCreateRefusalOfAnExistingClassSaysHowToReachClassUpdate [
 	"class_update is not in every client's list, and a client that calls only what it lists cannot call it by its name. The refusal gives the call every client can make, with the class already named in it."
 
-	| arguments text |
-	arguments := self
-		             createRequestArgumentsForClassName: 'MCPToolClassMutationTestGenerated'
-		             superclassName: 'Object'
-		             packageName: self generatedPackageName.
-	self callToolWith: arguments.
-	text := self textFrom: (self callToolWith: arguments).
+	| text |
+	self callToolWith: (self
+			 createRequestArgumentsForClassName: 'MCPToolClassMutationTestGenerated'
+			 superclassName: 'Object'
+			 packageName: self generatedPackageName).
+	text := self textFrom: (self callToolWith: (self createRequestArgumentsWith: {
+					          (#name -> 'MCPToolClassMutationTestGenerated').
+					          (#package -> self generatedPackageName).
+					          (#slots -> #( 'color' )) })).
 	self assert: (text includesSubstring:
-			 'Change it with class_update, through tool_call when class_update is not in your list: tool_call {"name": "class_update", "arguments": {"name": "MCPToolClassMutationTestGenerated", ...}}.')
+			 'Change it with class_update, through tool_call when class_update is not in your list: tool_call {"name":"class_update","arguments":{"name":"MCPToolClassMutationTestGenerated","slots":{"add":["color"]}}}.')
+]
+
+{ #category : 'tests - create' }
+MCPToolClassMutationTest >> testCreateRefusalOfAnExistingClassWritesTheUpdateThatGivesItWhatItLacks [
+	"An agent that asks class_create for a class that exists wants it to have that definition. The refusal writes the class_update call that gives it what it lacks, and nothing else: the slots it does not have are added, a list class_update replaces keeps what the class has, and what the class already has is left out. Made, that call gives the class the definition asked for."
+
+	| call createdClass error message |
+	self callToolWith: (self createRequestArgumentsWith: {
+				 (#name -> 'MCPToolClassMutationTestGenerated').
+				 (#package -> self generatedPackageName).
+				 (#slots -> #( 'a' )).
+				 (#sharedVariables -> #( 'Registry' )) }).
+	error := self errorFrom: (self callToolWith: (self createRequestArgumentsWith: {
+					           (#name -> 'MCPToolClassMutationTestGenerated').
+					           (#superclass -> 'Object').
+					           (#package -> self generatedPackageName).
+					           (#tag -> 'Model').
+					           (#slots -> #( 'a' 'color' )).
+					           (#classSlots -> #( 'made' )).
+					           (#sharedVariables -> #( 'Registry' 'Other' )).
+					           (#comment -> 'A generated class.') })).
+	message := error at: #message.
+	self assert: (error at: #errorCode) equals: 'ClassAlreadyExists'.
+	self
+		assert: message
+		equals:
+		'Class MCPToolClassMutationTestGenerated already exists. Change it with class_update, through tool_call when class_update is not in your list: tool_call {"name":"class_update","arguments":{"name":"MCPToolClassMutationTestGenerated","tag":"Model","slots":{"add":["color"]},"classSlots":{"add":["made"]},"sharedVariables":["Registry","Other"],"comment":"A generated class."}}. class_get shows it.'.
+	call := STONJSON fromString: (message
+			         copyFrom: (message indexOfSubCollection: 'tool_call {') + 'tool_call ' size
+			         to: message size - '. class_get shows it.' size).
+	self deny: ((self callRawToolNamed: 'tool_call' withArguments: call) at: #isError ifAbsent: [ false ]).
+	createdClass := self classNamed: 'MCPToolClassMutationTestGenerated'.
+	self assert: (createdClass instVarNames collect: [ :each | each asString ] as: Array) equals: #( 'a' 'color' ).
+	self assert: (createdClass classSide instVarNames collect: [ :each | each asString ] as: Array) equals: #( 'made' ).
+	self assert: (createdClass classVarNames collect: [ :each | each asString ] as: Set) equals: #( 'Registry' 'Other' ) asSet.
+	self assert: createdClass mcpTagName equals: 'Model'.
+	self assert: createdClass mcpComment equals: 'A generated class.'
 ]
 
 { #category : 'tests - create' }
@@ -493,7 +551,7 @@ MCPToolClassMutationTest >> testCreateReturnsStructuredErrorWhenClassAlreadyExis
 	self assert: (error at: #action) equals: 'create'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'ClassAlreadyExists'.
-	self assert: ((error at: #message) beginsWith: 'Class MCPToolClassMutationTestGenerated already exists. ').
+	self assert: ((error at: #message) beginsWith: 'Class MCPToolClassMutationTestGenerated already exists ').
 	self assert: (((result at: #content) first at: #text) includesSubstring: (error at: #message)).
 	self deny: (error includesKey: #guidance)
 ]
@@ -569,6 +627,23 @@ MCPToolClassMutationTest >> testCreateThatFailsLeavesNoPackageItMade [
 	self withoutEpiceaDuring: [ self packageOrganizer ensurePackage: self generatedPackageName ].
 	self assert: ((self callToolWith: arguments) at: #isError).
 	self assert: (self packageOrganizer hasPackage: self generatedPackageName)
+]
+
+{ #category : 'tests - create' }
+MCPToolClassMutationTest >> testCreateWithoutASuperclassSaysItSubclassesObject [
+	"A class made with no superclass given subclasses Object, which a caller that meant another, as for a test class, would not see in Created class Foo. The answer says so. A class given its superclass is answered as before."
+
+	self
+		assert: (self textFrom: (self callToolWith: (self createRequestArgumentsWith: {
+							   (#name -> 'MCPToolClassMutationTestDefaultSuperclass').
+							   (#package -> self generatedPackageName) })))
+		equals: 'Created class MCPToolClassMutationTestDefaultSuperclass, a subclass of Object.'.
+	self
+		assert: (self textFrom: (self callToolWith: (self
+						   createRequestArgumentsForClassName: 'MCPToolClassMutationTestGenerated'
+						   superclassName: 'Object'
+						   packageName: self generatedPackageName)))
+		equals: 'Created class MCPToolClassMutationTestGenerated.'
 ]
 
 { #category : 'tests - update' }
@@ -1362,6 +1437,18 @@ MCPToolClassMutationTest >> testUpdateRefusesAClassSideName [
 		'MCPToolClassMutationTestAddSlotTarget class is the class side of MCPToolClassMutationTestAddSlotTarget. class_update changes the whole class: name MCPToolClassMutationTestAddSlotTarget, and use classSlots for class-side slots.'.
 	self assert: target slots isEmpty.
 	self assert: target classSide slots isEmpty
+]
+
+{ #category : 'tests - update' }
+MCPToolClassMutationTest >> testUpdateRefusesASlotListWithThePatchItTakes [
+	"class_create takes its slots as a list, and a caller that comes from it sends class_update one too. The refusal names the keys of the patch, with the list under the one that adds the slots."
+
+	self
+		assertResult: (self callDiscoveredToolNamed: 'class_update' withArguments: {
+					 (#name -> self originalClassName).
+					 (#slots -> #( 'color' )) } asDictionary)
+		refusesArgumentsSaying:
+		'slots must be object, not array. Give it as an object with the keys add, pullUp, pushDown, remove, rename or replace, for example {"add":["color"]}.'
 ]
 
 { #category : 'tests - update' }
