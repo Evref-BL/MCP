@@ -163,21 +163,16 @@ MCPToolContractsTest >> baseToolFlowSpecs [
 			  (#requestClass -> MCPToolRequest) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolSearchTools).
-			  (#arguments -> Dictionary new).
-			  (#requestClass -> MCPSearchToolsRequest).
-			  (#commandClass -> MCPSearchToolsCommand) } asDictionary.
+			  (#arguments -> Dictionary new) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolGetTool).
-			  (#arguments -> { (#name -> 'class_search') } asDictionary).
-			  (#requestClass -> MCPGetToolRequest).
-			  (#commandClass -> MCPGetToolCommand) } asDictionary.
+			  (#arguments -> { (#name -> 'class_search') } asDictionary) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolCallTool).
 			  (#arguments -> {
 				   (#name -> 'package_search').
 				   (#arguments -> Dictionary new) } asDictionary).
-			  (#requestClass -> MCPCallToolRequest).
-			  (#commandClass -> MCPCallToolCommand) } asDictionary }
+			  (#requestClass -> MCPCallToolRequest) } asDictionary }
 ]
 
 { #category : 'private' }
@@ -3085,7 +3080,7 @@ MCPToolContractsTest >> testSearchToolsCapsResultsAtResultLimit [
 	| result tools |
 	result := self callToolNamed: 'tool_search' withArguments: { (#query -> 'class method repository') } asDictionary.
 	tools := (self dataFrom: result) at: #tools.
-	self assert: tools size equals: MCPSearchToolsCommand new resultLimit.
+	self assert: tools size equals: MCPToolSearchTools new resultLimit.
 	self assert: ((self summaryFrom: result) includesSubstring: 'matching tools, best first')
 ]
 

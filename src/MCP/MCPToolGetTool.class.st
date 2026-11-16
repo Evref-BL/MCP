@@ -73,9 +73,10 @@ MCPToolGetTool >> catalogOnlyContractKeys [
 ]
 
 { #category : 'private - execution' }
-MCPToolGetTool >> commandForRequest: getRequest [
+MCPToolGetTool >> commandForRequest: aToolRequest [
+	"MCPTool still declares this hook, but the tool does its work itself, with no command."
 
-	^ MCPGetToolCommand tool: self request: getRequest toolRegistry: self toolRegistry
+	^ self shouldNotImplement
 ]
 
 { #category : 'private - results' }
@@ -107,17 +108,11 @@ MCPToolGetTool >> executeWithRequest: request [
 
 	^ self
 		  executeParsedRequestFrom: request
-		  do: [ :getRequest |
-				  | data |
-				  data := (self commandForRequest: getRequest) execute.
-				  self successResultText: (self summaryForContract: (data at: #tool)) data: data ]
-		  onError: [ :error :parsedRequest | self errorResultFor: error ]
-]
-
-{ #category : 'private - request' }
-MCPToolGetTool >> parsedRequestFromToolRequest: request [
-
-	^ MCPGetToolRequest fromToolRequest: request
+		  do: [ :arguments |
+				  | contract |
+				  contract := self toolRegistry contractForToolNamed: (arguments stringArgumentNamed: 'name').
+				  self successResultText: (self summaryForContract: contract) data: { (#tool -> contract) } asDictionary ]
+		  onError: [ :error :arguments | self errorResultFor: error ]
 ]
 
 { #category : 'private - results' }
