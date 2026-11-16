@@ -478,25 +478,17 @@ MCPToolMethodMutation >> inputProperties [
 
 { #category : 'private' }
 MCPToolMethodMutation >> instanceSideNoteFor: aSend of: aClass in: aBehavior [
-	"When aClass itself does not understand aSend and its instances do, as a constructor compiled on the instance side and sent to the class: that its instances have it, and what to do from the side the method of aBehavior is on. Moving the method to the class side is offered only when it is in the project of aBehavior, never for a class of a library."
+	"When aClass itself does not understand aSend and its instances do, as a constructor compiled on the instance side and sent to the class: that its instances have it, and what to do, as MCPNotUnderstoodNote says when the send is made. Sent to self, the method of aBehavior is on the class side, which the note says first."
 
 	| method selector |
 	selector := aSend selector.
 	method := aClass lookupSelector: selector.
 	method ifNil: [ ^ nil ].
 	^ String streamContents: [ :stream |
-			  stream << aClass name << ' itself does not understand ' << selector << ', its instances do'.
-			  (self isSelfOrSuper: aSend receiver)
-				  ifTrue: [
-						  stream << ', and this method is on the class side, where self is ' << aClass name << '. Send it to an instance of '
-						  << aClass name << '.' ]
-				  ifFalse: [
-						  stream << ': it is on the instance side. Send it to an instance'.
-						  (self
-							   isPackageNamed: (method package ifNotNil: [ :package | package name ])
-							   inTheProjectOf: (aBehavior instanceSide package ifNotNil: [ :package | package name ])) ifTrue: [
-							  stream << ', or compile ' << selector << ' with side class' ].
-						  stream << '.' ] ]
+			  (self isSelfOrSuper: aSend receiver) ifTrue: [
+				  stream << 'This method is on the class side, where self is ' << aClass name << '. ' ].
+			  stream << aClass name << ' itself does not understand ' << selector << ', its instances do: it is on the instance side. '
+			  << (MCPNotUnderstoodNote instanceSideAdviceFor: method of: aClass) ]
 ]
 
 { #category : 'private' }

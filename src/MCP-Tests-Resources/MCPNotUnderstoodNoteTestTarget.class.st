@@ -1,5 +1,5 @@
 "
-Fixture class whose constructor, withLabel:, is compiled on the instance side on purpose, as one compiled on the wrong side is: its send of new cannot run there. The evaluate and test_run tests send it to the class, and see the answer offer to compile it on the class side.
+Fixture class whose constructor, withLabel:, is compiled on the instance side on purpose, as one compiled on the wrong side is: its send of new cannot run there. The evaluate, test_run and method_compile tests send it to the class, and see the answer offer to compile it on the class side, as no answer does for its setter, label:.
 "
 Class {
 	#name : 'MCPNotUnderstoodNoteTestTarget',

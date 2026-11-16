@@ -70,6 +70,31 @@ MCPNotUnderstoodNote class >> chainedSendTextFor: aSelector whereFirstPart: aBlo
 		  ifNone: [ nil ]
 ]
 
+{ #category : 'private' }
+MCPNotUnderstoodNote class >> instanceCreationsSentToSelfBy: aMethod of: aClass [
+	"The sends of new, new:, basicNew or basicNew: that aMethod, an instance-side method of aClass, makes to itself and that instances of aClass do not understand. An instance-side method that makes one is a constructor compiled on the wrong side: it cannot run on an instance, only on the class. None for a method that came with the image, which is never one to compile again on the other side."
+
+	(self isCompiledSinceTheImageShipped: aMethod) ifFalse: [ ^ #(  ) ].
+	^ aMethod ast sendNodes select: [ :node |
+			  node receiver isSelfOrSuperVariable and: [
+				  (#( #new #new: #basicNew #basicNew: ) includes: node selector) and: [ (aClass canUnderstand: node selector) not ] ] ]
+]
+
+{ #category : 'accessing' }
+MCPNotUnderstoodNote class >> instanceSideAdviceFor: aMethod of: aClass [
+	"What to do with a send to aClass of aMethod, one of its instance-side methods, whether it was sent, as evaluate and test_run say, or is about to be, as method_compile's critique says: both take it from here, so they cannot give opposite advice. A constructor compiled on the instance side, which sends new to itself, cannot run on an instance either: it is compiled on the class side instead. Any other method is sent to an instance, even one compiled since the image shipped, which may be a library's, as a setter is when new was forgotten. The class of Smalltalk globals has an instance everyone means, which a new one, empty, is not."
+
+	^ String streamContents: [ :stream |
+			  (self instanceCreationsSentToSelfBy: aMethod of: aClass)
+				  ifEmpty: [
+						  stream nextPutAll: 'Send it to an instance'.
+						  Smalltalk globals class == aClass ifTrue: [ stream nextPutAll: ', such as Smalltalk globals' ] ]
+				  ifNotEmpty: [ :creations |
+						  stream << 'It sends ' << creations first selector << ' to self, which instances of ' << aClass name
+						  << ' do not understand: compile it with method_compile and side class to send it to ' << aClass name ].
+			  stream nextPut: $. ]
+]
+
 { #category : 'testing' }
 MCPNotUnderstoodNote class >> isCompiledSinceTheImageShipped: aCompiledMethod [
 	"Whether aCompiledMethod was compiled into the image after it shipped, as the caller's own methods are: its source is in the image's .changes file."
@@ -169,30 +194,12 @@ MCPNotUnderstoodNote >> initializeReceiver: anObject selector: aSelector sender:
 ]
 
 { #category : 'private' }
-MCPNotUnderstoodNote >> instanceCreationsSentToSelfBy: aMethod [
-	"The sends of new, new:, basicNew or basicNew: that aMethod makes to itself and that the receiver's instances do not understand. An instance-side method that makes one is a constructor compiled on the wrong side: it cannot run on an instance, only on the class. None for a method that came with the image, which is never one to compile again on the other side."
-
-	(self class isCompiledSinceTheImageShipped: aMethod) ifFalse: [ ^ #(  ) ].
-	^ aMethod ast sendNodes select: [ :node |
-			  node receiver isSelfOrSuperVariable and: [
-				  (#( #new #new: #basicNew #basicNew: ) includes: node selector) and: [ (receiver canUnderstand: node selector) not ] ] ]
-]
-
-{ #category : 'private' }
 MCPNotUnderstoodNote >> instanceSideTextFor: aMethod [
-	"For a class sent a message only its instances understand, through aMethod. A constructor compiled on the instance side, which sends new to itself, cannot run on an instance either: it is compiled on the class side instead. Any other method is sent to an instance, even one compiled since the image shipped, which may be a library's, as a setter is when new was forgotten. The class of Smalltalk globals has an instance everyone means, which a new one, empty, is not."
+	"For a class sent a message only its instances understand, through aMethod: that its instances understand it, and what to do, as instanceSideAdviceFor:of: says."
 
 	^ String streamContents: [ :stream |
 			  stream << 'Instances of ' << receiver name << ' understand ' << selector << ', but ' << receiver name << ' itself does not: '
-			  << selector << ' is an instance-side method. '.
-			  (self instanceCreationsSentToSelfBy: aMethod)
-				  ifEmpty: [
-						  stream nextPutAll: 'Send it to an instance'.
-						  Smalltalk globals class == receiver ifTrue: [ stream nextPutAll: ', such as Smalltalk globals' ] ]
-				  ifNotEmpty: [ :creations |
-						  stream << 'It sends ' << creations first selector << ' to self, which instances of ' << receiver name
-						  << ' do not understand: compile it with method_compile and side class to send it to ' << receiver name ].
-			  stream nextPut: $. ]
+			  << selector << ' is an instance-side method. ' << (self class instanceSideAdviceFor: aMethod of: receiver) ]
 ]
 
 { #category : 'testing' }
