@@ -5,7 +5,7 @@ A test that finished is error, failure, skipped or passed, read from SUnit's own
 
 A test a timeout stopped was interrupted, and says where it was; one the deadline reached first never started. Neither is counted.
 
-It also names the classes removed since that the test's own code still refers to: the methods keep the obsolete copy of each, and the test runs that.
+It also names the classes removed since that the test's own code still refers to, and the methods of that code that refer to each: those methods keep the obsolete copy of each, and the test runs that.
 "
 Class {
 	#name : 'MCPTestOutcome',
@@ -17,7 +17,7 @@ Class {
 		'outcome',
 		'issues',
 		'location',
-		'removedClassNames'
+		'removedClassReferences'
 	],
 	#category : 'MCP-IDE-Utilities',
 	#package : 'MCP-IDE',
@@ -78,16 +78,25 @@ MCPTestOutcome class >> ownMethodsOf: aTestCase [
 	^ methods
 ]
 
-{ #category : 'removed classes' }
-MCPTestOutcome class >> removedClassNamesReferredToBy: aTestCase [
-	"The classes removed since that the test's own code still refers to, by their own names, each once, in the order found. A method keeps the binding of a class it names, and once the class is removed, that binding holds the class's obsolete copy, which the test then runs."
+{ #category : 'private' }
+MCPTestOutcome class >> referenceTextOf: aMethod [
+	"The method as a test names it: ZooKeeperTest>>#testFeeding."
 
-	| names |
-	names := OrderedCollection new.
+	^ String streamContents: [ :stream | stream << aMethod methodClass name << '>>#' << aMethod selector ]
+]
+
+{ #category : 'removed classes' }
+MCPTestOutcome class >> removedClassReferencesOf: aTestCase [
+	"The classes removed since that the test's own code still refers to, by their own names, each with the methods of that code that refer to it, in the order found. A method keeps the binding of a class it names, and once the class is removed, that binding holds the class's obsolete copy, which the test then runs."
+
+	| references |
+	references := Dictionary new.
 	(self ownMethodsOf: aTestCase) do: [ :method |
 			method literalsEvenTheOnesInTheInnerBlocks do: [ :each |
-				(self isRemovedClassBinding: each) ifTrue: [ names addIfNotPresent: each value originalName asString ] ] ].
-	^ names asArray
+					(self isRemovedClassBinding: each) ifTrue: [
+							(references at: each value originalName asString ifAbsentPut: [ OrderedCollection new ]) addIfNotPresent:
+								(self referenceTextOf: method) ] ] ].
+	^ references
 ]
 
 { #category : 'instance creation' }
@@ -139,7 +148,7 @@ MCPTestOutcome >> initializeTestCase: aTestCase outcome: anOutcome issues: someI
 	outcome := anOutcome.
 	issues := self issuesShownFor: anOutcome from: someIssues.
 	location := aLocationOrNil.
-	removedClassNames := self class removedClassNamesReferredToBy: aTestCase
+	removedClassReferences := self class removedClassReferencesOf: aTestCase
 ]
 
 { #category : 'testing' }
@@ -207,6 +216,13 @@ MCPTestOutcome >> location [
 	^ location
 ]
 
+{ #category : 'accessing' }
+MCPTestOutcome >> methodsReferringToRemovedClassNamed: aClassName [
+	"The methods of the test's own code that still refer to the removed class of that name: ZooKeeperTest>>#testFeeding."
+
+	^ self removedClassReferences at: aClassName ifAbsent: [ #(  ) ]
+]
+
 { #category : 'printing' }
 MCPTestOutcome >> name [
 	"The test as test_run names it: its reference, and the parameters of a parameterized case."
@@ -244,9 +260,16 @@ MCPTestOutcome >> reference [
 
 { #category : 'accessing' }
 MCPTestOutcome >> removedClassNames [
-	"The classes removed since that the test's own code still refers to, by their own names: the test ran their obsolete copies."
+	"The classes removed since that the test's own code still refers to, by their own names, sorted, so that tests that refer to the same classes name them alike, whatever order their code names them in."
 
-	^ removedClassNames ifNil: [ #(  ) ]
+	^ self removedClassReferences keys sort
+]
+
+{ #category : 'accessing' }
+MCPTestOutcome >> removedClassReferences [
+	"The classes removed since that the test's own code still refers to, by their own names, each with the methods that refer to it: the test ran their obsolete copies."
+
+	^ removedClassReferences ifNil: [ Dictionary new ]
 ]
 
 { #category : 'accessing' }

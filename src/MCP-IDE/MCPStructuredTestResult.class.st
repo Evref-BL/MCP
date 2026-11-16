@@ -3,7 +3,7 @@ The result of one test case run by test_run, so that SUnit's own bookkeeping cou
 
 It records each issue while the stack that raised it is still live: its kind, as SUnit sorts the exception, its error class and message, the first frame past the helpers that only pass an error on (the location), and, for a failure in the test method, the statement that failed. A location in Pharo's kernel or SUnit says where the error was noticed, so it also names the code under test that called it, at the line it was running. An issue raised again with the same kind, error class and message, as a broken fixture raises it in setUp and again in tearDown, adds its location to the first.
 
-A class removed since is named by its own name, not by the one Pharo gives its obsolete copy, and the issue lists it among the classes it names that were removed.
+A class removed since is named by its own name, not by the one Pharo gives its obsolete copy, with the article before it to match, and the issue lists it among the classes it names that were removed. A name quoted in a string or a symbol is left as it is.
 "
 Class {
 	#name : 'MCPStructuredTestResult',
@@ -15,6 +15,20 @@ Class {
 	#package : 'MCP-IDE',
 	#tag : 'DTOs'
 }
+
+{ #category : 'private - removed classes' }
+MCPStructuredTestResult class >> article: anArticle agreeingWith: aName [
+	"anArticle, a, an or nothing, followed by a space unless nothing, as aName takes it and capitalized as anArticle is."
+
+	| article |
+	anArticle ifEmpty: [ ^ anArticle ].
+	article := aName first isVowel
+		           ifTrue: [ 'an ' ]
+		           ifFalse: [ 'a ' ].
+	^ anArticle first isUppercase
+		  ifTrue: [ article capitalized ]
+		  ifFalse: [ article ]
+]
 
 { #category : 'locations' }
 MCPStructuredTestResult class >> codeUnderTestContextFrom: aLocationContext in: aTestCase [
@@ -28,6 +42,15 @@ MCPStructuredTestResult class >> codeUnderTestContextFrom: aLocationContext in: 
 			((self isHelperContext: context) or: [ self isContext: context inAnyPackageOf: packageNames ]) ifFalse: [ ^ context ].
 			context := context sender ].
 	^ nil
+]
+
+{ #category : 'private - locations' }
+MCPStructuredTestResult class >> cutShort: aString [
+	"aString, cut past 100 characters."
+
+	^ aString size > 100
+		  ifTrue: [ (aString first: 100) , '...' ]
+		  ifFalse: [ aString ]
 ]
 
 { #category : 'private - locations' }
@@ -128,21 +151,18 @@ MCPStructuredTestResult class >> issueLocationTextOf: aContext in: aTestCase [
 MCPStructuredTestResult class >> lineTextOf: aContext [
 	"The line of its method that aContext was running, counting the method as stored, and that line, trimmed and cut past 100 characters: line 4: portion > appetite. Nil when it cannot be read."
 
-	| node source text |
+	| node source |
 	node := [ aContext sourceNodeExecuted ]
 		        on: Error
 		        do: [ :error | ^ nil ].
 	node ifNil: [ ^ nil ].
 	source := node methodNode source.
-	text := (source lineCorrespondingToIndex: node start) trimBoth.
 	^ String streamContents: [ :stream |
 			  stream
 				  nextPutAll: 'line ';
 				  print: (source lineNumberCorrespondingToIndex: node start);
 				  nextPutAll: ': ';
-				  nextPutAll: (text size > 100
-						   ifTrue: [ (text first: 100) , '...' ]
-						   ifFalse: [ text ]) ]
+				  nextPutAll: (self cutShort: (source lineCorrespondingToIndex: node start) trimBoth) ]
 ]
 
 { #category : 'locations' }
@@ -183,27 +203,16 @@ MCPStructuredTestResult class >> locationTextOf: aContext [
 
 { #category : 'private - removed classes' }
 MCPStructuredTestResult class >> removedClassNamePattern [
-	"A class Pharo removes is renamed AnObsolete followed by its name, once more each time it is removed again."
+	"A class Pharo removes is renamed AnObsolete followed by its name, once more each time it is removed again. The match takes the article before the name, which the class's own name may change, and the quote or # before it that makes it the text of a string or a symbol."
 
-	^ '(AnObsolete)+[A-Z][A-Za-z0-9_]*'
-]
-
-{ #category : 'removed classes' }
-MCPStructuredTestResult class >> removedClassNamesIn: aString [
-	"The classes aString names as Pharo renames a class it removes, by their own names, each once, in order."
-
-	| names |
-	names := OrderedCollection new.
-	(aString allRegexMatches: self removedClassNamePattern) do: [ :each |
-		names addIfNotPresent: (each copyReplaceAll: 'AnObsolete' with: '') ].
-	^ names asArray
+	^ '(\b[Aa]n? )?[''#]?\b(AnObsolete)+[A-Z][A-Za-z0-9_]*'
 ]
 
 { #category : 'locations' }
 MCPStructuredTestResult class >> statementOf: aContext [
 	"The statement directly in its method's body that aContext was running, on one line and cut past 100 characters, or nil when it cannot be read."
 
-	| body methodNode node text |
+	| body methodNode node |
 	node := [ aContext sourceNodeExecuted ]
 		        on: Error
 		        do: [ :error | ^ nil ].
@@ -211,10 +220,7 @@ MCPStructuredTestResult class >> statementOf: aContext [
 	body := methodNode body.
 	[ node parent isNil or: [ node parent == body ] ] whileFalse: [ node := node parent ].
 	node parent == body ifFalse: [ ^ nil ].
-	text := ' ' join: node sourceCode substrings.
-	^ text size > 100
-		  ifTrue: [ (text first: 100) , '...' ]
-		  ifFalse: [ text ]
+	^ self cutShort: (' ' join: node sourceCode substrings)
 ]
 
 { #category : 'printing' }
@@ -239,21 +245,30 @@ MCPStructuredTestResult class >> textForDuration: aDuration [
 ]
 
 { #category : 'removed classes' }
-MCPStructuredTestResult class >> textNamingRemovedClassesIn: aString [
-	"aString with each removed class named by its own name, not by the one Pharo gives it on removal: AnObsoleteZooLion >> #roar reads ZooLion >> #roar."
+MCPStructuredTestResult class >> textNamingRemovedClassesIn: aString into: someNames [
+	"aString with each removed class named by its own name, not by the one Pharo gives it on removal, and with the article before it agreeing with that name: an AnObsoleteZooLion reads a ZooLion. Each such name goes into someNames once. A name in a string or a symbol, after a quote or #, is what the code compared or printed, and stays as it is."
 
-	^ aString
-		  copyWithRegex: self removedClassNamePattern
-		  matchesTranslatedUsing: [ :each | each copyReplaceAll: 'AnObsolete' with: '' ]
+	^ aString copyWithRegex: self removedClassNamePattern matchesTranslatedUsing: [ :match |
+			  | article className index |
+			  index := match indexOfSubCollection: 'AnObsolete'.
+			  article := match first: index - 1.
+			  ((article endsWith: '''') or: [ article endsWith: '#' ])
+				  ifTrue: [ match ]
+				  ifFalse: [
+						  className := match allButFirst: index - 1.
+						  [ className beginsWith: 'AnObsolete' ] whileTrue: [ className := className allButFirst: 'AnObsolete' size ].
+						  someNames addIfNotPresent: className.
+						  (self article: article agreeingWith: className) , className ] ]
 ]
 
 { #category : 'private' }
 MCPStructuredTestResult >> addIssueOfKind: aKind errorClass: anErrorClassName message: aMessage location: aLocationOrNil statement: aStatementOrNil [
 	"An issue of the kind, error class and message of one the test already raised is the same issue, raised again somewhere else, such as in setUp and again in tearDown: its place joins the others once. A class removed since is named by its own name, and listed among the removed classes the issue names. Answer the issue."
 
-	| issue location message |
-	message := self class textNamingRemovedClassesIn: aMessage.
-	location := aLocationOrNil ifNotNil: [ :text | self class textNamingRemovedClassesIn: text ].
+	| issue location message removedClassNames |
+	removedClassNames := OrderedCollection new.
+	message := self class textNamingRemovedClassesIn: aMessage into: removedClassNames.
+	location := aLocationOrNil ifNotNil: [ :text | self class textNamingRemovedClassesIn: text into: removedClassNames ].
 	issue := issues
 		         detect: [ :each |
 		         (each at: #kind) = aKind and: [ (each at: #errorClass) = anErrorClassName and: [ (each at: #message) = message ] ] ]
@@ -266,10 +281,7 @@ MCPStructuredTestResult >> addIssueOfKind: aKind errorClass: anErrorClassName me
 						          at: #removedClasses put: OrderedCollection new;
 						          yourself) ].
 	(location isNil or: [ (issue at: #locations) includes: location ]) ifFalse: [ (issue at: #locations) add: location ].
-	{
-		aMessage.
-		aLocationOrNil } do: [ :text |
-		text ifNotNil: [ (self class removedClassNamesIn: text) do: [ :each | (issue at: #removedClasses) addIfNotPresent: each ] ] ].
+	removedClassNames do: [ :each | (issue at: #removedClasses) addIfNotPresent: each ].
 	(aStatementOrNil isNil or: [ issue includesKey: #statement ]) ifFalse: [ issue at: #statement put: aStatementOrNil ].
 	^ issue
 ]

@@ -62,6 +62,30 @@ MCPToolRunTests >> checkArguments: request [
 	self testSelectionsFrom: request
 ]
 
+{ #category : 'private' }
+MCPToolRunTests >> classDefinedAgainSentenceFor: entry [
+	"<class> exists again, but <methods> still refer(s) to its removed copy: compile that method|those methods again with method_compile, unchanged, and it|they will refer to the current <class>. A references search finds only the current class's references, so the methods are named."
+
+	| className methods |
+	className := self valueIn: entry at: #class.
+	methods := self valueIn: entry at: #methods.
+	^ String streamContents: [ :stream |
+			  stream
+				  nextPutAll: className;
+				  nextPutAll: ' exists again, but ';
+				  nextPutAll: (self joinedNames: methods);
+				  nextPutAll: (methods size = 1
+						   ifTrue: [ ' still refers to its removed copy: compile that method' ]
+						   ifFalse: [ ' still refer to its removed copy: compile those methods' ]);
+				  nextPutAll: ' again with method_compile, unchanged, and ';
+				  nextPutAll: (methods size = 1
+						   ifTrue: [ 'it' ]
+						   ifFalse: [ 'they' ]);
+				  nextPutAll: ' will refer to the current ';
+				  nextPutAll: className;
+				  nextPut: $. ]
+]
+
 { #category : 'private - coverage schema' }
 MCPToolRunTests >> coverageOptionsObjectSchema [
 
@@ -243,8 +267,8 @@ MCPToolRunTests >> joinedNames: someStrings [
 MCPToolRunTests >> keysStatedInSummary [
 	"The summary already says the counts, the tests that refer to removed classes, the selections that held no test and the timeout: 'Ran 2 tests (0 passed). 2 errors. Timed out after 90 seconds, during T>>#testC. 7 tests not run, listed below as test_run arguments.'"
 
-	^ #( runCount passedCount failureCount errorCount skippedCount removedClassReferences withoutTests timedOut timeoutMilliseconds
-	     interrupted notRunCount )
+	^ #( runCount passedCount failureCount errorCount skippedCount removedClassReferences classesDefinedAgain withoutTests
+	     timedOut timeoutMilliseconds interrupted notRunCount )
 ]
 
 { #category : 'private - execution' }
@@ -287,44 +311,57 @@ MCPToolRunTests >> refuseEmptySelectionIn: request [
 ]
 
 { #category : 'private' }
-MCPToolRunTests >> removedClassReferencesSentencesOn: stream for: entries [
-	"<tests> refers to <class>, a removed class, so it ran the obsolete copy of <class>. <tests> refer to <classes>, removed classes, so they ran the obsolete copies of those classes. Create <every class> again with class_create, or change the test(s)."
+MCPToolRunTests >> removedClassReferenceSentenceFor: entry [
+	"<tests> refers to <class>, a removed class, so it ran the obsolete copy of <class>. <tests> refer to <classes>, removed classes, so they ran the obsolete copies of those classes."
 
-	| classNames testCount |
-	classNames := OrderedCollection new.
+	| classes tests |
+	classes := self valueIn: entry at: #classes.
+	tests := self valueIn: entry at: #tests.
+	^ String streamContents: [ :stream |
+			  stream
+				  nextPutAll: (self joinedNames: tests);
+				  nextPutAll: (tests size = 1
+						   ifTrue: [ ' refers to ' ]
+						   ifFalse: [ ' refer to ' ]);
+				  nextPutAll: (self joinedNames: classes);
+				  nextPutAll: (classes size = 1
+						   ifTrue: [ ', a removed class, so ' ]
+						   ifFalse: [ ', removed classes, so ' ]);
+				  nextPutAll: (tests size = 1
+						   ifTrue: [ 'it' ]
+						   ifFalse: [ 'they' ]);
+				  nextPutAll: (classes size = 1
+						   ifTrue: [ ' ran the obsolete copy of ' , classes first ]
+						   ifFalse: [ ' ran the obsolete copies of those classes' ]);
+				  nextPut: $. ]
+]
+
+{ #category : 'private' }
+MCPToolRunTests >> removedClassReferencesSentencesOn: stream for: data [
+	"One sentence per set of removed classes that tests refer to, then: Create <the classes nothing has the name of> again with class_create, or change the test(s). Then one sentence per class that exists again, naming the methods that still refer to its removed copy."
+
+	| classesDefinedAgain missingClassNames namesDefinedAgain sentences testCount |
+	classesDefinedAgain := (self valueIn: data at: #classesDefinedAgain) ifNil: [ #(  ) ].
+	namesDefinedAgain := classesDefinedAgain collect: [ :each | self valueIn: each at: #class ].
+	missingClassNames := OrderedCollection new.
 	testCount := 0.
-	entries do: [ :entry |
-			| classes tests |
-			classes := self valueIn: entry at: #classes.
-			tests := self valueIn: entry at: #tests.
-			classes do: [ :each | classNames addIfNotPresent: each ].
-			testCount := testCount + tests size.
-			stream
-				nextPutAll: (self joinedNames: tests);
-				nextPutAll: (tests size = 1
-						 ifTrue: [ ' refers to ' ]
-						 ifFalse: [ ' refer to ' ]);
-				nextPutAll: (self joinedNames: classes);
-				nextPutAll: (classes size = 1
-						 ifTrue: [ ', a removed class, so ' ]
-						 ifFalse: [ ', removed classes, so ' ]);
-				nextPutAll: (tests size = 1
-						 ifTrue: [ 'it' ]
-						 ifFalse: [ 'they' ]).
-			classes size = 1
-				ifTrue: [
-						stream
-							nextPutAll: ' ran the obsolete copy of ';
-							nextPutAll: classes first ]
-				ifFalse: [ stream nextPutAll: ' ran the obsolete copies of those classes' ].
-			stream nextPutAll: '. ' ].
-	stream
-		nextPutAll: 'Create ';
-		nextPutAll: (self joinedNames: classNames);
-		nextPutAll: ' again with class_create, or change the ';
-		nextPutAll: (testCount = 1
-				 ifTrue: [ 'test.' ]
-				 ifFalse: [ 'tests.' ])
+	sentences := OrderedCollection new.
+	(self valueIn: data at: #removedClassReferences) do: [ :entry |
+			sentences add: (self removedClassReferenceSentenceFor: entry).
+			((self valueIn: entry at: #classes) reject: [ :each | namesDefinedAgain includes: each ]) ifNotEmpty: [ :missing |
+					missing do: [ :each | missingClassNames addIfNotPresent: each ].
+					testCount := testCount + (self valueIn: entry at: #tests) size ] ].
+	missingClassNames ifNotEmpty: [
+			sentences add: (String streamContents: [ :sentence |
+						 sentence
+							 nextPutAll: 'Create ';
+							 nextPutAll: (self joinedNames: missingClassNames);
+							 nextPutAll: ' again with class_create, or change the ';
+							 nextPutAll: (testCount = 1
+									  ifTrue: [ 'test.' ]
+									  ifFalse: [ 'tests.' ]) ]) ].
+	classesDefinedAgain do: [ :each | sentences add: (self classDefinedAgainSentenceFor: each) ].
+	stream nextPutAll: (' ' join: sentences)
 ]
 
 { #category : 'private - execution' }
@@ -356,9 +393,9 @@ MCPToolRunTests >> successSummaryForData: data [
 						  space;
 						  print: count;
 						  nextPutAll: ' skipped.' ].
-			  (self valueIn: data at: #removedClassReferences) ifNotNil: [ :entries |
+			  (self valueIn: data at: #removedClassReferences) ifNotNil: [
 					  stream space.
-					  self removedClassReferencesSentencesOn: stream for: entries ].
+					  self removedClassReferencesSentencesOn: stream for: data ].
 			  ((self valueIn: data at: #withoutTests) ifNil: [ #(  ) ]) do: [ :entry |
 					  stream space.
 					  self withoutTestsSentenceOn: stream for: entry ].

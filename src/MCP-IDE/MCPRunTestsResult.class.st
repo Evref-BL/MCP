@@ -1,7 +1,7 @@
 "
 The tests a test_run or test_coverage_run call ran, counted and grouped for its answer.
 
-It counts each test once, from the outcomes of the selections it ran, and says each issue once: the issues of the same kind, error class, message and places, across tests, are one entry naming every test they hit. It also names the tests that still refer to removed classes, grouped by those classes, and the selections that selected no test, lists what a timeout left to run as test_run arguments, and carries the coverage when it was measured.
+It counts each test once, from the outcomes of the selections it ran, and says each issue once: the issues of the same kind, error class, message and places, across tests, are one entry naming every test they hit. It also names the tests that still refer to removed classes, grouped by those classes, with the methods that still hold a removed class whose name a class has again, and the selections that selected no test, lists what a timeout left to run as test_run arguments, and carries the coverage when it was measured.
 "
 Class {
 	#name : 'MCPRunTestsResult',
@@ -40,7 +40,7 @@ MCPRunTestsResult >> addTimeoutTo: data [
 
 { #category : 'converting' }
 MCPRunTestsResult >> asDictionary [
-	"The counts, each test counted once and a count of none left out but for the run and the passes; each issue once, naming every test it hit; the tests that still refer to removed classes; the selections that held no test; what a timeout left to run; and coverage."
+	"The counts, each test counted once and a count of none left out but for the run and the passes; each issue once, naming every test it hit; the tests that still refer to removed classes, and the classes among those that exist again; the selections that held no test; what a timeout left to run; and coverage."
 
 	| data |
 	data := Dictionary new.
@@ -55,10 +55,30 @@ MCPRunTestsResult >> asDictionary [
 		(#errors -> self errorDictionaries).
 		(#skipped -> self skippedDictionaries).
 		(#removedClassReferences -> self removedClassReferenceEntries).
+		(#classesDefinedAgain -> self classesDefinedAgainEntries).
 		(#withoutTests -> self withoutTestsEntries) } do: [ :each | each value ifNotEmpty: [ data at: each key put: each value ] ].
 	self coverage ifNotNil: [ :coverageResult | data at: #coverage put: coverageResult asDictionary ].
 	self timedOut ifTrue: [ self addTimeoutTo: data ].
 	^ data
+]
+
+{ #category : 'converting' }
+MCPRunTestsResult >> classesDefinedAgainEntries [
+	"One entry per class removed since that tests which ran still refer to, when a class of that name exists again, sorted by name: the class, and the methods of those tests that still refer to its removed copy, each once. A class created again under the removed one's name takes over its references, but one renamed to that name does not, and leaves those methods holding the removed copy until they are compiled again."
+
+	| methodsByClassName |
+	methodsByClassName := Dictionary new.
+	self outcomesReferringToRemovedClasses do: [ :outcome |
+			outcome removedClassNames do: [ :name |
+					(self isClassDefinedAgain: name) ifTrue: [
+							| methods |
+							methods := methodsByClassName at: name ifAbsentPut: [ OrderedCollection new ].
+							(outcome methodsReferringToRemovedClassNamed: name) do: [ :each | methods addIfNotPresent: each ] ] ] ].
+	^ methodsByClassName keys sort collect: [ :name |
+			  Dictionary new
+				  at: #class put: name;
+				  at: #methods put: (methodsByClassName at: name) asArray;
+				  yourself ]
 ]
 
 { #category : 'converting' }
@@ -156,6 +176,16 @@ MCPRunTestsResult >> interruption: anOutcomeOrNil [
 	interruption := anOutcomeOrNil
 ]
 
+{ #category : 'private' }
+MCPRunTestsResult >> isClassDefinedAgain: aClassName [
+	"Whether a class other than the removed one holds aClassName in the image now."
+
+	^ self class environment
+		  at: aClassName asSymbol
+		  ifPresent: [ :global | global isBehavior and: [ global isObsolete not ] ]
+		  ifAbsent: [ false ]
+]
+
 { #category : 'converting' }
 MCPRunTestsResult >> issueEntriesOfKind: aKind [
 	"One entry per issue of aKind, said once for every test it hit, in the order the first of those tests ran."
@@ -215,6 +245,13 @@ MCPRunTestsResult >> outcomes [
 	^ Array streamContents: [ :stream | self results do: [ :each | stream nextPutAll: each outcomes ] ]
 ]
 
+{ #category : 'private' }
+MCPRunTestsResult >> outcomesReferringToRemovedClasses [
+	"The tests that ran and still refer to classes removed since, in the order they ran. A skipped test ran nothing of them."
+
+	^ self outcomes select: [ :each | each isSkipped not and: [ each removedClassReferences isNotEmpty ] ]
+]
+
 { #category : 'converting' }
 MCPRunTestsResult >> passedCount [
 
@@ -223,15 +260,14 @@ MCPRunTestsResult >> passedCount [
 
 { #category : 'converting' }
 MCPRunTestsResult >> removedClassReferenceEntries [
-	"One entry per set of classes removed since that tests which ran still refer to, in the order the first of those tests ran: the classes, by their own names, and the tests. A skipped test ran nothing of them."
+	"One entry per set of classes removed since that tests which ran still refer to, in the order the first of those tests ran: the classes, by their own names, sorted, so that tests naming them in any order share an entry, and the tests."
 
 	| groups |
 	groups := OrderedCollection new.
-	self outcomes do: [ :outcome |
-			(outcome isSkipped not and: [ outcome removedClassNames isNotEmpty ]) ifTrue: [
-					(groups
-						 detect: [ :each | each key = outcome removedClassNames ]
-						 ifNone: [ groups add: outcome removedClassNames -> OrderedCollection new ]) value add: outcome ] ].
+	self outcomesReferringToRemovedClasses do: [ :outcome |
+			| names |
+			names := outcome removedClassNames.
+			(groups detect: [ :each | each key = names ] ifNone: [ groups add: names -> OrderedCollection new ]) value add: outcome ].
 	^ groups
 		  collect: [ :each |
 				  Dictionary new
