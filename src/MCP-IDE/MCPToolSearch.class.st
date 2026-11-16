@@ -255,6 +255,16 @@ MCPToolSearch >> keysStatedInSummary [
 	^ #( pagination nextOffset )
 ]
 
+{ #category : 'private - filtering' }
+MCPToolSearch >> literalRegexSourceFor: aString [
+	"A regex that matches aString as written in either engine: each character either engine reads as syntax is escaped, the colon included, which Rx reads as the start of a class such as :alpha:."
+
+	^ String streamContents: [ :stream |
+			  aString do: [ :each |
+					  ('\^$.|?*+()[]{}:' includes: each) ifTrue: [ stream nextPut: $\ ].
+					  stream nextPut: each ] ]
+]
+
 { #category : 'private - results' }
 MCPToolSearch >> matchTextAfterCount: aCount filtering: aBoolean [
 
@@ -277,6 +287,20 @@ MCPToolSearch >> matcherForPattern: aPattern mode: aMode caseSensitive: aBoolean
 		^ [ :candidate | (self normalizeFilterString: candidate caseSensitive: aBoolean) beginsWith: normalizedPattern ] ].
 	aMode = 'exact' ifTrue: [ ^ [ :candidate | (self normalizeFilterString: candidate caseSensitive: aBoolean) = normalizedPattern ] ].
 	Error signal: 'Unsupported filter mode: ' , aMode
+]
+
+{ #category : 'private - filtering' }
+MCPToolSearch >> matcherForPiecesAcrossBlanks: pieces caseSensitive: aBoolean [
+	"Whether a text holds pieces in this order, each separated from the next by a run of blanks, line breaks included: the pieces, each escaped, joined by \s+. The longest piece is looked for first, as a plain substring, so the regex runs only on the texts that hold it and a search over the whole image stays fast."
+
+	| longest regexMatcher |
+	longest := self normalizeFilterString: (pieces detectMax: [ :each | each size ]) caseSensitive: aBoolean.
+	regexMatcher := self
+		                regexMatcherForPattern: ('\s+' join: (pieces collect: [ :each | self literalRegexSourceFor: each ]))
+		                caseSensitive: aBoolean.
+	^ [ :candidate |
+	  ((self normalizeFilterString: candidate caseSensitive: aBoolean) includesSubstring: longest) and: [
+		  regexMatcher value: candidate ] ]
 ]
 
 { #category : 'private - results' }

@@ -641,6 +641,28 @@ MCPToolMethodSearchTest >> testImplementorsLeaveOutWhatTraitedClassInstalls [
 ]
 
 { #category : 'tests' }
+MCPToolMethodSearchTest >> testMatcherAcrossBlanksMatchesEachPieceAsWrittenInEitherEngine [
+	"Each piece is escaped in the regex that joins them, so a colon, a bracket, a caret or a period matches itself, whether PCRE2 or Pharo's own engine runs it, and pieces need blanks between them."
+
+	| source |
+	source := String streamContents: [ :stream |
+			          stream
+				          nextPutAll: 'x ifNil:';
+				          cr;
+				          tab;
+				          nextPutAll: '[ ^ nil ].' ].
+	{
+		MCPToolSearchWithoutPCRE2TestStub new.
+		MCPToolSearchMethods new } do: [ :tool |
+			| matcher |
+			matcher := tool matcherForPiecesAcrossBlanks: #( 'ifNil:' '[' '^' 'nil' '].' ) caseSensitive: true.
+			self assert: (matcher value: source).
+			self deny: (matcher value: 'x ifNil [ ^ nil ].').
+			self deny: (matcher value: 'x ifNil: [ ^ nil ]!').
+			self deny: (matcher value: 'x ifNil:[ ^ nil ].') ]
+]
+
+{ #category : 'tests' }
 MCPToolMethodSearchTest >> testMissingClassScopeReturnsPartialResultsAndWarnings [
 
 	| data result selectors warnings |
@@ -953,6 +975,39 @@ MCPToolMethodSearchTest >> testSourceHitsReadAsLineNumberAndText [
 	self deny: (contentText includesSubstring: 'protocol=').
 	self assert: (((self dataFrom: result) at: #methods) allSatisfy: [ :each |
 			 (each at: #lineNumber) = 4 and: [ (each includesKey: #line) and: [ each includesKey: #protocol ] ] ])
+]
+
+{ #category : 'tests' }
+MCPToolMethodSearchTest >> testSourceSearchMatchesAnyRunOfBlanks [
+	"Blanks of any kind and number between the pieces of a substring filter match the single space the source has there, and the rest of the filter, colon, brackets and period included, matches as written."
+
+	| filter methods |
+	filter := String streamContents: [ :stream |
+			          stream
+				          nextPutAll: 'ifNil:  [';
+				          tab;
+				          nextPutAll: 'SharedLimit  ].' ].
+	methods := (self dataFrom: (self callToolNamed: 'method_source_search' withArguments: {
+				             (#filter -> filter).
+				             (self searchScope: { (#classes -> #( 'MCPToolGetMethodTestTarget' )) }) } asDictionary)) at: #methods.
+	self assert: (methods collect: [ :each | each at: #selector ] as: Set) equals: #( 'readClassSide' 'readInstanceWith:' ) asSet.
+	self assert: (methods allSatisfy: [ :each | (each at: #lineNumber) = 4 ])
+]
+
+{ #category : 'tests' }
+MCPToolMethodSearchTest >> testSourceSearchMatchesBlanksAcrossLines [
+	"A run of blanks in a substring filter matches any run of blanks in the source, a line break included, and the hit is read at the line the match starts on. Blanks in the filter still need blanks in the source."
+
+	| methods |
+	methods := (self dataFrom: (self callToolNamed: 'method_source_search' withArguments: {
+				             (#filter -> 'OrderedCollection with: anArgument').
+				             (self searchScope: { (#classes -> #( 'MCPToolGetMethodTestTarget' )) }) } asDictionary)) at: #methods.
+	self assert: (methods collect: [ :each | each at: #selector ] as: Array) equals: #( 'readInstanceWith:' ).
+	self assert: (methods first at: #lineNumber) equals: 5.
+	self assert: (methods first at: #line) equals: '^ OrderedCollection'.
+	self assert: ((self dataFrom: (self callToolNamed: 'method_source_search' withArguments: {
+					   (#filter -> 'Ordered Collection').
+					   (self searchScope: { (#classes -> #( 'MCPToolGetMethodTestTarget' )) }) } asDictionary)) at: #methods) isEmpty
 ]
 
 { #category : 'tests' }
