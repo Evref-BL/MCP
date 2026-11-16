@@ -243,7 +243,7 @@ MCPToolCompileMethod >> mutateWith: request [
 							   from: previousProtocolName
 							   to: (self protocolNameOf: compiledMethod))
 					  data: (self dataForChange: changeKind critiques: critiques)
-					  warnings: warningMessages , headerWarnings , (self protocolWarningsFor: compiledMethod) ]
+					  warnings: warningMessages , headerWarnings , (self protocolWarningsFor: compiledMethod from: previousProtocolName) ]
 		  failureSummary: [ :error | self failureSummaryFor: error in: behavior of: request ]
 ]
 
@@ -254,13 +254,12 @@ MCPToolCompileMethod >> protocolNameOf: aCompiledMethod [
 ]
 
 { #category : 'private' }
-MCPToolCompileMethod >> protocolWarningsFor: aCompiledMethod [
-	"Nobody chose to file a method as unclassified: it is what is left when no protocol was named for it. The summary above the warning names the method, and a batch says a warning its methods share once, so the warning does not name it again."
+MCPToolCompileMethod >> protocolWarningsFor: aCompiledMethod from: previousProtocolName [
+	"Nobody chose to file a method as unclassified: it is what is left when no protocol was named for it. The compile that files it there says so, and a replace that leaves it there does not say it again. The summary above the warning names the method, and a batch says a warning its methods share once, so the warning does not name it again."
 
-	(self isUnclassified: aCompiledMethod) ifFalse: [ ^ #(  ) ].
+	((self isUnclassified: aCompiledMethod) and: [ previousProtocolName ~= Protocol unclassified asString ]) ifFalse: [ ^ #(  ) ].
 	^ { (String streamContents: [ :stream |
-			   stream << 'No protocol was named, so it is filed under ''' << Protocol unclassified asString
-			   << '''. Name one with protocol, or move it with method_update.' ]) }
+		   stream << 'No protocol was named, so it is filed under ''' << Protocol unclassified asString << '''.' ]) }
 ]
 
 { #category : 'private - errors' }

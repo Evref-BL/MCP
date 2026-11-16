@@ -247,6 +247,20 @@ MCPToolRunCritiquesTest >> testFlagsCascadedStreamWrites [
 ]
 
 { #category : 'tests' }
+MCPToolRunCritiquesTest >> testHitQuotesItsCodeAcrossLines [
+	"The formatter puts a cascade's receiver on a line of its own, so the code a hit on its first message flags starts on a line that holds only the receiver. The quote follows that code onto the next lines, each run of blanks and line breaks read as one space, as a compile's critiques do."
+
+	| data hit |
+	self compileFixtureMethodSource: 'cascadeQuoteProbe ^ String streamContents: [ :stream | stream << self printString; cr ]'.
+	data := self dataForArguments: {
+			        (#scope -> { (#classes -> { self fixtureClassName }) } asDictionary).
+			        (#ruleClasses -> { MCPPrintOnStreamRule name }) } asDictionary.
+	hit := ((data at: #rules) first at: #hits) first.
+	self assert: (hit at: #method) equals: self fixtureClassName , '>>cascadeQuoteProbe'.
+	self assert: (hit at: #code) equals: 'stream << self printString'
+]
+
+{ #category : 'tests' }
 MCPToolRunCritiquesTest >> testLeavesBooleanNilBranchesToPharo [
 	"ReNilBranchRule says it of ifTrue:ifFalse: already."
 
@@ -549,6 +563,24 @@ MCPToolRunCritiquesTest >> testRunsSelectedNodeCritiqueAndGroupsHitsByRule [
 ]
 
 { #category : 'tests' }
+MCPToolRunCritiquesTest >> testScopeWarningsNameTheirKey [
+
+	| result warnings |
+	result := self callCritiqueRunWithArguments: {
+			          (#scope -> {
+				           (#classes -> #( 'Zzqxw' )).
+				           (#packages -> #( 'Zzqxw-Package' )) } asDictionary).
+			          (#ruleClasses -> { ReAssignmentInBlockRule name }) } asDictionary.
+	warnings := self warningsFrom: result.
+	self assert: warnings size equals: 2.
+	self
+		assert: warnings asSet
+		equals:
+			#( 'Class Zzqxw does not exist, so scope.classes skipped it.' 'Package Zzqxw-Package does not exist, so scope.packages skipped it.' )
+				asSet
+]
+
+{ #category : 'tests' }
 MCPToolRunCritiquesTest >> testSummaryCountsAPageThatHoldsEveryHit [
 	"A page from the start that holds every hit counts them, in the singular for one. Only a hit with a line brings the sentence on what line numbers count."
 
@@ -656,24 +688,6 @@ MCPToolRunCritiquesTest >> testTextReadsRuleThenHitsByLine [
 	self
 		assert: (String streamContents: [ :stream | tool hitTextOn: stream for: { (#package -> 'Eval-Shapes') } asDictionary ])
 		equals: (String streamContents: [ :stream | stream lf << '  package Eval-Shapes' ])
-]
-
-{ #category : 'tests' }
-MCPToolRunCritiquesTest >> testScopeWarningsNameTheirKey [
-
-	| result warnings |
-	result := self callCritiqueRunWithArguments: {
-			          (#scope -> {
-				           (#classes -> #( 'Zzqxw' )).
-				           (#packages -> #( 'Zzqxw-Package' )) } asDictionary).
-			          (#ruleClasses -> { ReAssignmentInBlockRule name }) } asDictionary.
-	warnings := self warningsFrom: result.
-	self assert: warnings size equals: 2.
-	self
-		assert: warnings asSet
-		equals:
-			#( 'Class Zzqxw does not exist, so scope.classes skipped it.' 'Package Zzqxw-Package does not exist, so scope.packages skipped it.' )
-				asSet
 ]
 
 { #category : 'private' }

@@ -178,10 +178,21 @@ MCPToolMethodMutation >> critiqueData: aCritique precedes: anotherCritique [
 ]
 
 { #category : 'private' }
-MCPToolMethodMutation >> critiqueDataFor: aCritique source: aString [
-	"A critique says where it is by the line of aString its interval starts on and the code there, which the caller can find in the method; its interval stays for a tool that reads offsets. It is fixable when method_rewrite can apply its rule."
+MCPToolMethodMutation >> critiqueData: aCritique restates: anotherCritique [
+	"A hit saying that the receiver of a send, self or a global, does not understand it, on a send that ReSentNotImplementedRule flags: that nothing in the image implements its selector already says so."
 
-	| data interval |
+	(anotherCritique at: #ruleClass) = ReSentNotImplementedRule name asString ifFalse: [ ^ false ].
+	(aCritique at: #ruleClass) = (anotherCritique at: #ruleClass) ifTrue: [ ^ false ].
+	(self unimplementedSendRuleClasses anySatisfy: [ :each | each name asString = (aCritique at: #ruleClass) ]) ifFalse: [ ^ false ].
+	^ (aCritique at: #start ifAbsent: [ ^ false ]) = (anotherCritique at: #start ifAbsent: [ nil ]) and: [
+		  (aCritique at: #stop) = (anotherCritique at: #stop) ]
+]
+
+{ #category : 'private' }
+MCPToolMethodMutation >> critiqueDataFor: aCritique source: aString [
+	"A critique says where it is by the line of aString its quote starts on and the code there, which the caller can find in the method; its interval stays for a tool that reads offsets. It is fixable when method_rewrite can apply its rule."
+
+	| data interval quoted |
 	data := {
 		        (#ruleClass -> aCritique rule class name asString).
 		        (#title -> aCritique title asString).
@@ -192,8 +203,9 @@ MCPToolMethodMutation >> critiqueDataFor: aCritique source: aString [
 				at: #start put: interval first;
 				at: #stop put: interval last.
 			aString ifNotNil: [
-					data at: #line put: (self lineNumberAt: interval first in: aString).
-					(self codeQuoteFor: interval in: aString) ifNotEmpty: [ :code | data at: #code put: code ] ] ].
+					quoted := self quoteIntervalFor: aCritique at: interval in: aString.
+					data at: #line put: (self lineNumberAt: quoted first in: aString).
+					(self codeQuoteFor: quoted in: aString) ifNotEmpty: [ :code | data at: #code put: code ] ] ].
 	(MCPMethodRewriteNamedRuleSpec canApplyRuleClass: aCritique rule class) ifTrue: [ data at: #fixable put: true ].
 	^ data
 ]
@@ -261,14 +273,16 @@ MCPToolMethodMutation >> description [
 
 { #category : 'private' }
 MCPToolMethodMutation >> distinctCritiqueData: critiqueData [
-	"Each problem once, in the order of the method: of equal hits the first is kept, and a hit lying strictly inside another of the same rule and title says nothing that one does not."
+	"Each problem once, in the order of the method: of equal hits the first is kept, and a hit lying strictly inside another of the same rule and title, or restating another, says nothing that one does not."
 
-	| distinct |
+	| distinct kept |
 	distinct := OrderedCollection new.
 	critiqueData do: [ :each |
-		(distinct anySatisfy: [ :kept | self critiqueData: each isTheSameAs: kept ]) ifFalse: [ distinct add: each ] ].
-	^ (distinct reject: [ :each | distinct anySatisfy: [ :other | self critiqueData: each liesStrictlyInside: other ] ]) asArray
-		  sort: [ :left :right | self critiqueData: left precedes: right ]
+		(distinct anySatisfy: [ :other | self critiqueData: each isTheSameAs: other ]) ifFalse: [ distinct add: each ] ].
+	kept := distinct reject: [ :each |
+			        distinct anySatisfy: [ :other |
+				        (self critiqueData: each liesStrictlyInside: other) or: [ self critiqueData: each restates: other ] ] ].
+	^ kept asArray sort: [ :left :right | self critiqueData: left precedes: right ]
 ]
 
 { #category : 'private' }
@@ -371,6 +385,19 @@ MCPToolMethodMutation >> mutationActionFor: request checked: aBoolean [
 ]
 
 { #category : 'private' }
+MCPToolMethodMutation >> quoteIntervalFor: aCritique at: anInterval in: aString [
+	"The part of aString a critique's line and code show: the code it flags, except for a send that will not be understood and is too long to quote whole, its quote cut to end in ... That one is shown from its selector, which the critique is about: from its receiver, the receiver and the first argument would push the other keywords out of the quote, and the formatter may put the receiver on a line of its own."
+
+	| send |
+	(self unimplementedSendRuleClasses includes: aCritique rule class) ifFalse: [ ^ anInterval ].
+	((self codeQuoteFor: anInterval in: aString) endsWith: '...') ifFalse: [ ^ anInterval ].
+	send := (RBParser parseMethod: aString onError: [ :message :position | ^ anInterval ]) allChildren
+		        detect: [ :each | each isMessage and: [ each sourceInterval = anInterval ] ]
+		        ifNone: [ ^ anInterval ].
+	^ send keywordsPositions first to: anInterval last
+]
+
+{ #category : 'private' }
 MCPToolMethodMutation >> reformattedMethodForBehavior: aBehavior selector: aSelector [
 	"Not CompiledMethod>>reformat: it formats in the context of the AST node's class, so it reads AST-Core's manifest instead of the formatter the method's own package declares."
 
@@ -442,4 +469,14 @@ MCPToolMethodMutation >> sourceIntervalForCritique: aCritique [
 MCPToolMethodMutation >> title [
 
 	^ self methodToolSpec at: #title
+]
+
+{ #category : 'private' }
+MCPToolMethodMutation >> unimplementedSendRuleClasses [
+	"The rules that flag a send that will not be understood: ReSentNotImplementedRule when nothing in the image implements its selector, the others when its receiver, self or a global, does not, which the first then says too."
+
+	^ {
+		  ReSentNotImplementedRule.
+		  ReSelfSentNotImplementedRule.
+		  ReSendsUnknownMessageToGlobalRule }
 ]
