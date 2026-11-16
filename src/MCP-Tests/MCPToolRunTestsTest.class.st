@@ -258,7 +258,7 @@ MCPToolRunTestsTest >> testAMethodOfANonTestClassIsRefused [
 	self
 		assert: summary
 		equals:
-		'MCPToolCoverageTarget>>#coveredMethod is not a test: MCPToolCoverageTarget is a subclass of Object, and a test class subclasses TestCase. If MCPToolCoverageTarget is meant to hold tests, make TestCase its superclass with class_update, through tool_call when class_update is not in your list: tool_call {"name": "class_update", "arguments": {"name": "MCPToolCoverageTarget", "superclass": "TestCase"}}.'
+		'MCPToolCoverageTarget>>#coveredMethod is not a test: MCPToolCoverageTarget is a subclass of Object, and a test class subclasses TestCase. If MCPToolCoverageTarget is meant to hold tests, make TestCase its superclass with class_update {"name": "MCPToolCoverageTarget", "superclass": "TestCase"}.'
 ]
 
 { #category : 'tests - refusals' }
@@ -336,7 +336,7 @@ MCPToolRunTestsTest >> testANonTestClassIsRefused [
 	self
 		assert: (self summaryFrom: result)
 		equals:
-		'MCPToolRunTestsUnreferencedTarget is not a test class: it is a subclass of Object, and a test class subclasses TestCase. If MCPToolRunTestsUnreferencedTarget is meant to hold tests, make TestCase its superclass with class_update, through tool_call when class_update is not in your list: tool_call {"name": "class_update", "arguments": {"name": "MCPToolRunTestsUnreferencedTarget", "superclass": "TestCase"}}.'
+		'MCPToolRunTestsUnreferencedTarget is not a test class: it is a subclass of Object, and a test class subclasses TestCase. If MCPToolRunTestsUnreferencedTarget is meant to hold tests, make TestCase its superclass with class_update {"name": "MCPToolRunTestsUnreferencedTarget", "superclass": "TestCase"}.'
 ]
 
 { #category : 'tests - timeouts' }
@@ -850,7 +850,7 @@ MCPToolRunTestsTest >> testEveryBadSelectionIsNamedInOneRefusal [
 	self
 		assert: (self summaryFrom: result)
 		equals:
-		'MCPToolRunTestsUnreferencedTarget is not a test class: it is a subclass of Object, and a test class subclasses TestCase. If MCPToolRunTestsUnreferencedTarget is meant to hold tests, make TestCase its superclass with class_update, through tool_call when class_update is not in your list: tool_call {"name": "class_update", "arguments": {"name": "MCPToolRunTestsUnreferencedTarget", "superclass": "TestCase"}}. MCPToolStructuredOutputTestTarget>>#setUp is not one of MCPToolStructuredOutputTestTarget''s tests. Name one of its test methods, or the class to run them all.'.
+		'MCPToolRunTestsUnreferencedTarget is not a test class: it is a subclass of Object, and a test class subclasses TestCase. If MCPToolRunTestsUnreferencedTarget is meant to hold tests, make TestCase its superclass with class_update {"name": "MCPToolRunTestsUnreferencedTarget", "superclass": "TestCase"}. MCPToolStructuredOutputTestTarget>>#setUp is not one of MCPToolStructuredOutputTestTarget''s tests. Name one of its test methods, or the class to run them all.'.
 	self assert: notTests size equals: 2.
 	self assert: notTests first equals: {
 			(#selection -> 'MCPToolRunTestsUnreferencedTarget').
