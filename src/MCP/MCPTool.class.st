@@ -356,6 +356,25 @@ MCPTool >> codeQuoteFor: anInterval in: aString [
 				  nextPutAll: '...' ]
 ]
 
+{ #category : 'private - source' }
+MCPTool >> compactedCode: aString [
+	"aString with each run of blanks and line breaks between its tokens read as one space, and none at either end. A string, symbol or character literal and a comment are kept as written, blanks included: 'hello   world' is another string than 'hello world', and the blank after a $ is the character it names."
+
+	^ String streamContents: [ :stream |
+			  | code |
+			  code := aString readStream.
+			  code skipSeparators.
+			  [ code atEnd ] whileFalse: [
+					  | character tokenEnd |
+					  character := stream nextPut: code next.
+					  (character = $$ and: [ code atEnd not ]) ifTrue: [ stream nextPut: code next ].
+					  (character = $' or: [ character = $" ]) ifTrue: [
+						  [ code atEnd or: [ (stream nextPut: code next) = character ] ] whileFalse ].
+					  tokenEnd := code position.
+					  code skipSeparators.
+					  (code position > tokenEnd and: [ code atEnd not ]) ifTrue: [ stream space ] ] ]
+]
+
 { #category : 'private - results' }
 MCPTool >> contentTextForStructuredContent: structuredContent [
 	"Answer the text block a caller reads: what happened, then the payload as lines. A tool overrides the rendering of its own data when its shape reads better another way."
@@ -704,10 +723,10 @@ MCPTool >> failureMessageFor: anError [
 
 { #category : 'private - source' }
 MCPTool >> flaggedCodeFor: anInterval in: aString [
-	"The code an interval flags, from its first character to its last, each run of blanks and line breaks read as one space, and trimmed. The formatter spreads a long expression over several lines, so the line the code starts on can hold only the receiver of what is flagged."
+	"The code an interval flags, from its first character to its last, as compactedCode: reads it. The formatter spreads a long expression over several lines, so the line the code starts on can hold only the receiver of what is flagged."
 
 	(anInterval first between: 1 and: aString size) ifFalse: [ ^ '' ].
-	^ (aString copyFrom: anInterval first to: (anInterval last min: aString size)) withSeparatorsCompacted trimBoth
+	^ self compactedCode: (aString copyFrom: anInterval first to: (anInterval last min: aString size))
 ]
 
 { #category : 'error handling' }

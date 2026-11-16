@@ -50,6 +50,18 @@ MCPToolMethodMutation >> addCompileSourceContextFor: methodSource to: details [
 	details at: #position ifPresent: [ :position | self addSourceLineContextFor: methodSource position: position to: details ]
 ]
 
+{ #category : 'private' }
+MCPToolMethodMutation >> addReceiverNoteAt: anInterval in: aString of: aBehavior to: data [
+	"A send that will not be understood may name what its receiver has in another form: a class variable read as a message, a slot that has no accessor, or a method on the other side of a class. The rule's title alone reads as a method that is missing, which the caller then writes or looks for."
+
+	(self unimplementedSendRuleNames includes: (data at: #ruleClass) asSymbol) ifFalse: [ ^ self ].
+	self
+		sendAt: anInterval
+		in: aString
+		ifFound: [ :send | (self receiverNoteFor: send in: aBehavior) ifNotNil: [ :note | data at: #note put: note ] ]
+		ifNone: [ ]
+]
+
 { #category : 'private - errors' }
 MCPToolMethodMutation >> addSourceLineContextFor: methodSource position: position to: details [
 
@@ -116,7 +128,22 @@ MCPToolMethodMutation >> atLeastOneInputProperties [
 ]
 
 { #category : 'private' }
-MCPToolMethodMutation >> blockingCritiqueDataForMethodNode: aMethodNode [
+MCPToolMethodMutation >> behaviorReceiving: aSend in: aBehavior [
+	"The behavior whose methods run for the receiver of aSend, in a method of aBehavior: aBehavior for self and super, the class side of a class a global names, and the class side of aBehavior for self class on the instance side. nil for any other receiver, which the source alone does not resolve."
+
+	| receiver |
+	receiver := aSend receiver.
+	(self isSelfOrSuper: receiver) ifTrue: [ ^ aBehavior ].
+	(receiver isMessage and: [
+		 receiver selector = #class and: [ aBehavior isMeta not and: [ self isSelfOrSuper: receiver receiver ] ] ]) ifTrue: [
+		^ aBehavior classSide ].
+	receiver isVariable ifFalse: [ ^ nil ].
+	^ (aBehavior instanceSide bindingOf: receiver name asSymbol) ifNotNil: [ :binding |
+		  (binding value isBehavior and: [ binding value isMeta not ]) ifTrue: [ binding value classSide ] ]
+]
+
+{ #category : 'private' }
+MCPToolMethodMutation >> blockingCritiqueDataForMethodNode: aMethodNode in: aBehavior [
 	"Nothing is stored yet, so lines count the source as sent."
 
 	| critiques |
@@ -125,7 +152,7 @@ MCPToolMethodMutation >> blockingCritiqueDataForMethodNode: aMethodNode [
 			| rule |
 			rule := ruleClass new.
 			aMethodNode nodesDo: [ :node | rule check: node forCritiquesDo: [ :critique | critiques add: critique ] ] ].
-	^ self distinctCritiqueData: (critiques collect: [ :each | self critiqueDataFor: each source: aMethodNode source ])
+	^ self distinctCritiqueData: (critiques collect: [ :each | self critiqueDataFor: each source: aMethodNode source in: aBehavior ])
 ]
 
 { #category : 'private' }
@@ -163,6 +190,26 @@ MCPToolMethodMutation >> classReferenceNameFor: className classSide: classSide [
 	^ classSide
 		  ifTrue: [ className , ' class' ]
 		  ifFalse: [ className ]
+]
+
+{ #category : 'private' }
+MCPToolMethodMutation >> classVariableNoteFor: aSelector receivedBy: aReceiverBehavior in: aBehavior [
+	"When a unary send to a class names one of its class variables, as Units Dozen: the variable it reads as a message, and how the methods of aBehavior read it. By name where it is in their scope, as in its class, a subclass, or a class that uses it as a pool; through a method of its class elsewhere."
+
+	| owner reader |
+	(aSelector isUnary and: [ aReceiverBehavior isMeta ]) ifFalse: [ ^ nil ].
+	owner := aReceiverBehavior instanceSide withAllSuperclasses
+		         detect: [ :each | each classVarNames includes: aSelector ]
+		         ifNone: [ ^ nil ].
+	reader := aBehavior instanceSide.
+	^ String streamContents: [ :stream |
+			  stream << aSelector << ' is a class variable of ' << owner name << ', not a message. ' << reader name.
+			  (reader bindingOf: aSelector) == (owner bindingOf: aSelector)
+				  ifTrue: [ stream << ' can read it by name: write ' << aSelector << ' alone.' ]
+				  ifFalse: [
+						  stream << ' cannot read it by name: only ' << owner name
+						  << ', its subclasses and the classes that use it as a pool can. Add a class-side method to ' << owner name
+						  << ' that answers it, and send that.' ] ]
 ]
 
 { #category : 'private - errors' }
@@ -224,8 +271,8 @@ MCPToolMethodMutation >> critiqueData: aCritique restates: anotherCritique [
 ]
 
 { #category : 'private' }
-MCPToolMethodMutation >> critiqueDataFor: aCritique source: aString [
-	"A critique says where it is by the line of aString its quote starts on and the code there, which the caller can find in the method; its interval stays for a tool that reads offsets. It is fixable when method_rewrite can apply its rule, and a send nothing implements says when it reads as two sends written without their parentheses."
+MCPToolMethodMutation >> critiqueDataFor: aCritique source: aString in: aBehavior [
+	"A critique says where it is by the line of aString its quote starts on and the code there, which the caller can find in the method aBehavior holds; its interval stays for a tool that reads offsets. It is fixable when method_rewrite can apply its rule. A send that will not be understood says when it reads as two sends written without their parentheses, or names what its receiver has in another form."
 
 	| data interval ruleClassName |
 	ruleClassName := aCritique rule class name.
@@ -248,6 +295,11 @@ MCPToolMethodMutation >> critiqueDataFor: aCritique source: aString [
 						addChainedSendNoteAt: interval
 						flaggedBy: ruleClassName
 						in: aString
+						to: data.
+					self
+						addReceiverNoteAt: interval
+						in: aString
+						of: aBehavior
 						to: data ] ].
 	(MCPMethodRewriteNamedRuleSpec canApplyRuleClass: aCritique rule class) ifTrue: [ data at: #fixable put: true ].
 	^ data
@@ -262,14 +314,15 @@ MCPToolMethodMutation >> critiqueDataForMethod: aCompiledMethod [
 				   on: Warning
 				   do: [ :warning | warning resume ])
 		  source: aCompiledMethod sourceCode
+		  in: aCompiledMethod methodClass
 ]
 
 { #category : 'private' }
-MCPToolMethodMutation >> critiqueDataFromProperties: properties source: aString [
+MCPToolMethodMutation >> critiqueDataFromProperties: properties source: aString in: aBehavior [
 
 	^ self distinctCritiqueData: (properties
 			   select: [ :each | each isCritique and: [ self shouldIncludeCritique: each ] ]
-			   thenCollect: [ :each | self critiqueDataFor: each source: aString ])
+			   thenCollect: [ :each | self critiqueDataFor: each source: aString in: aBehavior ])
 ]
 
 { #category : 'private - results' }
@@ -422,6 +475,13 @@ MCPToolMethodMutation >> isImplementedSelector: aString [
 	^ selector isNotNil and: [ (SystemNavigation default allImplementorsOf: selector) isNotEmpty ]
 ]
 
+{ #category : 'private' }
+MCPToolMethodMutation >> isSelfOrSuper: aNode [
+	"Whether aNode, parsed without a class to resolve its names in, is self or super."
+
+	^ aNode isVariable and: [ #( 'self' 'super' ) includes: aNode name asString ]
+]
+
 { #category : 'private - specs' }
 MCPToolMethodMutation >> methodToolSpec [
 
@@ -438,6 +498,45 @@ MCPToolMethodMutation >> mutationAction [
 MCPToolMethodMutation >> mutationActionFor: request checked: aBoolean [
 
 	^ self mutationAction
+]
+
+{ #category : 'private' }
+MCPToolMethodMutation >> otherSideNoteFor: aSend receivedBy: aReceiverBehavior in: aBehavior [
+	"When the other side of the receiver's class understands aSend, as a constructor compiled on the instance side and sent to the class: which side has it, and what to do from the side the method of aBehavior is on."
+
+	| className otherSide selector |
+	selector := aSend selector.
+	otherSide := aReceiverBehavior isMeta
+		             ifTrue: [ aReceiverBehavior instanceSide ]
+		             ifFalse: [ aReceiverBehavior classSide ].
+	(otherSide canUnderstand: selector) ifFalse: [ ^ nil ].
+	className := aReceiverBehavior instanceSide name.
+	^ String streamContents: [ :stream |
+			  aReceiverBehavior isMeta
+				  ifFalse: [
+						  stream << 'Instances of ' << className << ' do not understand ' << selector << ', ' << className
+						  <<
+						  ' itself does: this method is on the instance side, where self is an instance. Send it to self class, or compile this method with side class.' ]
+				  ifTrue: [
+						  stream << className << ' itself does not understand ' << selector << ', its instances do'.
+						  (self isSelfOrSuper: aSend receiver)
+							  ifTrue: [
+									  stream << ', and this method is on the class side, where self is ' << className << '. Send it to an instance of '
+									  << className << '.' ]
+							  ifFalse: [
+							  stream << ': it is on the instance side. Send it to an instance, or compile ' << selector << ' with side class.' ] ] ]
+]
+
+{ #category : 'private' }
+MCPToolMethodMutation >> receiverNoteFor: aSend in: aBehavior [
+	"What the receiver of aSend, in a method of aBehavior, has under the name of a message it does not understand: a class variable, a slot with no accessor, or a method on the other side of its class. nil when the source does not show what the receiver is, or it has nothing under that name."
+
+	| receiver |
+	receiver := self behaviorReceiving: aSend in: aBehavior.
+	receiver ifNil: [ ^ nil ].
+	(self classVariableNoteFor: aSend selector receivedBy: receiver in: aBehavior) ifNotNil: [ :note | ^ note ].
+	(self slotNoteFor: aSend selector receivedBy: receiver in: aBehavior) ifNotNil: [ :note | ^ note ].
+	^ self otherSideNoteFor: aSend receivedBy: receiver in: aBehavior
 ]
 
 { #category : 'private' }
@@ -473,7 +572,7 @@ MCPToolMethodMutation >> signalBlockingCritiquesForMethodNode: aMethodNode in: a
 	"A critique that blocks a compile is told in the refusal itself, where a caller reading text sees it, with the lines of the source as sent."
 
 	| critiques |
-	critiques := self blockingCritiqueDataForMethodNode: aMethodNode.
+	critiques := self blockingCritiqueDataForMethodNode: aMethodNode in: aBehavior.
 	critiques ifEmpty: [ ^ self ].
 	MCPCommandError
 		signalErrorCode: #CompileBlockedByCritiques
@@ -496,6 +595,29 @@ MCPToolMethodMutation >> signalBlockingCritiquesForMethodNode: aMethodNode in: a
 		details: {
 				(#critiques -> critiques asArray).
 				(#howToProceed -> self howToProceedForBlockedCompile) } asDictionary
+]
+
+{ #category : 'private' }
+MCPToolMethodMutation >> slotNoteFor: aSelector receivedBy: aReceiverBehavior in: aBehavior [
+	"When a send to the object running a method of aBehavior is the name of one of its slots, or that name and a colon, as made: on a class side with the slot made, it is an accessor nobody defined, and the method can read or assign the slot itself. A class side's own slots are its class's, not the ones every class has from Class."
+
+	| owner slotName |
+	aReceiverBehavior == aBehavior ifFalse: [ ^ nil ].
+	(aSelector isUnary or: [ aSelector isKeyword and: [ aSelector numArgs = 1 ] ]) ifFalse: [ ^ nil ].
+	slotName := (aSelector copyWithout: $:) asSymbol.
+	owner := aBehavior instanceSide withAllSuperclasses
+		         detect: [ :each |
+				         (aBehavior isMeta
+					          ifTrue: [ each classSide ]
+					          ifFalse: [ each ]) slots anySatisfy: [ :slot | slot name = slotName ] ]
+		         ifNone: [ ^ nil ].
+	^ String streamContents: [ :stream |
+			  stream << slotName << ' is ' << (aBehavior isMeta
+				   ifTrue: [ 'a class-side' ]
+				   ifFalse: [ 'an instance-side' ]) << ' slot of ' << owner name << ' with no accessor ' << aSelector << '. This method can '.
+			  aSelector isUnary
+				  ifTrue: [ stream << 'read it directly, as ' << slotName << '.' ]
+				  ifFalse: [ stream << 'assign it directly, as ' << slotName << ' := ...' ] ]
 ]
 
 { #category : 'private' }
