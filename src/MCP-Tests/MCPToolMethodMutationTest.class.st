@@ -874,6 +874,24 @@ MCPToolMethodMutationTest >> testCompileCanReplaceMethodOnToolClass [
 ]
 
 { #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileCritiqueQuotesACommentOnOneLine [
+	"A comment changes nothing in the program, so a quote reads the blanks and line breaks in it as the code around it: one space each run, and the quote stays on one line. The formatter keeps a comment that opens a block where it is."
+
+	| codes result |
+	self removeSelector: #commentQuoteProbe from: MCPToolMethodMutationTestTarget.
+	[
+		result := self compileProbe: 'commentQuoteProbe
+	^ self mcpQuoted: [ "a   comment
+	on two lines" 3 ]'.
+		codes := ((self dataFrom: result) at: #critiques)
+			         select: [ :each | (each at: #ruleClass) = ReSentNotImplementedRule name asString ]
+			         thenCollect: [ :each | each at: #code ].
+		self assert: codes asArray equals: #( 'self mcpQuoted: [ "a comment on two lines" 3 ]' ).
+		self assert: ((self textOf: result) lines includes: '    self mcpQuoted: [ "a comment on two lines" 3 ]') ] ensure: [
+		self removeSelector: #commentQuoteProbe from: MCPToolMethodMutationTestTarget ]
+]
+
+{ #category : 'tests' }
 MCPToolMethodMutationTest >> testCompileCritiqueQuotesItsCodeAcrossLines [
 	"The formatter puts a cascade's receiver on a line of its own, so the code a critique of its first message flags starts on a line that holds only the receiver. The quote follows that code onto the next lines, each run of blanks and line breaks read as one space."
 
@@ -1152,6 +1170,32 @@ MCPToolMethodMutationTest >> testCompileNamesOnlyTheRulesMethodRewriteCanApply [
 		self deny: (MCPMethodRewriteNamedRuleSpec canApplyRuleClass: ReUsesTrueRule).
 		self deny: (MCPMethodRewriteNamedRuleSpec canApplyRuleClass: Object) ] ensure: [
 		self removeSelector: #fixableProbe from: MCPToolMethodMutationTestTarget ]
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileOffersTheClassSideOnlyForAMethodOfTheProject [
+	"A send to a class whose instances have the method may mean the method belongs on the class side, as a constructor. The critique offers to compile it there only when the method is of the caller's project: its package is named like the package of the method's class up to the first dash, as a class and its tests are. A class of a library, as OrderedCollection, is not the caller's to change."
+
+	| className |
+	className := 'MCPToolCompileProjectProbe'.
+	self
+		createClassNamed: className
+		superclassName: 'Object'
+		slots: #(  )
+		classSlots: #(  ).
+	[
+		self deny: (self resultIndicatesError: (self compileSource: 'probeBuild ^ self' into: className side: nil)).
+		{
+			('critiqueNoteProbe ^ MCPToolCompileProjectProbe probeBuild'
+			 ->
+			 'MCPToolCompileProjectProbe itself does not understand probeBuild, its instances do: it is on the instance side. Send it to an instance, or compile probeBuild with side class.').
+			('critiqueNoteProbe ^ OrderedCollection add: 3'
+			 -> 'OrderedCollection itself does not understand add:, its instances do: it is on the instance side. Send it to an instance.') }
+			do: [ :each |
+				self assert: (self noteOnTheSendIn: each key compiledInto: MCPToolMethodMutationTestTarget name side: nil) equals: each value ] ]
+		ensure: [
+				self removeSelector: #critiqueNoteProbe from: MCPToolMethodMutationTestTarget.
+				self removeClassNamed: className ]
 ]
 
 { #category : 'tests' }
@@ -1765,7 +1809,7 @@ MCPToolMethodMutationTest >> testCompileSaysAnUndeclaredNameIsASlotOfTheOtherSid
 
 { #category : 'tests' }
 MCPToolMethodMutationTest >> testCompileSaysWhichSideUnderstandsASend [
-	"A send the receiver does not understand while the other side of its class does, as a constructor compiled on the instance side and sent to the class, says which side has it and what to do from where the method is. A send neither side understands gets no such note."
+	"A send the receiver does not understand while the other side of its class does, as a constructor compiled on the instance side and sent to the class, says which side has it and what to do from where the method is. On the instance side, a method only counts when the class side defines it, as buildValue:, or when it is an instance creation method of Behavior, as new. What every class has from Class or Behavior, as name, is an accessor the instance lacks, not a message for self class. A send neither side understands gets no such note."
 
 	| target |
 	target := MCPToolMethodMutationTestTarget name.
@@ -1774,6 +1818,10 @@ MCPToolMethodMutationTest >> testCompileSaysWhichSideUnderstandsASend [
 			({ 'critiqueNoteProbe ^ self new'. nil }
 			 ->
 			 'Instances of MCPToolMethodMutationTestTarget do not understand new, MCPToolMethodMutationTestTarget itself does: this method is on the instance side, where self is an instance. Send it to self class, or compile this method with side class.').
+			({ 'critiqueNoteProbe ^ self buildValue: 3'. nil }
+			 ->
+			 'Instances of MCPToolMethodMutationTestTarget do not understand buildValue:, MCPToolMethodMutationTestTarget itself does: this method is on the instance side, where self is an instance. Send it to self class, or compile this method with side class.').
+			({ 'critiqueNoteProbe ^ self name'. nil } -> nil).
 			({ 'critiqueNoteProbe ^ MCPToolMethodMutationTestTarget combine: ''a'' with: ''b'''.
 			 nil }
 			 ->

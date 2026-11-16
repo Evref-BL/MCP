@@ -135,11 +135,11 @@ MCPToolMethodMutation >> behaviorReceiving: aSend in: aBehavior [
 	receiver := aSend receiver.
 	(self isSelfOrSuper: receiver) ifTrue: [ ^ aBehavior ].
 	(receiver isMessage and: [
-		 receiver selector = #class and: [ aBehavior isMeta not and: [ self isSelfOrSuper: receiver receiver ] ] ]) ifTrue: [
+		 receiver selector = #class and: [ aBehavior isClassSide not and: [ self isSelfOrSuper: receiver receiver ] ] ]) ifTrue: [
 		^ aBehavior classSide ].
 	receiver isVariable ifFalse: [ ^ nil ].
 	^ (aBehavior instanceSide bindingOf: receiver name asSymbol) ifNotNil: [ :binding |
-		  (binding value isBehavior and: [ binding value isMeta not ]) ifTrue: [ binding value classSide ] ]
+		  (binding value isBehavior and: [ binding value isClassSide not ]) ifTrue: [ binding value classSide ] ]
 ]
 
 { #category : 'private' }
@@ -193,23 +193,39 @@ MCPToolMethodMutation >> classReferenceNameFor: className classSide: classSide [
 ]
 
 { #category : 'private' }
+MCPToolMethodMutation >> classSideNoteFor: aSelector of: aClass [
+	"When an instance of aClass, sent aSelector by a method of its own, does not understand it and the class side has a method of its own for it, as new: that the class has it, and how to reach it. The class side also understands all that Class, ClassDescription and Behavior give every class, as name, comment or category. An instance-side method that sends one of those to self lacks an accessor, and self class name would quietly answer the name of the class. So only a method defined on a class side counts, of aClass or of a superclass, and the instance creation methods of Behavior."
+
+	| method |
+	method := aClass classSide lookupSelector: aSelector.
+	(method isNotNil and: [
+		 method methodClass isClassSide or: [
+			 method methodClass == Behavior and: [ method protocolName asString = 'instance creation' ] ] ]) ifFalse: [ ^ nil ].
+	^ String streamContents: [ :stream |
+			  stream << 'Instances of ' << aClass name << ' do not understand ' << aSelector << ', ' << aClass name
+			  <<
+			  ' itself does: this method is on the instance side, where self is an instance. Send it to self class, or compile this method with side class.' ]
+]
+
+{ #category : 'private' }
 MCPToolMethodMutation >> classVariableNoteFor: aSelector receivedBy: aReceiverBehavior in: aBehavior [
 	"When a unary send to a class names one of its class variables, as Units Dozen: the variable it reads as a message, and how the methods of aBehavior read it. By name where it is in their scope, as in its class, a subclass, or a class that uses it as a pool; through a method of its class elsewhere."
 
-	| owner reader |
-	(aSelector isUnary and: [ aReceiverBehavior isMeta ]) ifFalse: [ ^ nil ].
-	owner := aReceiverBehavior instanceSide withAllSuperclasses
-		         detect: [ :each | each classVarNames includes: aSelector ]
-		         ifNone: [ ^ nil ].
-	reader := aBehavior instanceSide.
-	^ String streamContents: [ :stream |
-			  stream << aSelector << ' is a class variable of ' << owner name << ', not a message. ' << reader name.
-			  (reader bindingOf: aSelector) == (owner bindingOf: aSelector)
-				  ifTrue: [ stream << ' can read it by name: write ' << aSelector << ' alone.' ]
-				  ifFalse: [
-						  stream << ' cannot read it by name: only ' << owner name
-						  << ', its subclasses and the classes that use it as a pool can. Add a class-side method to ' << owner name
-						  << ' that answers it, and send that.' ] ]
+	(aSelector isUnary and: [ aReceiverBehavior isClassSide ]) ifFalse: [ ^ nil ].
+	^ aReceiverBehavior instanceSide withAllSuperclasses
+		  detect: [ :each | each classVarNames includes: aSelector ]
+		  ifFound: [ :owner |
+				  | reader |
+				  reader := aBehavior instanceSide.
+				  String streamContents: [ :stream |
+						  stream << aSelector << ' is a class variable of ' << owner name << ', not a message. ' << reader name.
+						  (reader bindingOf: aSelector) == (owner bindingOf: aSelector)
+							  ifTrue: [ stream << ' can read it by name: write ' << aSelector << ' alone.' ]
+							  ifFalse: [
+									  stream << ' cannot read it by name: only ' << owner name
+									  << ', its subclasses and the classes that use it as a pool can. Add a class-side method to ' << owner name
+									  << ' that answers it, and send that.' ] ] ]
+		  ifNone: [ nil ]
 ]
 
 { #category : 'private - errors' }
@@ -467,6 +483,29 @@ MCPToolMethodMutation >> inputProperties [
 ]
 
 { #category : 'private' }
+MCPToolMethodMutation >> instanceSideNoteFor: aSend of: aClass in: aBehavior [
+	"When aClass itself does not understand aSend and its instances do, as a constructor compiled on the instance side and sent to the class: that its instances have it, and what to do from the side the method of aBehavior is on. Moving the method to the class side is offered only when it is in the project of aBehavior, never for a class of a library."
+
+	| method selector |
+	selector := aSend selector.
+	method := aClass lookupSelector: selector.
+	method ifNil: [ ^ nil ].
+	^ String streamContents: [ :stream |
+			  stream << aClass name << ' itself does not understand ' << selector << ', its instances do'.
+			  (self isSelfOrSuper: aSend receiver)
+				  ifTrue: [
+						  stream << ', and this method is on the class side, where self is ' << aClass name << '. Send it to an instance of '
+						  << aClass name << '.' ]
+				  ifFalse: [
+						  stream << ': it is on the instance side. Send it to an instance'.
+						  (self
+							   isPackageNamed: (method package ifNotNil: [ :package | package name ])
+							   inTheProjectOf: (aBehavior instanceSide package ifNotNil: [ :package | package name ])) ifTrue: [
+							  stream << ', or compile ' << selector << ' with side class' ].
+						  stream << '.' ] ]
+]
+
+{ #category : 'private' }
 MCPToolMethodMutation >> isImplementedSelector: aString [
 	"Whether a method somewhere in the image has aString as its selector. A string no symbol was ever made of is no method's selector."
 
@@ -502,29 +541,11 @@ MCPToolMethodMutation >> mutationActionFor: request checked: aBoolean [
 
 { #category : 'private' }
 MCPToolMethodMutation >> otherSideNoteFor: aSend receivedBy: aReceiverBehavior in: aBehavior [
-	"When the other side of the receiver's class understands aSend, as a constructor compiled on the instance side and sent to the class: which side has it, and what to do from the side the method of aBehavior is on."
+	"When the other side of the receiver's class has a method for aSend, as a constructor compiled on the instance side and sent to the class: which side has it, and what to do from the side the method of aBehavior is on."
 
-	| className otherSide selector |
-	selector := aSend selector.
-	otherSide := aReceiverBehavior isMeta
-		             ifTrue: [ aReceiverBehavior instanceSide ]
-		             ifFalse: [ aReceiverBehavior classSide ].
-	(otherSide canUnderstand: selector) ifFalse: [ ^ nil ].
-	className := aReceiverBehavior instanceSide name.
-	^ String streamContents: [ :stream |
-			  aReceiverBehavior isMeta
-				  ifFalse: [
-						  stream << 'Instances of ' << className << ' do not understand ' << selector << ', ' << className
-						  <<
-						  ' itself does: this method is on the instance side, where self is an instance. Send it to self class, or compile this method with side class.' ]
-				  ifTrue: [
-						  stream << className << ' itself does not understand ' << selector << ', its instances do'.
-						  (self isSelfOrSuper: aSend receiver)
-							  ifTrue: [
-									  stream << ', and this method is on the class side, where self is ' << className << '. Send it to an instance of '
-									  << className << '.' ]
-							  ifFalse: [
-							  stream << ': it is on the instance side. Send it to an instance, or compile ' << selector << ' with side class.' ] ] ]
+	^ aReceiverBehavior isClassSide
+		  ifTrue: [ self instanceSideNoteFor: aSend of: aReceiverBehavior instanceSide in: aBehavior ]
+		  ifFalse: [ self classSideNoteFor: aSend selector of: aReceiverBehavior ]
 ]
 
 { #category : 'private' }
@@ -601,23 +622,25 @@ MCPToolMethodMutation >> signalBlockingCritiquesForMethodNode: aMethodNode in: a
 MCPToolMethodMutation >> slotNoteFor: aSelector receivedBy: aReceiverBehavior in: aBehavior [
 	"When a send to the object running a method of aBehavior is the name of one of its slots, or that name and a colon, as made: on a class side with the slot made, it is an accessor nobody defined, and the method can read or assign the slot itself. A class side's own slots are its class's, not the ones every class has from Class."
 
-	| owner slotName |
+	| slotName |
 	aReceiverBehavior == aBehavior ifFalse: [ ^ nil ].
 	(aSelector isUnary or: [ aSelector isKeyword and: [ aSelector numArgs = 1 ] ]) ifFalse: [ ^ nil ].
 	slotName := (aSelector copyWithout: $:) asSymbol.
-	owner := aBehavior instanceSide withAllSuperclasses
-		         detect: [ :each |
-				         (aBehavior isMeta
-					          ifTrue: [ each classSide ]
-					          ifFalse: [ each ]) slots anySatisfy: [ :slot | slot name = slotName ] ]
-		         ifNone: [ ^ nil ].
-	^ String streamContents: [ :stream |
-			  stream << slotName << ' is ' << (aBehavior isMeta
-				   ifTrue: [ 'a class-side' ]
-				   ifFalse: [ 'an instance-side' ]) << ' slot of ' << owner name << ' with no accessor ' << aSelector << '. This method can '.
-			  aSelector isUnary
-				  ifTrue: [ stream << 'read it directly, as ' << slotName << '.' ]
-				  ifFalse: [ stream << 'assign it directly, as ' << slotName << ' := ...' ] ]
+	^ aBehavior instanceSide withAllSuperclasses
+		  detect: [ :each |
+				  (aBehavior isClassSide
+					   ifTrue: [ each classSide ]
+					   ifFalse: [ each ]) slots anySatisfy: [ :slot | slot name = slotName ] ]
+		  ifFound: [ :owner |
+				  String streamContents: [ :stream |
+						  stream << slotName << ' is ' << (aBehavior isClassSide
+							   ifTrue: [ 'a class-side' ]
+							   ifFalse: [ 'an instance-side' ]) << ' slot of ' << owner name << ' with no accessor ' << aSelector
+						  << '. This method can '.
+						  aSelector isUnary
+							  ifTrue: [ stream << 'read it directly, as ' << slotName << '.' ]
+							  ifFalse: [ stream << 'assign it directly, as ' << slotName << ' := ...' ] ] ]
+		  ifNone: [ nil ]
 ]
 
 { #category : 'private' }

@@ -358,21 +358,22 @@ MCPTool >> codeQuoteFor: anInterval in: aString [
 
 { #category : 'private - source' }
 MCPTool >> compactedCode: aString [
-	"aString with each run of blanks and line breaks between its tokens read as one space, and none at either end. A string, symbol or character literal and a comment are kept as written, blanks included: 'hello   world' is another string than 'hello world', and the blank after a $ is the character it names."
+	"aString on one line: each run of blanks and line breaks between its tokens reads as one space, and there is none at either end. A string, symbol or character literal is kept as written, blanks included: 'hello   world' is another string than 'hello world', and the blank after a $ is the character it names. A comment is compacted as the code around it is."
 
+	| code |
+	code := aString readStream.
 	^ String streamContents: [ :stream |
-			  | code |
-			  code := aString readStream.
 			  code skipSeparators.
 			  [ code atEnd ] whileFalse: [
-					  | character tokenEnd |
-					  character := stream nextPut: code next.
+					  | character |
+					  character := code next.
+					  stream nextPut: character.
 					  (character = $$ and: [ code atEnd not ]) ifTrue: [ stream nextPut: code next ].
-					  (character = $' or: [ character = $" ]) ifTrue: [
-						  [ code atEnd or: [ (stream nextPut: code next) = character ] ] whileFalse ].
-					  tokenEnd := code position.
-					  code skipSeparators.
-					  (code position > tokenEnd and: [ code atEnd not ]) ifTrue: [ stream space ] ] ]
+					  character = $' ifTrue: [ self copyLiteralFrom: code to: stream ].
+					  character = $" ifTrue: [ self copyCommentFrom: code to: stream ].
+					  (code atEnd not and: [ code peek isSeparator ]) ifTrue: [
+							  code skipSeparators.
+							  code atEnd ifFalse: [ stream space ] ] ] ]
 ]
 
 { #category : 'private - results' }
@@ -393,6 +394,33 @@ MCPTool >> contract [
 	data at: #inputSchema put: self inputSchema asJRPCJSON.
 	self defaultPageLimit ifNotNil: [ :pageSize | data at: #pageSize put: pageSize ].
 	^ data
+]
+
+{ #category : 'private - source' }
+MCPTool >> copyCommentFrom: code to: aStream [
+	"Copy the rest of a comment from code, up to and with the quote that closes it, each run of blanks and line breaks in it as one space. A comment's blanks change nothing in the program, and a line break in it would break the line a quote is."
+
+	[ code atEnd ] whileFalse: [
+			| character |
+			character := code next.
+			character isSeparator
+				ifTrue: [
+						code skipSeparators.
+						aStream space ]
+				ifFalse: [
+						aStream nextPut: character.
+						character = $" ifTrue: [ ^ self ] ] ]
+]
+
+{ #category : 'private - source' }
+MCPTool >> copyLiteralFrom: code to: aStream [
+	"Copy the rest of a string or symbol literal from code, as written, up to and with the quote that closes it."
+
+	[ code atEnd ] whileFalse: [
+			| character |
+			character := code next.
+			aStream nextPut: character.
+			character = $' ifTrue: [ ^ self ] ]
 ]
 
 { #category : 'private - results' }
