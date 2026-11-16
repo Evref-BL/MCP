@@ -601,6 +601,7 @@ MCPToolContractsTest >> readScreenToolFlowSpec [
 
 { #category : 'support' }
 MCPToolContractsTest >> repositoryToolFlowSpecs [
+	"A repository tool reads its arguments from the request it is given, and names no command."
 
 	^ {
 		  {
@@ -608,61 +609,51 @@ MCPToolContractsTest >> repositoryToolFlowSpecs [
 			  (#arguments -> {
 				   (#name -> 'MCP').
 				   (#branch -> 'main') } asDictionary).
-			  (#requestClass -> MCPRepositoryVerifyIdentityRequest).
-			  (#commandClass -> MCPRepositoryVerifyIdentityCommand) } asDictionary.
+			  (#requestClass -> MCPToolRequest) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolListRepositoryChanges).
 			  (#arguments -> { (#name -> 'MCP') } asDictionary).
-			  (#requestClass -> MCPRepositoryDiffRequest).
-			  (#commandClass -> MCPRepositoryDiffCommand) } asDictionary.
+			  (#requestClass -> MCPToolRequest) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolDiscardRepositoryChanges).
 			  (#arguments -> { (#name -> 'MCP') } asDictionary).
-			  (#requestClass -> MCPRepositoryDiscardRequest).
-			  (#commandClass -> MCPDiscardRepositoryChangesCommand) } asDictionary.
+			  (#requestClass -> MCPToolRequest) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolCreateRepository).
 			  (#arguments -> {
 				   (#name -> 'MCP Test Repository').
 				   (#location -> '/tmp/mcp-test-repository') } asDictionary).
-			  (#requestClass -> MCPRepositoryCreateRequest).
-			  (#commandClass -> MCPCreateRepositoryCommand) } asDictionary.
+			  (#requestClass -> MCPToolRequest) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolAttachRepository).
 			  (#arguments -> {
 				   (#name -> 'MCP Test Repository').
 				   (#location -> '/tmp/mcp-test-repository') } asDictionary).
-			  (#requestClass -> MCPRepositoryAttachRequest).
-			  (#commandClass -> MCPAttachRepositoryCommand) } asDictionary.
+			  (#requestClass -> MCPToolRequest) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolUpdateRepository).
 			  (#arguments -> {
 				   (#name -> 'MCP').
 				   (#addPackages -> #( 'MCP' )) } asDictionary).
-			  (#requestClass -> MCPRepositoryUpdateRequest).
-			  (#commandClass -> MCPUpdateRepositoryCommand) } asDictionary.
+			  (#requestClass -> MCPToolRequest) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolExportRepository).
 			  (#arguments -> { (#name -> 'MCP') } asDictionary).
-			  (#requestClass -> MCPRepositoryExportRequest).
-			  (#commandClass -> MCPExportRepositoryCommand) } asDictionary.
+			  (#requestClass -> MCPToolRequest) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolCommitRepository).
 			  (#arguments -> {
 				   (#name -> 'MCP').
 				   (#message -> 'Commit from test') } asDictionary).
-			  (#requestClass -> MCPRepositoryCommitRequest).
-			  (#commandClass -> MCPCommitRepositoryCommand) } asDictionary.
+			  (#requestClass -> MCPToolRequest) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolAdoptRepositoryHead).
 			  (#arguments -> { (#name -> 'MCP') } asDictionary).
-			  (#requestClass -> MCPRepositoryAdoptHeadRequest).
-			  (#commandClass -> MCPAdoptRepositoryHeadCommand) } asDictionary.
+			  (#requestClass -> MCPToolRequest) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolReloadRepository).
 			  (#arguments -> { (#name -> 'MCP') } asDictionary).
-			  (#requestClass -> MCPRepositoryReloadRequest).
-			  (#commandClass -> MCPReloadRepositoryCommand) } asDictionary }
+			  (#requestClass -> MCPToolRequest) } asDictionary }
 ]
 
 { #category : 'private' }
@@ -1095,15 +1086,7 @@ MCPToolContractsTest >> testDictionaryShapedCommandResultsUseDTOClasses [
 	commandResultClasses := {
 		                        (MCPGetClassCommand -> MCPGetClassResult).
 		                        (MCPGetMethodCommand -> MCPGetMethodResult).
-		                        (MCPCreateRepositoryCommand -> MCPRepositoryCreateResult).
-		                        (MCPAttachRepositoryCommand -> MCPRepositoryCreateResult).
-		                        (MCPUpdateRepositoryCommand -> MCPRepositoryUpdateResult).
-		                        (MCPExportRepositoryCommand -> MCPRepositoryExportResult).
-		                        (MCPRepositoryDiffCommand -> MCPRepositoryDiffResult).
-		                        (MCPRepositoryVerifyIdentityCommand -> MCPRepositoryVerifyIdentityResult).
-		                        (MCPCommitRepositoryCommand -> MCPRepositoryCommitResult).
-		                        (MCPAdoptRepositoryHeadCommand -> MCPRepositoryAdoptHeadResult).
-		                        (MCPReloadRepositoryCommand -> MCPRepositoryReloadResult) }.
+		                        }.
 	commandResultClasses do: [ :association |
 			| source |
 			source := (association key >> #execute) sourceCode.
