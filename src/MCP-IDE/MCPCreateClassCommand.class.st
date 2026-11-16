@@ -72,10 +72,13 @@ MCPCreateClassCommand >> ensurePackageNamed: aPackageName [
 
 { #category : 'executing' }
 MCPCreateClassCommand >> execute [
+	"The package is made first, for the class to land in, and removed again when the class does not build, so that a create that fails leaves nothing behind."
 
+	| packageIsNew |
 	MCPImageLookup newClassName: self className.
+	packageIsNew := (self packageOrganizer hasPackage: self packageName) not.
 	self ensurePackageNamed: self packageName.
-	^ self buildClass
+	^ [ self buildClass ] ifCurtailed: [ packageIsNew ifTrue: [ self removePackageNamed: self packageName ] ]
 ]
 
 { #category : 'accessing' }
@@ -100,6 +103,15 @@ MCPCreateClassCommand >> packageName [
 MCPCreateClassCommand >> packageName: aString [
 
 	packageName := aString
+]
+
+{ #category : 'private' }
+MCPCreateClassCommand >> removePackageNamed: aPackageName [
+	"Only while it holds no class: one may have landed in it before the build failed."
+
+	self packageOrganizer
+		packageNamed: aPackageName
+		ifPresent: [ :package | package definedClasses ifEmpty: [ self packageOrganizer removePackage: package ] ]
 ]
 
 { #category : 'private' }

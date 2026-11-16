@@ -36,18 +36,10 @@ MCPRemoveClassesCommand class >> classNames: someClassNames force: forceRemoval 
 
 { #category : 'private - facts' }
 MCPRemoveClassesCommand >> blockingFactsFor: anException [
-	"One sentence per fact, class by class: the methods outside the removal that refer to it, and the subclasses not asked for of one that is not empty. When none explains the check, its own text, on one line."
+	"The facts as they stand while they block the removal."
 
-	| references facts |
-	references := self referencesOutsideRemoval.
-	facts := Array streamContents: [ :stream |
-			         self resolvedClasses do: [ :each |
-					         references
-						         at: each name asString
-						         ifPresent: [ :methods | stream nextPut: each name , ' is referred to by ' , (self referenceListOf: methods) , '.' ].
-					         (self subclassesBlockingRemovalOf: each) ifNotEmpty: [ :names |
-						         stream nextPut: each name , ' is not empty and has subclasses: ' , (', ' join: names) , '.' ] ] ].
-	^ facts ifEmpty: [ { (MCPRefactoringText withoutNegation: (MCPRefactoringText singleLine: anException messageText)) } ]
+	^ self factsFor: anException sayingOfSubclasses: [ :aClass :names |
+		  String streamContents: [ :stream | stream << aClass name << ' is not empty and has subclasses: ' << (', ' join: names) << '.' ] ]
 ]
 
 { #category : 'accessing' }
@@ -77,6 +69,22 @@ MCPRemoveClassesCommand >> execute [
 	packageNames do: [ :each | self removePackageIfNowEmptyNamed: each recordingInto: removedPackageNames ]
 ]
 
+{ #category : 'private - facts' }
+MCPRemoveClassesCommand >> factsFor: anException sayingOfSubclasses: aBlock [
+	"One sentence per fact, class by class: the methods outside the removal that refer to it, then what aBlock says, given the class and their names, of the subclasses not asked for of one that is not empty. When none explains the check, its own text, on one line."
+
+	| references facts |
+	references := self referencesOutsideRemoval.
+	facts := Array streamContents: [ :stream |
+			         self resolvedClasses do: [ :each |
+					         references at: each name asString ifPresent: [ :methods |
+							         stream nextPut:
+								         (String streamContents: [ :sentence |
+									          sentence << each name << ' is referred to by ' << (self referenceListOf: methods) << '.' ]) ].
+					         (self subclassesBlockingRemovalOf: each) ifNotEmpty: [ :names | stream nextPut: (aBlock value: each value: names) ] ] ].
+	^ facts ifEmpty: [ { (MCPRefactoringText withoutNegation: (MCPRefactoringText singleLine: anException messageText)) } ]
+]
+
 { #category : 'accessing' }
 MCPRemoveClassesCommand >> force [
 
@@ -94,6 +102,17 @@ MCPRemoveClassesCommand >> forceGoesPast: anException [
 	"Force goes past a refactoring warning, never past an error. Pharo 10 and 11 make their refactoring errors resumable, so whether an exception can be resumed does not tell the two apart."
 
 	^ anException isKindOf: RBRefactoringWarning
+]
+
+{ #category : 'private - facts' }
+MCPRemoveClassesCommand >> forcedFactsFor: anException [
+	"The facts force went past, as they stand once the classes are gone: a method that referred to a class still does, and the subclasses of one that was not empty lost what they inherited from it."
+
+	^ self factsFor: anException sayingOfSubclasses: [ :aClass :names |
+			  String streamContents: [ :stream |
+					  stream << (MCPScopeQuery listPhraseFor: names) << ' lost what ' << (names size = 1
+						   ifTrue: [ 'it' ]
+						   ifFalse: [ 'they' ]) << ' inherited from ' << aClass name << '.' ] ]
 ]
 
 { #category : 'private' }
@@ -149,6 +168,19 @@ MCPRemoveClassesCommand >> reparentedSubclassNames [
 	"The subclasses execute moved to the superclass of a class it removed."
 
 	^ reparentedSubclassNames
+]
+
+{ #category : 'accessing' }
+MCPRemoveClassesCommand >> reparentedSubclassNamesBySuperclassName [
+	"The subclasses execute moved, each once, under the name of the class it inherits from now, as the image has it."
+
+	| grouped |
+	grouped := OrderedDictionary new.
+	self reparentedSubclassNames do: [ :each |
+			| names |
+			names := grouped at: (MCPImageLookup classNamed: each) superclass name asString ifAbsentPut: [ OrderedCollection new ].
+			(names includes: each) ifFalse: [ names add: each ] ].
+	^ grouped
 ]
 
 { #category : 'private' }
@@ -213,7 +245,7 @@ MCPRemoveClassesCommand >> subclassesBlockingRemovalOf: aClass [
 
 { #category : 'private' }
 MCPRemoveClassesCommand >> validatePreparedRefactoring: aRefactoring [
-	"Pharo's check decides whether the removal is blocked, and the image says what blocks it. Force goes past a warning, and the removal then warns with the same facts; it cannot go past an error, which is all Pharo 10 and 11 signal."
+	"Pharo's check decides whether the removal is blocked, and the image says what blocks it. Force goes past a warning, and the removal then warns with the same facts, as they stand once the classes are gone; it cannot go past an error, which is all Pharo 10 and 11 signal."
 
 	| blocking warnings |
 	warnings := OrderedCollection new.
@@ -222,7 +254,7 @@ MCPRemoveClassesCommand >> validatePreparedRefactoring: aRefactoring [
 		do: [ :exception |
 				(self force and: [ self forceGoesPast: exception ])
 					ifTrue: [
-							warnings addAll: (self blockingFactsFor: exception).
+							warnings addAll: (self forcedFactsFor: exception).
 							exception resume: true ]
 					ifFalse: [ blocking := exception ] ].
 	blocking ifNotNil: [ self signalBlockedBy: blocking ].

@@ -329,6 +329,22 @@ MCPCommandError class >> signalMissingTag: aTag packageName: aPackageName forCla
 ]
 
 { #category : 'signaling - names' }
+MCPCommandError class >> signalNameIsAList: aString kind: aKind argument: anArgumentName [
+	"aString, an entry of anArgumentName that takes one name per entry, such as a slot name, is several names written as one string. aKind is what the entry should have been, with its article. A class name that is a list answers ClassNameIsAList instead."
+
+	^ self
+		  signalErrorCode: #NameIsAList
+		  message: (self
+				   textForNameIsAList: aString
+				   kind: aKind
+				   scope: nil
+				   skipped: false)
+		  details: {
+				  (#argument -> anArgumentName).
+				  (#list -> aString) } asDictionary
+]
+
+{ #category : 'signaling - names' }
 MCPCommandError class >> signalNotAClass: aName role: aRole scope: aScopeKeyOrNil details: someAssociations [
 	"aName, given in aRole, is a global variable that is no class or trait."
 
@@ -383,15 +399,12 @@ MCPCommandError class >> superclassMethodSuggestionForClass: targetClass classSi
 
 { #category : 'texts - names' }
 MCPCommandError class >> textForClassNameIsAList: aName scope: aScopeKeyOrNil skipped: isSkipped [
-	"Splitting the list would guess at a format the schema does not offer, and an array is one edit away."
 
 	^ self
-		  messageAbout: aName
-		  saying: 'is a list written as one string, not a class name'
+		  textForNameIsAList: aName
+		  kind: 'a class name'
 		  scope: aScopeKeyOrNil
 		  skipped: isSkipped
-		  suggestions: #(  )
-		  closing: 'Pass several names as an array of strings.'
 ]
 
 { #category : 'texts - names' }
@@ -404,6 +417,19 @@ MCPCommandError class >> textForMissing: aName role: aRole scope: aScopeKeyOrNil
 		  skipped: isSkipped
 		  suggestions: someNames
 		  closing: nil
+]
+
+{ #category : 'texts - names' }
+MCPCommandError class >> textForNameIsAList: aName kind: aKind scope: aScopeKeyOrNil skipped: isSkipped [
+	"Splitting the list would guess at a format the schema does not offer, and an array is one edit away. aKind is what one entry should have been, with its article: a class name, a slot name."
+
+	^ self
+		  messageAbout: aName
+		  saying: 'is a list written as one string, not ' , aKind
+		  scope: aScopeKeyOrNil
+		  skipped: isSkipped
+		  suggestions: #(  )
+		  closing: 'Pass several names as an array of strings.'
 ]
 
 { #category : 'texts - names' }

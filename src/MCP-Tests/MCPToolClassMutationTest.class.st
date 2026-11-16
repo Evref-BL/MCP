@@ -452,6 +452,33 @@ MCPToolClassMutationTest >> testCreateRefusalOfAnExistingClassSaysHowToReachClas
 ]
 
 { #category : 'tests - create' }
+MCPToolClassMutationTest >> testCreateRefusesAListWrittenAsOneName [
+	"A client may send a list as the one string of an array. In the arguments whose names the class builder takes as they are, it is named as a list, and nothing is made: no class, no package."
+
+	{
+		#( 'slots' 'a slot name' ).
+		#( 'classSlots' 'a slot name' ).
+		#( 'sharedVariables' 'a class variable name' ) } do: [ :each |
+			| error result |
+			result := self callToolWith: (self createRequestArgumentsWith: {
+						           (#name -> 'MCPToolClassMutationTestGenerated').
+						           (#package -> self generatedPackageName).
+						           (each first -> #( '["Title" "Text"]' )) }).
+			error := self errorFrom: result.
+			self assert: (result at: #isError).
+			self assert: (error at: #errorCode) equals: 'NameIsAList'.
+			self assert: (error at: #argument) equals: each first.
+			self assert: (error at: #list) equals: '["Title" "Text"]'.
+			self
+				assert: (error at: #message)
+				equals:
+				('["Title" "Text"] is a list written as one string, not {1}. Pass several names as an array of strings.' format:
+					 { each second }).
+			self deny: (Smalltalk globals includesKey: #MCPToolClassMutationTestGenerated).
+			self deny: (self packageOrganizer hasPackage: self generatedPackageName) ]
+]
+
+{ #category : 'tests - create' }
 MCPToolClassMutationTest >> testCreateReturnsStructuredErrorWhenClassAlreadyExists [
 
 	| arguments error result |
@@ -525,6 +552,23 @@ MCPToolClassMutationTest >> testCreateSetsClassComment [
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: createdClass comment equals: 'Created with a comment.'.
 	self deny: (result at: #isError ifAbsent: [ false ])
+]
+
+{ #category : 'tests - create' }
+MCPToolClassMutationTest >> testCreateThatFailsLeavesNoPackageItMade [
+	"The package is made for the class to land in, so a class that does not build takes it away again. A package that was there stays."
+
+	| arguments |
+	arguments := self createRequestArgumentsWith: {
+			             (#name -> 'MCPToolClassMutationTestGenerated').
+			             (#package -> self generatedPackageName).
+			             (#traits -> #( 'DefinitelyMissingTrait' )) }.
+	self assert: ((self callToolWith: arguments) at: #isError).
+	self deny: (Smalltalk globals includesKey: #MCPToolClassMutationTestGenerated).
+	self deny: (self packageOrganizer hasPackage: self generatedPackageName).
+	self withoutEpiceaDuring: [ self packageOrganizer ensurePackage: self generatedPackageName ].
+	self assert: ((self callToolWith: arguments) at: #isError).
+	self assert: (self packageOrganizer hasPackage: self generatedPackageName)
 ]
 
 { #category : 'tests - update' }
