@@ -413,8 +413,15 @@ MCPToolContractsTest >> stoppedEarlyResultOf: aString bounds: aBlock [
 MCPToolContractsTest >> stoppedText: aString [
 	"A text that must be the answer to a stop at the tests' limit."
 
+	^ self stoppedText: aString after: self stopLimitSeconds
+]
+
+{ #category : 'private - evaluate' }
+MCPToolContractsTest >> stoppedText: aString after: seconds [
+	"A text that must be the answer to a stop at a limit of seconds."
+
 	self assert: (aString lines first: 2) equals: {
-			('Evaluation stopped after ' , self stopLimitSeconds printString , ' s, its time limit.').
+			('Evaluation stopped after ' , seconds printString , ' s, its time limit.').
 			'What it changed before then stays changed.' }.
 	^ aString
 ]
@@ -1401,7 +1408,9 @@ A fork has no time limit, and at this priority it holds up no evaluation.' lines
 
 { #category : 'tests - evaluate' }
 MCPToolContractsTest >> testEvaluateStopsAComputingLoopUnderEitherPreemptionRule [
-	"A loop that computes never yields, so only a process above it can take the processor back, whichever way the virtual machine requeues the process it preempts. The process that terminates the loop runs at the loop's priority, so the loop is taken off the run queue first, and has unwound under either rule by the time the answer goes."
+	"A loop that computes never yields, so only a process above it can take the processor back, whichever way the virtual machine requeues the process it preempts. The process that terminates the loop runs at the loop's priority, so the loop is taken off the run queue first, and has unwound under either rule by the time the answer goes.
+
+	The limit is a second, not the tests' fifth of one: the stop must find the loop running, and a loaded machine does not promise to start it, or to reach it, in 0.2 s."
 
 	self timeLimit: 30 seconds.
 	self underEitherPreemptionRuleDo: [ :yields |
@@ -1410,9 +1419,10 @@ MCPToolContractsTest >> testEvaluateStopsAComputingLoopUnderEitherPreemptionRule
 			before := self processesNamed: 'evaluate'.
 			actions := OrderedCollection new.
 			[
-				milliseconds := Time millisecondsToRun: [ result := self evaluateBriefly: '[ true ] whileTrue' deferringInto: actions ].
+				milliseconds := Time millisecondsToRun: [ result := self evaluate: '[ true ] whileTrue' within: 1 deferringInto: actions ].
 				evaluators := (self processesNamed: 'evaluate') copyWithoutAll: before ] ensure: [ actions do: #value ].
-			lines := (self stoppedTextOf: result) lines.
+			self assert: (self resultIndicatesError: result).
+			lines := (self stoppedText: (self firstTextFromToolResult: result) after: 1) lines.
 			self deny: (lines includes: 'Its ensure blocks were still running when this answer was sent.') description: rule.
 			self assert: (lines includes: 'Stopped in:').
 			self assert: (lines includes: 'UndefinedObject>>DoIt').
