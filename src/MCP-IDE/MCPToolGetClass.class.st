@@ -89,13 +89,6 @@ MCPToolGetClass >> buildInputSchema [
 		  yourself
 ]
 
-{ #category : 'private - errors' }
-MCPToolGetClass >> classNameForErrorFromParsedRequest: getRequest rawRequest: rawRequest [
-
-	getRequest ifNotNil: [ ^ getRequest className ].
-	^ (rawRequest stringArgumentNamed: 'name') ifNil: [ '' ]
-]
-
 { #category : 'private - request' }
 MCPToolGetClass >> classNameFromRequest: request [
 
@@ -103,12 +96,6 @@ MCPToolGetClass >> classNameFromRequest: request [
 	className := request stringArgumentNamed: 'name'.
 	className ifNil: [ Error signal: 'name must be a non-empty string.' ].
 	^ className
-]
-
-{ #category : 'private - execution' }
-MCPToolGetClass >> commandForRequest: getRequest [
-
-	^ MCPGetClassCommand tool: self request: getRequest
 ]
 
 { #category : 'metadata' }
@@ -159,16 +146,14 @@ MCPToolGetClass >> errorResultForError: anError className: className [
 
 { #category : 'executing' }
 MCPToolGetClass >> executeWithRequest: request [
+	"An error names the class as the name argument gives it, the same name before and after it is checked."
 
 	^ self executeBatchedRequest: request do: [ :targetRequest |
 			  self
 				  executeParsedRequestFrom: targetRequest
-				  do: [ :getRequest |
-						  | commandResult |
-						  commandResult := (self commandForRequest: getRequest) execute.
-						  self successResultText: (self successSummaryFor: commandResult) data: commandResult data ]
-				  onError: [ :error :getRequest |
-					  self errorResultForError: error className: (self classNameForErrorFromParsedRequest: getRequest rawRequest: targetRequest) ] ]
+				  do: [ :arguments | self getClassWith: arguments ]
+				  onError: [ :error :arguments |
+				  self errorResultForError: error className: ((arguments stringArgumentNamed: 'name') ifNil: [ '' ]) ] ]
 ]
 
 { #category : 'private' }
@@ -182,6 +167,23 @@ MCPToolGetClass >> failureMessageForClassName: className error: anError [
 				  nextPutAll: anError class name;
 				  nextPutAll: '): ';
 				  nextPutAll: anError messageText ]
+]
+
+{ #category : 'private - execution' }
+MCPToolGetClass >> getClassWith: request [
+	"The answer names the class found, not the name asked for: Foo class reads as Foo, and the summary says Foo."
+
+	| data includeComment subclasses superclasses targetClass |
+	targetClass := self resolvedClassNamed: (self classNameFromRequest: request).
+	superclasses := self superclassesOf: targetClass upTo: (request stringArgumentNamed: 'upToSuperclass').
+	subclasses := self subclassesOf: targetClass downTo: (request integerArgumentNamed: 'subclassDepth').
+	includeComment := request booleanArgumentNamed: 'includeComment'.
+	data := self descriptionDictionaryForClass: targetClass includeComment: includeComment.
+	superclasses ifNotEmpty: [
+		data at: #superclasses put: (self descriptionDictionariesForClasses: superclasses includeComment: includeComment) ].
+	subclasses ifNotEmpty: [
+		data at: #subclasses put: (self descriptionDictionariesForClasses: subclasses includeComment: includeComment) ].
+	^ self successResultText: (self successSummaryForClass: targetClass superclasses: superclasses subclasses: subclasses) data: data
 ]
 
 { #category : 'private - results' }
@@ -204,40 +206,56 @@ MCPToolGetClass >> maximumSubclassDepth [
 	^ 10
 ]
 
-{ #category : 'private - request' }
-MCPToolGetClass >> parsedRequestFromToolRequest: request [
+{ #category : 'private - hierarchy' }
+MCPToolGetClass >> subclassesOf: aClass downTo: aDepth [
 
-	^ MCPGetClassRequest fromRequest: request tool: self
+	| subclasses |
+	aDepth = 0 ifTrue: [ ^ #(  ) ].
+	subclasses := OrderedCollection new.
+	aClass
+		allSubclassesWithLevelDo: [ :eachClass :level | (level between: 1 and: aDepth) ifTrue: [ subclasses add: eachClass ] ]
+		startingLevel: 0.
+	^ subclasses asArray
 ]
 
 { #category : 'private - results' }
-MCPToolGetClass >> successSummaryFor: aResult [
+MCPToolGetClass >> successSummaryForClass: aClass superclasses: superclasses subclasses: subclasses [
 	"A trait is named as one. It is not a class, and it has users rather than superclasses and subclasses."
 
 	^ String streamContents: [ :stream |
 			  stream
 				  nextPutAll: 'Got ';
-				  nextPutAll: ((aResult data at: #isTrait ifAbsent: [ false ])
+				  nextPutAll: (aClass isTrait
 						   ifTrue: [ 'trait ' ]
 						   ifFalse: [ 'class ' ]);
-				  nextPutAll: aResult className;
+				  nextPutAll: aClass name;
 				  nextPut: $..
-			  (aResult superclasses isEmpty and: [ aResult subclasses isEmpty ]) ifFalse: [
+			  (superclasses isEmpty and: [ subclasses isEmpty ]) ifFalse: [
 					  stream
 						  space;
 						  nextPutAll: 'Included ';
-						  print: aResult superclasses size;
+						  print: superclasses size;
 						  nextPutAll: ' superclass';
-						  nextPutAll: (aResult superclasses size = 1
+						  nextPutAll: (superclasses size = 1
 								   ifTrue: [ '' ]
 								   ifFalse: [ 'es' ]);
 						  nextPutAll: ' and ';
-						  print: aResult subclasses size;
+						  print: subclasses size;
 						  nextPutAll: ' subclass';
-						  nextPutAll: (aResult subclasses size = 1
+						  nextPutAll: (subclasses size = 1
 								   ifTrue: [ '' ]
 								   ifFalse: [ 'es' ]);
 						  nextPut: $. ] ]
+]
+
+{ #category : 'private - hierarchy' }
+MCPToolGetClass >> superclassesOf: aClass upTo: aSuperclassName [
+	"The superclasses of aClass up to, not including, the one aSuperclassName names. None when no name is given."
+
+	| targetSuperclass |
+	aSuperclassName ifNil: [ ^ #(  ) ].
+	targetSuperclass := MCPImageLookup classNamed: aSuperclassName role: #superclass details: { (#class -> aClass name asString) }.
+	^ aClass allSuperclasses asArray copyUpTo: targetSuperclass
 ]
 
 { #category : 'metadata' }

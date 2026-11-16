@@ -120,8 +120,7 @@ MCPToolContractsTest >> baseToolFlowSpecs [
 		  {
 			  (#toolClass -> MCPToolGetClass).
 			  (#arguments -> { (#name -> 'Object') } asDictionary).
-			  (#requestClass -> MCPGetClassRequest).
-			  (#commandClass -> MCPGetClassCommand) } asDictionary.
+			  (#requestClass -> MCPToolRequest) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolRemoveClasses).
 			  (#arguments -> { (#name -> #( 'Object' )) } asDictionary) } asDictionary.
@@ -135,8 +134,7 @@ MCPToolContractsTest >> baseToolFlowSpecs [
 			  (#arguments -> {
 				   (#class -> 'Object').
 				   (#selector -> 'class') } asDictionary).
-			  (#requestClass -> MCPGetMethodRequest).
-			  (#commandClass -> MCPGetMethodCommand) } asDictionary.
+			  (#requestClass -> MCPToolRequest) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolRewriteMethods).
 			  (#arguments -> {
