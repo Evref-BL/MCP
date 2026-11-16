@@ -144,15 +144,13 @@ MCPToolContractsTest >> baseToolFlowSpecs [
 					    (#match -> 'self').
 					    (#replacement -> 'self') } asDictionary }).
 				   (#scope -> { (#classes -> { 'MCPToolContractsTest' }) } asDictionary) } asDictionary).
-			  (#requestClass -> MCPMethodRewriteRequest).
-			  (#commandClass -> MCPRewriteMethodsCommand) } asDictionary.
+			  (#requestClass -> MCPToolRequest) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolRemoveMethods).
 			  (#arguments -> {
 				   (#class -> 'Object').
 				   (#selector -> #( 'class' )) } asDictionary).
-			  (#requestClass -> MCPRemoveMethodsRequest).
-			  (#commandClass -> MCPRemoveMethodsCommand) } asDictionary.
+			  (#requestClass -> MCPToolRequest) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolRunTests).
 			  (#arguments -> { (#classes -> { 'MCPToolContractsTest' }) } asDictionary).
@@ -418,16 +416,14 @@ MCPToolContractsTest >> methodMutationToolFlowSpecs [
 				   (#class -> 'Object').
 				   (#source -> 'mcpTemporaryMethod ^ self').
 				   (#protocol -> 'tests') } asDictionary).
-			  (#requestClass -> MCPMethodCompileRequest).
-			  (#commandClass -> MCPCompileMethodCommand) } asDictionary.
+			  (#requestClass -> MCPToolRequest) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolUpdateMethod).
 			  (#arguments -> {
 				   (#class -> 'Object').
 				   (#selector -> 'class').
 				   (#protocol -> 'accessing') } asDictionary).
-			  (#requestClass -> MCPMethodUpdateRequest).
-			  (#commandClass -> MCPUpdateMethodCommand) } asDictionary }
+			  (#requestClass -> MCPToolRequest) } asDictionary }
 ]
 
 { #category : 'private' }
@@ -1099,8 +1095,6 @@ MCPToolContractsTest >> testDictionaryShapedCommandResultsUseDTOClasses [
 	commandResultClasses := {
 		                        (MCPGetClassCommand -> MCPGetClassResult).
 		                        (MCPGetMethodCommand -> MCPGetMethodResult).
-		                        (MCPRewriteMethodsCommand -> MCPMethodRewriteReport).
-		                        (MCPRemoveMethodsCommand -> MCPRemoveMethodsResult).
 		                        (MCPCreateRepositoryCommand -> MCPRepositoryCreateResult).
 		                        (MCPAttachRepositoryCommand -> MCPRepositoryCreateResult).
 		                        (MCPUpdateRepositoryCommand -> MCPRepositoryUpdateResult).

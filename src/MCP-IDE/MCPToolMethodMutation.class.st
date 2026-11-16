@@ -1,7 +1,7 @@
 "
-Shared implementation for method mutation tools.
+Shared implementation for the tools that compile and update methods.
 
-It defines per-tool input schemas, translates each concrete method tool request into method creation or update requests, and returns method state plus post-compile critiques when relevant.
+Each target of a call is checked, then changed: a concrete tool reads its arguments from the MCPToolRequest, refuses in checkArguments: what reading them can refuse, and makes the change in mutateWith:. An error raised before the arguments are checked echoes them as the caller wrote them; one raised after, as the tool read them. It also reports the critiques of a method it compiled, and the failure of each kind of change.
 "
 Class {
 	#name : 'MCPToolMethodMutation',
@@ -29,18 +29,6 @@ MCPToolMethodMutation class >> isAbstract [
 MCPToolMethodMutation >> addCompileSourceContextFor: methodSource to: details [
 
 	details at: #position ifPresent: [ :position | self addSourceLineContextFor: methodSource position: position to: details ]
-]
-
-{ #category : 'private - refactoring' }
-MCPToolMethodMutation >> addParameterRefactoringForSelector: oldSelectorSymbol inBehavior: aBehavior to: newSelectorSymbol permutation: permutation newArgs: newArguments model: refactoringModel [
-
-	^ RBAddParameterRefactoring
-		  model: refactoringModel
-		  addParameterToMethod: oldSelectorSymbol
-		  in: aBehavior
-		  newSelector: newSelectorSymbol
-		  permutation: permutation
-		  newArgs: newArguments
 ]
 
 { #category : 'private - errors' }
@@ -125,6 +113,20 @@ MCPToolMethodMutation >> blockingCritiqueDataForMethodNode: aMethodNode [
 MCPToolMethodMutation >> blockingPreCompileRuleClasses [
 
 	^ { ReDeadBlockRule }
+]
+
+{ #category : 'private - execution' }
+MCPToolMethodMutation >> checkArguments: request [
+	"Refuse what reading the arguments can refuse, as the call's own error rather than a failure of the change."
+
+	self subclassResponsibility
+]
+
+{ #category : 'private - arguments' }
+MCPToolMethodMutation >> classNameAndSideOf: request do: aBlock [
+	"aBlock gets the class the call names without its side, whether the class side is meant, and whether the call said which side, by side or by a class written as Foo class. A side that says the other one is refused."
+
+	^ MCPImageLookup className: (request stringArgumentNamed: 'class') side: (request stringArgumentNamed: 'side') do: aBlock
 ]
 
 { #category : 'private' }
@@ -276,6 +278,34 @@ MCPToolMethodMutation >> distinctCritiqueData: critiqueData [
 		  sort: [ :left :right | self critiqueData: left precedes: right ]
 ]
 
+{ #category : 'executing' }
+MCPToolMethodMutation >> executeWithRequest: request [
+	"Each target is checked, then changed. An error raised before its arguments are checked echoes them as the caller wrote them."
+
+	^ self executeBatchedRequest: request do: [ :targetRequest |
+			  | checked |
+			  checked := false.
+			  self
+				  executeParsedRequestFrom: targetRequest
+				  do: [ :arguments |
+						  self checkArguments: arguments.
+						  checked := true.
+						  self mutateWith: arguments ]
+				  onError: [ :error :arguments |
+						  | action requestedContext |
+						  action := self mutationActionFor: targetRequest checked: checked.
+						  requestedContext := self requestedContextFor: targetRequest checked: checked.
+						  error
+							  mcpCommandErrorDo: [ :commandError |
+							  self errorResultForCommandError: commandError action: action requestedContext: requestedContext ]
+							  otherwise: [ :actionError |
+									  self
+										  errorResultForActionFailure: actionError
+										  action: action
+										  requestedContext: requestedContext
+										  summary: (actionError messageText ifNil: [ actionError asString ] ifNotNil: [ :text | text ]) ] ] ]
+]
+
 { #category : 'private' }
 MCPToolMethodMutation >> failureMessageForArgumentUpdateAction: updateAction classNamed: className classSide: classSide selector: oldSelector newSelector: newSelector error: anError [
 
@@ -363,6 +393,13 @@ MCPToolMethodMutation >> methodToolSpec [
 	self subclassResponsibility
 ]
 
+{ #category : 'private - execution' }
+MCPToolMethodMutation >> mutateWith: request [
+	"Make the change the checked arguments ask for, and answer the tool result."
+
+	self subclassResponsibility
+]
+
 { #category : 'private - actions' }
 MCPToolMethodMutation >> mutationAction [
 
@@ -370,7 +407,7 @@ MCPToolMethodMutation >> mutationAction [
 ]
 
 { #category : 'private - errors' }
-MCPToolMethodMutation >> mutationActionForErrorFromParsedRequest: mutationRequest rawRequest: rawRequest [
+MCPToolMethodMutation >> mutationActionFor: request checked: aBoolean [
 
 	^ self mutationAction
 ]
@@ -378,11 +415,7 @@ MCPToolMethodMutation >> mutationActionForErrorFromParsedRequest: mutationReques
 { #category : 'private - execution' }
 MCPToolMethodMutation >> parsedRequestFromToolRequest: request [
 
-	| requestClass |
-	requestClass := self mutationAction = 'compile'
-		                ifTrue: [ MCPMethodCompileRequest ]
-		                ifFalse: [ MCPMethodUpdateRequest ].
-	^ requestClass fromRequest: request tool: self
+	^ request
 ]
 
 { #category : 'private' }
@@ -395,25 +428,19 @@ MCPToolMethodMutation >> reformattedMethodForBehavior: aBehavior selector: aSele
 	^ aBehavior >> aSelector
 ]
 
-{ #category : 'private - refactoring' }
-MCPToolMethodMutation >> removeParameterRefactoringForArgumentNamed: argumentName inBehavior: aBehavior selector: selectorSymbol model: refactoringModel [
+{ #category : 'private - errors' }
+MCPToolMethodMutation >> requestedContextFor: request [
+	"The arguments as the tool read them, for the details of an error raised once they were checked."
 
-	^ RBRemoveParameterRefactoring
-		  model: refactoringModel
-		  removeParameter: argumentName
-		  in: aBehavior
-		  selector: selectorSymbol
+	self subclassResponsibility
 ]
 
-{ #category : 'private - refactoring' }
-MCPToolMethodMutation >> renameRefactoringForSelector: oldSelectorSymbol inBehavior: aBehavior to: newSelectorSymbol permutation: permutation model: refactoringModel [
+{ #category : 'private - errors' }
+MCPToolMethodMutation >> requestedContextFor: request checked: aBoolean [
+	"An error raised before the arguments are checked echoes them as the caller wrote them; one raised after, as the tool read them."
 
-	^ ReRenameMethodRefactoring
-		  model: refactoringModel
-		  renameMethod: oldSelectorSymbol
-		  in: aBehavior
-		  to: newSelectorSymbol
-		  permutation: permutation
+	aBoolean ifFalse: [ ^ request asDictionary copy ].
+	^ self requestedContextFor: request
 ]
 
 { #category : 'private - schema' }
