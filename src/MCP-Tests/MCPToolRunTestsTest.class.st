@@ -356,6 +356,34 @@ MCPToolRunTestsTest >> testANotRunSelectionThatLostCasesIsListedByMethod [
 	self assert: (data at: #notRunCount) equals: 1
 ]
 
+{ #category : 'tests - answers' }
+MCPToolRunTestsTest >> testANotUnderstoodNoteNamesARemovedClassByItsOwnName [
+	"A message not understood whose receiver's other side implements it gets a note that names that side. When the receiver is an instance of a removed class, the note names the class by its own name, as the message does, not by the one Pharo gives it on removal."
+
+	| classNames line lines |
+	classNames := #( 'MCPToolRunTestsRemovedTargetTest' 'MCPToolRunTestsRemovedTarget' ).
+	[
+		self ensureMethodSource: 'buildRemoved ^ self new' protocol: 'instance creation' on: (self
+				 createClassNamed: 'MCPToolRunTestsRemovedTarget'
+				 superclassName: 'Object'
+				 slots: #(  )
+				 classSlots: #(  )) classSide.
+		self
+			ensureMethodSource: 'testSendsAClassMessageToAnInstance MCPToolRunTestsRemovedTarget new buildRemoved'
+			protocol: 'tests'
+			on: (self createTestClassNamed: 'MCPToolRunTestsRemovedTargetTest' traits: nil).
+		self removeClassNamed: 'MCPToolRunTestsRemovedTarget'.
+		lines := self issueLinesFrom:
+			         (self runTests: { (#methods -> #( 'MCPToolRunTestsRemovedTargetTest>>#testSendsAClassMessageToAnInstance' )) }).
+		self assert: lines size equals: 1.
+		line := lines first.
+		self deny: (line includesSubstring: 'AnObsolete') description: line.
+		self
+			assert: (line includesSubstring:
+					 '; MCPToolRunTestsRemovedTarget was removed. MCPToolRunTestsRemovedTarget itself understands buildRemoved')
+			description: line ] ensure: [ self removeClassesNamed: classNames ]
+]
+
 { #category : 'tests - selections without tests' }
 MCPToolRunTestsTest >> testAPackageWithoutTestClassesBesideOthersIsOnlyNamed [
 

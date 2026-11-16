@@ -322,7 +322,7 @@ MCPStructuredTestResult >> messageOf: anException forTestCase: aTestCase [
 
 { #category : 'private' }
 MCPStructuredTestResult >> recordIssueFrom: anException forTestCase: aTestCase [
-	"Recorded while the stack that signalled is still live, so that the issue says where it came from: a place outside the test method, with the code under test that called it when that place is in Pharo's kernel or SUnit, or, for a failure in the test method, the statement that failed; and, for a message not understood, what it was most likely meant to be."
+	"Recorded while the stack that signalled is still live, so that the issue says where it came from: a place outside the test method, with the code under test that called it when that place is in Pharo's kernel or SUnit, or, for a failure in the test method, the statement that failed; and, for a message not understood, what it was most likely meant to be, naming a removed class by its own name as the message does."
 
 	| context issue kind location statement |
 	kind := self issueKindOf: anException.
@@ -337,7 +337,8 @@ MCPStructuredTestResult >> recordIssueFrom: anException forTestCase: aTestCase [
 		         message: (self messageOf: anException forTestCase: aTestCase)
 		         location: location
 		         statement: statement.
-	anException mcpTestIssueNote ifNotNil: [ :note | issue at: #note ifAbsentPut: [ note ] ]
+	anException mcpTestIssueNote ifNotNil: [ :note |
+		issue at: #note ifAbsentPut: [ self class textNamingRemovedClassesIn: note into: (issue at: #removedClasses) ] ]
 ]
 
 { #category : 'running' }
