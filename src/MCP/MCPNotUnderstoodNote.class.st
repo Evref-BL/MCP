@@ -1,7 +1,7 @@
 "
 Says what a message its receiver did not understand was most likely meant to be, when its receiver or its keywords tell: a message the other side of the receiver's class understands, as a constructor compiled on the instance side and sent to the class, or two messages run together, as sorted:collect: for sorted: then collect:. For a message sent to nil, which nil's own selectors say nothing about, it names instead the send in the caller's own code it came from, past the methods that came with the image, which only noticed the nil, and the variable that held nil.
 
-A method that came with the image has its source in the image's .sources file: it is Pharo's own, or that of a project Pharo bundles, never the caller's code and never one to compile again on the other side. Only a method compiled since, its source in the .changes file, may be the caller's.
+A method that came with the image has its source in the image's .sources file: it is Pharo's own, or that of a project Pharo bundles, never the caller's code and never one to compile again on the other side. A method compiled since has its source in the .changes file, whether it is the caller's or a library's loaded with it, which the image cannot tell apart: only one that cannot run on its side, as an instance-side method sending new to itself, is offered to be compiled on the other.
 
 It reads the frames that sent the message, so it is made while the stack that raised the error is still there.
 "
@@ -144,15 +144,12 @@ MCPNotUnderstoodNote >> chainedSendText [
 ]
 
 { #category : 'private' }
-MCPNotUnderstoodNote >> classSideTextFor: aMethod [
-	"For an instance sent a message only its class understands, through aMethod, as a constructor sent to a new instance. Compiling aMethod on the instance side instead is offered only when it was compiled since the image shipped, as the caller's own methods are: one of Pharo's, such as Collection class>>withAll:, is sent to the class, never moved."
+MCPNotUnderstoodNote >> classSideText [
+	"For an instance sent a message only its class understands, as a constructor sent to a new instance. Nothing in a class-side method tells that it was meant for the instances: one that sends itself a message only they understand may as well be left for a subclass's class side to answer, so it is sent to the class, never moved."
 
 	^ String streamContents: [ :stream |
 			  stream << receiver class name << ' itself understands ' << selector << ', but its instances do not: ' << selector
-			  << ' is a class-side method. Send it to ' << receiver class name.
-			  (self class isCompiledSinceTheImageShipped: aMethod) ifTrue: [
-				  stream << ', or compile it with method_compile and side instance to send it to an instance' ].
-			  stream nextPut: $. ]
+			  << ' is a class-side method. Send it to ' << receiver class name << '.' ]
 ]
 
 { #category : 'private' }
@@ -172,14 +169,29 @@ MCPNotUnderstoodNote >> initializeReceiver: anObject selector: aSelector sender:
 ]
 
 { #category : 'private' }
+MCPNotUnderstoodNote >> instanceCreationsSentToSelfBy: aMethod [
+	"The sends of new, new:, basicNew or basicNew: that aMethod makes to itself and that the receiver's instances do not understand. An instance-side method that makes one is a constructor compiled on the wrong side: it cannot run on an instance, only on the class. None for a method that came with the image, which is never one to compile again on the other side."
+
+	(self class isCompiledSinceTheImageShipped: aMethod) ifFalse: [ ^ #(  ) ].
+	^ aMethod ast sendNodes select: [ :node |
+			  node receiver isSelfOrSuperVariable and: [
+				  (#( #new #new: #basicNew #basicNew: ) includes: node selector) and: [ (receiver canUnderstand: node selector) not ] ] ]
+]
+
+{ #category : 'private' }
 MCPNotUnderstoodNote >> instanceSideTextFor: aMethod [
-	"For a class sent a message only its instances understand, through aMethod, as a constructor compiled on the instance side. Compiling aMethod on the class side instead is offered only when it was compiled since the image shipped, as the caller's own methods are: one of Pharo's, such as OrderedCollection>>add:, is sent to an instance, never moved."
+	"For a class sent a message only its instances understand, through aMethod. A constructor compiled on the instance side, which sends new to itself, cannot run on an instance either: it is compiled on the class side instead. Any other method is sent to an instance, even one compiled since the image shipped, which may be a library's, as a setter is when new was forgotten. The class of Smalltalk globals has an instance everyone means, which a new one, empty, is not."
 
 	^ String streamContents: [ :stream |
 			  stream << 'Instances of ' << receiver name << ' understand ' << selector << ', but ' << receiver name << ' itself does not: '
-			  << selector << ' is an instance-side method. Send it to an instance'.
-			  (self class isCompiledSinceTheImageShipped: aMethod) ifTrue: [
-				  stream << ', or compile it with method_compile and side class to send it to ' << receiver name ].
+			  << selector << ' is an instance-side method. '.
+			  (self instanceCreationsSentToSelfBy: aMethod)
+				  ifEmpty: [
+						  stream nextPutAll: 'Send it to an instance'.
+						  Smalltalk globals class == receiver ifTrue: [ stream nextPutAll: ', such as Smalltalk globals' ] ]
+				  ifNotEmpty: [ :creations |
+						  stream << 'It sends ' << creations first selector << ' to self, which instances of ' << receiver name
+						  << ' do not understand: compile it with method_compile and side class to send it to ' << receiver name ].
 			  stream nextPut: $. ]
 ]
 
@@ -248,7 +260,7 @@ MCPNotUnderstoodNote >> otherSideText [
 
 	receiver class isMeta ifTrue: [ ^ (receiver lookupSelector: selector) ifNotNil: [ :method | self instanceSideTextFor: method ] ].
 	^ (receiver class classSide lookupSelector: selector) ifNotNil: [ :method |
-		  method methodClass isMeta ifTrue: [ self classSideTextFor: method ] ]
+		  method methodClass isMeta ifTrue: [ self classSideText ] ]
 ]
 
 { #category : 'private' }

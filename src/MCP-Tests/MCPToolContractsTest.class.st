@@ -1964,16 +1964,29 @@ MCPToolContractsTest >> testMCPsOwnTestFixturesAreNotServed [
 
 { #category : 'tests - evaluate' }
 MCPToolContractsTest >> testMessageNotUnderstoodByAClassSaysItsInstancesUnderstandIt [
-	"A constructor compiled on the instance side, then sent to the class, was answered with the class side's selectors that resembled it. Compiling it on the class side is offered for a method compiled since the image shipped, never for one of Pharo's own, such as add: sent to OrderedCollection when new was forgotten. Every class understands at:, so at:ifAbsent: also reads as at: then ifAbsent:, a guess that the instances understanding it outweighs."
+	"A constructor compiled on the instance side, then sent to the class, was answered with the class side's selectors that resembled it. Its send of new, which no instance understands, says it was meant for the class side, and compiling it there is offered. Any other instance-side method is sent to an instance: add: sent to OrderedCollection when new was forgotten, sumTo: whose source is in the .changes file as the caller's is, and port:, a library's setter, whose source is there too. Every class understands at:, so at:ifAbsent: also reads as at: then ifAbsent:, a guess that the instances understanding it outweighs. A new instance of the class of Smalltalk globals is empty, so the one everyone means is named."
 
 	| error |
+	error := self errorFrom: (self
+			          callDiscoveredToolNamed: 'evaluate'
+			          withArguments: { (#code -> 'MCPNotUnderstoodNoteTestTarget withLabel: ''a''') } asDictionary).
+	self
+		assert: (error at: #note)
+		equals:
+		'Instances of MCPNotUnderstoodNoteTestTarget understand withLabel:, but MCPNotUnderstoodNoteTestTarget itself does not: withLabel: is an instance-side method. It sends new to self, which instances of MCPNotUnderstoodNoteTestTarget do not understand: compile it with method_compile and side class to send it to MCPNotUnderstoodNoteTestTarget.'.
+	self deny: (error includesKey: #suggestedSelectors).
 	error := self errorFrom:
 		         (self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> 'MCPDebugWatchTestTarget sumTo: 3') } asDictionary).
 	self
 		assert: (error at: #note)
 		equals:
-		'Instances of MCPDebugWatchTestTarget understand sumTo:, but MCPDebugWatchTestTarget itself does not: sumTo: is an instance-side method. Send it to an instance, or compile it with method_compile and side class to send it to MCPDebugWatchTestTarget.'.
-	self deny: (error includesKey: #suggestedSelectors).
+		'Instances of MCPDebugWatchTestTarget understand sumTo:, but MCPDebugWatchTestTarget itself does not: sumTo: is an instance-side method. Send it to an instance.'.
+	error := self errorFrom:
+		         (self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> 'JRPCTCPClient port: 4000') } asDictionary).
+	self
+		assert: (error at: #note)
+		equals:
+		'Instances of JRPCTCPClient understand port:, but JRPCTCPClient itself does not: port: is an instance-side method. Send it to an instance.'.
 	error := self errorFrom:
 		         (self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> 'OrderedCollection add: 1') } asDictionary).
 	self
@@ -1986,12 +1999,16 @@ MCPToolContractsTest >> testMessageNotUnderstoodByAClassSaysItsInstancesUndersta
 			          withArguments: { (#code -> 'OrderedCollection at: 1 ifAbsent: [ 0 ]') } asDictionary).
 	self assert:
 		((error at: #note) beginsWith: 'Instances of OrderedCollection understand at:ifAbsent:, but OrderedCollection itself does not').
-	self deny: ((error at: #note) includesSubstring: 'method_compile')
+	self deny: ((error at: #note) includesSubstring: 'method_compile').
+	error := self errorFrom: (self
+			          callDiscoveredToolNamed: 'evaluate'
+			          withArguments: { (#code -> 'Smalltalk globals class at: #Object ifAbsent: [ nil ]') } asDictionary).
+	self assert: ((error at: #note) endsWith: ' is an instance-side method. Send it to an instance, such as Smalltalk globals.')
 ]
 
 { #category : 'tests - evaluate' }
 MCPToolContractsTest >> testMessageNotUnderstoodByAnInstanceSaysItsClassUnderstandsIt [
-	"Compiling a class-side method on the instance side is offered for a method compiled since the image shipped, never for one of Pharo's own, such as withAll:. Every class understands name, which Class implements, so an instance that does not lacks an accessor rather than was sent a class-side message: only a method a class side of its own hierarchy defines says so."
+	"A class-side method is sent to the class, whether it is one of Pharo's own, such as withAll:, or one compiled since the image shipped: nothing in it tells that it was meant for the instances. Every class understands name, which Class implements, so an instance that does not lacks an accessor rather than was sent a class-side message: only a method a class side of its own hierarchy defines says so."
 
 	| error |
 	error := self errorFrom:
@@ -2001,7 +2018,7 @@ MCPToolContractsTest >> testMessageNotUnderstoodByAnInstanceSaysItsClassUndersta
 	self
 		assert: (error at: #note)
 		equals:
-		'MCPDebugWatchTestTarget itself understands doubleOf:, but its instances do not: doubleOf: is a class-side method. Send it to MCPDebugWatchTestTarget, or compile it with method_compile and side instance to send it to an instance.'.
+		'MCPDebugWatchTestTarget itself understands doubleOf:, but its instances do not: doubleOf: is a class-side method. Send it to MCPDebugWatchTestTarget.'.
 	error := self errorFrom:
 		         (self
 			          callDiscoveredToolNamed: 'evaluate'

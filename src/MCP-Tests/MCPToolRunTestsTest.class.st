@@ -474,7 +474,7 @@ MCPToolRunTestsTest >> testAnInheritedTestMethodRuns [
 
 { #category : 'tests - answers' }
 MCPToolRunTestsTest >> testAnInstanceMessageSentToTheClassSaysItsInstancesUnderstandIt [
-	"A constructor compiled on the instance side reads, from a test that sends it to the class, as a message nothing understands. The message is not asserted: its wording differs before Pharo 12."
+	"A constructor compiled on the instance side reads, from a test that sends it to the class, as a message nothing understands. Its send of new says it was meant for the class side. The message is not asserted: its wording differs before Pharo 12."
 
 	| lines |
 	lines := self issueLinesFrom:
@@ -483,7 +483,7 @@ MCPToolRunTestsTest >> testAnInstanceMessageSentToTheClassSaysItsInstancesUnders
 	self assert: (lines first beginsWith:
 			 'error MCPToolRunTestsNotUnderstoodTarget>>#testSendsAnInstanceMessageToTheClass (MessageNotUnderstood): ').
 	self assert: (lines first endsWith:
-			 '. Instances of MCPToolRunTestsRaiser understand addToNil, but MCPToolRunTestsRaiser itself does not: addToNil is an instance-side method. Send it to an instance, or compile it with method_compile and side class to send it to MCPToolRunTestsRaiser.')
+			 '. Instances of MCPNotUnderstoodNoteTestTarget understand withLabel:, but MCPNotUnderstoodNoteTestTarget itself does not: withLabel: is an instance-side method. It sends new to self, which instances of MCPNotUnderstoodNoteTestTarget do not understand: compile it with method_compile and side class to send it to MCPNotUnderstoodNoteTestTarget.')
 ]
 
 { #category : 'tests - timeouts' }
