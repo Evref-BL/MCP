@@ -1562,7 +1562,30 @@ MCPToolRepositoryOperationTest >> testDiscardNamesThePackagesIcebergStillMarks [
 				         on: MCPCommandError
 				         do: [ :caught | caught ] ].
 	self assert: error errorCode equals: 'RepositoryDiscardIncomplete'.
-	self assert: error messageText equals: 'Repository changes remain after discard: Iceberg still marks MCP-Test-Dirty modified.'
+	self assert: error messageText equals: 'Repository changes remain after discard: Iceberg still marks MCP-Test-Dirty as modified.'
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testDiscardNamesThePackagesIcebergStillMarksBesideThePathsLeft [
+	"A package Iceberg still marks modified after a discard is named even when files are left too and none of them lies in that package."
+
+	| error location repository |
+	repository := self newTestRepositoryNamed: 'MCP Discard Marks And Paths Remain Test Repository'.
+	repository modifiedPackageNames: #( 'MCP-Test-Dirty' ).
+	location := repository location asFileReference.
+	self withRegisteredRepository: repository do: [
+			self shellCommand: 'git init --quiet ' , (self shellQuote: location pathString).
+			self write: 'x' to: location / 'notes.txt'.
+			error := [
+				         MCPRepositoryWorkingCopyCommand new assertRepositoryCleanAfterDiscard: repository.
+				         nil ]
+				         on: MCPCommandError
+				         do: [ :caught | caught ] ].
+	self assert: error errorCode equals: 'RepositoryDiscardIncomplete'.
+	self
+		assert: error messageText
+		equals:
+		'Repository changes remain after discard: notes.txt (untracked). Discard reverts the image and leaves the checkout''s files as they are; it does not restore a changed file or delete an untracked one. Iceberg still marks MCP-Test-Dirty as modified.'
 ]
 
 { #category : 'tests' }
@@ -2194,11 +2217,12 @@ MCPToolRepositoryOperationTest >> testReloadRefusesWhenAPackageHasNoSourceOnDisk
 
 { #category : 'tests' }
 MCPToolRepositoryOperationTest >> testReloadSaysItLoadedNothingWhenTheImageHasNoneOfItsPackages [
-	"Reload reloads only the packages the image has. When the image has none of those the repository registers, it does not answer that it reloaded: it names them and says it loaded nothing."
+	"Reload loads only the packages the image has. When the image has none of those the repository registers, it does not answer that it reloaded: it says it loaded nothing, and says of each registered package whether the checkout holds it."
 
-	| className location packageName repositoryName result |
+	| className location missingName packageName repositoryName result summary |
 	repositoryName := 'MCP Reload Nothing In Image Test'.
 	packageName := 'MCPToolRepositoryOperationReloadNothingPackage'.
+	missingName := 'MCPToolRepositoryOperationReloadNothingMissingPackage'.
 	className := 'MCPToolRepositoryOperationReloadNothingClass'.
 	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestReloadNothingInImage'.
 	self withExportPackageNamed: packageName className: className do: [
@@ -2206,23 +2230,26 @@ MCPToolRepositoryOperationTest >> testReloadSaysItLoadedNothingWhenTheImageHasNo
 					self commitCheckoutNamed: repositoryName at: location holding: packageName.
 					self removeClassNamed: className.
 					self removePackageNamed: packageName.
-					self attachRepositoryNamed: repositoryName location: location pathString packages: { packageName }.
+					self attachRepositoryNamed: repositoryName location: location pathString packages: {
+							packageName.
+							missingName }.
 					result := self callToolWith: {
 							          (#action -> 'reload').
 							          (#name -> repositoryName) } asDictionary.
-					self
-						assert: (self summaryFrom: result)
-						equals:
-							('None of the packages repository {1} registers is in the image: {2}. Reload reloads only the packages the image has, so it loaded nothing; it does not load a package only the checkout holds.'
-								 format: {
-										 repositoryName.
-										 packageName }).
+					summary := self summaryFrom: result.
+					self assert: (summary beginsWith:
+							 ('None of the packages repository {1} registers is in the image, so reload loaded nothing: it loads only the packages the image has. {2} is in the checkout but not in the image. {3} is in neither the image nor the checkout.'
+								  format: {
+										  repositoryName.
+										  packageName.
+										  missingName })).
 					self assert: (self dataFrom: result) isEmpty.
 					self deny: (self packageOrganizer hasPackage: packageName) ] ]
 ]
 
 { #category : 'tests' }
 MCPToolRepositoryOperationTest >> testReloadSaysItLoadedNothingWhenTheRepositoryHasNoPackages [
+	"A repository that registers no package gives reload nothing to load; registering one is not enough unless the image has it."
 
 	| location repositoryName result |
 	repositoryName := 'MCP Reload No Packages Test'.
@@ -2235,8 +2262,9 @@ MCPToolRepositoryOperationTest >> testReloadSaysItLoadedNothingWhenTheRepository
 					          (#name -> repositoryName) } asDictionary.
 			self
 				assert: (self summaryFrom: result)
-				equals: ('Repository {1} has no packages, so reload loaded nothing. Add them with repository_update addPackages.' format:
-						 { repositoryName }).
+				equals:
+					('Repository {1} has no packages, so reload loaded nothing. repository_update addPackages registers them, and reload then loads those the image has.'
+						 format: { repositoryName }).
 			self assert: (self dataFrom: result) isEmpty ]
 ]
 

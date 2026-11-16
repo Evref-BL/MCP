@@ -1,5 +1,5 @@
 "
-Concrete repository_reload tool. It loads the packages this image has from the files on disk, which is what an image needs after the checkout moved underneath it. When the image has none of the packages the repository registers, it loads nothing and says so, naming them.
+Concrete repository_reload tool. It loads the packages this image has from the files on disk, which is what an image needs after the checkout moved underneath it. When the image has none of the packages the repository registers, it loads nothing and says so, and says which of them the checkout holds.
 "
 Class {
 	#name : 'MCPToolReloadRepository',
@@ -67,21 +67,28 @@ MCPToolReloadRepository >> repositoryToolSpec [
 
 { #category : 'private - results' }
 MCPToolReloadRepository >> summaryForReloadOf: aRepository packageNames: packageNames [
-	"Reload reloads only the packages the image has. When the image has none of those the repository registers, it loaded nothing: say so, and name what the repository registers."
+	"Reload loads only the packages the image has. When the image has none of those the repository registers, it loaded nothing: say so, and say of each registered package whether the checkout holds it."
 
-	| registeredNames |
+	| inCheckout registeredNames steps |
 	packageNames ifNotEmpty: [
 			^ String streamContents: [ :stream |
 				  stream << 'Reloaded repository ' << aRepository name << ' from its files, ' << (self headPhraseFor: aRepository) << '.' ] ].
-	registeredNames := MCPRepositoryCommand new sortedStringsFrom: aRepository workingCopy packageNames.
+	steps := MCPRepositoryCommand new.
+	registeredNames := steps sortedStringsFrom: (self packageNamesRegisteredIn: aRepository).
+	registeredNames ifEmpty: [
+			^ String streamContents: [ :stream |
+					  stream << 'Repository ' << aRepository name
+					  <<
+					  ' has no packages, so reload loaded nothing. repository_update addPackages registers them, and reload then loads those the image has.' ] ].
+	inCheckout := registeredNames select: [ :each | steps checkoutOf: aRepository holdsPackageNamed: each ].
 	^ String streamContents: [ :stream |
+			  stream << 'None of the packages repository ' << aRepository name
+			  << ' registers is in the image, so reload loaded nothing: it loads only the packages the image has.'.
+			  inCheckout ifNotEmpty: [
+					  stream << ' ' << (', ' join: inCheckout) << (inCheckout size = 1
+						   ifTrue: [ ' is' ]
+						   ifFalse: [ ' are' ]) << ' in the checkout but not in the image.' ].
 			  registeredNames
-				  ifEmpty: [
-						  stream << 'Repository ' << aRepository name
-						  << ' has no packages, so reload loaded nothing. Add them with repository_update addPackages.' ]
-				  ifNotEmpty: [
-						  stream << 'None of the packages repository ' << aRepository name << ' registers is in the image: '
-						  << (', ' join: registeredNames)
-						  <<
-						  '. Reload reloads only the packages the image has, so it loaded nothing; it does not load a package only the checkout holds.' ] ]
+				  reject: [ :each | inCheckout includes: each ]
+				  thenDo: [ :each | stream << ' ' << (self warningForPackageInNeitherImageNorCheckoutNamed: each) ] ]
 ]

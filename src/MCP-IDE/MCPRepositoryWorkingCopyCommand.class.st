@@ -44,7 +44,7 @@ MCPRepositoryWorkingCopyCommand >> assertRepositoryCleanAfterDiscard: aRepositor
 	(remainingPackageNames isEmpty and: [ remainingPaths isEmpty ]) ifFalse: [
 			MCPCommandError
 				signalErrorCode: 'RepositoryDiscardIncomplete'
-				message: (self remainingAfterDiscardMessageFor: aRepository paths: remainingPaths packageNames: remainingPackageNames)
+				message: (self remainingAfterDiscardMessageFor: aRepository paths: remainingPaths)
 				details: {
 						(#remainingPackageNames -> remainingPackageNames).
 						(#remainingPaths -> remainingPaths) } asDictionary ]
@@ -296,24 +296,26 @@ MCPRepositoryWorkingCopyCommand >> pathsOutsidePackages: paths in: aRepository [
 ]
 
 { #category : 'private - discarding' }
-MCPRepositoryWorkingCopyCommand >> remainingAfterDiscardMessageFor: aRepository paths: remainingPaths packageNames: remainingPackageNames [
-	"Discard reverts the image and writes no file, so what git sees changed in the checkout stays: name each path, marking those git does not track. With no path left, what remains is the packages Iceberg still marks."
+MCPRepositoryWorkingCopyCommand >> remainingAfterDiscardMessageFor: aRepository paths: remainingPaths [
+	"Discard reverts the image and writes no file, so what git sees changed in the checkout stays: name each path, marking those git does not track. Name also the packages Iceberg still marks modified, which those paths need not cover."
 
+	| markedPackageNames |
+	markedPackageNames := self imageModifiedPackageNamesFor: aRepository.
 	^ String streamContents: [ :stream |
-			  stream << 'Repository changes remain after discard: '.
-			  remainingPaths
-				  ifEmpty: [ stream << 'Iceberg still marks ' << (', ' join: remainingPackageNames) << ' modified.' ]
-				  ifNotEmpty: [
-						  | untrackedPaths |
-						  untrackedPaths := self untrackedPathsFromGitStatusIn: aRepository.
-						  remainingPaths
-							  do: [ :each |
-									  stream << each.
-									  (untrackedPaths includes: each) ifTrue: [ stream << ' (untracked)' ] ]
-							  separatedBy: [ stream << ', ' ].
-						  stream
-						  <<
-						  '. Discard reverts the image and leaves the checkout''s files as they are; it does not restore a changed file or delete an untracked one.' ] ]
+			  stream << 'Repository changes remain after discard:'.
+			  remainingPaths ifNotEmpty: [
+					  | untrackedPaths |
+					  untrackedPaths := self untrackedPathsFromGitStatusIn: aRepository.
+					  stream << ' '.
+					  remainingPaths
+						  do: [ :each |
+								  stream << each.
+								  (untrackedPaths includes: each) ifTrue: [ stream << ' (untracked)' ] ]
+						  separatedBy: [ stream << ', ' ].
+					  stream
+					  <<
+					  '. Discard reverts the image and leaves the checkout''s files as they are; it does not restore a changed file or delete an untracked one.' ].
+			  markedPackageNames ifNotEmpty: [ stream << ' Iceberg still marks ' << (', ' join: markedPackageNames) << ' as modified.' ] ]
 ]
 
 { #category : 'tonel order' }
