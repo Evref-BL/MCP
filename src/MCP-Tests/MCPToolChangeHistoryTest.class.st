@@ -203,6 +203,26 @@ MCPToolChangeHistoryTest >> testApplyEntriesWithoutConfirmOnlyPreviews [
 ]
 
 { #category : 'tests' }
+MCPToolChangeHistoryTest >> testApplyPreviewDoesNotEchoTheSelection [
+	"An apply previews the very entries it selected, and its selection criteria are the request read back, so its text prints the preview alone. A revert previews the inverse changes, so it prints what it selected as well."
+
+	self withTemporaryRecoveryClassDo: [ :class |
+			| applyText revertText textFor |
+			textFor := [ :action :entryIndex |
+				           ((self callToolWith: {
+						             (#action -> action).
+						             (#indexes -> { entryIndex }) } asDictionary) at: #content) first at: #text ].
+			applyText := textFor value: 'applyEntries' value: (self recordRecoverableMethodAdditionOn: class).
+			self deny: (applyText includesSubstring: 'selectionCriteria').
+			self deny: (applyText includesSubstring: 'selectedEntries').
+			self assert: (applyText includesSubstring: 'previewEntries').
+			revertText := textFor value: 'revertEntries' value: (self recordMethodAdditionOn: class).
+			self deny: (revertText includesSubstring: 'selectionCriteria').
+			self assert: (revertText includesSubstring: 'selectedEntries').
+			self assert: (revertText includesSubstring: 'previewEntries') ]
+]
+
+{ #category : 'tests' }
 MCPToolChangeHistoryTest >> testClassSideEntryReadsAsAClassSideMethod [
 	"Epicea names the behavior of a class-side change with its class suffix. The entry carries the side apart, so it names the class alone, and reads the way Pharo writes a class-side method."
 
@@ -394,6 +414,42 @@ MCPToolChangeHistoryTest >> testRevertEntriesRevertsConfirmedChanges [
 			self assert: (data at: #performed).
 			self assert: (data at: #performedCount) equals: 1.
 			self deny: (class includesSelector: #rescuedValue) ]
+]
+
+{ #category : 'tests' }
+MCPToolChangeHistoryTest >> testSelectionResultDataHasExpectedShape [
+
+	| data |
+	data := self dataFrom: (self callToolWith: {
+				         (#action -> 'applyEntries').
+				         (#latestCount -> 1) } asDictionary).
+	self assert: data equals: {
+			(#action -> 'apply').
+			(#historyFile -> 'log.ombu').
+			(#selectionCriteria -> {
+				 (#latestCount -> 1).
+				 (#codeChangesOnly -> true) } asDictionary).
+			(#selectedEntries -> #(  )).
+			(#previewEntries -> #(  )).
+			(#selectedCount -> 0).
+			(#selectedCodeChangeCount -> 0).
+			(#previewCount -> 0).
+			(#skippedNonCodeChangeCount -> 0).
+			(#performed -> false).
+			(#performedCount -> 0) } asDictionary
+]
+
+{ #category : 'tests' }
+MCPToolChangeHistoryTest >> testSelectionToolsRouteToChangeHistorySelectionCommand [
+
+	{
+		(MCPToolApplyChangeHistoryEntries -> 'apply').
+		(MCPToolRevertChangeHistoryEntries -> 'revert') } do: [ :association |
+			| request tool |
+			tool := association key new.
+			request := tool requestFromToolCallArguments: { (#latestCount -> 1) } asDictionary.
+			self assert: (tool selectionFor: request in: EpMonitor current log) class equals: MCPChangeHistorySelectionCommand.
+			self assert: ((self dataFrom: (tool executeWithRequest: request) asJRPCJSON) at: #action) equals: association value ]
 ]
 
 { #category : 'private - calling' }

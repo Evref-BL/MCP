@@ -1,7 +1,7 @@
 "
 Shared implementation for change-history tools.
 
-The public API talks about change history rather than Epicea or Ombu; the implementation uses Epicea logs and .ombu files behind the scenes.
+The public API talks about change history rather than Epicea or Ombu; the implementation uses Epicea logs and .ombu files behind the scenes. This class holds the steps every history tool takes to read one: the file the session in progress writes, the directory that holds it, and loading a log from that session or from a named .ombu file. A tool reads what it needs in dataFor:, describes it with MCPChangeHistoryLogInfo and MCPChangeHistoryEntryInfo, and says what it found in successSummaryForData:.
 "
 Class {
 	#name : 'MCPToolChangeHistory',
@@ -29,38 +29,60 @@ MCPToolChangeHistory >> additionalKeywords [
 	^ #( 'history' 'change' 'epicea' 'ombu' 'recover' )
 ]
 
-{ #category : 'private - execution' }
-MCPToolChangeHistory >> commandForRequest: changeHistoryRequest [
+{ #category : 'private - history' }
+MCPToolChangeHistory >> currentHistoryFileReference [
+	"The file the session in progress writes its history to, nil without a change history monitor."
 
-	changeHistoryRequest operation = 'listFiles' ifTrue: [
-		^ MCPListChangeHistoryLogsCommand tool: self request: changeHistoryRequest ].
-	changeHistoryRequest operation = 'listEntries' ifTrue: [
-		^ MCPListChangeHistoryEntriesCommand tool: self request: changeHistoryRequest ].
-	(#( 'applyEntries' 'revertEntries' ) includes: changeHistoryRequest operation) ifTrue: [
-		^ MCPChangeHistorySelectionCommand tool: self request: changeHistoryRequest ].
-	MCPCommandError
-		signalErrorCode: #UnsupportedChangeHistoryAction
-		message: 'Unsupported change history action: ' , changeHistoryRequest operation
-		details: {
-				(#action -> changeHistoryRequest operation).
-				(#supportedActions -> #( 'listFiles' 'listEntries' 'applyEntries' 'revertEntries' )) } asDictionary
+	EpMonitor hasCurrent ifFalse: [ ^ nil ].
+	EpMonitor current sessionStore flush.
+	^ EpMonitor current log store writingFileReference
+]
+
+{ #category : 'private - history' }
+MCPToolChangeHistory >> currentLogAndFileName [
+
+	| currentFile log |
+	EpMonitor hasCurrent ifFalse: [
+			MCPCommandError
+				signalErrorCode: #ChangeHistoryUnavailable
+				message: 'No current Pharo change history monitor is available.'
+				details: Dictionary new ].
+	EpMonitor current sessionStore flush.
+	log := EpMonitor current log.
+	log refresh.
+	currentFile := self currentHistoryFileReference.
+	^ {
+		  log.
+		  (currentFile ifNotNil: [ currentFile basename ]) }
+]
+
+{ #category : 'private - execution' }
+MCPToolChangeHistory >> dataFor: request [
+	"The data the answer carries, read from the image as the request asks."
+
+	^ self subclassResponsibility
 ]
 
 { #category : 'executing' }
 MCPToolChangeHistory >> executeWithRequest: request [
+	"Every history tool answers the data it reads, under a sentence that says what it found."
 
 	^ self
 		  executeParsedRequestFrom: request
-		  do: [ :changeHistoryRequest |
-				  | data result |
-				  result := (self commandForRequest: changeHistoryRequest) execute.
-				  data := result asDictionary.
-				  self successResultText: (self successSummaryForData: data operation: changeHistoryRequest operation) data: data ]
-		  onError: [ :error :ignored |
-				  error
-					  mcpCommandErrorDo: [ :commandError |
-					  self errorResultText: commandError messageText details: commandError structuredDetails ]
-					  otherwise: [ :toolError | self errorResultFor: toolError ] ]
+		  do: [ :arguments |
+				  | data |
+				  data := self dataFor: arguments.
+				  self successResultText: (self successSummaryForData: data) data: data ]
+		  onError: [ :error :arguments | self errorResultFor: error ]
+]
+
+{ #category : 'private - history' }
+MCPToolChangeHistory >> historyDirectoryForCurrentFile: aFileReference [
+
+	aFileReference ifNotNil: [ ^ aFileReference parent ].
+	^ [ EpMonitor logsDirectory ]
+		  on: Error
+		  do: [ :error | FileLocator localDirectory asFileReference ]
 ]
 
 { #category : 'private - schema' }
@@ -121,6 +143,82 @@ MCPToolChangeHistory >> listedSummaryForCount: anInteger noun: aNoun data: data 
 						  nextPut: $. ] ]
 ]
 
+{ #category : 'private - history' }
+MCPToolChangeHistory >> logAndFileNameFor: request [
+	"The log the request names by directoryPath and historyFile, else the one of the session in progress, and the name of its file."
+
+	^ self
+		  logAndFileNameFromDirectoryPath: (request stringArgumentNamed: 'directoryPath')
+		  fileName: (request stringArgumentNamed: 'historyFile')
+]
+
+{ #category : 'private - history' }
+MCPToolChangeHistory >> logAndFileNameFromDirectoryPath: directoryPath fileName: fileName [
+
+	| currentFile directory file |
+	fileName ifNil: [ ^ self currentLogAndFileName ].
+	currentFile := self currentHistoryFileReference.
+	directory := directoryPath
+		             ifNil: [ self historyDirectoryForCurrentFile: currentFile ]
+		             ifNotNil: [ directoryPath asFileReference ].
+	directory exists ifFalse: [
+			MCPCommandError
+				signalErrorCode: #ChangeHistoryDirectoryNotFound
+				message:
+				(String streamContents: [ :stream | stream << 'Change history directory ' << directory fullName << ' does not exist.' ])
+				details: { (#directoryPath -> directory fullName) } asDictionary ].
+	directory isDirectory ifFalse: [
+			MCPCommandError
+				signalErrorCode: #ChangeHistoryPathNotDirectory
+				message:
+				(String streamContents: [ :stream | stream << 'Change history path ' << directory fullName << ' is not a directory.' ])
+				details: { (#directoryPath -> directory fullName) } asDictionary ].
+	file := directory / fileName.
+	^ self logAndFileNameFromFileReference: file
+]
+
+{ #category : 'private - history' }
+MCPToolChangeHistory >> logAndFileNameFromFileReference: aFileReference [
+
+	| log |
+	aFileReference exists ifFalse: [
+			MCPCommandError
+				signalErrorCode: #ChangeHistoryFileNotFound
+				message:
+				(String streamContents: [ :stream | stream << 'Change history file ' << aFileReference fullName << ' does not exist.' ])
+				details: {
+						(#directoryPath -> aFileReference parent fullName).
+						(#historyFile -> aFileReference basename) } asDictionary ].
+	aFileReference isFile ifFalse: [
+			MCPCommandError
+				signalErrorCode: #ChangeHistoryPathNotFile
+				message:
+				(String streamContents: [ :stream | stream << 'Change history path ' << aFileReference fullName << ' is not a file.' ])
+				details: {
+						(#directoryPath -> aFileReference parent fullName).
+						(#historyFile -> aFileReference basename) } asDictionary ].
+	log := [
+		       | loadedLog |
+		       loadedLog := EpLog freshFromFile: aFileReference.
+		       loadedLog entries size.
+		       loadedLog ]
+		       on: Error
+		       do: [ :error |
+				       MCPCommandError
+					       signalErrorCode: #ChangeHistoryFileUnreadable
+					       message:
+					       (String streamContents: [ :stream |
+						        stream << 'Change history file ' << aFileReference fullName << ' could not be loaded.' ])
+					       details: {
+							       (#directoryPath -> aFileReference parent fullName).
+							       (#historyFile -> aFileReference basename).
+							       (#causeClass -> error class name).
+							       (#causeMessage -> (error messageText ifNil: [ error asString ])) } asDictionary ].
+	^ {
+		  log.
+		  aFileReference basename }
+]
+
 { #category : 'private - results' }
 MCPToolChangeHistory >> redundantKeys [
 	"An entry's summary prints its event class around its behavior and selector, which the entry already names."
@@ -128,27 +226,17 @@ MCPToolChangeHistory >> redundantKeys [
 	^ #( summary )
 ]
 
-{ #category : 'private - results' }
-MCPToolChangeHistory >> successSummaryForData: data operation: operation [
+{ #category : 'private - history' }
+MCPToolChangeHistory >> sameFileReference: firstFile as: secondFile [
 
-	| action selectedCount performedCount previewCount |
-	operation = 'listFiles' ifTrue: [
-		^ self listedSummaryForCount: (data at: #files ifAbsent: [ #(  ) ]) size noun: 'change history file' data: data ].
-	operation = 'listEntries' ifTrue: [
-		^ self listedSummaryForCount: (data at: #entries ifAbsent: [ #(  ) ]) size noun: 'change history entry' data: data ].
-	(#( 'applyEntries' 'revertEntries' ) includes: operation) ifTrue: [
-			action := data at: #action ifAbsent: [ 'apply' ].
-			selectedCount := data at: #selectedCount ifAbsent: [ 0 ].
-			(data at: #performed ifAbsent: [ false ])
-				ifTrue: [
-						performedCount := data at: #performedCount ifAbsent: [ 0 ].
-						^ String streamContents: [ :stream |
-								  stream << 'Performed ' << action << ' for ' << (self textForCount: performedCount noun: 'previewed change') << ' from '
-								  << (self textForCount: selectedCount noun: 'selected history entry') << '.' ] ]
-				ifFalse: [
-						previewCount := data at: #previewCount ifAbsent: [ 0 ].
-						^ String streamContents: [ :stream |
-								  stream << 'Previewed ' << action << ' for ' << (self textForCount: previewCount noun: 'applicable change') << ' from '
-								  << (self textForCount: selectedCount noun: 'selected history entry') << '.' ] ] ].
-	^ 'Change history operation completed.'
+	firstFile ifNil: [ ^ false ].
+	secondFile ifNil: [ ^ false ].
+	^ firstFile fullName = secondFile fullName
+]
+
+{ #category : 'private - results' }
+MCPToolChangeHistory >> successSummaryForData: data [
+	"The sentence that says what the data holds."
+
+	^ self subclassResponsibility
 ]

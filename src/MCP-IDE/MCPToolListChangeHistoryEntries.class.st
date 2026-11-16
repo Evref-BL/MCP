@@ -39,9 +39,22 @@ MCPToolListChangeHistoryEntries >> buildInputSchema [
 ]
 
 { #category : 'private - execution' }
-MCPToolListChangeHistoryEntries >> commandForRequest: changeHistoryRequest [
+MCPToolListChangeHistoryEntries >> dataFor: request [
 
-	^ MCPListChangeHistoryEntriesCommand tool: self request: changeHistoryRequest
+	| data log logAndFileName page |
+	logAndFileName := self logAndFileNameFor: request.
+	log := logAndFileName first.
+	page := MCPPaginationResult
+		        fromEntries: (self entryPairsFrom: log for: request)
+		        limit: self defaultPageLimit
+		        offset: (request integerArgumentNamed: 'offset').
+	data := Dictionary new.
+	logAndFileName second ifNotNil: [ :fileName | data at: #historyFile put: fileName ].
+	data at: #entries put: (page entries
+			 collect: [ :pair | (MCPChangeHistoryEntryInfo fromEntry: pair second index: pair first log: log) asDictionary ]
+			 as: Array).
+	page nextOffset ifNotNil: [ :offset | data at: #nextOffset put: offset ].
+	^ data
 ]
 
 { #category : 'metadata' }
@@ -56,10 +69,26 @@ MCPToolListChangeHistoryEntries >> description [
 	^ 'List granular entries from the current Pharo image change history or a selected .ombu file. Use history_file_list to locate files, and history_entry_apply or history_entry_revert only when previewing or performing recovery changes.'
 ]
 
-{ #category : 'private - request' }
-MCPToolListChangeHistoryEntries >> parsedRequestFromToolRequest: request [
+{ #category : 'private - entries' }
+MCPToolListChangeHistoryEntries >> entryPairsFrom: aLog for: request [
+	"The entries of aLog the request lists, as pairs of their one-based index and the entry, the oldest first unless newestFirst."
 
-	^ MCPChangeHistoryListEntriesRequest fromRequest: request tool: self
+	| codeChangesOnly pairs |
+	codeChangesOnly := request booleanArgumentNamed: 'codeChangesOnly'.
+	pairs := OrderedCollection new.
+	aLog entries doWithIndex: [ :entry :index |
+			(codeChangesOnly not or: [ entry content isCodeChange ]) ifTrue: [
+					pairs add: {
+							index.
+							entry } ] ].
+	(request booleanArgumentNamed: 'newestFirst') ifTrue: [ ^ pairs reversed asOrderedCollection ].
+	^ pairs
+]
+
+{ #category : 'private - results' }
+MCPToolListChangeHistoryEntries >> successSummaryForData: data [
+
+	^ self listedSummaryForCount: (data at: #entries) size noun: 'change history entry' data: data
 ]
 
 { #category : 'metadata' }

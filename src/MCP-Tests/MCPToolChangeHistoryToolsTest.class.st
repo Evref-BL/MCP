@@ -15,35 +15,6 @@ MCPToolChangeHistoryToolsTest >> inputPropertyNamesFor: aTool [
 ]
 
 { #category : 'tests' }
-MCPToolChangeHistoryToolsTest >> testApplyPreviewDoesNotEchoTheSelection [
-	"An apply previews the very entries it selected, and its selection criteria are the request read back, so its text prints the preview alone. A revert previews the inverse changes, so it prints what it selected as well."
-
-	| entry textFor applyText revertText |
-	entry := MCPChangeHistoryEntryInfo fromEvent:
-		         (EpMethodAddition method: MCPToolChangeHistoryToolsTest >> #testApplyPreviewDoesNotEchoTheSelection).
-	textFor := [ :tool :action |
-		           | data |
-		           data := (MCPChangeHistorySelectionResult
-			                    action: action
-			                    historyFileName: 'memory.ombu'
-			                    selectionCriteria: { (#latestCount -> 1) } asDictionary
-			                    selectedEntries: { entry }
-			                    previewEntries: { entry }
-			                    skippedNonCodeChangeCount: 0
-			                    performed: false
-			                    performedCount: 0) asDictionary.
-		           ((tool successResultText: 'Previewed.' data: data) asJRPCJSON at: #content) first at: #text ].
-	applyText := textFor value: MCPToolApplyChangeHistoryEntries new value: 'apply'.
-	self deny: (applyText includesSubstring: 'selectionCriteria').
-	self deny: (applyText includesSubstring: 'selectedEntries').
-	self assert: (applyText includesSubstring: 'previewEntries').
-	revertText := textFor value: MCPToolRevertChangeHistoryEntries new value: 'revert'.
-	self deny: (revertText includesSubstring: 'selectionCriteria').
-	self assert: (revertText includesSubstring: 'selectedEntries').
-	self assert: (revertText includesSubstring: 'previewEntries')
-]
-
-{ #category : 'tests' }
 MCPToolChangeHistoryToolsTest >> testChangeHistoryToolsAreDiscoverableWithExpectedMetadata [
 
 	| metadataByName result toolNames |
@@ -123,70 +94,18 @@ MCPToolChangeHistoryToolsTest >> testListSaysWhereTheNextPageStarts [
 	| entries files |
 	entries := MCPToolListChangeHistoryEntries new.
 	self
-		assert: (entries
-				 successSummaryForData: {
-						 (#entries -> (1 to: 25) asArray).
-						 (#nextOffset -> 25) } asDictionary
-				 operation: 'listEntries')
+		assert: (entries successSummaryForData: {
+					 (#entries -> (1 to: 25) asArray).
+					 (#nextOffset -> 25) } asDictionary)
 		equals: 'Listed 25 change history entries. Next page: offset 25.'.
-	self
-		assert: (entries successSummaryForData: { (#entries -> #( 1 )) } asDictionary operation: 'listEntries')
-		equals: 'Listed 1 change history entry.'.
+	self assert: (entries successSummaryForData: { (#entries -> #( 1 )) } asDictionary) equals: 'Listed 1 change history entry.'.
 	files := MCPToolListChangeHistoryFiles new.
 	self
-		assert: (files
-				 successSummaryForData: {
-						 (#files -> (1 to: 25) asArray).
-						 (#nextOffset -> 25) } asDictionary
-				 operation: 'listFiles')
+		assert: (files successSummaryForData: {
+					 (#files -> (1 to: 25) asArray).
+					 (#nextOffset -> 25) } asDictionary)
 		equals: 'Listed 25 change history files. Next page: offset 25.'.
-	self
-		assert: (files successSummaryForData: { (#files -> #( 1 )) } asDictionary operation: 'listFiles')
-		equals: 'Listed 1 change history file.'
-]
-
-{ #category : 'tests' }
-MCPToolChangeHistoryToolsTest >> testSelectionResultDataHasExpectedShape [
-
-	| data result |
-	result := MCPChangeHistorySelectionResult
-		          action: 'apply'
-		          historyFileName: 'memory.ombu'
-		          selectionCriteria: Dictionary new
-		          selectedEntries: #(  )
-		          previewEntries: #(  )
-		          skippedNonCodeChangeCount: 0
-		          performed: false
-		          performedCount: 0.
-	data := result asDictionary.
-	self assert: data equals: {
-			(#action -> 'apply').
-			(#historyFile -> 'memory.ombu').
-			(#selectionCriteria -> Dictionary new).
-			(#selectedEntries -> #(  )).
-			(#previewEntries -> #(  )).
-			(#selectedCount -> 0).
-			(#selectedCodeChangeCount -> 0).
-			(#previewCount -> 0).
-			(#skippedNonCodeChangeCount -> 0).
-			(#performed -> false).
-			(#performedCount -> 0) } asDictionary
-]
-
-{ #category : 'tests' }
-MCPToolChangeHistoryToolsTest >> testSelectionToolsRouteToChangeHistorySelectionCommand [
-
-	{
-		(MCPToolApplyChangeHistoryEntries -> 'applyEntries').
-		(MCPToolRevertChangeHistoryEntries -> 'revertEntries') } do: [ :association |
-			| command parsedRequest rawRequest tool |
-			tool := association key new.
-			rawRequest := tool requestFromToolCallArguments: { (#latestCount -> 1) } asDictionary.
-			parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
-			command := tool commandForRequest: parsedRequest.
-			self assert: parsedRequest class equals: MCPChangeHistorySelectionRequest.
-			self assert: parsedRequest operation equals: association value.
-			self assert: command class equals: MCPChangeHistorySelectionCommand ]
+	self assert: (files successSummaryForData: { (#files -> #( 1 )) } asDictionary) equals: 'Listed 1 change history file.'
 ]
 
 { #category : 'private' }
