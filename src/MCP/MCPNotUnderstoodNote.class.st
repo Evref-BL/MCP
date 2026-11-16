@@ -1,5 +1,7 @@
 "
-Says what a message its receiver did not understand was most likely meant to be, when its receiver or its keywords tell: a message the other side of the receiver's class understands, as a constructor compiled on the instance side and sent to the class, or two messages run together, as sorted:collect: for sorted: then collect:. For a message sent to nil, which nil's own selectors say nothing about, it names instead the send in the caller's own code it came from, past the kernel methods that only noticed the nil, and the variable that held nil.
+Says what a message its receiver did not understand was most likely meant to be, when its receiver or its keywords tell: a message the other side of the receiver's class understands, as a constructor compiled on the instance side and sent to the class, or two messages run together, as sorted:collect: for sorted: then collect:. For a message sent to nil, which nil's own selectors say nothing about, it names instead the send in the caller's own code it came from, past the methods that came with the image, which only noticed the nil, and the variable that held nil.
+
+A method that came with the image has its source in the image's .sources file: it is Pharo's own, or that of a project Pharo bundles, never the caller's code and never one to compile again on the other side. Only a method compiled since, its source in the .changes file, may be the caller's.
 
 It reads the frames that sent the message, so it is made while the stack that raised the error is still there.
 "
@@ -68,15 +70,11 @@ MCPNotUnderstoodNote class >> chainedSendTextFor: aSelector whereFirstPart: aBlo
 		  ifNone: [ nil ]
 ]
 
-{ #category : 'private' }
-MCPNotUnderstoodNote class >> isContext: aContext inAnyPackageOf: somePackageNames [
-	"Whether the method aContext runs, or the one that defines the block it runs, belongs to one of somePackageNames. Code evaluated as a DoIt is the caller's own, whatever class it was compiled in."
+{ #category : 'testing' }
+MCPNotUnderstoodNote class >> isCompiledSinceTheImageShipped: aCompiledMethod [
+	"Whether aCompiledMethod was compiled into the image after it shipped, as the caller's own methods are: its source is in the image's .changes file."
 
-	| method package |
-	method := aContext compiledCode method.
-	method selector isDoIt ifTrue: [ ^ false ].
-	package := method package.
-	^ package isNotNil and: [ somePackageNames includes: package name asString ]
+	^ (self sourceFileIndexOf: aCompiledMethod) = 2
 ]
 
 { #category : 'testing' }
@@ -86,6 +84,13 @@ MCPNotUnderstoodNote class >> isImplementedSelector: aString [
 	| selector |
 	selector := Symbol findInterned: aString.
 	^ selector isNotNil and: [ (SystemNavigation default allImplementorsOf: selector) isNotEmpty ]
+]
+
+{ #category : 'testing' }
+MCPNotUnderstoodNote class >> isShippedWithTheImage: aCompiledMethod [
+	"Whether aCompiledMethod came with the image, as the methods of Pharo and of every project it bundles do: their source is in the image's .sources file."
+
+	^ (self sourceFileIndexOf: aCompiledMethod) = 1
 ]
 
 { #category : 'instance creation' }
@@ -99,16 +104,10 @@ MCPNotUnderstoodNote class >> on: aMessageNotUnderstood [
 ]
 
 { #category : 'private' }
-MCPNotUnderstoodNote class >> pharoPackageNames [
-	"The packages of Pharo's kernel, as its bootstrap baseline groups them, and SUnit's: code that runs in them notices a nil that the caller's own code handed it."
+MCPNotUnderstoodNote class >> runsCodeShippedWithTheImage: aContext [
+	"Whether the method aContext runs, or the one that defines the block it runs, came with the image. Code evaluated as a DoIt never did: it was compiled when it ran, and has no source pointer."
 
-	| names |
-	names := Set new.
-	self environment at: #TestCase ifPresent: [ :testCase | names add: testCase package name asString ].
-	self environment
-		at: #BaselineOfPharoBootstrap
-		ifPresent: [ :baseline | baseline kernelPackageNames do: [ :each | names add: each asString ] ].
-	^ names
+	^ self isShippedWithTheImage: aContext compiledCode method
 ]
 
 { #category : 'private' }
@@ -123,6 +122,21 @@ MCPNotUnderstoodNote class >> senderOf: aMessageNotUnderstood [
 ]
 
 { #category : 'private' }
+MCPNotUnderstoodNote class >> sourceFileIndexOf: aCompiledMethod [
+	"Which file holds aCompiledMethod's source: 1 for the image's .sources file, where the methods the image came with have theirs, 2 for its .changes file, where every method compiled since has its own, and 0 when that cannot be told, as for a method with no source pointer. Pharo 14 keeps its current sources manager in FilesSourcesManager's hierarchy, where one of another kind, as NoSourcesManager in an image deployed without its source files, has no file to tell; earlier versions keep theirs in SourceFiles."
+
+	| sources |
+	aCompiledMethod hasSourcePointer ifFalse: [ ^ 0 ].
+	sources := self environment
+		           at: #FilesSourcesManager
+		           ifPresent: [ :filesSourcesManager |
+				           (filesSourcesManager current isKindOf: filesSourcesManager) ifFalse: [ ^ 0 ].
+				           filesSourcesManager current ]
+		           ifAbsent: [ self environment at: #SourceFiles ].
+	^ sources fileIndexFromSourcePointer: aCompiledMethod sourcePointer
+]
+
+{ #category : 'private' }
 MCPNotUnderstoodNote >> chainedSendText [
 	"Keywords whose first part the receiver understands, and whose rest something implements, were most likely meant as two sends."
 
@@ -130,13 +144,15 @@ MCPNotUnderstoodNote >> chainedSendText [
 ]
 
 { #category : 'private' }
-MCPNotUnderstoodNote >> classSideText [
-	"For an instance sent a message only its class understands, as a constructor sent to a new instance."
+MCPNotUnderstoodNote >> classSideTextFor: aMethod [
+	"For an instance sent a message only its class understands, through aMethod, as a constructor sent to a new instance. Compiling aMethod on the instance side instead is offered only when it was compiled since the image shipped, as the caller's own methods are: one of Pharo's, such as Collection class>>withAll:, is sent to the class, never moved."
 
 	^ String streamContents: [ :stream |
 			  stream << receiver class name << ' itself understands ' << selector << ', but its instances do not: ' << selector
-			  << ' is a class-side method. Send it to ' << receiver class name
-			  << ', or compile it with method_compile and side instance to send it to an instance.' ]
+			  << ' is a class-side method. Send it to ' << receiver class name.
+			  (self class isCompiledSinceTheImageShipped: aMethod) ifTrue: [
+				  stream << ', or compile it with method_compile and side instance to send it to an instance' ].
+			  stream nextPut: $. ]
 ]
 
 { #category : 'private' }
@@ -156,14 +172,15 @@ MCPNotUnderstoodNote >> initializeReceiver: anObject selector: aSelector sender:
 ]
 
 { #category : 'private' }
-MCPNotUnderstoodNote >> instanceSideText [
-	"For a class sent a message only its instances understand, as a constructor compiled on the instance side."
+MCPNotUnderstoodNote >> instanceSideTextFor: aMethod [
+	"For a class sent a message only its instances understand, through aMethod, as a constructor compiled on the instance side. Compiling aMethod on the class side instead is offered only when it was compiled since the image shipped, as the caller's own methods are: one of Pharo's, such as OrderedCollection>>add:, is sent to an instance, never moved."
 
 	^ String streamContents: [ :stream |
 			  stream << 'Instances of ' << receiver name << ' understand ' << selector << ', but ' << receiver name << ' itself does not: '
-			  << selector
-			  << ' is an instance-side method. Send it to an instance, or compile it with method_compile and side class to send it to '
-			  << receiver name << '.' ]
+			  << selector << ' is an instance-side method. Send it to an instance'.
+			  (self class isCompiledSinceTheImageShipped: aMethod) ifTrue: [
+				  stream << ', or compile it with method_compile and side class to send it to ' << receiver name ].
+			  stream nextPut: $. ]
 ]
 
 { #category : 'testing' }
@@ -175,20 +192,31 @@ MCPNotUnderstoodNote >> leavesOutSuggestions [
 
 { #category : 'accessing' }
 MCPNotUnderstoodNote >> meantText [
-	"What the message was most likely meant to be, or nil when neither its receiver nor its keywords tell. That the other side of the class understands the whole selector is a fact, and comes before reading the keywords as two messages, a guess that every selector starting with one a class understands, such as at:, would match. A message sent to nil has none: nil understands nothing anyone means to send it."
+	"What the message was most likely meant to be, or nil when neither its receiver nor its keywords tell. That the other side of the class understands the whole selector is a fact, and comes before reading the keywords as two messages, a guess that every selector starting with one a class understands, such as at:, would match. A message sent to nil has none: nil understands nothing anyone means to send it. Nor has one whose selector is no symbol, as perform: nil raises before Pharo 14: it has no keywords to read."
 
-	receiver ifNil: [ ^ nil ].
+	(receiver isNil or: [ selector isSymbol not ]) ifTrue: [ ^ nil ].
 	^ self otherSideText ifNil: [ self chainedSendText ]
+]
+
+{ #category : 'private' }
+MCPNotUnderstoodNote >> messageNodeRunBy: aContext [
+	"The send aContext was making, as its source reads, or nil when its source cannot be read as one."
+
+	| node |
+	node := [ aContext sourceNodeExecuted ]
+		        on: Error
+		        do: [ :error | nil ].
+	(node isNotNil and: [ node isMessage ]) ifFalse: [ ^ nil ].
+	^ node
 ]
 
 { #category : 'accessing' }
 MCPNotUnderstoodNote >> nilReceiverText [
-	"For a message sent to nil: the send in the caller's own code it came from, in the code evaluated as a DoIt or the first method that is neither Pharo's kernel nor SUnit, and which of that send's receiver and arguments was nil, named by the variable it was read from, as in: The code sent > with the argument width, which is nil. Comparing a number with nil, or adding nil to it, fails in the kernel, which sends nil a message of its own on the number's behalf, from a method running on nil. nil when no frame of the caller's own code is known."
+	"For a message sent to nil: the send in the caller's own code it came from, in the code evaluated as a DoIt or the first method that did not come with the image, and which of that send's receiver and arguments was nil, named by the variable it was read from, as in: The code sent > with the argument width, which is nil. Comparing a number with nil, or adding nil to it, fails in Pharo's own methods, which send nil a message of their own on the number's behalf, and may pass through others the code never sent, as adding a number to a point does. nil when no frame of the caller's own code is known."
 
-	| callee caller pharoPackageNames |
+	| callee caller |
 	caller := sender ifNil: [ ^ nil ].
-	pharoPackageNames := self class pharoPackageNames.
-	[ self class isContext: caller inAnyPackageOf: pharoPackageNames ] whileTrue: [
+	[ self class runsCodeShippedWithTheImage: caller ] whileTrue: [
 			callee := caller.
 			caller := caller sender ifNil: [ ^ nil ] ].
 	callee ifNil: [ ^ self nilSendTextFrom: caller sent: selector nilAt: 0 ].
@@ -198,24 +226,19 @@ MCPNotUnderstoodNote >> nilReceiverText [
 
 { #category : 'private' }
 MCPNotUnderstoodNote >> nilSendTextFrom: aContext sent: aSelector nilAt: anIndexOrNil [
-	"The send of aSelector that aContext was running, and which of its operands was nil: 0 for its receiver, a positive index for that argument, nil for neither, when the nil was met further in."
+	"The send of aSelector that aContext was making, and which of its operands was nil: 0 for its receiver, a positive index for that argument, nil for neither. The send is named as the code wrote it: a send the code did not write, as the <= that an inlined to:do: or timesRepeat: makes or the message perform: sends, says only that the code's send met the nil, and a send whose source cannot be read leaves the frame alone."
 
+	| node |
+	node := self messageNodeRunBy: aContext.
 	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: (self class callerTextOf: aContext);
-				  nextPutAll: ' sent ';
-				  nextPutAll: aSelector.
-			  anIndexOrNil
-				  ifNil: [ stream nextPutAll: ', whose receiver and arguments are not nil: the nil was met inside it' ]
-				  ifNotNil: [
-						  stream nextPutAll: (anIndexOrNil = 0
-								   ifTrue: [ ' to ' ]
-								   ifFalse: [ ' with the argument ' ]).
-						  self
-							  printOperandAt: anIndexOrNil
-							  in: aContext
-							  sent: aSelector
-							  on: stream ].
+			  stream nextPutAll: (self class callerTextOf: aContext).
+			  node ifNil: [ stream nextPutAll: ' sent a message that met the nil' ] ifNotNil: [
+					  stream
+						  nextPutAll: ' sent ';
+						  nextPutAll: node selector.
+					  node selector == aSelector
+						  ifTrue: [ self printOperandAt: anIndexOrNil of: node on: stream ]
+						  ifFalse: [ stream nextPutAll: ', which met the nil' ] ].
 			  stream nextPut: $. ]
 ]
 
@@ -223,23 +246,23 @@ MCPNotUnderstoodNote >> nilSendTextFrom: aContext sent: aSelector nilAt: anIndex
 MCPNotUnderstoodNote >> otherSideText [
 	"A class that does not understand a message its instances understand, or an instance one its class side defines. Behavior, ClassDescription and Class give every class side their methods, which no instance was meant to understand, so only a class side of the receiver's own hierarchy counts."
 
-	receiver class isMeta ifTrue: [ ^ (receiver canUnderstand: selector) ifTrue: [ self instanceSideText ] ].
+	receiver class isMeta ifTrue: [ ^ (receiver lookupSelector: selector) ifNotNil: [ :method | self instanceSideTextFor: method ] ].
 	^ (receiver class classSide lookupSelector: selector) ifNotNil: [ :method |
-		  method methodClass isMeta ifTrue: [ self classSideText ] ]
+		  method methodClass isMeta ifTrue: [ self classSideTextFor: method ] ]
 ]
 
 { #category : 'private' }
-MCPNotUnderstoodNote >> printOperandAt: anIndex in: aContext sent: aSelector on: aStream [
-	"The receiver, at 0, or the argument at anIndex of the send of aSelector that aContext was running, which was nil: the variable it was read from, as in width, which is nil, or nil when it was no variable or the send cannot be read."
+MCPNotUnderstoodNote >> printOperandAt: anIndexOrNil of: aMessageNode on: aStream [
+	"Which of aMessageNode's receiver, at 0, and arguments was nil, named by the variable it was read from, as in: with the argument width, which is nil. nil for anIndexOrNil says none was, and the nil was met further in."
 
-	| node operand |
-	node := [ aContext sourceNodeExecuted ]
-		        on: Error
-		        do: [ :error | nil ].
-	(node isNotNil and: [ node isMessage and: [ node selector == aSelector ] ]) ifFalse: [ ^ aStream nextPutAll: 'nil' ].
-	operand := anIndex = 0
-		           ifTrue: [ node receiver ]
-		           ifFalse: [ node arguments at: anIndex ].
+	| operand |
+	anIndexOrNil ifNil: [ ^ aStream nextPutAll: ', whose receiver and arguments are not nil: the nil was met inside it' ].
+	aStream nextPutAll: (anIndexOrNil = 0
+			 ifTrue: [ ' to ' ]
+			 ifFalse: [ ' with the argument ' ]).
+	operand := anIndexOrNil = 0
+		           ifTrue: [ aMessageNode receiver ]
+		           ifFalse: [ aMessageNode arguments at: anIndexOrNil ].
 	operand isVariable ifFalse: [ ^ aStream nextPutAll: 'nil' ].
 	aStream
 		nextPutAll: operand name;

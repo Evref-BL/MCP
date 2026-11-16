@@ -483,7 +483,7 @@ MCPToolRunTestsTest >> testAnInstanceMessageSentToTheClassSaysItsInstancesUnders
 	self assert: (lines first beginsWith:
 			 'error MCPToolRunTestsNotUnderstoodTarget>>#testSendsAnInstanceMessageToTheClass (MessageNotUnderstood): ').
 	self assert: (lines first endsWith:
-			 '. Instances of OrderedCollection understand addFirst:, but OrderedCollection itself does not: addFirst: is an instance-side method. Send it to an instance, or compile it with method_compile and side class to send it to OrderedCollection.')
+			 '. Instances of MCPToolRunTestsRaiser understand addToNil, but MCPToolRunTestsRaiser itself does not: addToNil is an instance-side method. Send it to an instance, or compile it with method_compile and side class to send it to MCPToolRunTestsRaiser.')
 ]
 
 { #category : 'tests - timeouts' }

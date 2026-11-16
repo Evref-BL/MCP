@@ -19,5 +19,5 @@ MCPToolRunTestsNotUnderstoodTarget >> testRunsTwoMessagesTogether [
 MCPToolRunTestsNotUnderstoodTarget >> testSendsAnInstanceMessageToTheClass [
 	"This is a fixture test method; sending an instance-side message to the class is intentional and exercised by MCP test-running tool tests."
 
-	OrderedCollection addFirst: 1
+	MCPToolRunTestsRaiser addToNil
 ]

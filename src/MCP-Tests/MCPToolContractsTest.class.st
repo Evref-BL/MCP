@@ -1964,29 +1964,44 @@ MCPToolContractsTest >> testMCPsOwnTestFixturesAreNotServed [
 
 { #category : 'tests - evaluate' }
 MCPToolContractsTest >> testMessageNotUnderstoodByAClassSaysItsInstancesUnderstandIt [
-	"A constructor compiled on the instance side, then sent to the class, was answered with the class side's selectors that resembled it. Every class understands at:, so at:ifAbsent: also reads as at: then ifAbsent:, a guess that the instances understanding it outweighs."
+	"A constructor compiled on the instance side, then sent to the class, was answered with the class side's selectors that resembled it. Compiling it on the class side is offered for a method compiled since the image shipped, never for one of Pharo's own, such as add: sent to OrderedCollection when new was forgotten. Every class understands at:, so at:ifAbsent: also reads as at: then ifAbsent:, a guess that the instances understanding it outweighs."
 
 	| error |
 	error := self errorFrom:
-		         (self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> 'OrderedCollection addFirst: 1') } asDictionary).
+		         (self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> 'MCPDebugWatchTestTarget sumTo: 3') } asDictionary).
 	self
 		assert: (error at: #note)
 		equals:
-		'Instances of OrderedCollection understand addFirst:, but OrderedCollection itself does not: addFirst: is an instance-side method. Send it to an instance, or compile it with method_compile and side class to send it to OrderedCollection.'.
+		'Instances of MCPDebugWatchTestTarget understand sumTo:, but MCPDebugWatchTestTarget itself does not: sumTo: is an instance-side method. Send it to an instance, or compile it with method_compile and side class to send it to MCPDebugWatchTestTarget.'.
 	self deny: (error includesKey: #suggestedSelectors).
+	error := self errorFrom:
+		         (self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> 'OrderedCollection add: 1') } asDictionary).
+	self
+		assert: (error at: #note)
+		equals:
+		'Instances of OrderedCollection understand add:, but OrderedCollection itself does not: add: is an instance-side method. Send it to an instance.'.
 	error := self errorFrom:
 		         (self
 			          callDiscoveredToolNamed: 'evaluate'
 			          withArguments: { (#code -> 'OrderedCollection at: 1 ifAbsent: [ 0 ]') } asDictionary).
 	self assert:
-		((error at: #note) beginsWith: 'Instances of OrderedCollection understand at:ifAbsent:, but OrderedCollection itself does not')
+		((error at: #note) beginsWith: 'Instances of OrderedCollection understand at:ifAbsent:, but OrderedCollection itself does not').
+	self deny: ((error at: #note) includesSubstring: 'method_compile')
 ]
 
 { #category : 'tests - evaluate' }
 MCPToolContractsTest >> testMessageNotUnderstoodByAnInstanceSaysItsClassUnderstandsIt [
-	"Every class understands name, which Class implements, so an instance that does not lacks an accessor rather than was sent a class-side message: only a method a class side of its own hierarchy defines says so."
+	"Compiling a class-side method on the instance side is offered for a method compiled since the image shipped, never for one of Pharo's own, such as withAll:. Every class understands name, which Class implements, so an instance that does not lacks an accessor rather than was sent a class-side message: only a method a class side of its own hierarchy defines says so."
 
 	| error |
+	error := self errorFrom:
+		         (self
+			          callDiscoveredToolNamed: 'evaluate'
+			          withArguments: { (#code -> 'MCPDebugWatchTestTarget new doubleOf: 3') } asDictionary).
+	self
+		assert: (error at: #note)
+		equals:
+		'MCPDebugWatchTestTarget itself understands doubleOf:, but its instances do not: doubleOf: is a class-side method. Send it to MCPDebugWatchTestTarget, or compile it with method_compile and side instance to send it to an instance.'.
 	error := self errorFrom:
 		         (self
 			          callDiscoveredToolNamed: 'evaluate'
@@ -1994,7 +2009,7 @@ MCPToolContractsTest >> testMessageNotUnderstoodByAnInstanceSaysItsClassUndersta
 	self
 		assert: (error at: #note)
 		equals:
-		'OrderedCollection itself understands withAll:, but its instances do not: withAll: is a class-side method. Send it to OrderedCollection, or compile it with method_compile and side instance to send it to an instance.'.
+		'OrderedCollection itself understands withAll:, but its instances do not: withAll: is a class-side method. Send it to OrderedCollection.'.
 	error := self errorFrom: (self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> 'Object new name') } asDictionary).
 	self deny: (error includesKey: #note)
 ]
@@ -2044,6 +2059,19 @@ MCPToolContractsTest >> testMessageNotUnderstoodSuggestsNothingForAnUnrelatedSel
 	self deny: (error includesKey: #suggestedSelectors)
 ]
 
+{ #category : 'tests - evaluate' }
+MCPToolContractsTest >> testMessageNotUnderstoodWithNoSelectorAnswersTheFailure [
+	"Before Pharo 14, perform: nil raises a message not understood whose selector is nil, which has no keywords to read: the answer is that failure, not an error raised while reading it."
+
+	| result |
+	result := self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> 'MessageNotUnderstood new
+	message: (Message selector: nil arguments: #(  ));
+	receiver: 3;
+	signal') } asDictionary.
+	self assert: ((self firstTextFromToolResult: result) beginsWith: 'Evaluation failed during execution (MessageNotUnderstood)').
+	self deny: ((self errorFrom: result) includesKey: #note)
+]
+
 { #category : 'tests' }
 MCPToolContractsTest >> testMessageProcessorRegistersInheritedMCPHandlersForSubclass [
 
@@ -2071,6 +2099,16 @@ MCPToolContractsTest >> testMessageProcessorUsesSubclassJRPCHandlerOverride [
 ]
 
 { #category : 'tests - evaluate' }
+MCPToolContractsTest >> testMessageSentToNilByAnInlinedSendNamesTheSendTheCodeWrote [
+	"to:do: is compiled inline, as a <= the code never wrote, which fails in Pharo's own methods when the limit is nil. The note names to:do:, the send the code wrote, and since the <= does not say which of to:do:'s operands was nil, it does not either."
+
+	| error |
+	error := self errorFrom: (self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> '| limit |
+1 to: limit do: [ :each | each ]') } asDictionary).
+	self assert: (error at: #note) equals: 'The code sent to:do:, which met the nil.'
+]
+
+{ #category : 'tests - evaluate' }
 MCPToolContractsTest >> testMessageSentToNilByPharoNamesTheVariableTheCodePassed [
 	"Comparing with nil, or adding it, fails in the kernel, which sends nil a message of its own from a method running on nil. The variable the code left nil is width, or each in a block, not that method's self."
 
@@ -2087,14 +2125,18 @@ MCPToolContractsTest >> testMessageSentToNilByPharoNamesTheVariableTheCodePassed
 
 { #category : 'tests - evaluate' }
 MCPToolContractsTest >> testMessageSentToNilInsidePharoSaysTheCodePassedNone [
-	"Sorting a collection that holds nil fails in the kernel, on an element the code never named: the send the code made says so, rather than pointing at its receiver."
+	"Sorting a collection that holds nil fails in Pharo's own methods, on an element the code never named: the send the code made says so, rather than pointing at its receiver. Adding a number to a point whose coordinate is nil passes through Number>>adaptToPoint:andSend:, which the code never sent, and the send named is still the code's own."
 
 	| error |
 	error := self errorFrom:
 		         (self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> '#( 3 nil 1 ) asSortedCollection') } asDictionary).
 	self
 		assert: (error at: #note)
-		equals: 'The code sent asSortedCollection, whose receiver and arguments are not nil: the nil was met inside it.'
+		equals: 'The code sent asSortedCollection, whose receiver and arguments are not nil: the nil was met inside it.'.
+	error := self errorFrom: (self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> '| point |
+point := 3 @ nil.
+point + 1') } asDictionary).
+	self assert: (error at: #note) equals: 'The code sent +, whose receiver and arguments are not nil: the nil was met inside it.'
 ]
 
 { #category : 'tests - evaluate' }
