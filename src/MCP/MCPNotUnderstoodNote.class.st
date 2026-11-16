@@ -1,7 +1,7 @@
 "
-Says what a message its receiver did not understand was most likely meant to be, when its keywords or its receiver tell: two messages run together, as sorted:collect: for sorted: then collect:, or a message the other side of the receiver's class understands, as a constructor compiled on the instance side and sent to the class. For a message sent to nil, which nil's own selectors say nothing about, it names the method that sent it instead, and the variable that held nil.
+Says what a message its receiver did not understand was most likely meant to be, when its receiver or its keywords tell: a message the other side of the receiver's class understands, as a constructor compiled on the instance side and sent to the class, or two messages run together, as sorted:collect: for sorted: then collect:. For a message sent to nil, which nil's own selectors say nothing about, it names instead the send in the caller's own code it came from, past the kernel methods that only noticed the nil, and the variable that held nil.
 
-It reads the frame that sent the message, so it is made while the stack that raised the error is still there.
+It reads the frames that sent the message, so it is made while the stack that raised the error is still there.
 "
 Class {
 	#name : 'MCPNotUnderstoodNote',
@@ -15,6 +15,28 @@ Class {
 	#package : 'MCP',
 	#tag : 'Utilities'
 }
+
+{ #category : 'private' }
+MCPNotUnderstoodNote class >> callerTextOf: aContext [
+	"The code, for code evaluated as a DoIt; otherwise the method aContext runs, or the one that defines the block it runs, as its frame prints it: the receiver's class, the method's class in parentheses when it differs, and the selector, as in ZooLion(ZooAnimal)>>feed:. A block that refers to no variable of its method runs with nil as its receiver, which says nothing of the method's own, so the method's class stands alone then."
+
+	| method receiverClass |
+	method := aContext compiledCode method.
+	method selector isDoIt ifTrue: [ ^ 'The code' ].
+	receiverClass := aContext receiver class.
+	^ String streamContents: [ :stream |
+			  (receiverClass == method methodClass or: [ (receiverClass inheritsFrom: method methodClass) not ])
+				  ifTrue: [ stream nextPutAll: method methodClass name ]
+				  ifFalse: [
+						  stream
+							  nextPutAll: receiverClass name;
+							  nextPut: $(;
+							  nextPutAll: method methodClass name;
+							  nextPut: $) ].
+			  stream
+				  nextPutAll: '>>';
+				  nextPutAll: method selector ]
+]
 
 { #category : 'accessing' }
 MCPNotUnderstoodNote class >> chainedSend: aSelector splitAt: anIndex [
@@ -30,6 +52,31 @@ MCPNotUnderstoodNote class >> chainedSend: aSelector splitAt: anIndex [
 			  first do: [ :each | stream << ' ' << each << ' ...' ].
 			  stream nextPut: $).
 			  rest do: [ :each | stream << ' ' << each << ' ...' ] ]
+]
+
+{ #category : 'accessing' }
+MCPNotUnderstoodNote class >> chainedSendTextFor: aSelector whereFirstPart: aBlock [
+	"Keywords that run two messages together, as sorted:collect: for sorted: then collect:, split at the first place where aBlock accepts the keywords before it and a method somewhere in the image implements the rest: Smalltalk reads the keywords of one send as one selector. nil when no split does."
+
+	| keywords |
+	keywords := aSelector keywords.
+	^ (1 to: keywords size - 1)
+		  detect: [ :split |
+			  (aBlock value: ('' join: (keywords first: split))) and: [
+				  self isImplementedSelector: ('' join: (keywords allButFirst: split)) ] ]
+		  ifFound: [ :split | self chainedSend: aSelector splitAt: split ]
+		  ifNone: [ nil ]
+]
+
+{ #category : 'private' }
+MCPNotUnderstoodNote class >> isContext: aContext inAnyPackageOf: somePackageNames [
+	"Whether the method aContext runs, or the one that defines the block it runs, belongs to one of somePackageNames. Code evaluated as a DoIt is the caller's own, whatever class it was compiled in."
+
+	| method package |
+	method := aContext compiledCode method.
+	method selector isDoIt ifTrue: [ ^ false ].
+	package := method package.
+	^ package isNotNil and: [ somePackageNames includes: package name asString ]
 ]
 
 { #category : 'testing' }
@@ -52,6 +99,19 @@ MCPNotUnderstoodNote class >> on: aMessageNotUnderstood [
 ]
 
 { #category : 'private' }
+MCPNotUnderstoodNote class >> pharoPackageNames [
+	"The packages of Pharo's kernel, as its bootstrap baseline groups them, and SUnit's: code that runs in them notices a nil that the caller's own code handed it."
+
+	| names |
+	names := Set new.
+	self environment at: #TestCase ifPresent: [ :testCase | names add: testCase package name asString ].
+	self environment
+		at: #BaselineOfPharoBootstrap
+		ifPresent: [ :baseline | baseline kernelPackageNames do: [ :each | names add: each asString ] ].
+	^ names
+]
+
+{ #category : 'private' }
 MCPNotUnderstoodNote class >> senderOf: aMessageNotUnderstood [
 	"The frame that sent the message: the sender of the doesNotUnderstand: the virtual machine sent in its place, which Pharo 14 signals from a frame above it and earlier versions from that frame itself. nil when the error was raised some other way."
 
@@ -64,16 +124,9 @@ MCPNotUnderstoodNote class >> senderOf: aMessageNotUnderstood [
 
 { #category : 'private' }
 MCPNotUnderstoodNote >> chainedSendText [
-	"Keywords whose first part the receiver understands, and whose rest something implements, were most likely meant as two sends: Smalltalk reads the keywords of one send as one selector."
+	"Keywords whose first part the receiver understands, and whose rest something implements, were most likely meant as two sends."
 
-	| keywords |
-	keywords := selector keywords.
-	^ (1 to: keywords size - 1)
-		  detect: [ :split |
-				  (self receiverUnderstands: ('' join: (keywords first: split))) and: [
-					  self class isImplementedSelector: ('' join: (keywords allButFirst: split)) ] ]
-		  ifFound: [ :split | self class chainedSend: selector splitAt: split ]
-		  ifNone: [ nil ]
+	^ self class chainedSendTextFor: selector whereFirstPart: [ :firstPart | self receiverUnderstands: firstPart ]
 ]
 
 { #category : 'private' }
@@ -84,6 +137,14 @@ MCPNotUnderstoodNote >> classSideText [
 			  stream << receiver class name << ' itself understands ' << selector << ', but its instances do not: ' << selector
 			  << ' is a class-side method. Send it to ' << receiver class name
 			  << ', or compile it with method_compile and side instance to send it to an instance.' ]
+]
+
+{ #category : 'private' }
+MCPNotUnderstoodNote >> indexOfNilIn: aContext [
+	"Which of the receiver and the arguments aContext was sent is nil: 0 for the receiver, the index of the first argument that is, or nil when none is."
+
+	aContext receiver ifNil: [ ^ 0 ].
+	^ (1 to: aContext numArgs) detect: [ :index | (aContext tempAt: index) isNil ] ifNone: [ nil ]
 ]
 
 { #category : 'initialization' }
@@ -105,29 +166,56 @@ MCPNotUnderstoodNote >> instanceSideText [
 			  << receiver name << '.' ]
 ]
 
+{ #category : 'testing' }
+MCPNotUnderstoodNote >> leavesOutSuggestions [
+	"Whether the selectors that resemble the message are beside the point: nil's own say nothing of what was meant to be sent to it, and a message the other side of the class understands was not mistyped. Two messages run together are only a guess, which a mistyped selector can match too, so the selectors stay beside that note."
+
+	^ receiver isNil or: [ self otherSideText isNotNil ]
+]
+
 { #category : 'accessing' }
 MCPNotUnderstoodNote >> meantText [
-	"What the message was most likely meant to be, or nil when neither its keywords nor its receiver tell. A message sent to nil has none: nil understands nothing anyone means to send it."
+	"What the message was most likely meant to be, or nil when neither its receiver nor its keywords tell. That the other side of the class understands the whole selector is a fact, and comes before reading the keywords as two messages, a guess that every selector starting with one a class understands, such as at:, would match. A message sent to nil has none: nil understands nothing anyone means to send it."
 
 	receiver ifNil: [ ^ nil ].
-	^ self chainedSendText ifNil: [ self otherSideText ]
+	^ self otherSideText ifNil: [ self chainedSendText ]
 ]
 
 { #category : 'accessing' }
 MCPNotUnderstoodNote >> nilReceiverText [
-	"For a message sent to nil: the method that sent it, and the variable that held nil when the send read one, as in: Point>>+ sent + to x, which is nil. nil when the frame that sent it is not known."
+	"For a message sent to nil: the send in the caller's own code it came from, in the code evaluated as a DoIt or the first method that is neither Pharo's kernel nor SUnit, and which of that send's receiver and arguments was nil, named by the variable it was read from, as in: The code sent > with the argument width, which is nil. Comparing a number with nil, or adding nil to it, fails in the kernel, which sends nil a message of its own on the number's behalf, from a method running on nil. nil when no frame of the caller's own code is known."
 
-	| method |
-	sender ifNil: [ ^ nil ].
-	method := sender compiledCode method.
+	| callee caller pharoPackageNames |
+	caller := sender ifNil: [ ^ nil ].
+	pharoPackageNames := self class pharoPackageNames.
+	[ self class isContext: caller inAnyPackageOf: pharoPackageNames ] whileTrue: [
+			callee := caller.
+			caller := caller sender ifNil: [ ^ nil ] ].
+	callee ifNil: [ ^ self nilSendTextFrom: caller sent: selector nilAt: 0 ].
+	callee isBlockContext ifTrue: [ ^ nil ].
+	^ self nilSendTextFrom: caller sent: callee selector nilAt: (self indexOfNilIn: callee)
+]
+
+{ #category : 'private' }
+MCPNotUnderstoodNote >> nilSendTextFrom: aContext sent: aSelector nilAt: anIndexOrNil [
+	"The send of aSelector that aContext was running, and which of its operands was nil: 0 for its receiver, a positive index for that argument, nil for neither, when the nil was met further in."
+
 	^ String streamContents: [ :stream |
-			  method selector isDoIt
-				  ifTrue: [ stream nextPutAll: 'The code' ]
-				  ifFalse: [ stream << method methodClass name << '>>' << method selector ].
-			  stream << ' sent ' << selector << ' to '.
-			  self receiverVariableName
-				  ifNil: [ stream nextPutAll: 'nil' ]
-				  ifNotNil: [ :variableName | stream << variableName << ', which is nil' ].
+			  stream
+				  nextPutAll: (self class callerTextOf: aContext);
+				  nextPutAll: ' sent ';
+				  nextPutAll: aSelector.
+			  anIndexOrNil
+				  ifNil: [ stream nextPutAll: ', whose receiver and arguments are not nil: the nil was met inside it' ]
+				  ifNotNil: [
+						  stream nextPutAll: (anIndexOrNil = 0
+								   ifTrue: [ ' to ' ]
+								   ifFalse: [ ' with the argument ' ]).
+						  self
+							  printOperandAt: anIndexOrNil
+							  in: aContext
+							  sent: aSelector
+							  on: stream ].
 			  stream nextPut: $. ]
 ]
 
@@ -141,27 +229,35 @@ MCPNotUnderstoodNote >> otherSideText [
 ]
 
 { #category : 'private' }
-MCPNotUnderstoodNote >> receiverUnderstands: aString [
-	"A string no symbol was ever made of is no selector the receiver understands."
+MCPNotUnderstoodNote >> printOperandAt: anIndex in: aContext sent: aSelector on: aStream [
+	"The receiver, at 0, or the argument at anIndex of the send of aSelector that aContext was running, which was nil: the variable it was read from, as in width, which is nil, or nil when it was no variable or the send cannot be read."
 
-	^ (Symbol findInterned: aString) ifNil: [ false ] ifNotNil: [ :symbol | receiver class canUnderstand: symbol ]
+	| node operand |
+	node := [ aContext sourceNodeExecuted ]
+		        on: Error
+		        do: [ :error | nil ].
+	(node isNotNil and: [ node isMessage and: [ node selector == aSelector ] ]) ifFalse: [ ^ aStream nextPutAll: 'nil' ].
+	operand := anIndex = 0
+		           ifTrue: [ node receiver ]
+		           ifFalse: [ node arguments at: anIndex ].
+	operand isVariable ifFalse: [ ^ aStream nextPutAll: 'nil' ].
+	aStream
+		nextPutAll: operand name;
+		nextPutAll: ', which is nil'
 ]
 
 { #category : 'private' }
-MCPNotUnderstoodNote >> receiverVariableName [
-	"The variable the send read nil from, or nil when it sent to an expression, or its frame cannot say."
+MCPNotUnderstoodNote >> receiverUnderstands: aString [
+	"A string no symbol was ever made of is no selector the receiver understands."
 
-	| node |
-	node := [ sender sourceNodeExecuted ]
-		        on: Error
-		        do: [ :error | ^ nil ].
-	^ node ifNotNil: [
-		  (node isMessage and: [ node selector == selector and: [ node receiver isVariable ] ]) ifTrue: [ node receiver name ] ]
+	| symbol |
+	symbol := Symbol findInterned: aString.
+	^ symbol isNotNil and: [ receiver class canUnderstand: symbol ]
 ]
 
 { #category : 'accessing' }
 MCPNotUnderstoodNote >> text [
-	"What a failure says beside its message: for a message sent to nil, the method that sent it, and otherwise what the message was most likely meant to be. nil when neither can be told."
+	"What a failure says beside its message: for a message sent to nil, the send in the caller's own code it came from, and otherwise what the message was most likely meant to be. nil when neither can be told."
 
 	receiver ifNil: [ ^ self nilReceiverText ].
 	^ self meantText

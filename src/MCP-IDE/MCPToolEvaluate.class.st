@@ -503,8 +503,11 @@ MCPToolEvaluate >> syntaxFailureMessageFor: aNotice line: aLineNumber [
 			  stream
 				  nextPutAll: 'Evaluation failed during compilation (';
 				  nextPutAll: aNotice class name;
-				  nextPutAll: '): ';
-				  nextPutAll: (aNotice mcpNoticeNode ifNil: [ aNotice messageText ] ifNotNil: [ :node | 'Undeclared variable: ' , node name ]).
+				  nextPutAll: '): '.
+			  aNotice mcpNoticeNode ifNil: [ stream nextPutAll: aNotice messageText ] ifNotNil: [ :node |
+					  stream
+						  nextPutAll: 'Undeclared variable: ';
+						  nextPutAll: node name ].
 			  aLineNumber ifNotNil: [
 					  stream
 						  nextPutAll: ' Line ';

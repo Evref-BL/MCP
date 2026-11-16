@@ -1964,7 +1964,7 @@ MCPToolContractsTest >> testMCPsOwnTestFixturesAreNotServed [
 
 { #category : 'tests - evaluate' }
 MCPToolContractsTest >> testMessageNotUnderstoodByAClassSaysItsInstancesUnderstandIt [
-	"A constructor compiled on the instance side, then sent to the class, was answered with the class side's selectors that resembled it."
+	"A constructor compiled on the instance side, then sent to the class, was answered with the class side's selectors that resembled it. Every class understands at:, so at:ifAbsent: also reads as at: then ifAbsent:, a guess that the instances understanding it outweighs."
 
 	| error |
 	error := self errorFrom:
@@ -1973,7 +1973,13 @@ MCPToolContractsTest >> testMessageNotUnderstoodByAClassSaysItsInstancesUndersta
 		assert: (error at: #note)
 		equals:
 		'Instances of OrderedCollection understand addFirst:, but OrderedCollection itself does not: addFirst: is an instance-side method. Send it to an instance, or compile it with method_compile and side class to send it to OrderedCollection.'.
-	self deny: (error includesKey: #suggestedSelectors)
+	self deny: (error includesKey: #suggestedSelectors).
+	error := self errorFrom:
+		         (self
+			          callDiscoveredToolNamed: 'evaluate'
+			          withArguments: { (#code -> 'OrderedCollection at: 1 ifAbsent: [ 0 ]') } asDictionary).
+	self assert:
+		((error at: #note) beginsWith: 'Instances of OrderedCollection understand at:ifAbsent:, but OrderedCollection itself does not')
 ]
 
 { #category : 'tests - evaluate' }
@@ -1995,7 +2001,7 @@ MCPToolContractsTest >> testMessageNotUnderstoodByAnInstanceSaysItsClassUndersta
 
 { #category : 'tests - evaluate' }
 MCPToolContractsTest >> testMessageNotUnderstoodSaysTwoKeywordMessagesRunTogether [
-	"sorted:collect:, which nothing implements, was meant as sorted: then collect:. The selectors it resembles, sorted: among them, read as blaming the receiver; the compile critique says what was meant, and so does the failure, in place of them."
+	"sorted:collect:, which nothing implements, was meant as sorted: then collect:. The selectors it resembles, sorted: among them, read as blaming the receiver, so the compile critique's sentence comes first. It is a guess, which a mistyped selector such as at:ifAbsentPut:put: matches too, so the selectors stay after it."
 
 	| error result |
 	result := self
@@ -2007,8 +2013,13 @@ MCPToolContractsTest >> testMessageNotUnderstoodSaysTwoKeywordMessagesRunTogethe
 		assert: (error at: #note)
 		equals:
 		'sorted:collect: is one message. To send collect: to what sorted: answers, put the sorted: send in parentheses: (... sorted: ...) collect: ...'.
-	self deny: (error includesKey: #suggestedSelectors).
-	self assert: (self firstTextFromToolResult: result) lines second equals: (error at: #note)
+	self assert: ((error at: #suggestedSelectors) includes: 'sorted:').
+	self assert: (self firstTextFromToolResult: result) lines second equals: (error at: #note).
+	self assert: ((self firstTextFromToolResult: result) lines third beginsWith: 'Did you mean: ').
+	error := self errorFrom: (self
+			          callDiscoveredToolNamed: 'evaluate'
+			          withArguments: { (#code -> 'Dictionary new at: 1 ifAbsentPut: [ 0 ] put: 3') } asDictionary).
+	self assert: ((error at: #suggestedSelectors) includes: 'at:ifAbsentPut:')
 ]
 
 { #category : 'tests - evaluate' }
@@ -2057,6 +2068,33 @@ MCPToolContractsTest >> testMessageProcessorUsesSubclassJRPCHandlerOverride [
 	result := response result.
 	self assert: response class equals: JRPCSuccessResponseObject.
 	self assert: (result at: #source) equals: 'subclass'
+]
+
+{ #category : 'tests - evaluate' }
+MCPToolContractsTest >> testMessageSentToNilByPharoNamesTheVariableTheCodePassed [
+	"Comparing with nil, or adding it, fails in the kernel, which sends nil a message of its own from a method running on nil. The variable the code left nil is width, or each in a block, not that method's self."
+
+	| error |
+	error := self errorFrom: (self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> '| width |
+3 > width') } asDictionary).
+	self assert: (error at: #note) equals: 'The code sent > with the argument width, which is nil.'.
+	self deny: (error includesKey: #suggestedSelectors).
+	error := self errorFrom: (self
+			          callDiscoveredToolNamed: 'evaluate'
+			          withArguments: { (#code -> '#( 1 nil 3 ) inject: 0 into: [ :sum :each | sum + each ]') } asDictionary).
+	self assert: (error at: #note) equals: 'The code sent + with the argument each, which is nil.'
+]
+
+{ #category : 'tests - evaluate' }
+MCPToolContractsTest >> testMessageSentToNilInsidePharoSaysTheCodePassedNone [
+	"Sorting a collection that holds nil fails in the kernel, on an element the code never named: the send the code made says so, rather than pointing at its receiver."
+
+	| error |
+	error := self errorFrom:
+		         (self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> '#( 3 nil 1 ) asSortedCollection') } asDictionary).
+	self
+		assert: (error at: #note)
+		equals: 'The code sent asSortedCollection, whose receiver and arguments are not nil: the nil was met inside it.'
 ]
 
 { #category : 'tests - evaluate' }

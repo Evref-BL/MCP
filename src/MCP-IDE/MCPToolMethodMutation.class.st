@@ -34,13 +34,10 @@ MCPToolMethodMutation >> addChainedSendNoteAt: anInterval flaggedBy: aRuleClassN
 		sendAt: anInterval
 		in: aString
 		ifFound: [ :send |
-				| keywords |
-				keywords := send selector keywords.
-				(1 to: keywords size - 1)
-					detect: [ :split |
-							(MCPNotUnderstoodNote isImplementedSelector: ('' join: (keywords first: split))) and: [
-								MCPNotUnderstoodNote isImplementedSelector: ('' join: (keywords allButFirst: split)) ] ]
-					ifFound: [ :split | data at: #note put: (MCPNotUnderstoodNote chainedSend: send selector splitAt: split) ] ]
+				(MCPNotUnderstoodNote
+					 chainedSendTextFor: send selector
+					 whereFirstPart: [ :firstPart | MCPNotUnderstoodNote isImplementedSelector: firstPart ]) ifNotNil: [ :note |
+					data at: #note put: note ] ]
 		ifNone: [ ]
 ]
 

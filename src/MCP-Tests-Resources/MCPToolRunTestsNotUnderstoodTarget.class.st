@@ -1,5 +1,5 @@
 "
-Fixture test case used by test_run tests: each test sends a message its receiver does not understand, one that its keywords or its receiver say what it was meant to be.
+Fixture test case used by test_run tests: each test sends a message its receiver does not understand, whose keywords or receiver say what was meant.
 "
 Class {
 	#name : 'MCPToolRunTestsNotUnderstoodTarget',
