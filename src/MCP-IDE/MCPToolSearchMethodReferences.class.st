@@ -16,14 +16,14 @@ MCPToolSearchMethodReferences class >> toolName [
 ]
 
 { #category : 'private - results' }
-MCPToolSearchMethodReferences >> countTextForQueryRequest: queryRequest page: page [
+MCPToolSearchMethodReferences >> countTextForRequest: request page: page [
 	"What was looked for and how much of it was found, counted over every hit rather than the page: 1 implementor and 3 senders of calcArea, 25 of 40 methods refer to EvalRect. Nothing found names the kinds that were looked for."
 
 	| counts name offset |
-	name := queryRequest filterPattern.
-	page totalCount = 0 ifTrue: [ ^ self noHitTextForKinds: (self kindsForName: name request: queryRequest) name: name ].
+	name := self filterPatternFromRequest: request.
+	page totalCount = 0 ifTrue: [ ^ self noHitTextForKinds: (self kindsForName: name fromRequest: request) name: name ].
 	counts := page countsByKind.
-	offset := self offsetFromQueryRequest: queryRequest.
+	offset := request integerArgumentNamed: 'offset'.
 	^ String streamContents: [ :stream |
 			  offset >= page totalCount
 				  ifTrue: [
@@ -73,42 +73,42 @@ MCPToolSearchMethodReferences >> description [
 ]
 
 { #category : 'private - lookup' }
-MCPToolSearchMethodReferences >> entriesForKinds: kinds name: aName queryRequest: queryRequest [
+MCPToolSearchMethodReferences >> entriesForKinds: kinds name: aName scopeQuery: scopeQuery [
 
 	| entries |
 	entries := OrderedCollection new.
-	kinds do: [ :kind | entries addAll: (self entriesOfKind: kind forName: aName queryRequest: queryRequest) ].
+	kinds do: [ :kind | entries addAll: (self entriesOfKind: kind forName: aName scopeQuery: scopeQuery) ].
 	^ entries asArray
 ]
 
 { #category : 'private - lookup' }
-MCPToolSearchMethodReferences >> entriesForKinds: kinds name: aName queryRequest: queryRequest ifUnknown: aBlock [
+MCPToolSearchMethodReferences >> entriesForKinds: kinds name: aName scopeQuery: scopeQuery ifUnknown: aBlock [
 	"A reading that does not resolve is not a failure while another reading is still to be tried, so what
 	it said is kept for the message that reports both."
 
-	^ [ self entriesForKinds: kinds name: aName queryRequest: queryRequest ]
+	^ [ self entriesForKinds: kinds name: aName scopeQuery: scopeQuery ]
 		  on: Error
 		  do: [ :error | aBlock value: error ]
 ]
 
 { #category : 'private - lookup' }
-MCPToolSearchMethodReferences >> entriesOfKind: aKind forName: aName queryRequest: queryRequest [
+MCPToolSearchMethodReferences >> entriesOfKind: aKind forName: aName scopeQuery: scopeQuery [
 
 	| entries |
 	entries := aKind = 'implementors'
-		           ifTrue: [ self implementorEntriesForSelector: aName queryRequest: queryRequest ]
+		           ifTrue: [ self implementorEntriesForSelector: aName scopeQuery: scopeQuery ]
 		           ifFalse: [
-			           aKind = 'senders'
-				           ifTrue: [ self selectorReferenceEntriesForSelector: aName queryRequest: queryRequest ]
-				           ifFalse: [
-					           aKind = 'class'
-						           ifTrue: [ self classReferenceEntriesForClassNamed: aName queryRequest: queryRequest ]
-						           ifFalse: [ self variableReferenceEntriesForVariableNamed: aName queryRequest: queryRequest ] ] ].
+				           aKind = 'senders'
+					           ifTrue: [ self selectorReferenceEntriesForSelector: aName scopeQuery: scopeQuery ]
+					           ifFalse: [
+							           aKind = 'class'
+								           ifTrue: [ self classReferenceEntriesForClassNamed: aName scopeQuery: scopeQuery ]
+								           ifFalse: [ self variableReferenceEntriesForVariableNamed: aName scopeQuery: scopeQuery ] ] ].
 	^ entries collect: [ :each |
-		  | entry |
-		  entry := each copy.
-		  entry at: #reference put: aKind.
-		  entry ]
+			  | entry |
+			  entry := each copy.
+			  entry at: #reference put: aKind.
+			  entry ]
 ]
 
 { #category : 'private - schema' }
@@ -181,10 +181,10 @@ MCPToolSearchMethodReferences >> kindNounsTextForCounts: counts [
 ]
 
 { #category : 'private - lookup' }
-MCPToolSearchMethodReferences >> kindsForName: aName request: request [
+MCPToolSearchMethodReferences >> kindsForName: aName fromRequest: request [
 	"A capitalised name is a class when its base name is one, so Foo class reads as references to Foo, and a variable otherwise."
 
-	(self requestedKindIn: request) ifNotNil: [ :requested | ^ { requested } ].
+	(self requestedKindFromRequest: request) ifNotNil: [ :requested | ^ { requested } ].
 	(aName includes: $:) ifTrue: [ ^ #( 'implementors' 'senders' ) ].
 	aName first isLetter ifFalse: [ ^ #( 'implementors' 'senders' ) ].
 	aName first isUppercase ifFalse: [ ^ #( 'implementors' 'senders' ) ].
@@ -239,28 +239,28 @@ MCPToolSearchMethodReferences >> noHitTextForKinds: kinds name: aName [
 ]
 
 { #category : 'private - template' }
-MCPToolSearchMethodReferences >> queryEntriesForQueryRequest: queryRequest [
+MCPToolSearchMethodReferences >> queryEntriesForRequest: request scopeQuery: scopeQuery [
 
 	| entries fallback kinds name failures |
-	name := self requiredLookupPatternFromQueryRequest: queryRequest.
-	kinds := self kindsForName: name request: queryRequest.
-	(self requestedKindIn: queryRequest) ifNotNil: [ ^ self entriesForKinds: kinds name: name queryRequest: queryRequest ].
+	name := self requiredFilterPatternFromRequest: request.
+	kinds := self kindsForName: name fromRequest: request.
+	(self requestedKindFromRequest: request) ifNotNil: [ ^ self entriesForKinds: kinds name: name scopeQuery: scopeQuery ].
 	failures := OrderedCollection new.
 	entries := self
 		           entriesForKinds: kinds
 		           name: name
-		           queryRequest: queryRequest
+		           scopeQuery: scopeQuery
 		           ifUnknown: [ :error |
-		           failures add: error.
-		           nil ].
+				           failures add: error.
+				           nil ].
 	(entries isNotNil and: [ entries isNotEmpty ]) ifTrue: [ ^ entries ].
 	fallback := self
 		            entriesForKinds: (self fallbackKindsFor: kinds)
 		            name: name
-		            queryRequest: queryRequest
+		            scopeQuery: scopeQuery
 		            ifUnknown: [ :error |
-		            failures add: error.
-		            nil ].
+				            failures add: error.
+				            nil ].
 	(fallback isNotNil and: [ fallback isNotEmpty ]) ifTrue: [ ^ fallback ].
 	failures ifNotEmpty: [ ^ self signalUnknownName: name failures: failures ].
 	^ entries ifNil: [ #(  ) ]
@@ -295,18 +295,10 @@ MCPToolSearchMethodReferences >> referenceKinds [
 ]
 
 { #category : 'private - lookup' }
-MCPToolSearchMethodReferences >> requestedKindIn: queryRequest [
+MCPToolSearchMethodReferences >> requestedKindFromRequest: request [
+	"The kind the caller asked name to be read as, or nil to decide it from the name's spelling."
 
-	^ (queryRequest fieldFilters ifNil: [ Dictionary new ]) at: 'kind' ifAbsent: [ nil ]
-]
-
-{ #category : 'private - lookup' }
-MCPToolSearchMethodReferences >> searchRequestFromToolRequest: request [
-
-	| searchRequest |
-	searchRequest := super searchRequestFromToolRequest: request.
-	searchRequest fieldFilters: (self fieldFiltersFromRequest: request fieldNames: #( 'kind' )).
-	^ searchRequest
+	^ request stringArgumentNamed: 'kind'
 ]
 
 { #category : 'private - results' }
@@ -341,14 +333,14 @@ MCPToolSearchMethodReferences >> signalUnknownName: aName failures: failures [
 ]
 
 { #category : 'private - results' }
-MCPToolSearchMethodReferences >> successSummaryForQueryRequest: queryRequest page: page [
+MCPToolSearchMethodReferences >> successSummaryForRequest: request scopeQuery: scopeQuery page: page [
 	"When nothing implements or sends the name, a sentence follows when the name says what was meant instead."
 
 	| hint name summary |
-	summary := super successSummaryForQueryRequest: queryRequest page: page.
+	summary := super successSummaryForRequest: request scopeQuery: scopeQuery page: page.
 	page totalCount = 0 ifFalse: [ ^ summary ].
-	name := queryRequest filterPattern.
-	hint := (self noHitHintForKinds: (self kindsForName: name request: queryRequest) name: name) ifNil: [ ^ summary ].
+	name := self filterPatternFromRequest: request.
+	hint := (self noHitHintForKinds: (self kindsForName: name fromRequest: request) name: name) ifNil: [ ^ summary ].
 	^ String streamContents: [ :stream | stream << summary << ' ' << hint ]
 ]
 

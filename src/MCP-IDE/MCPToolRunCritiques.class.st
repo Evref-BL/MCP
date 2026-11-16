@@ -21,59 +21,6 @@ MCPToolRunCritiques class >> toolName [
 	^ 'critique_run'
 ]
 
-{ #category : 'private - running' }
-MCPToolRunCritiques >> addClassCritiqueEntriesForRuleClass: ruleClass queryRequest: queryRequest to: entries maximum: maximum [
-
-	| rule |
-	rule := ruleClass new.
-	self sortedBehaviorsForQueryRequest: queryRequest do: [ :eachBehavior |
-			((self hasCollectedEnoughEntries: entries maximum: maximum) not and: [ self rule: rule runsOn: eachBehavior for: queryRequest ])
-				ifTrue: [
-						rule check: eachBehavior forCritiquesDo: [ :critique |
-								self
-									addEntryForCritique: critique
-									rule: rule
-									fallbackEntity: eachBehavior
-									to: entries
-									maximum: maximum ] ] ]
-]
-
-{ #category : 'private - rules' }
-MCPToolRunCritiques >> addCritiqueEntriesForRuleClass: ruleClass queryRequest: queryRequest to: entries maximum: maximum [
-
-	ruleClass checksMethod ifTrue: [
-			self
-				addMethodCritiqueEntriesForRuleClass: ruleClass
-				queryRequest: queryRequest
-				to: entries
-				maximum: maximum ].
-	ruleClass checksNode ifTrue: [
-			self
-				addNodeCritiqueEntriesForRuleClass: ruleClass
-				queryRequest: queryRequest
-				to: entries
-				maximum: maximum ].
-	ruleClass checksClass ifTrue: [
-			self
-				addClassCritiqueEntriesForRuleClass: ruleClass
-				queryRequest: queryRequest
-				to: entries
-				maximum: maximum ].
-	ruleClass checksPackage ifTrue: [
-			self
-				addPackageCritiqueEntriesForRuleClass: ruleClass
-				queryRequest: queryRequest
-				to: entries
-				maximum: maximum ]
-]
-
-{ #category : 'private - entries' }
-MCPToolRunCritiques >> addEntryForCritique: critique rule: rule fallbackEntity: fallbackEntity to: entries maximum: maximum [
-
-	(self hasCollectedEnoughEntries: entries maximum: maximum) ifTrue: [ ^ self ].
-	entries add: (self critiqueEntryFor: critique rule: rule fallbackEntity: fallbackEntity)
-]
-
 { #category : 'private - entries' }
 MCPToolRunCritiques >> addIntervalFromAnchor: sourceAnchor of: target toHitData: data [
 	"A hit in a method also says the line of the method as stored where it starts, and the code there, as a compile's critiques do; the interval stays for a tool that reads offsets."
@@ -86,70 +33,6 @@ MCPToolRunCritiques >> addIntervalFromAnchor: sourceAnchor of: target toHitData:
 	(target isNotNil and: [ target isCompiledMethod ]) ifFalse: [ ^ self ].
 	data at: #line put: (self lineNumberAt: interval first in: target sourceCode).
 	(self codeQuoteFor: interval in: target sourceCode) ifNotEmpty: [ :code | data at: #code put: code ]
-]
-
-{ #category : 'private - running' }
-MCPToolRunCritiques >> addMethodCritiqueEntriesForRuleClass: ruleClass queryRequest: queryRequest to: entries maximum: maximum [
-
-	| rule |
-	rule := ruleClass new.
-	self sortedMethodsForQueryRequest: queryRequest do: [ :eachMethod |
-			((self hasCollectedEnoughEntries: entries maximum: maximum) not and: [ self rule: rule runsOn: eachMethod for: queryRequest ])
-				ifTrue: [
-						rule check: eachMethod forCritiquesDo: [ :critique |
-								self
-									addEntryForCritique: critique
-									rule: rule
-									fallbackEntity: eachMethod
-									to: entries
-									maximum: maximum ] ] ]
-]
-
-{ #category : 'private - running' }
-MCPToolRunCritiques >> addNodeCritiqueEntriesForRule: rule method: aMethod to: entries maximum: maximum [
-
-	aMethod ast nodesDo: [ :eachNode |
-			(self hasCollectedEnoughEntries: entries maximum: maximum) ifFalse: [
-					rule check: eachNode forCritiquesDo: [ :critique |
-							self
-								addEntryForCritique: critique
-								rule: rule
-								fallbackEntity: aMethod
-								to: entries
-								maximum: maximum ] ] ]
-]
-
-{ #category : 'private - running' }
-MCPToolRunCritiques >> addNodeCritiqueEntriesForRuleClass: ruleClass queryRequest: queryRequest to: entries maximum: maximum [
-	"A node rule is asked whether it wants the method before its nodes are walked, which is what Renraku's own sweeps do. A rule that excludes a method, as ReDoNotSendSuperInitializeInClassSideRule excludes every instance-side initialize, would otherwise be reported here and by no other tool."
-
-	| rule |
-	rule := ruleClass new.
-	self sortedMethodsForQueryRequest: queryRequest do: [ :eachMethod |
-			((self hasCollectedEnoughEntries: entries maximum: maximum) not and: [
-				 (self rule: rule runsOn: eachMethod for: queryRequest) and: [ rule shouldCheckMethod: eachMethod ] ]) ifTrue: [
-					self
-						addNodeCritiqueEntriesForRule: rule
-						method: eachMethod
-						to: entries
-						maximum: maximum ] ]
-]
-
-{ #category : 'private - running' }
-MCPToolRunCritiques >> addPackageCritiqueEntriesForRuleClass: ruleClass queryRequest: queryRequest to: entries maximum: maximum [
-
-	| rule |
-	rule := ruleClass new.
-	self sortedPackagesForQueryRequest: queryRequest do: [ :eachPackage |
-			((self hasCollectedEnoughEntries: entries maximum: maximum) not and: [ self rule: rule runsOn: eachPackage for: queryRequest ])
-				ifTrue: [
-						rule check: eachPackage forCritiquesDo: [ :critique |
-								self
-									addEntryForCritique: critique
-									rule: rule
-									fallbackEntity: eachPackage
-									to: entries
-									maximum: maximum ] ] ]
 ]
 
 { #category : 'private - entries' }
@@ -189,6 +72,16 @@ MCPToolRunCritiques >> buildInputSchema [
 			  self offsetInputProperty }
 ]
 
+{ #category : 'private - running' }
+MCPToolRunCritiques >> classCritiquesOfRuleClass: ruleClass in: scopeQuery runsOn: runsOnBlock do: aBlock [
+
+	| rule |
+	rule := ruleClass new.
+	self sortedBehaviorsIn: scopeQuery do: [ :eachBehavior |
+			(runsOnBlock value: rule value: eachBehavior) ifTrue: [
+				rule check: eachBehavior forCritiquesDo: [ :critique | aBlock value: critique value: rule value: eachBehavior ] ] ]
+]
+
 { #category : 'private - results' }
 MCPToolRunCritiques >> contentTextForStructuredContent: structuredContent [
 	"Each rule reads as one line naming it, then its hits two spaces in, one line each."
@@ -206,11 +99,11 @@ MCPToolRunCritiques >> contentTextForStructuredContent: structuredContent [
 ]
 
 { #category : 'private - results' }
-MCPToolRunCritiques >> countTextForQueryRequest: queryRequest page: page [
+MCPToolRunCritiques >> countTextForRequest: request page: page [
 	"7 critique hits, First 20 critique hits, Critique hits 21 to 40, No critique hits from offset 40. Collection stops one hit past the page, so no total is ever counted, and none is stated: a page says which hits it holds."
 
 	| offset returned |
-	offset := self offsetFromQueryRequest: queryRequest.
+	offset := request integerArgumentNamed: 'offset'.
 	returned := page returnedCount.
 	^ String streamContents: [ :stream |
 			  returned = 0
@@ -255,6 +148,36 @@ MCPToolRunCritiques >> critiqueEntryFor: critique rule: rule fallbackEntity: fal
 	^ entry
 ]
 
+{ #category : 'private - rules' }
+MCPToolRunCritiques >> critiquesOfRuleClass: ruleClass in: scopeQuery runsOn: runsOnBlock do: aBlock [
+	"Each critique the rule makes in scopeQuery, with the rule and the entity it was checking, on every kind of entity the rule checks."
+
+	ruleClass checksMethod ifTrue: [
+			self
+				methodCritiquesOfRuleClass: ruleClass
+				in: scopeQuery
+				runsOn: runsOnBlock
+				do: aBlock ].
+	ruleClass checksNode ifTrue: [
+			self
+				nodeCritiquesOfRuleClass: ruleClass
+				in: scopeQuery
+				runsOn: runsOnBlock
+				do: aBlock ].
+	ruleClass checksClass ifTrue: [
+			self
+				classCritiquesOfRuleClass: ruleClass
+				in: scopeQuery
+				runsOn: runsOnBlock
+				do: aBlock ].
+	ruleClass checksPackage ifTrue: [
+			self
+				packageCritiquesOfRuleClass: ruleClass
+				in: scopeQuery
+				runsOn: runsOnBlock
+				do: aBlock ]
+]
+
 { #category : 'defaults' }
 MCPToolRunCritiques >> defaultPageLimit [
 	"A rule carries its hits, so a page holds fewer than a flat list would."
@@ -269,7 +192,7 @@ MCPToolRunCritiques >> description [
 ]
 
 { #category : 'private - template' }
-MCPToolRunCritiques >> filtersQueryRequest: queryRequest [
+MCPToolRunCritiques >> filtersRequest: request [
 	"Rules choose what is run, not which hits are kept."
 
 	^ false
@@ -339,11 +262,14 @@ MCPToolRunCritiques >> hitTextOn: stream for: hit [
 	stream nextPutAll: (hit at: #entity ifAbsent: [ '' ])
 ]
 
-{ #category : 'private - pagination' }
-MCPToolRunCritiques >> maximumEntriesToCollectForQueryRequest: queryRequest [
+{ #category : 'private - running' }
+MCPToolRunCritiques >> methodCritiquesOfRuleClass: ruleClass in: scopeQuery runsOn: runsOnBlock do: aBlock [
 
-	queryRequest limit = 0 ifTrue: [ ^ 0 ].
-	^ queryRequest offset + queryRequest limit + 1
+	| rule |
+	rule := ruleClass new.
+	self sortedMethodsIn: scopeQuery do: [ :eachMethod |
+			(runsOnBlock value: rule value: eachMethod) ifTrue: [
+				rule check: eachMethod forCritiquesDo: [ :critique | aBlock value: critique value: rule value: eachMethod ] ] ]
 ]
 
 { #category : 'private - methods' }
@@ -385,36 +311,74 @@ MCPToolRunCritiques >> nextPageTextForOffset: anOffset [
 				  nextPut: $. ]
 ]
 
-{ #category : 'private - scope' }
-MCPToolRunCritiques >> packagesForQueryRequest: queryRequest [
+{ #category : 'private - running' }
+MCPToolRunCritiques >> nodeCritiquesOfRule: rule method: aMethod do: aBlock [
 
-	queryRequest scopeQuery usesImplicitImageScope ifTrue: [ ^ self packageOrganizer packages asArray ].
-	queryRequest scopeQuery packageNames ifEmpty: [ ^ #(  ) ].
-	^ queryRequest scopeQuery packageNames
-		  collect: [ :eachName | queryRequest scopeQuery packageNamed: eachName inScope: 'scope.packages' ]
+	aMethod ast nodesDo: [ :eachNode |
+		rule check: eachNode forCritiquesDo: [ :critique | aBlock value: critique value: rule value: aMethod ] ]
+]
+
+{ #category : 'private - running' }
+MCPToolRunCritiques >> nodeCritiquesOfRuleClass: ruleClass in: scopeQuery runsOn: runsOnBlock do: aBlock [
+	"A node rule is asked whether it wants the method before its nodes are walked, which is what Renraku's own sweeps do. A rule that excludes a method, as ReDoNotSendSuperInitializeInClassSideRule excludes every instance-side initialize, would otherwise be reported here and by no other tool."
+
+	| rule |
+	rule := ruleClass new.
+	self sortedMethodsIn: scopeQuery do: [ :eachMethod |
+			((runsOnBlock value: rule value: eachMethod) and: [ rule shouldCheckMethod: eachMethod ]) ifTrue: [
+				self nodeCritiquesOfRule: rule method: eachMethod do: aBlock ] ]
+]
+
+{ #category : 'private - running' }
+MCPToolRunCritiques >> packageCritiquesOfRuleClass: ruleClass in: scopeQuery runsOn: runsOnBlock do: aBlock [
+
+	| rule |
+	rule := ruleClass new.
+	self sortedPackagesIn: scopeQuery do: [ :eachPackage |
+			(runsOnBlock value: rule value: eachPackage) ifTrue: [
+				rule check: eachPackage forCritiquesDo: [ :critique | aBlock value: critique value: rule value: eachPackage ] ] ]
+]
+
+{ #category : 'private - scope' }
+MCPToolRunCritiques >> packagesIn: scopeQuery [
+
+	scopeQuery usesImplicitImageScope ifTrue: [ ^ self packageOrganizer packages asArray ].
+	scopeQuery packageNames ifEmpty: [ ^ #(  ) ].
+	^ scopeQuery packageNames
+		  collect: [ :eachName | scopeQuery packageNamed: eachName inScope: 'scope.packages' ]
 		  thenSelect: [ :eachPackage | eachPackage isNotNil ]
 ]
 
 { #category : 'private - template' }
-MCPToolRunCritiques >> queryEntriesForQueryRequest: queryRequest [
-	"MCP's own rules answer only an agent, which this is."
+MCPToolRunCritiques >> queryEntriesForRequest: request scopeQuery: scopeQuery [
+	"MCP's own rules answer only an agent, which this is. Collection stops one hit past the page, so whether another page follows is known without running every rule. Rules the caller names run though the image has them off."
 
-	| entries maximum |
+	| entries manifestRules maximum namedByCaller ruleClasses runsOn |
+	ruleClasses := self ruleClassesFromRequest: request.
+	namedByCaller := (request uniqueStringCollectionArgumentNamed: 'ruleClasses') isNotEmpty.
+	manifestRules := IdentityDictionary new.
+	runsOn := [ :rule :entity |
+		          self
+			          rule: rule
+			          runsOn: entity
+			          namedByCaller: namedByCaller
+			          manifestRules: manifestRules ].
+	maximum := (request integerArgumentNamed: 'offset') + self defaultPageLimit + 1.
 	entries := OrderedCollection new.
-	maximum := self maximumEntriesToCollectForQueryRequest: queryRequest.
-	maximum = 0 ifTrue: [ ^ #(  ) ].
 	MCPAgentCritiquing value: true during: [
-			queryRequest ruleClasses do: [ :eachRuleClass |
+			ruleClasses do: [ :eachRuleClass |
 					self
-						addCritiqueEntriesForRuleClass: eachRuleClass
-						queryRequest: queryRequest
-						to: entries
-						maximum: maximum ] ].
+						critiquesOfRuleClass: eachRuleClass
+						in: scopeQuery
+						runsOn: runsOn
+						do: [ :critique :rule :entity |
+								entries add: (self critiqueEntryFor: critique rule: rule fallbackEntity: entity).
+								(self hasCollectedEnoughEntries: entries maximum: maximum) ifTrue: [ ^ entries asArray ] ] ] ].
 	^ entries asArray
 ]
 
 { #category : 'private - template' }
-MCPToolRunCritiques >> queryResultDataForQueryRequest: queryRequest page: page [
+MCPToolRunCritiques >> queryResultDataForPage: page [
 
 	| data |
 	data := Dictionary new.
@@ -432,13 +396,13 @@ MCPToolRunCritiques >> readingNoteForPage: page [
 ]
 
 { #category : 'private - rules' }
-MCPToolRunCritiques >> rule: aRule runsOn: anEntity for: queryRequest [
-	"Whether a person's configuration lets aRule run on anEntity: the caller named it, the image has it on or the package's manifest forces it, and the manifest neither marks it a false positive there nor rejects it."
+MCPToolRunCritiques >> rule: aRule runsOn: anEntity namedByCaller: aBoolean manifestRules: manifestRulesByPackage [
+	"Whether a person's configuration lets aRule run on anEntity: the caller named it, the image has it on or the package's manifest forces it, and the manifest neither marks it a false positive there nor rejects it. Looking a package's manifest up walks its classes, so each package's is looked up once per call, in manifestRulesByPackage."
 
 	| manifestRules |
-	manifestRules := queryRequest manifestRulesFor: anEntity.
+	manifestRules := manifestRulesByPackage at: anEntity package ifAbsentPut: [ MCPManifestRules for: anEntity ].
 	(manifestRules excludes: aRule on: anEntity) ifTrue: [ ^ false ].
-	^ queryRequest namesRules or: [ aRule class enabled or: [ manifestRules forces: aRule class ] ]
+	^ aBoolean or: [ aRule class enabled or: [ manifestRules forces: aRule class ] ]
 ]
 
 { #category : 'private - rules' }
@@ -526,12 +490,6 @@ MCPToolRunCritiques >> searchActivityText [
 	^ 'run critiques'
 ]
 
-{ #category : 'private - request' }
-MCPToolRunCritiques >> searchRequestFromToolRequest: request [
-
-	^ MCPCritiqueRunRequest fromRequest: request tool: self
-]
-
 { #category : 'private - template' }
 MCPToolRunCritiques >> searchedNoun [
 
@@ -539,28 +497,28 @@ MCPToolRunCritiques >> searchedNoun [
 ]
 
 { #category : 'private - scope' }
-MCPToolRunCritiques >> sortedBehaviorsForQueryRequest: queryRequest do: aBlock [
+MCPToolRunCritiques >> sortedBehaviorsIn: scopeQuery do: aBlock [
 
 	| behaviors |
-	behaviors := queryRequest scopeQuery behaviors asArray.
+	behaviors := scopeQuery behaviors asArray.
 	behaviors sort: [ :left :right | (self targetNameForBehavior: left) <= (self targetNameForBehavior: right) ].
 	behaviors do: aBlock
 ]
 
 { #category : 'private - scope' }
-MCPToolRunCritiques >> sortedMethodsForQueryRequest: queryRequest do: aBlock [
+MCPToolRunCritiques >> sortedMethodsIn: scopeQuery do: aBlock [
 
 	| methods |
-	methods := queryRequest scopeQuery methods asArray.
+	methods := scopeQuery methods asArray.
 	methods sort: [ :left :right | (self methodReferenceForCompiledMethod: left) <= (self methodReferenceForCompiledMethod: right) ].
 	methods do: aBlock
 ]
 
 { #category : 'private - scope' }
-MCPToolRunCritiques >> sortedPackagesForQueryRequest: queryRequest do: aBlock [
+MCPToolRunCritiques >> sortedPackagesIn: scopeQuery do: aBlock [
 
 	| packages |
-	packages := self packagesForQueryRequest: queryRequest.
+	packages := self packagesIn: scopeQuery.
 	packages sort: [ :left :right | left name <= right name ].
 	packages do: aBlock
 ]

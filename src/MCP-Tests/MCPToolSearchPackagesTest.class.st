@@ -32,16 +32,11 @@ MCPToolSearchPackagesTest >> entryNamed: aPackageName in: packageEntries [
 MCPToolSearchPackagesTest >> testCanFilterPackageEntriesByTagNamesUsingControlledPackages [
 
 	self withTemporaryTaggedPackagesDo: [ :packages :packageProjectNames |
-			| data entry queryRequest |
-			queryRequest := MCPSearchPackagesRequest new
-				                fieldFilters: { (#tag -> 'FixtureBetaTag') } asDictionary;
-				                filterMode: 'substring';
-				                caseSensitive: false;
-				                yourself.
+			| data entry |
 			data := MCPToolSearchPackages new
 				        packageEntriesFromPackages: packages
 				        projectNames: packageProjectNames
-				        usingRequest: queryRequest.
+				        fieldFilters: { (#tag -> 'FixtureBetaTag') } asDictionary.
 			self assert: data size equals: 1.
 			entry := self entryNamed: 'MCP-Tests-SearchPackages-Temp-Beta' in: data.
 			self assert: (entry at: #projects) equals: #( 'FixtureProject' ).

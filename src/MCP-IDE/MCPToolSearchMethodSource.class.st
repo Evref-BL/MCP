@@ -16,7 +16,7 @@ MCPToolSearchMethodSource class >> toolName [
 ]
 
 { #category : 'private - methods' }
-MCPToolSearchMethodSource >> addMatchContextTo: entry sourceText: sourceText matcher: matcher queryRequest: queryRequest [
+MCPToolSearchMethodSource >> addMatchContextTo: entry sourceText: sourceText matcher: matcher [
 	"A hit on source text is read by seeing the line that matched, not by fetching the whole method."
 
 	| lines index |
@@ -92,10 +92,10 @@ MCPToolSearchMethodSource >> needsSourceForFiltering [
 ]
 
 { #category : 'private - template' }
-MCPToolSearchMethodSource >> queryEntriesForQueryRequest: queryRequest [
+MCPToolSearchMethodSource >> queryEntriesForRequest: request scopeQuery: scopeQuery [
 
-	queryRequest requiredFilterPatternForTool: self.
-	^ super queryEntriesForQueryRequest: queryRequest
+	self requiredFilterPatternFromRequest: request.
+	^ super queryEntriesForRequest: request scopeQuery: scopeQuery
 ]
 
 { #category : 'private - results' }
@@ -103,12 +103,6 @@ MCPToolSearchMethodSource >> redundantKeys [
 	"A hit reads like grep: the line that matched closes its row, so its line and number are not fields. The protocol says nothing about where the text matched."
 
 	^ #( isExtension protocol line lineNumber )
-]
-
-{ #category : 'private - template' }
-MCPToolSearchMethodSource >> searchRequestFromToolRequest: request [
-
-	^ MCPMethodSearchRequest fromRequest: request tool: self
 ]
 
 { #category : 'private - schema' }

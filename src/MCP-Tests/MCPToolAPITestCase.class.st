@@ -101,7 +101,11 @@ MCPToolAPITestCase >> expectedUndeclaredVariableNoticeClassNames [
 { #category : 'private - fixtures' }
 MCPToolAPITestCase >> packageSearchFixtureEntriesLoadedInImage: aBoolean [
 
-	^ MCPToolSearchPackages new queryEntriesForQueryRequest: (self packageSearchFixtureRequestLoadedInImage: aBoolean)
+	| tool |
+	tool := MCPToolSearchPackages new.
+	^ tool
+		  queryEntriesForRequest: (MCPToolRequest tool: tool arguments: Dictionary new)
+		  scopeQuery: (self packageSearchFixtureScopeQueryLoadedInImage: aBoolean)
 ]
 
 { #category : 'private - fixtures' }
@@ -123,19 +127,6 @@ MCPToolAPITestCase >> packageSearchFixtureRegistrationLoadedInImage: aBoolean [
 		  projectName: self packageSearchFixtureProjectName
 		  packageNames: self packageSearchFixturePackageNames
 		  loadedInImage: aBoolean
-]
-
-{ #category : 'private - fixtures' }
-MCPToolAPITestCase >> packageSearchFixtureRequestLoadedInImage: aBoolean [
-
-	^ MCPSearchPackagesRequest new
-		  scopeQuery: (self packageSearchFixtureScopeQueryLoadedInImage: aBoolean);
-		  filterMode: 'substring';
-		  fieldFilters: Dictionary new;
-		  caseSensitive: true;
-		  limit: 100;
-		  offset: 0;
-		  yourself
 ]
 
 { #category : 'private - fixtures' }

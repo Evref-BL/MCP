@@ -533,21 +533,19 @@ MCPToolMethodSearchTest >> testImageScopeLeavesOutWhatTraitedClassInstalls [
 { #category : 'tests' }
 MCPToolMethodSearchTest >> testImageScopeReturnsInstanceAndClassImplementors [
 
-	| entries queryRequest scopeQuery selector tool |
+	| entries scopeQuery selector tool |
 	selector := #mcpImageScopeUniqueTarget.
 	scopeQuery := MCPMethodSearchImageScopeQueryTestDouble new
 		              behaviors: {
 				              MCPToolMethodSearchReferenceFixture.
 				              MCPToolMethodSearchReferenceFixture class };
 		              yourself.
-	queryRequest := MCPMethodSearchRequest new
-		                scopeQuery: scopeQuery;
-		                fieldFilters: { ('selector' -> selector asString) } asDictionary;
-		                filterMode: 'exact';
-		                caseSensitive: true;
-		                yourself.
-	tool := MCPToolSearchMethods new.
-	entries := tool queryEntriesForQueryRequest: queryRequest.
+	tool := MCPToolSearchMethodReferences new.
+	entries := tool
+		           queryEntriesForRequest: (tool requestFromToolCallArguments: {
+					            (#name -> selector asString).
+					            (#kind -> 'implementors') } asDictionary)
+		           scopeQuery: scopeQuery.
 	self assert: entries size equals: 2.
 	self
 		entryForReference: (String streamContents: [ :stream | stream << MCPToolMethodSearchReferenceFixture name << '>>' << selector ])
