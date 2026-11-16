@@ -161,7 +161,7 @@ MCPToolSearchTools >> resultLimit [
 
 { #category : 'private - results' }
 MCPToolSearchTools >> summaryForQuery: aQuery matching: matchingTools shown: shownTools [
-	"A host may let a model call only the tools in its own list, and the model cannot tell whether its host is one. So when the answer shows a tool outside that list, the summary gives the route every client has, tool_call, with that tool's name in it."
+	"A host may let a model call only the tools in its own list, and the model cannot tell whether its host is one. So when the answer shows a tool outside that list, the summary gives the route every client has, tool_call, with that tool's name in it. It names those tools by the marker their lines carry, so that the route reads as theirs."
 
 	matchingTools ifEmpty: [
 			^ aQuery isEmptyOrNil
@@ -174,7 +174,9 @@ MCPToolSearchTools >> summaryForQuery: aQuery matching: matchingTools shown: sho
 						  stream << shownTools size asString << ' of ' << matchingTools size asString
 						  << ' matching tools, best first. Add words to narrow the search.' ].
 			  shownTools detect: [ :each | (self toolRegistry isToolAdvertised: each) not ] ifFound: [ :unlisted |
-					  stream << ' Call a tool not in your list through tool_call, with the arguments its line names: tool_call {"name": "'
+					  stream
+					  <<
+					  ' Call a tool marked (not in the advertised list) through tool_call, with the arguments its line names: tool_call {"name": "'
 					  << unlisted name << '", "arguments": {...}}.' ] ]
 ]
 

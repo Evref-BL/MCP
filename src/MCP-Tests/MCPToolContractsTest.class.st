@@ -3356,7 +3356,7 @@ MCPToolContractsTest >> testToolSearchNamesTheArgumentsOfAToolNotAdvertised [
 
 { #category : 'tests' }
 MCPToolContractsTest >> testToolSearchSendsAToolNotAdvertisedThroughToolCall [
-	"A host may let a model call only the tools its own list holds, and the model cannot tell whether its host is one. The route every client has, tool_call, is the one the answer gives, shown with the first unlisted tool it lists."
+	"A host may let a model call only the tools its own list holds, and the model cannot tell whether its host is one. The route every client has, tool_call, is the one the answer gives, for the tools marked as not advertised, shown with the first unlisted tool it lists."
 
 	| result server summary unlisted |
 	server := self mcpWithoutObservabilityExport.
@@ -3365,7 +3365,7 @@ MCPToolContractsTest >> testToolSearchSendsAToolNotAdvertisedThroughToolCall [
 	summary := self summaryFrom: result.
 	unlisted := ((self dataFrom: result) at: #tools) detect: [ :each | (each at: #exposure) = 'discoverable' ].
 	self assert: (summary endsWith:
-			 ' Call a tool not in your list through tool_call, with the arguments its line names: tool_call {"name": "'
+			 ' Call a tool marked (not in the advertised list) through tool_call, with the arguments its line names: tool_call {"name": "'
 			 , (unlisted at: #name) , '", "arguments": {...}}.').
 	self deny: (summary includesSubstring: 'by name')
 ]
