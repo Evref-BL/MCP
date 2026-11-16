@@ -167,20 +167,20 @@ MCPToolGetMethod >> executeWithRequest: request [
 			  checked := false.
 			  self
 				  executeRequest: targetRequest
-				  do: [ :arguments |
-						  self methodNamedIn: arguments do: [ :className :selector :classSide |
+				  do: [
+						  self methodNamedIn: targetRequest do: [ :className :selector :classSide |
 								  checked := true.
 								  self
 									  getMethod: selector
 									  in: className
 									  classSide: classSide
-									  includeVariableDetails: (arguments booleanArgumentNamed: 'includeVariableDetails') ] ]
-				  onError: [ :error :arguments |
+									  includeVariableDetails: (targetRequest booleanArgumentNamed: 'includeVariableDetails') ] ]
+				  onError: [ :error |
 						  self
 							  errorResultForError: error
-							  className: (self classNameFor: arguments checked: checked)
-							  selector: (self selectorFor: arguments checked: checked)
-							  classSide: (self classSideFor: arguments checked: checked) ] ]
+							  className: (self classNameFor: targetRequest checked: checked)
+							  selector: (self selectorFor: targetRequest checked: checked)
+							  classSide: (self classSideFor: targetRequest checked: checked) ] ]
 ]
 
 { #category : 'private - results' }

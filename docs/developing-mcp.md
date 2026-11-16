@@ -42,8 +42,10 @@ Rules:
   Pharo, and the critiques a compile reports for the rest.
 - A tool is one class. Its input schema declares each argument once, with its
   default and limits, and `executeWithRequest:` reads the arguments from the
-  `MCPToolRequest` it receives (`argumentOrDefaultNamed:` and the typed
-  accessors built on it answer the schema's default).
+  `MCPToolRequest` it receives. `argumentOrDefaultNamed:` and the typed
+  accessors built on it answer the schema's default; the other accessors
+  answer only what the caller supplied, for code that must know whether an
+  argument was given.
 - Work on the image goes in an operation object when it is long, has tests of
   its own, or several tools use it. It takes plain arguments, answers image
   objects or a report, and knows nothing of the tool, the request or the

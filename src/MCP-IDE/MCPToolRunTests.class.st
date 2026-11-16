@@ -154,11 +154,11 @@ MCPToolRunTests >> executeWithRequest: request [
 	checked := false.
 	^ self
 		  executeRequest: request
-		  do: [ :arguments |
-				  self checkArguments: arguments.
+		  do: [
+				  self checkArguments: request.
 				  checked := true.
-				  self runTestsWith: arguments ]
-		  onError: [ :error :arguments | self errorResultForError: error testNames: (self testNamesFor: arguments checked: checked) ]
+				  self runTestsWith: request ]
+		  onError: [ :error | self errorResultForError: error testNames: (self testNamesFor: request checked: checked) ]
 ]
 
 { #category : 'private' }

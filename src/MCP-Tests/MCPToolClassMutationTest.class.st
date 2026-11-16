@@ -1,5 +1,5 @@
 "
-Create tests exercise class creation tool requests. Update tests exercise class update tool requests and verify the structured result data produced by the internal narrow commands.
+Create tests exercise class creation tool requests. Update tests exercise class update tool requests and verify the structured data the tool builds from the changed class.
 "
 Class {
 	#name : 'MCPToolClassMutationTest',

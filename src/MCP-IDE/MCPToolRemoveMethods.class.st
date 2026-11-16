@@ -118,11 +118,11 @@ MCPToolRemoveMethods >> executeWithRequest: request [
 	checked := false.
 	^ self
 		  executeRequest: request
-		  do: [ :arguments |
-				  self checkArguments: arguments.
+		  do: [
+				  self checkArguments: request.
 				  checked := true.
-				  self removeWith: arguments ]
-		  onError: [ :error :arguments |
+				  self removeWith: request ]
+		  onError: [ :error |
 				  self
 					  errorResultForError: error
 					  className: (self classNameFor: request checked: checked)

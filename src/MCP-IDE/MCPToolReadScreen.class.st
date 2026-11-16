@@ -98,27 +98,18 @@ MCPToolReadScreen >> entryNameKeys [
 ]
 
 { #category : 'executing' }
-MCPToolReadScreen >> errorResultForError: anError [
-
-	^ anError
-		  mcpCommandErrorDo: [ :commandError | self errorResultText: commandError messageText details: commandError structuredDetails ]
-		  otherwise: [ :toolError |
-		  self errorResultText: (self failureMessageFor: toolError) details: (self errorDetailsFor: toolError) ]
-]
-
-{ #category : 'executing' }
 MCPToolReadScreen >> executeWithRequest: request [
 
 	^ self
 		  executeRequest: request
-		  do: [ :arguments |
+		  do: [
 				  | window |
-				  window := arguments stringArgumentNamed: 'window'.
+				  window := request stringArgumentNamed: 'window'.
 				  self
 					  resultForReadOf: (self targetMorphNamed: window)
 					  target: (window ifNil: [ 'world' ])
-					  depth: (arguments integerArgumentNamed: 'depth') ]
-		  onError: [ :error :ignored | self errorResultForError: error ]
+					  depth: (request integerArgumentNamed: 'depth') ]
+		  onError: [ :error | self errorResultForError: error ]
 ]
 
 { #category : 'private - results' }

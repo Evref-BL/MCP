@@ -135,18 +135,18 @@ MCPToolSearch >> executeWithRequest: request [
 
 	^ self
 		  executeRequest: request
-		  do: [ :arguments |
+		  do: [
 				  | page scopeQuery |
-				  scopeQuery := self scopeQueryFromRequest: arguments.
+				  scopeQuery := self scopeQueryFromRequest: request.
 				  page := self
-					          queryPageForEntries: (self queryEntriesForRequest: arguments scopeQuery: scopeQuery)
+					          queryPageForEntries: (self queryEntriesForRequest: request scopeQuery: scopeQuery)
 					          limit: self defaultPageLimit
-					          offset: (arguments integerArgumentNamed: 'offset').
+					          offset: (request integerArgumentNamed: 'offset').
 				  self
-					  successResultText: (self successSummaryForRequest: arguments scopeQuery: scopeQuery page: page)
+					  successResultText: (self successSummaryForRequest: request scopeQuery: scopeQuery page: page)
 					  data: (self queryResultDataForPage: page)
 					  warnings: (self warningsForScopeQuery: scopeQuery) ]
-		  onError: [ :error :ignored | self errorResultForQueryError: error request: request ]
+		  onError: [ :error | self errorResultForQueryError: error request: request ]
 ]
 
 { #category : 'private - results' }

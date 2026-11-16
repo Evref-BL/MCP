@@ -123,15 +123,15 @@ MCPToolSearchTools >> executeWithRequest: request [
 
 	^ self
 		  executeRequest: request
-		  do: [ :arguments |
+		  do: [
 				  | query matchingTools shownTools data |
-				  query := arguments stringArgumentNamed: 'query'.
+				  query := request stringArgumentNamed: 'query'.
 				  matchingTools := self toolRegistry toolsMatchingQuery: query.
 				  shownTools := matchingTools first: (matchingTools size min: self resultLimit).
 				  data := { (#tools -> (shownTools collect: [ :each | self toolRegistry searchMetadataForTool: each ] as: Array)) }
 					          asDictionary.
 				  self successResultText: (self summaryForQuery: query matching: matchingTools shown: shownTools) data: data ]
-		  onError: [ :error :arguments | self errorResultFor: error ]
+		  onError: [ :error | self errorResultFor: error ]
 ]
 
 { #category : 'private - results' }

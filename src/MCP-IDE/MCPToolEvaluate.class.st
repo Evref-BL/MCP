@@ -162,12 +162,12 @@ MCPToolEvaluate >> executeWithRequest: request [
 
 	^ self
 		  executeRequest: request
-		  do: [ :arguments |
+		  do: [
 				  self answerFor: (MCPEvaluateCommand
-						   code: (arguments stringArgumentNamed: 'code')
-						   timeLimit: (arguments integerArgumentNamed: 'timeoutSeconds')
+						   code: (request stringArgumentNamed: 'code')
+						   timeLimit: (request integerArgumentNamed: 'timeoutSeconds')
 						   previewLimit: self resultPreviewCharacterLimit) execute ]
-		  onError: [ :error :ignored |
+		  onError: [ :error |
 				  self
 					  errorResultText: (error messageText ifNil: [ error asString ] ifNotNil: [ :text | text ])
 					  details: (self errorDetailsFor: error) ]

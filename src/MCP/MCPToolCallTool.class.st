@@ -59,11 +59,11 @@ MCPToolCallTool >> executeWithRequest: request [
 
 	^ self
 		  executeRequest: request
-		  do: [ :ignored |
+		  do: [
 				  self
 					  errorResultText: 'tool_call requires MCP server call context.'
 					  details: { (#name -> (request stringArgumentNamed: 'name')) } asDictionary ]
-		  onError: [ :error :ignored | self errorResultFor: error ]
+		  onError: [ :error | self errorResultFor: error ]
 ]
 
 { #category : 'metadata' }

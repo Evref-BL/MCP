@@ -1,7 +1,7 @@
 "
-Parsed repository reference used by repository tools.
+Repository reference read by the repository tools.
 
-A repository can be identified by image name, location path, or both. Commands use this spec to resolve a registered Iceberg repository before applying read or write behavior.
+A repository can be identified by image name, location path, or both. The repository tools use this spec to resolve a registered Iceberg repository before reading or changing it.
 "
 Class {
 	#name : 'MCPRepositoryReferenceSpec',
@@ -10,9 +10,9 @@ Class {
 		'name',
 		'location'
 	],
-	#category : 'MCP-IDE-Requests',
+	#category : 'MCP-IDE-Specs',
 	#package : 'MCP-IDE',
-	#tag : 'Requests'
+	#tag : 'Specs'
 }
 
 { #category : 'instance creation' }

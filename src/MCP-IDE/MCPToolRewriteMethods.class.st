@@ -76,10 +76,7 @@ MCPToolRewriteMethods >> errorResultForRewriteError: anError [
 { #category : 'executing' }
 MCPToolRewriteMethods >> executeWithRequest: request [
 
-	^ self
-		  executeRequest: request
-		  do: [ :arguments | self rewriteWith: arguments ]
-		  onError: [ :error :arguments | self errorResultForRewriteError: error ]
+	^ self executeRequest: request do: [ self rewriteWith: request ] onError: [ :error | self errorResultForRewriteError: error ]
 ]
 
 { #category : 'private - results' }

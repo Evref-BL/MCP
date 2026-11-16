@@ -11,9 +11,9 @@ Class {
 		'ruleClass',
 		'ruleIndex'
 	],
-	#category : 'MCP-IDE-Requests',
+	#category : 'MCP-IDE-Specs',
 	#package : 'MCP-IDE',
-	#tag : 'Requests'
+	#tag : 'Specs'
 }
 
 { #category : 'testing' }

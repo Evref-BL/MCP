@@ -161,19 +161,31 @@ by every server in the image whose tests are loaded.
 ## Reading arguments
 
 `executeWithRequest:` receives an `MCPToolRequest` whose arguments have
-already been validated against your schema. Read them with the typed
-accessors rather than by hand, so a missing or oddly typed value fails in one
-place:
+already been validated against your schema: types, ranges and enums are
+checked, and a number above its `maximum` is brought down to it. Read them
+with the typed accessors rather than by hand, so a missing or oddly typed
+value fails in one place.
+
+Declare each argument's default once, in the schema, and read the argument
+with an accessor that answers that default when the caller leaves it out:
+
+```smalltalk
+request argumentOrDefaultNamed: 'mode'.
+request booleanArgumentNamed: 'force'.
+request integerArgumentNamed: 'offset'.
+```
+
+The other accessors answer only what the caller supplied, for code that must
+tell an argument left out from one given:
 
 ```smalltalk
 request stringArgumentNamed: 'name'.
-request stringArgumentNamed: 'name' default: 'anything'.
-request stringArgumentNamed: 'side' in: #( 'instance' 'class' ) default: 'instance'.
-request booleanArgumentNamed: 'force' default: false.
-request nonNegativeIntegerArgumentNamed: 'offset' default: 0.
-request stringCollectionArgumentNamed: 'packages' default: #(  ).
+request stringCollectionArgumentNamed: 'packages'.
 request hasArgumentNamed: 'prefix'.
 ```
+
+Read the arguments in the tool, and hand an object that does the work plain
+values rather than the request.
 
 ## Answering
 
@@ -226,7 +238,7 @@ MyProjectToolListWidgets >> executeWithRequest: request
 	page := MCPPaginationResult
 		        fromEntries: MyProject widgetNames asArray sorted
 		        limit: self defaultPageLimit
-		        offset: (request nonNegativeIntegerArgumentNamed: 'offset' default: 0).
+		        offset: (request integerArgumentNamed: 'offset').
 	^ self
 		  successResultText: page returnedCount asString , ' widget(s).'
 		  data: (page asDictionaryWithEntriesKey: #widgets)

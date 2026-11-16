@@ -1,7 +1,9 @@
 "
 Shared base class for mutating MCP tools.
 
-It centralizes refactoring warning handling and structured mutation failure reporting. Concrete tools choose their public request shape in their own tool classes and pass a concrete action name only for result and error metadata.
+It runs each target of a call through one checked flow: checkArguments: refuses what the schema cannot, then mutateWith: makes the change and answers the result. An error raised before the check echoes the arguments as the caller wrote them; one raised after reports them as the tool read them, through requestedContextFor:. mutationActionFor:checked: names the action an error reports.
+
+It also centralizes refactoring warning handling and structured mutation failure reporting.
 "
 Class {
 	#name : 'MCPToolMutation',
@@ -191,11 +193,11 @@ MCPToolMutation >> executeWithRequest: request [
 			  checked := false.
 			  self
 				  executeRequest: targetRequest
-				  do: [ :arguments |
-						  self checkArguments: arguments.
+				  do: [
+						  self checkArguments: targetRequest.
 						  checked := true.
-						  self mutateWith: arguments ]
-				  onError: [ :error :arguments |
+						  self mutateWith: targetRequest ]
+				  onError: [ :error |
 						  | action requestedContext |
 						  action := self mutationActionFor: targetRequest checked: checked.
 						  requestedContext := self requestedContextFor: targetRequest checked: checked.
@@ -604,7 +606,7 @@ MCPToolMutation >> validateRefactoringScopePackageNamesExist: packageNames [
 
 { #category : 'validating' }
 MCPToolMutation >> validateRequest: request [
-	"A required argument holding only whitespace is not supplied. Every request object reads it with stringArgumentNamed:, which answers nil for a blank, so accepting it here lets nil reach the image and fail deep inside Pharo, far from the argument that caused it."
+	"A required argument holding only whitespace is not supplied. Every tool reads it with stringArgumentNamed:, which answers nil for a blank, so accepting it here lets nil reach the image and fail deep inside Pharo, far from the argument that caused it."
 
 	self requiredInputProperties do: [ :each |
 		(request stringArgumentNamed: each) ifNil: [ MCPInvalidToolInput signalMissingRequiredArgumentNamed: each forTool: self ] ].

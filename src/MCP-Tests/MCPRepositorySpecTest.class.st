@@ -20,21 +20,7 @@ MCPRepositorySpecTest >> newRepositoryNamed: aRepositoryName location: aFileRefe
 ]
 
 { #category : 'tests' }
-MCPRepositorySpecTest >> testRepositoryAdoptHeadRequestParsesTypedInput [
-
-	| request tool |
-	tool := MCPToolAdoptRepositoryHead new.
-	request := tool requestFromToolCallArguments: {
-			           (#name -> 'MCP Repo').
-			           (#branch -> 'main') } asDictionary.
-	self assert: (tool mutationActionFor: request checked: true) equals: 'adoptHead'.
-	self assert: (tool repositoryReferenceFor: request) name equals: 'MCP Repo'.
-	self assert: (tool expectedBranchNameIn: request) equals: 'main'.
-	self assert: ((tool requestedContextFor: request checked: true) at: #branch) equals: 'main'
-]
-
-{ #category : 'tests' }
-MCPRepositorySpecTest >> testRepositoryAdoptHeadResultReturnsDictionary [
+MCPRepositorySpecTest >> testAdoptHeadNamesThePackagesItUnmarks [
 	"Adopting clears the marks, so the answer names those the info before held and the repository no longer does."
 
 	| afterInfo beforeInfo data repository tool unmarked |
@@ -59,7 +45,21 @@ MCPRepositorySpecTest >> testRepositoryAdoptHeadResultReturnsDictionary [
 ]
 
 { #category : 'tests' }
-MCPRepositorySpecTest >> testRepositoryAttachRequestParsesTypedInput [
+MCPRepositorySpecTest >> testAdoptHeadReadsItsRequest [
+
+	| request tool |
+	tool := MCPToolAdoptRepositoryHead new.
+	request := tool requestFromToolCallArguments: {
+			           (#name -> 'MCP Repo').
+			           (#branch -> 'main') } asDictionary.
+	self assert: (tool mutationActionFor: request checked: true) equals: 'adoptHead'.
+	self assert: (tool repositoryReferenceFor: request) name equals: 'MCP Repo'.
+	self assert: (tool expectedBranchNameIn: request) equals: 'main'.
+	self assert: ((tool requestedContextFor: request checked: true) at: #branch) equals: 'main'
+]
+
+{ #category : 'tests' }
+MCPRepositorySpecTest >> testAttachReadsItsRequest [
 
 	| context request tool |
 	tool := MCPToolAttachRepository new.
@@ -77,7 +77,7 @@ MCPRepositorySpecTest >> testRepositoryAttachRequestParsesTypedInput [
 ]
 
 { #category : 'tests' }
-MCPRepositorySpecTest >> testRepositoryCommitResultReturnsDictionary [
+MCPRepositorySpecTest >> testCommitDataNamesPackagesAndOtherFiles [
 
 	| data tool |
 	tool := MCPToolCommitRepository new.
@@ -89,7 +89,47 @@ MCPRepositorySpecTest >> testRepositoryCommitResultReturnsDictionary [
 ]
 
 { #category : 'tests' }
-MCPRepositorySpecTest >> testRepositoryCreateUpdateExportRequestsParseTypedInput [
+MCPRepositorySpecTest >> testDiffDataAndSummaryNameTheChanges [
+
+	| data repository tool |
+	tool := MCPToolListRepositoryChanges new.
+	repository := self newRepositoryNamed: 'MCP Diff Repository' location: FileLocator imageDirectory packageNames: #( 'MCP' ).
+	data := tool dataForImageModifiedPackages: #( 'MCP' ) modifiedPaths: #( 'src/MCP.package' ).
+	self assert: data keys asSet equals: #( imageModifiedPackages modifiedPaths ) asSet.
+	self assert: (data at: #imageModifiedPackages) equals: #( 'MCP' ).
+	self assert: (data at: #modifiedPaths) equals: #( 'src/MCP.package' ).
+	self
+		assert: (tool summaryForChangesOf: repository imageModifiedPackages: #( 'MCP' ) modifiedPaths: #( 'src/MCP.package' ))
+		equals: 'Repository MCP Diff Repository has uncommitted changes.'.
+	self
+		assert: (tool summaryForChangesOf: repository imageModifiedPackages: #(  ) modifiedPaths: #(  ))
+		equals: 'Repository MCP Diff Repository has no uncommitted changes: the image matches its files and git sees none.'
+]
+
+{ #category : 'tests' }
+MCPRepositorySpecTest >> testExportDataNamesWrittenAndDeletedPaths [
+
+	| data tool |
+	tool := MCPToolExportRepository new.
+	data := tool
+		        dataForPackageNames: #( 'MCP' )
+		        writtenPaths: #( 'src/MCP/MCPTool.class.st' )
+		        deletedPaths: #( 'src/MCP/MCPGone.class.st' )
+		        alsoUncommittedPaths: #( 'README.md' ).
+	self assert: data keys asSet equals: #( packages written deleted alsoUncommitted ) asSet.
+	self assert: (data at: #packages) equals: #( 'MCP' ).
+	self assert: (data at: #written) equals: #( 'src/MCP/MCPTool.class.st' ).
+	self assert: (data at: #deleted) equals: #( 'src/MCP/MCPGone.class.st' ).
+	self assert: (data at: #alsoUncommitted) equals: #( 'README.md' ).
+	self assert: (tool
+			 dataForPackageNames: #(  )
+			 writtenPaths: #(  )
+			 deletedPaths: #(  )
+			 alsoUncommittedPaths: #(  )) isEmpty
+]
+
+{ #category : 'tests' }
+MCPRepositorySpecTest >> testMutationToolsReadTheirRequests [
 
 	| context request tool |
 	tool := MCPToolCreateRepository new.
@@ -137,43 +177,14 @@ MCPRepositorySpecTest >> testRepositoryCreateUpdateExportRequestsParseTypedInput
 ]
 
 { #category : 'tests' }
-MCPRepositorySpecTest >> testRepositoryDiffResultReturnsDictionary [
+MCPRepositorySpecTest >> testReloadDataNamesThePackages [
 
-	| data repository tool |
-	tool := MCPToolListRepositoryChanges new.
-	repository := self newRepositoryNamed: 'MCP Diff Repository' location: FileLocator imageDirectory packageNames: #( 'MCP' ).
-	data := tool dataForImageModifiedPackages: #( 'MCP' ) modifiedPaths: #( 'src/MCP.package' ).
-	self assert: data keys asSet equals: #( imageModifiedPackages modifiedPaths ) asSet.
-	self assert: (data at: #imageModifiedPackages) equals: #( 'MCP' ).
-	self assert: (data at: #modifiedPaths) equals: #( 'src/MCP.package' ).
-	self
-		assert: (tool summaryForChangesOf: repository imageModifiedPackages: #( 'MCP' ) modifiedPaths: #( 'src/MCP.package' ))
-		equals: 'Repository MCP Diff Repository has uncommitted changes.'.
-	self
-		assert: (tool summaryForChangesOf: repository imageModifiedPackages: #(  ) modifiedPaths: #(  ))
-		equals: 'Repository MCP Diff Repository has no uncommitted changes: the image matches its files and git sees none.'
-]
-
-{ #category : 'tests' }
-MCPRepositorySpecTest >> testRepositoryExportResultReturnsDictionary [
-
-	| data tool |
-	tool := MCPToolExportRepository new.
-	data := tool
-		        dataForPackageNames: #( 'MCP' )
-		        writtenPaths: #( 'src/MCP/MCPTool.class.st' )
-		        deletedPaths: #( 'src/MCP/MCPGone.class.st' )
-		        alsoUncommittedPaths: #( 'README.md' ).
-	self assert: data keys asSet equals: #( packages written deleted alsoUncommitted ) asSet.
-	self assert: (data at: #packages) equals: #( 'MCP' ).
-	self assert: (data at: #written) equals: #( 'src/MCP/MCPTool.class.st' ).
-	self assert: (data at: #deleted) equals: #( 'src/MCP/MCPGone.class.st' ).
-	self assert: (data at: #alsoUncommitted) equals: #( 'README.md' ).
-	self assert: (tool
-			 dataForPackageNames: #(  )
-			 writtenPaths: #(  )
-			 deletedPaths: #(  )
-			 alsoUncommittedPaths: #(  )) isEmpty
+	| reloadData tool |
+	tool := MCPToolReloadRepository new.
+	reloadData := tool dataForPackageNames: #( 'MCP' 'MCP-Tests' ).
+	self assert: reloadData keys asSet equals: #( packages ) asSet.
+	self assert: (reloadData at: #packages) equals: #( 'MCP' 'MCP-Tests' ).
+	self assert: (tool dataForPackageNames: #(  )) isEmpty
 ]
 
 { #category : 'tests' }
@@ -204,18 +215,7 @@ MCPRepositorySpecTest >> testRepositoryReferenceResolvesByNameAndLocation [
 ]
 
 { #category : 'tests' }
-MCPRepositorySpecTest >> testRepositoryReloadResultReturnsDictionary [
-
-	| reloadData tool |
-	tool := MCPToolReloadRepository new.
-	reloadData := tool dataForPackageNames: #( 'MCP' 'MCP-Tests' ).
-	self assert: reloadData keys asSet equals: #( packages ) asSet.
-	self assert: (reloadData at: #packages) equals: #( 'MCP' 'MCP-Tests' ).
-	self assert: (tool dataForPackageNames: #(  )) isEmpty
-]
-
-{ #category : 'tests' }
-MCPRepositorySpecTest >> testRepositoryVerifyIdentityRequestParsesTypedInput [
+MCPRepositorySpecTest >> testVerifyIdentityReadsItsRequest [
 
 	| context reference request tool |
 	tool := MCPToolVerifyRepositoryIdentity new.
@@ -240,7 +240,7 @@ MCPRepositorySpecTest >> testRepositoryVerifyIdentityRequestParsesTypedInput [
 ]
 
 { #category : 'tests' }
-MCPRepositorySpecTest >> testRepositoryVerifyIdentityResultReturnsDictionary [
+MCPRepositorySpecTest >> testVerifyIdentitySuccessAnswersNoData [
 	"A mismatch is an error, so a success carries no data and its summary names the fields that held."
 
 	| repository result tool |

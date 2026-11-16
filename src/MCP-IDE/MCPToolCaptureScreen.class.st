@@ -53,36 +53,27 @@ MCPToolCaptureScreen >> description [
 	^ 'Capture the Morphic world, or one open window named by its title, and return it as MCP image content. One window costs a fraction of the whole screen.'
 ]
 
-{ #category : 'private - results' }
-MCPToolCaptureScreen >> errorResultForError: anError [
-	"A window a caller named and that is not open is their mistake to correct, so it is answered as a command error with the open titles rather than as a stack trace."
-
-	^ anError
-		  mcpCommandErrorDo: [ :commandError | self errorResultText: commandError messageText details: commandError structuredDetails ]
-		  otherwise: [ :toolError |
-		  self errorResultText: (self failureMessageFor: toolError) details: (self errorDetailsFor: toolError) ]
-]
-
 { #category : 'executing' }
 MCPToolCaptureScreen >> executeWithRequest: request [
 
 	^ self
 		  executeRequest: request
-		  do: [ :arguments |
+		  do: [
 				  | window |
-				  window := arguments stringArgumentNamed: 'window'.
-				  self resultForCaptureOf: (self targetMorphNamed: window) target: (window ifNil: [ 'world' ]) ]
-		  onError: [ :error :ignored | self errorResultForError: error ]
+				  window := request stringArgumentNamed: 'window'.
+				  self resultForCaptureOf: (self targetMorphNamed: window) window: window ]
+		  onError: [ :error | self errorResultForError: error ]
 ]
 
 { #category : 'private - results' }
-MCPToolCaptureScreen >> resultForCaptureOf: aMorph target: aString [
-	"The capture as a PNG image content block, with what it shows, its size and its MIME type as structured content. Any morph can be captured, so a test needs no window open."
+MCPToolCaptureScreen >> resultForCaptureOf: aMorph window: aTitleOrNil [
+	"The capture as a PNG image content block, with what it shows, its size and its MIME type as structured content. What it shows is the window named, or the world when none is. Any morph can be captured, so a test needs no window open."
 
-	| form imageContent summary |
+	| form imageContent summary target |
+	target := aTitleOrNil ifNil: [ 'world' ].
 	form := aMorph imageForm.
 	imageContent := MCPStructureImageContent pngFromForm: form.
-	summary := self successSummaryForTarget: aString form: form.
+	summary := self successSummaryForTarget: target form: form.
 	^ MCPStructureCallToolResult
 		  content: {
 				  (self textContent: summary).
@@ -90,7 +81,7 @@ MCPToolCaptureScreen >> resultForCaptureOf: aMorph target: aString [
 		  structuredContent: (Dictionary new
 				   at: #summary put: summary;
 				   at: #data put: {
-						   (#target -> aString).
+						   (#target -> target).
 						   (#width -> form width).
 						   (#height -> form height).
 						   (#mimeType -> imageContent mimeType) } asDictionary;

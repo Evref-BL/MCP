@@ -151,9 +151,8 @@ MCPToolGetClass >> executeWithRequest: request [
 	^ self executeBatchedRequest: request do: [ :targetRequest |
 			  self
 				  executeRequest: targetRequest
-				  do: [ :arguments | self getClassWith: arguments ]
-				  onError: [ :error :arguments |
-				  self errorResultForError: error className: ((arguments stringArgumentNamed: 'name') ifNil: [ '' ]) ] ]
+				  do: [ self getClassWith: targetRequest ]
+				  onError: [ :error | self errorResultForError: error className: ((targetRequest stringArgumentNamed: 'name') ifNil: [ '' ]) ] ]
 ]
 
 { #category : 'private' }

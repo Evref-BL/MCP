@@ -177,7 +177,7 @@ MCPToolCreateClass >> mutateWith: request [
 	^ self
 		  executeMutationAction: 'create'
 		  force: false
-		  requestedContext: (self requestedContextFor: request checked: true)
+		  requestedContext: (self requestedContextFor: request)
 		  work: [
 				  createdClass := (MCPCreateClassCommand
 					                   className: className
@@ -208,8 +208,8 @@ MCPToolCreateClass >> mutationActionFor: request checked: aBoolean [
 ]
 
 { #category : 'private - errors' }
-MCPToolCreateClass >> requestedContextFor: request checked: aBoolean [
-	"The definition as the class is made from it. Reading it refuses nothing, so an error reports it the same way whether or not the arguments were checked."
+MCPToolCreateClass >> requestedContextFor: request [
+	"The definition as the class is made from it."
 
 	^ {
 		  (#class -> (request stringArgumentNamed: 'name')).

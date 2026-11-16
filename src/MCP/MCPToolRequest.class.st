@@ -33,7 +33,7 @@ MCPToolRequest >> argumentNamed: anArgumentName ifAbsent: absentBlock [
 
 { #category : 'accessing' }
 MCPToolRequest >> argumentOrDefaultNamed: anArgumentName [
-	"The argument, or the default its schema declares when the caller left it out. The accessors that take a default of their own, and argumentNamed:ifAbsent:, answer only what the caller supplied."
+	"The argument, or the default its schema declares when the caller left it out. Only the accessors built on it, booleanArgumentNamed: and integerArgumentNamed:, answer that default; every other accessor answers only what the caller supplied, so that code can tell an argument left out from one given, as an inferred side or a patch must."
 
 	^ self valueNamed: anArgumentName in: self arguments ifAbsent: [ defaults at: anArgumentName asString ifAbsent: [ nil ] ]
 ]

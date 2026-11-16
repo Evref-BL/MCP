@@ -103,7 +103,7 @@ MCPToolRepositoryOperation >> executeOperationFor: request work: workBlock succe
 	^ self
 		  executeMutationAction: self operationAction
 		  force: false
-		  requestedContext: (self requestedContextFor: request checked: true)
+		  requestedContext: (self requestedContextFor: request)
 		  work: workBlock
 		  successResult: successBlock
 		  failureSummary: [ :error | self failureSummaryFor: error request: request ]

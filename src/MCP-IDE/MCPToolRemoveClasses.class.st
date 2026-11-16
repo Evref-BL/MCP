@@ -105,10 +105,10 @@ MCPToolRemoveClasses >> executeWithRequest: request [
 
 	^ self
 		  executeRequest: request
-		  do: [ :arguments |
-				  self checkArguments: arguments.
-				  self removeClassesWith: arguments ]
-		  onError: [ :error :arguments | self errorResultForError: error classNames: (self classNamesFrom: arguments) ]
+		  do: [
+				  self checkArguments: request.
+				  self removeClassesWith: request ]
+		  onError: [ :error | self errorResultForError: error classNames: (self classNamesFrom: request) ]
 ]
 
 { #category : 'private' }

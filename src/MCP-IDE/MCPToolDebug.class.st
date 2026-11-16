@@ -57,10 +57,7 @@ MCPToolDebug >> errorResultForDebugError: anError [
 { #category : 'executing' }
 MCPToolDebug >> executeWithRequest: request [
 
-	^ self
-		  executeRequest: request
-		  do: [ :arguments | self resultFor: arguments ]
-		  onError: [ :error :ignored | self errorResultForDebugError: error ]
+	^ self executeRequest: request do: [ self resultFor: request ] onError: [ :error | self errorResultForDebugError: error ]
 ]
 
 { #category : 'private - schema' }

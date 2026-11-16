@@ -544,6 +544,19 @@ MCPToolContractsTest >> testAllToolsHavePngIconsWithDataUris [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testArgumentValueClassesUseSpecOrDeltaSuffixes [
+	"A tool reads its arguments from MCPToolRequest, the one request class. What a tool builds from them to resolve or apply is a spec or a delta, kept under Specs."
+
+	| invalidNames specClasses suffixes |
+	specClasses := self mcpClassesInPackageTagNamed: 'Specs'.
+	suffixes := #( 'Spec' 'Delta' ).
+	invalidNames := specClasses reject: [ :each | suffixes anySatisfy: [ :suffix | each name asString endsWith: suffix ] ].
+	self assert: (self mcpClassesInPackageTagNamed: 'Requests') asArray equals: { MCPToolRequest }.
+	self assert: specClasses isNotEmpty.
+	self assert: invalidNames isEmpty
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testBrowseIconToolGroupsKeepRelatedToolsTogether [
 
 	| autoRegisteredToolClasses groupedToolClasses |
@@ -620,6 +633,27 @@ MCPToolContractsTest >> testCaptureScreenHasAccurateNameAndSchemas [
 	self assert: tool name equals: 'screen_capture'.
 	self assert: tool inputSchema required equals: #(  ).
 	self assert: inputPropertyNames equals: #( 'window' )
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testCaptureScreenPackagesTheFormAsImageContent [
+
+	| data imageContent imageJSON result |
+	result := MCPToolCaptureScreen new
+		          resultForCaptureOf: (Morph new
+				           extent: 2 @ 3;
+				           yourself)
+		          window: nil.
+	data := result structuredContent at: #data.
+	imageContent := result content second.
+	imageJSON := imageContent asJRPCJSON.
+	self assert: (data at: #target) equals: 'world'.
+	self assert: (data at: #width) equals: 2.
+	self assert: (data at: #height) equals: 3.
+	self assert: imageContent mimeType equals: 'image/png'.
+	self assert: imageContent data isNotEmpty.
+	self assert: (imageJSON at: #type) equals: 'image'.
+	self assert: (imageJSON at: #mimeType) equals: 'image/png'
 ]
 
 { #category : 'tests' }
@@ -760,6 +794,18 @@ MCPToolContractsTest >> testDefaultToolRegistryRegistersBuiltInTools [
 	registry := MCPToolRegistry default.
 	self assert: (registry includesToolNamed: MCPToolSearchTools toolName).
 	self assert: (registry advertisedToolNames includes: MCPToolSearchClasses toolName)
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testDescriberAndResultClassesUseInfoOrResultSuffixes [
+
+	| describerClasses invalidNames suffixes |
+	describerClasses := (self mcpClassesInPackageTagNamed: 'DTOs') , (self mcpClassesInPackageTagNamed: 'Results').
+	describerClasses := describerClasses reject: [ :each | each isAbstract ].
+	suffixes := #( 'Result' 'Info' ).
+	invalidNames := describerClasses reject: [ :each | suffixes anySatisfy: [ :suffix | each name asString endsWith: suffix ] ].
+	self assert: describerClasses isNotEmpty.
+	self assert: invalidNames isEmpty
 ]
 
 { #category : 'tests' }
@@ -2184,30 +2230,6 @@ MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable 
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testOutputDtoClassesUseResultInfoOrReportSuffixes [
-
-	| dtoClasses invalidNames suffixes |
-	dtoClasses := (self mcpClassesInPackageTagNamed: 'DTOs') , (self mcpClassesInPackageTagNamed: 'Results').
-	dtoClasses := dtoClasses reject: [ :each | each isAbstract ].
-	suffixes := #( 'Result' 'Info' 'Report' ).
-	invalidNames := dtoClasses reject: [ :each | suffixes anySatisfy: [ :suffix | each name asString endsWith: suffix ] ].
-	self assert: dtoClasses isNotEmpty.
-	self assert: invalidNames isEmpty
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testParsedInputClassesUseRequestOrSpecSuffixes [
-
-	| invalidNames parsedInputClasses suffixes |
-	parsedInputClasses := (self mcpClassesInPackageTagNamed: 'Requests') reject: [ :each | each = MCPToolRequest ].
-	suffixes := #( 'Request' 'Spec' 'Delta' ).
-	invalidNames := parsedInputClasses reject: [ :each | suffixes anySatisfy: [ :suffix | each name asString endsWith: suffix ] ].
-	self assert: ((self mcpClassesInPackageTagNamed: 'Requests') includes: MCPToolRequest).
-	self assert: parsedInputClasses isNotEmpty.
-	self assert: invalidNames isEmpty
-]
-
-{ #category : 'tests' }
 MCPToolContractsTest >> testProjectMethodsDoNotHandleMessageNotUnderstoodAsControlFlow [
 
 	| methods offendingMethods rule |
@@ -2609,27 +2631,6 @@ MCPToolContractsTest >> testRunTestsRejectsEmptySelection [
 		raise: MCPInvalidToolInput
 		whoseDescriptionIncludes: 'Name at least one package, class or method to run.'
 		description: 'test_run requires at least one compact selection.'
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testScreenshotCommandPackagesCapturedFormAsImageContent [
-
-	| data imageContent imageJSON result |
-	result := MCPToolCaptureScreen new
-		          resultForCaptureOf: (Morph new
-				           extent: 2 @ 3;
-				           yourself)
-		          target: 'world'.
-	data := result structuredContent at: #data.
-	imageContent := result content second.
-	imageJSON := imageContent asJRPCJSON.
-	self assert: (data at: #target) equals: 'world'.
-	self assert: (data at: #width) equals: 2.
-	self assert: (data at: #height) equals: 3.
-	self assert: imageContent mimeType equals: 'image/png'.
-	self assert: imageContent data isNotEmpty.
-	self assert: (imageJSON at: #type) equals: 'image'.
-	self assert: (imageJSON at: #mimeType) equals: 'image/png'
 ]
 
 { #category : 'tests' }
@@ -3379,7 +3380,8 @@ MCPToolContractsTest >> underEitherPreemptionRuleDo: aBlock [
 MCPToolContractsTest >> unimplementedResponsibilitiesForConcreteMCPClasses [
 
 	| classes issues |
-	classes := (self packageOrganizer packageNamed: #MCP) definedClasses reject: [ :each | each isTrait ].
+	classes := (MCPTool builtInPackageNames flatCollect: [ :name | (self packageOrganizer packageNamed: name) definedClasses ])
+		           reject: [ :each | each isTrait ].
 	issues := OrderedCollection new.
 	classes do: [ :class |
 			class isAbstract ifFalse: [

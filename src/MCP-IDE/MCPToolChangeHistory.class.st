@@ -69,11 +69,11 @@ MCPToolChangeHistory >> executeWithRequest: request [
 
 	^ self
 		  executeRequest: request
-		  do: [ :arguments |
+		  do: [
 				  | data |
-				  data := self dataFor: arguments.
+				  data := self dataFor: request.
 				  self successResultText: (self successSummaryForData: data) data: data ]
-		  onError: [ :error :arguments | self errorResultFor: error ]
+		  onError: [ :error | self errorResultFor: error ]
 ]
 
 { #category : 'private - history' }

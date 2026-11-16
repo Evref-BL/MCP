@@ -1,7 +1,7 @@
 "
-Shared schema and call flow of class_create and class_update.
+Shared schema of class_create and class_update.
 
-Each target's arguments are checked, then the class is changed through the MCPClassCommand operations. An error raised before the arguments are checked echoes them as the caller wrote them; one raised after reports them as the tool reads them.
+The class is changed through the MCPClassCommand operations.
 "
 Class {
 	#name : 'MCPToolClassMutation',

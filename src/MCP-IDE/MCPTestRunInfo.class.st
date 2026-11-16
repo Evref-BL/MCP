@@ -1,5 +1,5 @@
 "
-The outcome of one test_run selection: the class it named, the test method if it named one, and the outcome of every test the selection ran to its end.
+The outcome of every test one test_run selection ran to its end.
 
 It counts them: each test counts once, and the run count leaves skipped tests out, as SUnit's does.
 "
@@ -7,8 +7,6 @@ Class {
 	#name : 'MCPTestRunInfo',
 	#superclass : 'Object',
 	#instVars : [
-		'className',
-		'testMethodName',
 		'outcomes'
 	],
 	#category : 'MCP-IDE-DTOs',
@@ -17,15 +15,9 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPTestRunInfo class >> selection: aSelection outcomes: someOutcomes [
+MCPTestRunInfo class >> outcomes: someOutcomes [
 
-	^ self new initializeSelection: aSelection outcomes: someOutcomes
-]
-
-{ #category : 'accessing' }
-MCPTestRunInfo >> className [
-
-	^ className
+	^ self new initializeOutcomes: someOutcomes
 ]
 
 { #category : 'accessing' }
@@ -47,10 +39,8 @@ MCPTestRunInfo >> failureCount [
 ]
 
 { #category : 'initialization' }
-MCPTestRunInfo >> initializeSelection: aSelection outcomes: someOutcomes [
+MCPTestRunInfo >> initializeOutcomes: someOutcomes [
 
-	className := aSelection className.
-	testMethodName := aSelection testMethodName.
 	outcomes := someOutcomes asArray
 ]
 
@@ -78,10 +68,4 @@ MCPTestRunInfo >> runCount [
 MCPTestRunInfo >> skippedCount [
 
 	^ self countOf: #isSkipped
-]
-
-{ #category : 'accessing' }
-MCPTestRunInfo >> testMethodName [
-
-	^ testMethodName
 ]
