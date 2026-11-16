@@ -61,7 +61,10 @@ MCPToolGetClass >> buildInputSchema [
 		                         name: 'includeSource';
 		                         type: 'boolean';
 		                         description:
-			                         'Answer each class as its Tonel file, as an export writes it: definition, comment, and the methods its package defines on both sides. offset pages it by methods.';
+			                         ('Answer each class as its Tonel file, as an export writes it: definition, comment, and the methods its package defines on both sides. offset pages it: a page holds up to {1} methods and {2} characters, but at least one method.'
+				                          format: {
+						                          self defaultPageLimit.
+						                          self pageCharacterLimit asStringWithCommas });
 		                         default: false;
 		                         yourself.
 	upToSuperclassNameProperty := MCPStructureProperties new
@@ -112,7 +115,7 @@ MCPToolGetClass >> defaultExposure [
 
 { #category : 'metadata' }
 MCPToolGetClass >> defaultPageLimit [
-	"With includeSource, how many methods a page of a class's Tonel file holds. A page is counted in methods, not in characters, so a page of long methods is long."
+	"With includeSource, how many methods a page of a class's Tonel file holds at most. A page also keeps within pageCharacterLimit, so a page of long methods holds fewer."
 
 	^ 50
 ]
@@ -299,6 +302,13 @@ MCPToolGetClass >> maximumSubclassDepth [
 	^ 10
 ]
 
+{ #category : 'metadata' }
+MCPToolGetClass >> pageCharacterLimit [
+	"With includeSource, how many characters of a class's Tonel file a page holds at most, so that a large class comes in pages a model's context holds several of. A method longer than that still comes, alone on its page, since a page holds at least one method."
+
+	^ 10000
+]
+
 { #category : 'private - hierarchy' }
 MCPToolGetClass >> subclassesOf: aClass downTo: aDepth [
 
@@ -343,11 +353,20 @@ MCPToolGetClass >> title [
 MCPToolGetClass >> tonelDictionaryForClass: aClass offset: anOffset [
 	"The class's Tonel file, a page of methods at a time. The first page opens with the definition and the comment, and a later one holds its methods alone, so the pages put end to end are the file. What other packages add to the class is in their own files, so it is counted and their names given instead. No file holds the users of a trait, so they come beside it, as in the description the file stands for."
 
-	| data definition extensions page source |
+	| data definition extensions methods opening page source |
 	definition := aClass asClassDefinition.
-	page := MCPPaginationResult fromEntries: (self tonelMethodDefinitionsOf: aClass) limit: self defaultPageLimit offset: anOffset.
+	methods := self tonelMethodDefinitionsOf: aClass.
+	opening := self tonelTextOf: definition methods: #(  ).
+	page := MCPPaginationResult
+		        fromEntries: methods
+		        limit: (self
+				         tonelMethodCountFrom: anOffset
+				         of: methods
+				         in: definition
+				         opening: opening)
+		        offset: anOffset.
 	source := self tonelTextOf: definition methods: page entries.
-	anOffset > 0 ifTrue: [ source := source allButFirst: (self tonelTextOf: definition methods: #(  )) size ].
+	anOffset > 0 ifTrue: [ source := source allButFirst: opening size ].
 	data := Dictionary new.
 	data
 		at: #class put: aClass name asString;
@@ -363,6 +382,22 @@ MCPToolGetClass >> tonelDictionaryForClass: aClass offset: anOffset [
 				at: #extensionMethods put: extensions size;
 				at: #extensionPackages put: (extensions collect: [ :each | each package name asString ] as: Set) asArray sort ].
 	^ data
+]
+
+{ #category : 'private - source' }
+MCPToolGetClass >> tonelMethodCountFrom: anOffset of: someMethodDefinitions in: aClassDefinition opening: anOpeningString [
+	"How many methods the page from anOffset holds: up to defaultPageLimit, and as many as keep its text within pageCharacterLimit, but at least one, so a method longer than a page is read too. The first page opens with the definition and the comment, anOpeningString, which counts toward it. A method adds to the file what the writer writes for it after the opening."
+
+	| count size |
+	count := 0.
+	size := anOffset = 0
+		        ifTrue: [ anOpeningString size ]
+		        ifFalse: [ 0 ].
+	someMethodDefinitions from: anOffset + 1 to: (someMethodDefinitions size min: anOffset + self defaultPageLimit) do: [ :each |
+			size := size + (self tonelTextOf: aClassDefinition methods: { each }) size - anOpeningString size.
+			(count > 0 and: [ size > self pageCharacterLimit ]) ifTrue: [ ^ count ].
+			count := count + 1 ].
+	^ count
 ]
 
 { #category : 'private - source' }
@@ -382,19 +417,30 @@ MCPToolGetClass >> tonelMethodDefinitionsOf: aClass [
 ]
 
 { #category : 'private - results' }
+MCPToolGetClass >> tonelMethodRangeFrom: aFirstIndex count: aCount [
+	"Which methods a page holds, counting from one: methods 3 to 7, or method 3 when it holds one, as a page of long methods may."
+
+	aCount = 1 ifTrue: [ ^ 'method ' , aFirstIndex printString ].
+	^ 'methods {1} to {2}' format: {
+			  aFirstIndex.
+			  (aFirstIndex + aCount - 1) }
+]
+
+{ #category : 'private - results' }
 MCPToolGetClass >> tonelPageSummaryForClass: aClass pagination: pagination offset: anOffset [
 	"What the page holds of the class's Tonel file: the whole file, its definition with the first methods, or later methods alone."
 
-	| name returned total |
+	| name range returned total |
 	name := self kindAndNameOf: aClass.
 	returned := pagination at: #returnedCount.
 	total := pagination at: #totalCount.
+	range := self tonelMethodRangeFrom: anOffset + 1 count: returned.
 	anOffset = 0 ifTrue: [
 			^ (pagination at: #truncated)
 				  ifTrue: [
-						  'Got {1} as its Tonel file, with methods 1 to {2} of {3}.' format: {
+						  'Got {1} as its Tonel file, with {2} of {3}.' format: {
 								  name.
-								  returned.
+								  range.
 								  total } ]
 				  ifFalse: [ 'Got {1} as its Tonel file.' format: { name } ] ].
 	returned = 0 ifTrue: [
@@ -402,9 +448,8 @@ MCPToolGetClass >> tonelPageSummaryForClass: aClass pagination: pagination offse
 					  anOffset.
 					  name.
 					  (self textForCount: total noun: 'method') } ].
-	^ 'Got methods {1} to {2} of {3} in the Tonel file of {4}.' format: {
-			  (anOffset + 1).
-			  (anOffset + returned).
+	^ 'Got {1} of {2} in the Tonel file of {3}.' format: {
+			  range.
 			  total.
 			  name }
 ]
@@ -437,4 +482,19 @@ MCPToolGetClass >> tonelTextOf: aClassDefinition methods: someMethodDefinitions 
 	writer := TonelWriter new.
 	writer snapshot: (MCSnapshot fromDefinitions: { aClassDefinition } , someMethodDefinitions).
 	^ String streamContents: [ :stream | writer writeClass: aClassDefinition on: stream ]
+]
+
+{ #category : 'validating' }
+MCPToolGetClass >> validateRequest: aToolRequest [
+	"offset pages the Tonel file includeSource answers. Without includeSource the answer is a description, which has no pages, so an offset past the first would be ignored; it is refused instead, saying what it goes with."
+
+	super validateRequest: aToolRequest.
+	((aToolRequest integerArgumentNamed: 'offset') > 0 and: [ (aToolRequest booleanArgumentNamed: 'includeSource') not ]) ifFalse: [
+		^ self ].
+	MCPInvalidToolInput signalForTool: self violations: { (MCPJSONSchemaViolation
+			 path: #( 'offset' )
+			 keyword: #dependentRequired
+			 message: 'offset pages the Tonel file that includeSource answers; pass includeSource: true with it, or leave offset out.'
+			 expected: #( 'includeSource' )
+			 actual: nil) }
 ]

@@ -235,6 +235,36 @@ MCPToolGetClassTest >> testGetsClassMetadata [
 ]
 
 { #category : 'tests' }
+MCPToolGetClassTest >> testIncludeSourceAnswersAMethodLongerThanAPageAlone [
+	"A page holds at least one method, so a method longer than a page still comes, alone on its page, and the next page starts after it."
+
+	| class first limit second |
+	limit := MCPToolGetClass new pageCharacterLimit.
+	class := self classNamed: self baseClassName.
+	self
+		ensureClassMethodSource: ('aLongMarker ^ ''{1}''' format: { (String new: limit withAll: $a) })
+		onClassNamed: self baseClassName.
+	first := self callToolWith: {
+			         (#name -> self baseClassName).
+			         (#includeSource -> true) } asDictionary.
+	second := self callToolWith: {
+			          (#name -> self baseClassName).
+			          (#includeSource -> true).
+			          (#offset -> 1) } asDictionary.
+	self
+		assert: (self summaryFrom: first)
+		equals: ('Got class {1} as its Tonel file, with method 1 of 3. Next page: offset 1.' format: { self baseClassName }).
+	self assert: ((self dataFrom: first) at: #source) size > limit.
+	self assert: (((self dataFrom: first) at: #source) includesSubstring: 'aLongMarker').
+	self
+		assert: (self summaryFrom: second)
+		equals: ('Got methods 2 to 3 of 3 in the Tonel file of class {1}.' format: { self baseClassName }).
+	self
+		assert: ((self dataFrom: first) at: #source) , ((self dataFrom: second) at: #source)
+		equals: (TonelWriter sourceCodeOf: class)
+]
+
+{ #category : 'tests' }
 MCPToolGetClassTest >> testIncludeSourceAnswersATraitAsItsTonelFile [
 	"No file holds the classes that use a trait, so they come beside its file, as they do without it."
 
@@ -300,8 +330,37 @@ MCPToolGetClassTest >> testIncludeSourceCountsWhatSeveralPackagesAdd [
 ]
 
 { #category : 'tests' }
+MCPToolGetClassTest >> testIncludeSourceEndsAPageBeforeItsCharacterLimit [
+	"A page holds the methods that fit in its characters, fewer than its count when they are long, and the next page starts at the first one left out. The pages put end to end are still the whole file."
+
+	| class limit offsets pages |
+	limit := MCPToolGetClass new pageCharacterLimit.
+	class := self classNamed: self baseClassName.
+	1 to: 3 do: [ :index |
+			self
+				ensureMethodSource: ('longMarker{1} ^ ''{2}''' format: {
+							 index.
+							 (String new: limit * 3 // 5 withAll: $a) })
+				onClassNamed: self baseClassName ].
+	offsets := #( 0 3 4 ).
+	pages := offsets collect: [ :each |
+			         self callToolWith: {
+					         (#name -> self baseClassName).
+					         (#includeSource -> true).
+					         (#offset -> each) } asDictionary ].
+	self assert: (pages collect: [ :each | self summaryFrom: each ]) equals: {
+			('Got class {1} as its Tonel file, with methods 1 to 3 of 5. Next page: offset 3.' format: { self baseClassName }).
+			('Got method 4 of 5 in the Tonel file of class {1}. Next page: offset 4.' format: { self baseClassName }).
+			('Got method 5 of 5 in the Tonel file of class {1}.' format: { self baseClassName }) }.
+	pages do: [ :each | self assert: ((self dataFrom: each) at: #source) size <= limit ].
+	self
+		assert: (String streamContents: [ :stream | pages do: [ :each | stream nextPutAll: ((self dataFrom: each) at: #source) ] ])
+		equals: (TonelWriter sourceCodeOf: class)
+]
+
+{ #category : 'tests' }
 MCPToolGetClassTest >> testIncludeSourceIsAnOptionTheDescriptionNames [
-	"Off unless asked for, so an answer without it stays the class's description; the tool's description names it, since a whole class is otherwise read a method at a time."
+	"Off unless asked for, so an answer without it stays the class's description; the tool's description names it, since a whole class is otherwise read a method at a time. Its own description gives a page's bounds, the method count tool_get gives as the page size and the characters."
 
 	| schema tool |
 	tool := MCPToolGetClass new.
@@ -310,7 +369,12 @@ MCPToolGetClassTest >> testIncludeSourceIsAnOptionTheDescriptionNames [
 	self assert: ((schema at: 'includeSource') at: #default) equals: false.
 	self assert: ((schema at: 'offset') at: #default) equals: 0.
 	self assert: (tool description includesSubstring: 'includeSource').
-	self assert: tool defaultPageLimit > 0
+	self assert: tool defaultPageLimit > 0.
+	self assert: (tool contract at: #pageSize) equals: tool defaultPageLimit.
+	self assert: (((schema at: 'includeSource') at: #description) includesSubstring:
+			 ('a page holds up to {1} methods and {2} characters' format: {
+					  tool defaultPageLimit.
+					  tool pageCharacterLimit asStringWithCommas }))
 ]
 
 { #category : 'tests' }
@@ -332,9 +396,9 @@ MCPToolGetClassTest >> testIncludeSourceKeepsTheHierarchyItWasAskedFor [
 
 { #category : 'tests' }
 MCPToolGetClassTest >> testIncludeSourceLeavesOutWhatATraitGives [
-	"A method a class gets from a trait is in the trait's file. The class's file holds the methods the class defines itself, as an export of its package writes it: here the one that overrides the trait's on the instance side, and not the trait's own on the class side."
+	"A method a class gets from a trait is in the trait's file. The class's file holds the methods the class defines itself, as an export of its package writes it: here the one that overrides the trait's on the instance side, and not the trait's own on the class side. A class that overrides nothing holds none of the trait's, on either side."
 
-	| class result source writer |
+	| class result source user writer |
 	class := MCPToolMethodSearchTraitOverrider.
 	writer := TonelWriter new.
 	writer snapshot: (MCPackage named: class package name) snapshot.
@@ -345,7 +409,14 @@ MCPToolGetClassTest >> testIncludeSourceLeavesOutWhatATraitGives [
 	self assert: (self summaryFrom: result) equals: ('Got class {1} as its Tonel file.' format: { class name }).
 	self assert: source equals: (String streamContents: [ :stream | writer writeClass: class asClassDefinition on: stream ]).
 	self assert: (source includesSubstring: '''overridden''').
-	self deny: (source includesSubstring: 'from the class side of the trait')
+	self deny: (source includesSubstring: 'from the class side of the trait').
+	user := MCPToolMethodSearchTraitUser.
+	source := (self dataFrom: (self callToolWith: {
+				            (#name -> user name).
+				            (#includeSource -> true) } asDictionary)) at: #source.
+	self assert: source equals: (String streamContents: [ :stream | writer writeClass: user asClassDefinition on: stream ]).
+	self deny: (source includesSubstring: 'from the trait').
+	self deny: (source includesSubstring: 'mcpTraitFixtureValue')
 ]
 
 { #category : 'tests' }
@@ -563,6 +634,24 @@ MCPToolGetClassTest >> testNamesALayoutOnlyWhenItIsNotFixed [
 	data := self dataFrom: (self callToolWith: { (#name -> MCPToolGetMethodTestTarget name) } asDictionary).
 	self assert: MCPToolGetMethodTestTarget classLayout class equals: FixedLayout.
 	self deny: (data includesKey: #layout)
+]
+
+{ #category : 'tests' }
+MCPToolGetClassTest >> testOffsetGoesOnlyWithIncludeSource [
+	"Without includeSource the answer is the class's description, which has no pages, so an offset past the first is refused rather than ignored. The default offset changes nothing and is accepted."
+
+	| result |
+	result := self callToolWith: {
+			          (#name -> self baseClassName).
+			          (#offset -> 1) } asDictionary.
+	self
+		assertResult: result
+		refusesArgumentsSaying:
+		'offset pages the Tonel file that includeSource answers; pass includeSource: true with it, or leave offset out.'.
+	result := self callToolWith: {
+			          (#name -> self baseClassName).
+			          (#offset -> 0) } asDictionary.
+	self assert: (self summaryFrom: result) equals: ('Got class {1}.' format: { self baseClassName })
 ]
 
 { #category : 'tests' }

@@ -189,9 +189,10 @@ MCPJSONSchemaViolation >> printOn: aStream [
 
 { #category : 'printing' }
 MCPJSONSchemaViolation >> printSentenceOn: aStream [
+	"A rule a tool checks itself, beyond the schema, words its own sentence: which arguments to give, or which go together."
 
 	keyword = 'required' ifTrue: [ ^ aStream << (self placeAt: (path copyWith: expected)) << ' is required.' ].
-	keyword = 'selectionRequired' ifTrue: [ ^ aStream << message ].
+	(keyword = 'selectionRequired' or: [ keyword = 'dependentRequired' ]) ifTrue: [ ^ aStream << message ].
 	aStream << (self placeAt: path).
 	keyword = 'notBlank' ifTrue: [ ^ aStream << ' is blank; leave it out or give it a value.' ].
 	keyword = 'notEmpty' ifTrue: [ ^ aStream << ' names nothing to act on; give at least one value that is not blank.' ].
