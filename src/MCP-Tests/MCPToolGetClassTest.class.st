@@ -236,15 +236,21 @@ MCPToolGetClassTest >> testGetsClassMetadata [
 
 { #category : 'tests' }
 MCPToolGetClassTest >> testIncludeSourceAnswersATraitAsItsTonelFile [
+	"No file holds the classes that use a trait, so they come beside its file, as they do without it."
 
-	| result source |
+	| data result source |
 	result := self callToolWith: {
 			          (#name -> TMCPToolMethodSearchFixture name).
 			          (#includeSource -> true) } asDictionary.
-	source := (self dataFrom: result) at: #source.
+	data := self dataFrom: result.
+	source := data at: #source.
 	self assert: (self summaryFrom: result) equals: ('Got trait {1} as its Tonel file.' format: { TMCPToolMethodSearchFixture name }).
 	self assert: source equals: (TonelWriter sourceCodeOf: TMCPToolMethodSearchFixture).
-	self assert: (source includesSubstring: 'from the class side of the trait')
+	self assert: (source includesSubstring: 'from the class side of the trait').
+	self
+		assert: (data at: #users)
+		equals: ((self dataFrom: (self callToolWith: { (#name -> TMCPToolMethodSearchFixture name) } asDictionary)) at: #users).
+	self assert: ((data at: #users) includes: MCPToolMethodSearchTraitOverrider name asString)
 ]
 
 { #category : 'tests' }
@@ -268,6 +274,29 @@ MCPToolGetClassTest >> testIncludeSourceAnswersTheClassAsItsTonelFile [
 	self deny: (data includesKey: #methods).
 	self deny: (data includesKey: #comment).
 	self deny: (data includesKey: #nextOffset)
+]
+
+{ #category : 'tests' }
+MCPToolGetClassTest >> testIncludeSourceCountsWhatSeveralPackagesAdd [
+	"Methods several packages add are counted together, and each package is named once. The class is named, not referred to, since method search tests count the methods that refer to it."
+
+	| class data result |
+	class := self classNamed: 'MCPToolMethodSearchReferenceTarget'.
+	self ensureMethodSource: 'extensionMarker ^ 3' protocol: self generatedExtensionProtocol on: class.
+	[
+		result := self callToolWith: {
+				          (#name -> class name).
+				          (#includeSource -> true) } asDictionary.
+		data := self dataFrom: result.
+		self assert: (data at: #extensionMethods) equals: 3.
+		self assert: (data at: #extensionPackages) equals: {
+				self generatedExtensionPackageName.
+				'MCP-Tests-Resources-Extensions' }.
+		self
+			assert: (self summaryFrom: result)
+			equals:
+				('Got class {1} as its Tonel file. The file leaves out 3 methods that 2 other packages add to class {1}, each in its own package''s file. method_search with protocol "*" and scope.classes lists them.'
+					 format: { class name }) ] ensure: [ self removeSelector: #extensionMarker from: class ]
 ]
 
 { #category : 'tests' }
@@ -302,10 +331,28 @@ MCPToolGetClassTest >> testIncludeSourceKeepsTheHierarchyItWasAskedFor [
 ]
 
 { #category : 'tests' }
-MCPToolGetClassTest >> testIncludeSourceLeavesOutWhatOtherPackagesAdd [
-	"A method another package adds to the class is in that package's file, not in the class's. The answer says how many there are and which packages hold them."
+MCPToolGetClassTest >> testIncludeSourceLeavesOutWhatATraitGives [
+	"A method a class gets from a trait is in the trait's file. The class's file holds the methods the class defines itself, as an export of its package writes it: here the one that overrides the trait's on the instance side, and not the trait's own on the class side."
 
-	| class data expected result |
+	| class result source writer |
+	class := MCPToolMethodSearchTraitOverrider.
+	writer := TonelWriter new.
+	writer snapshot: (MCPackage named: class package name) snapshot.
+	result := self callToolWith: {
+			          (#name -> class name).
+			          (#includeSource -> true) } asDictionary.
+	source := (self dataFrom: result) at: #source.
+	self assert: (self summaryFrom: result) equals: ('Got class {1} as its Tonel file.' format: { class name }).
+	self assert: source equals: (String streamContents: [ :stream | writer writeClass: class asClassDefinition on: stream ]).
+	self assert: (source includesSubstring: '''overridden''').
+	self deny: (source includesSubstring: 'from the class side of the trait')
+]
+
+{ #category : 'tests' }
+MCPToolGetClassTest >> testIncludeSourceLeavesOutWhatOtherPackagesAdd [
+	"A method another package adds to the class is in that package's file, not in the class's. The answer says how many there are and which packages hold them, and the method_search it names lists them."
+
+	| class data expected listed result |
 	class := self classNamed: self baseClassName.
 	expected := TonelWriter sourceCodeOf: class.
 	self ensureMethodSource: 'extensionMarker ^ 3' protocol: self generatedExtensionProtocol on: class.
@@ -320,11 +367,15 @@ MCPToolGetClassTest >> testIncludeSourceLeavesOutWhatOtherPackagesAdd [
 		self
 			assert: (self summaryFrom: result)
 			equals:
-				('Got class {1} as its Tonel file. The file leaves out 1 method another package adds to it, in that package''s own file.'
+				('Got class {1} as its Tonel file. The file leaves out 1 method that another package adds to class {1}, in that package''s own file. method_search with protocol "*" and scope.classes lists it.'
 					 format: { self baseClassName }).
 		self assert:
-			((self textFrom: result) includesSubstring: ('extensionPackages: [{1}]' format: { self generatedExtensionPackageName })) ]
-		ensure: [ self removeSelector: #extensionMarker from: class ]
+			((self textFrom: result) includesSubstring: ('extensionPackages: [{1}]' format: { self generatedExtensionPackageName })).
+		listed := (self dataFrom: (self callToolNamed: 'method_search' withArguments: {
+					            (#protocol -> '*').
+					            (#scope -> { (#classes -> { self baseClassName }) } asDictionary) } asDictionary)) at: #methods.
+		self assert: (listed collect: [ :each | each at: #selector ] as: Array) equals: #( 'extensionMarker' ) ] ensure: [
+		self removeSelector: #extensionMarker from: class ]
 ]
 
 { #category : 'tests' }

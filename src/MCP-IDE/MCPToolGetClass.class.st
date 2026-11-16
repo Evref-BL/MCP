@@ -61,7 +61,7 @@ MCPToolGetClass >> buildInputSchema [
 		                         name: 'includeSource';
 		                         type: 'boolean';
 		                         description:
-			                         'Answer each class as its Tonel file, as an export writes it: definition, comment, and the methods its package defines on both sides. Paged by methods.';
+			                         'Answer each class as its Tonel file, as an export writes it: definition, comment, and the methods its package defines on both sides. offset pages it by methods.';
 		                         default: false;
 		                         yourself.
 	upToSuperclassNameProperty := MCPStructureProperties new
@@ -112,7 +112,7 @@ MCPToolGetClass >> defaultExposure [
 
 { #category : 'metadata' }
 MCPToolGetClass >> defaultPageLimit [
-	"With includeSource, how many methods one page of a class's Tonel file holds: enough for most classes to come whole, few enough that a page of long methods stays readable."
+	"With includeSource, how many methods a page of a class's Tonel file holds. A page is counted in methods, not in characters, so a page of long methods is long."
 
 	^ 50
 ]
@@ -120,7 +120,7 @@ MCPToolGetClass >> defaultPageLimit [
 { #category : 'metadata' }
 MCPToolGetClass >> description [
 
-	^ 'Get class or trait definitions by name: superclass, slots, traits, package. includeSource reads each whole, as its Tonel file. method_search lists their methods.'
+	^ 'Get class or trait definitions by name: superclass, slots, traits, package. includeSource answers each as its Tonel file, a page of methods at a time. method_search lists their methods.'
 ]
 
 { #category : 'private - hierarchy' }
@@ -176,16 +176,25 @@ MCPToolGetClass >> extensionMethodsOf: aClass [
 ]
 
 { #category : 'private - results' }
-MCPToolGetClass >> extensionSummaryOn: aStream methodCount: methodCount packageCount: packageCount [
-	"A method another package adds to the class is in that package's file, so the class's file leaves it out. The lines name the packages."
+MCPToolGetClass >> extensionSummaryOn: aStream of: aClass methodCount: methodCount packageCount: packageCount [
+	"A method another package adds to the class is in that package's file, so the class's file leaves it out. The extensionPackages line names the packages, and an extension method's protocol is the star and the name of its package, which method_search matches."
 
 	aStream
 		nextPutAll: ' The file leaves out ';
 		nextPutAll: (self textForCount: methodCount noun: 'method');
-		space;
+		nextPutAll: ' that ';
 		nextPutAll: (packageCount = 1
-				 ifTrue: [ 'another package adds to it, in that package''s own file.' ]
-				 ifFalse: [ (self textForCount: packageCount noun: 'other package') , ' add to it, in their own files.' ])
+				 ifTrue: [ 'another package adds' ]
+				 ifFalse: [ (self textForCount: packageCount noun: 'other package') , ' add' ]);
+		nextPutAll: ' to ';
+		nextPutAll: (self kindAndNameOf: aClass);
+		nextPutAll: (packageCount = 1
+				 ifTrue: [ ', in that package''s own file.' ]
+				 ifFalse: [ ', each in its own package''s file.' ]);
+		nextPutAll: ' method_search with protocol "*" and scope.classes lists ';
+		nextPutAll: (methodCount = 1
+				 ifTrue: [ 'it.' ]
+				 ifFalse: [ 'them.' ])
 ]
 
 { #category : 'private' }
@@ -221,7 +230,13 @@ MCPToolGetClass >> getClassWith: request [
 		data at: #subclasses put: (self descriptionDictionariesForClasses: subclasses includeComment: includeComment) ].
 	^ self
 		  successResultText: (includeSource
-				   ifTrue: [ self tonelSummaryForClass: targetClass data: data offset: offset ]
+				   ifTrue: [
+						   self
+							   tonelSummaryForClass: targetClass
+							   page: data
+							   offset: offset
+							   superclasses: superclasses
+							   subclasses: subclasses ]
 				   ifFalse: [ self successSummaryForClass: targetClass superclasses: superclasses subclasses: subclasses ])
 		  data: data
 ]
@@ -269,6 +284,15 @@ MCPToolGetClass >> keysStatedInSummary [
 	^ #( class isTrait pagination nextOffset extensionMethods )
 ]
 
+{ #category : 'private - results' }
+MCPToolGetClass >> kindAndNameOf: aClass [
+	"class Foo or trait Foo, as an answer names it: a trait is not a class."
+
+	^ (aClass isTrait
+		   ifTrue: [ 'trait ' ]
+		   ifFalse: [ 'class ' ]) , aClass name
+]
+
 { #category : 'defaults' }
 MCPToolGetClass >> maximumSubclassDepth [
 
@@ -294,10 +318,7 @@ MCPToolGetClass >> successSummaryForClass: aClass superclasses: superclasses sub
 	^ String streamContents: [ :stream |
 			  stream
 				  nextPutAll: 'Got ';
-				  nextPutAll: (aClass isTrait
-						   ifTrue: [ 'trait ' ]
-						   ifFalse: [ 'class ' ]);
-				  nextPutAll: aClass name;
+				  nextPutAll: (self kindAndNameOf: aClass);
 				  nextPut: $..
 			  self hierarchySummaryOn: stream superclassCount: superclasses size subclassCount: subclasses size ]
 ]
@@ -320,7 +341,7 @@ MCPToolGetClass >> title [
 
 { #category : 'private - source' }
 MCPToolGetClass >> tonelDictionaryForClass: aClass offset: anOffset [
-	"The class's Tonel file, a page of methods at a time. The first page opens with the definition and the comment, and a later one holds its methods alone, so the pages put end to end are the file. What other packages add to the class is in their own files, so it is counted and their names given instead."
+	"The class's Tonel file, a page of methods at a time. The first page opens with the definition and the comment, and a later one holds its methods alone, so the pages put end to end are the file. What other packages add to the class is in their own files, so it is counted and their names given instead. No file holds the users of a trait, so they come beside it, as in the description the file stands for."
 
 	| data definition extensions page source |
 	definition := aClass asClassDefinition.
@@ -331,7 +352,9 @@ MCPToolGetClass >> tonelDictionaryForClass: aClass offset: anOffset [
 	data
 		at: #class put: aClass name asString;
 		at: #pagination put: page paginationDictionary.
-	aClass isTrait ifTrue: [ data at: #isTrait put: true ].
+	aClass isTrait ifTrue: [
+			data at: #isTrait put: true.
+			(MCPClassDescriptionInfo fromClass: aClass) userNames ifNotEmpty: [ :names | data at: #users put: names ] ].
 	source ifNotEmpty: [ data at: #source put: source ].
 	page nextOffset ifNotNil: [ :nextOffset | data at: #nextOffset put: nextOffset ].
 	extensions := self extensionMethodsOf: aClass.
@@ -363,9 +386,7 @@ MCPToolGetClass >> tonelPageSummaryForClass: aClass pagination: pagination offse
 	"What the page holds of the class's Tonel file: the whole file, its definition with the first methods, or later methods alone."
 
 	| name returned total |
-	name := (aClass isTrait
-		         ifTrue: [ 'trait ' ]
-		         ifFalse: [ 'class ' ]) , aClass name.
+	name := self kindAndNameOf: aClass.
 	returned := pagination at: #returnedCount.
 	total := pagination at: #totalCount.
 	anOffset = 0 ifTrue: [
@@ -389,18 +410,18 @@ MCPToolGetClass >> tonelPageSummaryForClass: aClass pagination: pagination offse
 ]
 
 { #category : 'private - results' }
-MCPToolGetClass >> tonelSummaryForClass: aClass data: data offset: anOffset [
+MCPToolGetClass >> tonelSummaryForClass: aClass page: data offset: anOffset superclasses: superclasses subclasses: subclasses [
 	"What the page holds of the class's Tonel file, then what else the answer lists, what the file leaves out, and where the next page starts."
 
 	^ String streamContents: [ :stream |
 			  stream nextPutAll: (self tonelPageSummaryForClass: aClass pagination: (data at: #pagination) offset: anOffset).
-			  self
-				  hierarchySummaryOn: stream
-				  superclassCount: (data at: #superclasses ifAbsent: [ #(  ) ]) size
-				  subclassCount: (data at: #subclasses ifAbsent: [ #(  ) ]) size.
-			  data
-				  at: #extensionMethods
-				  ifPresent: [ :count | self extensionSummaryOn: stream methodCount: count packageCount: (data at: #extensionPackages) size ].
+			  self hierarchySummaryOn: stream superclassCount: superclasses size subclassCount: subclasses size.
+			  data at: #extensionMethods ifPresent: [ :count |
+					  self
+						  extensionSummaryOn: stream
+						  of: aClass
+						  methodCount: count
+						  packageCount: (data at: #extensionPackages) size ].
 			  data at: #nextOffset ifPresent: [ :nextOffset |
 					  stream
 						  nextPutAll: ' Next page: offset ';
