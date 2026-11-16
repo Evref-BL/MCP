@@ -235,6 +235,149 @@ MCPToolGetClassTest >> testGetsClassMetadata [
 ]
 
 { #category : 'tests' }
+MCPToolGetClassTest >> testIncludeSourceAnswersATraitAsItsTonelFile [
+
+	| result source |
+	result := self callToolWith: {
+			          (#name -> TMCPToolMethodSearchFixture name).
+			          (#includeSource -> true) } asDictionary.
+	source := (self dataFrom: result) at: #source.
+	self assert: (self summaryFrom: result) equals: ('Got trait {1} as its Tonel file.' format: { TMCPToolMethodSearchFixture name }).
+	self assert: source equals: (TonelWriter sourceCodeOf: TMCPToolMethodSearchFixture).
+	self assert: (source includesSubstring: 'from the class side of the trait')
+]
+
+{ #category : 'tests' }
+MCPToolGetClassTest >> testIncludeSourceAnswersTheClassAsItsTonelFile [
+	"The file is what Pharo's Tonel writer writes for the class: its definition, its comment, and its methods on both sides with their protocols. It stands for the description, and holds the comment already."
+
+	| data expected result |
+	expected := TonelWriter sourceCodeOf: (self classNamed: self baseClassName).
+	self assert: (expected includesSubstring: 'Base fixture class comment.').
+	self assert: (expected includesSubstring: 'classMarker').
+	self assert: (expected includesSubstring: 'instanceMarker').
+	result := self callToolWith: {
+			          (#name -> self baseClassName).
+			          (#includeSource -> true).
+			          (#includeComment -> true) } asDictionary.
+	data := self dataFrom: result.
+	self assert: (self summaryFrom: result) equals: ('Got class {1} as its Tonel file.' format: { self baseClassName }).
+	self assert: (data at: #source) equals: expected.
+	self assert: ((self textFrom: result) includesSubstring: expected).
+	self deny: (data includesKey: #superclass).
+	self deny: (data includesKey: #methods).
+	self deny: (data includesKey: #comment).
+	self deny: (data includesKey: #nextOffset)
+]
+
+{ #category : 'tests' }
+MCPToolGetClassTest >> testIncludeSourceIsAnOptionTheDescriptionNames [
+	"Off unless asked for, so an answer without it stays the class's description; the tool's description names it, since a whole class is otherwise read a method at a time."
+
+	| schema tool |
+	tool := MCPToolGetClass new.
+	schema := tool inputSchema asJRPCJSON at: #properties.
+	self assert: ((schema at: 'includeSource') at: #type) equals: 'boolean'.
+	self assert: ((schema at: 'includeSource') at: #default) equals: false.
+	self assert: ((schema at: 'offset') at: #default) equals: 0.
+	self assert: (tool description includesSubstring: 'includeSource').
+	self assert: tool defaultPageLimit > 0
+]
+
+{ #category : 'tests' }
+MCPToolGetClassTest >> testIncludeSourceKeepsTheHierarchyItWasAskedFor [
+	"The superclasses and subclasses come as they do without the file, as short records."
+
+	| data result |
+	result := self callToolWith: {
+			          (#name -> self grandchildClassName).
+			          (#includeSource -> true).
+			          (#upToSuperclass -> self baseClassName) } asDictionary.
+	data := self dataFrom: result.
+	self
+		assert: (self summaryFrom: result)
+		equals: ('Got class {1} as its Tonel file. Included 1 superclass and 0 subclasses.' format: { self grandchildClassName }).
+	self assert: ((data at: #superclasses) collect: [ :each | each at: #class ]) equals: { self childZClassName }.
+	self assert: (data at: #source) equals: (TonelWriter sourceCodeOf: (self classNamed: self grandchildClassName))
+]
+
+{ #category : 'tests' }
+MCPToolGetClassTest >> testIncludeSourceLeavesOutWhatOtherPackagesAdd [
+	"A method another package adds to the class is in that package's file, not in the class's. The answer says how many there are and which packages hold them."
+
+	| class data expected result |
+	class := self classNamed: self baseClassName.
+	expected := TonelWriter sourceCodeOf: class.
+	self ensureMethodSource: 'extensionMarker ^ 3' protocol: self generatedExtensionProtocol on: class.
+	[
+		result := self callToolWith: {
+				          (#name -> self baseClassName).
+				          (#includeSource -> true) } asDictionary.
+		data := self dataFrom: result.
+		self assert: (data at: #source) equals: expected.
+		self assert: (data at: #extensionMethods) equals: 1.
+		self assert: (data at: #extensionPackages) equals: { self generatedExtensionPackageName }.
+		self
+			assert: (self summaryFrom: result)
+			equals:
+				('Got class {1} as its Tonel file. The file leaves out 1 method another package adds to it, in that package''s own file.'
+					 format: { self baseClassName }).
+		self assert:
+			((self textFrom: result) includesSubstring: ('extensionPackages: [{1}]' format: { self generatedExtensionPackageName })) ]
+		ensure: [ self removeSelector: #extensionMarker from: class ]
+]
+
+{ #category : 'tests' }
+MCPToolGetClassTest >> testIncludeSourcePagesALargeClassByMethods [
+	"A page of the file holds a page of methods. The first opens with the definition, a later one holds its methods alone, and the pages put end to end are the whole file."
+
+	| class first pageSize second total |
+	pageSize := MCPToolGetClass new defaultPageLimit.
+	class := self classNamed: self baseClassName.
+	1 to: pageSize + 1 do: [ :index |
+	self ensureMethodSource: ('pagedMarker{1} ^ {1}' format: { index }) onClassNamed: self baseClassName ].
+	total := class localMethods size + class classSide localMethods size.
+	self assert: total equals: pageSize + 3.
+	first := self callToolWith: {
+			         (#name -> self baseClassName).
+			         (#includeSource -> true) } asDictionary.
+	second := self callToolWith: {
+			          (#name -> self baseClassName).
+			          (#includeSource -> true).
+			          (#offset -> pageSize) } asDictionary.
+	self
+		assert: (self summaryFrom: first)
+		equals: ('Got class {1} as its Tonel file, with methods 1 to {2} of {3}. Next page: offset {2}.' format: {
+					 self baseClassName.
+					 pageSize.
+					 total }).
+	self assert: ((self dataFrom: first) at: #nextOffset) equals: pageSize.
+	self assert: (self summaryFrom: second) equals: ('Got methods {1} to {2} of {2} in the Tonel file of class {3}.' format: {
+				 (pageSize + 1).
+				 total.
+				 self baseClassName }).
+	self deny: ((self dataFrom: second) includesKey: #nextOffset).
+	self deny: (((self dataFrom: second) at: #source) includesSubstring: 'Class {').
+	self
+		assert: ((self dataFrom: first) at: #source) , ((self dataFrom: second) at: #source)
+		equals: (TonelWriter sourceCodeOf: class)
+]
+
+{ #category : 'tests' }
+MCPToolGetClassTest >> testIncludeSourceSaysWhenTheOffsetIsPastTheLastMethod [
+
+	| result |
+	result := self callToolWith: {
+			          (#name -> self baseClassName).
+			          (#includeSource -> true).
+			          (#offset -> 10) } asDictionary.
+	self
+		assert: (self summaryFrom: result)
+		equals: ('No methods from offset 10: the Tonel file of class {1} holds 2 methods.' format: { self baseClassName }).
+	self deny: ((self dataFrom: result) includesKey: #source)
+]
+
+{ #category : 'tests' }
 MCPToolGetClassTest >> testIncludesClassCommentsWhenRequested [
 
 	| data result subclasses |
