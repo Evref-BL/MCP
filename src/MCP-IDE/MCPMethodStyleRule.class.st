@@ -53,6 +53,16 @@ MCPMethodStyleRule class >> isClassReference: aNode [
 ]
 
 { #category : 'testing' }
+MCPMethodStyleRule class >> isConditionOfIfTrueOrIfFalse: aNode [
+	"Pattern blocks call this to leave a test that ifTrue:, ifFalse:, ifTrue:ifFalse: or ifFalse:ifTrue: sends to: Pharo's rules for those conditionals say what to write instead."
+
+	| parent |
+	parent := aNode parent.
+	^ parent isMessage and: [
+		  parent receiver == aNode and: [ #( #ifTrue: #ifFalse: #ifTrue:ifFalse: #ifFalse:ifTrue: ) includes: parent selector ] ]
+]
+
+{ #category : 'testing' }
 MCPMethodStyleRule class >> isStatement: aNode [
 
 	^ aNode parent isSequence

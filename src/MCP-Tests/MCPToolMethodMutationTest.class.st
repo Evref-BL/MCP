@@ -1278,6 +1278,39 @@ MCPToolMethodMutationTest >> testCompileReturnsAllowlistedExcessiveArgumentsCrit
 ]
 
 { #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileReturnsAllowlistedIsNilAndConditionalCritique [
+
+	| selector |
+	selector := #isNilAndConditional:.
+	self removeSelector: selector from: MCPToolGetMethodTestTarget.
+	[
+		self
+			assertCompileForClass: MCPToolGetMethodTestTarget
+			methodSource: 'isNilAndConditional: anObject anObject isNil ifTrue: [ ^ 1 ]. ^ 2'
+			protocol: 'tests'
+			returnsSingleCritiqueRuleClass: 'ReIsNilAndConditionalRule'
+			titledLike: 'isNil' ] ensure: [ self removeSelector: selector from: MCPToolGetMethodTestTarget ]
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileReturnsAllowlistedIsNotNilAndConditionalCritique [
+	"Pharo's rule advises ifNotNil:, and MCPIsNotNilRule leaves it the notNil it tests rather than advise isNotNil."
+
+	| selector |
+	(self class environment includesKey: #ReIsNotNilAndConditionalRule) ifFalse: [
+		^ self skip: 'This Pharo version has no ReIsNotNilAndConditionalRule.' ].
+	selector := #isNotNilAndConditional:.
+	self removeSelector: selector from: MCPToolGetMethodTestTarget.
+	[
+		self
+			assertCompileForClass: MCPToolGetMethodTestTarget
+			methodSource: 'isNotNilAndConditional: anObject anObject notNil ifTrue: [ ^ 1 ]. ^ 2'
+			protocol: 'tests'
+			returnsSingleCritiqueRuleClass: 'ReIsNotNilAndConditionalRule'
+			titledLike: 'notNil' ] ensure: [ self removeSelector: selector from: MCPToolGetMethodTestTarget ]
+]
+
+{ #category : 'tests' }
 MCPToolMethodMutationTest >> testCompileReturnsAllowlistedMissingSuperSendsCritique [
 
 	self removeSelector: #initialize from: MCPToolHierarchyTestBase.
@@ -1356,6 +1389,21 @@ MCPToolMethodMutationTest >> testCompileReturnsAllowlistedUnaryAccessingWithoutR
 			protocol: 'accessing'
 			returnsSingleCritiqueRuleClass: 'ReUnaryAccessingMethodWithoutReturnRule'
 			titledLike: 'without explicit return' ] ensure: [ self removeSelector: selector from: MCPToolGetMethodTestTarget ]
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileReturnsAllowlistedUseIsEmptyNotSizeCritique [
+
+	| selector |
+	selector := #sizeIsZero:.
+	self removeSelector: selector from: MCPToolGetMethodTestTarget.
+	[
+		self
+			assertCompileForClass: MCPToolGetMethodTestTarget
+			methodSource: 'sizeIsZero: aCollection ^ aCollection size = 0'
+			protocol: 'tests'
+			returnsSingleCritiqueRuleClass: 'ReUseIsEmptyNotSizeRule'
+			titledLike: '#isEmpty' ] ensure: [ self removeSelector: selector from: MCPToolGetMethodTestTarget ]
 ]
 
 { #category : 'tests' }
@@ -2147,6 +2195,25 @@ MCPToolMethodMutationTest >> testHeadersOfABatchWarnOnce [
 		self assert: (text allRangesOfSubstring: self droppedHeaderWarning) size equals: 1.
 		self assert: (MCPToolMethodMutationTestTarget includesSelector: #headerProbe).
 		self assert: (MCPToolMethodMutationTestTarget includesSelector: #headerProbeTwo) ] ensure: [ self removeHeaderProbes ]
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testIsNotNilCritiqueLeavesTheConditionalsToIfNotNil [
+	"A notNil that ifTrue: or ifFalse: tests is better written ifNotNil: or ifNil:, which Pharo's own rule advises; isNotNil would keep the test. Any other notNil is still told to read isNotNil."
+
+	| critiquesOf selector |
+	selector := #notNilProbe:.
+	critiquesOf := [ :body |
+		               self ensureMethodSource: 'notNilProbe: anObject ' , body protocol: 'tests' on: MCPToolGetMethodTestTarget.
+		               MCPToolCompileMethod new critiquesOfMethod: MCPToolGetMethodTestTarget >> selector ].
+	self removeSelector: selector from: MCPToolGetMethodTestTarget.
+	[
+		#( 'anObject notNil ifTrue: [ ^ 1 ]. ^ 2' 'anObject notNil ifFalse: [ ^ 1 ]. ^ 2' 'anObject notNil ifTrue: [ ^ 1 ] ifFalse: [ ^ 2 ]'
+		   'anObject notNil ifFalse: [ ^ 1 ] ifTrue: [ ^ 2 ]' ) do: [ :body |
+			self deny: ((critiquesOf value: body) anySatisfy: [ :each | each rule class = MCPIsNotNilRule ]) description: body ].
+		self assert:
+			((critiquesOf value: '^ anObject notNil and: [ anObject isString ]') anySatisfy: [ :each | each rule class = MCPIsNotNilRule ]) ]
+		ensure: [ self removeSelector: selector from: MCPToolGetMethodTestTarget ]
 ]
 
 { #category : 'tests' }

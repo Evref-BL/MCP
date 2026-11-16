@@ -113,12 +113,15 @@ MCPToolMethodMutation >> allowedNonErrorCritiqueRuleClasses [
 		  ReAssignmentInBlockRule.
 		  ReEquivalentSuperclassMethodsRule.
 		  ReExcessiveArgumentsRule.
+		  ReIsNilAndConditionalRule.
+		  ReIsNotNilAndConditionalRule.
 		  ReMissingSuperSendsRule.
 		  ReNotOptimizedIfRule.
 		  ReNotOptimizedIfNilRule.
 		  ReReturnInEnsureRule.
 		  ReTempVarOverridesInstVarRule.
-		  ReUnaryAccessingMethodWithoutReturnRule }
+		  ReUnaryAccessingMethodWithoutReturnRule.
+		  ReUseIsEmptyNotSizeRule }
 ]
 
 { #category : 'private - specs' }
