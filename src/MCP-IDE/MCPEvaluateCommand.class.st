@@ -3,7 +3,7 @@ Evaluates Smalltalk code for the evaluate tool, in a process of its own one prio
 
 What happens in the code's process is read there, while it is there to read: the value's preview, within a limit of characters, since printing a value runs its own code; and a failure's description, before its stack unwinds. The code may also never start, end its own process, or be stopped, which this process sees, reading where a stopped evaluation was before it unwinds.
 
-It answers itself, holding how the evaluation ended and what it read. What a call answers for each ending is the tool's to say.
+It answers an evaluation, holding how it ended and what it read: itself, or, when the code's process returned, the copy of itself that process noted what it read in. What a call answers for each ending is the tool's to say.
 "
 Class {
 	#name : 'MCPEvaluateCommand',
@@ -131,7 +131,6 @@ MCPEvaluateCommand >> evaluate [
 	compiler failBlock: [ :aNotice |
 			notice := aNotice.
 			nil ].
-	transcript := MCPTranscriptRecorder limit: previewLimit.
 	result := [ transcript recordDuring: [ compiler evaluate: code ] ]
 		          on: Exception
 		          do: [ :error |
@@ -163,27 +162,28 @@ MCPEvaluateCommand >> evaluateWithinCallBoundary [
 
 { #category : 'executing' }
 MCPEvaluateCommand >> execute [
-	"The code runs in a process one priority below this one, which can therefore always take the processor back, however the code computes, and stop it at its time limit, or sooner when it runs away. A limit kept at the same priority cannot preempt a computing loop. Answer myself, holding how the evaluation ended."
+	"The code runs in a process one priority below this one, which can therefore always take the processor back, however the code computes, and stop it at its time limit, or sooner when it runs away. A limit kept at the same priority cannot preempt a computing loop. That process notes what it reads in a copy of myself, which becomes the answer once the process has returned from it, before it signals done, since this process wakes above it. Until then the code may still end its own process or be stopped, and what a stopped evaluation's ensure blocks then do, fail or answer, is not part of the answer. Answer the evaluation, holding how it ended."
 
-	| done evaluator started actions stop |
+	| done evaluation evaluator outcome started actions stop |
 	done := Semaphore new.
 	started := false.
 	actions := MCPPostResponseActions value.
+	transcript := MCPTranscriptRecorder limit: previewLimit.
+	evaluation := self copy.
 	evaluator := [
 		             started := true.
-		             [ MCPPostResponseActions value: actions during: [ self evaluateWithinCallBoundary ] ] ensure: [ done signal ] ]
-		             newProcess.
+		             [
+			             MCPPostResponseActions value: actions during: [ evaluation evaluateWithinCallBoundary ].
+			             outcome := evaluation ] ensure: [ done signal ] ] newProcess.
 	evaluator
 		priority: Processor activePriority - 1;
 		name: self class processName.
 	self start: evaluator.
 	stop := self watch: evaluator until: done started: [ started ].
-	stop ifNil: [
-			ending ifNil: [ self endedItsOwnProcess ].
-			^ self ].
+	stop ifNil: [ ^ outcome ifNil: [ self endedItsOwnProcess ] ].
 	started ifFalse: [ ^ self terminateUnstarted: evaluator ].
-	[ ending isNil and: [ self isSaving: evaluator ] ] whileTrue: [ done waitTimeoutSeconds: 1 ].
-	ending ifNotNil: [ ^ self ].
+	[ outcome isNil and: [ self isSaving: evaluator ] ] whileTrue: [ done waitTimeoutSeconds: 1 ].
+	outcome ifNotNil: [ ^ outcome ].
 	evaluator isTerminated ifTrue: [ ^ self endedItsOwnProcess ].
 	^ self stop: evaluator because: stop
 ]
@@ -256,7 +256,7 @@ MCPEvaluateCommand >> isTranscriptTruncated [
 	^ transcriptTruncated
 ]
 
-{ #category : 'private' }
+{ #category : 'accessing' }
 MCPEvaluateCommand >> memoryGrowthLimit [
 	"Generous, since it backs the stack bound up rather than stands for a precise one: code that keeps this much more within one evaluation is either running away, filling a collection in a loop that never ends, or doing heavy work, a model load, that belongs in a fork, which has no limit. Much more, and a machine of 16 GB starts to swap."
 
@@ -335,7 +335,7 @@ MCPEvaluateCommand >> savingFrameLimit [
 	^ 50
 ]
 
-{ #category : 'private' }
+{ #category : 'accessing' }
 MCPEvaluateCommand >> stackDepthLimit [
 	"Far deeper than ordinary code goes, and passed within a fraction of a second by an endless recursion. Compiling and running tests stay within a few hundred frames. Printing a structure that contains itself goes deepest, since printString bounds the characters printed rather than the depth: tens of thousands of frames, more where each level prints little."
 
