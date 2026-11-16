@@ -1026,7 +1026,7 @@ MCPToolMethodMutationTest >> testCompileMethodReportsReplacedChangeKind [
 
 { #category : 'tests' }
 MCPToolMethodMutationTest >> testCompileNamesASourceHoldingSeveralMethods [
-	"Methods written one after the other in one source fail where the second begins, the compiler reading its selector line as a name it does not know or as a keyword without a receiver. The answer names the source for what it is, and says how several methods are passed."
+	"Methods written one after the other in one source fail where the second begins, the compiler reading its selector line as a name it does not know or as a keyword without a receiver, or further on, reading its body as the rest of the first method's last statement until a return, temporaries or a comment no longer continue it. A second method may also begin with its reference, as method_get prints it. The answer names the source for what it is, and says how several methods are passed."
 
 	[
 		{
@@ -1036,26 +1036,51 @@ MCPToolMethodMutationTest >> testCompileNamesASourceHoldingSeveralMethods [
 
 probeSecond
 
-	self yourself'
-			 ->
-			 'The source holds more than one method: probeSecond starts another at line 5. Pass each method as its own string in a source array.').
+	self yourself' -> #( 5 'probeSecond' )).
 			('probeFirst
 
 	self yourself.
 
 probeSecond: anObject
 
-	self yourself'
-			 ->
-			 'The source holds more than one method: probeSecond: starts another at line 5. Pass each method as its own string in a source array.') }
-			do: [ :each |
-					| error result |
-					result := self compileSource: each key into: MCPToolMethodMutationTestTarget name side: nil.
-					error := self errorFrom: result.
-					self assert: (result at: #isError).
-					self assert: (error at: #errorCode) equals: 'MethodSourceHoldsSeveralMethods'.
-					self assert: (error at: #line) equals: 5.
-					self assert: (self textFrom: result) equals: each value ].
+	self yourself' -> #( 5 'probeSecond:' )).
+			('probeFirst
+	^ 1.
+
+probeSecond
+	^ 2' -> #( 4 'probeSecond' )).
+			('probeFirst
+	^ 1.
+
+probeSecond
+	| value |
+	value := 2.
+	^ value' -> #( 4 'probeSecond' )).
+			('probeFirst
+	^ 1.
+
+probeSecond
+	"Answer two."
+	^ 2' -> #( 4 'probeSecond' )).
+			('probeFirst
+	^ 1.
+
+MCPToolMethodMutationTestTarget >> probeSecond
+	^ 2' -> #( 4 'probeSecond' )) } do: [ :each |
+				| error result |
+				result := self compileSource: each key into: MCPToolMethodMutationTestTarget name side: nil.
+				error := self errorFrom: result.
+				self assert: (result at: #isError).
+				self assert: (error at: #errorCode) equals: 'MethodSourceHoldsSeveralMethods'.
+				self assert: (error at: #line) equals: each value first.
+				self assert: (error at: #nextSelector) equals: each value second.
+				self
+					assert: (self textFrom: result)
+					equals:
+						('The source holds more than one method: {1} starts another at line {2}. Pass each method as its own string in a source array.'
+							 format: {
+									 each value second.
+									 each value first printString }) ].
 		self deny: (MCPToolMethodMutationTestTarget includesSelector: #probeFirst) ] ensure: [
 		self removeSelector: #probeFirst from: MCPToolMethodMutationTestTarget ]
 ]
@@ -1600,7 +1625,7 @@ MCPToolMethodMutationTest >> testCompileStatesAnUnimplementedSendToSuperOnce [
 
 { #category : 'tests' }
 MCPToolMethodMutationTest >> testCompileSaysAnUndeclaredNameIsASlotOfTheOtherSide [
-	"A slot one side of a class defines is undeclared in the methods of the other side, and nothing in the source says which side it was written for. The class side's own slots are the class's, not those every class has from Class."
+	"A slot one side of a class defines is undeclared in the methods of the other side, and nothing in the source says which side it was written for. The class side's own slots are the class's, not those every class has from Class. A class written as Foo class, or a source that begins with the method's reference, names a side of its own, so the way to the other side says to drop it."
 
 	| className |
 	className := 'MCPToolCompileSideProbe'.
@@ -1610,29 +1635,50 @@ MCPToolMethodMutationTest >> testCompileSaysAnUndeclaredNameIsASlotOfTheOtherSid
 		slots: #( #probeQuantity )
 		classSlots: #( #probeMade ).
 	[
-		self
-			assert: (self summaryFrom: (self
-						  compileSource: 'probeReset
-	probeMade := 0'
-						  into: className
-						  side: nil))
-			equals:
-			'Unable to compile method on MCPToolCompileSideProbe: Undeclared variable: probeMade. probeMade is a class-side slot of MCPToolCompileSideProbe, which instance-side methods do not see. Compile this method with side class, or reach probeMade through a class-side method.'.
-		self
-			assert: (self summaryFrom: (self
-						  compileSource: 'probeReset
-	probeQuantity := 0'
-						  into: className
-						  side: 'class'))
-			equals:
-			'Unable to compile method on MCPToolCompileSideProbe class: Undeclared variable: probeQuantity. probeQuantity is an instance-side slot of MCPToolCompileSideProbe, which class-side methods do not see. Compile this method with side instance, or reach probeQuantity through an instance-side method.'.
-		self
-			assert: (self summaryFrom: (self
-						  compileSource: 'probeName
-	^ name'
-						  into: className
-						  side: nil))
-			equals: 'Unable to compile method on MCPToolCompileSideProbe: Undeclared variable: name'.
+		{
+			({
+				 'probeReset
+	probeMade := 0'.
+				 className.
+				 nil }
+			 ->
+			 'Unable to compile method on MCPToolCompileSideProbe: Undeclared variable: probeMade. probeMade is a class-side slot of MCPToolCompileSideProbe, which instance-side methods do not see. Compile this method with side class, or reach probeMade through a class-side method.').
+			({
+				 'probeReset
+	probeQuantity := 0'.
+				 className.
+				 'class' }
+			 ->
+			 'Unable to compile method on MCPToolCompileSideProbe class: Undeclared variable: probeQuantity. probeQuantity is an instance-side slot of MCPToolCompileSideProbe, which class-side methods do not see. Compile this method with side instance, or reach probeQuantity through an instance-side method.').
+			({
+				 'probeReset
+	probeQuantity := 0'.
+				 (className , ' class').
+				 nil }
+			 ->
+			 'Unable to compile method on MCPToolCompileSideProbe class: Undeclared variable: probeQuantity. probeQuantity is an instance-side slot of MCPToolCompileSideProbe, which class-side methods do not see. Compile this method with class MCPToolCompileSideProbe and side instance, or reach probeQuantity through an instance-side method.').
+			({
+				 (className , ' class >> probeReset
+	probeQuantity := 0').
+				 className.
+				 nil }
+			 ->
+			 'Unable to compile method on MCPToolCompileSideProbe class: Undeclared variable: probeQuantity. probeQuantity is an instance-side slot of MCPToolCompileSideProbe, which class-side methods do not see. Compile this method with side instance and a source that starts with its selector line, or reach probeQuantity through an instance-side method.').
+			({
+				 (className , ' >> probeReset
+	probeMade := 0').
+				 className.
+				 'instance' }
+			 ->
+			 'Unable to compile method on MCPToolCompileSideProbe: Undeclared variable: probeMade. probeMade is a class-side slot of MCPToolCompileSideProbe, which instance-side methods do not see. Compile this method with side class and a source that starts with its selector line, or reach probeMade through a class-side method.').
+			({
+				 'probeName
+	^ name'.
+				 className.
+				 nil } -> 'Unable to compile method on MCPToolCompileSideProbe: Undeclared variable: name') } do: [ :each |
+				self
+					assert: (self summaryFrom: (self compileSource: each key first into: each key second side: each key third))
+					equals: each value ].
 		self deny: ((self classNamed: className) includesSelector: #probeReset).
 		self deny: ((self classNamed: className) classSide includesSelector: #probeReset) ] ensure: [ self removeClassNamed: className ]
 ]
