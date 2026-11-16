@@ -68,7 +68,7 @@ MCPToolChangeHistory >> executeWithRequest: request [
 	"Every history tool answers the data it reads, under a sentence that says what it found."
 
 	^ self
-		  executeParsedRequestFrom: request
+		  executeRequest: request
 		  do: [ :arguments |
 				  | data |
 				  data := self dataFor: arguments.

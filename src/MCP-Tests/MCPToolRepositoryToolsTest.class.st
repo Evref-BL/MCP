@@ -92,15 +92,13 @@ MCPToolRepositoryToolsTest >> testRepositoryToolsAreDiscoverableWithExpectedMeta
 ]
 
 { #category : 'tests' }
-MCPToolRepositoryToolsTest >> testRepositoryToolsReadTheirRequestAndNameTheirAction [
+MCPToolRepositoryToolsTest >> testRepositoryToolsNameTheirAction [
 
 	self repositoryToolSpecifications do: [ :specification |
-			| parsedRequest rawRequest tool |
+			| request tool |
 			tool := (specification at: #toolClass) new.
-			rawRequest := tool requestFromToolCallArguments: (specification at: #arguments).
-			parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
-			self assert: parsedRequest identicalTo: rawRequest.
-			self assert: (tool mutationActionFor: parsedRequest checked: true) equals: (specification at: #action) ]
+			request := tool requestFromToolCallArguments: (specification at: #arguments).
+			self assert: (tool mutationActionFor: request checked: true) equals: (specification at: #action) ]
 ]
 
 { #category : 'tests' }

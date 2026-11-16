@@ -67,7 +67,7 @@ MCPToolCaptureScreen >> errorResultForError: anError [
 MCPToolCaptureScreen >> executeWithRequest: request [
 
 	^ self
-		  executeParsedRequestFrom: request
+		  executeRequest: request
 		  do: [ :arguments |
 				  | window |
 				  window := arguments stringArgumentNamed: 'window'.

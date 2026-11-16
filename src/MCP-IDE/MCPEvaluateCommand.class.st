@@ -145,7 +145,7 @@ MCPEvaluateCommand >> evaluate [
 
 { #category : 'private' }
 MCPEvaluateCommand >> evaluateWithinCallBoundary [
-	"The boundary MCPTool>>executeParsedRequestFrom:do:onError: keeps around a call, in the process the code runs in, so that no exception goes unhandled there, opens a debugger and leaves the call waiting for its limit."
+	"The boundary MCPTool>>executeRequest:do:onError: keeps around a call, in the process the code runs in, so that no exception goes unhandled there, opens a debugger and leaves the call waiting for its limit."
 
 	| boundary |
 	boundary := self callBoundary.

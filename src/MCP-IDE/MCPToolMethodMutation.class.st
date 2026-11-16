@@ -115,13 +115,6 @@ MCPToolMethodMutation >> blockingPreCompileRuleClasses [
 	^ { ReDeadBlockRule }
 ]
 
-{ #category : 'private - execution' }
-MCPToolMethodMutation >> checkArguments: request [
-	"Refuse what reading the arguments can refuse, as the call's own error rather than a failure of the change."
-
-	self subclassResponsibility
-]
-
 { #category : 'private - arguments' }
 MCPToolMethodMutation >> classNameAndSideOf: request do: aBlock [
 	"aBlock gets the class the call names without its side, whether the class side is meant, and whether the call said which side, by side or by a class written as Foo class. A side that says the other one is refused."
@@ -278,34 +271,6 @@ MCPToolMethodMutation >> distinctCritiqueData: critiqueData [
 		  sort: [ :left :right | self critiqueData: left precedes: right ]
 ]
 
-{ #category : 'executing' }
-MCPToolMethodMutation >> executeWithRequest: request [
-	"Each target is checked, then changed. An error raised before its arguments are checked echoes them as the caller wrote them."
-
-	^ self executeBatchedRequest: request do: [ :targetRequest |
-			  | checked |
-			  checked := false.
-			  self
-				  executeParsedRequestFrom: targetRequest
-				  do: [ :arguments |
-						  self checkArguments: arguments.
-						  checked := true.
-						  self mutateWith: arguments ]
-				  onError: [ :error :arguments |
-						  | action requestedContext |
-						  action := self mutationActionFor: targetRequest checked: checked.
-						  requestedContext := self requestedContextFor: targetRequest checked: checked.
-						  error
-							  mcpCommandErrorDo: [ :commandError |
-							  self errorResultForCommandError: commandError action: action requestedContext: requestedContext ]
-							  otherwise: [ :actionError |
-									  self
-										  errorResultForActionFailure: actionError
-										  action: action
-										  requestedContext: requestedContext
-										  summary: (actionError messageText ifNil: [ actionError asString ] ifNotNil: [ :text | text ]) ] ] ]
-]
-
 { #category : 'private' }
 MCPToolMethodMutation >> failureMessageForArgumentUpdateAction: updateAction classNamed: className classSide: classSide selector: oldSelector newSelector: newSelector error: anError [
 
@@ -393,13 +358,6 @@ MCPToolMethodMutation >> methodToolSpec [
 	self subclassResponsibility
 ]
 
-{ #category : 'private - execution' }
-MCPToolMethodMutation >> mutateWith: request [
-	"Make the change the checked arguments ask for, and answer the tool result."
-
-	self subclassResponsibility
-]
-
 { #category : 'private - actions' }
 MCPToolMethodMutation >> mutationAction [
 
@@ -412,12 +370,6 @@ MCPToolMethodMutation >> mutationActionFor: request checked: aBoolean [
 	^ self mutationAction
 ]
 
-{ #category : 'private - execution' }
-MCPToolMethodMutation >> parsedRequestFromToolRequest: request [
-
-	^ request
-]
-
 { #category : 'private' }
 MCPToolMethodMutation >> reformattedMethodForBehavior: aBehavior selector: aSelector [
 	"Not CompiledMethod>>reformat: it formats in the context of the AST node's class, so it reads AST-Core's manifest instead of the formatter the method's own package declares."
@@ -426,21 +378,6 @@ MCPToolMethodMutation >> reformattedMethodForBehavior: aBehavior selector: aSele
 	compiledMethod := aBehavior >> aSelector.
 	aBehavior compile: (compiledMethod ast formattedCodeIn: aBehavior) classified: compiledMethod protocol.
 	^ aBehavior >> aSelector
-]
-
-{ #category : 'private - errors' }
-MCPToolMethodMutation >> requestedContextFor: request [
-	"The arguments as the tool read them, for the details of an error raised once they were checked."
-
-	self subclassResponsibility
-]
-
-{ #category : 'private - errors' }
-MCPToolMethodMutation >> requestedContextFor: request checked: aBoolean [
-	"An error raised before the arguments are checked echoes them as the caller wrote them; one raised after, as the tool read them."
-
-	aBoolean ifFalse: [ ^ request asDictionary copy ].
-	^ self requestedContextFor: request
 ]
 
 { #category : 'private - schema' }

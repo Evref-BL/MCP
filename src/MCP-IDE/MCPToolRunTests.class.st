@@ -153,7 +153,7 @@ MCPToolRunTests >> executeWithRequest: request [
 	| checked |
 	checked := false.
 	^ self
-		  executeParsedRequestFrom: request
+		  executeRequest: request
 		  do: [ :arguments |
 				  self checkArguments: arguments.
 				  checked := true.

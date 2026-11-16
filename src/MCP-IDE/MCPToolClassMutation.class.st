@@ -38,13 +38,6 @@ MCPToolClassMutation >> atLeastOneInputProperties [
 ]
 
 { #category : 'private - arguments' }
-MCPToolClassMutation >> checkArguments: request [
-	"Refuse, before anything is changed, the arguments the schema cannot refuse."
-
-	self subclassResponsibility
-]
-
-{ #category : 'private - arguments' }
 MCPToolClassMutation >> classCommentIn: request [
 	"The comment as the caller wrote it, nil when it gave none. It is text, so it is not trimmed, and null clears it."
 
@@ -77,34 +70,6 @@ MCPToolClassMutation >> description [
 	^ self classToolSpec at: #description
 ]
 
-{ #category : 'executing' }
-MCPToolClassMutation >> executeWithRequest: request [
-	"Each target is checked, then changed. An error raised before its arguments are checked echoes them as the caller wrote them."
-
-	^ self executeBatchedRequest: request do: [ :targetRequest |
-			  | checked |
-			  checked := false.
-			  self
-				  executeParsedRequestFrom: targetRequest
-				  do: [ :arguments |
-						  self checkArguments: arguments.
-						  checked := true.
-						  self mutateWith: arguments ]
-				  onError: [ :error :arguments |
-						  | action requestedContext |
-						  action := self mutationActionFor: targetRequest checked: checked.
-						  requestedContext := self requestedContextFor: targetRequest checked: checked.
-						  error
-							  mcpCommandErrorDo: [ :commandError |
-							  self errorResultForCommandError: commandError action: action requestedContext: requestedContext ]
-							  otherwise: [ :actionError |
-									  self
-										  errorResultForActionFailure: actionError
-										  action: action
-										  requestedContext: requestedContext
-										  summary: (actionError messageText ifNil: [ actionError asString ] ifNotNil: [ :text | text ]) ] ] ]
-]
-
 { #category : 'private - schema' }
 MCPToolClassMutation >> inputProperties [
 
@@ -120,20 +85,6 @@ MCPToolClassMutation >> layoutSchemaProperty [
 		  description: 'Layout class, a subclass of AbstractLayout such as VariableLayout.'
 ]
 
-{ #category : 'private - mutation' }
-MCPToolClassMutation >> mutateWith: request [
-	"Make the change the checked arguments ask for, and answer the tool result."
-
-	self subclassResponsibility
-]
-
-{ #category : 'private - errors' }
-MCPToolClassMutation >> mutationActionFor: request checked: aBoolean [
-	"The action an error reports."
-
-	self subclassResponsibility
-]
-
 { #category : 'private - schema' }
 MCPToolClassMutation >> packageNameSchemaProperty [
 
@@ -143,12 +94,6 @@ MCPToolClassMutation >> packageNameSchemaProperty [
 		  description: 'Move the class to this package. Give tag alone to retag it inside the package it is already in.'
 ]
 
-{ #category : 'private - request' }
-MCPToolClassMutation >> parsedRequestFromToolRequest: request [
-
-	^ request
-]
-
 { #category : 'private - specs' }
 MCPToolClassMutation >> renameNewClassNameSchemaProperty [
 
@@ -156,13 +101,6 @@ MCPToolClassMutation >> renameNewClassNameSchemaProperty [
 		  schemaPropertyNamed: 'newName'
 		  type: 'string'
 		  description: 'Rename the class to this name, updating every reference to it.'
-]
-
-{ #category : 'private - errors' }
-MCPToolClassMutation >> requestedContextFor: request checked: aBoolean [
-	"The arguments an error reports, as the caller wrote them when the error came before they were checked."
-
-	self subclassResponsibility
 ]
 
 { #category : 'private - schema' }

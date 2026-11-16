@@ -166,7 +166,7 @@ MCPToolGetMethod >> executeWithRequest: request [
 			  | checked |
 			  checked := false.
 			  self
-				  executeParsedRequestFrom: targetRequest
+				  executeRequest: targetRequest
 				  do: [ :arguments |
 						  self methodNamedIn: arguments do: [ :className :selector :classSide |
 								  checked := true.

@@ -161,7 +161,7 @@ MCPToolEvaluate >> endedItsOwnProcessMessage [
 MCPToolEvaluate >> executeWithRequest: request [
 
 	^ self
-		  executeParsedRequestFrom: request
+		  executeRequest: request
 		  do: [ :arguments |
 				  self answerFor: (MCPEvaluateCommand
 						   code: (arguments stringArgumentNamed: 'code')

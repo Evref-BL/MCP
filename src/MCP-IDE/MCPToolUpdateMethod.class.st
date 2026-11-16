@@ -6,6 +6,8 @@ The changes apply in order, protocol first, stopping at the first that fails. A 
 Class {
 	#name : 'MCPToolUpdateMethod',
 	#superclass : 'MCPToolMethodMutation',
+	#traits : 'TMCPSequencedUpdate',
+	#classTraits : 'TMCPSequencedUpdate classTrait',
 	#category : 'MCP-IDE-Tools',
 	#package : 'MCP-IDE',
 	#tag : 'Tools'
@@ -25,24 +27,11 @@ MCPToolUpdateMethod >> additionalKeywords [
 ]
 
 { #category : 'private - updating' }
-MCPToolUpdateMethod >> applyUpdates: actions of: request [
-	"Apply the actions in order, stopping at the first that fails. They all land on one method and the later ones build on the earlier, so carrying on would apply half a change nobody asked for."
+MCPToolUpdateMethod >> applyUpdate: action of: request [
 
-	| applied |
-	applied := OrderedCollection new.
-	actions doWithIndex: [ :action :index |
-			| result |
-			result := action = 'changeProtocol'
-				          ifTrue: [ self changeProtocolOf: request ]
-				          ifFalse: [ self changeSelector: action of: request ].
-			result isError ifTrue: [
-					^ self
-						  resultForFailure: result
-						  of: action
-						  applied: (applied collect: [ :each | each key ] as: Array)
-						  skipped: (actions allButFirst: index) ].
-			applied add: action -> result ].
-	^ self resultForUpdates: applied of: request
+	^ action = 'changeProtocol'
+		  ifTrue: [ self changeProtocolOf: request ]
+		  ifFalse: [ self changeSelector: action of: request ]
 ]
 
 { #category : 'private - updating' }
@@ -333,58 +322,6 @@ MCPToolUpdateMethod >> requestedContextFor: request permutation: aPermutation [
 ]
 
 { #category : 'private - results' }
-MCPToolUpdateMethod >> resultForFailure: errorResult of: action applied: appliedActions skipped: skippedActions [
-	"A single change fails as it always did. When it was one of several, say which had already landed and which were never attempted, because the target is left part-way."
-
-	| details summary |
-	(appliedActions isEmpty and: [ skippedActions isEmpty ]) ifTrue: [ ^ errorResult ].
-	details := (errorResult structuredContent at: #error ifAbsent: [ Dictionary new ]) copy.
-	details
-		at: #failedUpdate put: action;
-		at: #appliedUpdates put: appliedActions asArray;
-		at: #skippedUpdates put: skippedActions asArray.
-	summary := String streamContents: [ :stream |
-			           stream << (errorResult structuredContent at: #summary ifAbsent: [ '' ]).
-			           stream << ' Update ' << action << ' failed'.
-			           appliedActions ifNotEmpty: [
-					           stream << ', after applying '.
-					           appliedActions do: [ :each | stream << each ] separatedBy: [ stream << ', ' ] ].
-			           skippedActions ifNotEmpty: [
-					           stream << '; not attempted: '.
-					           skippedActions do: [ :each | stream << each ] separatedBy: [ stream << ', ' ] ].
-			           stream << '.' ].
-	^ self errorResultText: summary details: details
-]
-
-{ #category : 'private - results' }
-MCPToolUpdateMethod >> resultForUpdates: applied of: request [
-	"One action answers exactly what it answers alone. Several say how many were applied, then what each one answered alone, a line each in the order applied; their data stays under updates."
-
-	| updates warnings |
-	applied size = 1 ifTrue: [ ^ applied first value ].
-	warnings := OrderedCollection new.
-	updates := applied collect: [ :each |
-			           warnings addAll: (self warningsOfResult: each value).
-			           (each value structuredContent at: #data ifAbsent: [ Dictionary new ]) copy
-				           at: #action put: each key;
-				           yourself ].
-	^ self
-		  successResultText: (String streamContents: [ :stream |
-					   stream
-						   nextPutAll: 'Applied ';
-						   print: applied size;
-						   nextPutAll: ' updates to ';
-						   nextPutAll: (self updateSubjectDescriptionFor: request);
-						   nextPut: $:.
-					   applied do: [ :each |
-							   stream
-								   nextPut: Character lf;
-								   nextPutAll: (each value structuredContent at: #summary ifAbsent: [ '' ]) ] ])
-		  data: { (#updates -> updates asArray) } asDictionary
-		  warnings: warnings asArray
-]
-
-{ #category : 'private - results' }
 MCPToolUpdateMethod >> selectorChangeSummaryFormatFor: action [
 
 	action = 'rename' ifTrue: [ ^ 'Renamed {1} to {2}.' ].
@@ -412,6 +349,12 @@ MCPToolUpdateMethod >> targetSelectorFor: request [
 	^ (request stringArgumentNamed: 'newSelector')
 		  ifNil: [ (request stringArgumentNamed: 'selector') asSymbol ]
 		  ifNotNil: [ :newSelector | newSelector asSymbol ]
+]
+
+{ #category : 'private - updating' }
+MCPToolUpdateMethod >> updateActionOf: action [
+
+	^ action
 ]
 
 { #category : 'private - validating' }

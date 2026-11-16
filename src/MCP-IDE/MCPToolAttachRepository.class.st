@@ -16,12 +16,6 @@ MCPToolAttachRepository class >> toolName [
 ]
 
 { #category : 'private - errors' }
-MCPToolAttachRepository >> argumentContextFor: request [
-
-	^ (self creationFor: request) requestedDetails
-]
-
-{ #category : 'private - errors' }
 MCPToolAttachRepository >> failureSummaryPrefixFor: request [
 
 	^ String streamContents: [ :stream | stream << 'Failed to attach repository ' << (request stringArgumentNamed: 'name') << ': ' ]
@@ -68,6 +62,12 @@ MCPToolAttachRepository >> repositoryToolSpec [
 				    description: 'Package names to manage initially from the attached checkout.'
 				    itemDescription: 'A package name.') }).
 		  (#requiredProperties -> #( 'name' 'location' )) } asDictionary
+]
+
+{ #category : 'private - errors' }
+MCPToolAttachRepository >> requestedContextFor: request [
+
+	^ (self creationFor: request) requestedDetails
 ]
 
 { #category : 'private - results' }

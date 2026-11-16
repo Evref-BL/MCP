@@ -134,7 +134,7 @@ MCPToolSearch >> executeWithRequest: request [
 	"A search builds the scope it looks in first, then reads the rest of its arguments as it collects what it finds, and answers one page of it. An error is told with what the caller asked for."
 
 	^ self
-		  executeParsedRequestFrom: request
+		  executeRequest: request
 		  do: [ :arguments |
 				  | page scopeQuery |
 				  scopeQuery := self scopeQueryFromRequest: arguments.

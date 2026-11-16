@@ -93,13 +93,6 @@ MCPToolSearchTools >> catalogTextForSummary: aSummary tools: toolMetadataEntries
 						  nextPutAll: (each at: #description) ] ]
 ]
 
-{ #category : 'private - execution' }
-MCPToolSearchTools >> commandForRequest: aToolRequest [
-	"MCPTool still declares this hook, but the tool does its work itself, with no command."
-
-	^ self shouldNotImplement
-]
-
 { #category : 'private - results' }
 MCPToolSearchTools >> contentTextForStructuredContent: structuredContent [
 	"A catalog listing reads as prose and costs a third fewer characters than its JSON. Error results keep the default shape."
@@ -129,7 +122,7 @@ MCPToolSearchTools >> description [
 MCPToolSearchTools >> executeWithRequest: request [
 
 	^ self
-		  executeParsedRequestFrom: request
+		  executeRequest: request
 		  do: [ :arguments |
 				  | query matchingTools shownTools data |
 				  query := arguments stringArgumentNamed: 'query'.

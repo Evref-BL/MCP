@@ -83,16 +83,17 @@ MCPToolMutation >> buildInputSchema [
 		  yourself
 ]
 
+{ #category : 'private - execution' }
+MCPToolMutation >> checkArguments: request [
+	"Refuse, before anything changes, what the arguments ask that the schema cannot refuse."
+
+	self subclassResponsibility
+]
+
 { #category : 'private - refactoring' }
 MCPToolMutation >> classesRefactoringEnvironmentForClassNames: classNames baseEnvironment: baseEnvironment [
 
 	^ baseEnvironment forClasses: (self resolvedRefactoringScopeClassesFrom: classNames inScope: 'scope.classes')
-]
-
-{ #category : 'private - execution' }
-MCPToolMutation >> commandForRequest: mutationRequest [
-
-	^ mutationRequest commandForTool: self
 ]
 
 { #category : 'private - errors' }
@@ -183,24 +184,30 @@ MCPToolMutation >> executeMutationAction: action force: forceRequested requested
 
 { #category : 'executing' }
 MCPToolMutation >> executeWithRequest: request [
+	"Each target is checked, then changed. An error raised before its arguments are checked echoes them as the caller wrote them."
 
 	^ self executeBatchedRequest: request do: [ :targetRequest |
-		  self
-			  executeParsedRequestFrom: targetRequest
-			  do: [ :mutationRequest | (self commandForRequest: mutationRequest) execute ]
-			  onError: [ :error :mutationRequest |
-					  | action requestedContext |
-					  action := self mutationActionForErrorFromParsedRequest: mutationRequest rawRequest: targetRequest.
-					  requestedContext := self requestedContextForErrorFromParsedRequest: mutationRequest rawRequest: targetRequest.
-					  error
-						  mcpCommandErrorDo: [ :commandError |
-						  self errorResultForCommandError: commandError action: action requestedContext: requestedContext ]
-						  otherwise: [ :actionError |
-								  self
-									  errorResultForActionFailure: actionError
-									  action: action
-									  requestedContext: requestedContext
-									  summary: (actionError messageText ifNil: [ actionError asString ] ifNotNil: [ :text | text ]) ] ] ]
+			  | checked |
+			  checked := false.
+			  self
+				  executeRequest: targetRequest
+				  do: [ :arguments |
+						  self checkArguments: arguments.
+						  checked := true.
+						  self mutateWith: arguments ]
+				  onError: [ :error :arguments |
+						  | action requestedContext |
+						  action := self mutationActionFor: targetRequest checked: checked.
+						  requestedContext := self requestedContextFor: targetRequest checked: checked.
+						  error
+							  mcpCommandErrorDo: [ :commandError |
+							  self errorResultForCommandError: commandError action: action requestedContext: requestedContext ]
+							  otherwise: [ :actionError |
+									  self
+										  errorResultForActionFailure: actionError
+										  action: action
+										  requestedContext: requestedContext
+										  summary: (actionError messageText ifNil: [ actionError asString ] ifNotNil: [ :text | text ]) ] ] ]
 ]
 
 { #category : 'private - errors' }
@@ -278,10 +285,18 @@ MCPToolMutation >> methodNodeFromError: anError [
 	^ anError mcpMethodNode
 ]
 
-{ #category : 'private - errors' }
-MCPToolMutation >> mutationActionForErrorFromParsedRequest: mutationRequest rawRequest: rawRequest [
+{ #category : 'private - execution' }
+MCPToolMutation >> mutateWith: request [
+	"Make the change the checked arguments ask for, and answer the tool result."
 
-	^ 'mutation'
+	self subclassResponsibility
+]
+
+{ #category : 'private - errors' }
+MCPToolMutation >> mutationActionFor: request checked: aBoolean [
+	"The action an error names."
+
+	self subclassResponsibility
 ]
 
 { #category : 'private - mutation failures' }
@@ -343,12 +358,6 @@ MCPToolMutation >> normalizedCommandErrorForRefactoringWarning: aWarning action:
 		  details: details;
 		  messageText: summary;
 		  yourself
-]
-
-{ #category : 'private - request' }
-MCPToolMutation >> parsedRequestFromToolRequest: request [
-
-	self subclassResponsibility
 ]
 
 { #category : 'private - errors' }
@@ -470,10 +479,18 @@ MCPToolMutation >> refactoringWarningSummaryFor: aWarning action: action request
 ]
 
 { #category : 'private - errors' }
-MCPToolMutation >> requestedContextForErrorFromParsedRequest: mutationRequest rawRequest: rawRequest [
+MCPToolMutation >> requestedContextFor: request [
+	"The arguments as the tool read them, for the details of an error raised once they were checked."
 
-	mutationRequest ifNil: [ ^ rawRequest asDictionary copy ].
-	^ mutationRequest requestedContext
+	self subclassResponsibility
+]
+
+{ #category : 'private - errors' }
+MCPToolMutation >> requestedContextFor: request checked: aBoolean [
+	"What an error echoes of the call: its arguments as the caller wrote them until they are checked, then as the tool read them."
+
+	aBoolean ifFalse: [ ^ request asDictionary copy ].
+	^ self requestedContextFor: request
 ]
 
 { #category : 'private - schema' }

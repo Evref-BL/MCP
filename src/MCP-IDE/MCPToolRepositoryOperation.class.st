@@ -29,13 +29,6 @@ MCPToolRepositoryOperation >> additionalKeywords [
 	^ #( 'repository' 'repo' 'iceberg' 'git' )
 ]
 
-{ #category : 'private - errors' }
-MCPToolRepositoryOperation >> argumentContextFor: request [
-	"The repository the call names."
-
-	^ (self repositoryReferenceFor: request) requestedContext
-]
-
 { #category : 'private - schema' }
 MCPToolRepositoryOperation >> branchNameSchemaProperty [
 	"A guard, not a checkout: both tools that take it refuse to act when the repository is on another branch."
@@ -116,34 +109,6 @@ MCPToolRepositoryOperation >> executeOperationFor: request work: workBlock succe
 		  failureSummary: [ :error | self failureSummaryFor: error request: request ]
 ]
 
-{ #category : 'executing' }
-MCPToolRepositoryOperation >> executeWithRequest: request [
-	"Each target is checked, then changed. An error raised before its arguments are checked echoes them as the caller wrote them."
-
-	^ self executeBatchedRequest: request do: [ :targetRequest |
-			  | checked |
-			  checked := false.
-			  self
-				  executeParsedRequestFrom: targetRequest
-				  do: [ :arguments |
-						  self checkArguments: arguments.
-						  checked := true.
-						  self mutateWith: arguments ]
-				  onError: [ :error :arguments |
-						  | action requestedContext |
-						  action := self mutationActionFor: targetRequest checked: checked.
-						  requestedContext := self requestedContextFor: targetRequest checked: checked.
-						  error
-							  mcpCommandErrorDo: [ :commandError |
-							  self errorResultForCommandError: commandError action: action requestedContext: requestedContext ]
-							  otherwise: [ :actionError |
-									  self
-										  errorResultForActionFailure: actionError
-										  action: action
-										  requestedContext: requestedContext
-										  summary: (actionError messageText ifNil: [ actionError asString ] ifNotNil: [ :text | text ]) ] ] ]
-]
-
 { #category : 'private - repository' }
 MCPToolRepositoryOperation >> expectedBranchNameIn: request [
 	"The branch the caller expects the repository on, or an empty string when it expects none."
@@ -208,12 +173,6 @@ MCPToolRepositoryOperation >> modifiedPackageNamesSchemaProperty [
 		  itemDescription: 'Package name.'
 ]
 
-{ #category : 'private - execution' }
-MCPToolRepositoryOperation >> mutateWith: request [
-
-	self subclassResponsibility
-]
-
 { #category : 'private - errors' }
 MCPToolRepositoryOperation >> mutationActionFor: request checked: aBoolean [
 
@@ -242,12 +201,6 @@ MCPToolRepositoryOperation >> packageNamesSchemaProperty [
 		  stringArraySchemaNamed: 'packages'
 		  description: 'Assert the repository manages exactly these packages.'
 		  itemDescription: 'Package name.'
-]
-
-{ #category : 'private - request' }
-MCPToolRepositoryOperation >> parsedRequestFromToolRequest: request [
-
-	^ request
 ]
 
 { #category : 'private - results' }
@@ -299,11 +252,10 @@ MCPToolRepositoryOperation >> repositoryToolSpec [
 ]
 
 { #category : 'private - errors' }
-MCPToolRepositoryOperation >> requestedContextFor: request checked: aBoolean [
-	"What an error echoes of the call: its arguments as the caller wrote them until they are checked, then what the tool read of them."
+MCPToolRepositoryOperation >> requestedContextFor: request [
+	"The repository the call names."
 
-	aBoolean ifFalse: [ ^ request asDictionary copy ].
-	^ self argumentContextFor: request
+	^ (self repositoryReferenceFor: request) requestedContext
 ]
 
 { #category : 'private - schema' }

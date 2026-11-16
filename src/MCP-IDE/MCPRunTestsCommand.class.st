@@ -271,7 +271,7 @@ MCPRunTestsCommand >> runEachSelectionUntil: deadline [
 			uniqueTestCases := self uniqueTestCasesFrom: testCases seenTestCaseNames: seenTestCaseNames.
 			outcomes := OrderedCollection new.
 			stopped := self runTestCases: uniqueTestCases until: deadline into: outcomes.
-			resultEntries add: (MCPTestRunInfo validatedRequest: selection selectedTestCount: uniqueTestCases size outcomes: outcomes).
+			resultEntries add: (MCPTestRunInfo selection: selection outcomes: outcomes).
 			stopped ifNotNil: [
 					notRun := OrderedCollection withAll: (self
 							           notRunSelectionsFor: selection

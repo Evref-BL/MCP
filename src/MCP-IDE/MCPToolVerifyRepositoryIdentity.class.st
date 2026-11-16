@@ -38,21 +38,6 @@ MCPToolVerifyRepositoryIdentity >> annotations [
 	^ MCPStructureToolAnnotations readOnly
 ]
 
-{ #category : 'private - errors' }
-MCPToolVerifyRepositoryIdentity >> argumentContextFor: request [
-
-	| context |
-	context := (super argumentContextFor: request) copy.
-	(self expectedBranchNameIn: request) ifNotEmpty: [ :branchName | context at: #branch put: branchName ].
-	(request hasArgumentNamed: 'subdirectory') ifTrue: [ context at: #subdirectory put: (self expectedSubdirectoryIn: request) ].
-	(request hasArgumentNamed: 'packages') ifTrue: [
-		context at: #packages put: (request uniqueStringCollectionArgumentNamed: 'packages') ].
-	(request hasArgumentNamed: 'modifiedPackages') ifTrue: [
-		context at: #modifiedPackages put: (request uniqueStringCollectionArgumentNamed: 'modifiedPackages') ].
-	(request hasArgumentNamed: 'isModified') ifTrue: [ context at: #isModified put: (request booleanArgumentNamed: 'isModified') ].
-	^ context
-]
-
 { #category : 'private - validation' }
 MCPToolVerifyRepositoryIdentity >> compare: anInfo with: request checkedFields: checkedFields mismatches: mismatches [
 	"Each expectation the call gives beside what the image holds, in the order the schema lists them."
@@ -186,12 +171,27 @@ MCPToolVerifyRepositoryIdentity >> repositoryToolSpec [
 ]
 
 { #category : 'private - errors' }
+MCPToolVerifyRepositoryIdentity >> requestedContextFor: request [
+
+	| context |
+	context := (super requestedContextFor: request) copy.
+	(self expectedBranchNameIn: request) ifNotEmpty: [ :branchName | context at: #branch put: branchName ].
+	(request hasArgumentNamed: 'subdirectory') ifTrue: [ context at: #subdirectory put: (self expectedSubdirectoryIn: request) ].
+	(request hasArgumentNamed: 'packages') ifTrue: [
+		context at: #packages put: (request uniqueStringCollectionArgumentNamed: 'packages') ].
+	(request hasArgumentNamed: 'modifiedPackages') ifTrue: [
+		context at: #modifiedPackages put: (request uniqueStringCollectionArgumentNamed: 'modifiedPackages') ].
+	(request hasArgumentNamed: 'isModified') ifTrue: [ context at: #isModified put: (request booleanArgumentNamed: 'isModified') ].
+	^ context
+]
+
+{ #category : 'private - errors' }
 MCPToolVerifyRepositoryIdentity >> signalMismatches: mismatches of: anInfo for: request [
 
 	MCPCommandError
 		signalErrorCode: #RepositoryIdentityMismatch
 		message: (String streamContents: [ :stream | stream << 'Repository identity verification failed for ' << anInfo name << '.' ])
-		details: ((self argumentContextFor: request) copy
+		details: ((self requestedContextFor: request) copy
 				 at: #repository put: anInfo asDictionary;
 				 at: #mismatches put: mismatches;
 				 yourself)
@@ -203,7 +203,7 @@ MCPToolVerifyRepositoryIdentity >> signalMissingExpectationsFor: request [
 	MCPCommandError
 		signalErrorCode: #RepositoryIdentityExpectationRequired
 		message: 'repository_identity_verify requires at least one expected identity field besides name.'
-		details: ((self argumentContextFor: request) copy
+		details: ((self requestedContextFor: request) copy
 				 at: #expectedFields put: #( 'location' 'branch' 'subdirectory' 'packages' 'modifiedPackages' 'isModified' );
 				 yourself)
 ]

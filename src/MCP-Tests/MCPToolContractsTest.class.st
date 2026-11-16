@@ -67,21 +67,6 @@ MCPToolContractsTest >> assertNamesAMissingClassAlike: aCase [
 ]
 
 { #category : 'private' }
-MCPToolContractsTest >> assertToolFlowSpec: aSpec [
-	"A spec that names no request class is for a tool that reads the request it is given; one that names no command class is for a tool that builds no command."
-
-	| parsedRequest rawRequest tool |
-	tool := (aSpec at: #toolClass) new.
-	rawRequest := tool requestFromToolCallArguments: (aSpec at: #arguments).
-	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
-	(aSpec includesKey: #requestClass) ifFalse: [ ^ self assert: parsedRequest identicalTo: rawRequest ].
-	self assert: parsedRequest class equals: (aSpec at: #requestClass).
-	aSpec
-		at: #commandClass
-		ifPresent: [ :commandClass | self assert: (tool commandForRequest: parsedRequest) class equals: commandClass ]
-]
-
-{ #category : 'private' }
 MCPToolContractsTest >> assertUsesSupportedSchemaDialect: aValue [
 
 	| supportedKeywords |
@@ -99,83 +84,6 @@ MCPToolContractsTest >> assertUsesSupportedSchemaDialect: aValue [
 ]
 
 { #category : 'private' }
-MCPToolContractsTest >> baseToolFlowSpecs [
-
-	^ {
-		  {
-			  (#toolClass -> MCPToolSearchRepositories).
-			  (#arguments -> Dictionary new).
-			  (#requestClass -> MCPToolRequest) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolSearchPackages).
-			  (#arguments -> Dictionary new).
-			  (#requestClass -> MCPToolRequest) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolSearchClasses).
-			  (#arguments -> Dictionary new).
-			  (#requestClass -> MCPToolRequest) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolGetClass).
-			  (#arguments -> { (#name -> 'Object') } asDictionary).
-			  (#requestClass -> MCPToolRequest) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolRemoveClasses).
-			  (#arguments -> { (#name -> #( 'Object' )) } asDictionary) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolSearchMethods).
-			  (#arguments -> Dictionary new).
-			  (#requestClass -> MCPToolRequest) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolGetMethod).
-			  (#arguments -> {
-				   (#class -> 'Object').
-				   (#selector -> 'class') } asDictionary).
-			  (#requestClass -> MCPToolRequest) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolRewriteMethods).
-			  (#arguments -> {
-				   (#rules -> { {
-					    (#match -> 'self').
-					    (#replacement -> 'self') } asDictionary }).
-				   (#scope -> { (#classes -> { 'MCPToolContractsTest' }) } asDictionary) } asDictionary).
-			  (#requestClass -> MCPToolRequest) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolRemoveMethods).
-			  (#arguments -> {
-				   (#class -> 'Object').
-				   (#selector -> #( 'class' )) } asDictionary).
-			  (#requestClass -> MCPToolRequest) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolRunTests).
-			  (#arguments -> { (#classes -> { 'MCPToolContractsTest' }) } asDictionary).
-			  (#requestClass -> MCPToolRequest) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolCaptureScreen).
-			  (#arguments -> Dictionary new).
-			  (#requestClass -> MCPToolRequest) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolDebugSearch).
-			  (#arguments -> Dictionary new).
-			  (#requestClass -> MCPToolRequest) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolEvaluate).
-			  (#arguments -> { (#code -> '1') } asDictionary).
-			  (#requestClass -> MCPToolRequest) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolSearchTools).
-			  (#arguments -> Dictionary new) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolGetTool).
-			  (#arguments -> { (#name -> 'class_search') } asDictionary) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolCallTool).
-			  (#arguments -> {
-				   (#name -> 'package_search').
-				   (#arguments -> Dictionary new) } asDictionary).
-			  (#requestClass -> MCPCallToolRequest) } asDictionary }
-]
-
-{ #category : 'private' }
 MCPToolContractsTest >> camelCaseWordsIn: aString [
 	"The words in a description that are spelled like an argument name, so a caller would read them as one."
 
@@ -185,52 +93,11 @@ MCPToolContractsTest >> camelCaseWordsIn: aString [
 ]
 
 { #category : 'private' }
-MCPToolContractsTest >> changeHistoryToolFlowSpecs [
-
-	^ {
-		  {
-			  (#toolClass -> MCPToolListChangeHistoryFiles).
-			  (#arguments -> Dictionary new).
-			  (#requestClass -> MCPToolRequest) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolListChangeHistoryEntries).
-			  (#arguments -> Dictionary new).
-			  (#requestClass -> MCPToolRequest) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolApplyChangeHistoryEntries).
-			  (#arguments -> { (#latestCount -> 1) } asDictionary).
-			  (#requestClass -> MCPToolRequest) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolRevertChangeHistoryEntries).
-			  (#arguments -> { (#latestCount -> 1) } asDictionary).
-			  (#requestClass -> MCPToolRequest) } asDictionary }
-]
-
-{ #category : 'private' }
 MCPToolContractsTest >> classMutationToolClasses [
 
 	^ {
 		  MCPToolCreateClass.
 		  MCPToolUpdateClass }
-]
-
-{ #category : 'private' }
-MCPToolContractsTest >> classMutationToolFlowSpecs [
-
-	^ {
-		  {
-			  (#toolClass -> MCPToolCreateClass).
-			  (#arguments -> {
-				   (#name -> 'MCPTemporaryClass').
-				   (#superclass -> 'Object').
-				   (#package -> 'MCP-Tests') } asDictionary).
-			  (#requestClass -> MCPToolRequest) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolUpdateClass).
-			  (#arguments -> {
-				   (#name -> 'Object').
-				   (#comment -> '') } asDictionary).
-			  (#requestClass -> MCPToolRequest) } asDictionary }
 ]
 
 { #category : 'private' }
@@ -244,37 +111,6 @@ MCPToolContractsTest >> collectSchemaNames: names descriptions: texts from: aDic
 	aDictionary
 		at: #items
 		ifPresent: [ :items | items isDictionary ifTrue: [ self collectSchemaNames: names descriptions: texts from: items ] ]
-]
-
-{ #category : 'private' }
-MCPToolContractsTest >> coverageToolFlowSpec [
-
-	^ {
-		  (#toolClass -> MCPToolRunTestCoverage).
-		  (#arguments -> {
-			   (#classes -> { 'MCPToolContractsTest' }).
-			   (#coverage -> { (#scope -> { (#classes -> #( 'MCPToolContractsTest' )) } asDictionary) } asDictionary) } asDictionary).
-		  (#requestClass -> MCPToolRequest) } asDictionary
-]
-
-{ #category : 'private' }
-MCPToolContractsTest >> critiqueRunToolFlowSpec [
-
-	^ {
-		  (#toolClass -> MCPToolRunCritiques).
-		  (#arguments -> { (#ruleClasses -> { ReAssignmentInBlockRule name }) } asDictionary).
-		  (#requestClass -> MCPToolRequest) } asDictionary
-]
-
-{ #category : 'support' }
-MCPToolContractsTest >> debugWatchToolFlowSpec [
-
-	^ {
-		  (#toolClass -> MCPToolDebugWatch).
-		  (#arguments -> {
-			   (#method -> 'MCPToolContractsTest>>testDebuggerToolsAreDiscoverableOnly').
-			   (#run -> '1') } asDictionary).
-		  (#requestClass -> MCPToolRequest) } asDictionary
 ]
 
 { #category : 'private - evaluate' }
@@ -357,46 +193,6 @@ MCPToolContractsTest >> mcpClassesInPackageTagNamed: aTagName [
 
 	^ ((MCPTool builtInPackageNames flatCollect: [ :each | (self packageOrganizer packageNamed: each asSymbol) definedClasses ])
 		   select: [ :each | each packageTagName asString = aTagName ]) asArray
-]
-
-{ #category : 'private' }
-MCPToolContractsTest >> methodLookupToolFlowSpecs [
-
-	^ {
-		  {
-			  (#toolClass -> MCPToolSearchMethodSource).
-			  (#arguments -> { (#filter -> 'class') } asDictionary).
-			  (#requestClass -> MCPToolRequest) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolSearchEquivalentMethods).
-			  (#arguments -> {
-				   (#class -> 'MCPTool').
-				   (#selector -> 'name') } asDictionary).
-			  (#requestClass -> MCPToolRequest) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolSearchMethodReferences).
-			  (#arguments -> { (#name -> 'class') } asDictionary).
-			  (#requestClass -> MCPToolRequest) } asDictionary }
-]
-
-{ #category : 'private' }
-MCPToolContractsTest >> methodMutationToolFlowSpecs [
-
-	^ {
-		  {
-			  (#toolClass -> MCPToolCompileMethod).
-			  (#arguments -> {
-				   (#class -> 'Object').
-				   (#source -> 'mcpTemporaryMethod ^ self').
-				   (#protocol -> 'tests') } asDictionary).
-			  (#requestClass -> MCPToolRequest) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolUpdateMethod).
-			  (#arguments -> {
-				   (#class -> 'Object').
-				   (#selector -> 'class').
-				   (#protocol -> 'accessing') } asDictionary).
-			  (#requestClass -> MCPToolRequest) } asDictionary }
 ]
 
 { #category : 'private' }
@@ -556,72 +352,6 @@ MCPToolContractsTest >> processesNamed: aString [
 	"Terminated or not, as long as something still holds them."
 
 	^ Process allInstances select: [ :each | each name = aString ]
-]
-
-{ #category : 'support' }
-MCPToolContractsTest >> readScreenToolFlowSpec [
-
-	^ {
-		  (#toolClass -> MCPToolReadScreen).
-		  (#arguments -> Dictionary new).
-		  (#requestClass -> MCPToolRequest) } asDictionary
-]
-
-{ #category : 'support' }
-MCPToolContractsTest >> repositoryToolFlowSpecs [
-	"A repository tool reads its arguments from the request it is given, and names no command."
-
-	^ {
-		  {
-			  (#toolClass -> MCPToolVerifyRepositoryIdentity).
-			  (#arguments -> {
-				   (#name -> 'MCP').
-				   (#branch -> 'main') } asDictionary).
-			  (#requestClass -> MCPToolRequest) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolListRepositoryChanges).
-			  (#arguments -> { (#name -> 'MCP') } asDictionary).
-			  (#requestClass -> MCPToolRequest) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolDiscardRepositoryChanges).
-			  (#arguments -> { (#name -> 'MCP') } asDictionary).
-			  (#requestClass -> MCPToolRequest) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolCreateRepository).
-			  (#arguments -> {
-				   (#name -> 'MCP Test Repository').
-				   (#location -> '/tmp/mcp-test-repository') } asDictionary).
-			  (#requestClass -> MCPToolRequest) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolAttachRepository).
-			  (#arguments -> {
-				   (#name -> 'MCP Test Repository').
-				   (#location -> '/tmp/mcp-test-repository') } asDictionary).
-			  (#requestClass -> MCPToolRequest) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolUpdateRepository).
-			  (#arguments -> {
-				   (#name -> 'MCP').
-				   (#addPackages -> #( 'MCP' )) } asDictionary).
-			  (#requestClass -> MCPToolRequest) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolExportRepository).
-			  (#arguments -> { (#name -> 'MCP') } asDictionary).
-			  (#requestClass -> MCPToolRequest) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolCommitRepository).
-			  (#arguments -> {
-				   (#name -> 'MCP').
-				   (#message -> 'Commit from test') } asDictionary).
-			  (#requestClass -> MCPToolRequest) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolAdoptRepositoryHead).
-			  (#arguments -> { (#name -> 'MCP') } asDictionary).
-			  (#requestClass -> MCPToolRequest) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolReloadRepository).
-			  (#arguments -> { (#name -> 'MCP') } asDictionary).
-			  (#requestClass -> MCPToolRequest) } asDictionary }
 ]
 
 { #category : 'private' }
@@ -811,15 +541,6 @@ MCPToolContractsTest >> testAllToolsHavePngIconsWithDataUris [
 			self assert: (icon src beginsWith: 'data:image/png;base64,').
 			self assert: icon sizes size equals: 1.
 			self assert: (icon sizes first includesSubstring: 'x') ]
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testAllToolsUseParsedRequestsAndCommands [
-
-	| toolClasses |
-	toolClasses := self toolFlowSpecs collect: [ :each | each at: #toolClass ].
-	self assert: toolClasses asSet equals: self builtInToolClasses asSet.
-	self toolFlowSpecs do: [ :each | self assertToolFlowSpec: each ]
 ]
 
 { #category : 'tests' }
@@ -1042,22 +763,6 @@ MCPToolContractsTest >> testDefaultToolRegistryRegistersBuiltInTools [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testDictionaryShapedCommandResultsUseDTOClasses [
-
-	| commandResultClasses |
-	commandResultClasses := {
-		                        (MCPGetClassCommand -> MCPGetClassResult).
-		                        (MCPGetMethodCommand -> MCPGetMethodResult).
-		                        }.
-	commandResultClasses do: [ :association |
-			| source |
-			source := (association key >> #execute) sourceCode.
-			self assert: (source includesSubstring: association value name asString) ].
-	self assert: ((MCPRunTestsCommand >> #aggregateDataForResults:timedOut:unrunTests:) sourceCode includesSubstring:
-			 MCPRunTestsResult name asString)
-]
-
-{ #category : 'tests' }
 MCPToolContractsTest >> testDiscoveryInstructionsNameOnlyAdvertisedTools [
 	"A host may let a model call only the tools its list holds, so a tool the instructions name must be one tools/list shows, or they send the model where it cannot go."
 
@@ -1140,6 +845,20 @@ MCPToolContractsTest >> testEvaluateAnswersThePrintStringAsItsWholeText [
 		assert: (self firstTextFromToolResult:
 				 (self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> '3 + 4') } asDictionary))
 		equals: '7'
+]
+
+{ #category : 'tests - evaluate' }
+MCPToolContractsTest >> testEvaluateAnswersWhenAFailingCodesEnsureBlockEndsItsProcess [
+	"A failure is answered once the code's process has unwound, so an ensure block that ends that process leaves no value and no failure to answer."
+
+	| result |
+	result := self
+		          callDiscoveredToolNamed: 'evaluate'
+		          withArguments: { (#code -> '[ 1/0 ] ensure: [ Processor activeProcess terminate ]') } asDictionary.
+	self assert: (self resultIndicatesError: result).
+	self
+		assert: (self firstTextFromToolResult: result)
+		equals: 'Evaluation ended the process running it, so it has no value to answer.'
 ]
 
 { #category : 'tests - evaluate' }
@@ -1579,6 +1298,18 @@ MCPToolContractsTest >> testEvaluateStoppedAnswersItsTranscript [
 ]
 
 { #category : 'tests - evaluate' }
+MCPToolContractsTest >> testEvaluateStoppedAnswersTheTranscriptAsItWasAtTheStop [
+	"Once the call has stopped the code, what its unwinding writes or raises does not reach the answer."
+
+	| result |
+	self timeLimit: 30 seconds.
+	result := self evaluateBriefly:
+		          '[ Transcript show: ''before''. (Delay forSeconds: 10) wait ] ensure: [ Transcript show: ''cleanup''. 1/0 ]'.
+	self stoppedTextOf: result.
+	self assert: ((result structuredContent at: #error) at: #transcript) equals: 'before'
+]
+
+{ #category : 'tests - evaluate' }
 MCPToolContractsTest >> testEvaluateStoppedFramesCollapseARecursion [
 	"A run of equal frame names is one line with its count, and the run that reaches the last frame kept, when the stack goes deeper, counts at least that many."
 
@@ -1643,6 +1374,16 @@ MCPToolContractsTest >> testEvaluateStopsAComputingLoopUnderEitherPreemptionRule
 			self waitUntilEnded: evaluators first.
 			self assert: evaluators first isTerminated description: rule.
 			self assert: milliseconds < 10000 ]
+]
+
+{ #category : 'tests - evaluate' }
+MCPToolContractsTest >> testEvaluateStopsAFailureWhoseEnsureBlockOutlastsTheLimit [
+	"A failure is answered only once its ensure blocks have run, so one that waits past the limit is stopped there, like any other code."
+
+	| result |
+	self timeLimit: 30 seconds.
+	result := self evaluateBriefly: '[ 1/0 ] ensure: [ (Delay forMilliseconds: 500) wait ]'.
+	self assert: ((self stoppedTextOf: result) includesSubstring: 'Stopped in:')
 ]
 
 { #category : 'tests - evaluate' }
@@ -1812,9 +1553,9 @@ MCPToolContractsTest >> testEvaluateTimeoutSecondsIsAnIntegerFromOneToSixHundred
 					 (#timeoutSeconds -> 0) } asDictionary)
 		refusesArgumentsSaying: 'timeoutSeconds must be at least 1, not 0.'.
 	self
-		assert: ((tool parsedRequestFromToolRequest: (tool requestFromToolCallArguments: {
-						   (#code -> '1').
-						   (#timeoutSeconds -> 3600) } asDictionary)) integerArgumentNamed: 'timeoutSeconds')
+		assert: ((tool requestFromToolCallArguments: {
+					  (#code -> '1').
+					  (#timeoutSeconds -> 3600) } asDictionary) integerArgumentNamed: 'timeoutSeconds')
 		equals: 600
 ]
 
@@ -2378,6 +2119,15 @@ MCPToolContractsTest >> testNoDescriptionNamesAnArgumentThatDoesNotExist [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testNoToolParsesItsRequestOrBuildsACommand [
+	"A tool reads its arguments from the request it is given, and does its work or asks an operation for it. The hooks that parsed a request into an object of its own and built a command from that object stay gone, with the names the call flow had before them."
+
+	#( #parsedRequestFromToolRequest: #commandForRequest: #toolRequestFromRequest: #querySpecFromRequest: #methodQueryParametersFromRequest:
+	   #refactoringScopeParametersFromRequest: #refactoringModelForScopeParameters:anchoredAtBehavior: ) do: [ :selector |
+		self deny: (MCPTool withAllSubclasses anySatisfy: [ :each | each includesSelector: selector ]) description: selector ]
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testOnlyToolsCanKeepSomeOfThemDiscoverable [
 
 	| server |
@@ -2399,6 +2149,14 @@ MCPToolContractsTest >> testOnlyToolsRegistersExactlyThoseTools [
 	server := MCP onlyTools: { MCPExternalTestTool }.
 	self assert: server toolRegistry toolNames asSet equals: { MCPExternalTestTool toolName } asSet.
 	self assert: server advertisedToolNames asSet equals: { MCPExternalTestTool toolName } asSet
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testOperationsHoldNeitherTheToolNorItsRequest [
+	"An operation takes plain arguments and answers what it found or did. Reading the request and writing the answer belong to the tool that runs it."
+
+	MCPCommand allSubclasses do: [ :operation |
+		self deny: (#( 'tool' 'request' ) anySatisfy: [ :name | operation allInstVarNames includes: name ]) description: operation name ]
 ]
 
 { #category : 'tests' }
@@ -2744,13 +2502,13 @@ MCPToolContractsTest >> testRpcToolCallRejectsLegacyScopeArgument [
 { #category : 'tests' }
 MCPToolContractsTest >> testRunTestCoverageParsesCompactSelections [
 
-	| command rawRequest tool |
+	| command request tool |
 	tool := MCPToolRunTestCoverage new.
-	rawRequest := tool requestFromToolCallArguments: {
-			              (#classes -> #( 'MCPToolContractsTest' )).
-			              (#coverage -> { (#scope -> { (#classes -> #( 'MCPToolContractsTest' )) } asDictionary) } asDictionary) }
-			              asDictionary.
-	command := tool operationFor: rawRequest.
+	request := tool requestFromToolCallArguments: {
+			           (#classes -> #( 'MCPToolContractsTest' )).
+			           (#coverage -> { (#scope -> { (#classes -> #( 'MCPToolContractsTest' )) } asDictionary) } asDictionary) }
+			           asDictionary.
+	command := tool operationFor: request.
 	command validateSelections.
 	self assert: command coverageScope class equals: MCPCompiledMethodScopeQuery.
 	self assert: command selections first class equals: MCPTestSelectionSpec.
@@ -2790,10 +2548,10 @@ MCPToolContractsTest >> testRunTestToolsHaveAccurateNamesAndRequiredArguments [
 { #category : 'tests' }
 MCPToolContractsTest >> testRunTestsKeepsPackagesAsPackageSelections [
 
-	| command rawRequest selections testCases tool |
+	| command request selections testCases tool |
 	tool := MCPToolRunTests new.
-	rawRequest := tool requestFromToolCallArguments: { (#packages -> #( 'MCP-Tests' )) } asDictionary.
-	command := tool operationFor: rawRequest.
+	request := tool requestFromToolCallArguments: { (#packages -> #( 'MCP-Tests' )) } asDictionary.
+	command := tool operationFor: request.
 	selections := command selections.
 	self assert: selections size equals: 1.
 	self assert: selections first isPackageSelection.
@@ -2810,14 +2568,14 @@ MCPToolContractsTest >> testRunTestsKeepsPackagesAsPackageSelections [
 { #category : 'tests' }
 MCPToolContractsTest >> testRunTestsParsesCompactSelections [
 
-	| command fixtureClassName rawRequest selections testMethodReference tool |
+	| command fixtureClassName request selections testMethodReference tool |
 	tool := MCPToolRunTests new.
 	fixtureClassName := MCPToolStructuredOutputTestTarget name asString.
 	testMethodReference := self testReferenceForMethod: MCPToolStructuredOutputTestTarget >> #testPasses.
-	rawRequest := tool requestFromToolCallArguments: {
-			              (#classes -> { MCPToolContractsTest name asString }).
-			              (#methods -> { testMethodReference }) } asDictionary.
-	command := tool operationFor: rawRequest.
+	request := tool requestFromToolCallArguments: {
+			           (#classes -> { MCPToolContractsTest name asString }).
+			           (#methods -> { testMethodReference }) } asDictionary.
+	command := tool operationFor: request.
 	command validateSelections.
 	selections := command selections.
 	self assert: selections size equals: 2.
@@ -2832,22 +2590,22 @@ MCPToolContractsTest >> testRunTestsParsesCompactSelections [
 { #category : 'tests' }
 MCPToolContractsTest >> testRunTestsParsesTimeoutSeconds [
 
-	| rawRequest tool |
+	| request tool |
 	tool := MCPToolRunTests new.
-	rawRequest := tool requestFromToolCallArguments: {
-			              (#classes -> #( 'MCPToolContractsTest' )).
-			              (#timeoutSeconds -> 2) } asDictionary.
-	self assert: (tool operationFor: rawRequest) timeoutMilliseconds equals: 2000
+	request := tool requestFromToolCallArguments: {
+			           (#classes -> #( 'MCPToolContractsTest' )).
+			           (#timeoutSeconds -> 2) } asDictionary.
+	self assert: (tool operationFor: request) timeoutMilliseconds equals: 2000
 ]
 
 { #category : 'tests' }
 MCPToolContractsTest >> testRunTestsRejectsEmptySelection [
 
-	| rawRequest tool |
+	| request tool |
 	tool := MCPToolRunTests new.
-	rawRequest := tool requestFromToolCallArguments: Dictionary new.
+	request := tool requestFromToolCallArguments: Dictionary new.
 	self
-		should: [ tool checkArguments: rawRequest ]
+		should: [ tool checkArguments: request ]
 		raise: MCPInvalidToolInput
 		whoseDescriptionIncludes: 'Name at least one package, class or method to run.'
 		description: 'test_run requires at least one compact selection.'
@@ -3179,21 +2937,6 @@ MCPToolContractsTest >> testSearchToolsRanksMoreMatchedWordsFirst [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testSearchToolsReadTheirArgumentsFromTheRequest [
-	"A search reads its arguments from the request it is given; nothing is parsed out of it first."
-
-	{
-		MCPToolSearchRepositories.
-		MCPToolSearchClasses.
-		MCPToolSearchMethods.
-		MCPToolSearchPackages } do: [ :toolClass |
-			| request tool |
-			tool := toolClass new.
-			request := MCPToolRequest tool: tool arguments: Dictionary new.
-			self assert: (tool parsedRequestFromToolRequest: request) identicalTo: request ]
-]
-
-{ #category : 'tests' }
 MCPToolContractsTest >> testSearchToolsReturnsDiscoverableMetadata [
 
 	| createRepositoryMetadata data names result tools |
@@ -3358,16 +3101,6 @@ MCPToolContractsTest >> testToolCallsResumeNotificationsWithoutAToolOfTheirOwn [
 	structured := result at: #structuredContent.
 	self deny: (result includesKey: #isError).
 	self assert: ((structured at: #data) at: #resumedWith) equals: 'nested-mcpDefaultAction'
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testToolFlowSelectorNamesSeparateTransportAndParsedInput [
-
-	| staleSelectors |
-	self assert: (MCPTool includesSelector: #parsedRequestFromToolRequest:).
-	staleSelectors := #( toolRequestFromRequest: querySpecFromRequest: methodQueryParametersFromRequest:
-	                     refactoringScopeParametersFromRequest: refactoringModelForScopeParameters:anchoredAtBehavior: ).
-	staleSelectors do: [ :selector | self deny: (MCPTool withAllSubclasses anySatisfy: [ :each | each includesSelector: selector ]) ]
 ]
 
 { #category : 'tests' }
@@ -3628,23 +3361,6 @@ MCPToolContractsTest >> textOfEvaluateResult: aResult [
 	"The text a call gets for an evaluation that failed."
 
 	^ aResult content first text
-]
-
-{ #category : 'support' }
-MCPToolContractsTest >> toolFlowSpecs [
-
-	| specs |
-	specs := OrderedCollection withAll: self baseToolFlowSpecs.
-	specs add: self coverageToolFlowSpec.
-	specs addAll: self classMutationToolFlowSpecs.
-	specs addAll: self methodLookupToolFlowSpecs.
-	specs add: self critiqueRunToolFlowSpec.
-	specs addAll: self methodMutationToolFlowSpecs.
-	specs addAll: self changeHistoryToolFlowSpecs.
-	specs addAll: self repositoryToolFlowSpecs.
-	specs add: self debugWatchToolFlowSpec.
-	specs add: self readScreenToolFlowSpec.
-	^ specs asArray
 ]
 
 { #category : 'private - evaluate' }

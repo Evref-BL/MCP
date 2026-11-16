@@ -77,7 +77,7 @@ MCPToolRewriteMethods >> errorResultForRewriteError: anError [
 MCPToolRewriteMethods >> executeWithRequest: request [
 
 	^ self
-		  executeParsedRequestFrom: request
+		  executeRequest: request
 		  do: [ :arguments | self rewriteWith: arguments ]
 		  onError: [ :error :arguments | self errorResultForRewriteError: error ]
 ]

@@ -22,20 +22,6 @@ MCPToolUpdateRepository >> add: packageNames to: aRepository with: steps recordi
 ]
 
 { #category : 'private - errors' }
-MCPToolUpdateRepository >> argumentContextFor: request [
-
-	| context supplied |
-	context := (super argumentContextFor: request) copy.
-	supplied := self suppliedUpdateArgumentNamesIn: request.
-	supplied do: [ :each |
-			context at: each asSymbol put: (each = 'subdirectory'
-					 ifTrue: [ request stringArgumentNamed: each ]
-					 ifFalse: [ request stringCollectionArgumentNamed: each ]) ].
-	context at: #updateActions put: (supplied collect: [ :each | self updateActionsByArgumentName at: each ] as: Array).
-	^ context
-]
-
-{ #category : 'private - errors' }
 MCPToolUpdateRepository >> failureSummaryPrefixFor: request [
 
 	^ 'Failed to update repository: '
@@ -104,12 +90,26 @@ MCPToolUpdateRepository >> repositoryToolSpec [
 ]
 
 { #category : 'private - errors' }
+MCPToolUpdateRepository >> requestedContextFor: request [
+
+	| context supplied |
+	context := (super requestedContextFor: request) copy.
+	supplied := self suppliedUpdateArgumentNamesIn: request.
+	supplied do: [ :each |
+			context at: each asSymbol put: (each = 'subdirectory'
+					 ifTrue: [ request stringArgumentNamed: each ]
+					 ifFalse: [ request stringCollectionArgumentNamed: each ]) ].
+	context at: #updateActions put: (supplied collect: [ :each | self updateActionsByArgumentName at: each ] as: Array).
+	^ context
+]
+
+{ #category : 'private - errors' }
 MCPToolUpdateRepository >> signalNoUpdateRequestedFor: request [
 
 	MCPCommandError
 		signalErrorCode: #NoRepositoryUpdateRequested
 		message: 'repository_update needs at least one of subdirectory, packages, addPackages or removePackages.'
-		details: (self argumentContextFor: request)
+		details: (self requestedContextFor: request)
 ]
 
 { #category : 'private - request' }

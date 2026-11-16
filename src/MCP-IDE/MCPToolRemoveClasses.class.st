@@ -104,7 +104,7 @@ MCPToolRemoveClasses >> executeWithRequest: request [
 	"The names are checked, then the classes removed. An error echoes the names each once, even one the check raises: the only check that raises no command error fails when there is no name at all."
 
 	^ self
-		  executeParsedRequestFrom: request
+		  executeRequest: request
 		  do: [ :arguments |
 				  self checkArguments: arguments.
 				  self removeClassesWith: arguments ]

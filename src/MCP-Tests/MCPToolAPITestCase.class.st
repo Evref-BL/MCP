@@ -138,12 +138,6 @@ MCPToolAPITestCase >> packageSearchFixtureScopeQueryLoadedInImage: aBoolean [
 		  yourself
 ]
 
-{ #category : 'private - parsing' }
-MCPToolAPITestCase >> parsedRequestForTool: aTool arguments: someArguments [
-
-	^ aTool parsedRequestFromToolRequest: (self unvalidatedToolRequestForTool: aTool arguments: someArguments)
-]
-
 { #category : 'private - results' }
 MCPToolAPITestCase >> resultIndicatesError: aResult [
 	"isError travels beside the structured content, not inside it."

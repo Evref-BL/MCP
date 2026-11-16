@@ -362,12 +362,6 @@ MCPTool >> codeQuoteFor: anInterval in: aString [
 				  nextPutAll: '...' ]
 ]
 
-{ #category : 'private - execution' }
-MCPTool >> commandForRequest: aToolRequest [
-
-	self subclassResponsibility
-]
-
 { #category : 'private - results' }
 MCPTool >> contentTextForStructuredContent: structuredContent [
 	"Answer the text block a caller reads: what happened, then the payload as lines. A tool overrides the rendering of its own data when its shape reads better another way."
@@ -674,24 +668,20 @@ MCPTool >> executeBatchedRequest: aRequest do: executionBlock [
 ]
 
 { #category : 'private - execution' }
-MCPTool >> executeParsedRequestFrom: request do: executionBlock onError: errorBlock [
-	"Parse the transport request inside the same exception boundary as execution.
-	The error block receives the error and the parsed request, or nil if parsing failed.
+MCPTool >> executeRequest: request do: executionBlock onError: errorBlock [
+	"Run the call inside one exception boundary. The error block receives the error and the request.
 	Every Warning and Notification is an Exception, so notifications are resumed here instead of failing the call."
 
-	| parsedRequest |
 	^ self duringCall: [
 			  [
-				  [
-					  parsedRequest := self parsedRequestFromToolRequest: request.
-					  executionBlock value: parsedRequest ]
+				  [ executionBlock value: request ]
 					  on: Notification
 					  do: [ :notification |
 							  (self shouldResumeNotification: notification)
 								  ifTrue: [ self resumeNotification: notification ]
 								  ifFalse: [ notification pass ] ] ]
 				  on: Exception
-				  do: [ :error | errorBlock value: error value: parsedRequest ] ]
+				  do: [ :error | errorBlock value: error value: request ] ]
 ]
 
 { #category : 'executing' }
@@ -1000,12 +990,6 @@ MCPTool >> orderedKeys: someKeys [
 			  leftIndex = rightIndex
 				  ifTrue: [ left asString <= right asString ]
 				  ifFalse: [ leftIndex < rightIndex ] ]
-]
-
-{ #category : 'private - request' }
-MCPTool >> parsedRequestFromToolRequest: request [
-
-	^ request
 ]
 
 { #category : 'private - results' }

@@ -72,13 +72,6 @@ MCPToolGetTool >> catalogOnlyContractKeys [
 	^ #( annotations exposure group keywords )
 ]
 
-{ #category : 'private - execution' }
-MCPToolGetTool >> commandForRequest: aToolRequest [
-	"MCPTool still declares this hook, but the tool does its work itself, with no command."
-
-	^ self shouldNotImplement
-]
-
 { #category : 'private - results' }
 MCPToolGetTool >> contentTextForStructuredContent: structuredContent [
 	"A contract is read in order to build a call, so it is written as YAML rather than as plain lines: lines cannot say whether a value is a number or the text of one, whether a list holds one item or is a string containing a comma, or where a value with spaces ends. The text carries only what a call needs."
@@ -107,7 +100,7 @@ MCPToolGetTool >> description [
 MCPToolGetTool >> executeWithRequest: request [
 
 	^ self
-		  executeParsedRequestFrom: request
+		  executeRequest: request
 		  do: [ :arguments |
 				  | contract |
 				  contract := self toolRegistry contractForToolNamed: (arguments stringArgumentNamed: 'name').

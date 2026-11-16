@@ -15,15 +15,6 @@ MCPToolAdoptRepositoryHead class >> toolName [
 	^ 'repository_head_adopt'
 ]
 
-{ #category : 'private - errors' }
-MCPToolAdoptRepositoryHead >> argumentContextFor: request [
-
-	| context |
-	context := (super argumentContextFor: request) copy.
-	(self expectedBranchNameIn: request) ifNotEmpty: [ :branchName | context at: #branch put: branchName ].
-	^ context
-]
-
 { #category : 'private - validation' }
 MCPToolAdoptRepositoryHead >> checkBranchOf: aRepository for: request [
 	"The branch argument is a guard: the call fails when the repository is on another branch, and never switches."
@@ -37,7 +28,7 @@ MCPToolAdoptRepositoryHead >> checkBranchOf: aRepository for: request [
 		signalErrorCode: #RepositoryBranchMismatch
 		message: (String streamContents: [ :stream |
 				 stream << 'Repository branch mismatch. Expected ' << expectedBranchName << ' but found ' << actualBranchName << '.' ])
-		details: ((self argumentContextFor: request) copy
+		details: ((self requestedContextFor: request) copy
 				 at: #actualBranch put: actualBranchName;
 				 at: #expectedBranch put: expectedBranchName;
 				 yourself)
@@ -50,7 +41,7 @@ MCPToolAdoptRepositoryHead >> checkHeadCommit: headCommit of: aRepository for: r
 	MCPCommandError
 		signalErrorCode: #RepositoryHeadCommitRequired
 		message: 'Cannot adopt repository HEAD because the repository has no head commit.'
-		details: ((self argumentContextFor: request) copy
+		details: ((self requestedContextFor: request) copy
 				 at: #name put: aRepository name asString;
 				 yourself)
 ]
@@ -121,6 +112,15 @@ MCPToolAdoptRepositoryHead >> repositoryToolSpec [
 		  (#description -> 'Align the image working-copy reference with the repository HEAD commit.').
 		  (#action -> 'adoptHead').
 		  (#inputProperties -> { self branchNameSchemaProperty }) } asDictionary
+]
+
+{ #category : 'private - errors' }
+MCPToolAdoptRepositoryHead >> requestedContextFor: request [
+
+	| context |
+	context := (super requestedContextFor: request) copy.
+	(self expectedBranchNameIn: request) ifNotEmpty: [ :branchName | context at: #branch put: branchName ].
+	^ context
 ]
 
 { #category : 'private - results' }

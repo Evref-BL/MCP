@@ -15,15 +15,6 @@ MCPToolCommitRepository class >> toolName [
 	^ 'repository_commit'
 ]
 
-{ #category : 'private - errors' }
-MCPToolCommitRepository >> argumentContextFor: request [
-
-	| context |
-	context := (super argumentContextFor: request) copy.
-	context at: #message put: (self messageIn: request).
-	^ context
-]
-
 { #category : 'private - results' }
 MCPToolCommitRepository >> dataForPackageNames: packageNames otherFiles: otherFiles [
 	"What the commit at HEAD holds, as git show lists its files: the registered packages those files belong to, and the files that belong to none, such as .project or a file written by hand."
@@ -80,6 +71,15 @@ MCPToolCommitRepository >> repositoryToolSpec [
 		  (#action -> 'commit').
 		  (#inputProperties -> { self messageSchemaProperty }).
 		  (#requiredProperties -> #( 'name' 'message' )) } asDictionary
+]
+
+{ #category : 'private - errors' }
+MCPToolCommitRepository >> requestedContextFor: request [
+
+	| context |
+	context := (super requestedContextFor: request) copy.
+	context at: #message put: (self messageIn: request).
+	^ context
 ]
 
 { #category : 'private - results' }

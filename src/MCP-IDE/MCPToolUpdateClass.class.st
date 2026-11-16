@@ -6,6 +6,8 @@ Every change asked for is planned as an MCPClassUpdatePlanInfo before the first 
 Class {
 	#name : 'MCPToolUpdateClass',
 	#superclass : 'MCPToolClassMutation',
+	#traits : 'TMCPSequencedUpdate',
+	#classTraits : 'TMCPSequencedUpdate classTrait',
 	#category : 'MCP-IDE-Tools',
 	#package : 'MCP-IDE',
 	#tag : 'Tools'
@@ -67,22 +69,19 @@ MCPToolUpdateClass >> apply: plan force: aBoolean work: workBlock summary: summa
 ]
 
 { #category : 'private - execution' }
-MCPToolUpdateClass >> applyUpdates: plans of: request [
-	"Apply the plans in order, stopping at the first that fails. They all land on one class and the later ones build on the earlier, so carrying on would apply half a change nobody asked for."
+MCPToolUpdateClass >> applyUpdate: plan of: request [
 
-	| applied |
-	applied := OrderedCollection new.
-	plans doWithIndex: [ :plan :index |
-			| result |
-			result := self executePlan: plan of: request.
-			result isError ifTrue: [
-					^ self
-						  resultForFailure: result
-						  of: plan updateAction
-						  applied: (applied collect: [ :each | each key ] as: Array)
-						  skipped: ((plans allButFirst: index) collect: [ :each | each updateAction ]) ].
-			applied add: plan updateAction -> result ].
-	^ self resultForUpdates: applied of: request
+	| actionBlock |
+	actionBlock := self executeBlockForAction: plan updateAction.
+	actionBlock ifNotNil: [ ^ actionBlock value: plan value: request ].
+	^ self
+		  errorResultForCommandError: (MCPCommandError new
+				   errorCode: #UnknownClassUpdateAction;
+				   messageText: 'Unknown class update action: ' , plan updateAction;
+				   details: plan requestedContext;
+				   yourself)
+		  action: 'update'
+		  requestedContext: plan requestedContext
 ]
 
 { #category : 'private - arguments' }
@@ -220,22 +219,6 @@ MCPToolUpdateClass >> executeMoveWithPlan: plan request: request [
 					  packageName: packageName
 					  tag: tag
 					  error: error ]
-]
-
-{ #category : 'private - execution' }
-MCPToolUpdateClass >> executePlan: plan of: request [
-
-	| actionBlock |
-	actionBlock := self executeBlockForAction: plan updateAction.
-	actionBlock ifNotNil: [ ^ actionBlock value: plan value: request ].
-	^ self
-		  errorResultForCommandError: (MCPCommandError new
-				   errorCode: #UnknownClassUpdateAction;
-				   messageText: 'Unknown class update action: ' , plan updateAction;
-				   details: plan requestedContext;
-				   yourself)
-		  action: 'update'
-		  requestedContext: plan requestedContext
 ]
 
 { #category : 'private - execution' }
@@ -617,7 +600,7 @@ MCPToolUpdateClass >> mutateWith: request [
 	| plans |
 	[ plans := self updatePlansFor: request ]
 		on: MCPCommandError
-		do: [ :error | ^ self errorResultForCommandError: error action: 'update' requestedContext: (self updateContextFor: request) ].
+		do: [ :error | ^ self errorResultForCommandError: error action: 'update' requestedContext: (self requestedContextFor: request) ].
 	^ self applyUpdates: plans of: request
 ]
 
@@ -632,7 +615,7 @@ MCPToolUpdateClass >> planForAction: action in: request [
 
 	^ MCPClassUpdatePlanInfo updateAction: action requestedContext: (action = 'move'
 			   ifTrue: [ self moveContextFor: request ]
-			   ifFalse: [ self updateContextFor: request ])
+			   ifFalse: [ self requestedContextFor: request ])
 ]
 
 { #category : 'private - planning' }
@@ -653,63 +636,15 @@ MCPToolUpdateClass >> requestedClassUpdateActionsIn: request [
 ]
 
 { #category : 'private - errors' }
-MCPToolUpdateClass >> requestedContextFor: request checked: aBoolean [
+MCPToolUpdateClass >> requestedContextFor: request [
+	"The class and every property the call supplied, as the update reads them. A property left out is not reported, so an empty list or string the caller gave is told apart from one it did not give."
 
-	^ aBoolean
-		  ifTrue: [ self updateContextFor: request ]
-		  ifFalse: [ request asDictionary copy ]
-]
-
-{ #category : 'private - results' }
-MCPToolUpdateClass >> resultForFailure: errorResult of: action applied: appliedActions skipped: skippedActions [
-	"A single change fails as it always did. When it was one of several, say which had already landed and which were never attempted, because the class is left part-way."
-
-	| details summary |
-	(appliedActions isEmpty and: [ skippedActions isEmpty ]) ifTrue: [ ^ errorResult ].
-	details := (errorResult structuredContent at: #error ifAbsent: [ Dictionary new ]) copy.
-	details
-		at: #failedUpdate put: action;
-		at: #appliedUpdates put: appliedActions asArray;
-		at: #skippedUpdates put: skippedActions asArray.
-	summary := String streamContents: [ :stream |
-			           stream << (errorResult structuredContent at: #summary ifAbsent: [ '' ]).
-			           stream << ' Update ' << action << ' failed'.
-			           appliedActions ifNotEmpty: [
-					           stream << ', after applying '.
-					           appliedActions do: [ :each | stream << each ] separatedBy: [ stream << ', ' ] ].
-			           skippedActions ifNotEmpty: [
-					           stream << '; not attempted: '.
-					           skippedActions do: [ :each | stream << each ] separatedBy: [ stream << ', ' ] ].
-			           stream << '.' ].
-	^ self errorResultText: summary details: details
-]
-
-{ #category : 'private - results' }
-MCPToolUpdateClass >> resultForUpdates: applied of: request [
-	"One change answers exactly what it answers alone. Several say how many were applied, then what each one answered alone, a line each in the order applied; their data stays under updates."
-
-	| warnings updates |
-	applied size = 1 ifTrue: [ ^ applied first value ].
-	warnings := OrderedCollection new.
-	updates := applied collect: [ :each |
-			           warnings addAll: (self warningsOfResult: each value).
-			           (each value structuredContent at: #data ifAbsent: [ Dictionary new ]) copy
-				           at: #action put: each key;
-				           yourself ].
-	^ self
-		  successResultText: (String streamContents: [ :stream |
-					   stream
-						   nextPutAll: 'Applied ';
-						   print: applied size;
-						   nextPutAll: ' updates to class ';
-						   nextPutAll: (request stringArgumentNamed: 'name');
-						   nextPut: $:.
-					   applied do: [ :each |
-							   stream
-								   nextPut: Character lf;
-								   nextPutAll: (each value structuredContent at: #summary ifAbsent: [ '' ]) ] ])
-		  data: { (#updates -> updates asArray) } asDictionary
-		  warnings: warnings asArray
+	| context |
+	context := Dictionary new.
+	context at: #name put: (request stringArgumentNamed: 'name').
+	(self suppliedPropertiesIn: request) do: [ :propertyName |
+		context at: propertyName asSymbol put: (self contextValueOf: propertyName in: request) ].
+	^ context
 ]
 
 { #category : 'private - planning' }
@@ -719,7 +654,7 @@ MCPToolUpdateClass >> signalNoUpdateRequestedIn: request [
 		  signalErrorCode: #NoClassUpdateRequested
 		  message:
 		  'Class update requires one update field such as newName, superclassName, packageName, tag, classComment, slots, classSlots, traits, sharedVariables, sharedPools, layout, or slotAction.'
-		  details: (self updateContextFor: request)
+		  details: (self requestedContextFor: request)
 ]
 
 { #category : 'private - arguments' }
@@ -750,7 +685,7 @@ MCPToolUpdateClass >> slotPlansIn: request side: classSide [
 			MCPCommandError
 				signalErrorCode: #EmptySlotDelta
 				message: 'A slots patch must ask for at least one of add, remove, rename, pullUp, pushDown or replace.'
-				details: (self updateContextFor: request) ].
+				details: (self requestedContextFor: request) ].
 	planFor := [ :action :slotName :newSlotName |
 		           | context |
 		           context := Dictionary new
@@ -789,16 +724,10 @@ MCPToolUpdateClass >> suppliedPropertiesIn: request [
 	^ self atLeastOneInputProperties select: [ :each | request hasArgumentNamed: each ]
 ]
 
-{ #category : 'private - errors' }
-MCPToolUpdateClass >> updateContextFor: request [
-	"The class and every property the call supplied, as the update reads them. A property left out is not reported, so an empty list or string the caller gave is told apart from one it did not give."
+{ #category : 'private - updating' }
+MCPToolUpdateClass >> updateActionOf: plan [
 
-	| context |
-	context := Dictionary new.
-	context at: #name put: (request stringArgumentNamed: 'name').
-	(self suppliedPropertiesIn: request) do: [ :propertyName |
-		context at: propertyName asSymbol put: (self contextValueOf: propertyName in: request) ].
-	^ context
+	^ plan updateAction
 ]
 
 { #category : 'private - planning' }
@@ -814,4 +743,11 @@ MCPToolUpdateClass >> updatePlansFor: request [
 	plans addAll: (self slotPlansIn: request side: true).
 	plans ifEmpty: [ self signalNoUpdateRequestedIn: request ].
 	^ self actionsInApplicationOrder: plans
+]
+
+{ #category : 'private - updating' }
+MCPToolUpdateClass >> updateSubjectDescriptionFor: request [
+	"What the summary of several updates calls the class."
+
+	^ 'class ' , (request stringArgumentNamed: 'name')
 ]

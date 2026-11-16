@@ -16,12 +16,6 @@ MCPToolCreateRepository class >> toolName [
 ]
 
 { #category : 'private - errors' }
-MCPToolCreateRepository >> argumentContextFor: request [
-
-	^ (self creationFor: request) requestedDetails
-]
-
-{ #category : 'private - errors' }
 MCPToolCreateRepository >> failureSummaryPrefixFor: request [
 
 	^ String streamContents: [ :stream | stream << 'Failed to create repository ' << (request stringArgumentNamed: 'name') << ': ' ]
@@ -72,6 +66,12 @@ MCPToolCreateRepository >> repositoryToolSpec [
 				    description: 'Packages of the image the repository holds.'
 				    itemDescription: 'A package name.') }).
 		  (#requiredProperties -> #( 'name' )) } asDictionary
+]
+
+{ #category : 'private - errors' }
+MCPToolCreateRepository >> requestedContextFor: request [
+
+	^ (self creationFor: request) requestedDetails
 ]
 
 { #category : 'private - results' }

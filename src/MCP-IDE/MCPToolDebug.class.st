@@ -58,7 +58,7 @@ MCPToolDebug >> errorResultForDebugError: anError [
 MCPToolDebug >> executeWithRequest: request [
 
 	^ self
-		  executeParsedRequestFrom: request
+		  executeRequest: request
 		  do: [ :arguments | self resultFor: arguments ]
 		  onError: [ :error :ignored | self errorResultForDebugError: error ]
 ]
