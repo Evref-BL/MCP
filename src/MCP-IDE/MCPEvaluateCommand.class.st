@@ -281,13 +281,15 @@ MCPEvaluateCommand >> noteTranscript [
 
 { #category : 'private' }
 MCPEvaluateCommand >> noteWhereStopped: anEvaluator [
-	"Where the code is, read before it unwinds, cut at the outermost DoIt as a failure's frames are, and what it wrote by then. The frames are kept, not described: describing one may print what it holds, which would run the stopped code's own printOn:, which may be what never ends, or wait on a lock the stopped process holds."
+	"Where the code is, read before it unwinds, cut at the outermost DoIt as a failure's frames are, and what it wrote by then. The frames are kept, not described: describing one may print what it holds, which would run the stopped code's own printOn:, which may be what never ends, or wait on a lock the stopped process holds. They are kept as copies, because terminating the process rewrites its frames on some Pharo versions: on 11, the top one becomes Process>>endProcess."
 
 	| boundary |
 	boundary := self callBoundary.
 	stoppedFrames := anEvaluator suspendedContext
 		                 ifNil: [ #(  ) ]
-		                 ifNotNil: [ :top | boundary framesUpToCallerIn: (top stackOfSize: boundary errorStackTraceLimit + 1) ].
+		                 ifNotNil: [ :top |
+		                 (boundary framesUpToCallerIn: (top stackOfSize: boundary errorStackTraceLimit + 1)) collect: [ :each |
+			                 each copy ] ].
 	self noteTranscript
 ]
 
