@@ -566,12 +566,12 @@ MCPToolRepositoryOperationTest >> testAttachRefusesARelativeLocation [
 	| repositoryName result |
 	repositoryName := 'MCP Attach Relative Location Test'.
 	self removeRegisteredRepositoriesNamed: repositoryName.
-	result := self attachRepositoryNamed: repositoryName location: 'notes' packages: #(  ).
+	result := self attachRepositoryNamed: repositoryName location: 'zoo' packages: #(  ).
 	self assert: ((self errorFrom: result) at: #errorCode) equals: 'RepositoryLocationNotAbsolute'.
 	self
 		assert: (self summaryFrom: result)
 		equals:
-			('Cannot attach repository {1}: location notes is not an absolute path, and the image would resolve it against its own working directory, {2}. Give the full path.'
+			('Cannot attach repository {1}: location zoo is not an absolute path, and the image would resolve it against its own working directory, {2}. Give the full path.'
 				 format: {
 						 repositoryName.
 						 FileSystem workingDirectory fullName }).
@@ -818,7 +818,7 @@ MCPToolRepositoryOperationTest >> testCommitNamesOnlyRegisteredPackages [
 						location: location
 						subdirectory: nil
 						packages: { packageName }.
-					self write: '# Notes' to: location / 'README.md'.
+					self write: '# Zoo' to: location / 'README.md'.
 					self write: 'x' to: location / 'Other' / 'x.st'.
 					result := self commitRepositoryNamed: repositoryName message: 'Write the package beside other files'.
 					data := self dataFrom: result.
@@ -1049,8 +1049,8 @@ MCPToolRepositoryOperationTest >> testCreateRefusesACheckoutWithCommits [
 	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestCreateCheckoutWithCommits'.
 	self withCleanRepositoryNamed: repositoryName location: location do: [
 			self shellCommand: 'git init --initial-branch=main ' , (self shellQuote: location pathString).
-			self write: 'notes' to: location / 'README.md'.
-			self commitAllIn: location message: 'Start the notes'.
+			self write: 'zoo' to: location / 'README.md'.
+			self commitAllIn: location message: 'Start the zoo'.
 			headBefore := self git: 'log --format=%H' in: location.
 			result := self refusedCreateNamed: repositoryName location: location pathString.
 			self assert: ((self errorFrom: result) at: #errorCode) equals: 'RepositoryLocationIsCheckout'.
@@ -1536,7 +1536,7 @@ MCPToolRepositoryOperationTest >> testDiscardNamesNoPackageForAnUnregisteredDire
 						subdirectory: nil
 						packages: { packageName }.
 					self commitRepositoryNamed: repositoryName message: 'Write the package'.
-					self write: '# Notes' to: location / 'README.md'.
+					self write: '# Zoo' to: location / 'README.md'.
 					self write: 'x' to: location / 'src' / 'X' / 'a.st'.
 					result := self callToolWith: {
 							          (#action -> 'discard').
@@ -1784,7 +1784,7 @@ MCPToolRepositoryOperationTest >> testExportLeavesOutFilesItDidNotWrite [
 						packages: { packageName }.
 					self exportRepositoryNamed: repositoryName.
 					self commitRepositoryNamed: repositoryName message: 'Write the package'.
-					self write: '# Notes' to: location / 'README.md'.
+					self write: '# Zoo' to: location / 'README.md'.
 					self write: 'x' to: location / 'src' / 'Other' / 'x.st'.
 					result := self exportRepositoryNamed: repositoryName.
 					data := self dataFrom: result.
