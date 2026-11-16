@@ -280,7 +280,14 @@ MCPCommandError class >> signalMissingCompileTarget: aName suggestions: someName
 
 { #category : 'signaling' }
 MCPCommandError class >> signalMissingMethod: aSelectorString in: aBehavior [
-	"aBehavior, which the caller has resolved, has no method aSelectorString of its own. The methods of that selector the caller may have meant are named: on the other side, or the first one up the hierarchy."
+	"aBehavior, which the caller has resolved, has no method aSelectorString of its own."
+
+	^ self signalMissingMethod: aSelectorString in: aBehavior closingWhenNoMatch: nil
+]
+
+{ #category : 'signaling' }
+MCPCommandError class >> signalMissingMethod: aSelectorString in: aBehavior closingWhenNoMatch: aStringOrNil [
+	"aBehavior, which the caller has resolved, has no method aSelectorString of its own. The methods of that selector the caller may have meant are named: on the other side, or the first one up the hierarchy. When none is, aStringOrNil, if given, ends the message with what the caller's tool offers instead; a method named is already the next step."
 
 	| className classSide details message suggestions |
 	className := aBehavior instanceSide name asString.
@@ -289,7 +296,7 @@ MCPCommandError class >> signalMissingMethod: aSelectorString in: aBehavior [
 	message := String streamContents: [ :stream |
 			           stream << 'Method ' << (self methodReferenceForClassName: className selector: aSelectorString classSide: classSide)
 			           << ' does not exist.'.
-			           suggestions ifNotEmpty: [
+			           suggestions ifEmpty: [ aStringOrNil ifNotNil: [ :closing | stream << ' ' << closing ] ] ifNotEmpty: [
 					           stream << ' Exact matches: ' << (', ' join: (suggestions collect: [ :each |
 							             self
 								             methodReferenceForClassName: (each at: #class)
