@@ -23,10 +23,36 @@ MCPToolDebugWatch >> additionalKeywords [
 	^ #( 'watch' 'trace' 'log' 'print' 'value' 'variable' 'probe' 'observe' 'instrument' )
 ]
 
-{ #category : 'private - execution' }
-MCPToolDebugWatch >> commandForRequest: debugRequest [
+{ #category : 'private - results' }
+MCPToolDebugWatch >> dataForHits: recordedHits targets: targets result: resultText [
+	"Several probes can watch one variable, since it may be assigned in several places. They read as
+	one series, so what is being watched is stated once rather than on every value."
 
-	^ MCPDebugWatchCommand tool: self request: debugRequest
+	| groups order |
+	groups := Dictionary new.
+	order := OrderedCollection new.
+	targets doWithIndex: [ :target :index |
+			| label |
+			label := target at: #label.
+			(groups includesKey: label) ifFalse: [
+					order add: label.
+					groups at: label put: {
+							(#method -> (target at: #method)).
+							(#watching -> (target at: #watching)).
+							(#values -> OrderedCollection new) } asDictionary ] ].
+	recordedHits do: [ :hit |
+			| label |
+			label := (targets at: hit key) at: #label.
+			((groups at: label) at: #values) add: hit value ].
+	^ {
+		  (#result -> resultText).
+		  (#watched -> (order
+			    collect: [ :label |
+					    | group |
+					    group := groups at: label.
+					    group at: #values put: (group at: #values) asArray.
+					    group ]
+			    as: Array)) } asDictionary
 ]
 
 { #category : 'metadata' }
@@ -65,15 +91,55 @@ MCPToolDebugWatch >> inputProperties [
 ]
 
 { #category : 'private - request' }
-MCPToolDebugWatch >> parsedRequestFromToolRequest: request [
+MCPToolDebugWatch >> methodReferencesIn: request [
+	"The methods to probe, each read as Class>>selector or Class class>>selector. One that does not read so, or none at all, is the caller's mistake, said before any method is looked up."
 
-	^ MCPDebugWatchRequest fromRequest: request tool: self
+	| references |
+	references := (request stringCollectionArgumentNamed: 'method') collect: [ :each |
+			              (MCPMethodReference fromString: each) ifNil: [
+					              MCPCommandError
+						              signalErrorCode: #MethodReferenceUnreadable
+						              message: (String streamContents: [ :stream |
+								               stream << 'Could not read ' << each printString << ' as a method. ' << MCPMethodReference helpText ])
+						              details: { (#method -> each) } asDictionary ] ].
+	references ifEmpty: [
+			MCPCommandError
+				signalErrorCode: #DebugWatchTargetMissing
+				message: 'debug_watch needs at least one method to probe.'
+				details: Dictionary new ].
+	^ references
 ]
 
 { #category : 'metadata' }
 MCPToolDebugWatch >> requiredInputProperties [
 
 	^ #( 'method' 'run' )
+]
+
+{ #category : 'executing' }
+MCPToolDebugWatch >> resultFor: request [
+
+	^ self resultForWatch: (MCPDebugWatchCommand
+			   methods: (self methodReferencesIn: request)
+			   variables: (request stringCollectionArgumentNamed: 'variable')
+			   run: (request stringArgumentNamed: 'run')) execute
+]
+
+{ #category : 'private - results' }
+MCPToolDebugWatch >> resultForWatch: aWatch [
+	"How many values the probes recorded, then what the expression answered and each watched variable's values."
+
+	| hits |
+	hits := aWatch recordedHits.
+	^ self
+		  successResultText: (String streamContents: [ :stream |
+					   stream << (self textForCount: hits size noun: 'value') << ' recorded from '
+					   << (self textForCount: aWatch targets size noun: 'probe') << '.' ])
+		  data: (self dataForHits: hits targets: aWatch targets result: aWatch resultText)
+		  warnings: (hits size >= aWatch hitLimit
+				   ifTrue: [
+				   { (String streamContents: [ :stream | stream << 'Recording stopped at ' << aWatch hitLimit printString << ' values.' ]) } ]
+				   ifFalse: [ #(  ) ])
 ]
 
 { #category : 'metadata' }

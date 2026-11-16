@@ -1,5 +1,5 @@
 "
-Replaces the layout of an existing class using the Shift class installer and returns a DTO describing the old and new layout class names plus the resulting class state.
+Replaces the layout of an existing class using the Shift class installer and answers the updated class.
 "
 Class {
 	#name : 'MCPReplaceClassLayoutCommand',
@@ -24,14 +24,7 @@ MCPReplaceClassLayoutCommand class >> className: aClassName layout: aLayoutName 
 { #category : 'executing' }
 MCPReplaceClassLayoutCommand >> execute [
 
-	| oldLayoutClassName targetClass updatedClass |
-	targetClass := self targetClass.
-	oldLayoutClassName := self layoutClassNameFromClass: targetClass.
-	updatedClass := self replaceLayoutOn: targetClass.
-	^ MCPReplaceClassLayoutResult
-		  classInfo: (MCPClassInfo fromClass: updatedClass)
-		  oldLayoutClassName: oldLayoutClassName
-		  newLayoutClassName: self layout
+	^ self replaceLayoutOn: self targetClass
 ]
 
 { #category : 'accessing' }
@@ -44,12 +37,6 @@ MCPReplaceClassLayoutCommand >> layout [
 MCPReplaceClassLayoutCommand >> layout: aLayoutName [
 
 	layout := aLayoutName
-]
-
-{ #category : 'private' }
-MCPReplaceClassLayoutCommand >> layoutClassNameFromClass: aClass [
-
-	^ aClass classLayout class name asString
 ]
 
 { #category : 'private' }

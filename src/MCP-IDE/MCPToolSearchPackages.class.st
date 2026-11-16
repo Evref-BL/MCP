@@ -42,6 +42,12 @@ MCPToolSearchPackages >> entryNameKeys [
 	^ #( package )
 ]
 
+{ #category : 'private - request' }
+MCPToolSearchPackages >> fieldFilterNames [
+
+	^ #( 'name' 'project' 'tag' )
+]
+
 { #category : 'private - filtering' }
 MCPToolSearchPackages >> fieldTextsForPackageEntry: anEntry fieldName: fieldName [
 
@@ -52,26 +58,8 @@ MCPToolSearchPackages >> fieldTextsForPackageEntry: anEntry fieldName: fieldName
 ]
 
 { #category : 'private - filtering' }
-MCPToolSearchPackages >> matchesFieldFiltersOnPackageEntry: anEntry queryRequest: queryRequest [
-
-	^ self
-		  fieldFilters: queryRequest fieldFilters
-		  matchUsing: [ :fieldName | self fieldTextsForPackageEntry: anEntry fieldName: fieldName ]
-		  mode: queryRequest filterMode
-		  caseSensitive: queryRequest caseSensitive
-]
-
-{ #category : 'private - filtering' }
-MCPToolSearchPackages >> packageEntriesForRequest: queryRequest [
-
-	^ self
-		  packageEntriesFromPackages: queryRequest scopeQuery packages
-		  projectNames: queryRequest scopeQuery packageProjectNamesMap
-		  usingRequest: queryRequest
-]
-
-{ #category : 'private - filtering' }
-MCPToolSearchPackages >> packageEntriesFromPackages: packages projectNames: packageProjectNames usingRequest: queryRequest [
+MCPToolSearchPackages >> packageEntriesFromPackages: packages projectNames: packageProjectNames fieldFilters: fieldFilters [
+	"The packages whose fields hold the field filters, ignoring case, each with the projects that own it."
 
 	| entries |
 	entries := OrderedCollection new.
@@ -79,14 +67,12 @@ MCPToolSearchPackages >> packageEntriesFromPackages: packages projectNames: pack
 			| entry projectNames |
 			projectNames := packageProjectNames at: eachPackage name asString ifAbsent: [ #(  ) ].
 			entry := (MCPPackageInfo fromPackage: eachPackage projectNames: projectNames) asQueryDictionary.
-			(self matchesFieldFiltersOnPackageEntry: entry queryRequest: queryRequest) ifTrue: [ entries add: entry ] ].
+			(self
+				 fieldFilters: fieldFilters
+				 matchUsing: [ :fieldName | self fieldTextsForPackageEntry: entry fieldName: fieldName ]
+				 mode: self defaultFilterMode
+				 caseSensitive: false) ifTrue: [ entries add: entry ] ].
 	^ entries asArray
-]
-
-{ #category : 'private - request' }
-MCPToolSearchPackages >> packageFilterFieldNames [
-
-	^ #( 'name' 'project' 'tag' )
 ]
 
 { #category : 'private - schema' }
@@ -114,27 +100,23 @@ MCPToolSearchPackages >> packageScopeQueryFromRequest: request [
 ]
 
 { #category : 'private - template' }
-MCPToolSearchPackages >> queryEntriesForQueryRequest: queryRequest [
+MCPToolSearchPackages >> queryEntriesForRequest: request scopeQuery: scopeQuery [
 
-	^ self packageEntriesForRequest: queryRequest
+	| fieldFilters |
+	fieldFilters := self fieldFiltersFromRequest: request.
+	^ self packageEntriesFromPackages: scopeQuery packages projectNames: scopeQuery packageProjectNamesMap fieldFilters: fieldFilters
 ]
 
 { #category : 'private - template' }
-MCPToolSearchPackages >> queryResultDataForQueryRequest: queryRequest page: page [
+MCPToolSearchPackages >> queryResultDataForPage: page [
 
-	^ self queryResultDataFrom: nil page: page entriesKey: #packages
+	^ page asDictionaryWithEntriesKey: #packages
 ]
 
 { #category : 'private - template' }
 MCPToolSearchPackages >> scopeQueryFromRequest: request [
 
 	^ self packageScopeQueryFromRequest: request
-]
-
-{ #category : 'private - template' }
-MCPToolSearchPackages >> searchRequestFromToolRequest: request [
-
-	^ MCPSearchPackagesRequest fromRequest: request tool: self
 ]
 
 { #category : 'private - template' }

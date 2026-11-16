@@ -1,15 +1,12 @@
 "
-Internal DTO for one executed test_run selection.
+The outcome of every test one test_run selection ran to its end.
 
-It holds the outcome of every test the selection ran to its end, and counts them: each test counts once, and the run count leaves skipped tests out, as SUnit's does.
+It counts them: each test counts once, and the run count leaves skipped tests out, as SUnit's does.
 "
 Class {
 	#name : 'MCPTestRunInfo',
-	#superclass : 'MCPDataTransferObject',
+	#superclass : 'Object',
 	#instVars : [
-		'className',
-		'testMethodName',
-		'selectedTestCount',
 		'outcomes'
 	],
 	#category : 'MCP-IDE-DTOs',
@@ -18,32 +15,9 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPTestRunInfo class >> validatedRequest: validatedRequest selectedTestCount: selectedCount outcomes: someOutcomes [
+MCPTestRunInfo class >> outcomes: someOutcomes [
 
-	^ self new initializeValidatedRequest: validatedRequest selectedTestCount: selectedCount outcomes: someOutcomes
-]
-
-{ #category : 'converting' }
-MCPTestRunInfo >> asDictionary [
-
-	| data |
-	data := Dictionary new.
-	data at: #class put: self className.
-	self testMethodName ifNotNil: [ :methodName | data at: #testMethod put: methodName ].
-	data at: #selectedTestCount put: self selectedTestCount.
-	data at: #runCount put: self runCount.
-	data at: #passedCount put: self passedCount.
-	data at: #skippedCount put: self skippedCount.
-	data at: #failureCount put: self failureCount.
-	data at: #errorCount put: self errorCount.
-	self outcomes ifNotEmpty: [ :finished | data at: #outcomes put: (finished collect: [ :each | each asDictionary ]) ].
-	^ data
-]
-
-{ #category : 'accessing' }
-MCPTestRunInfo >> className [
-
-	^ className
+	^ self new initializeOutcomes: someOutcomes
 ]
 
 { #category : 'accessing' }
@@ -65,11 +39,8 @@ MCPTestRunInfo >> failureCount [
 ]
 
 { #category : 'initialization' }
-MCPTestRunInfo >> initializeValidatedRequest: validatedRequest selectedTestCount: selectedCount outcomes: someOutcomes [
+MCPTestRunInfo >> initializeOutcomes: someOutcomes [
 
-	className := validatedRequest className.
-	testMethodName := validatedRequest testMethodName.
-	selectedTestCount := selectedCount.
 	outcomes := someOutcomes asArray
 ]
 
@@ -94,19 +65,7 @@ MCPTestRunInfo >> runCount [
 ]
 
 { #category : 'accessing' }
-MCPTestRunInfo >> selectedTestCount [
-
-	^ selectedTestCount ifNil: [ 0 ]
-]
-
-{ #category : 'accessing' }
 MCPTestRunInfo >> skippedCount [
 
 	^ self countOf: #isSkipped
-]
-
-{ #category : 'accessing' }
-MCPTestRunInfo >> testMethodName [
-
-	^ testMethodName
 ]

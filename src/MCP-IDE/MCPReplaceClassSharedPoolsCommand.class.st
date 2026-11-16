@@ -1,5 +1,5 @@
 "
-Replaces the shared pools of an existing class using the Shift class installer and returns a DTO describing the old and new shared pool name lists plus the resulting class state.
+Replaces the shared pools of an existing class using the Shift class installer and answers the updated class.
 "
 Class {
 	#name : 'MCPReplaceClassSharedPoolsCommand',
@@ -24,14 +24,7 @@ MCPReplaceClassSharedPoolsCommand class >> className: aClassName sharedPoolNames
 { #category : 'executing' }
 MCPReplaceClassSharedPoolsCommand >> execute [
 
-	| oldSharedPoolNames targetClass updatedClass |
-	targetClass := self targetClass.
-	oldSharedPoolNames := self sharedPoolNamesFromClass: targetClass.
-	updatedClass := self replaceSharedPoolsOn: targetClass.
-	^ MCPReplaceClassSharedPoolsResult
-		  classInfo: (MCPClassInfo fromClass: updatedClass)
-		  oldSharedPoolNames: oldSharedPoolNames
-		  newSharedPoolNames: self sharedPoolNames
+	^ self replaceSharedPoolsOn: self targetClass
 ]
 
 { #category : 'private' }
@@ -50,12 +43,6 @@ MCPReplaceClassSharedPoolsCommand >> sharedPoolNames [
 MCPReplaceClassSharedPoolsCommand >> sharedPoolNames: someNames [
 
 	sharedPoolNames := someNames ifNil: [ #(  ) ] ifNotNil: [ someNames asArray ]
-]
-
-{ #category : 'private' }
-MCPReplaceClassSharedPoolsCommand >> sharedPoolNamesFromClass: aClass [
-
-	^ aClass sharedPools collect: [ :each | each name asString ] as: Array
 ]
 
 { #category : 'accessing' }

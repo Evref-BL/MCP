@@ -1,7 +1,7 @@
 "
-Shared implementation for class mutation tools.
+Shared schema of class_create and class_update.
 
-It defines per-tool input schemas, translates each concrete class tool request into class creation or update requests, and returns structured class mutation results.
+The class is changed through the MCPClassCommand operations.
 "
 Class {
 	#name : 'MCPToolClassMutation',
@@ -37,6 +37,15 @@ MCPToolClassMutation >> atLeastOneInputProperties [
 	^ self classToolSpec at: #atLeastOneProperties ifAbsent: [ #(  ) ]
 ]
 
+{ #category : 'private - arguments' }
+MCPToolClassMutation >> classCommentIn: request [
+	"The comment as the caller wrote it, nil when it gave none. It is text, so it is not trimmed, and null clears it."
+
+	| value |
+	value := request argumentNamed: 'comment' ifAbsent: [ ^ nil ].
+	^ value ifNil: [ '' ] ifNotNil: [ value asString ]
+]
+
 { #category : 'private - schema' }
 MCPToolClassMutation >> classNameSchemaProperty [
 
@@ -55,189 +64,10 @@ MCPToolClassMutation >> commentSchemaProperty [
 	^ self schemaPropertyNamed: 'comment' type: 'string' description: 'Class comment; empty clears.'
 ]
 
-{ #category : 'private' }
-MCPToolClassMutation >> dataForAppliedUpdateResult: anAppliedUpdateResult [
-
-	^ anAppliedUpdateResult asDictionary
-]
-
-{ #category : 'private' }
-MCPToolClassMutation >> dataForResult: aResult action: actionName [
-
-	^ Dictionary new
-]
-
 { #category : 'metadata' }
 MCPToolClassMutation >> description [
 
 	^ self classToolSpec at: #description
-]
-
-{ #category : 'private' }
-MCPToolClassMutation >> failureMessageForAddSlotNamed: slotName onClassNamed: className classSide: classSide error: anError [
-
-	^ String streamContents: [ :stream |
-			  stream << 'Failed to add ' << (self slotDescriptionForClassSide: classSide) << ' ' << slotName << ' to class ' << className
-			  << ': ' << (self normalizedCauseMessageForMutationError: anError) ]
-]
-
-{ #category : 'private' }
-MCPToolClassMutation >> failureMessageForCreateClassNamed: className superclassName: superclassName packageName: packageName error: anError [
-
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Unable to create class ';
-				  nextPutAll: className;
-				  nextPutAll: ' < ';
-				  nextPutAll: superclassName;
-				  nextPutAll: ' in package ';
-				  nextPutAll: packageName;
-				  nextPutAll: ': ';
-				  nextPutAll: (self normalizedCauseMessageForMutationError: anError) ]
-]
-
-{ #category : 'private' }
-MCPToolClassMutation >> failureMessageForMoveClassNamed: className packageName: packageName tag: tag error: anError [
-
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Unable to move class ';
-				  nextPutAll: className;
-				  nextPutAll: ' to package ';
-				  nextPutAll: packageName.
-			  tag ifNotNil: [
-					  stream
-						  nextPutAll: ' tag ';
-						  nextPutAll: tag ].
-			  stream
-				  nextPutAll: ': ';
-				  nextPutAll: (self normalizedCauseMessageForMutationError: anError) ]
-]
-
-{ #category : 'private' }
-MCPToolClassMutation >> failureMessageForMoveSlotNamed: slotName onClassNamed: className classSide: classSide operation: operation error: anError [
-
-	operation = 'pullUpSlot' ifTrue: [
-			^ String streamContents: [ :stream |
-					  stream << 'Failed to pull up ' << (self slotDescriptionForClassSide: classSide) << ' ' << slotName << ' to class '
-					  << className << ': ' << (self normalizedCauseMessageForMutationError: anError) ] ].
-	^ String streamContents: [ :stream |
-			  stream << 'Failed to push down ' << (self slotDescriptionForClassSide: classSide) << ' ' << slotName << ' from class '
-			  << className << ': ' << (self normalizedCauseMessageForMutationError: anError) ]
-]
-
-{ #category : 'private' }
-MCPToolClassMutation >> failureMessageForRemoveSlotNamed: slotName onClassNamed: className classSide: classSide error: anError [
-
-	^ String streamContents: [ :stream |
-			  stream << 'Failed to remove ' << (self slotDescriptionForClassSide: classSide) << ' ' << slotName << ' from class '
-			  << className << ': ' << (self normalizedCauseMessageForMutationError: anError) ]
-]
-
-{ #category : 'private' }
-MCPToolClassMutation >> failureMessageForRenameClassNamed: className to: newClassName error: anError [
-
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Unable to rename class ';
-				  nextPutAll: className;
-				  nextPutAll: ' to ';
-				  nextPutAll: newClassName;
-				  nextPutAll: ': ';
-				  nextPutAll: (self normalizedCauseMessageForMutationError: anError) ]
-]
-
-{ #category : 'private' }
-MCPToolClassMutation >> failureMessageForRenameSlotNamed: slotName to: newSlotName onClassNamed: className classSide: classSide error: anError [
-
-	^ String streamContents: [ :stream |
-			  stream << 'Failed to rename ' << (self slotDescriptionForClassSide: classSide) << ' ' << slotName << ' to ' << newSlotName
-			  << ' in class ' << className << ': ' << (self normalizedCauseMessageForMutationError: anError) ]
-]
-
-{ #category : 'private' }
-MCPToolClassMutation >> failureMessageForReparentClassNamed: className superclassName: superclassName error: anError [
-
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Unable to reparent class ';
-				  nextPutAll: className;
-				  nextPutAll: ' to superclass ';
-				  nextPutAll: superclassName;
-				  nextPutAll: ': ';
-				  nextPutAll: (self normalizedCauseMessageForMutationError: anError) ]
-]
-
-{ #category : 'private' }
-MCPToolClassMutation >> failureMessageForReplaceDefinitionOnClassNamed: className error: anError [
-
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Unable to replace slot definition for class ';
-				  nextPutAll: className;
-				  nextPutAll: ': ';
-				  nextPutAll: (self normalizedCauseMessageForMutationError: anError) ]
-]
-
-{ #category : 'private' }
-MCPToolClassMutation >> failureMessageForReplaceLayoutOnClassNamed: className error: anError [
-
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Unable to replace layout for class ';
-				  nextPutAll: className;
-				  nextPutAll: ': ';
-				  nextPutAll: (self normalizedCauseMessageForMutationError: anError) ]
-]
-
-{ #category : 'private' }
-MCPToolClassMutation >> failureMessageForReplaceSharedPoolsOnClassNamed: className error: anError [
-
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Unable to replace shared pools for class ';
-				  nextPutAll: className;
-				  nextPutAll: ': ';
-				  nextPutAll: (self normalizedCauseMessageForMutationError: anError) ]
-]
-
-{ #category : 'private' }
-MCPToolClassMutation >> failureMessageForReplaceSharedVariablesOnClassNamed: className error: anError [
-
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Unable to replace shared variables for class ';
-				  nextPutAll: className;
-				  nextPutAll: ': ';
-				  nextPutAll: (self normalizedCauseMessageForMutationError: anError) ]
-]
-
-{ #category : 'private' }
-MCPToolClassMutation >> failureMessageForReplaceTraitsOnClassNamed: className error: anError [
-
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Unable to replace traits for class ';
-				  nextPutAll: className;
-				  nextPutAll: ': ';
-				  nextPutAll: (self normalizedCauseMessageForMutationError: anError) ]
-]
-
-{ #category : 'private' }
-MCPToolClassMutation >> failureMessageForSetCommentOnClassNamed: className error: anError [
-
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Unable to set comment for class ';
-				  nextPutAll: className;
-				  nextPutAll: ': ';
-				  nextPutAll: (self normalizedCauseMessageForMutationError: anError) ]
-]
-
-{ #category : 'private - specs' }
-MCPToolClassMutation >> fixedArguments [
-
-	^ self classToolSpec at: #fixedArguments ifAbsent: [ Dictionary new ]
 ]
 
 { #category : 'private - schema' }
@@ -255,26 +85,6 @@ MCPToolClassMutation >> layoutSchemaProperty [
 		  description: 'Layout class, a subclass of AbstractLayout such as VariableLayout.'
 ]
 
-{ #category : 'private - actions' }
-MCPToolClassMutation >> mutationAction [
-
-	^ self classToolSpec at: #action ifAbsent: [ 'update' ]
-]
-
-{ #category : 'private - errors' }
-MCPToolClassMutation >> mutationActionForErrorFromParsedRequest: mutationRequest rawRequest: rawRequest [
-
-	^ self mutationAction
-]
-
-{ #category : 'private - request' }
-MCPToolClassMutation >> packageNameForMoveClassNamed: className requestedPackageName: requestedPackageName [
-	"A tag alone retags the class inside its own package. The class is looked up as every class name is, so a global variable that is no class, such as Transcript, is refused rather than asked for its package."
-
-	requestedPackageName ifNotNil: [ ^ requestedPackageName ].
-	^ (MCPImageLookup classNamed: className) packageName asString
-]
-
 { #category : 'private - schema' }
 MCPToolClassMutation >> packageNameSchemaProperty [
 
@@ -282,22 +92,6 @@ MCPToolClassMutation >> packageNameSchemaProperty [
 		  schemaPropertyNamed: 'package'
 		  type: 'string'
 		  description: 'Move the class to this package. Give tag alone to retag it inside the package it is already in.'
-]
-
-{ #category : 'private - request' }
-MCPToolClassMutation >> parsedRequestFromToolRequest: request [
-
-	| arguments mutationToolRequest requestClass |
-	arguments := request arguments copy.
-	self fixedArguments keysAndValuesDo: [ :key :value | arguments at: key put: value ].
-	mutationToolRequest := MCPToolRequest new
-		                       tool: self;
-		                       arguments: arguments;
-		                       yourself.
-	requestClass := self mutationAction = 'create'
-		                ifTrue: [ MCPClassCreateRequest ]
-		                ifFalse: [ MCPClassUpdateRequest ].
-	^ requestClass fromRequest: mutationToolRequest tool: self
 ]
 
 { #category : 'private - specs' }
@@ -363,14 +157,6 @@ MCPToolClassMutation >> slotDeltaSchemaPropertyNamed: aName describedAs: aDescri
 					   description: 'The complete slot list, replacing what the class has. Prefer add and remove.'
 					   itemDescription: 'Slot name.') };
 		  yourself
-]
-
-{ #category : 'private' }
-MCPToolClassMutation >> slotDescriptionForClassSide: aBoolean [
-
-	^ aBoolean
-		  ifTrue: [ 'class-side slot' ]
-		  ifFalse: [ 'slot' ]
 ]
 
 { #category : 'private - schema' }

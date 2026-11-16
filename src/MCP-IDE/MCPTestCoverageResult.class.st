@@ -1,5 +1,5 @@
 "
-Structured coverage result DTO returned by test_coverage_run.
+The coverage test_coverage_run measured, from the collector's result: how many of the scope's methods and nodes ran, which methods ran only in part or not at all, and the share of the code that ran. Each list of methods is sorted and cut to the method limit, and says whether it was cut.
 "
 Class {
 	#name : 'MCPTestCoverageResult',

@@ -352,17 +352,16 @@ MCP >> discoveryInstructions [
 { #category : 'private - tools' }
 MCP >> dispatchToolCallWith: callTool arguments: arguments observabilityRecord: observabilityRecord [
 
-	| callRequest request targetResponse targetTool wrapperResult |
+	| request targetResponse targetTool wrapperResult |
 	request := callTool requestFromToolCallArguments: arguments.
-	callRequest := callTool parsedRequestFromToolRequest: request.
-	self validateToolCallRequest: callRequest wrapperTool: callTool.
-	targetTool := self targetToolForCallRequest: callRequest.
+	self validateToolCallRequest: request wrapperTool: callTool.
+	targetTool := self targetToolForCallRequest: request.
 	targetResponse := self
 		                  executeTool: targetTool
 		                  named: targetTool name
-		                  withParams: callRequest arguments
+		                  withParams: ((request argumentNamed: 'arguments' ifAbsent: [ nil ]) ifNil: [ Dictionary new ])
 		                  dispatchPath: 'via_tool_call'.
-	wrapperResult := self toolCallWrapperResultFor: callTool request: callRequest.
+	wrapperResult := self toolCallWrapperResultFor: callTool request: request.
 	self finishToolCallWrapper: observabilityRecord result: wrapperResult.
 	^ targetResponse
 ]
@@ -949,9 +948,11 @@ MCP >> supportedPharoMajorVersions [
 ]
 
 { #category : 'private - tools' }
-MCP >> targetToolForCallRequest: callRequest [
+MCP >> targetToolForCallRequest: request [
 
-	^ self toolRegistry toolNamed: callRequest toolName ifAbsent: [ self signalMissingToolNamed: callRequest toolName ]
+	| toolName |
+	toolName := request stringArgumentNamed: 'name'.
+	^ self toolRegistry toolNamed: toolName ifAbsent: [ self signalMissingToolNamed: toolName ]
 ]
 
 { #category : 'private - tools' }
@@ -961,11 +962,11 @@ MCP >> toolCallTool [
 ]
 
 { #category : 'private - tools' }
-MCP >> toolCallWrapperResultFor: callTool request: callRequest [
+MCP >> toolCallWrapperResultFor: callTool request: request [
 
-	^ callTool
-		  successResultText: 'Dispatched tool ' , callRequest toolName
-		  data: { (#tool -> callRequest toolName) } asDictionary
+	| toolName |
+	toolName := request stringArgumentNamed: 'name'.
+	^ callTool successResultText: 'Dispatched tool ' , toolName data: { (#tool -> toolName) } asDictionary
 ]
 
 { #category : 'configuration' }
@@ -1049,9 +1050,9 @@ MCP >> validToolResponseFields [
 ]
 
 { #category : 'private - tools' }
-MCP >> validateToolCallRequest: callRequest wrapperTool: callTool [
+MCP >> validateToolCallRequest: request wrapperTool: callTool [
 
-	callRequest toolName = callTool name ifTrue: [ Error signal: 'tool_call cannot call itself.' ]
+	(request stringArgumentNamed: 'name') = callTool name ifTrue: [ Error signal: 'tool_call cannot call itself.' ]
 ]
 
 { #category : 'private - start' }

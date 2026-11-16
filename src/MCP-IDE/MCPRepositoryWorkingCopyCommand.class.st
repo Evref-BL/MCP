@@ -1,7 +1,9 @@
 "
-Abstract base for repository commands that read or write the checkout's files: repository_change_list, repository_change_discard, repository_export and repository_commit.
+The steps that read or write the checkout's files, which repository_change_list, repository_change_discard, repository_export and repository_commit take.
 
-It writes the loaded packages, reads the bytes of the files export may write, answers which registered packages a path belongs to, and reads what git sees in the checkout. Every path counts from the checkout root, its segments joined with a slash.
+It writes the loaded packages, reads the bytes of the files export may write, answers which registered packages a path belongs to, compares the image's packages with the files, and reads what git sees in the checkout. Every path counts from the checkout root, its segments joined with a slash.
+
+Like MCPRepositoryCommand it is abstract and runs nothing itself: those tools call its steps on an instance, and MCPCommitRepositoryCommand inherits them.
 "
 Class {
 	#name : 'MCPRepositoryWorkingCopyCommand',
@@ -24,13 +26,25 @@ MCPRepositoryWorkingCopyCommand >> addModifiedPathsFromNode: aNode to: paths [
 	aNode children do: [ :each | self addModifiedPathsFromNode: each to: paths ]
 ]
 
-{ #category : 'private - files' }
+{ #category : 'files' }
 MCPRepositoryWorkingCopyCommand >> alsoUncommittedFrom: uncommittedPaths written: written deleted: deleted [
 	"What git sees besides what export wrote or deleted, in full: every uncommitted path but those export names and those under a directory it names."
 
 	^ uncommittedPaths reject: [ :path |
 			  (deleted includes: path) or: [
 				  written anySatisfy: [ :each | path = each or: [ (each endsWith: '/') and: [ path beginsWith: each ] ] ] ] ]
+]
+
+{ #category : 'discarding' }
+MCPRepositoryWorkingCopyCommand >> assertRepositoryCleanAfterDiscard: aRepository [
+
+	| remainingPackageNames remainingPaths |
+	remainingPaths := self modifiedPathsFromGitStatusIn: aRepository.
+	remainingPackageNames := self changedPackageNamesForRepository: aRepository modifiedPaths: remainingPaths.
+	(remainingPackageNames isEmpty and: [ remainingPaths isEmpty ]) ifFalse: [
+			MCPCommandError signalErrorCode: 'RepositoryDiscardIncomplete' message: 'Repository changes remain after discard.' details: {
+					(#remainingPackageNames -> remainingPackageNames).
+					(#remainingPaths -> remainingPaths) } asDictionary ]
 ]
 
 { #category : 'private - diff' }
@@ -67,20 +81,20 @@ MCPRepositoryWorkingCopyCommand >> bytesOf: aFileReference [
 	^ aFileReference binaryReadStreamDo: [ :stream | stream upToEnd ]
 ]
 
-{ #category : 'private - diff' }
+{ #category : 'diff' }
 MCPRepositoryWorkingCopyCommand >> changedPackageNamesForRepository: aRepository modifiedPaths: paths [
 	"The packages Iceberg marks and those the paths belong to."
 
 	^ self sortedStringsFrom: (self imageModifiedPackageNamesFor: aRepository) , (self packageNamesForPaths: paths in: aRepository)
 ]
 
-{ #category : 'private - files' }
+{ #category : 'files' }
 MCPRepositoryWorkingCopyCommand >> deletedPathsFrom: before to: after [
 
 	^ self sortedStringsFrom: (before keys reject: [ :each | after includesKey: each ])
 ]
 
-{ #category : 'private - files' }
+{ #category : 'files' }
 MCPRepositoryWorkingCopyCommand >> existingLoadedPackageDirectoryPathsFor: aRepository [
 
 	^ ((self loadedPackageDirectoriesFor: aRepository)
@@ -88,17 +102,16 @@ MCPRepositoryWorkingCopyCommand >> existingLoadedPackageDirectoryPathsFor: aRepo
 		   thenCollect: [ :each | self pathFromRoot: each in: aRepository ]) asSet
 ]
 
-{ #category : 'private - export' }
+{ #category : 'export' }
 MCPRepositoryWorkingCopyCommand >> exportLoadedPackagesFrom: aRepository [
-	"Write .project and each loaded package, and answer the warning that names the registered packages the image lacks, whose files are left as they are."
+	"Write .project and each loaded package. The files of the registered packages the image lacks are left as they are."
 
 	| sourceDirectory writerClass |
 	writerClass := self sourceWriterClassFor: aRepository.
 	self exportProjectFileFor: aRepository.
 	sourceDirectory := self repositorySourceDirectoryFor: aRepository.
 	sourceDirectory ensureCreateDirectory.
-	aRepository workingCopy loadedPackages do: [ :package | self exportPackage: package in: aRepository through: writerClass ].
-	^ self warningsForPackagesNotInImageOf: aRepository
+	aRepository workingCopy loadedPackages do: [ :package | self exportPackage: package in: aRepository through: writerClass ]
 ]
 
 { #category : 'private - export' }
@@ -123,6 +136,25 @@ MCPRepositoryWorkingCopyCommand >> gitStatusLinesFor: aRepository [
 		           in: aRepository
 		           ifFailed: [ :gitResult | self signalGitCommandFailed: gitResult action: 'status' ]) at: #output.
 	^ output lines
+]
+
+{ #category : 'diff' }
+MCPRepositoryWorkingCopyCommand >> imageDifferingPackageNamesFor: aRepository [
+	"The packages Iceberg marks modified whose contents in the image differ from the checkout's files. Iceberg marks a package on any change and clears the mark only when it writes the package, so an edit undone, or a test that compiles a method and removes it, leaves a mark over nothing. When the files cannot be read at all, the marks are all there is to answer with."
+
+	| modifiedPackages writerClass |
+	modifiedPackages := aRepository modifiedPackages.
+	modifiedPackages ifEmpty: [ ^ #(  ) ].
+	^ self withoutLeavingFiletreeMarkerIn: (self repositorySourceDirectoryFor: aRepository) do: [
+			  | sourceRepository |
+			  sourceRepository := [
+				                      writerClass := self sourceWriterClassFor: aRepository.
+				                      self sourceRepositoryFor: aRepository writer: writerClass ]
+				                      on: Error
+				                      do: [ ^ self imageModifiedPackageNamesFor: aRepository ].
+			  self sortedStringsFrom: (modifiedPackages
+					   select: [ :each | self package: each differsIn: sourceRepository writer: writerClass ]
+					   thenCollect: [ :each | each name ]) ]
 ]
 
 { #category : 'private - diff' }
@@ -159,7 +191,7 @@ MCPRepositoryWorkingCopyCommand >> loadedPackageDirectoriesFor: aRepository [
 	^ aRepository workingCopy loadedPackages collect: [ :each | self directoryOfPackage: each in: aRepository writer: writerClass ]
 ]
 
-{ #category : 'private - diff' }
+{ #category : 'diff' }
 MCPRepositoryWorkingCopyCommand >> modifiedPathsFromGitStatusIn: aRepository [
 
 	(self repositoryHasGitWorkTree: aRepository) ifFalse: [ ^ #(  ) ].
@@ -167,6 +199,18 @@ MCPRepositoryWorkingCopyCommand >> modifiedPathsFromGitStatusIn: aRepository [
 		  ((self gitStatusLinesFor: aRepository)
 			   collect: [ :line | self pathFromGitStatusLine: line ]
 			   thenSelect: [ :path | path isNotEmpty ])
+]
+
+{ #category : 'private - diff' }
+MCPRepositoryWorkingCopyCommand >> package: anIcePackage differsIn: sourceRepository writer: aWriterClass [
+	"Answer whether the image holds anIcePackage otherwise than the checkout's files do. A package the files lack differs, and so does one that cannot be read or compared: nothing showed it equal."
+
+	^ [
+		  (self versionIn: sourceRepository for: anIcePackage writer: aWriterClass)
+			  ifNil: [ true ]
+			  ifNotNil: [ :version | ((MCPackage named: anIcePackage name) snapshot patchRelativeToBase: version snapshot) isEmpty not ] ]
+		  on: Error
+		  do: [ true ]
 ]
 
 { #category : 'private - paths' }
@@ -197,7 +241,7 @@ MCPRepositoryWorkingCopyCommand >> packageNamesForPath: aPath among: packageDire
 	^ names
 ]
 
-{ #category : 'private - paths' }
+{ #category : 'paths' }
 MCPRepositoryWorkingCopyCommand >> packageNamesForPaths: paths in: aRepository [
 	"The packages the repository registers, loaded or not, that the paths belong to, sorted. A path belongs to a package when it is the package's directory, with or without a trailing slash, or lies under it. A path ending in a slash that holds package directories, as git folds a wholly untracked tree, belongs to each package whose directory lies under it and exists. A directory's name is never read as a package's: a path that belongs to no package stays a path."
 
@@ -248,7 +292,7 @@ MCPRepositoryWorkingCopyCommand >> pathsOutsidePackages: paths in: aRepository [
 	^ paths select: [ :each | (self packageNamesForPath: each among: directories in: aRepository) isEmpty ]
 ]
 
-{ #category : 'private - tonel order' }
+{ #category : 'tonel order' }
 MCPRepositoryWorkingCopyCommand >> restoreOrderOnlyTonelChurnFor: aRepository fromSnapshot: aSnapshot [
 	"Write back whole, from the snapshot, each Tonel class or extension file the writer changed only by putting its methods in another order, and answer their paths from the checkout root. The file is deleted first: a write stream on an existing file would keep whatever a shorter contents leaves past its end."
 
@@ -266,7 +310,7 @@ MCPRepositoryWorkingCopyCommand >> restoreOrderOnlyTonelChurnFor: aRepository fr
 	^ self sortedStringsFrom: restored
 ]
 
-{ #category : 'private - files' }
+{ #category : 'files' }
 MCPRepositoryWorkingCopyCommand >> snapshotFilesFor: aRepository [
 	"The bytes of every file export may write, by path from the checkout root: every file under each loaded package's directory, every file directly in the source directory, and .project. Only export runs between this reading and the next, so what differs between them is what it wrote."
 
@@ -323,7 +367,7 @@ MCPRepositoryWorkingCopyCommand >> tonelMethodOrderSignatureFor: contents [
 		  (#methods -> chunks asArray sort) } asDictionary
 ]
 
-{ #category : 'private - diff' }
+{ #category : 'diff' }
 MCPRepositoryWorkingCopyCommand >> uncommittedPathsIn: aRepository [
 	"Every path git sees changed or untracked in the checkout, file by file: what repository_commit would take."
 
@@ -335,6 +379,13 @@ MCPRepositoryWorkingCopyCommand >> uncommittedPathsIn: aRepository [
 		           ifFailed: [ :gitResult | self signalGitCommandFailed: gitResult action: 'status' ]) at: #output.
 	^ self sortedStringsFrom:
 		  (output lines collect: [ :line | self pathFromGitStatusLine: line ] thenSelect: [ :path | path isNotEmpty ])
+]
+
+{ #category : 'export' }
+MCPRepositoryWorkingCopyCommand >> unloadedPackageNamesOf: aRepository [
+	"The packages the repository registers and the image does not hold, sorted. Export leaves their files as they are."
+
+	^ self sortedStringsFrom: (aRepository workingCopy packages reject: [ :each | each isLoaded ] thenCollect: [ :each | each name ])
 ]
 
 { #category : 'private - diff' }
@@ -363,32 +414,13 @@ MCPRepositoryWorkingCopyCommand >> unquotedGitPath: aString [
 	^ bytes contents utf8Decoded
 ]
 
-{ #category : 'private - export' }
-MCPRepositoryWorkingCopyCommand >> warningsForPackagesNotInImageOf: aRepository [
-
-	| names |
-	names := self sortedStringsFrom:
-		         (aRepository workingCopy packages reject: [ :each | each isLoaded ] thenCollect: [ :each | each name ]).
-	names ifEmpty: [ ^ #(  ) ].
-	^ { (String streamContents: [ :stream |
-			   names size = 1
-				   ifTrue: [
-						   stream << names first << ' is registered in repository ' << aRepository name
-						   <<
-						   ' but not in the image, so export did not write it; its files in the checkout are left as they are. If it no longer belongs to the repository, repository_update removePackages drops it.' ]
-				   ifFalse: [
-						   stream << (', ' join: names) << ' are registered in repository ' << aRepository name
-						   <<
-						   ' but not in the image, so export did not write them; their files in the checkout are left as they are. If they no longer belong to the repository, repository_update removePackages drops them.' ] ]) }
-]
-
-{ #category : 'private - execution' }
+{ #category : 'export' }
 MCPRepositoryWorkingCopyCommand >> withNonInteractiveAuthorDuring: aBlock [
 
 	^ aBlock value
 ]
 
-{ #category : 'private - files' }
+{ #category : 'files' }
 MCPRepositoryWorkingCopyCommand >> writtenPathsFrom: before to: after newDirectories: directoryPaths [
 	"Each file created or changed between the two readings. A package directory that did not exist before is named once, with a trailing slash, as git names an untracked directory; in one that existed, files are named one by one, which a filetree package, a file per method, needs."
 

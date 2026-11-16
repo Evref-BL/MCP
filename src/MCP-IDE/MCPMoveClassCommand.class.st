@@ -1,7 +1,7 @@
 "
-Command that moves a class to another package and/or tag.
+Moves a class to another package and/or tag and answers the class.
 
-When only a tag is supplied, it recategorizes the class inside its current package. The command reports the old package and tag through MCPMoveClassResult.
+Given the package the class is already in and a tag, it retags the class inside its package.
 "
 Class {
 	#name : 'MCPMoveClassCommand',
@@ -42,14 +42,10 @@ MCPMoveClassCommand >> ensurePackageNamed: aPackageName [
 { #category : 'executing' }
 MCPMoveClassCommand >> execute [
 
-	| movedClass oldPackageName oldTag |
-	movedClass := MCPImageLookup classNamed: self className.
+	MCPImageLookup classNamed: self className.
 	self destinationValidation.
-	oldPackageName := movedClass packageName asString.
-	oldTag := movedClass packageTagName asString.
 	self performMove.
-	movedClass := Smalltalk globals at: self className asSymbol.
-	^ MCPMoveClassResult classInfo: (MCPClassInfo fromClass: movedClass) oldPackageName: oldPackageName oldTag: oldTag
+	^ Smalltalk globals at: self className asSymbol
 ]
 
 { #category : 'accessing' }

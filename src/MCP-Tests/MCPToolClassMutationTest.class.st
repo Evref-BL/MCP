@@ -1,5 +1,5 @@
 "
-Create tests exercise class creation tool requests. Update tests exercise class update tool requests and verify the structured result data produced by the internal narrow commands.
+Create tests exercise class creation tool requests. Update tests exercise class update tool requests and verify the structured data the tool builds from the changed class.
 "
 Class {
 	#name : 'MCPToolClassMutationTest',
@@ -241,6 +241,20 @@ MCPToolClassMutationTest >> tearDown [
 	super tearDown
 ]
 
+{ #category : 'tests - update' }
+MCPToolClassMutationTest >> testASingleUpdateAnswersNoData [
+	"Several updates in one call each add their action to the data, and nothing else."
+
+	| result |
+	self
+		createClassNamed: self commentTargetClassName
+		superclassName: 'Object'
+		slots: #(  )
+		classSlots: #(  ).
+	result := self callToolWith: (self updateRequestArgumentsForClassComment: 'updated comment').
+	self assert: (self dataFrom: result) isEmpty
+]
+
 { #category : 'tests - schema' }
 MCPToolClassMutationTest >> testClassToolSchemasDeclareExpectedInputs [
 
@@ -320,6 +334,50 @@ MCPToolClassMutationTest >> testCreateAcceptsSlotsAndTag [
 	self assert: createdClass packageTagName asString equals: 'Generated'.
 	self assert: createdClass category asString equals: self generatedPackageName , '-Generated'.
 	self deny: (result at: #isError ifAbsent: [ false ])
+]
+
+{ #category : 'tests - create' }
+MCPToolClassMutationTest >> testCreateContextDefaultsTheSuperclassToObject [
+
+	| request tool |
+	tool := MCPToolCreateClass new.
+	request := tool requestFromToolCallArguments: {
+			           (#name -> 'MCPGeneratedClass').
+			           (#package -> 'MCP-Generated') } asDictionary.
+	self assert: (tool superclassNameIn: request) equals: 'Object'.
+	self assert: ((tool requestedContextFor: request checked: true) at: #superclass) equals: 'Object'
+]
+
+{ #category : 'tests - create' }
+MCPToolClassMutationTest >> testCreateContextReadsTheDefinition [
+
+	| context tool |
+	tool := MCPToolCreateClass new.
+	context := tool
+		           requestedContextFor: (tool requestFromToolCallArguments: {
+					            (#name -> 'MCPGeneratedClass').
+					            (#superclass -> 'Object').
+					            (#package -> 'MCP-Generated').
+					            (#tag -> 'Models').
+					            (#comment -> 'Generated comment.').
+					            (#slots -> #( 'firstName' 'lastName' )).
+					            (#classSlots -> #( 'defaultName' )).
+					            (#traits -> #( 'TComparable' )).
+					            (#sharedVariables -> #( 'Current' )).
+					            (#sharedPools -> #( 'ChronologyConstants' )).
+					            (#layout -> 'WeakLayout') } asDictionary)
+		           checked: true.
+	self assert: (context at: #class) equals: 'MCPGeneratedClass'.
+	self assert: (context at: #superclass) equals: 'Object'.
+	self assert: (context at: #package) equals: 'MCP-Generated'.
+	self assert: (context at: #tag) equals: 'Models'.
+	self assert: (context at: #comment) equals: 'Generated comment.'.
+	self assert: (context at: #slots) equals: #( 'firstName' 'lastName' ).
+	self assert: (context at: #classSlots) equals: #( 'defaultName' ).
+	self assert: (context at: #traits) equals: #( 'TComparable' ).
+	self assert: (context at: #sharedVariables) equals: #( 'Current' ).
+	self assert: (context at: #sharedPools) equals: #( 'ChronologyConstants' ).
+	self assert: (context at: #layout) equals: 'WeakLayout'
 ]
 
 { #category : 'tests - create' }
@@ -646,6 +704,42 @@ MCPToolClassMutationTest >> testUpdateCanClearClassComment [
 ]
 
 { #category : 'tests - update' }
+MCPToolClassMutationTest >> testUpdateContextReadsTheArguments [
+
+	| context request tool |
+	tool := MCPToolUpdateClass new.
+	request := tool requestFromToolCallArguments: {
+			           (#name -> 'Object').
+			           (#comment -> 'updated') } asDictionary.
+	context := tool requestedContextFor: request checked: true.
+	self assert: (context at: #name) equals: 'Object'.
+	self assert: (context at: #comment) equals: 'updated'.
+	self assert: (tool classCommentIn: request) equals: 'updated'
+]
+
+{ #category : 'tests - update' }
+MCPToolClassMutationTest >> testUpdateContextReportsOnlyTheSuppliedProperties [
+
+	| context request tool |
+	tool := MCPToolUpdateClass new.
+	request := tool requestFromToolCallArguments: {
+			           (#name -> 'ExistingClass').
+			           (#tag -> 'Models').
+			           (#comment -> '').
+			           (#force -> true).
+			           (#slots -> (Dictionary with: 'add' -> #( 'count' ))) } asDictionary.
+	self assert: (tool classCommentIn: request) equals: ''.
+	self assert: (tool suppliedPropertiesIn: request) asArray equals: #( 'tag' 'comment' 'slots' ).
+	self assert: (tool slotDeltaIn: request side: false) added asArray equals: #( 'count' ).
+	context := tool requestedContextFor: request checked: true.
+	self assert: (context at: #name) equals: 'ExistingClass'.
+	self assert: (context at: #tag) equals: 'Models'.
+	self assert: (context at: #comment) equals: ''.
+	self assert: (context at: #slots) equals: (Dictionary with: #add -> #( 'count' )).
+	self deny: (context includesKey: #classSlots)
+]
+
+{ #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateForcePullUpSlotContinuesPastRefactoringWarningAndReturnsWarnings [
 
 	| childOne childTwo instance result target warnings |
@@ -710,6 +804,50 @@ MCPToolClassMutationTest >> testUpdateForceRemoveSlotContinuesPastRefactoringWar
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assertIncludesReferencedSlotWarning: warnings.
 	self assert: (target slots collect: #name as: Array) equals: #(  )
+]
+
+{ #category : 'tests - planning' }
+MCPToolClassMutationTest >> testUpdateMapsClassPatchFieldsToUpdateActions [
+
+	self assert: (self updatePlansFor: { (#newName -> 'ObjectRenamed') }) first updateAction equals: 'rename'.
+	self assert: (self updatePlansFor: { (#superclass -> 'ProtoObject') }) first updateAction equals: 'reparent'.
+	self assert: (self updatePlansFor: { (#package -> 'MCP') }) first updateAction equals: 'move'.
+	self assert: (self updatePlansFor: { (#tag -> 'Commands') }) first updateAction equals: 'move'.
+	self assert: (self updatePlansFor: { (#comment -> '') }) first updateAction equals: 'setComment'.
+	self
+		assert: (self updatePlansFor: { (#slots -> (Dictionary with: 'replace' -> #( 'slot' ))) }) first updateAction
+		equals: 'replaceDefinition'.
+	self
+		assert: (self updatePlansFor: { (#classSlots -> (Dictionary with: 'replace' -> #( 'Current' ))) }) first updateAction
+		equals: 'replaceDefinition'.
+	self assert: (self updatePlansFor: { (#traits -> #( 'TAbleToRotate' )) }) first updateAction equals: 'replaceTraits'.
+	self assert: (self updatePlansFor: { (#sharedVariables -> #( 'Current' )) }) first updateAction equals: 'replaceSharedVariables'.
+	self
+		assert: (self updatePlansFor: { (#sharedPools -> #( 'ChronologyConstants' )) }) first updateAction
+		equals: 'replaceSharedPools'.
+	self assert: (self updatePlansFor: { (#layout -> 'WeakLayout') }) first updateAction equals: 'replaceLayout'
+]
+
+{ #category : 'tests - planning' }
+MCPToolClassMutationTest >> testUpdateMapsSlotActionsToUpdateActions [
+
+	self
+		assert: (self updatePlansFor: { (#slots -> (Dictionary with: 'add' -> #( 'addedSlot' ))) }) first updateAction
+		equals: 'addSlot'.
+	self
+		assert: (self updatePlansFor: { (#slots -> (Dictionary with: 'remove' -> #( 'removedSlot' ))) }) first updateAction
+		equals: 'removeSlot'.
+	self
+		assert:
+		(self updatePlansFor: { (#slots -> (Dictionary with: 'rename' -> (Dictionary with: 'oldSlot' -> 'newSlot'))) }) first
+			updateAction
+		equals: 'renameSlot'.
+	self
+		assert: (self updatePlansFor: { (#slots -> (Dictionary with: 'pullUp' -> #( 'sharedSlot' ))) }) first updateAction
+		equals: 'pullUpSlot'.
+	self
+		assert: (self updatePlansFor: { (#classSlots -> (Dictionary with: 'pushDown' -> #( 'sharedSlot' ))) }) first updateAction
+		equals: 'pushDownSlot'
 ]
 
 { #category : 'tests - update' }
@@ -778,6 +916,92 @@ MCPToolClassMutationTest >> testUpdateOfAGlobalThatIsNotAClassIsRefused [
 	self assert: (error at: #errorCode) equals: 'NotAClass'.
 	self assert: (error at: #class) equals: 'Transcript'.
 	self assert: (error at: #message) equals: 'Transcript is a global variable, not a class.'
+]
+
+{ #category : 'tests - planning' }
+MCPToolClassMutationTest >> testUpdatePlansADefinitionReplacement [
+
+	| context plan |
+	plan := (self updatePlansFor: {
+			         (#slots -> (Dictionary with: 'replace' -> #( 'first' 'second' ))).
+			         (#classSlots -> (Dictionary with: 'replace' -> #( 'Current' ))) }) first.
+	context := plan requestedContext.
+	self assert: plan updateAction equals: 'replaceDefinition'.
+	self assert: (context at: #name) equals: 'Object'.
+	self assert: (context at: #slots) equals: (Dictionary with: #replace -> #( 'first' 'second' )).
+	self assert: (context at: #classSlots) equals: (Dictionary with: #replace -> #( 'Current' ))
+]
+
+{ #category : 'tests - planning' }
+MCPToolClassMutationTest >> testUpdatePlansALayoutReplacement [
+
+	| context plan |
+	plan := (self updatePlansFor: { (#layout -> 'WeakLayout') }) first.
+	context := plan requestedContext.
+	self assert: plan updateAction equals: 'replaceLayout'.
+	self assert: (context at: #name) equals: 'Object'.
+	self assert: (context at: #layout) equals: 'WeakLayout'
+]
+
+{ #category : 'tests - planning' }
+MCPToolClassMutationTest >> testUpdatePlansAMove [
+
+	| context plan |
+	plan := (self updatePlansFor: { (#package -> 'MCP') }) first.
+	context := plan requestedContext.
+	self assert: plan updateAction equals: 'move'.
+	self assert: (context at: #class) equals: 'Object'.
+	self assert: (context at: #package) equals: 'MCP'
+]
+
+{ #category : 'tests - update' }
+MCPToolClassMutationTest >> testUpdatePlansAMoveIntoTheClassPackageWhenOnlyATagIsGiven [
+
+	| context plan request tool |
+	tool := MCPToolUpdateClass new.
+	request := tool requestFromToolCallArguments: {
+			           (#name -> self class name asString).
+			           (#tag -> 'Requests') } asDictionary.
+	plan := (tool updatePlansFor: request) first.
+	context := plan requestedContext.
+	self assert: plan updateAction equals: 'move'.
+	self assert: (tool movePackageNameIn: request) equals: self class packageName asString.
+	self assert: (context at: #class) equals: self class name asString.
+	self assert: (context at: #tag) equals: 'Requests'.
+	self assert: (context at: #package) equals: self class packageName asString
+]
+
+{ #category : 'tests - planning' }
+MCPToolClassMutationTest >> testUpdatePlansASharedPoolReplacement [
+
+	| context plan |
+	plan := (self updatePlansFor: { (#sharedPools -> #( 'ChronologyConstants' )) }) first.
+	context := plan requestedContext.
+	self assert: plan updateAction equals: 'replaceSharedPools'.
+	self assert: (context at: #name) equals: 'Object'.
+	self assert: (context at: #sharedPools) equals: #( 'ChronologyConstants' )
+]
+
+{ #category : 'tests - planning' }
+MCPToolClassMutationTest >> testUpdatePlansASharedVariableReplacement [
+
+	| context plan |
+	plan := (self updatePlansFor: { (#sharedVariables -> #( 'Current' )) }) first.
+	context := plan requestedContext.
+	self assert: plan updateAction equals: 'replaceSharedVariables'.
+	self assert: (context at: #name) equals: 'Object'.
+	self assert: (context at: #sharedVariables) equals: #( 'Current' )
+]
+
+{ #category : 'tests - planning' }
+MCPToolClassMutationTest >> testUpdatePlansATraitReplacement [
+
+	| context plan |
+	plan := (self updatePlansFor: { (#traits -> #( 'TAbleToRotate' )) }) first.
+	context := plan requestedContext.
+	self assert: plan updateAction equals: 'replaceTraits'.
+	self assert: (context at: #name) equals: 'Object'.
+	self assert: (context at: #traits) equals: #( 'TAbleToRotate' )
 ]
 
 { #category : 'tests - update' }
@@ -1013,6 +1237,32 @@ MCPToolClassMutationTest >> testUpdatePushesDownClassSlotToDirectSubclasses [
 	self assert: (childTwo classSide slots collect: #name as: Array) equals: #( #sharedClassSlot ).
 	self assert: childOne slotProbe equals: 23.
 	self deny: (result at: #isError ifAbsent: [ false ])
+]
+
+{ #category : 'tests - update' }
+MCPToolClassMutationTest >> testUpdateReadsASlotPatch [
+
+	| delta plan request tool |
+	tool := MCPToolUpdateClass new.
+	request := tool requestFromToolCallArguments: {
+			           (#name -> 'ExistingClass').
+			           (#classSlots -> (Dictionary with: 'rename' -> (Dictionary with: 'oldName' -> 'newName'))).
+			           (#force -> true) } asDictionary.
+	self assert: ((tool requestedContextFor: request checked: true) at: #name) equals: 'ExistingClass'.
+	self assert: (tool slotDeltaIn: request side: false) isNil.
+	delta := tool slotDeltaIn: request side: true.
+	self deny: delta isEmpty.
+	self assert: (delta renamed at: 'oldName') equals: 'newName'.
+	self assert: delta added isEmpty.
+	self deny: delta hasReplacement.
+	self
+		assert: ((tool requestedContextFor: request checked: true) at: #classSlots)
+		equals: (Dictionary with: #rename -> delta renamed).
+	plan := (tool updatePlansFor: request) first.
+	self assert: plan updateAction equals: 'renameSlot'.
+	self assert: plan slotName equals: 'oldName'.
+	self assert: plan newSlotName equals: 'newName'.
+	self assert: plan classSide
 ]
 
 { #category : 'tests - update' }
@@ -1785,10 +2035,38 @@ MCPToolClassMutationTest >> testUpdateStopsAtTheFirstFailedChangeAndSaysWhatLand
 	self deny: target comment = 'never set'
 ]
 
+{ #category : 'tests - update' }
+MCPToolClassMutationTest >> testUpdateWithNoPatchArgumentsAsksForNoUpdate [
+	"The schema refuses such a call before the tool sees it. Given one anyway, the tool reports the class alone and asks for an update."
+
+	| context request result tool |
+	tool := MCPToolUpdateClass new.
+	request := self unvalidatedToolRequestForTool: tool arguments: { (#name -> 'ExistingClass') }.
+	self assert: (tool suppliedPropertiesIn: request) isEmpty.
+	context := tool requestedContextFor: request checked: true.
+	self assert: context size equals: 1.
+	self assert: (context at: #name) equals: 'ExistingClass'.
+	result := (tool executeWithRequest: request) asJRPCJSON.
+	self assert: (self resultIndicatesError: result).
+	self assert: ((self errorFrom: result) at: #errorCode) equals: 'NoClassUpdateRequested'
+]
+
 { #category : 'private - calling' }
 MCPToolClassMutationTest >> toolName [
 
 	self shouldNotImplement
+]
+
+{ #category : 'private - update' }
+MCPToolClassMutationTest >> updatePlansFor: associations [
+	"The plans class_update makes for these arguments on Object, in the order it would apply them, without applying any."
+
+	| arguments tool |
+	arguments := Dictionary new.
+	arguments at: #name put: 'Object'.
+	associations do: [ :each | arguments at: each key put: each value ].
+	tool := MCPToolUpdateClass new.
+	^ tool updatePlansFor: (tool requestFromToolCallArguments: arguments)
 ]
 
 { #category : 'private - update' }

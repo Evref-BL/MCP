@@ -1,7 +1,9 @@
 "
 Shared base class for mutating MCP tools.
 
-It centralizes refactoring warning handling and structured mutation failure reporting. Concrete tools choose their public request shape in their own tool classes and pass a concrete action name only for result and error metadata.
+It runs each target of a call through one checked flow: checkArguments: refuses what the schema cannot, then mutateWith: makes the change and answers the result. An error raised before the check echoes the arguments as the caller wrote them; one raised after reports them as the tool read them, through requestedContextFor:. mutationActionFor:checked: names the action an error reports.
+
+It also centralizes refactoring warning handling and structured mutation failure reporting.
 "
 Class {
 	#name : 'MCPToolMutation',
@@ -83,16 +85,17 @@ MCPToolMutation >> buildInputSchema [
 		  yourself
 ]
 
+{ #category : 'private - execution' }
+MCPToolMutation >> checkArguments: request [
+	"Refuse, before anything changes, what the arguments ask that the schema cannot refuse."
+
+	self subclassResponsibility
+]
+
 { #category : 'private - refactoring' }
 MCPToolMutation >> classesRefactoringEnvironmentForClassNames: classNames baseEnvironment: baseEnvironment [
 
 	^ baseEnvironment forClasses: (self resolvedRefactoringScopeClassesFrom: classNames inScope: 'scope.classes')
-]
-
-{ #category : 'private - execution' }
-MCPToolMutation >> commandForRequest: mutationRequest [
-
-	^ mutationRequest commandForTool: self
 ]
 
 { #category : 'private - errors' }
@@ -183,24 +186,30 @@ MCPToolMutation >> executeMutationAction: action force: forceRequested requested
 
 { #category : 'executing' }
 MCPToolMutation >> executeWithRequest: request [
+	"Each target is checked, then changed. An error raised before its arguments are checked echoes them as the caller wrote them."
 
 	^ self executeBatchedRequest: request do: [ :targetRequest |
-		  self
-			  executeParsedRequestFrom: targetRequest
-			  do: [ :mutationRequest | (self commandForRequest: mutationRequest) execute ]
-			  onError: [ :error :mutationRequest |
-					  | action requestedContext |
-					  action := self mutationActionForErrorFromParsedRequest: mutationRequest rawRequest: targetRequest.
-					  requestedContext := self requestedContextForErrorFromParsedRequest: mutationRequest rawRequest: targetRequest.
-					  error
-						  mcpCommandErrorDo: [ :commandError |
-						  self errorResultForCommandError: commandError action: action requestedContext: requestedContext ]
-						  otherwise: [ :actionError |
-								  self
-									  errorResultForActionFailure: actionError
-									  action: action
-									  requestedContext: requestedContext
-									  summary: (actionError messageText ifNil: [ actionError asString ] ifNotNil: [ :text | text ]) ] ] ]
+			  | checked |
+			  checked := false.
+			  self
+				  executeRequest: targetRequest
+				  do: [
+						  self checkArguments: targetRequest.
+						  checked := true.
+						  self mutateWith: targetRequest ]
+				  onError: [ :error |
+						  | action requestedContext |
+						  action := self mutationActionFor: targetRequest checked: checked.
+						  requestedContext := self requestedContextFor: targetRequest checked: checked.
+						  error
+							  mcpCommandErrorDo: [ :commandError |
+							  self errorResultForCommandError: commandError action: action requestedContext: requestedContext ]
+							  otherwise: [ :actionError |
+									  self
+										  errorResultForActionFailure: actionError
+										  action: action
+										  requestedContext: requestedContext
+										  summary: (actionError messageText ifNil: [ actionError asString ] ifNotNil: [ :text | text ]) ] ] ]
 ]
 
 { #category : 'private - errors' }
@@ -278,10 +287,18 @@ MCPToolMutation >> methodNodeFromError: anError [
 	^ anError mcpMethodNode
 ]
 
-{ #category : 'private - errors' }
-MCPToolMutation >> mutationActionForErrorFromParsedRequest: mutationRequest rawRequest: rawRequest [
+{ #category : 'private - execution' }
+MCPToolMutation >> mutateWith: request [
+	"Make the change the checked arguments ask for, and answer the tool result."
 
-	^ 'mutation'
+	self subclassResponsibility
+]
+
+{ #category : 'private - errors' }
+MCPToolMutation >> mutationActionFor: request checked: aBoolean [
+	"The action an error names."
+
+	self subclassResponsibility
 ]
 
 { #category : 'private - mutation failures' }
@@ -343,12 +360,6 @@ MCPToolMutation >> normalizedCommandErrorForRefactoringWarning: aWarning action:
 		  details: details;
 		  messageText: summary;
 		  yourself
-]
-
-{ #category : 'private - request' }
-MCPToolMutation >> parsedRequestFromToolRequest: request [
-
-	self subclassResponsibility
 ]
 
 { #category : 'private - errors' }
@@ -470,10 +481,18 @@ MCPToolMutation >> refactoringWarningSummaryFor: aWarning action: action request
 ]
 
 { #category : 'private - errors' }
-MCPToolMutation >> requestedContextForErrorFromParsedRequest: mutationRequest rawRequest: rawRequest [
+MCPToolMutation >> requestedContextFor: request [
+	"The arguments as the tool read them, for the details of an error raised once they were checked."
 
-	mutationRequest ifNil: [ ^ rawRequest asDictionary copy ].
-	^ mutationRequest requestedContext
+	self subclassResponsibility
+]
+
+{ #category : 'private - errors' }
+MCPToolMutation >> requestedContextFor: request checked: aBoolean [
+	"What an error echoes of the call: its arguments as the caller wrote them until they are checked, then as the tool read them."
+
+	aBoolean ifFalse: [ ^ request asDictionary copy ].
+	^ self requestedContextFor: request
 ]
 
 { #category : 'private - schema' }
@@ -587,7 +606,7 @@ MCPToolMutation >> validateRefactoringScopePackageNamesExist: packageNames [
 
 { #category : 'validating' }
 MCPToolMutation >> validateRequest: request [
-	"A required argument holding only whitespace is not supplied. Every request object reads it with stringArgumentNamed:, which answers nil for a blank, so accepting it here lets nil reach the image and fail deep inside Pharo, far from the argument that caused it."
+	"A required argument holding only whitespace is not supplied. Every tool reads it with stringArgumentNamed:, which answers nil for a blank, so accepting it here lets nil reach the image and fail deep inside Pharo, far from the argument that caused it."
 
 	self requiredInputProperties do: [ :each |
 		(request stringArgumentNamed: each) ifNil: [ MCPInvalidToolInput signalMissingRequiredArgumentNamed: each forTool: self ] ].

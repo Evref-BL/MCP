@@ -47,27 +47,32 @@ MCPToolRemoveClasses >> buildInputSchema [
 		  yourself
 ]
 
-{ #category : 'private - errors' }
-MCPToolRemoveClasses >> classNamesForErrorFromParsedRequest: removeRequest rawRequest: rawRequest [
-
-	removeRequest ifNotNil: [ ^ removeRequest classNames ].
-	^ rawRequest stringCollectionArgumentNamed: 'name'
-]
-
-{ #category : 'private' }
-MCPToolRemoveClasses >> classNamesFromRequest: request [
-	"One class side among the names refuses the whole call, before anything is looked up: read as its class, it would delete the class."
+{ #category : 'private - arguments' }
+MCPToolRemoveClasses >> checkArguments: request [
+	"At least one name, and none of a class side. One class side among the names refuses the whole call, before anything is looked up: read as its class, it would delete the class."
 
 	| classNames |
-	classNames := request uniqueStringCollectionArgumentNamed: 'name'.
+	classNames := self classNamesFrom: request.
 	classNames ifEmpty: [ Error signal: 'name must hold at least one class name.' ].
-	^ classNames collect: [ :each | MCPImageLookup wholeClassName: each for: 'class_remove' ]
+	classNames do: [ :each | MCPImageLookup wholeClassName: each for: 'class_remove' ]
 ]
 
-{ #category : 'private - execution' }
-MCPToolRemoveClasses >> commandForRequest: removeRequest [
+{ #category : 'private - arguments' }
+MCPToolRemoveClasses >> classNamesFrom: request [
+	"Each name once, in the order given."
 
-	^ MCPRemoveClassesCommand classNames: removeRequest classNames force: removeRequest force
+	^ request uniqueStringCollectionArgumentNamed: 'name'
+]
+
+{ #category : 'private - results' }
+MCPToolRemoveClasses >> dataFor: aRemoval [
+	"What the removal changed besides the classes, when it changed anything: the packages it left empty and the subclasses it moved up."
+
+	| data |
+	data := Dictionary new.
+	aRemoval removedPackageNames ifNotEmpty: [ :names | data at: #removedPackageNames put: names asArray ].
+	aRemoval reparentedSubclassNames ifNotEmpty: [ :names | data at: #reparentedSubclassNames put: names asArray ].
+	^ data
 ]
 
 { #category : 'metadata' }
@@ -96,22 +101,14 @@ MCPToolRemoveClasses >> errorResultForError: anError classNames: classNames [
 
 { #category : 'executing' }
 MCPToolRemoveClasses >> executeWithRequest: request [
+	"The names are checked, then the classes removed. An error echoes the names each once, even one the check raises: the only check that raises no command error fails when there is no name at all."
 
 	^ self
-		  executeParsedRequestFrom: request
-		  do: [ :removeRequest |
-				  | result |
-				  result := (self commandForRequest: removeRequest) execute.
-				  self
-					  successResultText: (self
-							   successSummaryForClassNames: removeRequest classNames
-							   removedClasses: result removedClasses
-							   removedPackageNames: result removedPackageNames
-							   forced: result warningMessages isNotEmpty)
-					  data: result asDictionary
-					  warnings: result warningMessages ]
-		  onError: [ :error :removeRequest |
-			  self errorResultForError: error classNames: (self classNamesForErrorFromParsedRequest: removeRequest rawRequest: request) ]
+		  executeRequest: request
+		  do: [
+				  self checkArguments: request.
+				  self removeClassesWith: request ]
+		  onError: [ :error | self errorResultForError: error classNames: (self classNamesFrom: request) ]
 ]
 
 { #category : 'private' }
@@ -134,61 +131,49 @@ MCPToolRemoveClasses >> keysStatedInSummary [
 	^ #( removedClasses removedPackageNames reparentedSubclassNames )
 ]
 
-{ #category : 'private - request' }
-MCPToolRemoveClasses >> parsedRequestFromToolRequest: request [
+{ #category : 'private - execution' }
+MCPToolRemoveClasses >> removeClassesWith: request [
 
-	^ MCPRemoveClassesRequest fromRequest: request tool: self
+	| classNames removal |
+	classNames := self classNamesFrom: request.
+	removal := MCPRemoveClassesCommand classNames: classNames force: (request booleanArgumentNamed: 'force').
+	removal execute.
+	^ self
+		  successResultText: (self successSummaryForClassNames: classNames removal: removal)
+		  data: (self dataFor: removal)
+		  warnings: removal warningMessages
 ]
 
 { #category : 'private' }
-MCPToolRemoveClasses >> successSummaryForClassNames: classNames removedClasses: removedClasses removedPackageNames: removedPackageNames forced: wasForced [
+MCPToolRemoveClasses >> successSummaryForClassNames: classNames removal: aRemoval [
+	"Each subclass moved up is named once. A removal that warned went past what blocked it."
 
 	| reparentedSubclassNames |
 	reparentedSubclassNames := OrderedCollection new.
-	removedClasses do: [ :each |
-			each reparentedSubclassNames do: [ :subclassName |
-				(reparentedSubclassNames includes: subclassName) ifFalse: [ reparentedSubclassNames add: subclassName ] ] ].
+	aRemoval reparentedSubclassNames do: [ :each |
+		(reparentedSubclassNames includes: each) ifFalse: [ reparentedSubclassNames add: each ] ].
 	^ String streamContents: [ :stream |
+			  stream nextPutAll: (aRemoval warningMessages ifEmpty: [ 'Removed ' ] ifNotEmpty: [ 'Force-removed ' ]).
 			  classNames size = 1
 				  ifTrue: [
-						  wasForced
-							  ifTrue: [
-									  stream
-										  nextPutAll: 'Force-removed class ';
-										  nextPutAll: classNames first;
-										  nextPut: $. ]
-							  ifFalse: [
-									  stream
-										  nextPutAll: 'Removed class ';
-										  nextPutAll: classNames first;
-										  nextPut: $. ] ]
+						  stream
+							  nextPutAll: 'class ';
+							  nextPutAll: classNames first ]
 				  ifFalse: [
-						  wasForced
-							  ifTrue: [
-									  stream
-										  nextPutAll: 'Force-removed ';
-										  nextPutAll: classNames size asString;
-										  nextPutAll: ' classes: ';
-										  nextPutAll: (', ' join: classNames);
-										  nextPut: $. ]
-							  ifFalse: [
-									  stream
-										  nextPutAll: 'Removed ';
-										  nextPutAll: classNames size asString;
-										  nextPutAll: ' classes: ';
-										  nextPutAll: (', ' join: classNames);
-										  nextPut: $. ] ].
+						  stream
+							  print: classNames size;
+							  nextPutAll: ' classes: ';
+							  nextPutAll: (', ' join: classNames) ].
+			  stream nextPut: $..
 			  reparentedSubclassNames ifNotEmpty: [
 					  stream
-						  space;
-						  nextPutAll: 'Reparented subclasses: ';
+						  nextPutAll: ' Reparented subclasses: ';
 						  nextPutAll: (', ' join: reparentedSubclassNames);
 						  nextPut: $. ].
-			  removedPackageNames ifNotEmpty: [
+			  aRemoval removedPackageNames ifNotEmpty: [ :names |
 					  stream
-						  space;
-						  nextPutAll: 'Removed packages: ';
-						  nextPutAll: (', ' join: removedPackageNames);
+						  nextPutAll: ' Removed packages: ';
+						  nextPutAll: (', ' join: names);
 						  nextPut: $. ] ]
 ]
 

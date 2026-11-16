@@ -35,10 +35,28 @@ MCPToolRewriteMethods >> buildInputSchema [
 		  yourself
 ]
 
-{ #category : 'private - execution' }
-MCPToolRewriteMethods >> commandForRequest: rewriteRequest [
+{ #category : 'private - results' }
+MCPToolRewriteMethods >> changeDataFor: changes includeSources: aBoolean [
+	"Each change as the answer names it, with the sources it replaces and writes when aBoolean says so."
 
-	^ MCPRewriteMethodsCommand tool: self request: rewriteRequest
+	^ changes collect: [ :each | (MCPMethodRewriteChangeInfo fromChange: each includeSources: aBoolean) asDictionary ] as: Array
+]
+
+{ #category : 'private - results' }
+MCPToolRewriteMethods >> dataForChanges: changeData applied: apply scopeQuery: aScopeQuery skippedTraitMethods: skippedTraitMethods [
+	"Whether the changes were applied, how many there are and how many were applied, the scope as read, each change, and the trait methods left out when there are any."
+
+	| data |
+	data := Dictionary new.
+	data at: #apply put: apply.
+	data at: #changeCount put: changeData size.
+	data at: #appliedCount put: (apply
+			 ifTrue: [ changeData size ]
+			 ifFalse: [ 0 ]).
+	data at: #scope put: aScopeQuery asDictionary.
+	data at: #changes put: changeData.
+	skippedTraitMethods ifNotEmpty: [ data at: #skippedTraitMethods put: skippedTraitMethods ].
+	^ data
 ]
 
 { #category : 'metadata' }
@@ -48,7 +66,7 @@ MCPToolRewriteMethods >> description [
 ]
 
 { #category : 'error handling' }
-MCPToolRewriteMethods >> errorResultForRewriteError: anError request: rewriteRequest rawRequest: rawRequest [
+MCPToolRewriteMethods >> errorResultForRewriteError: anError [
 
 	^ anError
 		  mcpCommandErrorDo: [ :commandError | self errorResultText: commandError messageText details: commandError structuredDetails ]
@@ -58,10 +76,7 @@ MCPToolRewriteMethods >> errorResultForRewriteError: anError request: rewriteReq
 { #category : 'executing' }
 MCPToolRewriteMethods >> executeWithRequest: request [
 
-	^ self
-		  executeParsedRequestFrom: request
-		  do: [ :rewriteRequest | (self commandForRequest: rewriteRequest) execute ]
-		  onError: [ :error :rewriteRequest | self errorResultForRewriteError: error request: rewriteRequest rawRequest: request ]
+	^ self executeRequest: request do: [ self rewriteWith: request ] onError: [ :error | self errorResultForRewriteError: error ]
 ]
 
 { #category : 'private - results' }
@@ -71,10 +86,11 @@ MCPToolRewriteMethods >> keysStatedInSummary [
 	^ #( apply appliedCount changeCount scope )
 ]
 
-{ #category : 'private - execution' }
-MCPToolRewriteMethods >> parsedRequestFromToolRequest: request [
+{ #category : 'private - results' }
+MCPToolRewriteMethods >> methodReferencesForChanges: changes [
+	"Each method the changes would rewrite, named once, in order."
 
-	^ MCPMethodRewriteRequest fromRequest: request tool: self
+	^ (changes collect: [ :each | self methodReferenceForBehavior: each changeClass selector: each selector ] as: Set) asArray sort
 ]
 
 { #category : 'private - schema' }
@@ -135,6 +151,25 @@ MCPToolRewriteMethods >> rewriteRuleSchema [
 		  yourself
 ]
 
+{ #category : 'private - arguments' }
+MCPToolRewriteMethods >> rewriteRulesFrom: request [
+	"The patterns the call wrote, then the rule classes it named, numbered in that order."
+
+	| ruleClassNames ruleObjects rules |
+	ruleObjects := request objectCollectionArgumentNamed: 'rules'.
+	ruleClassNames := request stringCollectionArgumentNamed: 'ruleClasses'.
+	(ruleObjects isEmpty and: [ ruleClassNames isEmpty ]) ifTrue: [
+			MCPCommandError
+				signalErrorCode: #RewriteRulesRequired
+				message: 'method_rewrite requires rules, ruleClasses, or both.'
+				details: Dictionary new ].
+	rules := OrderedCollection new.
+	ruleObjects doWithIndex: [ :eachRule :index |
+		rules add: (MCPMethodRewriteRuleSpec fromDictionary: eachRule request: request index: index) ].
+	ruleClassNames do: [ :eachName | rules add: (MCPMethodRewriteNamedRuleSpec named: eachName index: rules size + 1) ].
+	^ rules
+]
+
 { #category : 'private - schema' }
 MCPToolRewriteMethods >> rewriteRulesSchemaProperty [
 
@@ -147,8 +182,81 @@ MCPToolRewriteMethods >> rewriteRulesSchemaProperty [
 		  yourself
 ]
 
+{ #category : 'executing' }
+MCPToolRewriteMethods >> rewriteWith: request [
+	"Preview or apply the rules in the scope the call names. A preview exists to show what would change, so it carries the sources, described before anything is applied; an apply has already changed them. A trait's method is rewritten where the trait defines it, so the copies in scope are left out and named."
+
+	| apply changeData changes rewrite rules scopeQuery skippedTraitMethods |
+	rules := self rewriteRulesFrom: request.
+	apply := request booleanArgumentNamed: 'confirm'.
+	scopeQuery := self methodScopeQueryFromRequest: request.
+	scopeQuery requireCompleteScope.
+	apply ifTrue: [ self validateExplicitApplyScope: scopeQuery rules: rules ].
+	rewrite := MCPRewriteMethodsCommand rules: rules scopeQuery: scopeQuery.
+	changes := rewrite execute.
+	changeData := self changeDataFor: changes includeSources: apply not.
+	apply ifTrue: [ rewrite applyChanges: changes ].
+	skippedTraitMethods := self methodReferencesForChanges: rewrite skippedTraitChanges.
+	^ self
+		  successResultText: (self
+				   successSummaryForChangeCount: changes size
+				   applied: apply
+				   scopeQuery: scopeQuery
+				   skippedTraitMethods: skippedTraitMethods)
+		  data: (self
+				   dataForChanges: changeData
+				   applied: apply
+				   scopeQuery: scopeQuery
+				   skippedTraitMethods: skippedTraitMethods)
+]
+
+{ #category : 'private - results' }
+MCPToolRewriteMethods >> successSummaryForChangeCount: count applied: apply scopeQuery: aScopeQuery skippedTraitMethods: skippedTraitMethods [
+	"Previewed 2 method rewrite changes in package Eval-Shapes., naming where it looked as a search does. The scope must name only what exists, so its phrase holds every name."
+
+	| scopePhrase |
+	scopePhrase := aScopeQuery scopePhrase.
+	^ String streamContents: [ :stream |
+			  stream
+				  nextPutAll: (apply
+						   ifTrue: [ 'Applied ' ]
+						   ifFalse: [ 'Previewed ' ]);
+				  print: count;
+				  nextPutAll: ' method rewrite change'.
+			  count = 1 ifFalse: [ stream nextPut: $s ].
+			  scopePhrase ifNotNil: [
+					  stream
+						  nextPutAll: ' in ';
+						  nextPutAll: scopePhrase ].
+			  stream nextPut: $..
+			  skippedTraitMethods ifNotEmpty: [ :skipped |
+					  skipped size = 1
+						  ifTrue: [ stream nextPutAll: ' Skipped 1 method installed from a trait.' ]
+						  ifFalse: [
+								  stream
+									  nextPutAll: ' Skipped ';
+									  print: skipped size;
+									  nextPutAll: ' methods installed from traits.' ] ] ]
+]
+
 { #category : 'metadata' }
 MCPToolRewriteMethods >> title [
 
 	^ 'Rewrite Methods'
+]
+
+{ #category : 'private - validation' }
+MCPToolRewriteMethods >> validateExplicitApplyScope: aScopeQuery rules: rules [
+	"Rewriting every method in the image is not something a caller should be able to ask for by leaving an argument out. Naming the packages says it on purpose."
+
+	| details |
+	aScopeQuery usesImplicitImageScope ifFalse: [ ^ self ].
+	details := Dictionary new.
+	details at: #confirm put: true.
+	details at: #scope put: aScopeQuery asDictionary.
+	details at: #rules put: (rules collect: [ :each | each asDictionary ] as: Array).
+	MCPCommandError
+		signalErrorCode: #RewriteApplyRequiresExplicitScope
+		message: 'Applying method_rewrite needs a scope. Name packages, classes, subclassesOf or superclassesOf.'
+		details: details
 ]

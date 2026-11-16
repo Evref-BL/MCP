@@ -47,66 +47,58 @@ MCPToolCaptureScreen >> buildInputSchema [
 		  yourself
 ]
 
-{ #category : 'private - execution' }
-MCPToolCaptureScreen >> commandForRequest: screenshotRequest [
-
-	^ MCPScreenshotCommand tool: self request: screenshotRequest morph: (self targetMorphNamed: screenshotRequest window)
-]
-
 { #category : 'metadata' }
 MCPToolCaptureScreen >> description [
 
 	^ 'Capture the Morphic world, or one open window named by its title, and return it as MCP image content. One window costs a fraction of the whole screen.'
 ]
 
-{ #category : 'private - results' }
-MCPToolCaptureScreen >> errorResultForError: anError [
-	"A window a caller named and that is not open is their mistake to correct, so it is answered as a command error with the open titles rather than as a stack trace."
-
-	^ anError
-		  mcpCommandErrorDo: [ :commandError | self errorResultText: commandError messageText details: commandError structuredDetails ]
-		  otherwise: [ :toolError |
-		  self errorResultText: (self failureMessageFor: toolError) details: (self errorDetailsFor: toolError) ]
-]
-
 { #category : 'executing' }
 MCPToolCaptureScreen >> executeWithRequest: request [
 
 	^ self
-		  executeParsedRequestFrom: request
-		  do: [ :screenshotRequest |
-				  | commandResult structuredContent summary |
-				  commandResult := (self commandForRequest: screenshotRequest) execute.
-				  summary := self successSummaryForResult: commandResult.
-				  structuredContent := Dictionary new
-					                       at: #summary put: summary;
-					                       at: #data put: commandResult asDictionary;
-					                       yourself.
-				  MCPStructureCallToolResult
-					  content: {
-							  (self textContent: summary).
-							  commandResult imageContent }
-					  structuredContent: structuredContent ]
-		  onError: [ :error :ignored | self errorResultForError: error ]
-]
-
-{ #category : 'private - request' }
-MCPToolCaptureScreen >> parsedRequestFromToolRequest: request [
-
-	^ MCPScreenshotRequest fromRequest: request tool: self
+		  executeRequest: request
+		  do: [
+				  | window |
+				  window := request stringArgumentNamed: 'window'.
+				  self resultForCaptureOf: (self targetMorphNamed: window) window: window ]
+		  onError: [ :error | self errorResultForError: error ]
 ]
 
 { #category : 'private - results' }
-MCPToolCaptureScreen >> successSummaryForResult: aScreenshotResult [
+MCPToolCaptureScreen >> resultForCaptureOf: aMorph window: aTitleOrNil [
+	"The capture as a PNG image content block, with what it shows, its size and its MIME type as structured content. What it shows is the window named, or the world when none is. Any morph can be captured, so a test needs no window open."
+
+	| form imageContent summary target |
+	target := aTitleOrNil ifNil: [ 'world' ].
+	form := aMorph imageForm.
+	imageContent := MCPStructureImageContent pngFromForm: form.
+	summary := self successSummaryForTarget: target form: form.
+	^ MCPStructureCallToolResult
+		  content: {
+				  (self textContent: summary).
+				  imageContent }
+		  structuredContent: (Dictionary new
+				   at: #summary put: summary;
+				   at: #data put: {
+						   (#target -> target).
+						   (#width -> form width).
+						   (#height -> form height).
+						   (#mimeType -> imageContent mimeType) } asDictionary;
+				   yourself)
+]
+
+{ #category : 'private - results' }
+MCPToolCaptureScreen >> successSummaryForTarget: aString form: aForm [
 
 	^ String streamContents: [ :stream |
 			  stream
 				  nextPutAll: 'Captured ';
-				  nextPutAll: aScreenshotResult target;
+				  nextPutAll: aString;
 				  nextPutAll: ' screenshot (';
-				  print: aScreenshotResult width;
+				  print: aForm width;
 				  nextPutAll: 'x';
-				  print: aScreenshotResult height;
+				  print: aForm height;
 				  nextPutAll: ').' ]
 ]
 

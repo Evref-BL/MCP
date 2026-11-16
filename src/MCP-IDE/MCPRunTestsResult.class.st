@@ -1,7 +1,7 @@
 "
-Aggregate result DTO produced by test_run and test_coverage_run.
+The tests a test_run or test_coverage_run call ran, counted and grouped for its answer.
 
-It counts each test once, from the outcomes of the selections it ran. It says each issue once: the issues of the same kind, error class, message and places, across tests, are one entry naming every test they hit, and a class whose whole suite ran and failed alike is named as Class, all N tests. It also carries the selections that selected no test, what a timeout left to run as test_run arguments, and coverage when it was measured.
+It counts each test once, from the outcomes of the selections it ran, and says each issue once: the issues of the same kind, error class, message and places, across tests, are one entry naming every test they hit. It also names the selections that selected no test, lists what a timeout left to run as test_run arguments, and carries the coverage when it was measured.
 "
 Class {
 	#name : 'MCPRunTestsResult',
@@ -54,7 +54,7 @@ MCPRunTestsResult >> asDictionary [
 		(#failures -> self failureDictionaries).
 		(#errors -> self errorDictionaries).
 		(#skipped -> self skippedDictionaries).
-		(#withoutTests -> self withoutTests) } do: [ :each | each value ifNotEmpty: [ data at: each key put: each value ] ].
+		(#withoutTests -> self withoutTestsEntries) } do: [ :each | each value ifNotEmpty: [ data at: each key put: each value ] ].
 	self coverage ifNotNil: [ :coverageResult | data at: #coverage put: coverageResult asDictionary ].
 	self timedOut ifTrue: [ self addTimeoutTo: data ].
 	^ data
@@ -284,22 +284,22 @@ MCPRunTestsResult >> uniqueStringsFrom: strings [
 MCPRunTestsResult >> unrunClassNames [
 
 	^ self uniqueStringsFrom: (Array streamContents: [ :stream |
-				   self unrunTests do: [ :request |
-					   (request isPackageRequest not and: [ request hasTestMethod not ]) ifTrue: [ stream nextPut: request className ] ] ])
+				   self unrunTests do: [ :selection |
+					   (selection isPackageSelection not and: [ selection hasTestMethod not ]) ifTrue: [ stream nextPut: selection className ] ] ])
 ]
 
 { #category : 'converting' }
 MCPRunTestsResult >> unrunMethodReferences [
 
 	^ self uniqueStringsFrom: (Array streamContents: [ :stream |
-			   self unrunTests do: [ :request | request hasTestMethod ifTrue: [ stream nextPut: request displayName ] ] ])
+			   self unrunTests do: [ :selection | selection hasTestMethod ifTrue: [ stream nextPut: selection displayName ] ] ])
 ]
 
 { #category : 'converting' }
 MCPRunTestsResult >> unrunPackageNames [
 
 	^ self uniqueStringsFrom: (Array streamContents: [ :stream |
-			   self unrunTests do: [ :request | request isPackageRequest ifTrue: [ stream nextPut: request packageName ] ] ])
+			   self unrunTests do: [ :selection | selection isPackageSelection ifTrue: [ stream nextPut: selection packageName ] ] ])
 ]
 
 { #category : 'accessing' }
@@ -310,13 +310,24 @@ MCPRunTestsResult >> unrunTests [
 
 { #category : 'accessing' }
 MCPRunTestsResult >> withoutTests [
-	"One entry per selection that selected no test, in selection order: its selection and why."
+	"The selections that selected no test, in selection order."
 
 	^ withoutTests ifNil: [ #(  ) ]
 ]
 
 { #category : 'accessing' }
-MCPRunTestsResult >> withoutTests: someEntries [
+MCPRunTestsResult >> withoutTests: someSelections [
 
-	withoutTests := someEntries
+	withoutTests := someSelections
+]
+
+{ #category : 'converting' }
+MCPRunTestsResult >> withoutTestsEntries [
+	"One entry per selection that selected no test, in selection order: the selection, as a refusal names it, and why."
+
+	^ self withoutTests collect: [ :each |
+			  Dictionary new
+				  at: #selection put: each resolvedName;
+				  at: #reason put: 'has no tests';
+				  yourself ]
 ]

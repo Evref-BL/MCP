@@ -9,6 +9,28 @@ Class {
 }
 
 { #category : 'tests' }
+MCPToolRequestTest >> testASuppliedArgumentWinsOverItsSchemaDefault [
+
+	| request |
+	request := MCPToolGetClass new requestFromToolCallArguments: {
+			           (#name -> 'Object').
+			           (#subclassDepth -> 2).
+			           (#includeComment -> true) } asDictionary.
+	self assert: (request integerArgumentNamed: 'subclassDepth') equals: 2.
+	self assert: (request booleanArgumentNamed: 'includeComment')
+]
+
+{ #category : 'tests' }
+MCPToolRequestTest >> testAnArgumentLeftOutAnswersTheDefaultItsSchemaDeclares [
+
+	| request |
+	request := MCPToolGetClass new requestFromToolCallArguments: { (#name -> 'Object') } asDictionary.
+	self assert: (request integerArgumentNamed: 'subclassDepth') equals: 0.
+	self deny: (request booleanArgumentNamed: 'includeComment').
+	self deny: (request hasArgumentNamed: 'subclassDepth')
+]
+
+{ #category : 'tests' }
 MCPToolRequestTest >> testBlankRequiredArgumentIsRefusedLikeAMissingOne [
 	"A blank required argument used to pass validation and reach the image as nil, where it failed deep inside Pharo instead of naming the argument that was wrong."
 

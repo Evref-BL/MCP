@@ -7,7 +7,8 @@ Class {
 	#instVars : [
 		'tool',
 		'arguments',
-		'violations'
+		'violations',
+		'defaults'
 	],
 	#category : 'MCP-Requests',
 	#package : 'MCP',
@@ -28,6 +29,13 @@ MCPToolRequest class >> tool: aTool arguments: aDictionary [
 MCPToolRequest >> argumentNamed: anArgumentName ifAbsent: absentBlock [
 
 	^ self valueNamed: anArgumentName in: self arguments ifAbsent: absentBlock
+]
+
+{ #category : 'accessing' }
+MCPToolRequest >> argumentOrDefaultNamed: anArgumentName [
+	"The argument, or the default its schema declares when the caller left it out. Only the accessors built on it, booleanArgumentNamed: and integerArgumentNamed:, answer that default; every other accessor answers only what the caller supplied, so that code can tell an argument left out from one given, as an inferred side or a patch must."
+
+	^ self valueNamed: anArgumentName in: self arguments ifAbsent: [ defaults at: anArgumentName asString ifAbsent: [ nil ] ]
 ]
 
 { #category : 'accessing' }
@@ -61,6 +69,13 @@ MCPToolRequest >> arrayArgumentNamed: anArgumentName ifAbsent: absentBlock [
 MCPToolRequest >> asDictionary [
 
 	^ self arguments
+]
+
+{ #category : 'accessing' }
+MCPToolRequest >> booleanArgumentNamed: anArgumentName [
+	"The argument, else its schema default, else false."
+
+	^ (self argumentOrDefaultNamed: anArgumentName) ifNil: [ false ]
 ]
 
 { #category : 'accessing' }
@@ -101,7 +116,15 @@ MCPToolRequest >> initialize [
 
 	super initialize.
 	arguments := Dictionary new.
+	defaults := Dictionary new.
 	violations := #(  )
+]
+
+{ #category : 'accessing' }
+MCPToolRequest >> integerArgumentNamed: anArgumentName [
+	"The argument, else its schema default. The schema has already checked its type and range, and clamped it to its maximum."
+
+	^ self argumentOrDefaultNamed: anArgumentName
 ]
 
 { #category : 'private - validating' }
@@ -157,6 +180,14 @@ MCPToolRequest >> normalizeArgumentsForInputSchema: anInputSchema [
 MCPToolRequest >> objectCollectionArgumentNamed: anArgumentName [
 
 	^ self arrayArgumentNamed: anArgumentName
+]
+
+{ #category : 'private - validating' }
+MCPToolRequest >> rememberDefaultsOf: anInputSchema [
+	"The default each property declares, which argumentOrDefaultNamed: and the accessors built on it answer when the caller leaves the argument out, so that a tool states a default once, in its schema."
+
+	anInputSchema properties do: [ :property |
+		property extraProperties at: #default ifPresent: [ :value | defaults at: property name asString put: value ] ]
 ]
 
 { #category : 'accessing' }
@@ -269,6 +300,7 @@ MCPToolRequest >> validate [
 	| inputSchema |
 	inputSchema := self tool inputSchema ifNil: [ ^ self ].
 	self normalizeArgumentsForInputSchema: inputSchema.
+	self rememberDefaultsOf: inputSchema.
 	violations := MCPJSONSchemaValidator violationsFor: self arguments schema: inputSchema.
 	violations ifNotEmpty: [ MCPInvalidToolInput signalForTool: self tool violations: violations ].
 	self tool validateRequest: self

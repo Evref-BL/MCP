@@ -28,14 +28,12 @@ MCPRemoveSlotCommand >> directlyDefinesSlotNamed: aSlotName inBehavior: aBehavio
 { #category : 'executing' }
 MCPRemoveSlotCommand >> execute [
 
-	| currentClass refactoringBehavior updatedClass |
-	currentClass := self currentClass.
-	refactoringBehavior := self refactoringBehaviorForClass: currentClass.
+	| refactoringBehavior |
+	refactoringBehavior := self refactoringBehaviorForClass: self currentClass.
 	self classSide
 		ifTrue: [ self removeClassSideSlotFromBehavior: refactoringBehavior ]
 		ifFalse: [ (self refactoringForBehavior: refactoringBehavior) execute ].
-	updatedClass := Smalltalk globals at: self className asSymbol.
-	^ MCPSlotResult classInfo: (MCPClassInfo fromClass: updatedClass) slotName: self slotName classSide: self classSide
+	^ Smalltalk globals at: self className asSymbol
 ]
 
 { #category : 'private' }

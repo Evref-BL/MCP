@@ -25,6 +25,21 @@ MCPToolRunTests class >> toolName [
 	^ 'test_run'
 ]
 
+{ #category : 'private - arguments' }
+MCPToolRunTests >> addMethodSelectionsFrom: methodReferences to: aStream [
+	"A method is read in every form method_get reads one, and its side is dropped: test_run reads Foo class as Foo. A case of a parameterized test is read as its method, so the name an answer gives it can be passed back. Every entry that names no method is refused, all in one refusal."
+
+	| violations |
+	violations := OrderedCollection new.
+	methodReferences do: [ :each |
+			(MCPMethodReference fromString: each)
+				ifNil: [ violations add: (self violationForMethodReference: each) ]
+				ifNotNil: [ :reference |
+					aStream nextPut:
+						(MCPTestSelectionSpec className: reference className testMethodName: (self testSelectorIn: reference selector)) ] ].
+	violations ifNotEmpty: [ MCPInvalidToolInput signalForTool: self violations: violations ]
+]
+
 { #category : 'metadata' }
 MCPToolRunTests >> additionalKeywords [
 
@@ -40,10 +55,11 @@ MCPToolRunTests >> buildInputSchema [
 		  yourself
 ]
 
-{ #category : 'private - execution' }
-MCPToolRunTests >> commandForRequest: runTestsRequest [
+{ #category : 'private - arguments' }
+MCPToolRunTests >> checkArguments: request [
+	"What the schema cannot check: that the call names something to run, and that every method reference names a method."
 
-	^ MCPRunTestsCommand tool: self request: runTestsRequest
+	self testSelectionsFrom: request
 ]
 
 { #category : 'private - coverage schema' }
@@ -132,16 +148,17 @@ MCPToolRunTests >> errorResultForError: anError testNames: testNames [
 
 { #category : 'executing' }
 MCPToolRunTests >> executeWithRequest: request [
+	"The arguments are checked, then the selections they name run. An error raised before the arguments are checked names the tests as the caller wrote them."
 
+	| checked |
+	checked := false.
 	^ self
-		  executeParsedRequestFrom: request
-		  do: [ :runTestsRequest |
-				  | data result |
-				  result := (self commandForRequest: runTestsRequest) execute.
-				  data := result asDictionary.
-				  self successResultText: (self successSummaryForData: data) data: data warnings: (self warningsForRequest: runTestsRequest) ]
-		  onError: [ :error :runTestsRequest |
-			  self errorResultForError: error testNames: (self testNamesForErrorFromParsedRequest: runTestsRequest rawRequest: request) ]
+		  executeRequest: request
+		  do: [
+				  self checkArguments: request.
+				  checked := true.
+				  self runTestsWith: request ]
+		  onError: [ :error | self errorResultForError: error testNames: (self testNamesFor: request checked: checked) ]
 ]
 
 { #category : 'private' }
@@ -219,10 +236,11 @@ MCPToolRunTests >> keysStatedInSummary [
 	^ #( runCount passedCount failureCount errorCount skippedCount withoutTests timedOut timeoutMilliseconds interrupted notRunCount )
 ]
 
-{ #category : 'private - request' }
-MCPToolRunTests >> parsedRequestFromToolRequest: request [
+{ #category : 'private - execution' }
+MCPToolRunTests >> operationFor: request [
+	"The run the checked arguments ask for."
 
-	^ MCPRunTestsRequest fromRequest: request tool: self operation: 'run'
+	^ MCPRunTestsCommand selections: (self testSelectionsFrom: request) timeoutMilliseconds: (self timeoutMillisecondsFrom: request)
 ]
 
 { #category : 'private - errors' }
@@ -240,6 +258,31 @@ MCPToolRunTests >> rawTestNamesFromRequest: rawRequest [
 	^ Array streamContents: [ :stream |
 			  #( 'packages' 'classes' 'methods' ) do: [ :argumentName |
 				  (self rawStringCollectionNamed: argumentName fromRequest: rawRequest) do: [ :each | stream nextPut: each ] ] ]
+]
+
+{ #category : 'private - arguments' }
+MCPToolRunTests >> refuseEmptySelectionIn: request [
+	"An argument that names nothing once blank values are dropped is named, the first of packages, classes and methods. With none given at all, the call names nothing to run."
+
+	#( 'packages' 'classes' 'methods' ) do: [ :argumentName |
+			(request argumentNamed: argumentName ifAbsent: [ nil ]) ifNotNil: [
+				MCPInvalidToolInput signalEmptyArgumentNamed: argumentName forTool: self ] ].
+	MCPInvalidToolInput signalForTool: self violations: { (MCPJSONSchemaViolation
+			 path: #(  )
+			 keyword: #selectionRequired
+			 message: 'Name at least one package, class or method to run.'
+			 expected: nil
+			 actual: nil) }
+]
+
+{ #category : 'private - execution' }
+MCPToolRunTests >> runTestsWith: request [
+	"Runs the selections the checked arguments name, and says what they did."
+
+	| data operation |
+	operation := self operationFor: request.
+	data := operation execute asDictionary.
+	^ self successResultText: (self successSummaryForData: data) data: data warnings: (self warningsFor: operation)
 ]
 
 { #category : 'private' }
@@ -277,16 +320,11 @@ MCPToolRunTests >> successSummaryForData: data [
 ]
 
 { #category : 'private - errors' }
-MCPToolRunTests >> testNamesForErrorFromParsedRequest: runTestsRequest rawRequest: rawRequest [
+MCPToolRunTests >> testNamesFor: request checked: aBoolean [
+	"The tests an error names: as the selections read them once the arguments are checked, else as the caller wrote them."
 
-	runTestsRequest ifNotNil: [ ^ self testNamesFromRequests: runTestsRequest testRequests ].
-	^ self rawTestNamesFromRequest: rawRequest
-]
-
-{ #category : 'private - errors' }
-MCPToolRunTests >> testNamesFromRequests: testRequests [
-
-	^ testRequests collect: [ :each | each displayName ] as: Array
+	aBoolean ifTrue: [ ^ (self testSelectionsFrom: request) collect: [ :each | each displayName ] as: Array ].
+	^ self rawTestNamesFromRequest: request
 ]
 
 { #category : 'private - tests' }
@@ -298,6 +336,32 @@ MCPToolRunTests >> testSelectionInputProperties [
 		  (self stringArraySchemaNamed: 'methods' description: 'Run these test methods, as Class>>selector.' itemDescription: nil) }
 ]
 
+{ #category : 'private - arguments' }
+MCPToolRunTests >> testSelectionsFrom: request [
+	"Every selection, in the order packages, classes, methods. The refusals answer like the schema's."
+
+	| classNames methodReferences packageNames |
+	packageNames := request uniqueStringCollectionArgumentNamed: 'packages'.
+	classNames := request uniqueStringCollectionArgumentNamed: 'classes'.
+	methodReferences := request uniqueStringCollectionArgumentNamed: 'methods'.
+	(packageNames isEmpty and: [ classNames isEmpty and: [ methodReferences isEmpty ] ]) ifTrue: [
+		self refuseEmptySelectionIn: request ].
+	^ Array streamContents: [ :stream |
+			  packageNames do: [ :each | stream nextPut: (MCPTestSelectionSpec packageName: each) ].
+			  classNames do: [ :each | stream nextPut: (MCPTestSelectionSpec className: each) ].
+			  self addMethodSelectionsFrom: methodReferences to: stream ]
+]
+
+{ #category : 'private - arguments' }
+MCPToolRunTests >> testSelectorIn: aSelectorText [
+	"The selector of a test as an answer names it. A case of a parameterized test is named Class>>#selector with its parameters, and a test selector is unary, so what follows the selector's first ' with ' is the case's parameters, and passing that name back runs every case of the method."
+
+	| index |
+	index := aSelectorText indexOfSubCollection: ' with '.
+	index isZero ifTrue: [ ^ aSelectorText ].
+	^ (aSelectorText first: index - 1) trimBoth
+]
+
 { #category : 'private - results' }
 MCPToolRunTests >> textWithoutTrailingPeriod: aString [
 	"One period, so that 'Got 1 instead of 2.' reads on into ', at ...' and an ellipsis keeps two."
@@ -305,6 +369,12 @@ MCPToolRunTests >> textWithoutTrailingPeriod: aString [
 	^ (aString isNotEmpty and: [ aString last = $. ])
 		  ifTrue: [ aString allButLast ]
 		  ifFalse: [ aString ]
+]
+
+{ #category : 'private - arguments' }
+MCPToolRunTests >> timeoutMillisecondsFrom: request [
+
+	^ (request integerArgumentNamed: 'timeoutSeconds') * 1000
 ]
 
 { #category : 'private - schema' }
@@ -361,8 +431,19 @@ MCPToolRunTests >> title [
 	^ 'Run Tests'
 ]
 
+{ #category : 'private - arguments' }
+MCPToolRunTests >> violationForMethodReference: aString [
+
+	^ MCPJSONSchemaViolation
+		  path: #( 'methods' )
+		  keyword: #methodReference
+		  message: aString , ' is not a method reference; write it as Class>>#selector.'
+		  expected: nil
+		  actual: aString
+]
+
 { #category : 'private - results' }
-MCPToolRunTests >> warningsForRequest: aRunTestsRequest [
+MCPToolRunTests >> warningsFor: anOperation [
 	"test_run refuses a selection that names nothing before anything runs, so a call that ran has nothing to warn of."
 
 	^ #(  )

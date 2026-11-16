@@ -1,5 +1,5 @@
 "
-Shared base class for search-style MCP tools. It centralizes paged result shaping and search-specific error handling.
+Shared base class for search-style MCP tools. A search builds the scope it looks in from its MCPToolRequest, reads the rest of its arguments from the same request as it collects its entries, and answers one page of them. It centralizes paged result shaping and search-specific error handling.
 "
 Class {
 	#name : 'MCPToolSearch',
@@ -55,12 +55,6 @@ MCPToolSearch >> classScopeQueryFromRequest: request [
 		  yourself
 ]
 
-{ #category : 'private - execution' }
-MCPToolSearch >> commandForRequest: searchRequest [
-
-	^ MCPSearchToolCommand tool: self request: searchRequest
-]
-
 { #category : 'private - results' }
 MCPToolSearch >> countTextForPage: page offset: offset noun: aNoun filtering: aBoolean [
 	"No methods, 1 method, 25 of 143563 methods: a page from the start that holds everything counts it, any other page counts what it holds of the total. An offset past the end says so, then counts the whole. A filtered count says that it matches."
@@ -92,13 +86,13 @@ MCPToolSearch >> countTextForPage: page offset: offset noun: aNoun filtering: aB
 ]
 
 { #category : 'private - results' }
-MCPToolSearch >> countTextForQueryRequest: queryRequest page: page [
+MCPToolSearch >> countTextForRequest: request page: page [
 
 	^ self
 		  countTextForPage: page
-		  offset: (self offsetFromQueryRequest: queryRequest)
+		  offset: (request integerArgumentNamed: 'offset')
 		  noun: self searchedNoun
-		  filtering: (self filtersQueryRequest: queryRequest)
+		  filtering: (self filtersRequest: request)
 ]
 
 { #category : 'private - request' }
@@ -137,21 +131,22 @@ MCPToolSearch >> errorResultForQueryError: anError request: request [
 
 { #category : 'executing' }
 MCPToolSearch >> executeWithRequest: request [
+	"A search builds the scope it looks in first, then reads the rest of its arguments as it collects what it finds, and answers one page of it. An error is told with what the caller asked for."
 
 	^ self
-		  executeParsedRequestFrom: request
-		  do: [ :queryRequest |
-				  | command page |
-				  command := self commandForRequest: queryRequest.
+		  executeRequest: request
+		  do: [
+				  | page scopeQuery |
+				  scopeQuery := self scopeQueryFromRequest: request.
 				  page := self
-					          queryPageForEntries: command execute
-					          limit: (self limitFromQueryRequest: queryRequest)
-					          offset: (self offsetFromQueryRequest: queryRequest).
+					          queryPageForEntries: (self queryEntriesForRequest: request scopeQuery: scopeQuery)
+					          limit: self defaultPageLimit
+					          offset: (request integerArgumentNamed: 'offset').
 				  self
-					  successResultText: (self successSummaryForQueryRequest: queryRequest page: page)
-					  data: (self queryResultDataForQueryRequest: queryRequest page: page)
-					  warnings: (self warningsForQueryRequest: queryRequest) ]
-		  onError: [ :error :ignored | self errorResultForQueryError: error request: request ]
+					  successResultText: (self successSummaryForRequest: request scopeQuery: scopeQuery page: page)
+					  data: (self queryResultDataForPage: page)
+					  warnings: (self warningsForScopeQuery: scopeQuery) ]
+		  onError: [ :error | self errorResultForQueryError: error request: request ]
 ]
 
 { #category : 'private - results' }
@@ -179,6 +174,13 @@ MCPToolSearch >> failureScopePhraseFromRequest: request [
 		  do: [ :error | 'the requested scope' ]
 ]
 
+{ #category : 'private - request' }
+MCPToolSearch >> fieldFilterNames [
+	"The arguments that keep only the results whose field holds their text. A tool that filters on fields names them."
+
+	^ #(  )
+]
+
 { #category : 'private - filtering' }
 MCPToolSearch >> fieldFilters: fieldFilters matchUsing: fieldTextsBlock mode: filterMode caseSensitive: caseSensitive [
 
@@ -190,11 +192,12 @@ MCPToolSearch >> fieldFilters: fieldFilters matchUsing: fieldTextsBlock mode: fi
 ]
 
 { #category : 'private - request' }
-MCPToolSearch >> fieldFiltersFromRequest: request fieldNames: fieldNames [
+MCPToolSearch >> fieldFiltersFromRequest: request [
+	"Each field filter the caller wrote, by its name. A blank one is refused rather than read as matching everything."
 
 	| filters |
 	filters := Dictionary new.
-	fieldNames do: [ :fieldName |
+	self fieldFilterNames do: [ :fieldName |
 			(request hasArgumentNamed: fieldName) ifTrue: [
 					filters
 						at: fieldName
@@ -233,10 +236,10 @@ MCPToolSearch >> filterSchemaPropertyWithDescription: filterDescription [
 ]
 
 { #category : 'private - results' }
-MCPToolSearch >> filtersQueryRequest: queryRequest [
+MCPToolSearch >> filtersRequest: request [
 	"Whether the request keeps only the results that hold something, beyond saying where to look: a filter pattern or a field filter. Its count then says that it matches."
 
-	^ queryRequest hasFilterPattern or: [ queryRequest hasFieldFilters ]
+	^ (self filterPatternFromRequest: request) isNotNil or: [ (self fieldFiltersFromRequest: request) isNotEmpty ]
 ]
 
 { #category : 'private - results' }
@@ -250,12 +253,6 @@ MCPToolSearch >> keysStatedInSummary [
 	"The summary already states the counts and the next offset in prose."
 
 	^ #( pagination nextOffset )
-]
-
-{ #category : 'private - template' }
-MCPToolSearch >> limitFromQueryRequest: queryRequest [
-
-	^ queryRequest limit
 ]
 
 { #category : 'private - results' }
@@ -303,12 +300,6 @@ MCPToolSearch >> normalizeFilterString: aValue caseSensitive: aBoolean [
 		  ifFalse: [ normalized asLowercase ]
 ]
 
-{ #category : 'private - template' }
-MCPToolSearch >> offsetFromQueryRequest: queryRequest [
-
-	^ queryRequest offset
-]
-
 { #category : 'private - schema' }
 MCPToolSearch >> packageQueryScopeInputProperties [
 
@@ -332,12 +323,6 @@ MCPToolSearch >> packageScopeProjectNamesProperty [
 		  itemDescription: 'Project name.'
 ]
 
-{ #category : 'private - request' }
-MCPToolSearch >> parsedRequestFromToolRequest: request [
-
-	^ self searchRequestFromToolRequest: request
-]
-
 { #category : 'private - filtering' }
 MCPToolSearch >> pcre2RegexLibraryAvailable [
 	"PCRE2 is an optional dependency: answer whether there is an engine to compile a pattern with."
@@ -356,9 +341,10 @@ MCPToolSearch >> pcre2RegexMatcherForPattern: aPattern caseSensitive: aBoolean [
 ]
 
 { #category : 'private - template' }
-MCPToolSearch >> queryEntriesForQueryRequest: queryRequest [
+MCPToolSearch >> queryEntriesForRequest: request scopeQuery: scopeQuery [
+	"Every entry the search finds in scopeQuery, before it is paged. A tool reads the rest of its arguments from request here, checking them before it looks."
 
-	self subclassResponsibility
+	^ self subclassResponsibility
 ]
 
 { #category : 'private - schema' }
@@ -378,15 +364,10 @@ MCPToolSearch >> queryPageForEntries: entries limit: limit offset: offset [
 ]
 
 { #category : 'private - template' }
-MCPToolSearch >> queryResultDataForQueryRequest: queryRequest page: page [
+MCPToolSearch >> queryResultDataForPage: page [
+	"The answer's data for one page of entries."
 
-	self subclassResponsibility
-]
-
-{ #category : 'private - pagination' }
-MCPToolSearch >> queryResultDataFrom: baseData page: page entriesKey: entriesKey [
-
-	^ page asDictionaryWithEntriesKey: entriesKey
+	^ self subclassResponsibility
 ]
 
 { #category : 'private - results' }
@@ -411,10 +392,10 @@ MCPToolSearch >> regexSubjectFrom: aCandidate [
 ]
 
 { #category : 'private - results' }
-MCPToolSearch >> scopePhraseForQueryRequest: queryRequest [
+MCPToolSearch >> scopePhraseForScopeQuery: scopeQuery [
 	"Where the search looked, from the names its scope resolved; nil when none of them exists."
 
-	^ queryRequest scopeQuery scopePhrase
+	^ scopeQuery scopePhrase
 ]
 
 { #category : 'private - template' }
@@ -429,12 +410,6 @@ MCPToolSearch >> searchActivityText [
 	"What the tool does, for the sentence that says it could not: search methods."
 
 	^ 'search ' , (self pluralNounFor: self searchedNoun)
-]
-
-{ #category : 'private - template' }
-MCPToolSearch >> searchRequestFromToolRequest: request [
-
-	self subclassResponsibility
 ]
 
 { #category : 'private - results' }
@@ -465,13 +440,13 @@ MCPToolSearch >> searchedNoun [
 	^ self subclassResponsibility
 ]
 
-{ #category : 'private - template' }
-MCPToolSearch >> successSummaryForQueryRequest: queryRequest page: page [
+{ #category : 'private - results' }
+MCPToolSearch >> successSummaryForRequest: request scopeQuery: scopeQuery page: page [
 	"How many were found and where, then where the next page starts."
 
 	^ self
-		  searchSummaryForCountText: (self countTextForQueryRequest: queryRequest page: page)
-		  scopePhrase: (self scopePhraseForQueryRequest: queryRequest)
+		  searchSummaryForCountText: (self countTextForRequest: request page: page)
+		  scopePhrase: (self scopePhraseForScopeQuery: scopeQuery)
 		  page: page
 ]
 
@@ -482,7 +457,8 @@ MCPToolSearch >> supportedFilterModes [
 ]
 
 { #category : 'private - results' }
-MCPToolSearch >> warningsForQueryRequest: queryRequest [
+MCPToolSearch >> warningsForScopeQuery: scopeQuery [
+	"What the scope could not resolve, such as a class that does not exist."
 
-	^ queryRequest warnings
+	^ scopeQuery warnings
 ]

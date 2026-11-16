@@ -18,12 +18,6 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPPaginationResult class >> entries: entryCollection nextOffset: anIntegerOrNil [
-
-	^ self entries: entryCollection nextOffset: anIntegerOrNil totalCount: entryCollection size
-]
-
-{ #category : 'instance creation' }
 MCPPaginationResult class >> entries: entryCollection nextOffset: anIntegerOrNil totalCount: totalCountInteger [
 
 	^ self new

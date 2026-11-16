@@ -88,26 +88,20 @@ MCPToolGetMethod >> buildInputSchema [
 ]
 
 { #category : 'private - errors' }
-MCPToolGetMethod >> classNameForErrorFromParsedRequest: getRequest rawRequest: rawRequest [
-	"The request did not parse, so the class is read from the raw text, without the side it may name."
+MCPToolGetMethod >> classNameFor: request checked: aBoolean [
+	"The class an error names: the one the arguments name once checked, else the class argument as written, without the side it may name."
 
-	getRequest ifNotNil: [ ^ getRequest className ].
-	^ (rawRequest stringArgumentNamed: 'class') ifNil: [ '' ] ifNotNil: [ :className | MCPImageLookup baseNameOf: className ]
+	aBoolean ifTrue: [ ^ self methodNamedIn: request do: [ :className :selector :classSide | className ] ].
+	^ (request stringArgumentNamed: 'class') ifNil: [ '' ] ifNotNil: [ :className | MCPImageLookup baseNameOf: className ]
 ]
 
 { #category : 'private - errors' }
-MCPToolGetMethod >> classSideForErrorFromParsedRequest: getRequest rawRequest: rawRequest [
-	"The request did not parse: the class side is meant when the call said so, by side or by a class written as Foo class."
+MCPToolGetMethod >> classSideFor: request checked: aBoolean [
+	"Whether an error names the class side: the side the arguments name once checked, else the class side when the call said so, by side or by a class written as Foo class."
 
-	getRequest ifNotNil: [ ^ getRequest classSide ].
-	^ (rawRequest stringArgumentNamed: 'side') = 'class' or: [
-		  (rawRequest stringArgumentNamed: 'class') ifNil: [ false ] ifNotNil: [ :className | MCPImageLookup namesClassSide: className ] ]
-]
-
-{ #category : 'private - execution' }
-MCPToolGetMethod >> commandForRequest: getRequest [
-
-	^ MCPGetMethodCommand tool: self request: getRequest
+	aBoolean ifTrue: [ ^ self methodNamedIn: request do: [ :className :selector :classSide | classSide ] ].
+	^ (request stringArgumentNamed: 'side') = 'class' or: [
+		  (request stringArgumentNamed: 'class') ifNil: [ false ] ifNotNil: [ :className | MCPImageLookup namesClassSide: className ] ]
 ]
 
 { #category : 'metadata' }
@@ -166,26 +160,27 @@ MCPToolGetMethod >> errorResultForError: anError className: className selector: 
 
 { #category : 'executing' }
 MCPToolGetMethod >> executeWithRequest: request [
+	"Each selector is read as a method, then got. An error raised before it is read names the class, selector and side as the caller wrote them."
 
 	^ self executeBatchedRequest: request do: [ :targetRequest |
+			  | checked |
+			  checked := false.
 			  self
-				  executeParsedRequestFrom: targetRequest
-				  do: [ :getRequest |
-						  | commandResult |
-						  commandResult := (self commandForRequest: getRequest) execute.
-						  self
-							  successResultText:
-							  (self
-								   successSummaryForClassName: getRequest className
-								   selector: getRequest selectorString
-								   classSide: getRequest classSide)
-							  data: commandResult data ]
-				  onError: [ :error :getRequest |
+				  executeRequest: targetRequest
+				  do: [
+						  self methodNamedIn: targetRequest do: [ :className :selector :classSide |
+								  checked := true.
+								  self
+									  getMethod: selector
+									  in: className
+									  classSide: classSide
+									  includeVariableDetails: (targetRequest booleanArgumentNamed: 'includeVariableDetails') ] ]
+				  onError: [ :error |
 						  self
 							  errorResultForError: error
-							  className: (self classNameForErrorFromParsedRequest: getRequest rawRequest: targetRequest)
-							  selector: (self selectorForErrorFromParsedRequest: getRequest rawRequest: targetRequest)
-							  classSide: (self classSideForErrorFromParsedRequest: getRequest rawRequest: targetRequest) ] ]
+							  className: (self classNameFor: targetRequest checked: checked)
+							  selector: (self selectorFor: targetRequest checked: checked)
+							  classSide: (self classSideFor: targetRequest checked: checked) ] ]
 ]
 
 { #category : 'private - results' }
@@ -199,6 +194,22 @@ MCPToolGetMethod >> failureMessageForClassNamed: className selector: selectorStr
 			  nextPutAll: anError class name;
 			  nextPutAll: '): ';
 			  nextPutAll: anError messageText ]
+]
+
+{ #category : 'private - execution' }
+MCPToolGetMethod >> getMethod: selector in: className classSide: classSide includeVariableDetails: includeVariableDetails [
+
+	| compiledMethod data |
+	compiledMethod := self methodForClassNamed: className selector: selector classSide: classSide.
+	data := {
+		        (#protocol -> (compiledMethod protocolName ifNil: [ '' ] ifNotNil: [ :protocol | protocol asString ])).
+		        (#source -> (compiledMethod sourceCode ifNil: [ '' ])) } asDictionary.
+	(MCPCompiledMethodInfo fromMethod: compiledMethod) traitName ifNotNil: [ :traitName | data at: #trait put: traitName ].
+	includeVariableDetails ifTrue: [
+			data
+				at: #variableReferences
+				put: (self variableSummariesForMethod: compiledMethod methodBehavior: (self behaviorNamed: className classSide: classSide)) ].
+	^ self successResultText: (self successSummaryForClassName: className selector: selector classSide: classSide) data: data
 ]
 
 { #category : 'private - analysis' }
@@ -221,6 +232,27 @@ MCPToolGetMethod >> matchingSummaryForNodeName: aName kind: aKind ownerName: anO
 		  detect: [ :each |
 			  (each at: #name) = aName and: [ (each at: #kind) = aKind and: [ (each at: #ownerName ifAbsent: [ nil ]) = anOwnerName ] ] ]
 		  ifNone: [ nil ]
+]
+
+{ #category : 'private - request' }
+MCPToolGetMethod >> methodNamedIn: request do: aBlock [
+	"Give aBlock the class name without its side, the selector and whether the class side is meant, for the method the arguments name. A selector written as a reference names it alone; a bare one needs class, and a class written with its side must agree with side."
+
+	| className text |
+	text := self selectorStringFromRequest: request.
+	(MCPMethodReference fromString: text) ifNotNil: [ :reference |
+		^ aBlock value: reference className value: reference selector value: reference classSide ].
+	className := request stringArgumentNamed: 'class'.
+	((MCPMethodReference looksLikeAReference: text) or: [ className isNil ]) ifTrue: [
+			MCPCommandError
+				signalErrorCode: #MethodReferenceUnreadable
+				message: (String streamContents: [ :stream |
+						 stream << (text ifNil: [ 'A method' ]) << ' does not name a method. ' << self referenceHelpText ])
+				details: { (#selector -> text) } asDictionary ].
+	^ MCPImageLookup
+		  className: className
+		  side: (request stringArgumentNamed: 'side')
+		  do: [ :baseName :isClassSide :isSideGiven | aBlock value: baseName value: text value: isClassSide ]
 ]
 
 { #category : 'private - results' }
@@ -266,12 +298,6 @@ MCPToolGetMethod >> ownerNameForNode: aVariableNode kind: aKind methodBehavior: 
 	^ nil
 ]
 
-{ #category : 'private - request' }
-MCPToolGetMethod >> parsedRequestFromToolRequest: request [
-
-	^ MCPGetMethodRequest fromRequest: request tool: self
-]
-
 { #category : 'private - results' }
 MCPToolGetMethod >> redundantKeys [
 	"A variable's binding class restates its kind in Pharo's terms."
@@ -279,11 +305,19 @@ MCPToolGetMethod >> redundantKeys [
 	^ #( bindingClass )
 ]
 
-{ #category : 'private - errors' }
-MCPToolGetMethod >> selectorForErrorFromParsedRequest: getRequest rawRequest: rawRequest [
+{ #category : 'private - request' }
+MCPToolGetMethod >> referenceHelpText [
+	"method_get, unlike the other tools that read a method's reference, has a class argument for a bare selector."
 
-	getRequest ifNotNil: [ ^ getRequest selectorString ].
-	^ (rawRequest stringArgumentNamed: 'selector') ifNil: [ '' ]
+	^ MCPMethodReference helpText , ' A bare selector works too when class is given.'
+]
+
+{ #category : 'private - errors' }
+MCPToolGetMethod >> selectorFor: request checked: aBoolean [
+	"The selector an error names: the one the arguments name once checked, else the selector argument as written."
+
+	aBoolean ifTrue: [ ^ self methodNamedIn: request do: [ :className :selector :classSide | selector ] ].
+	^ (request stringArgumentNamed: 'selector') ifNil: [ '' ]
 ]
 
 { #category : 'private - results' }

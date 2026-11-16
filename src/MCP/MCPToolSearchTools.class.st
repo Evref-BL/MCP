@@ -53,6 +53,31 @@ MCPToolSearchTools >> buildInputSchema [
 ]
 
 { #category : 'private - results' }
+MCPToolSearchTools >> catalogOverviewText [
+	"Answer the size and shape of the catalog: a caller that matched nothing needs the vocabulary to search with, not only a count."
+
+	| groups |
+	groups := self toolRegistry toolGroups sorted: [ :left :right |
+			          left value size = right value size
+				          ifTrue: [ left key <= right key ]
+				          ifFalse: [ left value size > right value size ] ].
+	^ String streamContents: [ :stream |
+			  stream
+				  print: self toolRegistry tools size;
+				  nextPutAll: ' tools in ';
+				  print: groups size;
+				  nextPutAll: ' groups: '.
+			  groups
+				  do: [ :each |
+						  stream
+							  nextPutAll: each key;
+							  space;
+							  print: each value size ]
+				  separatedBy: [ stream nextPutAll: ', ' ].
+			  stream nextPutAll: '. Search by keyword.' ]
+]
+
+{ #category : 'private - results' }
 MCPToolSearchTools >> catalogTextForSummary: aSummary tools: toolMetadataEntries [
 	"Separate entries with a line feed: a carriage return reaches the caller as an escaped character rather than a line break. A tool that is not advertised says so after its name, since a client that calls only what it lists cannot call it by that name alone."
 
@@ -66,12 +91,6 @@ MCPToolSearchTools >> catalogTextForSummary: aSummary tools: toolMetadataEntries
 					  stream
 						  nextPutAll: ' - ';
 						  nextPutAll: (each at: #description) ] ]
-]
-
-{ #category : 'private - execution' }
-MCPToolSearchTools >> commandForRequest: searchRequest [
-
-	^ MCPSearchToolsCommand tool: self request: searchRequest toolRegistry: self toolRegistry
 ]
 
 { #category : 'private - results' }
@@ -103,19 +122,42 @@ MCPToolSearchTools >> description [
 MCPToolSearchTools >> executeWithRequest: request [
 
 	^ self
-		  executeParsedRequestFrom: request
-		  do: [ :searchRequest |
-				  | command data |
-				  command := self commandForRequest: searchRequest.
-				  data := command execute.
-				  self successResultText: command summaryText data: data ]
-		  onError: [ :error :parsedRequest | self errorResultFor: error ]
+		  executeRequest: request
+		  do: [
+				  | query matchingTools shownTools data |
+				  query := request stringArgumentNamed: 'query'.
+				  matchingTools := self toolRegistry toolsMatchingQuery: query.
+				  shownTools := matchingTools first: (matchingTools size min: self resultLimit).
+				  data := { (#tools -> (shownTools collect: [ :each | self toolRegistry searchMetadataForTool: each ] as: Array)) }
+					          asDictionary.
+				  self successResultText: (self summaryForQuery: query matching: matchingTools shown: shownTools) data: data ]
+		  onError: [ :error | self errorResultFor: error ]
 ]
 
-{ #category : 'private - request' }
-MCPToolSearchTools >> parsedRequestFromToolRequest: request [
+{ #category : 'private - results' }
+MCPToolSearchTools >> resultLimit [
+	"The ranking answers the closest matches; a caller narrows the search with more words instead of paging through worse ones."
 
-	^ MCPSearchToolsRequest fromToolRequest: request
+	^ 15
+]
+
+{ #category : 'private - results' }
+MCPToolSearchTools >> summaryForQuery: aQuery matching: matchingTools shown: shownTools [
+	"Every registered tool is callable by name; only a client that calls nothing but the tools it lists needs tool_call to reach the others, so the summary says so when it shows one of them."
+
+	matchingTools ifEmpty: [
+			^ aQuery isEmptyOrNil
+				  ifTrue: [ self catalogOverviewText ]
+				  ifFalse: [ 'No tool matched. ' , self catalogOverviewText ] ].
+	^ String streamContents: [ :stream |
+			  shownTools size = matchingTools size
+				  ifTrue: [ stream << (self textForCount: shownTools size noun: 'tool') << ' matched, best first.' ]
+				  ifFalse: [
+						  stream << shownTools size asString << ' of ' << matchingTools size asString
+						  << ' matching tools, best first. Add words to narrow the search.' ].
+			  (shownTools anySatisfy: [ :each | (self toolRegistry isToolAdvertised: each) not ]) ifTrue: [
+				  stream nextPutAll:
+					  ' Tools not in your list can be called by name, or through tool_call if your client only calls listed tools.' ] ]
 ]
 
 { #category : 'metadata' }

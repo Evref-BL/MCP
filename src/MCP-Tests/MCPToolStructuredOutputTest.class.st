@@ -868,18 +868,15 @@ MCPToolStructuredOutputTest >> testRunTestsSuccessfulResultHasExpectedShape [
 { #category : 'tests' }
 MCPToolStructuredOutputTest >> testRunTestsTimeoutReturnsPartialResultsAndUnrunSelectionsCanResume [
 
-	| data expectedRunCount notRun request resumedData resumedResult result runTestsRequest tool |
+	| data expectedRunCount notRun request resumedData resumedResult result tool |
 	tool := MCPToolRunTests new.
 	expectedRunCount := 1 + MCPToolCoverageTargetTest testSelectors size + MCPToolRunTestsPackageTarget testSelectors size.
-	runTestsRequest := MCPRunTestsRequest new
-		                   initializeTestRequests: {
-				                   (MCPTestRunRequest className: MCPToolRunTestsTimeoutTarget name).
-				                   (MCPTestRunRequest className: MCPToolCoverageTargetTest name).
-				                   (MCPTestRunRequest packageName: 'MCP-Tests-RunResources') }
-		                   timeoutMilliseconds: 100
-		                   operation: 'run'
-		                   coverageRequest: nil.
-	result := (tool commandForRequest: runTestsRequest) execute.
+	result := (MCPRunTestsCommand
+		           selections: {
+				           (MCPTestSelectionSpec className: MCPToolRunTestsTimeoutTarget name).
+				           (MCPTestSelectionSpec className: MCPToolCoverageTargetTest name).
+				           (MCPTestSelectionSpec packageName: 'MCP-Tests-RunResources') }
+		           timeoutMilliseconds: 100) execute.
 	data := result asDictionary.
 	notRun := data at: #notRun.
 	self assert: (data at: #timedOut).

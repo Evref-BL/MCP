@@ -41,12 +41,6 @@ MCPToolCallTool >> buildInputSchema [
 		  yourself
 ]
 
-{ #category : 'private - execution' }
-MCPToolCallTool >> commandForRequest: callRequest [
-
-	^ MCPCallToolCommand tool: self request: callRequest
-]
-
 { #category : 'metadata' }
 MCPToolCallTool >> defaultExposure [
 
@@ -61,18 +55,15 @@ MCPToolCallTool >> description [
 
 { #category : 'executing' }
 MCPToolCallTool >> executeWithRequest: request [
+	"The server dispatches a tool_call itself, so a call that reaches the tool did not come through one."
 
 	^ self
-		  executeParsedRequestFrom: request
-		  do: [ :callRequest |
-			  self errorResultText: 'tool_call requires MCP server call context.' details: { (#name -> callRequest toolName) } asDictionary ]
-		  onError: [ :error :parsedRequest | self errorResultFor: error ]
-]
-
-{ #category : 'private - request' }
-MCPToolCallTool >> parsedRequestFromToolRequest: request [
-
-	^ MCPCallToolRequest fromToolRequest: request
+		  executeRequest: request
+		  do: [
+				  self
+					  errorResultText: 'tool_call requires MCP server call context.'
+					  details: { (#name -> (request stringArgumentNamed: 'name')) } asDictionary ]
+		  onError: [ :error | self errorResultFor: error ]
 ]
 
 { #category : 'metadata' }

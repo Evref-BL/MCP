@@ -1,107 +1,49 @@
 "
-Applies the several actions one update request can ask for, in a fixed order, stopping at the first that fails.
+Applies the several updates one call can ask for of a tool, in order, stopping at the first that fails.
 
-A user answers planForAction: and executePlan: for its own kind of target, actionApplicationOrder for the order they must run in, and updateSubjectDescription for the summary.
+A user answers applyUpdate:of: for one update, updateActionOf: for the action an update names, and updateSubjectDescriptionFor: for the summary of several.
 
-Unlike a batch over independent targets, these actions all land on one target and the later ones build on the earlier, so a failure stops the rest rather than carrying on.
+Unlike a batch over independent targets, these updates all land on one target and the later ones build on the earlier, so a failure stops the rest rather than carrying on.
 "
 Trait {
 	#name : 'TMCPSequencedUpdate',
-	#category : 'MCP-IDE-Commands',
+	#category : 'MCP-IDE-Tools',
 	#package : 'MCP-IDE',
-	#tag : 'Commands'
+	#tag : 'Tools'
 }
 
 { #category : 'requirements' }
-TMCPSequencedUpdate >> actionApplicationOrder [
-	"The actions this kind of update can ask for, in the order they must be applied."
+TMCPSequencedUpdate >> applyUpdate: update of: request [
+	"Apply one update and answer its tool result, which is an error result when it failed."
 
 	^ self explicitRequirement
 ]
 
-{ #category : 'private - results' }
-TMCPSequencedUpdate >> actionsInApplicationOrder: plans [
-	"Order by what each plan does, keeping plans that do the same thing in the order they were asked for."
-
-	| order |
-	order := self actionApplicationOrder.
-	^ ((plans asArray withIndexCollect: [ :plan :index |
-			    {
-				    (order indexOf: plan updateAction).
-				    index.
-				    plan } ]) sorted: [ :left :right |
-			   left first = right first
-				   ifTrue: [ (left at: 2) <= (right at: 2) ]
-				   ifFalse: [ left first < right first ] ]) collect: [ :each | each last ]
-]
-
-{ #category : 'private - results' }
-TMCPSequencedUpdate >> dataOfResult: aResult [
-
-	^ aResult structuredContent at: #data ifAbsent: [ Dictionary new ]
-]
-
-{ #category : 'executing' }
-TMCPSequencedUpdate >> executeActions: plans [
-	"Apply the plans in order, stopping at the first that fails. Unlike a batch over independent targets, these all land on one target and the later ones build on the earlier, so carrying on would apply half a change nobody asked for."
+{ #category : 'updating' }
+TMCPSequencedUpdate >> applyUpdates: updates of: request [
+	"Apply the updates in order, stopping at the first that fails. They all land on one target and the later ones build on the earlier, so carrying on would apply half a change nobody asked for."
 
 	| applied |
 	applied := OrderedCollection new.
-	plans doWithIndex: [ :plan :index |
+	updates doWithIndex: [ :update :index |
 			| result |
-			result := self executePlan: plan.
+			result := self applyUpdate: update of: request.
 			result isError ifTrue: [
 					^ self
 						  resultForFailure: result
-						  at: plan
+						  of: (self updateActionOf: update)
 						  applied: (applied collect: [ :each | each key ] as: Array)
-						  skipped: ((plans copyFrom: index + 1 to: plans size) collect: [ :each | each updateAction ]) ].
-			applied add: plan updateAction -> result ].
-	^ self resultForAppliedUpdates: applied
+						  skipped: ((updates allButFirst: index) collect: [ :each | self updateActionOf: each ]) ].
+			applied add: (self updateActionOf: update) -> result ].
+	^ self resultForUpdates: applied of: request
 ]
 
-{ #category : 'requirements' }
-TMCPSequencedUpdate >> executePlan: plan [
-	"Carry out one planned action."
-
-	^ self explicitRequirement
-]
-
-{ #category : 'private - results' }
-TMCPSequencedUpdate >> resultForAppliedUpdates: applied [
-	"One action answers exactly what it answered when it had a tool of its own. Several say how many were applied, then what each one answered alone, a line each in the order applied; their data stays under updates."
-
-	| warnings updates |
-	applied size = 1 ifTrue: [ ^ applied first value ].
-	warnings := OrderedCollection new.
-	updates := applied collect: [ :each |
-			           warnings addAll: (self warningsOfResult: each value).
-			           (self dataOfResult: each value) copy
-				           at: #action put: each key;
-				           yourself ].
-	^ self tool
-		  successResultText: (String streamContents: [ :stream |
-					   stream
-						   nextPutAll: 'Applied ';
-						   print: applied size;
-						   nextPutAll: ' updates to ';
-						   nextPutAll: self updateSubjectDescription;
-						   nextPut: $:.
-					   applied do: [ :each |
-							   stream
-								   nextPut: Character lf;
-								   nextPutAll: (self summaryOfResult: each value) ] ])
-		  data: { (#updates -> updates asArray) } asDictionary
-		  warnings: warnings asArray
-]
-
-{ #category : 'private - results' }
-TMCPSequencedUpdate >> resultForFailure: errorResult at: plan applied: appliedActions skipped: skippedActions [
+{ #category : 'updating' }
+TMCPSequencedUpdate >> resultForFailure: errorResult of: action applied: appliedActions skipped: skippedActions [
 	"A single change fails as it always did. When it was one of several, say which had already landed and which were never attempted, because the target is left part-way."
 
-	| action details summary |
+	| details summary |
 	(appliedActions isEmpty and: [ skippedActions isEmpty ]) ifTrue: [ ^ errorResult ].
-	action := plan updateAction.
 	details := (errorResult structuredContent at: #error ifAbsent: [ Dictionary new ]) copy.
 	details
 		at: #failedUpdate put: action;
@@ -117,24 +59,47 @@ TMCPSequencedUpdate >> resultForFailure: errorResult at: plan applied: appliedAc
 					           stream << '; not attempted: '.
 					           skippedActions do: [ :each | stream << each ] separatedBy: [ stream << ', ' ] ].
 			           stream << '.' ].
-	^ self tool errorResultText: summary details: details
+	^ self errorResultText: summary details: details
 ]
 
-{ #category : 'private - results' }
-TMCPSequencedUpdate >> summaryOfResult: aResult [
+{ #category : 'updating' }
+TMCPSequencedUpdate >> resultForUpdates: applied of: request [
+	"One update answers exactly what it answers alone. Several say how many were applied, then what each one answered alone, a line each in the order applied; their data stays under updates."
 
-	^ aResult structuredContent at: #summary ifAbsent: [ '' ]
+	| updates warnings |
+	applied size = 1 ifTrue: [ ^ applied first value ].
+	warnings := OrderedCollection new.
+	updates := applied collect: [ :each |
+			           warnings addAll: (self warningsOfResult: each value).
+			           (each value structuredContent at: #data ifAbsent: [ Dictionary new ]) copy
+				           at: #action put: each key;
+				           yourself ].
+	^ self
+		  successResultText: (String streamContents: [ :stream |
+					   stream
+						   nextPutAll: 'Applied ';
+						   print: applied size;
+						   nextPutAll: ' updates to ';
+						   nextPutAll: (self updateSubjectDescriptionFor: request);
+						   nextPut: $:.
+					   applied do: [ :each |
+							   stream
+								   nextPut: Character lf;
+								   nextPutAll: (each value structuredContent at: #summary ifAbsent: [ '' ]) ] ])
+		  data: { (#updates -> updates asArray) } asDictionary
+		  warnings: warnings asArray
 ]
 
 { #category : 'requirements' }
-TMCPSequencedUpdate >> updateSubjectDescription [
-	"What the summary calls the thing being updated, such as 'class Foo'."
+TMCPSequencedUpdate >> updateActionOf: update [
+	"The name of the action an update performs, as the answer reports it."
 
 	^ self explicitRequirement
 ]
 
-{ #category : 'private - results' }
-TMCPSequencedUpdate >> warningsOfResult: aResult [
+{ #category : 'requirements' }
+TMCPSequencedUpdate >> updateSubjectDescriptionFor: request [
+	"What the summary of several updates calls their target."
 
-	^ aResult structuredContent at: #warnings ifAbsent: [ #(  ) ]
+	^ self explicitRequirement
 ]

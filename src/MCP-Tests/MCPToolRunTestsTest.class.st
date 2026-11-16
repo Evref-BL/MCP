@@ -12,25 +12,20 @@ Class {
 
 { #category : 'private - running' }
 MCPToolRunTestsTest >> commandResultFor: someArguments [
-	"What test_run's command answers, before the tool words it."
+	"What test_run's operation answers, before the tool words it."
 
 	| tool |
 	tool := MCPToolRunTests new.
-	^ (tool commandForRequest: (self parsedRequestForTool: tool arguments: someArguments asDictionary)) execute
+	^ (tool operationFor: (tool requestFromToolCallArguments: someArguments asDictionary)) execute
 ]
 
 { #category : 'private - running' }
 MCPToolRunTestsTest >> commandResultForClasses: classNames timeoutMilliseconds: milliseconds [
-	"What test_run's command answers for a timeout finer than timeoutSeconds can say."
+	"What test_run's operation answers for a timeout finer than timeoutSeconds can say."
 
-	| runTestsRequest tool |
-	tool := MCPToolRunTests new.
-	runTestsRequest := MCPRunTestsRequest new
-		                   initializeTestRequests: (classNames collect: [ :each | MCPTestRunRequest className: each ] as: Array)
-		                   timeoutMilliseconds: milliseconds
-		                   operation: 'run'
-		                   coverageRequest: nil.
-	^ (tool commandForRequest: runTestsRequest) execute
+	^ (MCPRunTestsCommand
+		   selections: (classNames collect: [ :each | MCPTestSelectionSpec className: each ] as: Array)
+		   timeoutMilliseconds: milliseconds) execute
 ]
 
 { #category : 'private - fixtures' }
@@ -542,6 +537,19 @@ MCPToolRunTestsTest >> testCoverageAfterATimeoutIsCoverageSoFar [
 		'Ran 2 tests (2 passed). Timed out after 2 seconds. 3 tests not run, listed below as test_coverage_run arguments. Coverage so far: 50.00%.'
 ]
 
+{ #category : 'tests - answers' }
+MCPToolRunTestsTest >> testCoverageLeavesOutTheRunnersOwnLookups [
+	"A selection's class is looked up before the coverage collector is installed, so the runner's lookups never count as executed: MCPToolCoverageTargetTest's tests reach no method of MCPImageLookup. Pharo 10 has no coverage to collect and refuses the call."
+
+	| result |
+	result := self callToolNamed: 'test_coverage_run' withArguments: {
+			          (#classes -> #( 'MCPToolCoverageTargetTest' )).
+			          (#coverage -> { (#scope -> { (#classes -> #( 'MCPImageLookup' )) } asDictionary) } asDictionary) } asDictionary.
+	self coverageIsAvailable ifFalse: [ ^ self assert: (self resultIndicatesError: result) ].
+	self deny: (self resultIndicatesError: result).
+	self assert: (((self dataFrom: result) at: #coverage) at: #coveredMethodCount) equals: 0
+]
+
 { #category : 'tests - outcomes' }
 MCPToolRunTestsTest >> testDurationsReadInWholeSecondsOrMilliseconds [
 
@@ -691,13 +699,13 @@ MCPToolRunTestsTest >> testWhatAPackageLeavesIsListedByClass [
 
 	| broken command notRun package someFail testCases |
 	command := MCPRunTestsCommand new.
-	package := MCPValidatedTestRunRequest request: (MCPTestRunRequest packageName: 'P') testClass: nil.
+	package := MCPTestSelectionSpec packageName: 'P'.
 	someFail := (self fixtureNamed: 'MCPToolRunTestsSomeFailTarget') buildSuite tests.
 	broken := (self fixtureNamed: 'MCPToolRunTestsBrokenFixtureTarget') buildSuite tests.
 	testCases := someFail , broken.
 	notRun := [ :uniqueTestCases :startIndex |
 		          (command
-			           notRunRequestsForValidatedRequest: package
+			           notRunSelectionsFor: package
 			           testCases: testCases
 			           uniqueTestCases: uniqueTestCases
 			           startingAt: startIndex) collect: [ :each | each displayName ] ].

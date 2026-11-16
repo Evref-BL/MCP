@@ -1,9 +1,11 @@
 "
-Abstract base for repository command objects. It owns the shared tool/request state and construction protocol used by repository tools; subclasses implement the repository operation itself.
+Iceberg and git steps on a registered repository: reading its source format, loading its packages from the checkout's files, adopting a commit as the working copy's reference, registering and removing packages, setting its source directory, and running git in its checkout. Each step takes the repository it acts on.
+
+It is abstract: it runs no operation of its own, so it leaves execute to its subclasses. The repository tools call its steps on an instance, and the operations long enough to be objects of their own, which create or commit a repository, are its subclasses and run with execute.
 "
 Class {
 	#name : 'MCPRepositoryCommand',
-	#superclass : 'MCPToolRequestCommand',
+	#superclass : 'MCPCommand',
 	#category : 'MCP-IDE-Commands',
 	#package : 'MCP-IDE',
 	#tag : 'Commands'
@@ -15,7 +17,16 @@ MCPRepositoryCommand class >> isAbstract [
 	^ self = MCPRepositoryCommand
 ]
 
-{ #category : 'private - iceberg state' }
+{ #category : 'packages' }
+MCPRepositoryCommand >> addPackageNamed: aPackageName to: aRepository [
+	"Register the package with the repository unless it already is, and answer whether this added it."
+
+	((self sortedStringsFrom: aRepository workingCopy packageNames) includes: aPackageName) ifTrue: [ ^ false ].
+	aRepository workingCopy addPackageNamed: aPackageName.
+	^ true
+]
+
+{ #category : 'iceberg state' }
 MCPRepositoryCommand >> adoptHeadCommit: headCommit for: aRepository [
 
 	self adoptHeadCommit: headCommit for: aRepository markLoadedPackagesClean: true
@@ -32,7 +43,7 @@ MCPRepositoryCommand >> adoptHeadCommit: headCommit for: aRepository markLoadedP
 		ifFalse: [ self markLoadedPackagesDirtyIn: workingCopy ]
 ]
 
-{ #category : 'private - warnings' }
+{ #category : 'testing' }
 MCPRepositoryCommand >> checkoutOf: aRepository holdsPackageNamed: aPackageName [
 	"Whether the checkout's source directory has a directory for the registered package, named as the format the checkout declares names it. When that cannot be read, nothing shows the package is missing."
 
@@ -46,7 +57,7 @@ MCPRepositoryCommand >> checkoutOf: aRepository holdsPackageNamed: aPackageName 
 		  do: [ true ]
 ]
 
-{ #category : 'private - iceberg state' }
+{ #category : 'iceberg state' }
 MCPRepositoryCommand >> commit: leftCommit equals: rightCommit [
 
 	leftCommit ifNil: [ ^ rightCommit isNil ].
@@ -84,18 +95,6 @@ MCPRepositoryCommand >> directoryOfPackage: anIcePackage in: aRepository writer:
 	^ (self repositorySourceDirectoryFor: aRepository) / (aWriterClass directoryNameFor: anIcePackage) asString
 ]
 
-{ #category : 'private - execution' }
-MCPRepositoryCommand >> executeRepositoryAction: actionName work: workBlock successResult: successBlock failureSummary: failureBlock [
-
-	^ self tool
-		  executeMutationAction: actionName
-		  force: false
-		  requestedContext: self request requestedContext
-		  work: workBlock
-		  successResult: successBlock
-		  failureSummary: failureBlock
-]
-
 { #category : 'private - export' }
 MCPRepositoryCommand >> exportProjectFileFor: aRepository [
 
@@ -130,20 +129,7 @@ MCPRepositoryCommand >> gitCommandStringFor: arguments in: aRepository outputFil
 				  nextPutAll: '2>&1' ]
 ]
 
-{ #category : 'private - results' }
-MCPRepositoryCommand >> headPhraseFor: aRepository [
-	"Where HEAD is, as attach and reload say it: on a branch, detached at a commit, or before any commit."
-
-	| info |
-	(MCPIcebergCommitInfo isNoCommit: aRepository headCommit) ifTrue: [ ^ 'which has no commit yet' ].
-	info := MCPRepositoryInfo fromRepository: aRepository.
-	^ String streamContents: [ :stream |
-			  info isDetachedHead
-				  ifTrue: [ stream << 'on detached HEAD ' << (self shortCommitId: info headCommitId) ]
-				  ifFalse: [ stream << 'on branch ' << info branchName ] ]
-]
-
-{ #category : 'private - loading' }
+{ #category : 'loading' }
 MCPRepositoryCommand >> loadLoadedPackagesFromDiskIn: aRepository [
 
 	| writerClass |
@@ -182,7 +168,7 @@ MCPRepositoryCommand >> loadVersionsReplacingImageChanges: versions [
 	versions do: [ :version | version workingCopy loaded: version ]
 ]
 
-{ #category : 'private - iceberg state' }
+{ #category : 'iceberg state' }
 MCPRepositoryCommand >> markLoadedPackagesCleanIn: aWorkingCopy [
 
 	aWorkingCopy loadedPackages do: [ :package | package beDirty: false ]
@@ -201,18 +187,18 @@ MCPRepositoryCommand >> normalizedSystemStatusFrom: anInteger [
 	^ anInteger
 ]
 
-{ #category : 'private' }
-MCPRepositoryCommand >> projectFileNoteFor: aRepository [
-	"The caller did not write the .project file the next export writes, so say it is coming when the image's project differs from the one at the checkout's HEAD."
-
-	(aRepository project isUnborn or: [ aRepository project isDirty not ]) ifTrue: [ ^ '' ].
-	^ ' The next export writes its .project file, which names the source directory.'
-]
-
-{ #category : 'private - iceberg state' }
+{ #category : 'iceberg state' }
 MCPRepositoryCommand >> referenceCommitFor: aRepository [
 
 	^ aRepository workingCopy referenceCommit
+]
+
+{ #category : 'packages' }
+MCPRepositoryCommand >> removePackageNamed: aPackageName from: aRepository [
+	"Drop the package from the repository, leaving it loaded in the image, and answer whether the repository registered it."
+
+	(aRepository workingCopy packageNamed: aPackageName ifAbsent: [ ^ false ]) remove.
+	^ true
 ]
 
 { #category : 'private - git' }
@@ -267,7 +253,7 @@ MCPRepositoryCommand >> runGitArguments: arguments in: aRepository ifFailed: fai
 	^ failureBlock cull: result
 ]
 
-{ #category : 'private - iceberg state' }
+{ #category : 'iceberg state' }
 MCPRepositoryCommand >> setSubdirectory: aString on: aRepository [
 	"A checkout whose HEAD has no .project file has an unborn project, whatever its history, and an unborn project takes no source directory. Give it one with this directory, as Iceberg does when it creates a repository, and read the properties there. Its packages stay as they are, as they do when a project changes its source directory. The next export writes its .project file."
 
@@ -294,13 +280,6 @@ MCPRepositoryCommand >> shellQuote: aString [
 									  nextPut: quote ]
 						  ifFalse: [ stream nextPut: each ] ].
 			  stream nextPut: quote ]
-]
-
-{ #category : 'private - results' }
-MCPRepositoryCommand >> shortCommitId: aCommitId [
-	"The first seven characters, as git log --oneline names a commit."
-
-	^ aCommitId first: (7 min: aCommitId size)
 ]
 
 { #category : 'private - git' }
@@ -344,7 +323,7 @@ MCPRepositoryCommand >> signalUnsupportedSourceFormat: formatId for: aRepository
 				(#supportedFormats -> self supportedSourceFormatIds) } asDictionary
 ]
 
-{ #category : 'private' }
+{ #category : 'converting' }
 MCPRepositoryCommand >> sortedStringsFrom: aCollection [
 
 	^ (aCollection collect: [ :each | each asString ] as: Set) asArray sort
@@ -417,30 +396,6 @@ MCPRepositoryCommand >> versionIn: sourceRepository for: anIcePackage writer: aW
 	| directoryName |
 	directoryName := (aWriterClass directoryNameFor: anIcePackage) asString.
 	^ (sourceRepository directory / directoryName) exists ifTrue: [ sourceRepository versionFromFileNamed: directoryName ]
-]
-
-{ #category : 'private - warnings' }
-MCPRepositoryCommand >> warningForPackageInNeitherImageNorCheckoutNamed: aPackageName [
-
-	| suggestions |
-	suggestions := MCPScopeNameSuggester packageSuggestionsFor: aPackageName.
-	^ String streamContents: [ :stream |
-			  stream << aPackageName << ' is in neither the image nor the checkout.'.
-			  suggestions ifNotEmpty: [ stream << ' Did you mean: ' << (', ' join: suggestions) << '.' ] ]
-]
-
-{ #category : 'private - warnings' }
-MCPRepositoryCommand >> warningsForPackagesNamed: packageNames inNeitherImageNorCheckoutOf: aRepository [
-	"A registered package that neither the image nor the checkout holds is likely a name mistyped, so say so, once per package."
-
-	| seen |
-	seen := Set new.
-	^ Array streamContents: [ :stream |
-			  packageNames do: [ :each |
-					  ((seen includes: each) or: [
-						   (self packageOrganizer hasPackage: each) or: [ self checkoutOf: aRepository holdsPackageNamed: each ] ]) ifFalse: [
-						  stream nextPut: (self warningForPackageInNeitherImageNorCheckoutNamed: each) ].
-					  seen add: each ] ]
 ]
 
 { #category : 'private - source format' }

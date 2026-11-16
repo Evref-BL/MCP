@@ -101,7 +101,11 @@ MCPToolAPITestCase >> expectedUndeclaredVariableNoticeClassNames [
 { #category : 'private - fixtures' }
 MCPToolAPITestCase >> packageSearchFixtureEntriesLoadedInImage: aBoolean [
 
-	^ MCPToolSearchPackages new queryEntriesForQueryRequest: (self packageSearchFixtureRequestLoadedInImage: aBoolean)
+	| tool |
+	tool := MCPToolSearchPackages new.
+	^ tool
+		  queryEntriesForRequest: (MCPToolRequest tool: tool arguments: Dictionary new)
+		  scopeQuery: (self packageSearchFixtureScopeQueryLoadedInImage: aBoolean)
 ]
 
 { #category : 'private - fixtures' }
@@ -126,31 +130,12 @@ MCPToolAPITestCase >> packageSearchFixtureRegistrationLoadedInImage: aBoolean [
 ]
 
 { #category : 'private - fixtures' }
-MCPToolAPITestCase >> packageSearchFixtureRequestLoadedInImage: aBoolean [
-
-	^ MCPSearchPackagesRequest new
-		  scopeQuery: (self packageSearchFixtureScopeQueryLoadedInImage: aBoolean);
-		  filterMode: 'substring';
-		  fieldFilters: Dictionary new;
-		  caseSensitive: true;
-		  limit: 100;
-		  offset: 0;
-		  yourself
-]
-
-{ #category : 'private - fixtures' }
 MCPToolAPITestCase >> packageSearchFixtureScopeQueryLoadedInImage: aBoolean [
 
 	^ MCPPackageScopeQueryTestDouble new
 		  projectNames: { self packageSearchFixtureProjectName };
 		  projectRegistrations: { (self packageSearchFixtureRegistrationLoadedInImage: aBoolean) };
 		  yourself
-]
-
-{ #category : 'private - parsing' }
-MCPToolAPITestCase >> parsedRequestForTool: aTool arguments: someArguments [
-
-	^ aTool parsedRequestFromToolRequest: (self unvalidatedToolRequestForTool: aTool arguments: someArguments)
 ]
 
 { #category : 'private - results' }

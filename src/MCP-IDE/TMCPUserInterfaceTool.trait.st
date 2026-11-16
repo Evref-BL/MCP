@@ -10,6 +10,16 @@ Trait {
 	#tag : 'Tools'
 }
 
+{ #category : 'private - results' }
+TMCPUserInterfaceTool >> errorResultForError: anError [
+	"A window a caller named and that is not open is their mistake to correct, so it is answered as a command error with the open titles rather than as a stack trace."
+
+	^ anError
+		  mcpCommandErrorDo: [ :commandError | self errorResultText: commandError messageText details: commandError structuredDetails ]
+		  otherwise: [ :toolError |
+		  self errorResultText: (self failureMessageFor: toolError) details: (self errorDetailsFor: toolError) ]
+]
+
 { #category : 'private - user interface' }
 TMCPUserInterfaceTool >> openWindowTitles [
 

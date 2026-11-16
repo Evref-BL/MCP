@@ -6,13 +6,12 @@ A tool owns its public MCP metadata: name, title, description, icons, annotation
 The normal execution flow is:
 1. The MCP server receives a JSON-RPC tool call and dispatches it to the matching MCPTool instance.
 2. MCPToolRequest validates the raw arguments against the tool input schema. This is the transport/schema boundary.
-3. The concrete tool parses the MCPToolRequest into a tool-specific request or spec object.
-4. The tool creates and dispatches a command or query command.
-5. Commands perform the image operation or query and return result DTOs, info DTOs, reports, warnings, or errors.
-6. The tool arranges those DTOs into text and structured output that matches its output schema.
-7. The server serializes the tool result into the HTTP/JSON-RPC response.
+3. The tool's executeWithRequest: reads the arguments from that MCPToolRequest, usually inside executeRequest:do:onError: or, for batched calls, executeBatchedRequest:do:. argumentOrDefaultNamed: and the typed accessors built on it answer the schema's default.
+4. The tool does the work itself, or asks an operation object when the work is long, has tests of its own, or several tools use it. An operation takes plain arguments and answers image objects or a report, never the request or the answer's text.
+5. The tool describes what came back with the shared describers (the *Info classes) and writes the summary and the structured output its output schema declares.
+6. The server serializes the tool result into the HTTP/JSON-RPC response.
 
-Subclasses should keep protocol and schema mechanics in the tool, put image work in commands or query objects, and avoid passing raw argument dictionaries beyond request parsing.
+Each argument is declared once, in the input schema. Do not parse the request into an object of its own, and do not pass the request or the tool to an operation.
 
 A tool is served because its package is loaded: a concrete subclass that can already name itself is in the catalog of every registry that discovers. One that must stay out of every catalog, a test fixture for instance, answers false to `shouldAutoRegister`.
 "
@@ -362,12 +361,6 @@ MCPTool >> codeQuoteFor: anInterval in: aString [
 				  nextPutAll: '...' ]
 ]
 
-{ #category : 'private - execution' }
-MCPTool >> commandForRequest: aToolRequest [
-
-	self subclassResponsibility
-]
-
 { #category : 'private - results' }
 MCPTool >> contentTextForStructuredContent: structuredContent [
 	"Answer the text block a caller reads: what happened, then the payload as lines. A tool overrides the rendering of its own data when its shape reads better another way."
@@ -674,24 +667,20 @@ MCPTool >> executeBatchedRequest: aRequest do: executionBlock [
 ]
 
 { #category : 'private - execution' }
-MCPTool >> executeParsedRequestFrom: request do: executionBlock onError: errorBlock [
-	"Parse the transport request inside the same exception boundary as execution.
-	The error block receives the error and the parsed request, or nil if parsing failed.
+MCPTool >> executeRequest: request do: executionBlock onError: errorBlock [
+	"Run the call inside one exception boundary. The error block receives the error.
 	Every Warning and Notification is an Exception, so notifications are resumed here instead of failing the call."
 
-	| parsedRequest |
 	^ self duringCall: [
 			  [
-				  [
-					  parsedRequest := self parsedRequestFromToolRequest: request.
-					  executionBlock value: parsedRequest ]
+				  [ executionBlock value ]
 					  on: Notification
 					  do: [ :notification |
 							  (self shouldResumeNotification: notification)
 								  ifTrue: [ self resumeNotification: notification ]
 								  ifFalse: [ notification pass ] ] ]
 				  on: Exception
-				  do: [ :error | errorBlock value: error value: parsedRequest ] ]
+				  do: [ :error | errorBlock value: error ] ]
 ]
 
 { #category : 'executing' }
@@ -1000,12 +989,6 @@ MCPTool >> orderedKeys: someKeys [
 			  leftIndex = rightIndex
 				  ifTrue: [ left asString <= right asString ]
 				  ifFalse: [ leftIndex < rightIndex ] ]
-]
-
-{ #category : 'private - request' }
-MCPTool >> parsedRequestFromToolRequest: request [
-
-	^ request
 ]
 
 { #category : 'private - results' }

@@ -387,19 +387,15 @@ MCPToolRepositoryOperationTest >> testAdoptHeadNamesADetachedHead [
 ]
 
 { #category : 'tests' }
-MCPToolRepositoryOperationTest >> testAdoptHeadOperationRequiresRepositoryAndParses [
+MCPToolRepositoryOperationTest >> testAdoptHeadReadsItsRequest [
 
-	| command parsedRequest rawRequest tool |
+	| request tool |
 	tool := MCPToolAdoptRepositoryHead new.
-	rawRequest := tool requestFromToolCallArguments: {
-			              (#name -> 'MCP').
-			              (#branch -> 'main') } asDictionary.
-	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
-	command := tool commandForRequest: parsedRequest.
-	self assert: parsedRequest class equals: MCPRepositoryAdoptHeadRequest.
-	self assert: parsedRequest operation equals: 'adoptHead'.
-	self assert: parsedRequest branchName equals: 'main'.
-	self assert: command class equals: MCPAdoptRepositoryHeadCommand
+	request := tool requestFromToolCallArguments: {
+			           (#name -> 'MCP').
+			           (#branch -> 'main') } asDictionary.
+	self assert: (tool mutationActionFor: request checked: true) equals: 'adoptHead'.
+	self assert: ((tool requestedContextFor: request checked: true) at: #branch) equals: 'main'
 ]
 
 { #category : 'tests' }
@@ -481,20 +477,19 @@ MCPToolRepositoryOperationTest >> testAttachGivesAnEmptyCheckoutItsSubdirectory 
 ]
 
 { #category : 'tests' }
-MCPToolRepositoryOperationTest >> testAttachParsesAndDispatchesToAttachCommand [
+MCPToolRepositoryOperationTest >> testAttachReadsItsRequest [
 
-	| command parsedRequest rawRequest tool |
+	| context request tool |
 	tool := MCPToolAttachRepository new.
-	rawRequest := tool requestFromToolCallArguments: {
-			              (#name -> 'MCP').
-			              (#location -> 'C:/src/MCP').
-			              (#packages -> #( 'MCP' )) } asDictionary.
-	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
-	command := tool commandForRequest: parsedRequest.
+	request := tool requestFromToolCallArguments: {
+			           (#name -> 'MCP').
+			           (#location -> 'C:/src/MCP').
+			           (#packages -> #( 'MCP' )) } asDictionary.
+	context := tool requestedContextFor: request checked: true.
 
-	self assert: parsedRequest class equals: MCPRepositoryAttachRequest.
-	self assert: parsedRequest operation equals: 'attach'.
-	self assert: command class equals: MCPAttachRepositoryCommand
+	self assert: (tool mutationActionFor: request checked: true) equals: 'attach'.
+	self assert: (context at: #location) equals: 'C:/src/MCP'.
+	self assert: (context at: #packages) equals: #( 'MCP' )
 ]
 
 { #category : 'tests' }
@@ -859,20 +854,16 @@ MCPToolRepositoryOperationTest >> testCommitOfARepositoryWithoutPackages [
 ]
 
 { #category : 'tests' }
-MCPToolRepositoryOperationTest >> testCommitParsesAndDispatchesToCommitCommand [
+MCPToolRepositoryOperationTest >> testCommitReadsItsRequest [
 
-	| command parsedRequest rawRequest tool |
+	| request tool |
 	tool := MCPToolCommitRepository new.
-	rawRequest := tool requestFromToolCallArguments: {
-			              (#name -> 'MCP').
-			              (#message -> 'Commit from test') } asDictionary.
-	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
-	command := tool commandForRequest: parsedRequest.
+	request := tool requestFromToolCallArguments: {
+			           (#name -> 'MCP').
+			           (#message -> 'Commit from test') } asDictionary.
 
-	self assert: parsedRequest class equals: MCPRepositoryCommitRequest.
-	self assert: parsedRequest message equals: 'Commit from test'.
-	self assert: parsedRequest operation equals: 'commit'.
-	self assert: command class equals: MCPCommitRepositoryCommand
+	self assert: ((tool requestedContextFor: request checked: true) at: #message) equals: 'Commit from test'.
+	self assert: (tool mutationActionFor: request checked: true) equals: 'commit'
 ]
 
 { #category : 'tests' }
@@ -1456,17 +1447,13 @@ MCPToolRepositoryOperationTest >> testDiffListsAPackageWhoseImageDiffersFromItsF
 ]
 
 { #category : 'tests' }
-MCPToolRepositoryOperationTest >> testDiffParsesAndDispatchesToDiffCommand [
+MCPToolRepositoryOperationTest >> testDiffReadsItsRequest [
 
-	| command parsedRequest rawRequest tool |
+	| request tool |
 	tool := MCPToolListRepositoryChanges new.
-	rawRequest := tool requestFromToolCallArguments: { (#name -> 'MCP') } asDictionary.
-	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
-	command := tool commandForRequest: parsedRequest.
+	request := tool requestFromToolCallArguments: { (#name -> 'MCP') } asDictionary.
 
-	self assert: parsedRequest class equals: MCPRepositoryDiffRequest.
-	self assert: parsedRequest operation equals: 'diff'.
-	self assert: command class equals: MCPRepositoryDiffCommand
+	self assert: (tool mutationActionFor: request checked: true) equals: 'diff'
 ]
 
 { #category : 'tests' }
@@ -1562,17 +1549,13 @@ MCPToolRepositoryOperationTest >> testDiscardNamesNoPackageForAnUnregisteredDire
 ]
 
 { #category : 'tests' }
-MCPToolRepositoryOperationTest >> testDiscardParsesAndDispatchesToDiscardCommand [
+MCPToolRepositoryOperationTest >> testDiscardReadsItsRequest [
 
-	| command parsedRequest rawRequest tool |
+	| request tool |
 	tool := MCPToolDiscardRepositoryChanges new.
-	rawRequest := tool requestFromToolCallArguments: { (#name -> 'MCP') } asDictionary.
-	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
-	command := tool commandForRequest: parsedRequest.
+	request := tool requestFromToolCallArguments: { (#name -> 'MCP') } asDictionary.
 
-	self assert: parsedRequest class equals: MCPRepositoryDiscardRequest.
-	self assert: parsedRequest operation equals: 'discard'.
-	self assert: command class equals: MCPDiscardRepositoryChangesCommand
+	self assert: (tool mutationActionFor: request checked: true) equals: 'discard'
 ]
 
 { #category : 'tests' }
@@ -1954,7 +1937,7 @@ MCPToolRepositoryOperationTest >> testExportWarnsOfARegisteredPackageNotInTheIma
 MCPToolRepositoryOperationTest >> testGitCommandFailureSignalsStructuredCommandError [
 
 	| command error |
-	command := MCPCommitRepositoryCommand tool: MCPToolCommitRepository new request: nil.
+	command := MCPCommitRepositoryCommand new.
 	error := [
 		         command
 			         signalGitCommandFailed: {
@@ -2091,7 +2074,7 @@ MCPToolRepositoryOperationTest >> testPathRuleNamesTheRegisteredPackagesOfAPath 
 							(#addPackages -> { absentPackageName }) } asDictionary.
 					self write: 'a' to: location / 'src' / absentPackageName / 'a.st'.
 					repository := IceRepository repositories detect: [ :each | each name asString = repositoryName ].
-					command := MCPExportRepositoryCommand new.
+					command := MCPRepositoryWorkingCopyCommand new.
 					{
 						('src/{1}/{2}.class.st' format: {
 								 packageName.
@@ -2174,7 +2157,7 @@ MCPToolRepositoryOperationTest >> testRestoreOrderOnlyTonelChurnRestoresOriginal
 		original := self tonelClassSourceWithMethods: #( 'alpha' 'beta' ).
 		self write: (self tonelClassSourceWithMethods: #( 'beta' 'alpha' )) to: file.
 		repository := self newRepositoryNamed: 'MCP Order Only Test' location: location packageNames: #(  ).
-		command := MCPExportRepositoryCommand new.
+		command := MCPRepositoryWorkingCopyCommand new.
 		snapshot := Dictionary new.
 		snapshot at: 'MCP-Order/MCPOrderTestClass.class.st' put: original utf8Encoded.
 		restored := command restoreOrderOnlyTonelChurnFor: repository fromSnapshot: snapshot.
@@ -2207,7 +2190,7 @@ MCPToolRepositoryOperationTest >> testSourceFormatSupportsEveryFormatIcebergWrit
 MCPToolRepositoryOperationTest >> testTonelMethodOrderComparisonIgnoresMethodChunkOrder [
 
 	| command original reordered |
-	command := MCPExportRepositoryCommand new.
+	command := MCPRepositoryWorkingCopyCommand new.
 	original := self tonelClassSourceWithMethods: #( 'alpha' 'beta' ).
 	reordered := self tonelClassSourceWithMethods: #( 'beta' 'alpha' ).
 	self assert: (command tonelMethodOrderEquivalent: original to: reordered)
@@ -2217,7 +2200,7 @@ MCPToolRepositoryOperationTest >> testTonelMethodOrderComparisonIgnoresMethodChu
 MCPToolRepositoryOperationTest >> testTonelMethodOrderComparisonKeepsSemanticChanges [
 
 	| changed command original |
-	command := MCPExportRepositoryCommand new.
+	command := MCPRepositoryWorkingCopyCommand new.
 	original := self tonelClassSourceWithMethods: #( 'alpha' 'beta' ).
 	changed := original copyReplaceAll: '^ #beta' with: '^ #changed'.
 	self deny: (command tonelMethodOrderEquivalent: original to: changed)
@@ -2357,26 +2340,6 @@ MCPToolRepositoryOperationTest >> testUpdateWithNothingToDoNamesItsArguments [
 ]
 
 { #category : 'tests' }
-MCPToolRepositoryOperationTest >> testVerifyIdentityOperationRequiresRepositoryAndParses [
-
-	| command parsedRequest rawRequest tool |
-	tool := MCPToolVerifyRepositoryIdentity new.
-	rawRequest := tool requestFromToolCallArguments: {
-			              (#name -> 'MCP').
-			              (#branch -> 'main').
-			              (#packages -> #( 'MCP' )).
-			              (#isModified -> false) } asDictionary.
-	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
-	command := tool commandForRequest: parsedRequest.
-
-	self assert: parsedRequest class equals: MCPRepositoryVerifyIdentityRequest.
-	self assert: parsedRequest operation equals: 'verifyIdentity'.
-	self assert: parsedRequest branchName equals: 'main'.
-	self assert: parsedRequest isModified equals: false.
-	self assert: command class equals: MCPRepositoryVerifyIdentityCommand
-]
-
-{ #category : 'tests' }
 MCPToolRepositoryOperationTest >> testVerifyIdentityPassesWhenExpectedIdentityMatches [
 
 	| repository result |
@@ -2419,6 +2382,23 @@ MCPToolRepositoryOperationTest >> testVerifyIdentityReadsItsMismatchesWithoutStr
 			self assert: (contentText includesSubstring: 'Repository identity verification failed').
 			self assert: (contentText includesSubstring: 'branch: expected feature, actual main').
 			self assert: (contentText includesSubstring: 'packages: expected [MCP, MCP-Tests], actual [MCP]') ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testVerifyIdentityReadsItsRequest [
+
+	| context request tool |
+	tool := MCPToolVerifyRepositoryIdentity new.
+	request := tool requestFromToolCallArguments: {
+			           (#name -> 'MCP').
+			           (#branch -> 'main').
+			           (#packages -> #( 'MCP' )).
+			           (#isModified -> false) } asDictionary.
+	context := tool requestedContextFor: request checked: true.
+
+	self assert: (tool mutationActionFor: request checked: true) equals: 'verifyIdentity'.
+	self assert: (context at: #branch) equals: 'main'.
+	self assert: (context at: #isModified) equals: false
 ]
 
 { #category : 'tests' }

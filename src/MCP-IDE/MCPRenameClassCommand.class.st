@@ -1,7 +1,5 @@
 "
-Command that renames a class using the refactoring engine.
-
-It preserves the old class name for reporting and returns the renamed class metadata in MCPRenameClassResult.
+Renames a class using the refactoring engine, which updates every reference to it, and answers the renamed class.
 "
 Class {
 	#name : 'MCPRenameClassCommand',
@@ -27,14 +25,9 @@ MCPRenameClassCommand class >> className: aClassName newClassName: aNewClassName
 { #category : 'executing' }
 MCPRenameClassCommand >> execute [
 
-	| renamedClass |
 	MCPImageLookup classNamed: self className.
 	self refactoring execute.
-	renamedClass := Smalltalk globals at: self newClassName asSymbol.
-	^ MCPRenameClassResult
-		  classInfo: (MCPClassInfo fromClass: renamedClass)
-		  oldClassName: self className
-		  newClassName: self newClassName
+	^ Smalltalk globals at: self newClassName asSymbol
 ]
 
 { #category : 'accessing' }

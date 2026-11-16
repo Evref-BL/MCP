@@ -50,11 +50,11 @@ MCPChangeClassCommentCommandTest >> tearDown [
 MCPChangeClassCommentCommandTest >> testCanClearClassComment [
 
 	| result target |
+	self assert: (self classNamed: self commentTargetClassName) mcpComment equals: 'original comment'.
 	result := self executeCommand: (MCPChangeClassCommentCommand className: self commentTargetClassName classComment: '').
 	target := self classNamed: self commentTargetClassName.
 	self assert: target mcpComment equals: ''.
-	self assert: result oldClassComment equals: 'original comment'.
-	self assert: result newClassComment equals: ''
+	self assert: result identicalTo: target
 ]
 
 { #category : 'tests' }
@@ -68,14 +68,13 @@ MCPChangeClassCommentCommandTest >> testMissingClassSignalsCommandError [
 ]
 
 { #category : 'tests' }
-MCPChangeClassCommentCommandTest >> testUpdatesClassCommentAndReturnsResultObject [
+MCPChangeClassCommentCommandTest >> testUpdatesClassCommentAndAnswersTheClass [
 
 	| result target |
+	self assert: (self classNamed: self commentTargetClassName) mcpComment equals: 'original comment'.
 	result := self executeCommand:
 		          (MCPChangeClassCommentCommand className: self commentTargetClassName classComment: 'updated comment').
 	target := self classNamed: self commentTargetClassName.
 	self assert: target mcpComment equals: 'updated comment'.
-	self assert: result oldClassComment equals: 'original comment'.
-	self assert: result newClassComment equals: 'updated comment'.
-	self assert: result classInfo className equals: self commentTargetClassName
+	self assert: result identicalTo: target
 ]

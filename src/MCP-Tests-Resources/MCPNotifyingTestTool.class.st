@@ -42,12 +42,10 @@ MCPNotifyingTestTool >> description [
 MCPNotifyingTestTool >> executeWithRequest: aRequest [
 
 	^ self
-		  executeParsedRequestFrom: aRequest
-		  do: [ :parsedRequest |
-				  self
-					  successResultText: 'Signaled a notification.'
-					  data: { (#resumedWith -> MCPToolNestedNotification signal) } asDictionary ]
-		  onError: [ :error :parsedRequest | self errorResultFor: error ]
+		  executeRequest: aRequest
+		  do: [
+		  self successResultText: 'Signaled a notification.' data: { (#resumedWith -> MCPToolNestedNotification signal) } asDictionary ]
+		  onError: [ :error | self errorResultFor: error ]
 ]
 
 { #category : 'metadata' }
