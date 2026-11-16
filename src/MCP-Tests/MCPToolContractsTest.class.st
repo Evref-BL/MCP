@@ -68,11 +68,13 @@ MCPToolContractsTest >> assertNamesAMissingClassAlike: aCase [
 
 { #category : 'private' }
 MCPToolContractsTest >> assertToolFlowSpec: aSpec [
+	"A spec that names no request class is for a tool that reads the request it is given; one that names no command class is for a tool that builds no command."
 
 	| parsedRequest rawRequest tool |
 	tool := (aSpec at: #toolClass) new.
 	rawRequest := tool requestFromToolCallArguments: (aSpec at: #arguments).
 	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
+	(aSpec includesKey: #requestClass) ifFalse: [ ^ self assert: parsedRequest identicalTo: rawRequest ].
 	self assert: parsedRequest class equals: (aSpec at: #requestClass).
 	aSpec
 		at: #commandClass
@@ -122,9 +124,7 @@ MCPToolContractsTest >> baseToolFlowSpecs [
 			  (#commandClass -> MCPGetClassCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolRemoveClasses).
-			  (#arguments -> { (#name -> #( 'Object' )) } asDictionary).
-			  (#requestClass -> MCPRemoveClassesRequest).
-			  (#commandClass -> MCPRemoveClassesCommand) } asDictionary.
+			  (#arguments -> { (#name -> #( 'Object' )) } asDictionary) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolSearchMethods).
 			  (#arguments -> Dictionary new).
