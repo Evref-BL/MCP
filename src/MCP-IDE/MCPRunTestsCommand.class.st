@@ -185,7 +185,7 @@ MCPRunTestsCommand >> partiallyCoveredMethodsFromCoverageResult: coverageResult 
 
 { #category : 'private - validation' }
 MCPRunTestsCommand >> refusalOf: aSelection [
-	"Nil for a selection that holds tests, or a package; else its sentence and its entry. A test class whose suite holds no case of the method is refused, and so is any class that is not a test class."
+	"Nil for a selection that holds tests, or a package; else its sentence and its entry. A test class whose suite holds no case of the method is refused, and so is any class that is not a test class, saying what it subclasses."
 
 	| entry selectionText testClass |
 	aSelection isPackageSelection ifTrue: [ ^ nil ].
@@ -196,8 +196,10 @@ MCPRunTestsCommand >> refusalOf: aSelection [
 	entry at: #class put: testClass name asString.
 	testClass isTestCase ifFalse: [
 			^ (String streamContents: [ :stream |
-					   aSelection hasTestMethod ifTrue: [ stream << selectionText << ' is not a test: ' ].
-					   stream << testClass name << ' is not a test class.' ]) -> entry ].
+					   aSelection hasTestMethod
+						   ifTrue: [ stream << selectionText << ' is not a test: ' << testClass name << ' is a subclass of ' ]
+						   ifFalse: [ stream << testClass name << ' is not a test class: it is a subclass of ' ].
+					   self testCaseSuperclassAdviceOn: stream for: testClass ]) -> entry ].
 	aSelection hasTestMethod ifFalse: [ ^ nil ].
 	(self testCasesFor: aSelection) ifNotEmpty: [ ^ nil ].
 	^ (self textForMethod: selectionText notATestOf: testClass name) -> entry
@@ -369,6 +371,20 @@ MCPRunTestsCommand >> testCaseDeduplicationKeyFor: aTestCase [
 				  nextPutAll: aTestCase selector asString;
 				  nextPut: $/;
 				  nextPutAll: aTestCase nameForReport ]
+]
+
+{ #category : 'private - validation' }
+MCPRunTestsCommand >> testCaseSuperclassAdviceOn: aStream for: aClass [
+	"A class made with no superclass subclasses Object, so the advice says what a test class subclasses and how to change it. class_update is not in every client's list, and a client that calls only what it lists reaches it through tool_call alone, so the advice gives that call."
+
+	aStream
+		nextPutAll: (aClass superclass ifNil: [ 'nothing' ] ifNotNil: [ :superclass | superclass name ]);
+		nextPutAll: ', and a test class subclasses TestCase. If ';
+		nextPutAll: aClass name;
+		nextPutAll:
+			' is meant to hold tests, make TestCase its superclass with class_update, through tool_call when class_update is not in your list: tool_call {"name": "class_update", "arguments": {"name": "';
+		nextPutAll: aClass name;
+		nextPutAll: '", "superclass": "TestCase"}}.'
 ]
 
 { #category : 'private - not run' }

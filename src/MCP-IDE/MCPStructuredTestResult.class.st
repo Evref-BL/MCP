@@ -1,7 +1,9 @@
 "
 The result of one test case run by test_run, so that SUnit's own bookkeeping counts that test once, however many exceptions it raised.
 
-It records each issue while the stack that raised it is still live: its kind, as SUnit sorts the exception, its error class and message, the first frame past the helpers that only pass an error on (the location), and, for a failure in the test method, the statement that failed. An issue raised again with the same kind, error class and message, as a broken fixture raises it in setUp and again in tearDown, adds its location to the first.
+It records each issue while the stack that raised it is still live: its kind, as SUnit sorts the exception, its error class and message, the first frame past the helpers that only pass an error on (the location), and, for a failure in the test method, the statement that failed. A location in Pharo's kernel or SUnit says where the error was noticed, so it also names the code under test that called it, at the line it was running. An issue raised again with the same kind, error class and message, as a broken fixture raises it in setUp and again in tearDown, adds its location to the first.
+
+A class removed since is named by its own name, not by the one Pharo gives its obsolete copy, and the issue lists it among the classes it names that were removed.
 "
 Class {
 	#name : 'MCPStructuredTestResult',
@@ -13,6 +15,32 @@ Class {
 	#package : 'MCP-IDE',
 	#tag : 'DTOs'
 }
+
+{ #category : 'locations' }
+MCPStructuredTestResult class >> codeUnderTestContextFrom: aLocationContext in: aTestCase [
+	"When aLocationContext runs a method of Pharo's kernel or of SUnit, which says where the error was noticed rather than where it was made, the first context below it that runs neither theirs nor a helper's: the code under test, or the test itself. Nil otherwise, and when the walk reaches the test case's runCase first."
+
+	| context packageNames |
+	packageNames := self frameworkPackageNames.
+	(self isContext: aLocationContext inAnyPackageOf: packageNames) ifFalse: [ ^ nil ].
+	context := aLocationContext sender.
+	[ context isNil or: [ self isRunCaseContext: context of: aTestCase ] ] whileFalse: [
+			((self isHelperContext: context) or: [ self isContext: context inAnyPackageOf: packageNames ]) ifFalse: [ ^ context ].
+			context := context sender ].
+	^ nil
+]
+
+{ #category : 'private - locations' }
+MCPStructuredTestResult class >> frameworkPackageNames [
+	"The packages of Pharo's kernel, as its bootstrap baseline groups them, and SUnit's: what runs in them is never the code a test is testing."
+
+	| names |
+	names := Set with: TestCase package name asString.
+	self environment
+		at: #BaselineOfPharoBootstrap
+		ifPresent: [ :baseline | baseline kernelPackageNames do: [ :each | names add: each asString ] ].
+	^ names
+]
 
 { #category : 'private - locations' }
 MCPStructuredTestResult class >> helperClasses [
@@ -47,6 +75,15 @@ MCPStructuredTestResult class >> homeMethodOf: aContext [
 ]
 
 { #category : 'private - locations' }
+MCPStructuredTestResult class >> isContext: aContext inAnyPackageOf: somePackageNames [
+	"Whether the method aContext runs, or the one that defines the block it runs, belongs to one of somePackageNames."
+
+	| package |
+	package := (self homeMethodOf: aContext) ifNotNil: [ :method | method package ].
+	^ package isNotNil and: [ somePackageNames includes: package name asString ]
+]
+
+{ #category : 'private - locations' }
 MCPStructuredTestResult class >> isHelperContext: aContext [
 	"A frame Pharo's debugger completes to its sender, or one of the kernel, SUnit or this result."
 
@@ -72,6 +109,43 @@ MCPStructuredTestResult class >> isTestMethodContext: aContext of: aTestCase [
 ]
 
 { #category : 'locations' }
+MCPStructuredTestResult class >> issueLocationTextOf: aContext in: aTestCase [
+	"Where an issue came from: aContext as Pharo prints it, and, when it runs Pharo's kernel or SUnit, the code under test that called it, at the line it was running: SmallInteger(Integer)>>>, called from ZooKeeper>>feed: at line 4: portion > appetite."
+
+	^ String streamContents: [ :stream |
+			  stream nextPutAll: (self locationTextOf: aContext).
+			  (self codeUnderTestContextFrom: aContext in: aTestCase) ifNotNil: [ :caller |
+					  stream
+						  nextPutAll: ', called from ';
+						  nextPutAll: (self locationTextOf: caller).
+					  (self lineTextOf: caller) ifNotNil: [ :line |
+							  stream
+								  nextPutAll: ' at ';
+								  nextPutAll: line ] ] ]
+]
+
+{ #category : 'locations' }
+MCPStructuredTestResult class >> lineTextOf: aContext [
+	"The line of its method that aContext was running, counting the method as stored, and that line, trimmed and cut past 100 characters: line 4: portion > appetite. Nil when it cannot be read."
+
+	| node source text |
+	node := [ aContext sourceNodeExecuted ]
+		        on: Error
+		        do: [ :error | ^ nil ].
+	node ifNil: [ ^ nil ].
+	source := node methodNode source.
+	text := (source lineCorrespondingToIndex: node start) trimBoth.
+	^ String streamContents: [ :stream |
+			  stream
+				  nextPutAll: 'line ';
+				  print: (source lineNumberCorrespondingToIndex: node start);
+				  nextPutAll: ': ';
+				  nextPutAll: (text size > 100
+						   ifTrue: [ (text first: 100) , '...' ]
+						   ifFalse: [ text ]) ]
+]
+
+{ #category : 'locations' }
 MCPStructuredTestResult class >> locationContextFrom: aContext in: aTestCase [
 	"The first context from aContext toward the bottom of the stack that is not a helper, or nil when the walk reaches the test case's runCase first."
 
@@ -93,15 +167,36 @@ MCPStructuredTestResult class >> locationOf: aContext in: aTestCase [
 
 { #category : 'locations' }
 MCPStructuredTestResult class >> locationTextOf: aContext [
-	"The receiver's class, the method's class in parentheses when it differs, and the selector: ZooLion class(ZooAnimal class)>>arrivedOn:."
+	"The receiver's class, the method's class in parentheses when it differs, and the selector: ZooLion class(ZooAnimal class)>>arrivedOn:. A clean block runs with no receiver, so the method's class alone names it."
 
 	| method receiverClass |
 	method := self homeMethodOf: aContext.
 	receiverClass := aContext receiver class.
 	^ String streamContents: [ :stream |
-			  stream << receiverClass name.
-			  method methodClass == receiverClass ifFalse: [ stream << '(' << method methodClass name << ')' ].
+			  (receiverClass includesBehavior: method methodClass)
+				  ifTrue: [
+						  stream << receiverClass name.
+						  method methodClass == receiverClass ifFalse: [ stream << '(' << method methodClass name << ')' ] ]
+				  ifFalse: [ stream << method methodClass name ].
 			  stream << '>>' << method selector ]
+]
+
+{ #category : 'private - removed classes' }
+MCPStructuredTestResult class >> removedClassNamePattern [
+	"A class Pharo removes is renamed AnObsolete followed by its name, once more each time it is removed again."
+
+	^ '(AnObsolete)+[A-Z][A-Za-z0-9_]*'
+]
+
+{ #category : 'removed classes' }
+MCPStructuredTestResult class >> removedClassNamesIn: aString [
+	"The classes aString names as Pharo renames a class it removes, by their own names, each once, in order."
+
+	| names |
+	names := OrderedCollection new.
+	(aString allRegexMatches: self removedClassNamePattern) do: [ :each |
+		names addIfNotPresent: (each copyReplaceAll: 'AnObsolete' with: '') ].
+	^ names asArray
 ]
 
 { #category : 'locations' }
@@ -143,23 +238,38 @@ MCPStructuredTestResult class >> textForDuration: aDuration [
 			  count = 1 ifFalse: [ stream nextPut: $s ] ]
 ]
 
+{ #category : 'removed classes' }
+MCPStructuredTestResult class >> textNamingRemovedClassesIn: aString [
+	"aString with each removed class named by its own name, not by the one Pharo gives it on removal: AnObsoleteZooLion >> #roar reads ZooLion >> #roar."
+
+	^ aString
+		  copyWithRegex: self removedClassNamePattern
+		  matchesTranslatedUsing: [ :each | each copyReplaceAll: 'AnObsolete' with: '' ]
+]
+
 { #category : 'private' }
 MCPStructuredTestResult >> addIssueOfKind: aKind errorClass: anErrorClassName message: aMessage location: aLocationOrNil statement: aStatementOrNil [
-	"An issue of the kind, error class and message of one the test already raised is the same issue, raised again somewhere else, such as in setUp and again in tearDown: its place joins the others once. Answer the issue."
+	"An issue of the kind, error class and message of one the test already raised is the same issue, raised again somewhere else, such as in setUp and again in tearDown: its place joins the others once. A class removed since is named by its own name, and listed among the removed classes the issue names. Answer the issue."
 
-	| issue |
+	| issue location message |
+	message := self class textNamingRemovedClassesIn: aMessage.
+	location := aLocationOrNil ifNotNil: [ :text | self class textNamingRemovedClassesIn: text ].
 	issue := issues
 		         detect: [ :each |
-		         (each at: #kind) = aKind and: [ (each at: #errorClass) = anErrorClassName and: [ (each at: #message) = aMessage ] ] ]
+		         (each at: #kind) = aKind and: [ (each at: #errorClass) = anErrorClassName and: [ (each at: #message) = message ] ] ]
 		         ifNone: [
 				         issues add: (Dictionary new
 						          at: #kind put: aKind;
 						          at: #errorClass put: anErrorClassName;
-						          at: #message put: aMessage;
+						          at: #message put: message;
 						          at: #locations put: OrderedCollection new;
+						          at: #removedClasses put: OrderedCollection new;
 						          yourself) ].
-	(aLocationOrNil isNil or: [ (issue at: #locations) includes: aLocationOrNil ]) ifFalse: [
-		(issue at: #locations) add: aLocationOrNil ].
+	(location isNil or: [ (issue at: #locations) includes: location ]) ifFalse: [ (issue at: #locations) add: location ].
+	{
+		aMessage.
+		aLocationOrNil } do: [ :text |
+		text ifNotNil: [ (self class removedClassNamesIn: text) do: [ :each | (issue at: #removedClasses) addIfNotPresent: each ] ] ].
 	(aStatementOrNil isNil or: [ issue includesKey: #statement ]) ifFalse: [ issue at: #statement put: aStatementOrNil ].
 	^ issue
 ]
@@ -200,7 +310,7 @@ MCPStructuredTestResult >> messageOf: anException forTestCase: aTestCase [
 
 { #category : 'private' }
 MCPStructuredTestResult >> recordIssueFrom: anException forTestCase: aTestCase [
-	"Recorded while the stack that signalled is still live, so that the issue says where it came from: a place outside the test method, or, for a failure in the test method, the statement that failed; and, for a message not understood, what it was most likely meant to be."
+	"Recorded while the stack that signalled is still live, so that the issue says where it came from: a place outside the test method, with the code under test that called it when that place is in Pharo's kernel or SUnit, or, for a failure in the test method, the statement that failed; and, for a message not understood, what it was most likely meant to be."
 
 	| context issue kind location statement |
 	kind := self issueKindOf: anException.
@@ -208,7 +318,7 @@ MCPStructuredTestResult >> recordIssueFrom: anException forTestCase: aTestCase [
 	context ifNotNil: [
 			(self class isTestMethodContext: context of: aTestCase)
 				ifTrue: [ kind = 'failure' ifTrue: [ statement := self class statementOf: context ] ]
-				ifFalse: [ location := self class locationTextOf: context ] ].
+				ifFalse: [ location := self class issueLocationTextOf: context in: aTestCase ] ].
 	issue := self
 		         addIssueOfKind: kind
 		         errorClass: anException class name

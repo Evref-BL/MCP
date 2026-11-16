@@ -1,7 +1,7 @@
 "
 The tests a test_run or test_coverage_run call ran, counted and grouped for its answer.
 
-It counts each test once, from the outcomes of the selections it ran, and says each issue once: the issues of the same kind, error class, message and places, across tests, are one entry naming every test they hit. It also names the selections that selected no test, lists what a timeout left to run as test_run arguments, and carries the coverage when it was measured.
+It counts each test once, from the outcomes of the selections it ran, and says each issue once: the issues of the same kind, error class, message and places, across tests, are one entry naming every test they hit. It also names the tests that still refer to removed classes, grouped by those classes, and the selections that selected no test, lists what a timeout left to run as test_run arguments, and carries the coverage when it was measured.
 "
 Class {
 	#name : 'MCPRunTestsResult',
@@ -40,7 +40,7 @@ MCPRunTestsResult >> addTimeoutTo: data [
 
 { #category : 'converting' }
 MCPRunTestsResult >> asDictionary [
-	"The counts, each test counted once and a count of none left out but for the run and the passes; each issue once, naming every test it hit; the selections that held no test; what a timeout left to run; and coverage."
+	"The counts, each test counted once and a count of none left out but for the run and the passes; each issue once, naming every test it hit; the tests that still refer to removed classes; the selections that held no test; what a timeout left to run; and coverage."
 
 	| data |
 	data := Dictionary new.
@@ -54,6 +54,7 @@ MCPRunTestsResult >> asDictionary [
 		(#failures -> self failureDictionaries).
 		(#errors -> self errorDictionaries).
 		(#skipped -> self skippedDictionaries).
+		(#removedClassReferences -> self removedClassReferenceEntries).
 		(#withoutTests -> self withoutTestsEntries) } do: [ :each | each value ifNotEmpty: [ data at: each key put: each value ] ].
 	self coverage ifNotNil: [ :coverageResult | data at: #coverage put: coverageResult asDictionary ].
 	self timedOut ifTrue: [ self addTimeoutTo: data ].
@@ -92,6 +93,7 @@ MCPRunTestsResult >> entryForIssueGroup: someTestIssues [
 	(issue at: #kind) = 'error' ifTrue: [ data at: #errorClass put: (issue at: #errorClass) asString ].
 	(issue at: #message) ifNotEmpty: [ :message | data at: #message put: message ].
 	(issue at: #locations) ifNotEmpty: [ :locations | data at: #locations put: locations asArray ].
+	(issue at: #removedClasses ifAbsent: [ #(  ) ]) ifNotEmpty: [ :names | data at: #removedClasses put: names asArray ].
 	someTestIssues size = 1 ifTrue: [ issue at: #statement ifPresent: [ :statement | data at: #statement put: statement ] ].
 	issue at: #note ifPresent: [ :note | data at: #note put: note ].
 	^ data
@@ -217,6 +219,26 @@ MCPRunTestsResult >> outcomes [
 MCPRunTestsResult >> passedCount [
 
 	^ self countOf: #passedCount
+]
+
+{ #category : 'converting' }
+MCPRunTestsResult >> removedClassReferenceEntries [
+	"One entry per set of classes removed since that tests which ran still refer to, in the order the first of those tests ran: the classes, by their own names, and the tests. A skipped test ran nothing of them."
+
+	| groups |
+	groups := OrderedCollection new.
+	self outcomes do: [ :outcome |
+			(outcome isSkipped not and: [ outcome removedClassNames isNotEmpty ]) ifTrue: [
+					(groups
+						 detect: [ :each | each key = outcome removedClassNames ]
+						 ifNone: [ groups add: outcome removedClassNames -> OrderedCollection new ]) value add: outcome ] ].
+	^ groups
+		  collect: [ :each |
+				  Dictionary new
+					  at: #classes put: each key;
+					  at: #tests put: (self testNamesOf: each value);
+					  yourself ]
+		  as: Array
 ]
 
 { #category : 'accessing' }
