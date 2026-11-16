@@ -69,22 +69,25 @@ MCPToolCreateClass >> classToolSpec [
 
 { #category : 'private - errors' }
 MCPToolCreateClass >> classUpdateArgumentsFor: aClass from: request [
-	"What class_update needs besides the name to give aClass what this call asked class_create for, in the order class_create takes its arguments: each one the call gave that aClass does not have. The slots aClass lacks are added, and a list class_update replaces whole keeps what aClass has, so nothing is removed. A superclass is left out for a trait, since class_update makes no class a trait nor a trait a class."
+	"The arguments of the class_update call that gives aClass what this call asked class_create for and it lacks, its name first and the rest in the order class_create takes them: each one the call gave that aClass does not have. The slots aClass lacks are added, counted under the superclass the call names, since class_update moves a class before it adds slots: one that superclass defines is not added again, and one aClass inherits only where it is now is. A list class_update replaces whole keeps what aClass has, so nothing is removed. A trait is given no superclass, as class_update gives a trait none."
 
-	| arguments |
+	| arguments newSuperclass |
 	arguments := OrderedDictionary new.
+	arguments at: 'name' put: aClass name asString.
 	(request stringArgumentNamed: 'superclass') ifNotNil: [ :name |
-			(aClass isTrait or: [ name = 'Trait' or: [ name = (aClass superclass ifNotNil: [ :superclass | superclass name asString ]) ] ])
-				ifFalse: [ arguments at: 'superclass' put: name ] ].
+			(aClass isTrait or: [ name = (aClass superclass ifNotNil: [ :superclass | superclass name asString ]) ]) ifFalse: [
+					arguments at: 'superclass' put: name.
+					newSuperclass := Smalltalk globals classNamed: name ] ].
 	(request stringArgumentNamed: 'package') ifNotNil: [ :name |
 		name = (aClass package ifNotNil: [ :package | package name asString ]) ifFalse: [ arguments at: 'package' put: name ] ].
 	(request stringArgumentNamed: 'tag') ifNotNil: [ :name |
 		((arguments includesKey: 'package') or: [ name ~= aClass mcpTagName ]) ifTrue: [ arguments at: 'tag' put: name ] ].
 	{
-		('slots' -> aClass).
-		('classSlots' -> aClass classSide) } do: [ :each |
-			(self namesIn: request argumentNamed: each key lackedFrom: each value allInstVarNames) ifNotEmpty: [ :names |
-				arguments at: each key put: { ('add' -> names asArray) } asDictionary ] ].
+		('slots' -> (self slotNamesOf: aClass under: newSuperclass)).
+		('classSlots' -> (self slotNamesOf: aClass classSide under: (newSuperclass ifNotNil: [ :superclass | superclass classSide ]))) }
+		do: [ :each |
+				(self namesIn: request argumentNamed: each key lackedFrom: each value) ifNotEmpty: [ :names |
+					arguments at: each key put: { ('add' -> names asArray) } asDictionary ] ].
 	{
 		('traits' -> (aClass traits collect: [ :each | each name ])).
 		('sharedVariables' -> aClass classVarNames).
@@ -218,10 +221,7 @@ MCPToolCreateClass >> mutateWith: request [
 		  force: false
 		  requestedContext: (self requestedContextFor: request)
 		  work: [
-				  MCPImageLookup newClassName: className ifClassExists: [ :existingClass |
-					  MCPCommandError
-						  signalClassAlreadyExistsNamed: className
-						  update: (self classUpdateArgumentsFor: existingClass from: request) ].
+				  MCPImageLookup newClassName: className ifClassExists: [ :existingClass | self refuseExisting: existingClass from: request ].
 				  createdClass := (MCPCreateClassCommand
 					                   className: className
 					                   superclassName: superclassName
@@ -260,6 +260,19 @@ MCPToolCreateClass >> namesIn: request argumentNamed: anArgumentName lackedFrom:
 ]
 
 { #category : 'private - errors' }
+MCPToolCreateClass >> refuseExisting: aClass from: request [
+	"class_create's refusal of a class that exists. When the call asks for what it is, a class or a trait, the refusal writes the class_update call that gives it what the call asks for and it lacks. class_update makes no class a trait and no trait a class, so a call that asks for the other kind is told which kind exists instead."
+
+	| asksForATrait |
+	asksForATrait := (self superclassNameIn: request) = 'Trait'.
+	aClass isTrait = asksForATrait ifFalse: [
+		^ MCPCommandError signalClassAlreadyExistsNamed: aClass name asString askedForATrait: asksForATrait ].
+	^ MCPCommandError
+		  signalClassAlreadyExistsNamed: aClass name asString
+		  update: (self classUpdateArgumentsFor: aClass from: request)
+]
+
+{ #category : 'private - errors' }
 MCPToolCreateClass >> requestedContextFor: request [
 	"The definition as the class is made from it."
 
@@ -275,6 +288,14 @@ MCPToolCreateClass >> requestedContextFor: request [
 		  (#sharedVariables -> (request stringCollectionArgumentNamed: 'sharedVariables')).
 		  (#sharedPools -> (request stringCollectionArgumentNamed: 'sharedPools')).
 		  (#layout -> (request stringArgumentNamed: 'layout' default: '')) } asDictionary
+]
+
+{ #category : 'private - errors' }
+MCPToolCreateClass >> slotNamesOf: aBehavior under: aSuperclassOrNil [
+	"aBehavior's slot names, its own and those it inherits, as they would be under aSuperclassOrNil, or as they are when it is nil."
+
+	aSuperclassOrNil ifNil: [ ^ aBehavior allInstVarNames ].
+	^ aBehavior instVarNames , aSuperclassOrNil allInstVarNames
 ]
 
 { #category : 'private - arguments' }

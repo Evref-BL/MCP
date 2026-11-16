@@ -146,28 +146,47 @@ MCPCommandError class >> signalClassAlreadyExistsNamed: aClassName [
 ]
 
 { #category : 'signaling' }
-MCPCommandError class >> signalClassAlreadyExistsNamed: aClassName update: someArguments [
-	"class_create's refusal of a class that exists, knowing what the call asked for. someArguments are what class_update needs besides the name to give the class what it lacks of that, in the order the call writes them; the message writes that call, or says the class lacks nothing when they are empty. A client reading text sees nothing of the details, and one that calls only what it lists reaches class_update through tool_call alone."
+MCPCommandError class >> signalClassAlreadyExistsNamed: aClassName askedForATrait: aBoolean [
+	"class_create's refusal of a name the other kind holds: a class where the call asks for a trait, or a trait where it asks for a class. class_update makes neither the other, so no call to it is written."
 
-	| arguments |
-	someArguments ifEmpty: [
+	| asked existing |
+	asked := aBoolean
+		         ifTrue: [ 'trait' ]
+		         ifFalse: [ 'class' ].
+	existing := aBoolean
+		            ifTrue: [ 'class' ]
+		            ifFalse: [ 'trait' ].
+	^ self
+		  signalErrorCode: #ClassAlreadyExists
+		  message:
+			  ('{1} {2} already exists, and this call asks for a {3}: class_update cannot make a {4} a {3}. Choose another name for the {3}. class_get shows the {4}.'
+				   format: {
+						   existing capitalized.
+						   aClassName.
+						   asked.
+						   existing })
+		  details: { (#class -> aClassName) } asDictionary
+]
+
+{ #category : 'signaling' }
+MCPCommandError class >> signalClassAlreadyExistsNamed: aClassName update: classUpdateArguments [
+	"class_create's refusal of a class that exists, knowing what the call asked for. classUpdateArguments are those of the class_update call that gives the class what it lacks of that, its name first; the message writes that call, or says the class lacks nothing when they hold only its name. A client reading text sees nothing of the details, and one that calls only what it lists reaches class_update through tool_call alone. The call is written as a client reads text, its line endings line feeds: written as JSON, a carriage return would show as an escape the answer's own conversion leaves alone."
+
+	classUpdateArguments size = 1 ifTrue: [
 			^ self
 				  signalErrorCode: #ClassAlreadyExists
 				  message:
 				  ('Class {1} already exists and already has everything this call asks for. class_get shows it.' format: { aClassName })
 				  details: { (#class -> aClassName) } asDictionary ].
-	arguments := OrderedDictionary new.
-	arguments at: 'name' put: aClassName.
-	someArguments keysAndValuesDo: [ :key :value | arguments at: key put: value ].
 	^ self
 		  signalErrorCode: #ClassAlreadyExists
 		  message: (String streamContents: [ :stream |
 					   stream << 'Class ' << aClassName
 					   << ' already exists. Change it with class_update, through tool_call when class_update is not in your list: tool_call '
-					   << (STONJSON toString: (OrderedDictionary new
-								     at: 'name' put: 'class_update';
-								     at: 'arguments' put: arguments;
-								     yourself)) << '. class_get shows it.' ])
+					   << (STONJSON toString: (MCPLineEndings leaving: (OrderedDictionary new
+									      at: 'name' put: 'class_update';
+									      at: 'arguments' put: classUpdateArguments;
+									      yourself))) << '. class_get shows it.' ])
 		  details: { (#class -> aClassName) } asDictionary
 ]
 

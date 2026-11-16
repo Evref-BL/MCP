@@ -26,16 +26,19 @@ MCPJSONSchemaValidator class >> violationsFor: aValue schema: aSchema [
 
 { #category : 'private - violations' }
 MCPJSONSchemaValidator >> addTypeViolationAt: path for: aValue against: schema [
-	"A value of the wrong type. Where the schema wants an object, the violation names the object's keys, with an example made of the value."
+	"A value of the wrong type. Where the schema's type, one name or a list of them, allows an object, the violation names the object's keys, with an example made of the value."
 
-	| violation |
+	| type violation |
+	type := self keywordNamed: #type in: schema ifAbsent: [ nil ].
 	violation := MCPJSONSchemaViolation
 		             path: path
 		             keyword: #type
 		             message: 'Value has the wrong JSON type.'
-		             expected: (self keywordNamed: #type in: schema ifAbsent: [ nil ])
+		             expected: type
 		             actual: (self typeNameFor: aValue).
-	(self value: Dictionary new matchesType: violation expected) ifTrue: [
+	((type isString
+		  ifTrue: [ { type } ]
+		  ifFalse: [ type ]) anySatisfy: [ :each | each asString = 'object' ]) ifTrue: [
 			violation
 				keys: (self propertyNamesIn: schema) asArray sort;
 				example: (self exampleObjectOf: aValue against: schema) ].
@@ -55,28 +58,23 @@ MCPJSONSchemaValidator >> addViolationAt: path keyword: aKeyword message: aMessa
 
 { #category : 'private - object validation' }
 MCPJSONSchemaValidator >> exampleObjectOf: aValue against: schema [
-	"An object of schema's shape made of aValue, which is not one: aValue, or failing that aValue in a list, under the first property by name that takes it, provided the object then matches schema. Nil when no property takes it, and when aValue names a property, since the caller then sent a key where an object goes."
+	"An object of schema's shape made of aValue, which is not one, or nil when none can be made of it. JSON written as a string is read first, since the caller meant what it holds: an object read from it that matches schema is the example, and text that does not read gives none rather than one that wraps it. Otherwise the value goes under the first property by name that takes it as it is, or failing that under the first that takes it in a list, provided the object then matches schema; a property that takes the value as sent is the better guess, and which one a list goes under remains a guess. A value that names a property gives none, since the caller then sent a key where an object goes."
 
-	| names properties |
-	properties := self keywordNamed: #properties in: schema ifAbsent: [ ^ nil ].
-	names := self propertyNamesIn: schema.
-	(names includes: aValue) ifTrue: [ ^ nil ].
-	names asArray sort do: [ :name |
-			| propertySchema |
-			propertySchema := self
-				                  propertyValueNamed: name
-				                  in: properties
-				                  ifPresent: [ :each | each ]
-				                  ifAbsent: [ nil ].
-			{
-				aValue.
-				{ aValue } } do: [ :candidate |
+	| names value |
+	(self hasKeywordNamed: #properties in: schema) ifFalse: [ ^ nil ].
+	value := self valueHeldBy: aValue ifUnreadable: [ ^ nil ].
+	(value isDictionary and: [ value isNotEmpty and: [ self schema: schema matchesValue: value ] ]) ifTrue: [ ^ value ].
+	names := (self propertyNamesIn: schema) asArray sort.
+	(names includes: value) ifTrue: [ ^ nil ].
+	{
+		value.
+		{ value } } do: [ :candidate |
+			names do: [ :name |
 					| example |
 					example := Dictionary new
 						           at: name put: candidate;
 						           yourself.
-					((self schema: propertySchema matchesValue: candidate) and: [ self schema: schema matchesValue: example ]) ifTrue: [
-						^ example ] ] ].
+					(self schema: schema matchesValue: example) ifTrue: [ ^ example ] ] ].
 	^ nil
 ]
 
@@ -426,6 +424,20 @@ MCPJSONSchemaValidator >> value: aValue matchesType: typeName [
 	(typeName isCollection and: [ typeName isString not ]) ifTrue: [
 		^ typeName anySatisfy: [ :each | self value: aValue matchesType: each ] ].
 	^ self value: aValue matchesSingleType: typeName
+]
+
+{ #category : 'private - object validation' }
+MCPJSONSchemaValidator >> valueHeldBy: aValue ifUnreadable: aBlock [
+	"aValue, or the array or object it holds when it is JSON written as a string, between brackets or braces: a caller that sends a list or an object as a string means what it holds. aBlock answers for such a string that does not read as JSON, which holds no value to show."
+
+	| text |
+	aValue isString ifFalse: [ ^ aValue ].
+	text := aValue trimBoth.
+	(text size >= 2 and: [ (text first = $[ and: [ text last = $] ]) or: [ text first = ${ and: [ text last = $} ] ] ]) ifFalse: [
+		^ aValue ].
+	^ [ STONJSON fromString: text ]
+		  on: Error
+		  do: [ :error | aBlock value ]
 ]
 
 { #category : 'accessing' }
