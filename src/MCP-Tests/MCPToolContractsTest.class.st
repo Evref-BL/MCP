@@ -152,18 +152,15 @@ MCPToolContractsTest >> baseToolFlowSpecs [
 		  {
 			  (#toolClass -> MCPToolCaptureScreen).
 			  (#arguments -> Dictionary new).
-			  (#requestClass -> MCPScreenshotRequest).
-			  (#commandClass -> MCPScreenshotCommand) } asDictionary.
+			  (#requestClass -> MCPToolRequest) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolDebugSearch).
 			  (#arguments -> Dictionary new).
-			  (#requestClass -> MCPDebugSearchRequest).
-			  (#commandClass -> MCPDebugSearchCommand) } asDictionary.
+			  (#requestClass -> MCPToolRequest) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolEvaluate).
 			  (#arguments -> { (#code -> '1') } asDictionary).
-			  (#requestClass -> MCPEvaluateRequest).
-			  (#commandClass -> MCPEvaluateCommand) } asDictionary.
+			  (#requestClass -> MCPToolRequest) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolSearchTools).
 			  (#arguments -> Dictionary new).
@@ -282,8 +279,7 @@ MCPToolContractsTest >> debugWatchToolFlowSpec [
 		  (#arguments -> {
 			   (#method -> 'MCPToolContractsTest>>testDebuggerToolsAreDiscoverableOnly').
 			   (#run -> '1') } asDictionary).
-		  (#requestClass -> MCPDebugWatchRequest).
-		  (#commandClass -> MCPDebugWatchCommand) } asDictionary
+		  (#requestClass -> MCPToolRequest) } asDictionary
 ]
 
 { #category : 'private - evaluate' }
@@ -309,7 +305,7 @@ MCPToolContractsTest >> evaluate: aString within: seconds deferringInto: actions
 
 { #category : 'private - evaluate' }
 MCPToolContractsTest >> evaluateBriefly: aString [
-	"The command's result of an evaluation of aString with the tests' short limit, once what it deferred has run, as the server runs it after the response."
+	"The answer to an evaluation of aString with the tests' short limit, once what it deferred has run, as the server runs it after the response."
 
 	| actions result |
 	actions := OrderedCollection new.
@@ -320,15 +316,13 @@ MCPToolContractsTest >> evaluateBriefly: aString [
 
 { #category : 'private - evaluate' }
 MCPToolContractsTest >> evaluateBriefly: aString deferringInto: actions [
-	"The command's result of an evaluation of aString with the tests' short limit, leaving in actions what the call deferred until after its response."
+	"The answer to an evaluation of aString with the tests' short limit, leaving in actions what the call deferred until after its response."
 
 	| tool |
 	tool := MCPToolEvaluate new.
 	^ MCPPostResponseActions value: actions during: [
-			  (MCPEvaluateCommand
-				   tool: tool
-				   request: (MCPEvaluateRequest new initializeCode: aString timeoutSeconds: self stopLimitSeconds)
-				   resultPreviewCharacterLimit: tool resultPreviewCharacterLimit) execute ]
+			  tool answerFor:
+				  (MCPEvaluateCommand code: aString timeLimit: self stopLimitSeconds previewLimit: tool resultPreviewCharacterLimit) execute ]
 ]
 
 { #category : 'private' }
@@ -554,15 +548,11 @@ MCPToolContractsTest >> missingClassTargetName [
 MCPToolContractsTest >> notStartedTextHeldBy: processes [
 	"The text of an evaluation that never started within 1 s, while these processes held the priority evaluations run at."
 
-	| command tool |
+	| tool |
 	tool := MCPToolEvaluate new.
-	command := MCPEvaluateCommand
-		           tool: tool
-		           request: (MCPEvaluateRequest new initializeCode: '3 + 4' timeoutSeconds: 1)
-		           resultPreviewCharacterLimit: tool resultPreviewCharacterLimit.
 	^ tool contentTextForStructuredContent: (Dictionary new
 			   at: #summary put: (tool notStartedMessageFor: 1);
-			   at: #error put: (command notStartedDetailsFor: processes);
+			   at: #error put: (tool notStartedDetailsFor: processes within: 1);
 			   yourself)
 ]
 
@@ -579,8 +569,7 @@ MCPToolContractsTest >> readScreenToolFlowSpec [
 	^ {
 		  (#toolClass -> MCPToolReadScreen).
 		  (#arguments -> Dictionary new).
-		  (#requestClass -> MCPReadScreenRequest).
-		  (#commandClass -> MCPReadScreenCommand) } asDictionary
+		  (#requestClass -> MCPToolRequest) } asDictionary
 ]
 
 { #category : 'support' }
@@ -683,17 +672,14 @@ MCPToolContractsTest >> stopLimitSeconds [
 
 { #category : 'private - evaluate' }
 MCPToolContractsTest >> stoppedEarlyResultOf: aString bounds: aBlock [
-	"The answer of an evaluation of aString with a limit of 30 s, by a command whose bounds aBlock sets. What the call deferred runs once it has answered, as the server runs it after the response."
+	"The answer to an evaluation of aString with a limit of 30 s, by a command whose bounds aBlock sets. What the call deferred runs once it has answered, as the server runs it after the response."
 
 	| actions command result tool |
 	tool := MCPToolEvaluate new.
-	command := MCPEvaluateCommandStoppingEarly
-		           tool: tool
-		           request: (MCPEvaluateRequest new initializeCode: aString timeoutSeconds: 30)
-		           resultPreviewCharacterLimit: tool resultPreviewCharacterLimit.
+	command := MCPEvaluateCommandStoppingEarly code: aString timeLimit: 30 previewLimit: tool resultPreviewCharacterLimit.
 	aBlock value: command.
 	actions := OrderedCollection new.
-	result := MCPPostResponseActions value: actions during: [ command execute ].
+	result := MCPPostResponseActions value: actions during: [ tool answerFor: command execute ].
 	actions do: #value.
 	^ result
 ]
@@ -710,13 +696,10 @@ MCPToolContractsTest >> stoppedText: aString [
 
 { #category : 'private - evaluate' }
 MCPToolContractsTest >> stoppedTextOf: aResult [
-	"The text the tool answers for a command's result that must be a stop at the tests' limit."
+	"The text of an evaluation's answer that must be a stop at the tests' limit."
 
 	self assert: aResult isError.
-	^ self stoppedText: (MCPToolEvaluate new contentTextForStructuredContent: (Dictionary new
-				    at: #summary put: aResult summary;
-				    at: #error put: aResult errorDetails;
-				    yourself))
+	^ self stoppedText: aResult content first text
 ]
 
 { #category : 'private - evaluate' }
@@ -726,10 +709,10 @@ MCPToolContractsTest >> stoppedTextUnwindingBrieflyOf: aString deferringInto: ac
 	| command tool |
 	tool := MCPToolEvaluate new.
 	command := MCPEvaluateCommandUnwindingBriefly
-		           tool: tool
-		           request: (MCPEvaluateRequest new initializeCode: aString timeoutSeconds: self stopLimitSeconds)
-		           resultPreviewCharacterLimit: tool resultPreviewCharacterLimit.
-	^ self stoppedTextOf: (MCPPostResponseActions value: actions during: [ command execute ])
+		           code: aString
+		           timeLimit: self stopLimitSeconds
+		           previewLimit: tool resultPreviewCharacterLimit.
+	^ self stoppedTextOf: (MCPPostResponseActions value: actions during: [ tool answerFor: command execute ])
 ]
 
 { #category : 'tests' }
@@ -1075,7 +1058,6 @@ MCPToolContractsTest >> testDictionaryShapedCommandResultsUseDTOClasses [
 			| source |
 			source := (association key >> #execute) sourceCode.
 			self assert: (source includesSubstring: association value name asString) ].
-	self assert: ((MCPEvaluateCommand >> #evaluate) sourceCode includesSubstring: MCPEvaluateResult name asString).
 	self assert: ((MCPRunTestsCommand >> #aggregateDataForResults:timedOut:unrunTests:) sourceCode includesSubstring:
 			 MCPRunTestsResult name asString)
 ]
@@ -1254,10 +1236,7 @@ MCPToolContractsTest >> testEvaluateLetsASaveFinish [
 	"Stopped between the snapshot and the restart of the listener that follows it, a save would leave the image without its listener. Neither process is resumed, so nothing is saved."
 
 	| command other saving |
-	command := MCPEvaluateCommand
-		           tool: MCPToolEvaluate new
-		           request: (MCPEvaluateRequest new initializeCode: 'Smalltalk saveSession' timeoutSeconds: 1)
-		           resultPreviewCharacterLimit: 100.
+	command := MCPEvaluateCommand code: 'Smalltalk saveSession' timeLimit: 1 previewLimit: 100.
 	saving := Process
 		          forContext: (Context
 				           sender: nil
@@ -1293,17 +1272,15 @@ MCPToolContractsTest >> testEvaluateLetsNotificationsUseTheirDefaultAction [
 MCPToolContractsTest >> testEvaluateLooksAtTheMemoryOnlyOnceTheCodeHasStarted [
 	"Before the code has started, whatever grows the image is not the code, so only the time limit stops it. A bound below any growth stands for one the image passed. Code that has ended is never stopped."
 
-	| command unstarted |
-	command := MCPEvaluateCommandStoppingEarly
-		           tool: MCPToolEvaluate new
-		           request: (MCPEvaluateRequest new initializeCode: '3 + 4' timeoutSeconds: self stopLimitSeconds)
-		           resultPreviewCharacterLimit: 100.
+	| command tool unstarted |
+	tool := MCPToolEvaluate new.
+	command := MCPEvaluateCommandStoppingEarly code: '3 + 4' timeLimit: self stopLimitSeconds previewLimit: 100.
 	command memoryGrowthLimit: -1024 * 1024 * 1024.
 	unstarted := [ 3 + 4 ] newProcess.
 	self
-		assert: (command watch: unstarted until: Semaphore new started: [ false ])
+		assert: (tool stopSummaryFor: (command watch: unstarted until: Semaphore new started: [ false ]) of: command)
 		equals: 'Evaluation stopped after ' , self stopLimitSeconds printString , ' s, its time limit.'.
-	self assert: ((command watch: unstarted until: Semaphore new started: [ true ]) beginsWith:
+	self assert: ((tool stopSummaryFor: (command watch: unstarted until: Semaphore new started: [ true ]) of: command) beginsWith:
 			 'Evaluation stopped: the image''s memory grew by more than ').
 	self assert: (command
 			 watch: unstarted
@@ -1480,10 +1457,7 @@ MCPToolContractsTest >> testEvaluateStackAndMemoryStopsSayWhy [
 
 	| command tool |
 	tool := MCPToolEvaluate new.
-	command := MCPEvaluateCommand
-		           tool: tool
-		           request: (MCPEvaluateRequest new initializeCode: '3 + 4' timeoutSeconds: 30)
-		           resultPreviewCharacterLimit: 100.
+	command := MCPEvaluateCommand code: '3 + 4' timeLimit: 30 previewLimit: 100.
 	self
 		assert: (tool stackStoppedMessageFor: command stackDepthLimit)
 		equals: 'Evaluation stopped: its stack passed 1000000 frames, which an endless recursion does.'.
@@ -1606,7 +1580,7 @@ MCPToolContractsTest >> testEvaluateStoppedAnswersItsTranscript [
 		assert: ((self stoppedTextOf: result) lines last: 3)
 		equals: #( 'A fork has no time limit, and at this priority it holds up no evaluation.'
 			   'Transcript:' 'started' ).
-	self assert: (result errorDetails at: #transcript) equals: 'started'
+	self assert: ((result structuredContent at: #error) at: #transcript) equals: 'started'
 ]
 
 { #category : 'tests - evaluate' }
@@ -1807,22 +1781,20 @@ MCPToolContractsTest >> testEvaluateStopsCodeThatKeepsMoreMemoryThanItsBound [
 MCPToolContractsTest >> testEvaluateThatNeverStartedSaysSo [
 	"Whether an evaluation behind a computing process ever gets a turn depends on how the virtual machine schedules processes of one priority, so the double leaves it unstarted, as if it never did."
 
-	| command holder result |
+	| command error holder result |
 	self timeLimit: 30 seconds.
 	holder := [ [ true ] whileTrue ] forkAt: Processor activePriority - 1 named: 'mcp-evaluate-holder-probe'.
 	[
-		command := MCPEvaluateCommandNeverStarting
-			           tool: MCPToolEvaluate new
-			           request: (MCPEvaluateRequest new initializeCode: '3 + 4' timeoutSeconds: self stopLimitSeconds)
-			           resultPreviewCharacterLimit: 100.
-		result := command execute ] ensure: [ holder terminate ].
+		command := MCPEvaluateCommandNeverStarting code: '3 + 4' timeLimit: self stopLimitSeconds previewLimit: 100.
+		result := MCPToolEvaluate new answerFor: command execute ] ensure: [ holder terminate ].
+	error := result structuredContent at: #error.
 	self assert: result isError.
 	self
-		assert: result summary
+		assert: (result structuredContent at: #summary)
 		equals: 'Evaluation did not start within ' , self stopLimitSeconds printString , ' s, its time limit; none of it ran.'.
-	self assert: ((result errorDetails at: #heldBy) anySatisfy: [ :each |
+	self assert: ((error at: #heldBy) anySatisfy: [ :each |
 			 each beginsWith: 'a process an evaluation forked, named mcp-evaluate-holder-probe, in ' ]).
-	self assert: (result errorDetails at: #timeoutSeconds) equals: self stopLimitSeconds.
+	self assert: (error at: #timeoutSeconds) equals: self stopLimitSeconds.
 	self assert: command evaluator isTerminated
 ]
 
@@ -1845,9 +1817,9 @@ MCPToolContractsTest >> testEvaluateTimeoutSecondsIsAnIntegerFromOneToSixHundred
 					 (#timeoutSeconds -> 0) } asDictionary)
 		refusesArgumentsSaying: 'timeoutSeconds must be at least 1, not 0.'.
 	self
-		assert: (tool parsedRequestFromToolRequest: (tool requestFromToolCallArguments: {
-						  (#code -> '1').
-						  (#timeoutSeconds -> 3600) } asDictionary)) timeoutSeconds
+		assert: ((tool parsedRequestFromToolRequest: (tool requestFromToolCallArguments: {
+						   (#code -> '1').
+						   (#timeoutSeconds -> 3600) } asDictionary)) integerArgumentNamed: 'timeoutSeconds')
 		equals: 600
 ]
 
@@ -2889,18 +2861,20 @@ MCPToolContractsTest >> testRunTestsRejectsEmptySelection [
 { #category : 'tests' }
 MCPToolContractsTest >> testScreenshotCommandPackagesCapturedFormAsImageContent [
 
-	| command imageJSON request result |
-	request := MCPScreenshotRequest new initializeWindow: nil.
-	command := MCPScreenshotCommand tool: MCPToolCaptureScreen new request: request morph: (Morph new
-			            extent: 2 @ 3;
-			            yourself).
-	result := command execute.
-	imageJSON := result imageContent asJRPCJSON.
-	self assert: result target equals: 'world'.
-	self assert: result width equals: 2.
-	self assert: result height equals: 3.
-	self assert: result imageContent mimeType equals: 'image/png'.
-	self assert: result imageContent data isNotEmpty.
+	| data imageContent imageJSON result |
+	result := MCPToolCaptureScreen new
+		          resultForCaptureOf: (Morph new
+				           extent: 2 @ 3;
+				           yourself)
+		          target: 'world'.
+	data := result structuredContent at: #data.
+	imageContent := result content second.
+	imageJSON := imageContent asJRPCJSON.
+	self assert: (data at: #target) equals: 'world'.
+	self assert: (data at: #width) equals: 2.
+	self assert: (data at: #height) equals: 3.
+	self assert: imageContent mimeType equals: 'image/png'.
+	self assert: imageContent data isNotEmpty.
 	self assert: (imageJSON at: #type) equals: 'image'.
 	self assert: (imageJSON at: #mimeType) equals: 'image/png'
 ]
@@ -3658,10 +3632,7 @@ MCPToolContractsTest >> testUnknownToolNameSuggestsCloseNames [
 MCPToolContractsTest >> textOfEvaluateResult: aResult [
 	"The text a call gets for an evaluation that failed."
 
-	^ MCPToolEvaluate new contentTextForStructuredContent: (Dictionary new
-			   at: #summary put: aResult summary;
-			   at: #error put: aResult errorDetails;
-			   yourself)
+	^ aResult content first text
 ]
 
 { #category : 'support' }

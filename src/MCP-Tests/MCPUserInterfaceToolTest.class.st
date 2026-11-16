@@ -17,12 +17,10 @@ MCPUserInterfaceToolTest >> morphOfExtent: anExtent [
 ]
 
 { #category : 'private' }
-MCPUserInterfaceToolTest >> readScreenCommandFor: aMorph depth: anInteger [
+MCPUserInterfaceToolTest >> readScreenDataFor: aMorph depth: anInteger [
+	"What screen_read answers about aMorph, read anInteger levels deep."
 
-	^ MCPReadScreenCommand
-		  tool: MCPToolReadScreen new
-		  request: (MCPReadScreenRequest new initializeWindow: nil depth: anInteger)
-		  morph: aMorph
+	^ (MCPToolReadScreen new resultForReadOf: aMorph target: 'world' depth: anInteger) structuredContent at: #data
 ]
 
 { #category : 'tests' }
@@ -41,46 +39,43 @@ MCPUserInterfaceToolTest >> testNamingAWindowThatIsNotOpenIsAnError [
 { #category : 'tests' }
 MCPUserInterfaceToolTest >> testScreenReadDescribesWhatAMorphHolds [
 
-	| parent result tree |
+	| data parent tree |
 	parent := self morphOfExtent: 100 @ 50.
 	parent addMorph: (self morphOfExtent: 10 @ 10).
 	parent addMorph: (self morphOfExtent: 20 @ 20).
-	result := (self readScreenCommandFor: parent depth: 2) execute.
-	tree := result tree.
+	data := self readScreenDataFor: parent depth: 2.
+	tree := data at: #tree.
 	self assert: (tree at: #class) equals: 'Morph'.
 	self assert: (tree at: #bounds) equals: '0,0 100x50'.
 	self assert: (tree at: #children) size equals: 2.
-	self assert: result nodeCount equals: 3
+	self assert: (data at: #nodes) equals: 3
 ]
 
 { #category : 'tests' }
 MCPUserInterfaceToolTest >> testScreenReadNamesAPlainWindow [
 
-	| result |
-	result := (self readScreenCommandFor: (SystemWindow labelled: 'Plain Window') depth: 0) execute.
-	self assert: (result tree at: #title) equals: 'Plain Window'
+	| data |
+	data := self readScreenDataFor: (SystemWindow labelled: 'Plain Window') depth: 0.
+	self assert: ((data at: #tree) at: #title) equals: 'Plain Window'
 ]
 
 { #category : 'tests' }
 MCPUserInterfaceToolTest >> testScreenReadStopsAtTheRequestedDepth [
 
-	| parent result |
+	| data parent |
 	parent := self morphOfExtent: 100 @ 50.
 	parent addMorph: (self morphOfExtent: 10 @ 10).
-	result := (self readScreenCommandFor: parent depth: 0) execute.
-	self deny: (result tree includesKey: #children).
-	self assert: result nodeCount equals: 1
+	data := self readScreenDataFor: parent depth: 0.
+	self deny: ((data at: #tree) includesKey: #children).
+	self assert: (data at: #nodes) equals: 1
 ]
 
 { #category : 'tests' }
 MCPUserInterfaceToolTest >> testScreenshotNamesTheWindowItCaptured [
 
 	| result |
-	result := (MCPScreenshotCommand
-		           tool: MCPToolCaptureScreen new
-		           request: (MCPScreenshotRequest new initializeWindow: 'Playground')
-		           morph: (self morphOfExtent: 40 @ 30)) execute.
-	self assert: result target equals: 'Playground'
+	result := MCPToolCaptureScreen new resultForCaptureOf: (self morphOfExtent: 40 @ 30) target: 'Playground'.
+	self assert: ((result structuredContent at: #data) at: #target) equals: 'Playground'
 ]
 
 { #category : 'tests' }

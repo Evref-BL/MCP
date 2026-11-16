@@ -37,6 +37,22 @@ MCPToolReadScreen >> annotations [
 	^ MCPStructureToolAnnotations readOnly
 ]
 
+{ #category : 'private - reading' }
+MCPToolReadScreen >> boundsTextFor: aMorph [
+
+	| bounds |
+	bounds := aMorph bounds.
+	^ String streamContents: [ :stream |
+			  stream
+				  print: bounds left asInteger;
+				  nextPut: $,;
+				  print: bounds top asInteger;
+				  space;
+				  print: bounds width asInteger;
+				  nextPut: $x;
+				  print: bounds height asInteger ]
+]
+
 { #category : 'metadata' }
 MCPToolReadScreen >> buildInputSchema [
 
@@ -53,10 +69,12 @@ MCPToolReadScreen >> buildInputSchema [
 		  yourself
 ]
 
-{ #category : 'executing' }
-MCPToolReadScreen >> commandForRequest: readRequest [
+{ #category : 'private - reading' }
+MCPToolReadScreen >> childNodesOf: aMorph depth: remaining [
 
-	^ MCPReadScreenCommand tool: self request: readRequest morph: (self targetMorphNamed: readRequest window)
+	^ (self presenterOf: aMorph)
+		  ifNil: [ aMorph submorphs collect: [ :each | self nodeFor: each depth: remaining ] as: Array ]
+		  ifNotNil: [ :presenter | { (self presenterNodeFor: presenter depth: remaining) } ]
 ]
 
 { #category : 'metadata' }
@@ -93,10 +111,13 @@ MCPToolReadScreen >> executeWithRequest: request [
 
 	^ self
 		  executeParsedRequestFrom: request
-		  do: [ :readRequest |
-				  | commandResult |
-				  commandResult := (self commandForRequest: readRequest) execute.
-				  self successResultText: (self successSummaryForResult: commandResult) data: commandResult asDictionary ]
+		  do: [ :arguments |
+				  | window |
+				  window := arguments stringArgumentNamed: 'window'.
+				  self
+					  resultForReadOf: (self targetMorphNamed: window)
+					  target: (window ifNil: [ 'world' ])
+					  depth: (arguments integerArgumentNamed: 'depth') ]
 		  onError: [ :error :ignored | self errorResultForError: error ]
 ]
 
@@ -120,21 +141,69 @@ MCPToolReadScreen >> maximumDepth [
 	^ 10
 ]
 
-{ #category : 'executing' }
-MCPToolReadScreen >> parsedRequestFromToolRequest: request [
+{ #category : 'private - reading' }
+MCPToolReadScreen >> nodeCountIn: aNode [
 
-	^ MCPReadScreenRequest fromRequest: request tool: self
+	^ 1 + ((aNode at: #children ifAbsent: [ #(  ) ]) inject: 0 into: [ :sum :each | sum + (self nodeCountIn: each) ])
 ]
 
-{ #category : 'executing' }
-MCPToolReadScreen >> successSummaryForResult: aResult [
+{ #category : 'private - reading' }
+MCPToolReadScreen >> nodeFor: aMorph depth: remaining [
+	"What a morph is and what it holds. A window showing a Spec presenter is described by its presenters, because those carry the names a reader recognises."
+
+	| node children |
+	node := Dictionary new.
+	node at: #class put: aMorph class name asString.
+	(aMorph isKindOf: SystemWindow) ifTrue: [ node at: #title put: (self titleOf: aMorph) ].
+	node at: #bounds put: (self boundsTextFor: aMorph).
+	aMorph visible ifFalse: [ node at: #visible put: false ].
+	remaining isZero ifFalse: [
+			children := self childNodesOf: aMorph depth: remaining - 1.
+			children ifNotEmpty: [ node at: #children put: children ] ].
+	^ node
+]
+
+{ #category : 'private - reading' }
+MCPToolReadScreen >> presenterNodeFor: aPresenter depth: remaining [
+
+	| node children |
+	node := Dictionary new.
+	node at: #class put: aPresenter class name asString.
+	remaining isZero ifFalse: [
+			children := aPresenter presenters collect: [ :each | self presenterNodeFor: each depth: remaining - 1 ] as: Array.
+			children ifNotEmpty: [ node at: #children put: children ] ].
+	^ node
+]
+
+{ #category : 'private - reading' }
+MCPToolReadScreen >> presenterOf: aMorph [
+	"The Spec presenter a morph shows, when it shows one. A morph showing none answers nil."
+
+	^ aMorph presenter ifNotNil: [ :windowPresenter | windowPresenter presenter ]
+]
+
+{ #category : 'private - results' }
+MCPToolReadScreen >> resultForReadOf: aMorph target: aString depth: anInteger [
+	"A morph and what it contains, as a tree of nodes walked anInteger levels deep. Any morph can be read, so a test needs no window open."
+
+	| nodeCount tree |
+	tree := self nodeFor: aMorph depth: anInteger.
+	nodeCount := self nodeCountIn: tree.
+	^ self successResultText: (self successSummaryForTarget: aString nodeCount: nodeCount) data: {
+			  (#target -> aString).
+			  (#nodes -> nodeCount).
+			  (#tree -> tree) } asDictionary
+]
+
+{ #category : 'private - results' }
+MCPToolReadScreen >> successSummaryForTarget: aString nodeCount: anInteger [
 
 	^ String streamContents: [ :stream |
 			  stream
 				  nextPutAll: 'Read ';
-				  nextPutAll: aResult target;
+				  nextPutAll: aString;
 				  nextPutAll: ', ';
-				  print: aResult nodeCount;
+				  print: anInteger;
 				  nextPutAll: ' nodes.' ]
 ]
 
