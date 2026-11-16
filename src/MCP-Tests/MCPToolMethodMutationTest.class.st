@@ -15,6 +15,17 @@ MCPToolMethodMutationTest >> aroundToolCall: aBlock [
 ]
 
 { #category : 'private' }
+MCPToolMethodMutationTest >> assertClassSideHeaderIsRefusedIn: aSource side: aSideOrNil [
+	"A header naming the class side is refused like any other, and, since the selector line that replaces it cannot name the side and the call did not, says to pass it."
+
+	^ self
+		  assertHeader: aSource lines first trimBoth
+		  isRefusedIn: aSource
+		  side: aSideOrNil
+		  closingWith: ' The header named the class side, so pass side class.'
+]
+
+{ #category : 'private' }
 MCPToolMethodMutationTest >> assertCompileForClass: aClass methodSource: aMethodSource protocol: aProtocol returnsSingleCritiqueRuleClass: aRuleClassName titledLike: aSubstring [
 
 	| critique critiques data result |
@@ -36,22 +47,34 @@ MCPToolMethodMutationTest >> assertCompileForClass: aClass methodSource: aMethod
 ]
 
 { #category : 'private' }
-MCPToolMethodMutationTest >> assertHeaderIsRefusedIn: aSource side: aSideOrNil [
+MCPToolMethodMutationTest >> assertHeader: aHeader isRefusedIn: aSource side: aSideOrNil closingWith: aSentence [
+	"aSource, which begins with the method's reference aHeader, is refused and nothing is compiled. The answer ends with aSentence."
 
 	| error result |
 	result := self compileSource: aSource into: MCPToolMethodMutationTestTarget name side: aSideOrNil.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (error at: #errorCode) equals: 'MethodSourceHeader'.
-	self assert: (error at: #header) equals: aSource lines first trimBoth.
+	self assert: (error at: #header) equals: aHeader.
 	self assert: (error at: #class) equals: MCPToolMethodMutationTestTarget name.
-	self assert: (self textFrom: result) equals: 'The source begins with ' , aSource lines first trimBoth
+	self assert: (self textFrom: result) equals: 'The source begins with ' , aHeader
 		,
-		', a method''s reference. Start it with the method''s selector line, argument names included, then its body; class and side say where it goes.'.
+		', a method''s reference. Start it with the method''s selector line, argument names included, then its body; class and side say where it goes.'
+		, aSentence.
 	#( #headerProbe #headerProbe:with: #headerProbe: #= #'>=' ) do: [ :each |
 			self deny: (MCPToolMethodMutationTestTarget includesSelector: each).
 			self deny: (MCPToolMethodMutationTestTarget classSide includesSelector: each) ].
 	^ error
+]
+
+{ #category : 'private' }
+MCPToolMethodMutationTest >> assertHeaderIsRefusedIn: aSource side: aSideOrNil [
+
+	^ self
+		  assertHeader: aSource lines first trimBoth
+		  isRefusedIn: aSource
+		  side: aSideOrNil
+		  closingWith: ''
 ]
 
 { #category : 'private' }
@@ -302,7 +325,7 @@ MCPToolMethodMutationTest >> noteOnTheSendIn: aSource compiledInto: aClassName s
 { #category : 'private' }
 MCPToolMethodMutationTest >> removeHeaderProbes [
 
-	#( #headerProbe #headerProbe: #headerProbeTwo #HeaderProbe #'>=' #> ) do: [ :each |
+	#( #headerProbe #headerProbe: #headerProbeTwo #HeaderProbe #'>=' #> #'>>' ) do: [ :each |
 			self removeSelector: each from: MCPToolMethodMutationTestTarget.
 			self removeSelector: each from: MCPToolMethodMutationTestTarget classSide ]
 ]
@@ -472,10 +495,98 @@ MCPToolMethodMutationTest >> testAHeaderWithNothingAfterItIsRefused [
 		self deny: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
 		self assert: (MCPToolMethodMutationTestTarget new perform: #headerProbe) equals: 2 ] ensure: [ self removeHeaderProbes ].
 	self
-		assertHeaderIsRefusedIn: 'MCPToolMethodMutationTestTarget class>>headerProbe: a
+		assertClassSideHeaderIsRefusedIn: 'MCPToolMethodMutationTestTarget class>>headerProbe: a
 	'
 		side: nil.
 	self assertHeaderIsRefusedIn: 'MCPToolMethodMutationTestTarget>>#headerProbe:with:' side: nil
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testAHeaderWithoutItsClassNamesTheCallsClass [
+	"class>>selector and >>selector leave out the class, which the call names: the first names the class side, and the second the side the call gives. Each is dropped where a header naming the class would be. >> is a selector too, so a source that parses as written, as >> other does, is a method named >>, not a header."
+
+	| result |
+	[
+		result := self
+			          compileSource: 'class>>headerProbe: a
+	^ a'
+			          into: MCPToolMethodMutationTestTarget name
+			          side: 'class'.
+		self deny: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
+		self assert: (self summaryFrom: result) equals: 'Created MCPToolMethodMutationTestTarget class>>headerProbe:.'.
+		self assert: (self warningsFrom: result) equals: { self droppedHeaderWarning }.
+		self assert: (MCPToolMethodMutationTestTarget perform: #headerProbe: with: 3) equals: 3.
+
+		result := self
+			          compileSource: 'class >> #headerProbe
+	^ 2'
+			          into: MCPToolMethodMutationTestTarget name
+			          side: nil.
+		self assert: (self summaryFrom: result) equals: 'Created MCPToolMethodMutationTestTarget class>>headerProbe.'.
+		self assert: (MCPToolMethodMutationTestTarget perform: #headerProbe) equals: 2.
+
+		result := self
+			          compileSource: '>>#headerProbe
+	^ 1'
+			          into: MCPToolMethodMutationTestTarget name
+			          side: nil.
+		self assert: (self summaryFrom: result) equals: 'Created MCPToolMethodMutationTestTarget>>headerProbe.'.
+		self assert: (MCPToolMethodMutationTestTarget new perform: #headerProbe) equals: 1.
+
+		result := self
+			          compileSource: '>> #headerProbeTwo
+	^ 4'
+			          into: MCPToolMethodMutationTestTarget name
+			          side: 'class'.
+		self assert: (self summaryFrom: result) equals: 'Created MCPToolMethodMutationTestTarget class>>headerProbeTwo.'.
+		self assert: (MCPToolMethodMutationTestTarget perform: #headerProbeTwo) equals: 4.
+
+		result := self
+			          compileSource: '>> other
+	^ other'
+			          into: MCPToolMethodMutationTestTarget name
+			          side: nil.
+		self deny: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
+		self assert: (self summaryFrom: result) equals: 'Created MCPToolMethodMutationTestTarget>>>>.'.
+		self assert: (self warningsFrom: result) isEmpty.
+		self assert: MCPToolMethodMutationTestTarget new >> 5 equals: 5 ] ensure: [ self removeHeaderProbes ]
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testAHeaderWithoutItsClassThatCannotBeDroppedIsRefused [
+	"A header that leaves out its class is refused where one naming the class would be. A header after the comments a source begins with is refused too: dropping it would leave them above the selector line."
+
+	self
+		assertHeaderIsRefusedIn: 'class>>headerProbe:with:
+	^ 1'
+		side: 'class'.
+	self
+		assertClassSideHeaderIsRefusedIn: 'class>>headerProbe:with:
+	^ 1'
+		side: nil.
+	self
+		assertClassSideHeaderIsRefusedIn: 'class>>headerProbe: a
+	^ a'
+		side: 'instance'.
+	self
+		assertHeaderIsRefusedIn: '>>headerProbe:with:
+	^ 1'
+		side: nil.
+	self
+		assertHeader: 'class>>headerProbe: a'
+		isRefusedIn: '"Instance creation"
+class>>headerProbe: a
+	^ a'
+		side: nil
+		closingWith: ' The header named the class side, so pass side class.'.
+	self
+		assertHeader: 'MCPToolMethodMutationTestTarget>>headerProbe'
+		isRefusedIn: '"accessing"
+
+MCPToolMethodMutationTestTarget>>headerProbe
+	^ 1'
+		side: nil
+		closingWith: ''
 ]
 
 { #category : 'tests' }
@@ -2174,11 +2285,11 @@ MCPToolMethodMutationTest >> testHeaderNamingTheTargetIsDropped [
 
 { #category : 'tests' }
 MCPToolMethodMutationTest >> testHeaderThatCannotBeDroppedIsRefused [
-	"Dropping a header that names another class or side would compile somewhere the call did not say, a selector without its argument names would leave the body's arguments undeclared, and Tonel's brackets would leave a dead block. Each is refused, and nothing is compiled."
+	"Dropping a header that names another class or side would compile somewhere the call did not say, a selector without its argument names would leave the body's arguments undeclared, and Tonel's brackets would leave a dead block. Each is refused, and nothing is compiled. A header naming the class side the call did not pass says to pass it."
 
 	self
 		assert: ((self
-				  assertHeaderIsRefusedIn: 'MCPToolMethodMutationTestTarget class>>headerProbe:with:
+				  assertClassSideHeaderIsRefusedIn: 'MCPToolMethodMutationTestTarget class>>headerProbe:with:
 	^ 1'
 				  side: nil) at: #side)
 		equals: 'class'.
@@ -2192,7 +2303,7 @@ MCPToolMethodMutationTest >> testHeaderThatCannotBeDroppedIsRefused [
 		side: nil.
 	self
 		assert: ((self
-				  assertHeaderIsRefusedIn: 'MCPToolMethodMutationTestTarget class >> #headerProbe
+				  assertClassSideHeaderIsRefusedIn: 'MCPToolMethodMutationTestTarget class >> #headerProbe
 	^ 1'
 				  side: 'instance') at: #side)
 		equals: 'instance'.
@@ -2682,6 +2793,49 @@ MCPToolMethodMutationTest >> testSourcesThatBeginWithTheirSelectorLineHaveNoHead
 				self deny: ((self warningsFrom: result) includes: self droppedHeaderWarning) ].
 		self assert: (MCPToolMethodMutationTestTarget new perform: #headerProbe) equals: #bar.
 		self assert: (MCPToolMethodMutationTestTarget new perform: #HeaderProbe) equals: 1 ] ensure: [ self removeHeaderProbes ]
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testTemporariesAfterAStatementSayWhereTheyGo [
+	"A method or block declares its temporaries before its first statement. To the compiler, a declaration after a statement is an expression that cannot begin with a bar, and its answer says nothing of where the declaration goes, so the answer says it: above the first statement, or into the declaration the method already has. A bar met anywhere else is answered as before."
+
+	| error result |
+	[
+		{
+			('headerProbe: aString
+	aString ifNil: [ ^ '''' ].
+	| stream |
+	stream := WriteStream on: String new.
+	^ stream contents' -> '| stream | follows one: move it above the method''s first statement.').
+			('headerProbe: aString
+	| size |
+	size := aString size.
+	| first last |
+	first := aString first.
+	^ size' -> '| first last | follows one: add first and last to the method''s declaration, above its first statement.').
+			('headerProbe: aString
+	^ aString collect: [ :each |
+		each yourself.
+		| upper |
+		upper := each asUppercase ]' -> '| upper | follows one: move it above the block''s first statement.') } do: [ :each |
+				result := self compileSource: each key into: MCPToolMethodMutationTestTarget name side: nil.
+				error := self errorFrom: result.
+				self assert: (result at: #isError).
+				self assert: (error at: #errorCode) equals: 'CompileSyntaxError'.
+				self
+					assert: ((error at: #message) endsWith: '. Temporaries are declared before the first statement, and ' , each value)
+					description: [ error at: #message ].
+				self deny: (MCPToolMethodMutationTestTarget includesSelector: #headerProbe:) ].
+
+		result := self
+			          compileSource: 'headerProbe
+	| first |
+	first := | last |'
+			          into: MCPToolMethodMutationTestTarget name
+			          side: nil.
+		error := self errorFrom: result.
+		self assert: (error at: #errorCode) equals: 'CompileSyntaxError'.
+		self deny: ((error at: #message) includesSubstring: 'Temporaries') ] ensure: [ self removeHeaderProbes ]
 ]
 
 { #category : 'tests' }
