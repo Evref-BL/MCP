@@ -2487,16 +2487,17 @@ MCPToolContractsTest >> testQueryScopeDescriptionsExplainScopeSemantics [
 
 { #category : 'tests' }
 MCPToolContractsTest >> testRPCAdvertisesTheAdvertisedSurfaceOnly [
-	"The public surface is capped at fifteen: the catalogue, the classes, the methods, and running code."
+	"The public surface is capped at twenty: the catalogue, the classes and their packages, the methods, running and critiquing code, and moving the image's changes to the checkout."
 
 	| discoverableToolNames expectedAdvertisedToolNames registry toolNames |
 	registry := self toolRegistry.
 	toolNames := (self mcpWithoutObservabilityExport rpcToolsList at: #tools) collect: [ :each | each at: #name ].
-	expectedAdvertisedToolNames := #( 'tool_search' 'tool_get' 'tool_call' 'class_search' 'class_get' 'class_create' 'class_remove'
-	                                  'method_search' 'method_source_search' 'method_reference_search' 'method_get' 'method_compile'
-	                                  'method_remove' 'evaluate' 'test_run' ).
+	expectedAdvertisedToolNames := #( 'tool_search' 'tool_get' 'tool_call' 'class_search' 'class_get' 'class_create' 'class_update'
+	                                  'class_remove' 'package_search' 'method_search' 'method_source_search' 'method_reference_search'
+	                                  'method_get' 'method_compile' 'method_remove' 'evaluate' 'test_run' 'critique_run'
+	                                  'repository_change_list' 'repository_export' ).
 	discoverableToolNames := registry toolNames difference: registry advertisedToolNames.
-	self assert: expectedAdvertisedToolNames size equals: 15.
+	self assert: expectedAdvertisedToolNames size equals: 20.
 	self assert: toolNames asSet equals: registry advertisedToolNames asSet.
 	self assert: registry advertisedToolNames asSet equals: expectedAdvertisedToolNames asSet.
 	discoverableToolNames do: [ :each | self deny: (toolNames includes: each) ].
@@ -2974,14 +2975,14 @@ MCPToolContractsTest >> testSearchToolsAnswerEntriesAsLines [
 
 { #category : 'tests' }
 MCPToolContractsTest >> testSearchToolsAnswerPlainTextContent [
-	"A catalog listing is read as prose, so the text block carries one line per tool instead of the canonical JSON. class_update is not advertised, which its line says."
+	"A catalog listing is read as prose, so the text block carries one line per tool instead of the canonical JSON. method_update is not advertised, which its line says."
 
 	| lines result text |
-	result := self callToolNamed: 'tool_search' withArguments: { (#query -> 'class slots') } asDictionary.
+	result := self callToolNamed: 'tool_search' withArguments: { (#query -> 'method signature') } asDictionary.
 	text := self firstTextFromToolResult: result.
 	lines := text lines.
 	self assert: lines first equals: (self summaryFrom: result).
-	self assert: (lines anySatisfy: [ :each | each beginsWith: 'class_update (not in the advertised list) - ' ]).
+	self assert: (lines anySatisfy: [ :each | each beginsWith: 'method_update (not in the advertised list) - ' ]).
 	self deny: (text includesSubstring: '"tools"')
 ]
 
@@ -3211,7 +3212,7 @@ MCPToolContractsTest >> testSingularSearchTermsUseGenericInflectionRules [
 MCPToolContractsTest >> testSpecializedClassAndMethodToolsAreDiscoverableOnly [
 
 	| discoverableOnlyNames |
-	discoverableOnlyNames := #( 'class_update' 'method_equivalent_search' 'test_coverage_run' ).
+	discoverableOnlyNames := #( 'method_equivalent_search' 'test_coverage_run' ).
 	discoverableOnlyNames do: [ :each |
 			| tool |
 			self assert: (self toolRegistry toolNames includes: each).

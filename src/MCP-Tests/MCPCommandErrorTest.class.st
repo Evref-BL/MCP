@@ -213,7 +213,7 @@ MCPCommandErrorTest >> testClassAlreadyExistsErrorCarriesClassName [
 	self
 		assert: (details at: #message)
 		equals:
-		'Class MCPCommandErrorTestExisting already exists. Change it with class_update, through tool_call when class_update is not in your list: tool_call {"name": "class_update", "arguments": {"name": "MCPCommandErrorTestExisting", ...}}. class_get shows it.'.
+		'Class MCPCommandErrorTestExisting already exists. Change it with class_update {"name": "MCPCommandErrorTestExisting", ...}. class_get shows it.'.
 	self deny: (details includesKey: #guidance)
 ]
 
