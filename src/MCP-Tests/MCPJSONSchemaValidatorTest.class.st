@@ -206,7 +206,7 @@ MCPJSONSchemaValidatorTest >> testATypeErrorOnAnObjectPutsWhatWasSentUnderAKeyTh
 
 { #category : 'tests' }
 MCPJSONSchemaValidatorTest >> testATypeErrorOnAnObjectReadsJSONWrittenAsAString [
-	"A caller that writes the object, or the list it meant, as JSON inside a string means what the string holds. The example is made of that rather than of the text, and text in brackets that is no JSON gives none: a slot named after the text would mislead."
+	"A caller that writes the object, or the list it meant, as JSON inside a string means what the string holds. The example is made of that rather than of the text, and text in brackets that is no JSON gives none: a slot named after the text would mislead. An object read so is the example only when it is right as it is, with keys the schema names: one that is not shows the caller its own mistake back, and put under a key that takes any object it would read as right."
 
 	| schema sentenceFor |
 	schema := {
@@ -225,9 +225,10 @@ MCPJSONSchemaValidatorTest >> testATypeErrorOnAnObjectReadsJSONWrittenAsAString 
 	self
 		assert: (sentenceFor value: '{"add":["color"]}')
 		equals: 'slots must be object, not string. Give it as an object with the keys add or rename, for example {"add":["color"]}.'.
-	self
-		assert: (sentenceFor value: '["title" "text"]')
-		equals: 'slots must be object, not string. Give it as an object with the keys add or rename.'
+	#( '["title" "text"]' '{"add":"color"}' '{"added":["color"]}' '{"rename":"color"}' '{}' ) do: [ :each |
+			self
+				assert: (sentenceFor value: each)
+				equals: 'slots must be object, not string. Give it as an object with the keys add or rename.' ]
 ]
 
 { #category : 'tests' }

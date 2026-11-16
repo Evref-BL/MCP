@@ -58,13 +58,17 @@ MCPJSONSchemaValidator >> addViolationAt: path keyword: aKeyword message: aMessa
 
 { #category : 'private - object validation' }
 MCPJSONSchemaValidator >> exampleObjectOf: aValue against: schema [
-	"An object of schema's shape made of aValue, which is not one, or nil when none can be made of it. JSON written as a string is read first, since the caller meant what it holds: an object read from it that matches schema is the example, and text that does not read gives none rather than one that wraps it. Otherwise the value goes under the first property by name that takes it as it is, or failing that under the first that takes it in a list, provided the object then matches schema; a property that takes the value as sent is the better guess, and which one a list goes under remains a guess. A value that names a property gives none, since the caller then sent a key where an object goes."
+	"An object of schema's shape made of aValue, which is not one, or nil when none can be made of it. JSON written as a string is read first, since the caller meant what it holds, and text that does not read gives none rather than one that wraps it. An object read so is the example only when it matches schema with keys schema names: one that does not would show the caller its own mistake back, and under a property that takes any object it would read as right. Otherwise the value goes under the first property by name that takes it as it is, or failing that under the first that takes it in a list, provided the object then matches schema; a property that takes the value as sent is the better guess, and which one a list goes under remains a guess. A value that names a property gives none, since the caller then sent a key where an object goes."
 
 	| names value |
 	(self hasKeywordNamed: #properties in: schema) ifFalse: [ ^ nil ].
 	value := self valueHeldBy: aValue ifUnreadable: [ ^ nil ].
-	(value isDictionary and: [ value isNotEmpty and: [ self schema: schema matchesValue: value ] ]) ifTrue: [ ^ value ].
 	names := (self propertyNamesIn: schema) asArray sort.
+	value isDictionary ifTrue: [
+			^ (value isNotEmpty and: [
+				   (value keys allSatisfy: [ :each | names includes: each asString ]) and: [ self schema: schema matchesValue: value ] ])
+				  ifTrue: [ value ]
+				  ifFalse: [ nil ] ].
 	(names includes: value) ifTrue: [ ^ nil ].
 	{
 		value.

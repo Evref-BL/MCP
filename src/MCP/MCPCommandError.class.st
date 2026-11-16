@@ -33,6 +33,19 @@ MCPCommandError class >> detailsNaming: aName role: aRole scope: aScopeKeyOrNil 
 ]
 
 { #category : 'private - names' }
+MCPCommandError class >> joinedNames: someStrings [
+	"A, A and B, A, B and C."
+
+	^ String streamContents: [ :stream |
+			  someStrings withIndexDo: [ :each :index |
+					  index > 1 ifTrue: [
+							  stream nextPutAll: (index = someStrings size
+									   ifTrue: [ ' and ' ]
+									   ifFalse: [ ', ' ]) ].
+					  stream nextPutAll: each ] ]
+]
+
+{ #category : 'private - names' }
 MCPCommandError class >> kindOfRole: aRole [
 	"What a global variable given in aRole should have been, as in: not a class."
 
@@ -166,6 +179,35 @@ MCPCommandError class >> signalClassAlreadyExistsNamed: aClassName askedForATrai
 						   asked.
 						   existing })
 		  details: { (#class -> aClassName) } asDictionary
+]
+
+{ #category : 'signaling' }
+MCPCommandError class >> signalClassAlreadyExistsNamed: aClassName superclass: aSuperclassName definedSlots: someAssociations [
+	"class_create's refusal of a class that exists, when the call names a superclass that already has slots the class or its subclasses define. A class cannot define a slot one of its superclasses has, so class_update refuses to move the class there, and no call to it is written: the refusal says which class defines which of those slots. someAssociations map each class that defines some, the class first and then its subclasses, to their names."
+
+	| slotNames |
+	slotNames := someAssociations inject: #(  ) into: [ :names :each | names , each value asArray ].
+	^ self
+		  signalErrorCode: #ClassAlreadyExists
+		  message: (String streamContents: [ :stream |
+					   stream << 'Class ' << aClassName << ' already exists.'.
+					   someAssociations do: [ :each |
+							   stream << ' ' << each key.
+							   each key = aClassName ifFalse: [ stream << ', a subclass of ' << aClassName << ',' ].
+							   stream << ' defines the ' << (each value size = 1
+								    ifTrue: [ 'slot ' ]
+								    ifFalse: [ 'slots ' ]) << (self joinedNames: each value) << ', which ' << aSuperclassName << ' already has.' ].
+					   stream << ' A class cannot define a slot one of its superclasses has, so class_update cannot move ' << aClassName
+					   << ' under ' << aSuperclassName << ' until ' << (self joinedNames: (someAssociations collect: [ :each | each key ]))
+					   << (someAssociations size = 1
+							    ifTrue: [ ' no longer defines ' ]
+							    ifFalse: [ ' no longer define ' ]) << (slotNames size = 1
+						    ifTrue: [ slotNames first ]
+						    ifFalse: [ 'those slots' ]) << '. class_get shows the slots a class defines.' ])
+		  details: {
+				  (#class -> aClassName).
+				  (#superclass -> aSuperclassName).
+				  (#slots -> slotNames) } asDictionary
 ]
 
 { #category : 'signaling' }
