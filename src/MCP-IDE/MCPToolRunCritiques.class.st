@@ -22,8 +22,8 @@ MCPToolRunCritiques class >> toolName [
 ]
 
 { #category : 'private - entries' }
-MCPToolRunCritiques >> addIntervalFromAnchor: sourceAnchor of: target toHitData: data [
-	"A hit in a method also says the line of the method as stored where it starts, and the code there, as a compile's critiques do; the interval stays for a tool that reads offsets."
+MCPToolRunCritiques >> addIntervalFromAnchor: sourceAnchor of: target flaggedBy: aRuleClassName toHitData: data [
+	"A hit in a method also says the line of the method as stored where it is and the code there, as a compile's critiques do; the interval stays for a tool that reads offsets."
 
 	| interval |
 	(sourceAnchor class canUnderstand: #interval) ifFalse: [ ^ self ].
@@ -31,8 +31,11 @@ MCPToolRunCritiques >> addIntervalFromAnchor: sourceAnchor of: target toHitData:
 	interval ifNil: [ ^ self ].
 	data at: #interval put: (String streamContents: [ :stream | stream << interval first asString << '-' << interval last asString ]).
 	(target isNotNil and: [ target isCompiledMethod ]) ifFalse: [ ^ self ].
-	data at: #line put: (self lineNumberAt: interval first in: target sourceCode).
-	(self codeQuoteFor: interval in: target sourceCode) ifNotEmpty: [ :code | data at: #code put: code ]
+	self
+		addLineAndCodeAt: interval
+		flaggedBy: aRuleClassName
+		in: target sourceCode
+		to: data
 ]
 
 { #category : 'private - entries' }
@@ -144,7 +147,7 @@ MCPToolRunCritiques >> critiqueEntryFor: critique rule: rule fallbackEntity: fal
 	entry at: #title put: rule name asString.
 	rule severity ifNotNil: [ :severity | entry at: #severity put: severity asString ].
 	(MCPMethodRewriteNamedRuleSpec canApplyRuleClass: rule class) ifTrue: [ entry at: #fixable put: true ].
-	entry at: #hit put: (self hitDataForCritique: critique fallbackEntity: fallbackEntity).
+	entry at: #hit put: (self hitDataForCritique: critique rule: rule fallbackEntity: fallbackEntity).
 	^ entry
 ]
 
@@ -223,7 +226,7 @@ MCPToolRunCritiques >> hasCollectedEnoughEntries: entries maximum: maximum [
 ]
 
 { #category : 'private - entries' }
-MCPToolRunCritiques >> hitDataForCritique: critique fallbackEntity: fallbackEntity [
+MCPToolRunCritiques >> hitDataForCritique: critique rule: rule fallbackEntity: fallbackEntity [
 
 	| anchor data target |
 	data := Dictionary new.
@@ -232,7 +235,12 @@ MCPToolRunCritiques >> hitDataForCritique: critique fallbackEntity: fallbackEnti
 		          ifNil: [ fallbackEntity ]
 		          ifNotNil: [ :sourceAnchor | self targetEntityFromAnchor: sourceAnchor fallbackEntity: fallbackEntity ].
 	self addTarget: target toHitData: data.
-	anchor ifNotNil: [ self addIntervalFromAnchor: anchor of: target toHitData: data ].
+	anchor ifNotNil: [
+			self
+				addIntervalFromAnchor: anchor
+				of: target
+				flaggedBy: rule class name
+				toHitData: data ].
 	^ data
 ]
 
