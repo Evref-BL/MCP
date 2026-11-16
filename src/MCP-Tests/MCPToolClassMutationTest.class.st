@@ -42,7 +42,7 @@ MCPToolClassMutationTest >> callUpdateWrittenIn: aMessage [
 
 	^ self callRawToolNamed: 'tool_call' withArguments: (STONJSON fromString: (aMessage
 				    copyFrom: (aMessage indexOfSubCollection: 'tool_call {') + 'tool_call ' size
-				    to: aMessage size - '. class_get shows it.' size))
+				    to: (aMessage indexOfSubCollection: '. class_get shows it.') - 1))
 ]
 
 { #category : 'private - calling' }
@@ -450,6 +450,77 @@ MCPToolClassMutationTest >> testCreateNamesATraitATrait [
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: createdTrait isTrait.
 	self assert: (text includesSubstring: 'Created trait TMCPToolClassMutationTestTrait.')
+]
+
+{ #category : 'tests - create' }
+MCPToolClassMutationTest >> testCreateRefusalNamesTheSlotsTheClassDefinesThatTheCallLeavesOut [
+	"class_create gives a class whole, so an agent that gives it again without a slot it defines may mean that slot to go, as when it renames colour to color. class_update keeps a slot it is not told to remove, so the refusal names each slot the class defines that the call leaves out, whether it writes a move, an add or no call at all. Made, the written move keeps the slot, as the refusal says."
+
+	| refusal target |
+	self
+		createClassNamed: self reparentSuperclassName
+		superclassName: 'Object'
+		slots: #( #color )
+		classSlots: #(  ).
+	self
+		createClassNamed: self reparentTargetClassName
+		superclassName: 'Object'
+		slots: #( #radius #colour )
+		classSlots: #(  ).
+	refusal := [ :superclassName |
+		           (self errorFrom: (self callToolWith: (self createRequestArgumentsWith: {
+						              (#name -> self reparentTargetClassName).
+						              (#superclass -> superclassName).
+						              (#package -> self generatedPackageName).
+						              (#slots -> #( 'radius' 'color' )) }))) at: #message ].
+	self
+		assert: (refusal value: 'Object')
+		equals:
+		'Class MCPToolClassMutationTestReparentTarget already exists. Change it with class_update, through tool_call when class_update is not in your list: tool_call {"name":"class_update","arguments":{"name":"MCPToolClassMutationTestReparentTarget","slots":{"add":["color"]}}}. class_get shows it. MCPToolClassMutationTestReparentTarget also defines the slot colour, which this call does not list. class_update keeps it unless its slots argument removes or renames it.'.
+	self
+		assert: (refusal value: self reparentSuperclassName)
+		equals:
+		'Class MCPToolClassMutationTestReparentTarget already exists. Change it with class_update, through tool_call when class_update is not in your list: tool_call {"name":"class_update","arguments":{"name":"MCPToolClassMutationTestReparentTarget","superclass":"MCPToolClassMutationTestReparentSuperclass"}}. class_get shows it. MCPToolClassMutationTestReparentTarget also defines the slot colour, which this call does not list. class_update keeps it unless its slots argument removes or renames it.'.
+	self deny: ((self callUpdateWrittenIn: (refusal value: self reparentSuperclassName)) at: #isError ifAbsent: [ false ]).
+	target := self classNamed: self reparentTargetClassName.
+	self assert: target superclass name equals: self reparentSuperclassName asSymbol.
+	self assert: (target instVarNames collect: [ :each | each asString ] as: Array) equals: #( 'radius' 'colour' ).
+	self
+		assert: (refusal value: self reparentSuperclassName)
+		equals:
+		'Class MCPToolClassMutationTestReparentTarget already exists and already has everything this call asks for. class_get shows it. MCPToolClassMutationTestReparentTarget also defines the slot colour, which this call does not list. class_update keeps it unless its slots argument removes or renames it.'
+]
+
+{ #category : 'tests - create' }
+MCPToolClassMutationTest >> testCreateRefusalNamesWhatTheClassHasThatTheListsTheCallGivesLeaveOut [
+	"Each list class_create takes gives the class whole, and class_update keeps what it is not told to drop: a slot its patch does not remove, a trait, shared variable or shared pool the list it is given holds. So the refusal names, for each list the call gives, what the class has that the list leaves out. A list the call does not give leaves nothing out."
+
+	| message |
+	self callToolWith: (self
+			 createRequestArgumentsForClassName: 'TMCPToolClassMutationTestTrait'
+			 superclassName: 'Trait'
+			 packageName: self generatedPackageName).
+	self callToolWith: (self createRequestArgumentsWith: {
+				 (#name -> 'MCPToolClassMutationTestGenerated').
+				 (#superclass -> 'Object').
+				 (#package -> self generatedPackageName).
+				 (#slots -> #( 'a' 'b' 'c' )).
+				 (#classSlots -> #( 'made' 'kept' )).
+				 (#traits -> #( 'TMCPToolClassMutationTestTrait' )).
+				 (#sharedVariables -> #( 'Registry' 'Kept' )).
+				 (#sharedPools -> #( 'ChronologyConstants' )) }).
+	message := (self errorFrom: (self callToolWith: (self createRequestArgumentsWith: {
+					              (#name -> 'MCPToolClassMutationTestGenerated').
+					              (#superclass -> 'Object').
+					              (#package -> self generatedPackageName).
+					              (#slots -> #( 'a' )).
+					              (#classSlots -> #( 'made' )).
+					              (#traits -> #(  )).
+					              (#sharedVariables -> #( 'Registry' )) }))) at: #message.
+	self
+		assert: message
+		equals:
+		'Class MCPToolClassMutationTestGenerated already exists and already has everything this call asks for. class_get shows it. MCPToolClassMutationTestGenerated also defines the slots b and c, which this call does not list. class_update keeps them unless its slots argument removes or renames them. MCPToolClassMutationTestGenerated also defines the class-side slot kept, which this call does not list. class_update keeps it unless its classSlots argument removes or renames it. MCPToolClassMutationTestGenerated also uses the trait TMCPToolClassMutationTestTrait, which this call does not list. class_update keeps it unless its traits argument leaves it out. MCPToolClassMutationTestGenerated also defines the shared variable Kept, which this call does not list. class_update keeps it unless its sharedVariables argument leaves it out.'
 ]
 
 { #category : 'tests - create' }

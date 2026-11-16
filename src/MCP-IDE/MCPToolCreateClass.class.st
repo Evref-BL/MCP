@@ -276,7 +276,7 @@ MCPToolCreateClass >> newSuperclassNameOf: aClass in: request [
 
 { #category : 'private - errors' }
 MCPToolCreateClass >> refuseExisting: aClass from: request [
-	"class_create's refusal of a class that exists. class_update makes no class a trait and no trait a class, so a call that names a superclass asking for the other kind, Trait where a class exists or a class where a trait does, is told which kind exists; one that names none asks for neither. A call that names a superclass with a slot the class or one of its subclasses defines is told so, since class_update would refuse that move. Otherwise the refusal writes the class_update call that gives the class what the call asks for and it lacks."
+	"class_create's refusal of a class that exists. class_update makes no class a trait and no trait a class, so a call that names a superclass asking for the other kind, Trait where a class exists or a class where a trait does, is told which kind exists; one that names none asks for neither. A call that names a superclass with a slot the class or one of its subclasses defines is told so, since class_update would refuse that move. Otherwise the refusal writes the class_update call that gives the class what the call asks for and it lacks, and names what the class has that a list the call gives leaves out, which that call keeps."
 
 	| superclassName |
 	superclassName := request stringArgumentNamed: 'superclass'.
@@ -289,6 +289,7 @@ MCPToolCreateClass >> refuseExisting: aClass from: request [
 	^ MCPCommandError
 		  signalClassAlreadyExistsNamed: aClass name asString
 		  update: (self classUpdateArgumentsFor: aClass from: request)
+		  unlisted: (self unlistedNamesOf: aClass in: request)
 ]
 
 { #category : 'private - errors' }
@@ -355,4 +356,24 @@ MCPToolCreateClass >> superclassNameIn: request [
 	"Object when the caller omits it, because that is what a new class subclasses unless it says otherwise. Defaulting here rather than in MCPCreateClassCommand keeps the error details and the failure messages naming the superclass the class actually gets."
 
 	^ request stringArgumentNamed: 'superclass' default: 'Object'
+]
+
+{ #category : 'private - errors' }
+MCPToolCreateClass >> unlistedNamesOf: aClass in: request [
+	"What aClass has that a list the call gives leaves out: for each such list, in the order class_create takes them, its argument name and those names. A list the call does not give leaves nothing out. class_create gives a class whole, so the caller may mean those to go, while class_update keeps them unless told otherwise."
+
+	| unlisted |
+	unlisted := OrderedCollection new.
+	{
+		('slots' -> aClass instVarNames).
+		('classSlots' -> aClass classSide instVarNames).
+		('traits' -> (aClass traits collect: [ :each | each name ])).
+		('sharedVariables' -> aClass classVarNames).
+		('sharedPools' -> (aClass sharedPools collect: [ :each | each name ])) } do: [ :each |
+			(request hasArgumentNamed: each key) ifTrue: [
+					| listed |
+					listed := (request uniqueStringCollectionArgumentNamed: each key) asSet.
+					((each value collect: [ :name | name asString ] as: Array) reject: [ :name | listed includes: name ]) ifNotEmpty: [ :names |
+						unlisted add: each key -> names ] ] ].
+	^ unlisted asArray
 ]

@@ -211,25 +211,29 @@ MCPCommandError class >> signalClassAlreadyExistsNamed: aClassName superclass: a
 ]
 
 { #category : 'signaling' }
-MCPCommandError class >> signalClassAlreadyExistsNamed: aClassName update: classUpdateArguments [
-	"class_create's refusal of a class that exists, knowing what the call asked for. classUpdateArguments are those of the class_update call that gives the class what it lacks of that, its name first; the message writes that call, or says the class lacks nothing when they hold only its name. A client reading text sees nothing of the details, and one that calls only what it lists reaches class_update through tool_call alone. The call is written as a client reads text, its line endings line feeds: written as JSON, a carriage return would show as an escape the answer's own conversion leaves alone."
+MCPCommandError class >> signalClassAlreadyExistsNamed: aClassName update: classUpdateArguments unlisted: someAssociations [
+	"class_create's refusal of a class that exists, knowing what the call asked for. classUpdateArguments are those of the class_update call that gives the class what it lacks of that, its name first; the message writes that call, or says the class lacks nothing when they hold only its name. A client reading text sees nothing of the details, and one that calls only what it lists reaches class_update through tool_call alone. The call is written as a client reads text, its line endings line feeds: written as JSON, a carriage return would show as an escape the answer's own conversion leaves alone. someAssociations map each list the call gives that leaves out something the class has to those names. class_create gives a class whole, so the caller may mean them to go, while class_update keeps them unless told otherwise: the message names them last, after the call that keeps them."
 
-	classUpdateArguments size = 1 ifTrue: [
-			^ self
-				  signalErrorCode: #ClassAlreadyExists
-				  message:
-				  ('Class {1} already exists and already has everything this call asks for. class_get shows it.' format: { aClassName })
-				  details: { (#class -> aClassName) } asDictionary ].
+	| details |
+	details := Dictionary new.
+	details at: #class put: aClassName.
+	someAssociations ifNotEmpty: [ details at: #unlisted put: someAssociations asDictionary ].
 	^ self
 		  signalErrorCode: #ClassAlreadyExists
 		  message: (String streamContents: [ :stream |
-					   stream << 'Class ' << aClassName
-					   << ' already exists. Change it with class_update, through tool_call when class_update is not in your list: tool_call '
-					   << (STONJSON toString: (MCPLineEndings leaving: (OrderedDictionary new
-									      at: 'name' put: 'class_update';
-									      at: 'arguments' put: classUpdateArguments;
-									      yourself))) << '. class_get shows it.' ])
-		  details: { (#class -> aClassName) } asDictionary
+					   classUpdateArguments size = 1
+						   ifTrue: [
+						   stream << 'Class ' << aClassName << ' already exists and already has everything this call asks for. class_get shows it.' ]
+						   ifFalse: [
+								   stream << 'Class ' << aClassName
+								   << ' already exists. Change it with class_update, through tool_call when class_update is not in your list: tool_call '
+								   << (STONJSON toString: (MCPLineEndings leaving: (OrderedDictionary new
+												      at: 'name' put: 'class_update';
+												      at: 'arguments' put: classUpdateArguments;
+												      yourself))) << '. class_get shows it.' ].
+					   someAssociations do: [ :each |
+						   stream << ' ' << (self unlistedSentenceFor: aClassName names: each value argument: each key) ] ])
+		  details: details
 ]
 
 { #category : 'signaling - names' }
@@ -536,6 +540,32 @@ MCPCommandError class >> textForNotAClass: aName role: aRole scope: aScopeKeyOrN
 		  skipped: isSkipped
 		  suggestions: #(  )
 		  closing: nil
+]
+
+{ #category : 'private - names' }
+MCPCommandError class >> unlistedSentenceFor: aClassName names: someNames argument: anArgumentName [
+	"Say that the class has someNames, which the list the call gives as anArgumentName leaves out, and that class_update keeps them unless told otherwise: it patches slots, and replaces each other list with the one it is given."
+
+	| pronoun words |
+	words := {
+		         ('slots' -> #( 'defines' 'slot' 'removes or renames {1}' )).
+		         ('classSlots' -> #( 'defines' 'class-side slot' 'removes or renames {1}' )).
+		         ('traits' -> #( 'uses' 'trait' 'leaves {1} out' )).
+		         ('sharedVariables' -> #( 'defines' 'shared variable' 'leaves {1} out' )).
+		         ('sharedPools' -> #( 'uses' 'shared pool' 'leaves {1} out' )) } asDictionary at: anArgumentName.
+	pronoun := someNames size = 1
+		           ifTrue: [ 'it' ]
+		           ifFalse: [ 'them' ].
+	^ '{1} also {2} the {3} {4}, which this call does not list. class_update keeps {5} unless its {6} argument {7}.' format: {
+			  aClassName.
+			  words first.
+			  (someNames size = 1
+				   ifTrue: [ words second ]
+				   ifFalse: [ words second , 's' ]).
+			  (self joinedNames: someNames).
+			  pronoun.
+			  anArgumentName.
+			  (words third format: { pronoun }) }
 ]
 
 { #category : 'private - names' }
