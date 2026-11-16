@@ -651,6 +651,24 @@ MCPToolMethodMutationTest >> testAddArgumentsUpdatesSendersAndReportsAction [
 ]
 
 { #category : 'tests' }
+MCPToolMethodMutationTest >> testAnUnterminatedLeadingCommentIsASyntaxError [
+	"A header is looked for past the comments a source begins with. A comment that is never closed holds the rest of the source, so there is no header to find, and the compiler's answer is the one given."
+
+	| error result |
+	[
+		result := self
+			          compileSource: '"Instance creation
+headerProbe
+	^ 1'
+			          into: MCPToolMethodMutationTestTarget name
+			          side: nil.
+		error := self errorFrom: result.
+		self assert: (result at: #isError).
+		self assert: (error at: #errorCode) equals: 'CompileSyntaxError'.
+		self deny: (MCPToolMethodMutationTestTarget includesSelector: #headerProbe) ] ensure: [ self removeHeaderProbes ]
+]
+
+{ #category : 'tests' }
 MCPToolMethodMutationTest >> testBatchCompileWarnsOnlyTheMethodsWithoutProtocol [
 	"A replaced method keeps its protocol, so a warning only some methods of a batch carry stays with them."
 
@@ -2797,7 +2815,7 @@ MCPToolMethodMutationTest >> testSourcesThatBeginWithTheirSelectorLineHaveNoHead
 
 { #category : 'tests' }
 MCPToolMethodMutationTest >> testTemporariesAfterAStatementSayWhereTheyGo [
-	"A method or block declares its temporaries before its first statement. To the compiler, a declaration after a statement is an expression that cannot begin with a bar, and its answer says nothing of where the declaration goes, so the answer says it: above the first statement, or into the declaration the method already has. A bar met anywhere else is answered as before."
+	"A method or block declares its temporaries before its first statement. To the compiler, a declaration after a statement is an expression that cannot begin with a bar, and its answer says nothing of where the declaration goes, so the answer says it: above the first statement of the method or block it is in, or into the declaration that one already has. A bar met anywhere else, as in a brace array, is answered as before."
 
 	| error result |
 	[
@@ -2806,36 +2824,45 @@ MCPToolMethodMutationTest >> testTemporariesAfterAStatementSayWhereTheyGo [
 	aString ifNil: [ ^ '''' ].
 	| stream |
 	stream := WriteStream on: String new.
-	^ stream contents' -> '| stream | follows one: move it above the method''s first statement.').
+	^ stream contents' -> '| stream | comes after a statement: move it above the method''s first statement.').
 			('headerProbe: aString
 	| size |
 	size := aString size.
 	| first last |
 	first := aString first.
-	^ size' -> '| first last | follows one: add first and last to the method''s declaration, above its first statement.').
+	^ size' -> '| first last | comes after a statement: add first and last to the method''s declaration, above its first statement.').
 			('headerProbe: aString
 	^ aString collect: [ :each |
 		each yourself.
 		| upper |
-		upper := each asUppercase ]' -> '| upper | follows one: move it above the block''s first statement.') } do: [ :each |
+		upper := each asUppercase ]' -> '| upper | comes after a statement: move it above the block''s first statement.').
+			('headerProbe: aString
+	| size |
+	size := aString size.
+	^ aString collect: [ :each |
+		| lower |
+		lower := each asLowercase.
+		| upper |
+		upper := each asUppercase ]'
+			 -> '| upper | comes after a statement: add upper to the block''s declaration, above its first statement.') } do: [ :each |
 				result := self compileSource: each key into: MCPToolMethodMutationTestTarget name side: nil.
 				error := self errorFrom: result.
 				self assert: (result at: #isError).
 				self assert: (error at: #errorCode) equals: 'CompileSyntaxError'.
 				self
-					assert: ((error at: #message) endsWith: '. Temporaries are declared before the first statement, and ' , each value)
+					assert: ((error at: #message) endsWith: '. Temporaries are declared before the first statement, but ' , each value)
 					description: [ error at: #message ].
 				self deny: (MCPToolMethodMutationTestTarget includesSelector: #headerProbe:) ].
 
-		result := self
-			          compileSource: 'headerProbe
+		{ 'headerProbe
 	| first |
-	first := | last |'
-			          into: MCPToolMethodMutationTestTarget name
-			          side: nil.
-		error := self errorFrom: result.
-		self assert: (error at: #errorCode) equals: 'CompileSyntaxError'.
-		self deny: ((error at: #message) includesSubstring: 'Temporaries') ] ensure: [ self removeHeaderProbes ]
+	first := | last |'. 'headerProbe
+	^ { 1. | last | }' } do: [ :each |
+				result := self compileSource: each into: MCPToolMethodMutationTestTarget name side: nil.
+				error := self errorFrom: result.
+				self assert: (error at: #errorCode) equals: 'CompileSyntaxError'.
+				self deny: ((error at: #message) includesSubstring: 'Temporaries') description: [ error at: #message ] ] ] ensure: [
+		self removeHeaderProbes ]
 ]
 
 { #category : 'tests' }
