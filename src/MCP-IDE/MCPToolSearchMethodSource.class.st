@@ -16,13 +16,13 @@ MCPToolSearchMethodSource class >> toolName [
 ]
 
 { #category : 'private - methods' }
-MCPToolSearchMethodSource >> addMatchContextTo: entry sourceText: sourceText matcher: matcher [
-	"A hit on source text is read by seeing the line that matched, not by fetching the whole method. A match over several lines is read at the line it starts on."
+MCPToolSearchMethodSource >> addMatchContextTo: entry sourceText: sourceText matchStartFinder: aFinder [
+	"A hit on source text is read by seeing the line that matched, not by fetching the whole method."
 
 	| lines index |
 	sourceText ifNil: [ ^ self ].
 	lines := sourceText lines.
-	index := self lineNumberOfMatchIn: lines matcher: matcher.
+	index := self lineNumberOfMatchIn: sourceText lines: lines finder: aFinder.
 	index isZero ifTrue: [ ^ self ].
 	entry at: #lineNumber put: index.
 	entry at: #line put: (lines at: index) trimBoth
@@ -36,7 +36,7 @@ MCPToolSearchMethodSource >> buildInputSchema [
 		              (self filterSchemaPropertyWithDescription: 'Text to find in method source. Case matters.').
 		              (self
 			               filterModeSchemaPropertyWithDescription:
-			               'Match filter as a substring or as a regular expression. In a substring, blanks match any blanks, line breaks included.'
+			               'Match filter as a substring or as a regular expression. In substring mode, blanks match any blanks, line breaks included.'
 			               values: self supportedFilterModes).
 		              self offsetInputProperty }.
 	^ MCPStructureInputSchema new
@@ -87,14 +87,26 @@ MCPToolSearchMethodSource >> filterTextsForMethodEntry: anEntry sourceText: sour
 ]
 
 { #category : 'private - methods' }
-MCPToolSearchMethodSource >> lineNumberOfMatchIn: lines matcher: matcher [
-	"The line a match starts on: the first line that matches alone. A match that no line holds alone runs over several lines, as a filter with blanks can: it ends on the first line the text matches up to, and starts on the last line, back from there, from which the text still matches. 0 when the lines hold no match."
+MCPToolSearchMethodSource >> lineNumberOfMatchIn: sourceText lines: lines finder: aFinder [
+	"The line a hit is read at: the first line that holds a match by itself. A match that no line holds by itself runs over several lines and is read at the line it starts on: where it starts in the whole text, after as many line breaks as come before it, so the cost grows with the text's length and no faster. A regex match can start with a blank or a line break, on a line that shows none of it, so such a hit names no line. 0 when no line is named."
 
-	| index end |
-	index := lines findFirst: [ :each | matcher value: each ].
+	| index start |
+	index := lines findFirst: [ :each | (aFinder value: each) > 0 ].
 	index isZero ifFalse: [ ^ index ].
-	end := (1 to: lines size) detect: [ :each | matcher value: (String cr join: (lines first: each)) ] ifNone: [ ^ 0 ].
-	^ (end to: 1 by: -1) detect: [ :each | matcher value: (String cr join: (lines copyFrom: each to: end)) ]
+	start := aFinder value: sourceText.
+	((start between: 1 and: sourceText size) and: [ (sourceText at: start) isSeparator not ]) ifFalse: [ ^ 0 ].
+	^ self lineNumberAt: start in: sourceText
+]
+
+{ #category : 'private - filtering' }
+MCPToolSearchMethodSource >> matchStartFinderForPattern: aPattern mode: aMode [
+	"Where the filter's first match starts in a text, 0 when the text holds none, the filter read as matcherForPattern:mode:caseSensitive: reads it: as a regex, as pieces joined by any run of blanks, or as a plain substring."
+
+	| pieces |
+	aMode = 'regex' ifTrue: [ ^ self regexMatchStartFinderForPattern: aPattern caseSensitive: true ].
+	pieces := aPattern substrings.
+	pieces size > 1 ifTrue: [ ^ self matchStartFinderForPiecesAcrossBlanks: pieces caseSensitive: true ].
+	^ [ :candidate | candidate indexOfSubCollection: aPattern ]
 ]
 
 { #category : 'private - filtering' }

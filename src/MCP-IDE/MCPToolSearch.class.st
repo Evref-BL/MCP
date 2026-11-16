@@ -265,6 +265,21 @@ MCPToolSearch >> literalRegexSourceFor: aString [
 					  stream nextPut: each ] ]
 ]
 
+{ #category : 'private - filtering' }
+MCPToolSearch >> matchStartFinderForPiecesAcrossBlanks: pieces caseSensitive: aBoolean [
+	"A block answering where pieces first stand in a text in this order, each separated from the next by a run of blanks, line breaks included, as the index of the first piece's first character, or 0 when they do not: the pieces, each escaped, joined by \s+. The longest piece is looked for first, as a plain substring, so the regex runs only on the texts that hold it and a search over the whole image stays fast."
+
+	| longest regexFinder |
+	longest := self normalizeFilterString: (pieces detectMax: [ :each | each size ]) caseSensitive: aBoolean.
+	regexFinder := self
+		               regexMatchStartFinderForPattern: ('\s+' join: (pieces collect: [ :each | self literalRegexSourceFor: each ]))
+		               caseSensitive: aBoolean.
+	^ [ :candidate |
+		  ((self normalizeFilterString: candidate caseSensitive: aBoolean) includesSubstring: longest)
+			  ifTrue: [ regexFinder value: candidate ]
+			  ifFalse: [ 0 ] ]
+]
+
 { #category : 'private - results' }
 MCPToolSearch >> matchTextAfterCount: aCount filtering: aBoolean [
 
@@ -291,16 +306,11 @@ MCPToolSearch >> matcherForPattern: aPattern mode: aMode caseSensitive: aBoolean
 
 { #category : 'private - filtering' }
 MCPToolSearch >> matcherForPiecesAcrossBlanks: pieces caseSensitive: aBoolean [
-	"Whether a text holds pieces in this order, each separated from the next by a run of blanks, line breaks included: the pieces, each escaped, joined by \s+. The longest piece is looked for first, as a plain substring, so the regex runs only on the texts that hold it and a search over the whole image stays fast."
+	"Whether a text holds pieces in this order, each separated from the next by a run of blanks, line breaks included."
 
-	| longest regexMatcher |
-	longest := self normalizeFilterString: (pieces detectMax: [ :each | each size ]) caseSensitive: aBoolean.
-	regexMatcher := self
-		                regexMatcherForPattern: ('\s+' join: (pieces collect: [ :each | self literalRegexSourceFor: each ]))
-		                caseSensitive: aBoolean.
-	^ [ :candidate |
-	  ((self normalizeFilterString: candidate caseSensitive: aBoolean) includesSubstring: longest) and: [
-		  regexMatcher value: candidate ] ]
+	| finder |
+	finder := self matchStartFinderForPiecesAcrossBlanks: pieces caseSensitive: aBoolean.
+	^ [ :candidate | (finder value: candidate) > 0 ]
 ]
 
 { #category : 'private - results' }
@@ -399,6 +409,26 @@ MCPToolSearch >> readingNoteForPage: page [
 	"A sentence on how to read the rows of page, or nil when they need none."
 
 	^ nil
+]
+
+{ #category : 'private - filtering' }
+MCPToolSearch >> regexMatchStartFinderForPattern: aPattern caseSensitive: aBoolean [
+	"A block answering where the first match of aPattern starts in a text, as the index of its first character, or 0 when the text holds none. It runs the engine regexMatcherForPattern:caseSensitive: runs; after a search, either engine answers the 0-based position the match starts at."
+
+	| regex |
+	regex := self pcre2RegexLibraryAvailable
+		         ifTrue: [
+				         aBoolean
+					         ifTrue: [ aPattern asPerlCompatibleRegex ]
+					         ifFalse: [ aPattern asPerlCompatibleRegexIgnoringCase ] ]
+		         ifFalse: [
+				         aBoolean
+					         ifTrue: [ aPattern asRegex ]
+					         ifFalse: [ aPattern asRegexIgnoringCase ] ].
+	^ [ :candidate |
+		  (regex search: (self regexSubjectFrom: candidate))
+			  ifTrue: [ (regex subBeginning: 1) first + 1 ]
+			  ifFalse: [ 0 ] ]
 ]
 
 { #category : 'private - filtering' }

@@ -641,6 +641,32 @@ MCPToolMethodSearchTest >> testImplementorsLeaveOutWhatTraitedClassInstalls [
 ]
 
 { #category : 'tests' }
+MCPToolMethodSearchTest >> testMatchOverLinesIsReadWhereItStartsInEitherEngine [
+	"The line a match over several lines starts on is counted in characters, the way lines splits the text: a CR, an LF or a CR and LF each end one, and a character outside ASCII counts once, whichever engine finds the match."
+
+	| source tool |
+	source := String streamContents: [ :stream |
+			          stream
+				          nextPutAll: (String new: 10 withAll: $é);
+				          cr;
+				          nextPutAll: 'b';
+				          lf;
+				          nextPutAll: 'c';
+				          crlf;
+				          nextPutAll: 'x isNil';
+				          cr;
+				          tab;
+				          nextPutAll: 'ifTrue: [ ^ x ]' ].
+	tool := MCPToolSearchMethodSource new.
+	{
+		MCPToolSearchWithoutPCRE2TestStub new.
+		tool } do: [ :engine |
+			| finder |
+			finder := engine matchStartFinderForPiecesAcrossBlanks: #( 'isNil' 'ifTrue:' ) caseSensitive: true.
+			self assert: (tool lineNumberOfMatchIn: source lines: source lines finder: finder) equals: 4 ]
+]
+
+{ #category : 'tests' }
 MCPToolMethodSearchTest >> testMatcherAcrossBlanksMatchesEachPieceAsWrittenInEitherEngine [
 	"Each piece is escaped in the regex that joins them, so a colon, a bracket, a caret or a period matches itself, whether PCRE2 or Pharo's own engine runs it, and pieces need blanks between them."
 
@@ -776,6 +802,25 @@ MCPToolMethodSearchTest >> testRegexMatcherUsesPCRE2WhenLibraryAvailable [
 	matcher := tool regexMatcherForPattern: '(?<=a)b' caseSensitive: true.
 	self assert: (matcher value: 'ab').
 	self deny: (matcher value: 'cb')
+]
+
+{ #category : 'tests' }
+MCPToolMethodSearchTest >> testRegexSourceSearchReadsAMatchOverLinesWhereItStarts [
+	"A regex hit that no line holds by itself is read at the line its match starts on. When that match starts with a blank or a line break, that line would show none of it, so the hit names no line."
+
+	| methods search |
+	search := [ :filter |
+		          (self dataFrom: (self callToolNamed: 'method_source_search' withArguments: {
+					            (#filter -> filter).
+					            (#filterMode -> 'regex').
+					            (self searchScope: { (#classes -> #( 'MCPToolGetMethodTestTarget' )) }) } asDictionary)) at: #methods ].
+	methods := search value: 'OrderedCollection\s+with: anArgument\s+with: local'.
+	self assert: (methods collect: [ :each | each at: #selector ] as: Array) equals: #( 'readInstanceWith:' ).
+	self assert: (methods first at: #lineNumber) equals: 5.
+	self assert: (methods first at: #line) equals: '^ OrderedCollection'.
+	methods := search value: '\s+with: anArgument\s+with: local'.
+	self assert: (methods collect: [ :each | each at: #selector ] as: Array) equals: #( 'readInstanceWith:' ).
+	self deny: (methods first includesKey: #lineNumber)
 ]
 
 { #category : 'tests' }
@@ -1008,6 +1053,19 @@ MCPToolMethodSearchTest >> testSourceSearchMatchesBlanksAcrossLines [
 	self assert: ((self dataFrom: (self callToolNamed: 'method_source_search' withArguments: {
 					   (#filter -> 'Ordered Collection').
 					   (self searchScope: { (#classes -> #( 'MCPToolGetMethodTestTarget' )) }) } asDictionary)) at: #methods) isEmpty
+]
+
+{ #category : 'tests' }
+MCPToolMethodSearchTest >> testSourceSearchReadsAMatchOverThreeLinesAtItsFirst [
+	"A substring filter whose blanks fall on two line breaks is read at the line the match starts on, not at a line it runs through."
+
+	| methods |
+	methods := (self dataFrom: (self callToolNamed: 'method_source_search' withArguments: {
+				             (#filter -> '^ OrderedCollection with: anArgument with: local').
+				             (self searchScope: { (#classes -> #( 'MCPToolGetMethodTestTarget' )) }) } asDictionary)) at: #methods.
+	self assert: (methods collect: [ :each | each at: #selector ] as: Array) equals: #( 'readInstanceWith:' ).
+	self assert: (methods first at: #lineNumber) equals: 5.
+	self assert: (methods first at: #line) equals: '^ OrderedCollection'
 ]
 
 { #category : 'tests' }
