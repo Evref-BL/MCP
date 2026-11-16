@@ -2032,6 +2032,19 @@ MCPToolContractsTest >> testMessageNotUnderstoodByAnInstanceSaysItsClassUndersta
 ]
 
 { #category : 'tests - evaluate' }
+MCPToolContractsTest >> testMessageNotUnderstoodPassedOnToSuperIsSentByTheFrameThatSentIt [
+	"An override of doesNotUnderstand: that passes the message on to super, as nil's own does in Pharo 10 and 11, runs one doesNotUnderstand: inside the one the virtual machine sent. The note reads the frame that sent the message, the sender of the outermost, not the override, which only passed it on: in those versions it named UndefinedObject>>doesNotUnderstand: as the code that sent a message to nil."
+
+	| sender |
+	sender := [
+		          MCPNotUnderstoodNotePassingOnTarget new mcpProbeNobodyUnderstands.
+		          nil ]
+		          on: Error
+		          do: [ :error | error return: (MCPNotUnderstoodNote senderOf: error) ].
+	self assert: sender compiledCode method equals: thisContext method
+]
+
+{ #category : 'tests - evaluate' }
 MCPToolContractsTest >> testMessageNotUnderstoodSaysTwoKeywordMessagesRunTogether [
 	"sorted:collect:, which nothing implements, was meant as sorted: then collect:. The selectors it resembles, sorted: among them, read as blaming the receiver, so the compile critique's sentence comes first. It is a guess, which a mistyped selector such as at:ifAbsentPut:put: matches too, so the selectors stay after it."
 

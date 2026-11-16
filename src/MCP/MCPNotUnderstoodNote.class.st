@@ -137,13 +137,17 @@ MCPNotUnderstoodNote class >> runsCodeShippedWithTheImage: aContext [
 
 { #category : 'private' }
 MCPNotUnderstoodNote class >> senderOf: aMessageNotUnderstood [
-	"The frame that sent the message: the sender of the doesNotUnderstand: the virtual machine sent in its place, which Pharo 14 signals from a frame above it and earlier versions from that frame itself. nil when the error was raised some other way."
+	"The frame that sent the message: the sender of the doesNotUnderstand: the virtual machine sent in its place, which Pharo 14 signals from a frame above it and earlier versions from that frame itself. An override of doesNotUnderstand: that passes the message on to super, as nil's own does in Pharo 10 and 11, runs another inside it, so the one the virtual machine sent is the outermost of those its receiver runs one inside the other. nil when the error was raised some other way."
 
-	| context |
-	context := aMessageNotUnderstood signalerContext ifNil: [ ^ nil ].
-	^ (context findContextSuchThat: [ :each |
-		   each selector == #doesNotUnderstand: and: [ each receiver == aMessageNotUnderstood receiver ] ]) ifNotNil: [ :notUnderstood |
-		  notUnderstood sender ]
+	| isNotUnderstood |
+	isNotUnderstood := [ :context |
+	                   context isNotNil and: [
+		                   context selector == #doesNotUnderstand: and: [ context receiver == aMessageNotUnderstood receiver ] ] ].
+	^ ((aMessageNotUnderstood signalerContext ifNil: [ ^ nil ]) findContextSuchThat: isNotUnderstood) ifNotNil: [ :innermost |
+			  | outermost |
+			  outermost := innermost.
+			  [ isNotUnderstood value: outermost sender ] whileTrue: [ outermost := outermost sender ].
+			  outermost sender ]
 ]
 
 { #category : 'private' }
