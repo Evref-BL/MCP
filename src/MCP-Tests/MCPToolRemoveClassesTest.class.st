@@ -37,6 +37,12 @@ MCPToolRemoveClassesTest >> emptyChildClassName [
 ]
 
 { #category : 'private' }
+MCPToolRemoveClassesTest >> emptyGrandchildClassName [
+
+	^ self fixturePrefix , 'EmptyGrandchild'
+]
+
+{ #category : 'private' }
 MCPToolRemoveClassesTest >> emptyParentClassName [
 
 	^ self fixturePrefix , 'EmptyParent'
@@ -83,7 +89,9 @@ MCPToolRemoveClassesTest >> fixtureClassNames [
 		  self senderClassName.
 		  self mutualFirstClassName.
 		  self mutualSecondClassName.
-		  self packageCleanupClassName } asArray
+		  self packageCleanupClassName.
+		  self simpleChildClassName.
+		  self emptyGrandchildClassName } asArray
 ]
 
 { #category : 'private' }
@@ -198,6 +206,12 @@ MCPToolRemoveClassesTest >> setUp [
 ]
 
 { #category : 'private' }
+MCPToolRemoveClassesTest >> simpleChildClassName [
+
+	^ self fixturePrefix , 'SimpleChild'
+]
+
+{ #category : 'private' }
 MCPToolRemoveClassesTest >> simpleClassName [
 
 	^ self fixturePrefix , 'Simple'
@@ -208,6 +222,30 @@ MCPToolRemoveClassesTest >> tearDown [
 
 	self removeFixtureClasses.
 	super tearDown
+]
+
+{ #category : 'tests' }
+MCPToolRemoveClassesTest >> testAForcedRemovalSaysWhichClassTheSubclassesNowInheritFrom [
+	"Each subclass moved up is named with the class it inherits from now, so that a class made again under the removed name is not taken to bring it back. What force went past is said as it stands once the classes are gone."
+
+	| result |
+	result := self callToolWith: (self
+			           argumentsForClassNames: {
+					           self emptyParentClassName.
+					           self nonEmptyParentClassName }
+			           force: true).
+	self refactoringsRefuseBreakingChanges ifTrue: [
+			self assert: (result at: #isError).
+			^ self assert: ((self errorFrom: result) at: #errorCode) equals: 'ClassRemovalBlocked' ].
+	self assert: (self textFrom: result) lines equals: {
+			('Force-removed 2 classes: {1}, {2}. {3} and {4} now inherit from Object.' format: {
+					 self emptyParentClassName.
+					 self nonEmptyParentClassName.
+					 self emptyChildClassName.
+					 self nonEmptyChildClassName }).
+			('Warning: {1} lost what it inherited from {2}.' format: {
+					 self nonEmptyChildClassName.
+					 self nonEmptyParentClassName }) }
 ]
 
 { #category : 'tests' }
@@ -264,7 +302,7 @@ MCPToolRemoveClassesTest >> testAnEmptyClassNamedWithItsSubclassReparentsNothing
 	self deny: (self class environment includesKey: self emptyParentClassName asSymbol).
 	self deny: (self class environment includesKey: self emptyChildClassName asSymbol).
 	self assert: (data at: #reparentedSubclassNames ifAbsent: [ #(  ) ]) isEmpty.
-	self deny: ((self textFrom: result) includesSubstring: 'Reparented')
+	self deny: ((self textFrom: result) includesSubstring: 'inherit')
 ]
 
 { #category : 'tests' }
@@ -284,8 +322,30 @@ MCPToolRemoveClassesTest >> testClassesThatReferOnlyToEachOtherAreRemovedTogethe
 ]
 
 { #category : 'tests' }
+MCPToolRemoveClassesTest >> testEachSuperclassTheSubclassesMoveToIsNamed [
+	"Subclasses that move to different classes are named class by class, in the order of the classes removed."
+
+	| result |
+	self ensureClassNamed: self simpleChildClassName superclassName: self simpleClassName.
+	self ensureClassNamed: self emptyGrandchildClassName superclassName: self emptyChildClassName.
+	result := self callToolWith: (self argumentsForClassNames: {
+				           self simpleClassName.
+				           self emptyChildClassName }).
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (self classNamed: self emptyGrandchildClassName) superclass name asString equals: self emptyParentClassName.
+	self
+		assert: (self textFrom: result)
+		equals: ('Removed 2 classes: {1}, {2}. {3} now inherits from Object. {4} now inherits from {5}.' format: {
+					 self simpleClassName.
+					 self emptyChildClassName.
+					 self simpleChildClassName.
+					 self emptyGrandchildClassName.
+					 self emptyParentClassName })
+]
+
+{ #category : 'tests' }
 MCPToolRemoveClassesTest >> testForceRemovesWhatBlocksAndWarnsOfIt [
-	"Force goes past Pharo's check from Pharo 12: the classes go, the subclasses of a non-empty one move to its superclass, and the warnings say what blocked. Before 12 it cannot, and nothing is removed."
+	"Force goes past Pharo's check from Pharo 12: the classes go, the subclasses of a non-empty one move to its superclass, and the warnings say what blocked, as it stands once the classes are gone. Before 12 it cannot, and nothing is removed."
 
 	| data result |
 	result := self callToolWith: (self
@@ -305,9 +365,9 @@ MCPToolRemoveClassesTest >> testForceRemovesWhatBlocksAndWarnsOfIt [
 	self assert: (self classNamed: self nonEmptyChildClassName) superclass name asString equals: 'Object'.
 	self assert: (data at: #reparentedSubclassNames ifAbsent: [ #(  ) ]) equals: { self nonEmptyChildClassName } asArray.
 	self assert: (self warningsFrom: result) asArray equals: {
-			('{1} is not empty and has subclasses: {2}.' format: {
-					 self nonEmptyParentClassName.
-					 self nonEmptyChildClassName }).
+			('{1} lost what it inherited from {2}.' format: {
+					 self nonEmptyChildClassName.
+					 self nonEmptyParentClassName }).
 			('{1} is referred to by {2}>>useReferencedClass.' format: {
 					 self referencedClassName.
 					 self senderClassName }) }.
@@ -360,7 +420,10 @@ MCPToolRemoveClassesTest >> testSafelyRemovesEmptyClassAndReparentsDirectSubclas
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self deny: (self class environment includesKey: self emptyParentClassName asSymbol).
 	self assert: (self classNamed: self emptyChildClassName) superclass name asString equals: 'Object'.
-	self assert: (data at: #reparentedSubclassNames ifAbsent: [ #(  ) ]) equals: { self emptyChildClassName } asArray
+	self assert: (data at: #reparentedSubclassNames ifAbsent: [ #(  ) ]) equals: { self emptyChildClassName } asArray.
+	self assert: (self textFrom: result) equals: ('Removed class {1}. {2} now inherits from Object.' format: {
+				 self emptyParentClassName.
+				 self emptyChildClassName })
 ]
 
 { #category : 'tests' }

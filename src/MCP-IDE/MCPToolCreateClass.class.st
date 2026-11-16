@@ -35,9 +35,15 @@ MCPToolCreateClass >> batchSummaryVerb [
 
 { #category : 'private - arguments' }
 MCPToolCreateClass >> checkArguments: request [
-	"Nothing is refused before the image is asked: the schema has checked every argument, and MCPCreateClassCommand refuses a name no new class can take."
+	"An entry that is a list written as one string is refused before anything changes, in the arguments whose names the class builder takes as they are: the schema checks only that each entry is a string, and the builder would call the list an invalid slot name, or make a class variable of it. Traits and pools are class names, which MCPImageLookup refuses the same way, and MCPCreateClassCommand refuses a name no new class can take."
 
-	
+	{
+		('slots' -> 'a slot name').
+		('classSlots' -> 'a slot name').
+		('sharedVariables' -> 'a class variable name') } do: [ :argument |
+			(request stringCollectionArgumentNamed: argument key)
+				detect: [ :each | MCPImageLookup isListInOneName: each ]
+				ifFound: [ :list | MCPCommandError signalNameIsAList: list kind: argument value argument: argument key ] ]
 ]
 
 { #category : 'private - specs' }

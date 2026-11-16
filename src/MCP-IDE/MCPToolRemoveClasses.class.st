@@ -126,7 +126,7 @@ MCPToolRemoveClasses >> failureMessageForClassNames: classNames error: anError [
 
 { #category : 'private - results' }
 MCPToolRemoveClasses >> keysStatedInSummary [
-	"The summary already reads 'Removed class Foo. Reparented subclasses: Baz. Removed packages: Bar.'"
+	"The summary already reads 'Removed class Foo. Baz now inherits from Object. Removed packages: Bar.'"
 
 	^ #( removedClasses removedPackageNames reparentedSubclassNames )
 ]
@@ -146,12 +146,8 @@ MCPToolRemoveClasses >> removeClassesWith: request [
 
 { #category : 'private' }
 MCPToolRemoveClasses >> successSummaryForClassNames: classNames removal: aRemoval [
-	"Each subclass moved up is named once. A removal that warned went past what blocked it."
+	"Each subclass moved up is named once, with the class it inherits from now, so that a class made again under a removed name is not taken to bring it back. A removal that warned went past what blocked it."
 
-	| reparentedSubclassNames |
-	reparentedSubclassNames := OrderedCollection new.
-	aRemoval reparentedSubclassNames do: [ :each |
-		(reparentedSubclassNames includes: each) ifFalse: [ reparentedSubclassNames add: each ] ].
 	^ String streamContents: [ :stream |
 			  stream nextPutAll: (aRemoval warningMessages ifEmpty: [ 'Removed ' ] ifNotEmpty: [ 'Force-removed ' ]).
 			  classNames size = 1
@@ -165,10 +161,14 @@ MCPToolRemoveClasses >> successSummaryForClassNames: classNames removal: aRemova
 							  nextPutAll: ' classes: ';
 							  nextPutAll: (', ' join: classNames) ].
 			  stream nextPut: $..
-			  reparentedSubclassNames ifNotEmpty: [
+			  aRemoval reparentedSubclassNamesBySuperclassName keysAndValuesDo: [ :superclassName :subclassNames |
 					  stream
-						  nextPutAll: ' Reparented subclasses: ';
-						  nextPutAll: (', ' join: reparentedSubclassNames);
+						  space;
+						  nextPutAll: (MCPScopeQuery listPhraseFor: subclassNames);
+						  nextPutAll: (subclassNames size = 1
+								   ifTrue: [ ' now inherits from ' ]
+								   ifFalse: [ ' now inherit from ' ]);
+						  nextPutAll: superclassName;
 						  nextPut: $. ].
 			  aRemoval removedPackageNames ifNotEmpty: [ :names |
 					  stream
