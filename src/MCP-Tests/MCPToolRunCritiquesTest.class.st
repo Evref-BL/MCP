@@ -247,6 +247,38 @@ MCPToolRunCritiquesTest >> testFlagsCascadedStreamWrites [
 ]
 
 { #category : 'tests' }
+MCPToolRunCritiquesTest >> testHitQuotesALongUnimplementedSendFromItsSelector [
+	"A hit on a send that nothing implements, too long to quote whole, is quoted from its first keyword, on that keyword's line, as a compile's critique of it is."
+
+	| data hit |
+	self compileFixtureMethodSource: 'longUnimplementedSendProbe
+
+	^ self printString asSymbol keywords
+		  mcpProbeSorted: [ :a :b | a size < b size ]
+		  collect: [ :each | each asUppercase asSymbol printString reversed ]'.
+	data := self dataForArguments: {
+			        (#scope -> { (#classes -> { self fixtureClassName }) } asDictionary).
+			        (#ruleClasses -> { ReSentNotImplementedRule name }) } asDictionary.
+	hit := ((data at: #rules) first at: #hits) detect: [ :each | (each at: #method) endsWith: '>>longUnimplementedSendProbe' ].
+	self assert: (hit at: #line) equals: 4.
+	self assert: ((hit at: #code) beginsWith: 'mcpProbeSorted: [ :a :b | a size < b size ] collect: ')
+]
+
+{ #category : 'tests' }
+MCPToolRunCritiquesTest >> testHitQuotesItsCodeAcrossLines [
+	"The formatter puts a cascade's receiver on a line of its own, so the code a hit on its first message flags starts on a line that holds only the receiver. The quote follows that code onto the next lines, each run of blanks and line breaks read as one space, as a compile's critiques do."
+
+	| data hit |
+	self compileFixtureMethodSource: 'cascadeQuoteProbe ^ String streamContents: [ :stream | stream << self printString; cr ]'.
+	data := self dataForArguments: {
+			        (#scope -> { (#classes -> { self fixtureClassName }) } asDictionary).
+			        (#ruleClasses -> { MCPPrintOnStreamRule name }) } asDictionary.
+	hit := ((data at: #rules) first at: #hits) first.
+	self assert: (hit at: #method) equals: self fixtureClassName , '>>cascadeQuoteProbe'.
+	self assert: (hit at: #code) equals: 'stream << self printString'
+]
+
+{ #category : 'tests' }
 MCPToolRunCritiquesTest >> testLeavesBooleanNilBranchesToPharo [
 	"ReNilBranchRule says it of ifTrue:ifFalse: already."
 
@@ -544,8 +576,28 @@ MCPToolRunCritiquesTest >> testRunsSelectedNodeCritiqueAndGroupsHitsByRule [
 	self assert: (hit at: #method) equals: self fixtureClassName , '>>assignmentInBlockProbe'.
 	self assert: (hit includesKey: #interval).
 	self assert: (hit at: #line) equals: 4.
-	"The code is the flagged statement as the method is stored, and the fixture is stored as the image's formatter writes it, which is not the same in every Pharo."
-	self assert: (hit at: #code) equals: (self fixtureClass >> #assignmentInBlockProbe) ast statements first sourceCode
+	"The code is the flagged statement as the method is stored, each run of blanks read as one space. The fixture is stored as the image's formatter writes it, which is not the same in every Pharo."
+	self
+		assert: (hit at: #code)
+		equals: (self fixtureClass >> #assignmentInBlockProbe) ast statements first sourceCode withSeparatorsCompacted
+]
+
+{ #category : 'tests' }
+MCPToolRunCritiquesTest >> testScopeWarningsNameTheirKey [
+
+	| result warnings |
+	result := self callCritiqueRunWithArguments: {
+			          (#scope -> {
+				           (#classes -> #( 'Zzqxw' )).
+				           (#packages -> #( 'Zzqxw-Package' )) } asDictionary).
+			          (#ruleClasses -> { ReAssignmentInBlockRule name }) } asDictionary.
+	warnings := self warningsFrom: result.
+	self assert: warnings size equals: 2.
+	self
+		assert: warnings asSet
+		equals:
+			#( 'Class Zzqxw does not exist, so scope.classes skipped it.' 'Package Zzqxw-Package does not exist, so scope.packages skipped it.' )
+				asSet
 ]
 
 { #category : 'tests' }
@@ -656,24 +708,6 @@ MCPToolRunCritiquesTest >> testTextReadsRuleThenHitsByLine [
 	self
 		assert: (String streamContents: [ :stream | tool hitTextOn: stream for: { (#package -> 'Eval-Shapes') } asDictionary ])
 		equals: (String streamContents: [ :stream | stream lf << '  package Eval-Shapes' ])
-]
-
-{ #category : 'tests' }
-MCPToolRunCritiquesTest >> testScopeWarningsNameTheirKey [
-
-	| result warnings |
-	result := self callCritiqueRunWithArguments: {
-			          (#scope -> {
-				           (#classes -> #( 'Zzqxw' )).
-				           (#packages -> #( 'Zzqxw-Package' )) } asDictionary).
-			          (#ruleClasses -> { ReAssignmentInBlockRule name }) } asDictionary.
-	warnings := self warningsFrom: result.
-	self assert: warnings size equals: 2.
-	self
-		assert: warnings asSet
-		equals:
-			#( 'Class Zzqxw does not exist, so scope.classes skipped it.' 'Package Zzqxw-Package does not exist, so scope.packages skipped it.' )
-				asSet
 ]
 
 { #category : 'private' }

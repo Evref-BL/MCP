@@ -846,6 +846,21 @@ MCPToolMethodMutationTest >> testCompileCanReplaceMethodOnToolClass [
 ]
 
 { #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileCritiqueQuotesItsCodeAcrossLines [
+	"The formatter puts a cascade's receiver on a line of its own, so the code a critique of its first message flags starts on a line that holds only the receiver. The quote follows that code onto the next lines, each run of blanks and line breaks read as one space."
+
+	| critique result |
+	self removeSelector: #cascadeQuoteProbe from: MCPToolMethodMutationTestTarget.
+	[
+		result := self compileProbe: 'cascadeQuoteProbe ^ String streamContents: [ :stream | stream << self printString; cr ]'.
+		critique := ((self dataFrom: result) at: #critiques) detect: [ :each |
+			            (each at: #ruleClass) = MCPPrintOnStreamRule name asString ].
+		self assert: (critique at: #code) equals: 'stream << self printString'.
+		self assert: ((self textOf: result) lines includes: '    stream << self printString') ] ensure: [
+		self removeSelector: #cascadeQuoteProbe from: MCPToolMethodMutationTestTarget ]
+]
+
+{ #category : 'tests' }
 MCPToolMethodMutationTest >> testCompileCritiqueQuotesTheStoredCode [
 	"A method sent on one line is stored reformatted, its body from the third line; its critique counts the stored lines and quotes the stored code, which method_get shows."
 
@@ -1030,6 +1045,38 @@ MCPToolMethodMutationTest >> testCompileNamesOnlyTheRulesMethodRewriteCanApply [
 		self deny: (MCPMethodRewriteNamedRuleSpec canApplyRuleClass: ReUsesTrueRule).
 		self deny: (MCPMethodRewriteNamedRuleSpec canApplyRuleClass: Object) ] ensure: [
 		self removeSelector: #fixableProbe from: MCPToolMethodMutationTestTarget ]
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileQuotesALongSendInParenthesesWithoutTheClosingOne [
+	"A critique of a send written in parentheses flags them too. Quoted from its first keyword, the send leaves out the closing one, as the opening one goes with its receiver."
+
+	| critique result |
+	self removeSelector: #parenthesizedSendProbe from: MCPToolMethodMutationTestTarget.
+	[
+		result := self compileProbe:
+			          'parenthesizedSendProbe ^ (self printString mcpProbeSorted: [ :a :b | a < b ] collect: [ :e | e ]) size'.
+		critique := ((self dataFrom: result) at: #critiques) detect: [ :each |
+			            (each at: #ruleClass) = ReSentNotImplementedRule name asString ].
+		self assert: (critique at: #code) equals: 'mcpProbeSorted: [ :a :b | a < b ] collect: [ :e | e ]' ] ensure: [
+		self removeSelector: #parenthesizedSendProbe from: MCPToolMethodMutationTestTarget ]
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileQuotesALongUnimplementedSendFromItsSelector [
+	"A critique of a send that nothing implements names its selector, so a send too long to quote whole is quoted from its first keyword, on that keyword's line: from its receiver, the receiver and the first argument would leave the other keywords out of the quote, and the formatter may put the receiver of a send this long on a line of its own."
+
+	| critique result storedLines |
+	self removeSelector: #unimplementedKeywordsProbe from: MCPToolMethodMutationTestTarget.
+	[
+		result := self compileProbe:
+			          'unimplementedKeywordsProbe ^ self printString asSymbol keywords mcpProbeSorted: [ :a :b | a size < b size ] collect: [ :each | each asUppercase asSymbol printString reversed ]'.
+		critique := ((self dataFrom: result) at: #critiques) detect: [ :each |
+			            (each at: #ruleClass) = ReSentNotImplementedRule name asString ].
+		storedLines := (MCPToolMethodMutationTestTarget >> #unimplementedKeywordsProbe) sourceCode lines.
+		self assert: (critique at: #line) equals: (storedLines findFirst: [ :each | each includesSubstring: 'mcpProbeSorted:' ]).
+		self assert: ((critique at: #code) beginsWith: 'mcpProbeSorted: [ :a :b | a size < b size ] collect: ') ] ensure: [
+		self removeSelector: #unimplementedKeywordsProbe from: MCPToolMethodMutationTestTarget ]
 ]
 
 { #category : 'tests' }
@@ -1462,6 +1509,60 @@ MCPToolMethodMutationTest >> testCompileReturnsStructuredCommandErrorForUndeclar
 ]
 
 { #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileSaysAChainedKeywordSendIsOneMessage [
+	"sorted:collect:, which nothing implements, reads as sorted: then collect:, which are both methods. Its critique says that it is one message and how to send the two; a send whose keywords make no such pair gets no such note."
+
+	| critiques note result |
+	self removeSelector: #chainedSendProbe from: MCPToolMethodMutationTestTarget.
+	[
+		result := self compileProbe:
+			          'chainedSendProbe ^ (self printString sorted: [ :a :b | a < b ] collect: [ :each | each ]) -> (self printString mcpProbeSorted: 1 collect: 2)'.
+		critiques := ((self dataFrom: result) at: #critiques) select: [ :each |
+			             (each at: #ruleClass) = ReSentNotImplementedRule name asString ].
+		self assert: critiques size equals: 2.
+		note := (critiques detect: [ :each | ((each at: #code) includesSubstring: 'mcpProbeSorted:') not ]) at: #note.
+		self
+			assert: note
+			equals:
+			'sorted:collect: is one message. To send collect: to what sorted: answers, put the sorted: send in parentheses: (... sorted: ...) collect: ...'.
+		self assert: ((self textOf: result) includesSubstring: 'Messages sent but not implemented. ' , note).
+		self deny: ((critiques detect: [ :each | (each at: #code) includesSubstring: 'mcpProbeSorted:' ]) includesKey: #note) ] ensure: [
+		self removeSelector: #chainedSendProbe from: MCPToolMethodMutationTestTarget ]
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileStatesAnUnimplementedSendOnce [
+	"Renraku flags a send that nothing implements, and flags it again when its receiver is self or a global, which cannot understand it either. The answer states each such send once, quoted with its receiver since the whole send fits in the quote."
+
+	| critiques result |
+	self removeSelector: #unimplementedOnceProbe from: MCPToolMethodMutationTestTarget.
+	[
+		result := self compileProbe: 'unimplementedOnceProbe ^ self mcpProbeQuantity // Object mcpProbeDozen'.
+		critiques := (self dataFrom: result) at: #critiques.
+		self assert: critiques size equals: 2.
+		self assert: (critiques allSatisfy: [ :each | (each at: #ruleClass) = ReSentNotImplementedRule name asString ]).
+		self
+			assert: (critiques collect: [ :each | each at: #code ] as: Set)
+			equals: #( 'self mcpProbeQuantity' 'Object mcpProbeDozen' ) asSet ] ensure: [
+		self removeSelector: #unimplementedOnceProbe from: MCPToolMethodMutationTestTarget ]
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileStatesAnUnimplementedSendToSuperOnce [
+	"Renraku flags a send to super that nothing implements for that, and again as neither the class nor its superclass understands it. The answer states it once."
+
+	| critiques result |
+	self removeSelector: #superOnceProbe from: MCPToolMethodMutationTestTarget.
+	[
+		result := self compileProbe: 'superOnceProbe ^ super mcpProbeZork: 3'.
+		critiques := (self dataFrom: result) at: #critiques.
+		self assert: critiques size equals: 1.
+		self assert: (critiques first at: #ruleClass) equals: ReSentNotImplementedRule name asString.
+		self assert: (critiques first at: #code) equals: 'super mcpProbeZork: 3' ] ensure: [
+		self removeSelector: #superOnceProbe from: MCPToolMethodMutationTestTarget ]
+]
+
+{ #category : 'tests' }
 MCPToolMethodMutationTest >> testCompileSucceedsWhenACritiqueRuleRaisesAWarning [
 
 	| result selector |
@@ -1536,6 +1637,7 @@ MCPToolMethodMutationTest >> testCompileWithoutProtocolKeepsTheProtocolOfTheMeth
 
 { #category : 'tests' }
 MCPToolMethodMutationTest >> testCompileWithoutProtocolWarnsThatANewMethodHasNone [
+	"The warning says where the method went and why, in one sentence: every compile that names no protocol for a new method carries it."
 
 	| result selector warnings |
 	selector := #unclassifiedProbe.
@@ -1548,7 +1650,8 @@ MCPToolMethodMutationTest >> testCompileWithoutProtocolWarnsThatANewMethodHasNon
 		self assert: (MCPToolMethodMutationTestTarget >> selector) protocolName asString equals: Protocol unclassified asString.
 		warnings := self warningsFrom: result.
 		self assert: warnings size equals: 1.
-		self assert: (warnings first beginsWith: 'No protocol was named') ] ensure: [
+		self assert: warnings first equals: (String streamContents: [ :stream |
+				 stream << 'No protocol was named, so it is filed under ''' << Protocol unclassified asString << '''.' ]) ] ensure: [
 		self removeSelector: selector from: MCPToolMethodMutationTestTarget ]
 ]
 
@@ -2116,6 +2219,27 @@ MCPToolMethodMutationTest >> testRenamesInstanceMethodAndReturnsStructuredData [
 	self assert: (MCPToolMethodMutationTestTarget includesSelector: self renamedInstanceSelector).
 	self assertSuccessDataHasMethodShape: data.
 	self deny: (result at: #isError ifAbsent: [ false ])
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testReplacingAnUnclassifiedMethodDoesNotWarnAgain [
+	"A replace that names no protocol keeps the method where it is. The compile that filed it as unclassified said so, and the replace does not say it again."
+
+	| result selector |
+	selector := #unclassifiedProbe.
+	self removeSelector: selector from: MCPToolMethodMutationTestTarget.
+	[
+		self callToolNamed: 'method_compile' withArguments: {
+				(#class -> MCPToolMethodMutationTestTarget name).
+				(#source -> 'unclassifiedProbe ^ 3') } asDictionary.
+		result := self callToolNamed: 'method_compile' withArguments: {
+				          (#class -> MCPToolMethodMutationTestTarget name).
+				          (#source -> 'unclassifiedProbe ^ 4') } asDictionary.
+		self deny: (result at: #isError ifAbsent: [ false ]).
+		self assert: (MCPToolMethodMutationTestTarget >> selector) protocolName asString equals: Protocol unclassified asString.
+		self assert: (self warningsFrom: result) isEmpty.
+		self assert: (self textOf: result) equals: 'Replaced MCPToolMethodMutationTestTarget>>unclassifiedProbe.' ] ensure: [
+		self removeSelector: selector from: MCPToolMethodMutationTestTarget ]
 ]
 
 { #category : 'tests' }

@@ -25,6 +25,25 @@ MCPToolMethodMutation class >> isAbstract [
 	^ self = MCPToolMethodMutation
 ]
 
+{ #category : 'private' }
+MCPToolMethodMutation >> addChainedSendNoteAt: anInterval flaggedBy: aRuleClassName in: aString to: data [
+	"A send that nothing implements, whose keywords split into two selectors that are methods somewhere, as sorted:collect: into sorted: and collect:, was most likely meant as two sends: Smalltalk reads the keywords of one send as one selector, so sending the second to what the first answers takes parentheses. The rule's title alone reads as sorted: not being implemented."
+
+	aRuleClassName = ReSentNotImplementedRule name ifFalse: [ ^ self ].
+	self
+		sendAt: anInterval
+		in: aString
+		ifFound: [ :send |
+				| keywords |
+				keywords := send selector keywords.
+				(1 to: keywords size - 1)
+					detect: [ :split |
+							(self isImplementedSelector: ('' join: (keywords first: split))) and: [
+								self isImplementedSelector: ('' join: (keywords allButFirst: split)) ] ]
+					ifFound: [ :split | data at: #note put: (self chainedSendNote: send selector splitAt: split) ] ]
+		ifNone: [ ]
+]
+
 { #category : 'private - errors' }
 MCPToolMethodMutation >> addCompileSourceContextFor: methodSource to: details [
 
@@ -115,6 +134,22 @@ MCPToolMethodMutation >> blockingPreCompileRuleClasses [
 	^ { ReDeadBlockRule }
 ]
 
+{ #category : 'private' }
+MCPToolMethodMutation >> chainedSendNote: aSelector splitAt: anIndex [
+	"As in: sorted:collect: is one message. To send collect: to what sorted: answers, put the sorted: send in parentheses: (... sorted: ...) collect: ..."
+
+	| first firstSelector rest |
+	first := aSelector keywords first: anIndex.
+	rest := aSelector keywords allButFirst: anIndex.
+	firstSelector := '' join: first.
+	^ String streamContents: [ :stream |
+			  stream << aSelector << ' is one message. To send ' << ('' join: rest) << ' to what ' << firstSelector << ' answers, put the '
+			  << firstSelector << ' send in parentheses: (...'.
+			  first do: [ :each | stream << ' ' << each << ' ...' ].
+			  stream nextPut: $).
+			  rest do: [ :each | stream << ' ' << each << ' ...' ] ]
+]
+
 { #category : 'private - arguments' }
 MCPToolMethodMutation >> classNameAndSideOf: request do: aBlock [
 	"aBlock gets the class the call names without its side, whether the class side is meant, and whether the call said which side, by side or by a class written as Foo class. A side that says the other one is refused."
@@ -178,12 +213,24 @@ MCPToolMethodMutation >> critiqueData: aCritique precedes: anotherCritique [
 ]
 
 { #category : 'private' }
-MCPToolMethodMutation >> critiqueDataFor: aCritique source: aString [
-	"A critique says where it is by the line of aString its interval starts on and the code there, which the caller can find in the method; its interval stays for a tool that reads offsets. It is fixable when method_rewrite can apply its rule."
+MCPToolMethodMutation >> critiqueData: aCritique restates: anotherCritique [
+	"A hit saying that the receiver of a send, self, super or a global, does not understand it, on a send that ReSentNotImplementedRule flags: that nothing in the image implements its selector already says so."
 
-	| data interval |
+	(anotherCritique at: #ruleClass) = ReSentNotImplementedRule name asString ifFalse: [ ^ false ].
+	(aCritique at: #ruleClass) = (anotherCritique at: #ruleClass) ifTrue: [ ^ false ].
+	(self unimplementedSendRuleNames includes: (aCritique at: #ruleClass) asSymbol) ifFalse: [ ^ false ].
+	^ (aCritique at: #start ifAbsent: [ ^ false ]) = (anotherCritique at: #start ifAbsent: [ nil ]) and: [
+		  (aCritique at: #stop) = (anotherCritique at: #stop) ]
+]
+
+{ #category : 'private' }
+MCPToolMethodMutation >> critiqueDataFor: aCritique source: aString [
+	"A critique says where it is by the line of aString its quote starts on and the code there, which the caller can find in the method; its interval stays for a tool that reads offsets. It is fixable when method_rewrite can apply its rule, and a send nothing implements says when it reads as two sends written without their parentheses."
+
+	| data interval ruleClassName |
+	ruleClassName := aCritique rule class name.
 	data := {
-		        (#ruleClass -> aCritique rule class name asString).
+		        (#ruleClass -> ruleClassName asString).
 		        (#title -> aCritique title asString).
 		        (#description -> aCritique description asString) } asDictionary.
 	interval := self sourceIntervalForCritique: aCritique.
@@ -192,8 +239,16 @@ MCPToolMethodMutation >> critiqueDataFor: aCritique source: aString [
 				at: #start put: interval first;
 				at: #stop put: interval last.
 			aString ifNotNil: [
-					data at: #line put: (self lineNumberAt: interval first in: aString).
-					(self codeQuoteFor: interval in: aString) ifNotEmpty: [ :code | data at: #code put: code ] ] ].
+					self
+						addLineAndCodeAt: interval
+						flaggedBy: ruleClassName
+						in: aString
+						to: data.
+					self
+						addChainedSendNoteAt: interval
+						flaggedBy: ruleClassName
+						in: aString
+						to: data ] ].
 	(MCPMethodRewriteNamedRuleSpec canApplyRuleClass: aCritique rule class) ifTrue: [ data at: #fixable put: true ].
 	^ data
 ]
@@ -219,7 +274,7 @@ MCPToolMethodMutation >> critiqueDataFromProperties: properties source: aString 
 
 { #category : 'private - results' }
 MCPToolMethodMutation >> critiqueTextOn: stream for: critique indent: indent [
-	"line 3: Build strings with a stream, naming the rule only when method_rewrite can apply it, then the code it flags on a line of its own, two spaces further in. A critique without a place has no line and no code."
+	"line 3: Build strings with a stream, naming the rule only when method_rewrite can apply it, and saying what a send nothing implements was most likely meant as, then the code it flags on a line of its own, two spaces further in. A critique without a place has no line and no code."
 
 	stream
 		nextPut: Character lf;
@@ -235,6 +290,10 @@ MCPToolMethodMutation >> critiqueTextOn: stream for: critique indent: indent [
 				nextPutAll: ' (method_rewrite ruleClasses: ';
 				nextPutAll: (critique at: #ruleClass);
 				nextPut: $) ].
+	critique at: #note ifPresent: [ :note |
+			stream
+				nextPutAll: '. ';
+				nextPutAll: note ].
 	critique at: #code ifPresent: [ :code |
 			stream
 				nextPut: Character lf;
@@ -261,14 +320,16 @@ MCPToolMethodMutation >> description [
 
 { #category : 'private' }
 MCPToolMethodMutation >> distinctCritiqueData: critiqueData [
-	"Each problem once, in the order of the method: of equal hits the first is kept, and a hit lying strictly inside another of the same rule and title says nothing that one does not."
+	"Each problem once, in the order of the method: of equal hits the first is kept, and a hit lying strictly inside another of the same rule and title, or restating another, says nothing that one does not."
 
-	| distinct |
+	| distinct kept |
 	distinct := OrderedCollection new.
 	critiqueData do: [ :each |
-		(distinct anySatisfy: [ :kept | self critiqueData: each isTheSameAs: kept ]) ifFalse: [ distinct add: each ] ].
-	^ (distinct reject: [ :each | distinct anySatisfy: [ :other | self critiqueData: each liesStrictlyInside: other ] ]) asArray
-		  sort: [ :left :right | self critiqueData: left precedes: right ]
+		(distinct anySatisfy: [ :other | self critiqueData: each isTheSameAs: other ]) ifFalse: [ distinct add: each ] ].
+	kept := distinct reject: [ :each |
+			        distinct anySatisfy: [ :other |
+				        (self critiqueData: each liesStrictlyInside: other) or: [ self critiqueData: each restates: other ] ] ].
+	^ kept asArray sort: [ :left :right | self critiqueData: left precedes: right ]
 ]
 
 { #category : 'private' }
@@ -350,6 +411,15 @@ MCPToolMethodMutation >> howToProceedForBlockedCompile [
 MCPToolMethodMutation >> inputProperties [
 
 	^ self methodToolSpec at: #inputProperties
+]
+
+{ #category : 'private' }
+MCPToolMethodMutation >> isImplementedSelector: aString [
+	"Whether a method somewhere in the image has aString as its selector. A string no symbol was ever made of is no method's selector."
+
+	| selector |
+	selector := Symbol findInterned: aString.
+	^ selector isNotNil and: [ (SystemNavigation default allImplementorsOf: selector) isNotEmpty ]
 ]
 
 { #category : 'private - specs' }

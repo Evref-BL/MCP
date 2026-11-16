@@ -345,15 +345,10 @@ MCPTool >> buildInputSchema [
 
 { #category : 'private - source' }
 MCPTool >> codeQuoteFor: anInterval in: aString [
-	"The code an interval flags, as one line can show it: from its first character to the end of that line or its last character, whichever comes first, trimmed, and cut to its first 60 characters and ... when longer."
+	"The code an interval flags, as flaggedCodeFor:in: reads it, cut to its first 60 characters and ... when longer."
 
-	| end code last |
-	(anInterval first between: 1 and: aString size) ifFalse: [ ^ '' ].
-	last := anInterval last min: aString size.
-	end := anInterval first.
-	[ end <= last and: [ ((aString at: end) = Character cr or: [ (aString at: end) = Character lf ]) not ] ] whileTrue: [
-		end := end + 1 ].
-	code := (aString copyFrom: anInterval first to: end - 1) trimBoth.
+	| code |
+	code := self flaggedCodeFor: anInterval in: aString.
 	code size > 60 ifFalse: [ ^ code ].
 	^ String streamContents: [ :stream |
 			  stream
@@ -705,6 +700,14 @@ MCPTool >> failureMessageFor: anError [
 					  stream
 						  nextPutAll: ': ';
 						  nextPutAll: message ] ]
+]
+
+{ #category : 'private - source' }
+MCPTool >> flaggedCodeFor: anInterval in: aString [
+	"The code an interval flags, from its first character to its last, each run of blanks and line breaks read as one space, and trimmed. The formatter spreads a long expression over several lines, so the line the code starts on can hold only the receiver of what is flagged."
+
+	(anInterval first between: 1 and: aString size) ifFalse: [ ^ '' ].
+	^ (aString copyFrom: anInterval first to: (anInterval last min: aString size)) withSeparatorsCompacted trimBoth
 ]
 
 { #category : 'error handling' }
