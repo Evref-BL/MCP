@@ -148,8 +148,7 @@ MCPToolContractsTest >> baseToolFlowSpecs [
 		  {
 			  (#toolClass -> MCPToolRunTests).
 			  (#arguments -> { (#classes -> { 'MCPToolContractsTest' }) } asDictionary).
-			  (#requestClass -> MCPRunTestsRequest).
-			  (#commandClass -> MCPRunTestsCommand) } asDictionary.
+			  (#requestClass -> MCPToolRequest) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolCaptureScreen).
 			  (#arguments -> Dictionary new).
@@ -267,8 +266,7 @@ MCPToolContractsTest >> coverageToolFlowSpec [
 		  (#arguments -> {
 			   (#classes -> { 'MCPToolContractsTest' }).
 			   (#coverage -> { (#scope -> { (#classes -> #( 'MCPToolContractsTest' )) } asDictionary) } asDictionary) } asDictionary).
-		  (#requestClass -> MCPRunTestsRequest).
-		  (#commandClass -> MCPRunTestsCommand) } asDictionary
+		  (#requestClass -> MCPToolRequest) } asDictionary
 ]
 
 { #category : 'private' }
@@ -2783,21 +2781,17 @@ MCPToolContractsTest >> testRpcToolCallRejectsLegacyScopeArgument [
 { #category : 'tests' }
 MCPToolContractsTest >> testRunTestCoverageParsesCompactSelections [
 
-	| command parsedRequest rawRequest tool validatedRequests |
+	| command rawRequest tool |
 	tool := MCPToolRunTestCoverage new.
 	rawRequest := tool requestFromToolCallArguments: {
 			              (#classes -> #( 'MCPToolContractsTest' )).
 			              (#coverage -> { (#scope -> { (#classes -> #( 'MCPToolContractsTest' )) } asDictionary) } asDictionary) }
 			              asDictionary.
-	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
-	command := tool commandForRequest: parsedRequest.
-	validatedRequests := command validatedRequestsFrom: parsedRequest testRequests.
-	self assert: parsedRequest class equals: MCPRunTestsRequest.
-	self assert: parsedRequest isCoverageOperation.
-	self assert: parsedRequest coverageRequest class equals: MCPTestCoverageRequest.
-	self assert: parsedRequest testRequests first class equals: MCPTestRunRequest.
-	self assert: validatedRequests first class equals: MCPValidatedTestRunRequest.
-	self assert: validatedRequests first testClass equals: MCPToolContractsTest
+	command := tool operationFor: rawRequest.
+	command validateSelections.
+	self assert: command coverageScope class equals: MCPCompiledMethodScopeQuery.
+	self assert: command selections first class equals: MCPTestSelectionSpec.
+	self assert: command selections first testClass equals: MCPToolContractsTest
 ]
 
 { #category : 'tests' }
@@ -2833,21 +2827,19 @@ MCPToolContractsTest >> testRunTestToolsHaveAccurateNamesAndRequiredArguments [
 { #category : 'tests' }
 MCPToolContractsTest >> testRunTestsKeepsPackagesAsPackageSelections [
 
-	| command parsedRequest rawRequest testCases testRequests tool validatedRequests |
+	| command rawRequest selections testCases tool |
 	tool := MCPToolRunTests new.
 	rawRequest := tool requestFromToolCallArguments: { (#packages -> #( 'MCP-Tests' )) } asDictionary.
-	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
-	testRequests := parsedRequest testRequests.
-	self assert: testRequests size equals: 1.
-	self assert: testRequests first isPackageRequest.
-	self assert: testRequests first packageName equals: 'MCP-Tests'.
-	self assert: testRequests first displayName equals: 'MCP-Tests'.
-	self assert: testRequests first className equals: nil.
-	self assert: testRequests first testMethodName equals: nil.
-	command := tool commandForRequest: parsedRequest.
-	validatedRequests := command validatedRequestsFrom: testRequests.
-	self assert: validatedRequests first isPackageRequest.
-	testCases := command testCasesForValidatedRequest: validatedRequests first.
+	command := tool operationFor: rawRequest.
+	selections := command selections.
+	self assert: selections size equals: 1.
+	self assert: selections first isPackageSelection.
+	self assert: selections first packageName equals: 'MCP-Tests'.
+	self assert: selections first displayName equals: 'MCP-Tests'.
+	self assert: selections first className equals: nil.
+	self assert: selections first testMethodName equals: nil.
+	command validateSelections.
+	testCases := command testCasesFor: selections first.
 	self assert: testCases isNotEmpty.
 	self assert: (testCases noneSatisfy: [ :each | each class isAbstract ])
 ]
@@ -2855,39 +2847,34 @@ MCPToolContractsTest >> testRunTestsKeepsPackagesAsPackageSelections [
 { #category : 'tests' }
 MCPToolContractsTest >> testRunTestsParsesCompactSelections [
 
-	| command fixtureClassName parsedRequest rawRequest testMethodReference testRequests tool validatedRequests |
+	| command fixtureClassName rawRequest selections testMethodReference tool |
 	tool := MCPToolRunTests new.
 	fixtureClassName := MCPToolStructuredOutputTestTarget name asString.
 	testMethodReference := self testReferenceForMethod: MCPToolStructuredOutputTestTarget >> #testPasses.
 	rawRequest := tool requestFromToolCallArguments: {
 			              (#classes -> { MCPToolContractsTest name asString }).
 			              (#methods -> { testMethodReference }) } asDictionary.
-	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
-	command := tool commandForRequest: parsedRequest.
-	validatedRequests := command validatedRequestsFrom: parsedRequest testRequests.
-	testRequests := parsedRequest testRequests.
-	self assert: parsedRequest class equals: MCPRunTestsRequest.
-	self assert: testRequests size equals: 2.
-	self assert: testRequests first className equals: MCPToolContractsTest name asString.
-	self assert: testRequests first testMethodName equals: nil.
-	self assert: testRequests second className equals: fixtureClassName.
-	self assert: testRequests second testMethodName equals: #testPasses asString.
-	self assert: testRequests second displayName equals: testMethodReference.
-	self assert: validatedRequests first class equals: MCPValidatedTestRunRequest.
-	self assert: validatedRequests first testRunRequest equals: testRequests first.
-	self assert: validatedRequests first testClass equals: MCPToolContractsTest
+	command := tool operationFor: rawRequest.
+	command validateSelections.
+	selections := command selections.
+	self assert: selections size equals: 2.
+	self assert: selections first className equals: MCPToolContractsTest name asString.
+	self assert: selections first testMethodName equals: nil.
+	self assert: selections second className equals: fixtureClassName.
+	self assert: selections second testMethodName equals: #testPasses asString.
+	self assert: selections second displayName equals: testMethodReference.
+	self assert: selections first testClass equals: MCPToolContractsTest
 ]
 
 { #category : 'tests' }
 MCPToolContractsTest >> testRunTestsParsesTimeoutSeconds [
 
-	| parsedRequest rawRequest tool |
+	| rawRequest tool |
 	tool := MCPToolRunTests new.
 	rawRequest := tool requestFromToolCallArguments: {
 			              (#classes -> #( 'MCPToolContractsTest' )).
 			              (#timeoutSeconds -> 2) } asDictionary.
-	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
-	self assert: parsedRequest timeoutMilliseconds equals: 2000
+	self assert: (tool operationFor: rawRequest) timeoutMilliseconds equals: 2000
 ]
 
 { #category : 'tests' }
@@ -2897,7 +2884,7 @@ MCPToolContractsTest >> testRunTestsRejectsEmptySelection [
 	tool := MCPToolRunTests new.
 	rawRequest := tool requestFromToolCallArguments: Dictionary new.
 	self
-		should: [ tool parsedRequestFromToolRequest: rawRequest ]
+		should: [ tool checkArguments: rawRequest ]
 		raise: MCPInvalidToolInput
 		whoseDescriptionIncludes: 'Name at least one package, class or method to run.'
 		description: 'test_run requires at least one compact selection.'
