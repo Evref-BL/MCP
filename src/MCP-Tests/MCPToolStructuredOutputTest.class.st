@@ -339,16 +339,15 @@ MCPToolStructuredOutputTest >> testEvaluateTakesTheStepTheWorldGivesTheTranscrip
 ]
 
 { #category : 'tests' }
-MCPToolStructuredOutputTest >> testGetClassParseErrorReturnsStructuredToolError [
+MCPToolStructuredOutputTest >> testGetClassRefusesABlankNameAsInvalidInput [
+	"A blank name is no name: it is refused with the arguments, under the argument's own name, before the tool looks anything up."
 
-	| error result structured |
+	| error result |
 	result := self callToolNamed: 'class_get' withArguments: { (#name -> '') } asDictionary.
-	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
-	self assert: (error at: #errorClass) equals: #Error.
-	self assert: (error at: #class) equals: ''.
-	self assert: ((error at: #message) includesSubstring: 'name must be a non-empty string')
+	self assert: (error at: #errorClass) equals: #MCPInvalidToolInput.
+	self assert: (error at: #message) equals: 'Invalid arguments for class_get. name is required.'
 ]
 
 { #category : 'tests' }
