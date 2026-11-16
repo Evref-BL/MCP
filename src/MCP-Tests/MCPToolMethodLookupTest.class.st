@@ -73,6 +73,16 @@ MCPToolMethodLookupTest >> testAClassSideNameAnswersReferencesToItsClass [
 ]
 
 { #category : 'tests' }
+MCPToolMethodLookupTest >> testALowercaseNameNothingUsesFindsNoImplementorsOrSenders [
+	"A lowercase name reads as a selector, which any name can be, and then as a variable. When nothing implements or sends it and no variable has that name, nothing was found: the answer says so, rather than that the name is unknown."
+
+	| result |
+	result := self callToolNamed: 'method_reference_search' withArguments: { (#name -> 'mcpNoSuchSelectorAnywhere') } asDictionary.
+	self deny: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
+	self assert: (self summaryFrom: result) equals: 'No implementors or senders of mcpNoSuchSelectorAnywhere in the image.'
+]
+
+{ #category : 'tests' }
 MCPToolMethodLookupTest >> testClassNameAnswersClassReferences [
 
 	| data |

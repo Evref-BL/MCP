@@ -240,6 +240,7 @@ MCPToolSearchMethodReferences >> noHitTextForKinds: kinds name: aName [
 
 { #category : 'private - template' }
 MCPToolSearchMethodReferences >> queryEntriesForRequest: request scopeQuery: scopeQuery [
+	"The name is read as its spelling says, then the other way when that finds nothing. When neither finds anything, the first reading answers: no hits when it resolved, as a selector always does, and an error only when it did not."
 
 	| entries fallback kinds name failures |
 	name := self requiredFilterPatternFromRequest: request.
@@ -262,8 +263,7 @@ MCPToolSearchMethodReferences >> queryEntriesForRequest: request scopeQuery: sco
 				            failures add: error.
 				            nil ].
 	(fallback isNotNil and: [ fallback isNotEmpty ]) ifTrue: [ ^ fallback ].
-	failures ifNotEmpty: [ ^ self signalUnknownName: name failures: failures ].
-	^ entries ifNil: [ #(  ) ]
+	^ entries ifNil: [ self signalUnknownName: name failures: failures ]
 ]
 
 { #category : 'private - pagination' }

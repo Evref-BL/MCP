@@ -37,8 +37,13 @@ MCPClassReferenceQuery class >> method: aCompiledMethod accessesAnyOf: someBindi
 
 { #category : 'testing' }
 MCPClassReferenceQuery class >> method: aCompiledMethod referencesAnyVariable: variables [
+	"Whether aCompiledMethod accesses any of variables. A method reaches a slot by its index, which another class gives to a slot of its own, so a slot is looked for only in the methods of the classes that have it."
 
-	^ variables anySatisfy: [ :eachVariable | eachVariable isAccessedIn: aCompiledMethod ]
+	| slots |
+	slots := aCompiledMethod methodClass allSlots.
+	^ variables anySatisfy: [ :eachVariable |
+			  (eachVariable isInstanceVariable not or: [ slots identityIncludes: eachVariable ]) and: [
+				  eachVariable isAccessedIn: aCompiledMethod ] ]
 ]
 
 { #category : 'accessing' }

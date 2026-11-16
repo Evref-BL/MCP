@@ -992,6 +992,49 @@ MCPToolMethodSearchTest >> testTraitedClassStillListsItsOwnMethods [
 ]
 
 { #category : 'tests' }
+MCPToolMethodSearchTest >> testVariableReferenceLooksForASlotOnlyInTheClassesThatHaveIt [
+	"A method reaches a slot by its index, which another class gives to a slot of its own. Here sharedSlot is the third slot of one class and the second of another, so the first class's betaSlot, its second slot, is not a use of sharedSlot. A subclass's method uses the sharedSlot it inherits."
+
+	| heirName methods ownerName strangerName |
+	ownerName := 'MCPToolMethodSearchSlotOwner'.
+	strangerName := 'MCPToolMethodSearchSlotStranger'.
+	heirName := 'MCPToolMethodSearchSlotHeir'.
+	[
+		| heir owner stranger |
+		owner := self
+			         createClassNamed: ownerName
+			         superclassName: 'Object'
+			         slots: #( alphaSlot betaSlot sharedSlot )
+			         classSlots: #(  ).
+		stranger := self
+			            createClassNamed: strangerName
+			            superclassName: 'Object'
+			            slots: #( gammaSlot sharedSlot )
+			            classSlots: #(  ).
+		heir := self
+			        createClassNamed: heirName
+			        superclassName: ownerName
+			        slots: #(  )
+			        classSlots: #(  ).
+		self ensureMethodSource: 'readBetaSlot ^ betaSlot' protocol: 'accessing' on: owner.
+		self ensureMethodSource: 'readSharedSlot ^ sharedSlot' protocol: 'accessing' on: owner.
+		self ensureMethodSource: 'readSharedSlot ^ sharedSlot' protocol: 'accessing' on: stranger.
+		self ensureMethodSource: 'writeSharedSlot: anObject sharedSlot := anObject' protocol: 'accessing' on: heir.
+		methods := (self dataFrom: (self callToolNamed: 'method_reference_search' withArguments: {
+					             (#name -> 'sharedSlot').
+					             (#kind -> 'variable').
+					             (self searchScope: { (#packages -> { self generatedPackageName }) }) } asDictionary)) at: #methods.
+		self assert: (self referencesOf: methods) equals: {
+				(heirName , '>>writeSharedSlot:').
+				(ownerName , '>>readSharedSlot').
+				(strangerName , '>>readSharedSlot') } ] ensure: [
+			{
+				heirName.
+				ownerName.
+				strangerName } do: [ :each | self removeClassNamed: each ] ]
+]
+
+{ #category : 'tests' }
 MCPToolMethodSearchTest >> testVariableReferenceReturnsClassSideVariableReferences [
 
 	| data result |
@@ -1022,14 +1065,15 @@ MCPToolMethodSearchTest >> testVariableReferenceReturnsInstanceVariableReference
 { #category : 'tests' }
 MCPToolMethodSearchTest >> testVariableReferenceReturnsStructuredErrorWhenVariableIsMissing [
 
-	| error result structured |
+	| error result |
 	result := self callToolNamed: 'method_reference_search' withArguments: {
 			          (#name -> 'missingTrackedSlot').
+			          (#kind -> 'variable').
 			          (self searchScope: { (#classes -> #( 'MCPToolMethodSearchVariableReferenceTarget' )) }) } asDictionary.
-	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
-	self assert: ((error at: #message) includesSubstring: 'There is no class, variable or selector named missingTrackedSlot')
+	self assert:
+		((error at: #message) includesSubstring: 'No variable named missingTrackedSlot is accessible in the requested scope.')
 ]
 
 { #category : 'private - calling' }
