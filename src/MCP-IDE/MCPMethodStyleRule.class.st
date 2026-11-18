@@ -53,6 +53,16 @@ MCPMethodStyleRule class >> isClassReference: aNode [
 ]
 
 { #category : 'testing' }
+MCPMethodStyleRule class >> isConditionOfIfTrueOrIfFalse: aNode [
+	"Whether ifTrue:, ifFalse:, ifTrue:ifFalse: or ifFalse:ifTrue: is sent to aNode. Pattern blocks call this to leave alone a test that such a conditional is sent to, when another rule says what to write in place of the whole conditional."
+
+	| parent |
+	parent := aNode parent.
+	^ parent isMessage and: [
+		  parent receiver == aNode and: [ #( #ifTrue: #ifFalse: #ifTrue:ifFalse: #ifFalse:ifTrue: ) includes: parent selector ] ]
+]
+
+{ #category : 'testing' }
 MCPMethodStyleRule class >> isStatement: aNode [
 
 	^ aNode parent isSequence

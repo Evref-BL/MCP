@@ -113,18 +113,30 @@ MCPToolMethodMutation >> allowedNonErrorCritiqueRuleClasses [
 		  ReAssignmentInBlockRule.
 		  ReEquivalentSuperclassMethodsRule.
 		  ReExcessiveArgumentsRule.
+		  ReIsNilAndConditionalRule.
+		  ReIsNotNilAndConditionalRule.
 		  ReMissingSuperSendsRule.
 		  ReNotOptimizedIfRule.
 		  ReNotOptimizedIfNilRule.
 		  ReReturnInEnsureRule.
 		  ReTempVarOverridesInstVarRule.
-		  ReUnaryAccessingMethodWithoutReturnRule }
+		  ReUnaryAccessingMethodWithoutReturnRule.
+		  ReUseIsEmptyNotSizeRule }
 ]
 
 { #category : 'private - specs' }
 MCPToolMethodMutation >> atLeastOneInputProperties [
 
 	^ self methodToolSpec at: #atLeastOneProperties ifAbsent: [ #(  ) ]
+]
+
+{ #category : 'private' }
+MCPToolMethodMutation >> behaviorChangingRewriteRuleClasses [
+	"Pharo rewrites a one-armed conditional on these rules whether or not the method reads its value: ^ x isNil ifTrue: [ 1 ] becomes ^ x ifNil: [ 1 ], which answers x when x is set. method_rewrite rewrites at least a whole class, so a critique of one of them names the idiom but not method_rewrite, even on a hit whose rewrite would keep what the method answers. A rule this Pharo lacks reads as nil."
+
+	^ {
+		  ReIsNilAndConditionalRule.
+		  ReIsNotNilAndConditionalRule }
 ]
 
 { #category : 'private' }
@@ -288,7 +300,7 @@ MCPToolMethodMutation >> critiqueData: aCritique restates: anotherCritique [
 
 { #category : 'private' }
 MCPToolMethodMutation >> critiqueDataFor: aCritique source: aString in: aBehavior [
-	"A critique says where it is by the line of aString its quote starts on and the code there, which the caller can find in the method aBehavior holds; its interval stays for a tool that reads offsets. It is fixable when method_rewrite can apply its rule. A send that will not be understood says when it reads as two sends written without their parentheses, or names what its receiver has in another form."
+	"A critique says where it is by the line of aString its quote starts on and the code there, which the caller can find in the method aBehavior holds; its interval stays for a tool that reads offsets. It is fixable when method_rewrite can apply its rule and the rule is not one whose rewrite can change what a method answers. A send that will not be understood says when it reads as two sends written without their parentheses, or names what its receiver has in another form."
 
 	| data interval ruleClassName |
 	ruleClassName := aCritique rule class name.
@@ -317,7 +329,8 @@ MCPToolMethodMutation >> critiqueDataFor: aCritique source: aString in: aBehavio
 						in: aString
 						of: aBehavior
 						to: data ] ].
-	(MCPMethodRewriteNamedRuleSpec canApplyRuleClass: aCritique rule class) ifTrue: [ data at: #fixable put: true ].
+	((MCPMethodRewriteNamedRuleSpec canApplyRuleClass: aCritique rule class) and: [
+		 (self behaviorChangingRewriteRuleClasses includes: aCritique rule class) not ]) ifTrue: [ data at: #fixable put: true ].
 	^ data
 ]
 
@@ -343,7 +356,7 @@ MCPToolMethodMutation >> critiqueDataFromProperties: properties source: aString 
 
 { #category : 'private - results' }
 MCPToolMethodMutation >> critiqueTextOn: stream for: critique indent: indent [
-	"line 3: Build strings with a stream, naming the rule only when method_rewrite can apply it, and saying what a send nothing implements was most likely meant as, then the code it flags on a line of its own, two spaces further in. A critique without a place has no line and no code."
+	"line 3: Build strings with a stream, naming the rule for method_rewrite only when the critique is fixable, and saying what a send nothing implements was most likely meant as, then the code it flags on a line of its own, two spaces further in. A critique without a place has no line and no code."
 
 	stream
 		nextPut: Character lf;
