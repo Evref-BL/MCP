@@ -98,7 +98,7 @@ MCPToolUpdateClass >> classToolSpec [
 		  (#title -> 'Update Class').
 		  (#description
 		   ->
-		   'Change one class definition in one call: its name, superclass, package, tag, comment and layout are replaced by value, its slots are patched. The changes asked for are applied in dependency order, stopping at the first that fails.').
+		   'Change one class definition in one call. Its name, superclass, package, tag, comment and layout are replaced by value, its slots are patched. The changes asked for are applied in dependency order, stopping at the first that fails.').
 		  (#inputProperties -> {
 			   self classNameSchemaProperty.
 			   self renameNewClassNameSchemaProperty.
@@ -131,6 +131,12 @@ MCPToolUpdateClass >> contextValueOf: propertyName in: request [
 	(#( 'tag' 'layout' ) includes: propertyName) ifTrue: [ ^ request stringArgumentNamed: propertyName default: '' ].
 	propertyName = 'comment' ifTrue: [ ^ self classCommentIn: request ].
 	^ request stringArgumentNamed: propertyName
+]
+
+{ #category : 'metadata' }
+MCPToolUpdateClass >> defaultExposure [
+
+	^ 'static'
 ]
 
 { #category : 'private - execution' }

@@ -38,6 +38,12 @@ MCPToolListRepositoryChanges >> dataForImageModifiedPackages: packageNames modif
 			  (#modifiedPaths -> paths) }
 ]
 
+{ #category : 'metadata' }
+MCPToolListRepositoryChanges >> defaultExposure [
+
+	^ 'static'
+]
+
 { #category : 'private - errors' }
 MCPToolListRepositoryChanges >> failureSummaryPrefixFor: request [
 
@@ -72,7 +78,7 @@ MCPToolListRepositoryChanges >> repositoryToolSpec [
 		  (#title -> 'List Repository Changes').
 		  (#description
 		   ->
-		   'List what a registered repository has changed, on both sides and without writing anything: the packages whose contents in the image differ from the checkout''s files, which is what an export would change, and the files git sees changed in the checkout.').
+		   'List what a registered repository has changed, on both sides and without writing anything. It names the packages whose contents in the image differ from the checkout''s files, which is what an export would change, and the files git sees changed in the checkout.').
 		  (#action -> 'diff') } asDictionary
 ]
 

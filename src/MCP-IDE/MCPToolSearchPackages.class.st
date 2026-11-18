@@ -30,6 +30,12 @@ MCPToolSearchPackages >> buildInputSchema [
 ]
 
 { #category : 'metadata' }
+MCPToolSearchPackages >> defaultExposure [
+
+	^ 'static'
+]
+
+{ #category : 'metadata' }
 MCPToolSearchPackages >> description [
 
 	^ 'Search packages by name, project, or tag.'

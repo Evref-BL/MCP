@@ -77,17 +77,24 @@ MCPToolRepositoryToolsTest >> searchMetadataByToolName [
 
 { #category : 'tests' }
 MCPToolRepositoryToolsTest >> testRepositoryToolsAreDiscoverableWithExpectedMetadata [
+	"repository_change_list and repository_export are advertised, since they move the image's work to the checkout in every project that has one; the other repository tools are found through tool_search."
 
 	| metadataByName |
 	metadataByName := self searchMetadataByToolName.
-	#( 'repository_identity_verify' 'repository_change_list' 'repository_create' 'repository_attach' 'repository_update'
-	   'repository_export' 'repository_commit' 'repository_discard' 'repository_reload' 'repository_head_adopt' ) do: [ :toolName |
+	#( 'repository_identity_verify' 'repository_create' 'repository_attach' 'repository_update' 'repository_commit'
+	   'repository_discard' 'repository_reload' 'repository_head_adopt' ) do: [ :toolName |
 			| metadata tool |
 			tool := self toolRegistry toolNamed: toolName ifAbsent: [ nil ].
 			tool ifNotNil: [
 					metadata := metadataByName at: toolName.
 					self assert: tool defaultExposure equals: 'discoverable'.
 					self assert: metadata keys asSet equals: #( name description ) asSet ] ].
+	#( 'repository_change_list' 'repository_export' ) do: [ :toolName |
+			| tool |
+			tool := self toolRegistry toolNamed: toolName ifAbsent: [ self fail: 'Missing tool ' , toolName ].
+			self assert: tool defaultExposure equals: 'static'.
+			self assert: (self toolRegistry advertisedToolNames includes: toolName).
+			self assert: (metadataByName at: toolName) keys asSet equals: #( name description ) asSet ].
 	self assert: (metadataByName includesKey: 'repository_reload')
 ]
 

@@ -148,13 +148,12 @@ MCPCommandError class >> oppositeSideMethodSuggestionForClass: targetClass class
 
 { #category : 'signaling' }
 MCPCommandError class >> signalClassAlreadyExistsNamed: aClassName [
-	"The message says which tools work on a class that exists, since a client reading text sees nothing of the details. class_update is not in every client's list, and a client that calls only what it lists reaches it through tool_call alone, so the message gives that call. A backslash keeps a brace of the call from being read as a placeholder."
+	"The message says which tools work on a class that exists, since a client reading text sees nothing of the details, and gives the class_update call that starts from the class's name. A backslash keeps a brace of the call from being read as a placeholder."
 
 	^ self
 		  signalErrorCode: #ClassAlreadyExists
 		  message:
-			  ('Class {1} already exists. Change it with class_update, through tool_call when class_update is not in your list: tool_call \{"name": "class_update", "arguments": \{"name": "{1}", ...}}. class_get shows it.'
-				   format: { aClassName })
+		  ('Class {1} already exists. Change it with class_update \{"name": "{1}", ...}. class_get shows it.' format: { aClassName })
 		  details: { (#class -> aClassName) } asDictionary
 ]
 
@@ -229,7 +228,7 @@ MCPCommandError class >> signalClassAlreadyExistsNamed: aClassName superclass: a
 
 { #category : 'signaling' }
 MCPCommandError class >> signalClassAlreadyExistsNamed: aClassName update: classUpdateArguments unlisted: someAssociations [
-	"class_create's refusal of a class that exists, knowing what the call asked for. classUpdateArguments are those of the class_update call that gives the class what it lacks of that, its name first; the message writes that call, or says the class lacks nothing when they hold only its name. A client reading text sees nothing of the details, and one that calls only what it lists reaches class_update through tool_call alone. The call is written as a client reads text, its line endings line feeds: written as JSON, a carriage return would show as an escape the answer's own conversion leaves alone. someAssociations map each list the call gives that leaves out something the class has to those names. class_create gives a class whole, so the caller may mean them to go, while class_update keeps them unless told otherwise: the message names them last, after the call that keeps them."
+	"class_create's refusal of a class that exists, knowing what the call asked for. classUpdateArguments are those of the class_update call that gives the class what it lacks of that, its name first; the message writes that call, or says the class lacks nothing when they hold only its name. A client reading text sees nothing of the details, so the message gives the call to class_update itself, which tools/list advertises. The call is written as a client reads text, its line endings line feeds: written as JSON, a carriage return would show as an escape the answer's own conversion leaves alone. someAssociations map each list the call gives that leaves out something the class has to those names. class_create gives a class whole, so the caller may mean them to go, while class_update keeps them unless told otherwise: the message names them last, after the call that keeps them."
 
 	| details |
 	details := Dictionary new.
@@ -242,12 +241,8 @@ MCPCommandError class >> signalClassAlreadyExistsNamed: aClassName update: class
 						   ifTrue: [
 						   stream << 'Class ' << aClassName << ' already exists and already has everything this call asks for. class_get shows it.' ]
 						   ifFalse: [
-								   stream << 'Class ' << aClassName
-								   << ' already exists. Change it with class_update, through tool_call when class_update is not in your list: tool_call '
-								   << (STONJSON toString: (MCPLineEndings leaving: (OrderedDictionary new
-												      at: 'name' put: 'class_update';
-												      at: 'arguments' put: classUpdateArguments;
-												      yourself))) << '. class_get shows it.' ].
+								   stream << 'Class ' << aClassName << ' already exists. Change it with class_update '
+								   << (STONJSON toString: (MCPLineEndings leaving: classUpdateArguments)) << '. class_get shows it.' ].
 					   someAssociations do: [ :each |
 						   stream << ' ' << (self unlistedSentenceFor: aClassName names: each value argument: each key) ] ])
 		  details: details

@@ -38,10 +38,10 @@ MCPToolClassMutationTest >> callToolWith: someArguments [
 
 { #category : 'private - calling' }
 MCPToolClassMutationTest >> callUpdateWrittenIn: aMessage [
-	"Make the tool_call a refusal of class_create writes, as a client that reads the text would."
+	"Make the class_update call a refusal of class_create writes, as a client that reads the text would."
 
-	^ self callRawToolNamed: 'tool_call' withArguments: (STONJSON fromString: (aMessage
-				    copyFrom: (aMessage indexOfSubCollection: 'tool_call {') + 'tool_call ' size
+	^ self callRawToolNamed: 'class_update' withArguments: (STONJSON fromString: (aMessage
+				    copyFrom: (aMessage indexOfSubCollection: 'class_update {') + 'class_update ' size
 				    to: (aMessage indexOfSubCollection: '. class_get shows it.') - 1))
 ]
 
@@ -476,11 +476,11 @@ MCPToolClassMutationTest >> testCreateRefusalNamesTheSlotsTheClassDefinesThatThe
 	self
 		assert: (refusal value: 'Object')
 		equals:
-		'Class MCPToolClassMutationTestReparentTarget already exists. Change it with class_update, through tool_call when class_update is not in your list: tool_call {"name":"class_update","arguments":{"name":"MCPToolClassMutationTestReparentTarget","slots":{"add":["color"]}}}. class_get shows it. MCPToolClassMutationTestReparentTarget also defines the slot colour, which this call does not list. class_update keeps it unless its slots argument removes or renames it.'.
+		'Class MCPToolClassMutationTestReparentTarget already exists. Change it with class_update {"name":"MCPToolClassMutationTestReparentTarget","slots":{"add":["color"]}}. class_get shows it. MCPToolClassMutationTestReparentTarget also defines the slot colour, which this call does not list. class_update keeps it unless its slots argument removes or renames it.'.
 	self
 		assert: (refusal value: self reparentSuperclassName)
 		equals:
-		'Class MCPToolClassMutationTestReparentTarget already exists. Change it with class_update, through tool_call when class_update is not in your list: tool_call {"name":"class_update","arguments":{"name":"MCPToolClassMutationTestReparentTarget","superclass":"MCPToolClassMutationTestReparentSuperclass"}}. class_get shows it. MCPToolClassMutationTestReparentTarget also defines the slot colour, which this call does not list. class_update keeps it unless its slots argument removes or renames it.'.
+		'Class MCPToolClassMutationTestReparentTarget already exists. Change it with class_update {"name":"MCPToolClassMutationTestReparentTarget","superclass":"MCPToolClassMutationTestReparentSuperclass"}. class_get shows it. MCPToolClassMutationTestReparentTarget also defines the slot colour, which this call does not list. class_update keeps it unless its slots argument removes or renames it.'.
 	self deny: ((self callUpdateWrittenIn: (refusal value: self reparentSuperclassName)) at: #isError ifAbsent: [ false ]).
 	target := self classNamed: self reparentTargetClassName.
 	self assert: target superclass name equals: self reparentSuperclassName asSymbol.
@@ -546,7 +546,7 @@ MCPToolClassMutationTest >> testCreateRefusalNamingAnotherSuperclassAddsASlotThe
 	self
 		assert: message
 		equals:
-		'Class MCPToolClassMutationTestReparentTarget already exists. Change it with class_update, through tool_call when class_update is not in your list: tool_call {"name":"class_update","arguments":{"name":"MCPToolClassMutationTestReparentTarget","superclass":"Object","slots":{"add":["inherited"]}}}. class_get shows it.'.
+		'Class MCPToolClassMutationTestReparentTarget already exists. Change it with class_update {"name":"MCPToolClassMutationTestReparentTarget","superclass":"Object","slots":{"add":["inherited"]}}. class_get shows it.'.
 	self deny: ((self callUpdateWrittenIn: message) at: #isError ifAbsent: [ false ]).
 	target := self classNamed: self reparentTargetClassName.
 	self assert: target superclass name equals: #Object.
@@ -577,7 +577,7 @@ MCPToolClassMutationTest >> testCreateRefusalNamingAnotherSuperclassAddsNoSlotTh
 	self
 		assert: message
 		equals:
-		'Class MCPToolClassMutationTestReparentTarget already exists. Change it with class_update, through tool_call when class_update is not in your list: tool_call {"name":"class_update","arguments":{"name":"MCPToolClassMutationTestReparentTarget","superclass":"MCPToolClassMutationTestReparentSuperclass","slots":{"add":["added"]}}}. class_get shows it.'.
+		'Class MCPToolClassMutationTestReparentTarget already exists. Change it with class_update {"name":"MCPToolClassMutationTestReparentTarget","superclass":"MCPToolClassMutationTestReparentSuperclass","slots":{"add":["added"]}}. class_get shows it.'.
 	self deny: ((self callUpdateWrittenIn: message) at: #isError ifAbsent: [ false ]).
 	target := self classNamed: self reparentTargetClassName.
 	self assert: target superclass name equals: self reparentSuperclassName asSymbol.
@@ -643,7 +643,7 @@ MCPToolClassMutationTest >> testCreateRefusalOfATraitWritesTheUpdateWhenTheCallN
 	self
 		assert: message
 		equals:
-		'Class TMCPToolClassMutationTestTrait already exists. Change it with class_update, through tool_call when class_update is not in your list: tool_call {"name":"class_update","arguments":{"name":"TMCPToolClassMutationTestTrait","slots":{"add":["color"]}}}. class_get shows it.'.
+		'Class TMCPToolClassMutationTestTrait already exists. Change it with class_update {"name":"TMCPToolClassMutationTestTrait","slots":{"add":["color"]}}. class_get shows it.'.
 	self deny: ((self callUpdateWrittenIn: message) at: #isError ifAbsent: [ false ]).
 	self
 		assert: ((self classNamed: 'TMCPToolClassMutationTestTrait') instVarNames collect: [ :each | each asString ] as: Array)
@@ -652,7 +652,7 @@ MCPToolClassMutationTest >> testCreateRefusalOfATraitWritesTheUpdateWhenTheCallN
 
 { #category : 'tests - create' }
 MCPToolClassMutationTest >> testCreateRefusalOfAnExistingClassSaysHowToReachClassUpdate [
-	"class_update is not in every client's list, and a client that calls only what it lists cannot call it by its name. The refusal gives the call every client can make, with the class already named in it."
+	"class_update is in tools/list, so the refusal gives the call to class_update itself, with the class already named in it, rather than a route through tool_call."
 
 	| text |
 	self callToolWith: (self
@@ -664,7 +664,8 @@ MCPToolClassMutationTest >> testCreateRefusalOfAnExistingClassSaysHowToReachClas
 					          (#package -> self generatedPackageName).
 					          (#slots -> #( 'color' )) })).
 	self assert: (text includesSubstring:
-			 'Change it with class_update, through tool_call when class_update is not in your list: tool_call {"name":"class_update","arguments":{"name":"MCPToolClassMutationTestGenerated","slots":{"add":["color"]}}}.')
+			 'Change it with class_update {"name":"MCPToolClassMutationTestGenerated","slots":{"add":["color"]}}.').
+	self deny: (text includesSubstring: 'tool_call')
 ]
 
 { #category : 'tests - create' }
@@ -691,7 +692,7 @@ MCPToolClassMutationTest >> testCreateRefusalOfAnExistingClassWritesTheUpdateTha
 	self
 		assert: message
 		equals:
-		'Class MCPToolClassMutationTestGenerated already exists. Change it with class_update, through tool_call when class_update is not in your list: tool_call {"name":"class_update","arguments":{"name":"MCPToolClassMutationTestGenerated","tag":"Model","slots":{"add":["color"]},"classSlots":{"add":["made"]},"sharedVariables":["Registry","Other"],"comment":"A generated class.\nIt has two lines."}}. class_get shows it.'.
+		'Class MCPToolClassMutationTestGenerated already exists. Change it with class_update {"name":"MCPToolClassMutationTestGenerated","tag":"Model","slots":{"add":["color"]},"classSlots":{"add":["made"]},"sharedVariables":["Registry","Other"],"comment":"A generated class.\nIt has two lines."}. class_get shows it.'.
 	self deny: ((self callUpdateWrittenIn: message) at: #isError ifAbsent: [ false ]).
 	createdClass := self classNamed: 'MCPToolClassMutationTestGenerated'.
 	self assert: (createdClass instVarNames collect: [ :each | each asString ] as: Array) equals: #( 'a' 'color' ).
@@ -754,7 +755,7 @@ MCPToolClassMutationTest >> testCreateRefusalPullsUpASlotASubclassDefines [
 	self
 		assert: message
 		equals:
-		'Class MCPToolClassMutationTestReparentTarget already exists. Change it with class_update, through tool_call when class_update is not in your list: tool_call {"name":"class_update","arguments":{"name":"MCPToolClassMutationTestReparentTarget","slots":{"add":["added"],"pullUp":["shared"]},"classSlots":{"pullUp":["registry"]}}}. class_get shows it.'.
+		'Class MCPToolClassMutationTestReparentTarget already exists. Change it with class_update {"name":"MCPToolClassMutationTestReparentTarget","slots":{"add":["added"],"pullUp":["shared"]},"classSlots":{"pullUp":["registry"]}}. class_get shows it.'.
 	self deny: ((self callUpdateWrittenIn: message) at: #isError ifAbsent: [ false ]).
 	target := self classNamed: self reparentTargetClassName.
 	child := self classNamed: self reparentChildClassName.

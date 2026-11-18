@@ -28,6 +28,12 @@ MCPToolExportRepository >> dataForPackageNames: packageNames writtenPaths: writt
 			  (#alsoUncommitted -> alsoUncommittedPaths asArray) }
 ]
 
+{ #category : 'metadata' }
+MCPToolExportRepository >> defaultExposure [
+
+	^ 'static'
+]
+
 { #category : 'private - errors' }
 MCPToolExportRepository >> failureSummaryPrefixFor: request [
 
@@ -130,7 +136,7 @@ MCPToolExportRepository >> repositoryToolSpec [
 		  (#title -> 'Export Repository').
 		  (#description
 		   ->
-		   'Write the packages of a registered repository to its checkout, in the format the checkout declares, and name the files written. Nothing is staged or committed.').
+		   'Write the packages of a registered repository to its checkout, in the format the checkout declares. It names the files written. Nothing is staged or committed.').
 		  (#action -> 'export') } asDictionary
 ]
 

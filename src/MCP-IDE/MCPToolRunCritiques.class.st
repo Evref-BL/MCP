@@ -181,6 +181,12 @@ MCPToolRunCritiques >> critiquesOfRuleClass: ruleClass in: scopeQuery runsOn: ru
 				do: aBlock ]
 ]
 
+{ #category : 'metadata' }
+MCPToolRunCritiques >> defaultExposure [
+
+	^ 'static'
+]
+
 { #category : 'defaults' }
 MCPToolRunCritiques >> defaultPageLimit [
 	"A rule carries its hits, so a page holds fewer than a flat list would."

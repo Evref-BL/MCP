@@ -402,16 +402,15 @@ MCPRunTestsCommand >> testCaseDeduplicationKeyFor: aTestCase [
 
 { #category : 'private - validation' }
 MCPRunTestsCommand >> testCaseSuperclassAdviceOn: aStream for: aClass [
-	"A class made with no superclass subclasses Object, so the advice says what a test class subclasses and how to change it. class_update is not in every client's list, and a client that calls only what it lists reaches it through tool_call alone, so the advice gives that call."
+	"A class made with no superclass subclasses Object, so the advice says what a test class subclasses and how to change it, with the call to class_update itself, which tools/list advertises."
 
 	aStream
 		nextPutAll: aClass superclass name;
 		nextPutAll: ', and a test class subclasses TestCase. If ';
 		nextPutAll: aClass name;
-		nextPutAll:
-			' is meant to hold tests, make TestCase its superclass with class_update, through tool_call when class_update is not in your list: tool_call {"name": "class_update", "arguments": {"name": "';
+		nextPutAll: ' is meant to hold tests, make TestCase its superclass with class_update {"name": "';
 		nextPutAll: aClass name;
-		nextPutAll: '", "superclass": "TestCase"}}.'
+		nextPutAll: '", "superclass": "TestCase"}.'
 ]
 
 { #category : 'private - not run' }
