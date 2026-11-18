@@ -156,8 +156,11 @@ MCPToolChangeHistory >> logAndFileNameFor: request [
 MCPToolChangeHistory >> logAndFileNameFromDirectoryPath: directoryPath fileName: fileName [
 
 	| currentFile directory file |
-	fileName ifNil: [ ^ self currentLogAndFileName ].
+	fileName ifNil: [
+			directoryPath ifNotNil: [ self refuseDirectoryPathWithoutFile: directoryPath ].
+			^ self currentLogAndFileName ].
 	currentFile := self currentHistoryFileReference.
+	directoryPath ifNotNil: [ self refuseRelativeDirectoryPath: directoryPath ].
 	directory := directoryPath
 		             ifNil: [ self historyDirectoryForCurrentFile: currentFile ]
 		             ifNotNil: [ directoryPath asFileReference ].
@@ -224,6 +227,36 @@ MCPToolChangeHistory >> redundantKeys [
 	"An entry's summary prints its event class around its behavior and selector, which the entry already names."
 
 	^ #( summary )
+]
+
+{ #category : 'private - history' }
+MCPToolChangeHistory >> refuseDirectoryPathWithoutFile: directoryPath [
+	"A directory alone names no file. The session in progress is the default only in the directory that holds it: anywhere else the caller meant one of that directory's files, and answering the session in progress would read another history than the one asked for."
+
+	| currentFile |
+	self refuseRelativeDirectoryPath: directoryPath.
+	currentFile := self currentHistoryFileReference.
+	(currentFile isNotNil and: [ currentFile parent fullName = directoryPath asFileReference fullName ]) ifTrue: [ ^ self ].
+	MCPCommandError
+		signalErrorCode: #ChangeHistoryFileNotNamed
+		message: (String streamContents: [ :stream |
+					 stream << 'Change history directory ' << directoryPath
+					 << ' does not hold the session in progress: name one of its files with historyFile, as history_file_list lists them.' ])
+		details: { (#directoryPath -> directoryPath) } asDictionary
+]
+
+{ #category : 'private - history' }
+MCPToolChangeHistory >> refuseRelativeDirectoryPath: directoryPath [
+	"The image would resolve a relative directory against its own working directory, which is not the caller's."
+
+	directoryPath asFileReference isAbsolute ifTrue: [ ^ self ].
+	MCPCommandError
+		signalErrorCode: #ChangeHistoryDirectoryNotAbsolute
+		message: (String streamContents: [ :stream |
+					 stream << 'Change history directory ' << directoryPath
+					 << ' is not an absolute path, and the image would resolve it against its own working directory, '
+					 << FileSystem workingDirectory fullName << '. Give the full path.' ])
+		details: { (#directoryPath -> directoryPath) } asDictionary
 ]
 
 { #category : 'private - history' }

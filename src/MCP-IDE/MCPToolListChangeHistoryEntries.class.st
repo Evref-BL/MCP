@@ -27,6 +27,10 @@ MCPToolListChangeHistoryEntries >> buildInputSchema [
 	^ MCPStructureInputSchema new
 		  type: 'object';
 		  properties: self historyLocationInputProperties , {
+					  (self
+						   integerSchemaPropertyNamed: 'startIndex'
+						   description: 'List from this one-based index, as history_entry_apply and history_entry_revert take it.').
+					  (self integerSchemaPropertyNamed: 'endIndex' description: 'Last one-based index to list.').
 					  self offsetInputProperty.
 					  (self booleanSchemaPropertyNamed: 'newestFirst' description: 'List the most recent entries first.' default: false).
 					  (self
@@ -71,13 +75,15 @@ MCPToolListChangeHistoryEntries >> description [
 
 { #category : 'private - entries' }
 MCPToolListChangeHistoryEntries >> entryPairsFrom: aLog for: request [
-	"The entries of aLog the request lists, as pairs of their one-based index and the entry, the oldest first unless newestFirst."
+	"The entries of aLog the request lists, as pairs of their one-based index and the entry, the oldest first unless newestFirst. startIndex and endIndex keep the range of indexes the other history tools take."
 
-	| codeChangesOnly pairs |
+	| codeChangesOnly endIndex pairs startIndex |
 	codeChangesOnly := request booleanArgumentNamed: 'codeChangesOnly'.
+	startIndex := (request integerArgumentNamed: 'startIndex') ifNil: [ 1 ].
+	endIndex := (request integerArgumentNamed: 'endIndex') ifNil: [ SmallInteger maxVal ].
 	pairs := OrderedCollection new.
 	aLog entries doWithIndex: [ :entry :index |
-			(codeChangesOnly not or: [ entry content isCodeChange ]) ifTrue: [
+			((index between: startIndex and: endIndex) and: [ codeChangesOnly not or: [ entry content isCodeChange ] ]) ifTrue: [
 					pairs add: {
 							index.
 							entry } ] ].
