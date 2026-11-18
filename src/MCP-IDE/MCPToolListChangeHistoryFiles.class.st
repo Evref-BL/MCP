@@ -74,6 +74,7 @@ MCPToolListChangeHistoryFiles >> directoryToList: directoryPath current: current
 
 	| directory |
 	directoryPath ifNil: [ ^ self historyDirectoryForCurrentFile: currentFile ].
+	self refuseRelativeDirectoryPath: directoryPath.
 	directory := directoryPath asFileReference.
 	currentFile ifNotNil: [
 			(self sameFileReference: directory as: currentFile) ifTrue: [

@@ -121,6 +121,59 @@ MCPToolChangeHistoryTest >> testACompileKeepingTheSourceIsLoggedOnce [
 ]
 
 { #category : 'tests' }
+MCPToolChangeHistoryTest >> testADirectoryWithoutAFileIsRefusedWhereTheSessionIsNot [
+	"Answering the session in progress would read another history than the directory asked for."
+
+	| directory error result |
+	directory := FileLocator temp asFileReference / ('mcp-colleague-history-' , UUID new asString).
+	[
+		directory ensureCreateDirectory.
+		result := self callToolWith: {
+				          (#action -> 'listEntries').
+				          (#directoryPath -> directory fullName) } asDictionary.
+		error := self errorFrom: result.
+		self assert: (result at: #isError).
+		self assert: (error at: #errorCode) equals: 'ChangeHistoryFileNotNamed'.
+		self assert: (error at: #message) equals: (String streamContents: [ :stream |
+					 stream << 'Change history directory ' << directory fullName
+					 << ' does not hold the session in progress: name one of its files with historyFile, as history_file_list lists them.' ]) ]
+		ensure: [ directory ensureDeleteAll ]
+]
+
+{ #category : 'tests' }
+MCPToolChangeHistoryTest >> testADirectoryWithoutAFileListsTheSessionWhereItIs [
+
+	| result |
+	self useDiskBackedTemporaryLog.
+	result := self callToolWith: {
+			          (#action -> 'listEntries').
+			          (#directoryPath -> self defaultHistoryDirectoryPath) } asDictionary.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: ((self dataFrom: result) includesKey: #entries)
+]
+
+{ #category : 'tests' }
+MCPToolChangeHistoryTest >> testARelativeDirectoryIsRefusedNamingTheImageDirectory [
+	"The image would read history against its own working directory, which is not the caller's."
+
+	{
+		{ (#action -> 'listFiles') }.
+		{
+			(#action -> 'listEntries').
+			(#historyFile -> 'colleague.ombu') } } do: [ :arguments |
+			| error result |
+			result := self callToolWith: (arguments , { (#directoryPath -> 'history') }) asDictionary.
+			error := self errorFrom: result.
+			self assert: (result at: #isError).
+			self assert: (error at: #errorCode) equals: 'ChangeHistoryDirectoryNotAbsolute'.
+			self assert: (error at: #message) equals: (String streamContents: [ :stream |
+						 stream
+						 <<
+						 'Change history directory history is not an absolute path, and the image would resolve it against its own working directory, '
+						 << FileSystem workingDirectory fullName << '. Give the full path.' ]) ]
+]
+
+{ #category : 'tests' }
 MCPToolChangeHistoryTest >> testApplyEntriesAppliesConfirmedChanges [
 
 	self withTemporaryRecoveryClassDo: [ :class |
@@ -255,6 +308,20 @@ MCPToolChangeHistoryTest >> testClassSideEntryReadsAsAClassSideMethod [
 			text := (result at: #content) first at: #text.
 			self assert: (text includesSubstring: ('{1} class>>rescuedValue' format: { class name })).
 			self deny: (text includesSubstring: ' class class>>') ]
+]
+
+{ #category : 'tests' }
+MCPToolChangeHistoryTest >> testListEntriesKeepsTheRangeTheOtherToolsTake [
+
+	self withTemporaryRecoveryClassDo: [ :class |
+			| entries index |
+			index := self recordMethodAdditionOn: class.
+			entries := (self dataFrom: (self callToolWith: {
+						             (#action -> 'listEntries').
+						             (#startIndex -> index).
+						             (#endIndex -> index) } asDictionary)) at: #entries.
+			self assert: (entries collect: [ :each | each at: #index ] as: Array) equals: { index }.
+			self removeSelector: #rescuedValue from: class ]
 ]
 
 { #category : 'tests' }
