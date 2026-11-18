@@ -253,6 +253,14 @@ MCPCompiledMethodScopeQuery >> parentBehaviorsForClassNames [
 	^ behaviors asArray
 ]
 
+{ #category : 'querying' }
+MCPCompiledMethodScopeQuery >> reaches: aBehavior [
+	"Whether the scope holds the methods of aBehavior. A named scope is resolved again, and records the warnings the search recorded."
+
+	self usesImplicitImageScope ifTrue: [ ^ self matchesSideForBehavior: aBehavior ].
+	^ self behaviors includes: aBehavior
+]
+
 { #category : 'phrasing' }
 MCPCompiledMethodScopeQuery >> scopePhrase [
 	"A sweep of one side says which."
