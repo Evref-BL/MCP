@@ -88,16 +88,25 @@ MCPToolSearchClasses >> fieldTextsForClassEntry: anEntry fieldName: fieldName [
 	^ #(  )
 ]
 
+{ #category : 'private - results' }
+MCPToolSearchClasses >> keyOrder [
+	"What a class inherits from, then where it lives."
+
+	^ #( superclass package tag )
+]
+
 { #category : 'private - template' }
 MCPToolSearchClasses >> queryEntriesForRequest: request scopeQuery: scopeQuery [
-	"The classes of the scope whose fields hold the field filters, ignoring case."
+	"The classes of the scope whose fields hold the field filters, ignoring case. A scope that reaches them by inheritance gives each its superclass, since the rows come by name and would not otherwise say how they inherit."
 
-	| entries fieldFilters |
+	| entries fieldFilters hierarchy |
 	fieldFilters := self fieldFiltersFromRequest: request.
+	hierarchy := scopeQuery asksForAHierarchy.
 	entries := OrderedCollection new.
 	scopeQuery classes do: [ :eachClass |
 			| entry |
 			entry := (MCPClassInfo fromClass: eachClass) asQueryDictionary.
+			(hierarchy and: [ eachClass superclass isNotNil ]) ifTrue: [ entry at: #superclass put: eachClass superclass name asString ].
 			(self
 				 fieldFilters: fieldFilters
 				 matchUsing: [ :fieldName | self fieldTextsForClassEntry: entry fieldName: fieldName ]
@@ -119,13 +128,14 @@ MCPToolSearchClasses >> queryResultDataForPage: page [
 
 { #category : 'private - results' }
 MCPToolSearchClasses >> queryResultEntryFromClassEntry: anEntry [
-	"A class that is not tagged sits in its package's root tag, which says nothing a row needs."
+	"A class that is not tagged sits in its package's root tag, which says nothing a row needs. A row reached by inheritance says what its class inherits from."
 
 	| entry |
 	entry := {
 		         (#class -> (anEntry at: #class)).
 		         (#package -> (anEntry at: #package)) } asDictionary.
 	(anEntry at: #hasTag) ifTrue: [ entry at: #tag put: (anEntry at: #tag) ].
+	anEntry at: #superclass ifPresent: [ :name | entry at: #superclass put: name ].
 	^ entry
 ]
 
