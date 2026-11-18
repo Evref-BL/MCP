@@ -22,14 +22,19 @@ MCPToolChangeHistoryOperation >> actionName [
 ]
 
 { #category : 'private - results' }
-MCPToolChangeHistoryOperation >> addEntriesOf: aSelection in: aLog previewedBy: aPreviewLog to: data [
-	"The entries aSelection took from aLog and those aPreviewLog holds, described, with how many of each."
+MCPToolChangeHistoryOperation >> addEntriesOf: aSelection in: aLog to: data [
+	"The entries aSelection took from aLog, each saying why it changes nothing when the preview holds no change of its own, and the changes it previews, each under the index of the entry it comes from and with the source it changes, with how many of each."
 
-	| previewEntries selectedEntries |
+	| previewedIndexes previewEntries selectedEntries |
+	previewedIndexes := aSelection previewPairs collect: [ :pair | pair first ] as: Set.
 	selectedEntries := aSelection selectedPairs collect: [ :pair |
-		                   MCPChangeHistoryEntryInfo fromEntry: pair second index: pair first log: aLog ].
-	previewEntries := aPreviewLog entries collectWithIndex: [ :entry :index |
-		                  MCPChangeHistoryEntryInfo fromEntry: entry index: index log: aPreviewLog ].
+			                   | entry |
+			                   entry := MCPChangeHistoryEntryInfo fromEntry: pair second index: pair first log: aLog.
+			                   (previewedIndexes includes: pair first) ifFalse: [
+				                   entry changesNothingBecause: (self reasonEntryChangesNothing: pair in: aSelection) ].
+			                   entry ].
+	previewEntries := aSelection previewPairs collect: [ :pair |
+		                  MCPChangeHistoryEntryInfo fromPreviewedChange: pair second index: pair first ].
 	data at: #selectedEntries put: (selectedEntries collect: [ :each | each asDictionary ] as: Array).
 	data at: #previewEntries put: (previewEntries collect: [ :each | each asDictionary ] as: Array).
 	data at: #selectedCount put: selectedEntries size.
@@ -109,11 +114,7 @@ MCPToolChangeHistoryOperation >> dataFor: request [
 	data at: #action put: self actionName.
 	logAndFileName second ifNotNil: [ :fileName | data at: #historyFile put: fileName ].
 	data at: #selectionCriteria put: (self selectionCriteriaFrom: request).
-	self
-		addEntriesOf: selection
-		in: logAndFileName first
-		previewedBy: previewLog
-		to: data.
+	self addEntriesOf: selection in: logAndFileName first to: data.
 	data at: #performed put: (request booleanArgumentNamed: 'confirm').
 	data at: #performedCount put: performedCount.
 	^ data
@@ -151,6 +152,19 @@ MCPToolChangeHistoryOperation >> rangeFrom: request [
 	^ (request integerArgumentNamed: 'startIndex')
 		  ifNil: [ #(  ) ]
 		  ifNotNil: [ :startIndex | startIndex to: (request integerArgumentNamed: 'endIndex') ]
+]
+
+{ #category : 'private - results' }
+MCPToolChangeHistoryOperation >> reasonEntryChangesNothing: aPair in: aSelection [
+	"Why Epicea's preview holds no change of a selected entry's own: a later change to the same element overrides it, it is no code change, or the image already is as the entry would leave it."
+
+	^ aSelection overridingIndexes
+		  at: aPair first
+		  ifPresent: [ :index | String streamContents: [ :stream | stream << 'overridden by entry ' << index printString ] ]
+		  ifAbsent: [
+				  aPair second content isCodeChange
+					  ifTrue: [ self changeHistoryToolSpec at: #unchangedReason ]
+					  ifFalse: [ 'not a code change' ] ]
 ]
 
 { #category : 'private - results' }
