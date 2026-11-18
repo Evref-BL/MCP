@@ -464,6 +464,13 @@ MCPToolMethodMutation >> failureMessageForRenameClassNamed: className classSide:
 				  nextPutAll: (self normalizedCauseMessageForMutationError: anError) ]
 ]
 
+{ #category : 'private - schema' }
+MCPToolMethodMutation >> formatSchemaPropertyDescribedAs: aString [
+	"Formatting is the default, so that what is compiled reads like the rest of the image. Restoring a method's text from another branch, or a small edit across many methods, needs the text kept as written: formatted, every line the formatter writes differently changes too."
+
+	^ self booleanSchemaPropertyNamed: 'format' description: aString default: true
+]
+
 { #category : 'private' }
 MCPToolMethodMutation >> howToProceedForBlockedCompile [
 

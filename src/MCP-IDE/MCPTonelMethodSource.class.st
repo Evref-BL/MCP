@@ -29,7 +29,7 @@ MCPTonelMethodSource class >> categoryIn: aMetadata [
 
 { #category : 'instance creation' }
 MCPTonelMethodSource class >> fromString: aString [
-	"The Tonel method aString writes, or nil when it writes none: it begins neither with a category line nor with a method header, or something other than blanks follows the method's closing bracket. A category line followed by no header leaves the rest of aString as the source."
+	"The Tonel method aString writes, or nil when it writes none: it begins neither with a category line nor with a method header, or something other than blanks follows the method's closing bracket. A category line followed by no header leaves the rest of aString as the source. The source ends at its last character that is not a blank, as every other source method_compile is given does: Tonel's reader leaves in the body the empty lines above the closing bracket."
 
 	| category hasMetadata header parser stream |
 	aString isString ifFalse: [ ^ nil ].
@@ -46,7 +46,7 @@ MCPTonelMethodSource class >> fromString: aString [
 			  ifNil: [
 					  hasMetadata ifTrue: [
 							  self new
-								  setCategory: category source: stream upToEnd;
+								  setCategory: category source: stream upToEnd trimRight;
 								  yourself ] ]
 			  ifNotNil: [
 					  | body signature |
@@ -55,7 +55,7 @@ MCPTonelMethodSource class >> fromString: aString [
 					  parser separator.
 					  stream atEnd ifTrue: [
 							  self new
-								  setCategory: category source: signature second , body;
+								  setCategory: category source: (signature second , body) trimRight;
 								  setHeader: header className: signature first first classSide: signature first second isNotNil;
 								  yourself ] ] ]
 		  on: Error
