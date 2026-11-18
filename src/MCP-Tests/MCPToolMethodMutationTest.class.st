@@ -331,6 +331,14 @@ MCPToolMethodMutationTest >> removeHeaderProbes [
 ]
 
 { #category : 'private' }
+MCPToolMethodMutationTest >> removeTonelProbes [
+
+	#( #tonelProbe #tonelProbe: ) do: [ :each |
+			self removeSelector: each from: MCPToolMethodMutationTestTarget.
+			self removeSelector: each from: MCPToolMethodMutationTestTarget classSide ]
+]
+
+{ #category : 'private' }
 MCPToolMethodMutationTest >> renamedClassSelector [
 
 	^ ('make' , 'Value:') asSymbol
@@ -474,6 +482,33 @@ MCPToolMethodMutationTest >> testABinaryHeaderKeepsItsSelector [
 ]
 
 { #category : 'tests' }
+MCPToolMethodMutationTest >> testACategoryLineAboveASourceGivesItsProtocol [
+	"A Tonel category line kept above a method that begins with its selector line, or with its reference, gives the protocol, and the rest compiles as it would without it."
+
+	| result |
+	[
+		result := self callToolNamed: 'method_compile' withArguments: {
+				          (#class -> MCPToolMethodMutationTestTarget name).
+				          (#source -> '{ #category : ''accessing'' }
+tonelProbe
+	^ 1') } asDictionary.
+		self deny: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
+		self assert: (self warningsFrom: result) isEmpty.
+		self assert: (MCPToolMethodMutationTestTarget >> #tonelProbe) protocolName asString equals: 'accessing'.
+
+		result := self callToolNamed: 'method_compile' withArguments: {
+				          (#class -> MCPToolMethodMutationTestTarget name).
+				          (#source -> '{ #category : ''private'' }
+MCPToolMethodMutationTestTarget >> tonelProbe
+	^ 2') } asDictionary.
+		self
+			assert: (self summaryFrom: result)
+			equals: 'Replaced MCPToolMethodMutationTestTarget>>tonelProbe, moving it from accessing to private.'.
+		self assert: (self warningsFrom: result) equals: { self droppedHeaderWarning }.
+		self assert: (MCPToolMethodMutationTestTarget new perform: #tonelProbe) equals: 2 ] ensure: [ self removeTonelProbes ]
+]
+
+{ #category : 'tests' }
 MCPToolMethodMutationTest >> testAHeaderWithNothingAfterItIsRefused [
 	"A source that is only a method's reference names the method and writes none of it. Dropping the header would compile an empty method, replacing the body of one that exists, so it is refused and nothing is compiled. A body on the header's own line is a body."
 
@@ -587,6 +622,124 @@ MCPToolMethodMutationTestTarget>>headerProbe
 	^ 1'
 		side: nil
 		closingWith: ''
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testATonelHeaderNamingAnotherClassOrSideIsRefused [
+	"Dropping a Tonel header that names another class, or the other side than the call names, would compile where the call did not say. It is refused, saying what to pass, and nothing is compiled."
+
+	| error result |
+	result := self callToolNamed: 'method_compile' withArguments: {
+			          (#class -> MCPToolMethodMutationTestTarget name).
+			          (#source -> 'MCPToolMethodMutationTestSender >> tonelProbe [
+	^ 1
+]') } asDictionary.
+	error := self errorFrom: result.
+	self assert: (error at: #errorCode) equals: 'MethodSourceHeader'.
+	self assert: (error at: #header) equals: 'MCPToolMethodMutationTestSender >> tonelProbe'.
+	self
+		assert: (self textFrom: result)
+		equals:
+		'The source is the Tonel method MCPToolMethodMutationTestSender >> tonelProbe, which goes in MCPToolMethodMutationTestSender, but the call compiles into MCPToolMethodMutationTestTarget on the instance side. Pass the class and side its header names, or correct the header.'.
+	result := self callToolNamed: 'method_compile' withArguments: {
+			          (#class -> MCPToolMethodMutationTestTarget name).
+			          (#side -> 'instance').
+			          (#source -> 'MCPToolMethodMutationTestTarget class >> tonelProbe [
+	^ 1
+]') } asDictionary.
+	self
+		assert: (self textFrom: result)
+		equals:
+		'The source is the Tonel method MCPToolMethodMutationTestTarget class >> tonelProbe, which goes in MCPToolMethodMutationTestTarget class, but the call compiles into MCPToolMethodMutationTestTarget on the instance side. Pass the class and side its header names, or correct the header.'.
+	{
+		MCPToolMethodMutationTestTarget.
+		MCPToolMethodMutationTestSender } do: [ :each |
+			self deny: (each includesSelector: #tonelProbe).
+			self deny: (each classSide includesSelector: #tonelProbe) ]
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testATonelMethodCompilesWithItsCategory [
+	"A method as a Tonel file writes it compiles without its header and brackets, wherever a bracket sits in its strings and comments. Its category line gives the protocol: a string in Tonel v2 and v3, a symbol in v1. A header naming the class side compiles there when the call names no side."
+
+	| method result |
+	[
+		result := self callToolNamed: 'method_compile' withArguments: {
+				          (#class -> MCPToolMethodMutationTestTarget name).
+				          (#source -> '{ #category : ''accessing'' }
+MCPToolMethodMutationTestTarget >> tonelProbe [
+
+	"a ] in a comment"
+	^ ''a ] in a string''
+]') } asDictionary.
+		self deny: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
+		self assert: (self summaryFrom: result) equals: 'Created MCPToolMethodMutationTestTarget>>tonelProbe.'.
+		self assert: (self warningsFrom: result) isEmpty.
+		method := MCPToolMethodMutationTestTarget >> #tonelProbe.
+		self assert: (MCPToolMethodMutationTestTarget new perform: #tonelProbe) equals: 'a ] in a string'.
+		self assert: method protocolName asString equals: 'accessing'.
+		self assert: (method sourceCode beginsWith: 'tonelProbe').
+		self assert: (method sourceCode includesSubstring: '"a ] in a comment"').
+
+		result := self callToolNamed: 'method_compile' withArguments: {
+				          (#class -> MCPToolMethodMutationTestTarget name).
+				          (#source -> '{ #category : #''instance creation'' }
+MCPToolMethodMutationTestTarget class >> tonelProbe: anObject [
+
+	^ anObject
+]') } asDictionary.
+		self assert: (self summaryFrom: result) equals: 'Created MCPToolMethodMutationTestTarget class>>tonelProbe:.'.
+		self assert: (MCPToolMethodMutationTestTarget perform: #tonelProbe: with: 3) equals: 3.
+		self assert: (MCPToolMethodMutationTestTarget classSide >> #tonelProbe:) protocolName asString equals: 'instance creation' ]
+		ensure: [ self removeTonelProbes ]
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testATonelMethodWithoutItsCategoryLineKeepsItsProtocol [
+	"A Tonel method without its category line names no protocol, as a source that begins with its selector line and names none: the method it replaces keeps its own."
+
+	| result |
+	self ensureMethodSource: 'tonelProbe ^ 1' protocol: 'private' on: MCPToolMethodMutationTestTarget.
+	[
+		result := self callToolNamed: 'method_compile' withArguments: {
+				          (#class -> MCPToolMethodMutationTestTarget name).
+				          (#source -> 'MCPToolMethodMutationTestTarget >> tonelProbe [
+
+	^ 2
+]') } asDictionary.
+		self deny: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
+		self assert: (self summaryFrom: result) equals: 'Replaced MCPToolMethodMutationTestTarget>>tonelProbe.'.
+		self assert: (self warningsFrom: result) isEmpty.
+		self assert: (MCPToolMethodMutationTestTarget >> #tonelProbe) protocolName asString equals: 'private'.
+		self assert: (MCPToolMethodMutationTestTarget new perform: #tonelProbe) equals: 2 ] ensure: [ self removeTonelProbes ]
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testATonelPageCompilesEachOfItsMethods [
+	"A source holding several methods as a Tonel file writes them, as a page class_get answers does, compiles each as its own, as a source array does, each in its own category and on its own side."
+
+	| result |
+	[
+		result := self callToolNamed: 'method_compile' withArguments: {
+				          (#class -> MCPToolMethodMutationTestTarget name).
+				          (#source -> '{ #category : ''accessing'' }
+MCPToolMethodMutationTestTarget >> tonelProbe [
+
+	^ 1
+]
+
+{ #category : ''instance creation'' }
+MCPToolMethodMutationTestTarget class >> tonelProbe: anObject [
+
+	^ anObject
+]
+') } asDictionary.
+		self deny: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
+		self assert: (self summaryFrom: result) equals: 'Compiled 2 of 2 methods.'.
+		self assert: (MCPToolMethodMutationTestTarget >> #tonelProbe) protocolName asString equals: 'accessing'.
+		self assert: (MCPToolMethodMutationTestTarget classSide >> #tonelProbe:) protocolName asString equals: 'instance creation'.
+		self assert: (MCPToolMethodMutationTestTarget new perform: #tonelProbe) equals: 1.
+		self assert: (MCPToolMethodMutationTestTarget perform: #tonelProbe: with: 2) equals: 2 ] ensure: [ self removeTonelProbes ]
 ]
 
 { #category : 'tests' }
@@ -2321,7 +2474,7 @@ MCPToolMethodMutationTest >> testHeaderNamingTheTargetIsDropped [
 
 { #category : 'tests' }
 MCPToolMethodMutationTest >> testHeaderThatCannotBeDroppedIsRefused [
-	"Dropping a header that names another class or side would compile somewhere the call did not say, a selector without its argument names would leave the body's arguments undeclared, and Tonel's brackets would leave a dead block. Each is refused, and nothing is compiled. A header naming the class side the call did not pass says to pass it."
+	"Dropping a header that names another class or side would compile somewhere the call did not say, and a selector without its argument names would leave the body's arguments undeclared. Each is refused, and nothing is compiled. A header naming the class side the call did not pass says to pass it."
 
 	self
 		assert: ((self
@@ -2342,12 +2495,7 @@ MCPToolMethodMutationTest >> testHeaderThatCannotBeDroppedIsRefused [
 				  assertClassSideHeaderIsRefusedIn: 'MCPToolMethodMutationTestTarget class >> #headerProbe
 	^ 1'
 				  side: 'instance') at: #side)
-		equals: 'instance'.
-	self
-		assertHeaderIsRefusedIn: 'MCPToolMethodMutationTestTarget >> headerProbe [
-	^ 1
-]'
-		side: nil
+		equals: 'instance'
 ]
 
 { #category : 'tests' }
@@ -2881,6 +3029,24 @@ MCPToolMethodMutationTest >> testTemporariesAfterAStatementSayWhereTheyGo [
 				self assert: (error at: #errorCode) equals: 'CompileSyntaxError'.
 				self deny: ((error at: #message) includesSubstring: 'Temporaries') description: [ error at: #message ] ] ] ensure: [
 		self removeHeaderProbes ]
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testTheProtocolNamedWinsOverATonelCategory [
+	"The protocol the call names is what the caller chose; a category line copied with the method gives the protocol only when the call names none."
+
+	| result |
+	[
+		result := self callToolNamed: 'method_compile' withArguments: {
+				          (#class -> MCPToolMethodMutationTestTarget name).
+				          (#protocol -> 'private').
+				          (#source -> '{ #category : ''accessing'' }
+MCPToolMethodMutationTestTarget >> tonelProbe [
+	^ 1
+]') } asDictionary.
+		self deny: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
+		self assert: (MCPToolMethodMutationTestTarget >> #tonelProbe) protocolName asString equals: 'private' ] ensure: [
+		self removeTonelProbes ]
 ]
 
 { #category : 'tests' }

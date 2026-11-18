@@ -34,11 +34,13 @@ MCPToolCompileMethod >> anotherMethodIn: aSource upToLine: aLineNumber do: aBloc
 
 { #category : 'private - errors' }
 MCPToolCompileMethod >> argumentsChoosingSide: classSide of: request [
-	"What a call like request passes to compile on the side classSide, the class side when true: side, and, since each names a side of its own, the class without its side when it was written as Foo class, and a source without the method's reference it began with."
+	"What a call like request passes to compile on the side classSide, the class side when true: side, and, since each names a side of its own, the class without its side when it was written as Foo class, and a source without the method's reference or Tonel header it began with."
 
-	| className startsWithReference |
+	| className source startsWithReference |
 	className := request stringArgumentNamed: 'class'.
-	startsWithReference := (self headerIn: (request argumentNamed: 'source' ifAbsent: [ nil ]) of: request) isNotNil.
+	source := request argumentNamed: 'source' ifAbsent: [ nil ].
+	startsWithReference := (self headerIn: source of: request) isNotNil or: [
+		                       (MCPTonelMethodSource fromString: source) ifNil: [ false ] ifNotNil: [ :tonel | tonel hasHeader ] ].
 	^ String streamContents: [ :stream |
 			  (MCPImageLookup namesClassSide: className) ifTrue: [
 					  stream << 'class ' << (MCPImageLookup baseNameOf: className) << (startsWithReference
@@ -64,6 +66,14 @@ MCPToolCompileMethod >> batchSummaryNoun [
 MCPToolCompileMethod >> batchSummaryVerb [
 
 	^ 'Compiled'
+]
+
+{ #category : 'private - batch' }
+MCPToolCompileMethod >> batchTargetsOf: aRequest [
+	"Each source, and each method of a source that writes several as a Tonel file does, as a page class_get answers does, so that each compiles as its own."
+
+	^ (super batchTargetsOf: aRequest) asArray flatCollect: [ :each |
+		  (MCPTonelMethodSource methodTextsIn: each) ifEmpty: [ { each } ] ]
 ]
 
 { #category : 'private' }
@@ -247,9 +257,9 @@ MCPToolCompileMethod >> methodToolSpec [
 
 { #category : 'executing' }
 MCPToolCompileMethod >> mutateWith: request [
-	"Compile the source into the class the call names, on the side it names or, when it names none, the side a header names. The answer says whether the method was created or replaced, and what its critiques find in it as stored."
+	"Compile the source into the class the call names, on the side it names or, when it names none, the side a header names. A method written as a Tonel file writes it compiles without its header and brackets, its category line giving the protocol when the call names none. The answer says whether the method was created or replaced, and what its critiques find in it as stored."
 
-	| behavior changeKind compiledMethod critiques force headerWarnings methodReference methodSource previousProtocolName selector |
+	| behavior changeKind compiledMethod critiques force headerWarnings methodReference methodSource previousProtocolName protocol selector |
 	force := request booleanArgumentNamed: 'force'.
 	headerWarnings := #(  ).
 	^ self
@@ -261,6 +271,11 @@ MCPToolCompileMethod >> mutateWith: request [
 					              classNameAndSideOf: request
 					              do: [ :className :classSide :sideGiven | MCPImageLookup compileTargetNamed: className classSide: classSide ].
 				  methodSource := request argumentNamed: 'source' ifAbsent: [ nil ].
+				  protocol := request stringArgumentNamed: 'protocol'.
+				  (MCPTonelMethodSource fromString: methodSource) ifNotNil: [ :tonel |
+						  tonel hasHeader ifTrue: [ behavior := self target: behavior forTonel: tonel of: request ].
+						  protocol ifNil: [ protocol := tonel category ].
+						  methodSource := tonel source ].
 				  (self headerIn: methodSource of: request) ifNotNil: [ :header |
 						  behavior := self
 							              target: behavior
@@ -283,10 +298,7 @@ MCPToolCompileMethod >> mutateWith: request [
 				  previousProtocolName := changeKind = 'replaced' ifTrue: [ self protocolNameOf: behavior >> selector ].
 				  self signalTraitOriginBeforeCompiling: selector in: behavior unlessForced: force.
 				  "Naming no protocol keeps the one the method is in. Pharo's own compile:classified: with nil does not promise that, so it is passed explicitly."
-				  selector := [
-				              behavior
-					              mcpCompile: methodSource
-					              classified: ((request stringArgumentNamed: 'protocol') ifNil: [ previousProtocolName ]) ]
+				  selector := [ behavior mcpCompile: methodSource classified: (protocol ifNil: [ previousProtocolName ]) ]
 					              on: Exception
 					              do: [ :error |
 							              self
@@ -375,6 +387,17 @@ MCPToolCompileMethod >> refusalOfHeader: aLine passingClassSide: aBoolean [
 			  <<
 			  ', a method''s reference. Start it with the method''s selector line, argument names included, then its body; class and side say where it goes.'.
 			  aBoolean ifTrue: [ stream << ' The header named the class side, so pass side class.' ] ]
+]
+
+{ #category : 'private - header' }
+MCPToolCompileMethod >> refusalOfTonelHeader: aTonelMethod className: aClassName side: aBoolean [
+	"What a Tonel method whose header names another class or side than the call compiles into, the class side when aBoolean is true, is to do instead."
+
+	^ String streamContents: [ :stream |
+			  stream << 'The source is the Tonel method ' << aTonelMethod header << ', which goes in ' << aTonelMethod className.
+			  aTonelMethod classSide ifTrue: [ stream << ' class' ].
+			  stream << ', but the call compiles into ' << aClassName << ' on the ' << (self sideNameFor: aBoolean)
+			  << ' side. Pass the class and side its header names, or correct the header.' ]
 ]
 
 { #category : 'private - errors' }
@@ -514,6 +537,26 @@ MCPToolCompileMethod >> target: aBehavior forHeader: aReference source: aSource 
 							  (self refusalOfHeader: line passingClassSide: (aReference classSide and: [ (sideGiven and: [ classSide ]) not ]))
 							  className: className
 							  side: (self sideNameFor: targetSide) ].
+			  targetSide
+				  ifTrue: [ aBehavior instanceSide classSide ]
+				  ifFalse: [ aBehavior instanceSide ] ]
+]
+
+{ #category : 'private - header' }
+MCPToolCompileMethod >> target: aBehavior forTonel: aTonelMethod of: request [
+	"The behaviour a Tonel method compiles into: the call's class, on the side the call names or, when it names none, the side the method's header names. A header naming another class, or the other side than the call names, is refused, and nothing is compiled."
+
+	^ self classNameAndSideOf: request do: [ :className :classSide :sideGiven |
+			  | targetSide |
+			  targetSide := sideGiven
+				                ifTrue: [ classSide ]
+				                ifFalse: [ aTonelMethod classSide ].
+			  (aTonelMethod className = aBehavior instanceSide name asString and: [ aTonelMethod classSide = targetSide ]) ifFalse: [
+					  MCPCommandError
+						  signalMethodSourceHeader: aTonelMethod header
+						  message: (self refusalOfTonelHeader: aTonelMethod className: className side: targetSide)
+						  className: className
+						  side: (self sideNameFor: targetSide) ].
 			  targetSide
 				  ifTrue: [ aBehavior instanceSide classSide ]
 				  ifFalse: [ aBehavior instanceSide ] ]
