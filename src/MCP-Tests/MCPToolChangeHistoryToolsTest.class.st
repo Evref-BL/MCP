@@ -39,15 +39,18 @@ MCPToolChangeHistoryToolsTest >> testChangeHistoryToolsDeclareExpectedInputs [
 	entryProperties := self inputPropertyNamesFor: MCPToolListChangeHistoryEntries new.
 	applyProperties := self inputPropertyNamesFor: MCPToolApplyChangeHistoryEntries new.
 	revertProperties := self inputPropertyNamesFor: MCPToolRevertChangeHistoryEntries new.
-	selectionProperties := #( 'directoryPath' 'historyFile' 'indexes' 'startIndex' 'endIndex' 'latestCount' 'codeChangesOnly'
-	                          'confirm' ).
+	selectionProperties := #( 'directoryPath' 'historyFile' 'indexes' 'codeChangesOnly' ).
 	self assert: fileProperties asArray equals: #( 'directoryPath' 'offset' ).
 	self
 		assert: entryProperties asArray
 		equals:
 		#( 'directoryPath' 'historyFile' 'class' 'side' 'selector' 'startIndex' 'endIndex' 'offset' 'newestFirst' 'codeChangesOnly' ).
 	self assert: applyProperties asArray equals: selectionProperties.
-	self assert: revertProperties asArray equals: selectionProperties
+	self assert: revertProperties asArray equals: selectionProperties.
+	{
+		MCPToolApplyChangeHistoryEntries.
+		MCPToolRevertChangeHistoryEntries } do: [ :toolClass |
+		self assert: toolClass new inputSchema required asArray equals: #( 'indexes' ) ]
 ]
 
 { #category : 'tests' }

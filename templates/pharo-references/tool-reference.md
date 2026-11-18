@@ -118,7 +118,8 @@ session rather than the image file. Evaluate `Smalltalk saveSession` when a
 change should survive, or leave it to whoever owns the image lifecycle.
 
 `history_entry_list` shows what changed and `history_entry_revert` undoes it in
-the running image; both preview, and perform with `confirm=true`.
+the running image, by the indexes the list prints; the answer shows each
+method's source before and after.
 
 ## The Escape Hatch
 

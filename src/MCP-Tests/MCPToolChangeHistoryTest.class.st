@@ -78,6 +78,16 @@ MCPToolChangeHistoryTest >> recordMethodAdditionOn: aClass [
 ]
 
 { #category : 'private' }
+MCPToolChangeHistoryTest >> recordNonCodeEntry [
+	"Record a session start, an entry that is no code change, and answer its index."
+
+	EpMonitor current addEvent: EpSessionStart new.
+	EpMonitor current sessionStore flush.
+	EpMonitor current log refresh.
+	^ EpMonitor current log entries size
+]
+
+{ #category : 'private' }
 MCPToolChangeHistoryTest >> recordRecoverableMethodAdditionOn: aClass [
 
 	| index |
@@ -172,14 +182,10 @@ MCPToolChangeHistoryTest >> testADirectoryWithoutAFileListsTheSessionWhereItIs [
 MCPToolChangeHistoryTest >> testANonCodeEntryChangesNothing [
 	"Kept in the selection when codeChangesOnly is false, an entry that is no code change has nothing to apply, and says so."
 
-	| entry index |
-	EpMonitor current addEvent: EpSessionStart new.
-	EpMonitor current sessionStore flush.
-	EpMonitor current log refresh.
-	index := EpMonitor current log entries size.
+	| entry |
 	entry := ((self dataFrom: (self callToolWith: {
 				            (#action -> 'applyEntries').
-				            (#indexes -> { index }).
+				            (#indexes -> { self recordNonCodeEntry }).
 				            (#codeChangesOnly -> false) } asDictionary)) at: #selectedEntries) first.
 	self assert: (entry at: #eventClass) equals: 'EpSessionStart'.
 	self assert: (entry at: #changesNothing) equals: 'not a code change'
@@ -208,7 +214,7 @@ MCPToolChangeHistoryTest >> testARelativeDirectoryIsRefusedNamingTheImageDirecto
 
 { #category : 'tests' }
 MCPToolChangeHistoryTest >> testApplyAndRevertPrintWhatTheySelected [
-	"Each prints the entries it selected beside the changes it previews, so an entry that changes nothing can be told; the selection criteria are the request read back."
+	"Each prints the entries it selected beside the changes it made, so an entry that changed nothing can be told; the selection criteria are the request read back."
 
 	self withTemporaryRecoveryClassDo: [ :class |
 			| textFor |
@@ -217,15 +223,16 @@ MCPToolChangeHistoryTest >> testApplyAndRevertPrintWhatTheySelected [
 							            (#action -> action).
 							            (#indexes -> { entryIndex }) } asDictionary) ].
 			{
-				(textFor value: 'applyEntries' value: (self recordRecoverableMethodAdditionOn: class)).
-				(textFor value: 'revertEntries' value: (self recordMethodAdditionOn: class)) } do: [ :text |
+				(textFor value: 'revertEntries' value: (self recordMethodAdditionOn: class)).
+				(textFor value: 'applyEntries' value: (self recordRecoverableMethodAdditionOn: class)) } do: [ :text |
 					self deny: (text includesSubstring: 'selectionCriteria').
-					self assert: (text includesSubstring: 'selectedEntries').
-					self assert: (text includesSubstring: 'previewEntries') ] ]
+					self assert: (text includesSubstring: 'selectedEntries:').
+					self assert: (text includesSubstring: 'changes:') ] ]
 ]
 
 { #category : 'tests' }
-MCPToolChangeHistoryTest >> testApplyEntriesAppliesConfirmedChanges [
+MCPToolChangeHistoryTest >> testApplyEntriesAppliesChanges [
+	"A call applies what it selects: there is no preview to confirm first."
 
 	self withTemporaryRecoveryClassDo: [ :class |
 			| data entryIndex result |
@@ -233,48 +240,15 @@ MCPToolChangeHistoryTest >> testApplyEntriesAppliesConfirmedChanges [
 			self deny: (class includesSelector: #rescuedValue).
 			result := self callToolWith: {
 					          (#action -> 'applyEntries').
-					          (#indexes -> { entryIndex }).
-					          (#confirm -> true) } asDictionary.
-			data := self dataFrom: result.
-			self deny: (result at: #isError ifAbsent: [ false ]).
-			self assert: (data at: #action) equals: 'apply'.
-			self assert: (data at: #performed).
-			self assert: (data at: #performedCount) equals: 1.
-			self assert: (class includesSelector: #rescuedValue).
-			self assert: (class >> #rescuedValue) sourceCode equals: 'rescuedValue ^ 42' ]
-]
-
-{ #category : 'tests' }
-MCPToolChangeHistoryTest >> testApplyEntriesPreviewsChanges [
-
-	self withTemporaryRecoveryClassDo: [ :class |
-			| data entryIndex previewEntry result |
-			entryIndex := self recordRecoverableMethodAdditionOn: class.
-			result := self callToolWith: {
-					          (#action -> 'applyEntries').
 					          (#indexes -> { entryIndex }) } asDictionary.
 			data := self dataFrom: result.
 			self deny: (result at: #isError ifAbsent: [ false ]).
 			self assert: (data at: #action) equals: 'apply'.
 			self assert: (data at: #selectedCount) equals: 1.
-			self assert: (data at: #previewCount) equals: 1.
-			self deny: (data at: #performed).
-			previewEntry := (data at: #previewEntries) first.
-			self assert: (previewEntry at: #selector) equals: 'rescuedValue' ]
-]
-
-{ #category : 'tests' }
-MCPToolChangeHistoryTest >> testApplyEntriesRejectsIncompleteRange [
-
-	| error result |
-	result := self callToolWith: {
-			          (#action -> 'applyEntries').
-			          (#startIndex -> 1) } asDictionary.
-	error := self errorFrom: result.
-	self assert: (result at: #isError).
-	self assert: (error at: #errorCode) equals: 'ChangeHistoryInvalidSelection'.
-	self assert: (error at: #startIndex) equals: 1.
-	self assert: (error at: #endIndex) isNil
+			self assert: (data at: #changeCount) equals: 1.
+			self assert: ((data at: #changes) first at: #selector) equals: 'rescuedValue'.
+			self assert: (self summaryFrom: result) equals: 'Applied 1 change from 1 selected history entry.'.
+			self assert: (class >> #rescuedValue) sourceCode equals: 'rescuedValue ^ 42' ]
 ]
 
 { #category : 'tests' }
@@ -292,38 +266,22 @@ MCPToolChangeHistoryTest >> testApplyEntriesRejectsNonPositiveIndex [
 ]
 
 { #category : 'tests' }
-MCPToolChangeHistoryTest >> testApplyEntriesRequiresSelectionCriteria [
+MCPToolChangeHistoryTest >> testApplyEntriesRequiresAnIndex [
+	"indexes is the only way to name an entry, so a call without one, or with an empty list, names nothing to apply."
 
 	| error result |
-	result := self callToolWith: { (#action -> 'applyEntries') } asDictionary.
+	self should: [ self callToolWith: { (#action -> 'applyEntries') } asDictionary ] raise: MCPInvalidToolInput.
+	result := self callToolWith: {
+			          (#action -> 'applyEntries').
+			          (#indexes -> #(  )) } asDictionary.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (error at: #errorCode) equals: 'ChangeHistoryInvalidSelection'
 ]
 
 { #category : 'tests' }
-MCPToolChangeHistoryTest >> testApplyEntriesWithoutConfirmOnlyPreviews [
-
-	self withTemporaryRecoveryClassDo: [ :class |
-			| data entryIndex result |
-			entryIndex := self recordRecoverableMethodAdditionOn: class.
-			self deny: (class includesSelector: #rescuedValue).
-			result := self callToolWith: {
-					          (#action -> 'applyEntries').
-					          (#indexes -> { entryIndex }).
-					          (#confirm -> false) } asDictionary.
-			data := self dataFrom: result.
-			self deny: (result at: #isError ifAbsent: [ false ]).
-			self assert: (data at: #action) equals: 'apply'.
-			self deny: (data at: #performed).
-			self assert: (data at: #performedCount) equals: 0.
-			self assert: (data at: #previewCount) equals: 1.
-			self deny: (class includesSelector: #rescuedValue) ]
-]
-
-{ #category : 'tests' }
 MCPToolChangeHistoryTest >> testApplySaysWhichSelectedEntriesChangeNothing [
-	"Applying two changes to one method previews the later alone, and the image already holds it: each selected entry says why it changes nothing."
+	"Applying two changes to one method comes down to the later, and the image already holds it: each selected entry says why it changes nothing."
 
 	self withTemporaryRecoveryClassDo: [ :class |
 			| additionIndex data modificationIndex reasons |
@@ -335,7 +293,7 @@ MCPToolChangeHistoryTest >> testApplySaysWhichSelectedEntriesChangeNothing [
 							          additionIndex.
 							          modificationIndex }) } asDictionary).
 			reasons := (data at: #selectedEntries) collect: [ :each | (each at: #index) -> (each at: #changesNothing) ] as: Dictionary.
-			self assert: (data at: #previewEntries) isEmpty.
+			self assert: (data at: #changes) isEmpty.
 			self
 				assert: (reasons at: additionIndex)
 				equals: (String streamContents: [ :stream | stream << 'overridden by entry ' << modificationIndex printString ]).
@@ -343,20 +301,21 @@ MCPToolChangeHistoryTest >> testApplySaysWhichSelectedEntriesChangeNothing [
 ]
 
 { #category : 'tests' }
-MCPToolChangeHistoryTest >> testApplyingAnOlderVersionPreviewsTheSourceBeforeAndAfter [
-	"Applying a method's addition once the method has changed puts the source it added back: the preview is a modification from the source in the image to that one, under the addition's own index."
+MCPToolChangeHistoryTest >> testApplyingAnOlderVersionShowsTheSourceBeforeAndAfter [
+	"Applying a method's addition once the method has changed puts the source it added back: the change is a modification from the source in the image to that one, under the addition's own index."
 
 	self withTemporaryRecoveryClassDo: [ :class |
-			| additionIndex previewEntry |
+			| additionIndex change |
 			additionIndex := self recordRescuedValue: 'rescuedValue ^ 42' on: class.
 			self recordRescuedValue: 'rescuedValue ^ 43' on: class.
-			previewEntry := ((self dataFrom: (self callToolWith: {
-						                   (#action -> 'applyEntries').
-						                   (#indexes -> { additionIndex }) } asDictionary)) at: #previewEntries) first.
-			self assert: (previewEntry at: #index) equals: additionIndex.
-			self assert: (previewEntry at: #eventClass) equals: 'EpMethodModification'.
-			self assert: (previewEntry at: #sourceBefore) equals: 'rescuedValue ^ 43'.
-			self assert: (previewEntry at: #sourceAfter) equals: 'rescuedValue ^ 42' ]
+			change := ((self dataFrom: (self callToolWith: {
+						             (#action -> 'applyEntries').
+						             (#indexes -> { additionIndex }) } asDictionary)) at: #changes) first.
+			self assert: (change at: #index) equals: additionIndex.
+			self assert: (change at: #eventClass) equals: 'EpMethodModification'.
+			self assert: (change at: #sourceBefore) equals: 'rescuedValue ^ 43'.
+			self assert: (change at: #sourceAfter) equals: 'rescuedValue ^ 42'.
+			self assert: (class >> #rescuedValue) sourceCode equals: 'rescuedValue ^ 42' ]
 ]
 
 { #category : 'tests' }
@@ -377,20 +336,6 @@ MCPToolChangeHistoryTest >> testClassSideEntryReadsAsAClassSideMethod [
 			text := (result at: #content) first at: #text.
 			self assert: (text includesSubstring: ('{1} class>>rescuedValue' format: { class name })).
 			self deny: (text includesSubstring: ' class class>>') ]
-]
-
-{ #category : 'tests' }
-MCPToolChangeHistoryTest >> testListEntriesKeepsTheRangeTheOtherToolsTake [
-
-	self withTemporaryRecoveryClassDo: [ :class |
-			| entries index |
-			index := self recordMethodAdditionOn: class.
-			entries := (self dataFrom: (self callToolWith: {
-						             (#action -> 'listEntries').
-						             (#startIndex -> index).
-						             (#endIndex -> index) } asDictionary)) at: #entries.
-			self assert: (entries collect: [ :each | each at: #index ] as: Array) equals: { index }.
-			self removeSelector: #rescuedValue from: class ]
 ]
 
 { #category : 'tests' }
@@ -532,6 +477,20 @@ MCPToolChangeHistoryTest >> testListEntriesSupportsHistoryFileName [
 ]
 
 { #category : 'tests' }
+MCPToolChangeHistoryTest >> testListEntriesWithinARange [
+
+	self withTemporaryRecoveryClassDo: [ :class |
+			| entries index |
+			index := self recordMethodAdditionOn: class.
+			entries := (self dataFrom: (self callToolWith: {
+						             (#action -> 'listEntries').
+						             (#startIndex -> index).
+						             (#endIndex -> index) } asDictionary)) at: #entries.
+			self assert: (entries collect: [ :each | each at: #index ] as: Array) equals: { index }.
+			self removeSelector: #rescuedValue from: class ]
+]
+
+{ #category : 'tests' }
 MCPToolChangeHistoryTest >> testListFilesReportsFilePathAsNotDirectory [
 
 	| data error file filePath result |
@@ -604,7 +563,8 @@ MCPToolChangeHistoryTest >> testNonCodeEntryDictionaryHasExpectedShape [
 ]
 
 { #category : 'tests' }
-MCPToolChangeHistoryTest >> testRevertEntriesRevertsConfirmedChanges [
+MCPToolChangeHistoryTest >> testRevertEntriesRevertsChanges [
+	"A call reverts what it selects, and says so."
 
 	self withTemporaryRecoveryClassDo: [ :class |
 			| data entryIndex result |
@@ -612,22 +572,21 @@ MCPToolChangeHistoryTest >> testRevertEntriesRevertsConfirmedChanges [
 			self assert: (class includesSelector: #rescuedValue).
 			result := self callToolWith: {
 					          (#action -> 'revertEntries').
-					          (#indexes -> { entryIndex }).
-					          (#confirm -> true) } asDictionary.
+					          (#indexes -> { entryIndex }) } asDictionary.
 			data := self dataFrom: result.
 			self deny: (result at: #isError ifAbsent: [ false ]).
 			self assert: (data at: #action) equals: 'revert'.
-			self assert: (data at: #performed).
-			self assert: (data at: #performedCount) equals: 1.
+			self assert: (data at: #changeCount) equals: 1.
+			self assert: (self summaryFrom: result) equals: 'Reverted 1 change from 1 selected history entry.'.
 			self deny: (class includesSelector: #rescuedValue) ]
 ]
 
 { #category : 'tests' }
 MCPToolChangeHistoryTest >> testRevertUndoesTheOldestOfTheChangesToOneMethod [
-	"A revert undoes the newest entry first, so reverting a method's addition and a later change to it comes down to removing the method: the preview is the addition's, and the later change is overridden by it."
+	"A revert undoes the newest entry first, so reverting a method's addition and a later change to it comes down to removing the method: the change is the addition's, and the later change is overridden by it."
 
 	self withTemporaryRecoveryClassDo: [ :class |
-			| additionIndex data modificationIndex previewEntry selectedEntries |
+			| additionIndex change data modificationIndex selectedEntries |
 			additionIndex := self recordRescuedValue: 'rescuedValue ^ 42' on: class.
 			modificationIndex := self recordRescuedValue: 'rescuedValue ^ 43' on: class.
 			data := self dataFrom: (self callToolWith: {
@@ -635,24 +594,25 @@ MCPToolChangeHistoryTest >> testRevertUndoesTheOldestOfTheChangesToOneMethod [
 						         (#indexes -> {
 							          additionIndex.
 							          modificationIndex }) } asDictionary).
-			previewEntry := (data at: #previewEntries) first.
+			change := (data at: #changes) first.
 			selectedEntries := (data at: #selectedEntries) collect: [ :each | (each at: #index) -> each ] as: Dictionary.
-			self assert: (data at: #previewEntries) size equals: 1.
-			self assert: (previewEntry at: #index) equals: additionIndex.
-			self assert: (previewEntry at: #eventClass) equals: 'EpMethodRemoval'.
-			self assert: (previewEntry at: #sourceBefore) equals: 'rescuedValue ^ 43'.
+			self assert: (data at: #changes) size equals: 1.
+			self assert: (change at: #index) equals: additionIndex.
+			self assert: (change at: #eventClass) equals: 'EpMethodRemoval'.
+			self assert: (change at: #sourceBefore) equals: 'rescuedValue ^ 43'.
 			self deny: ((selectedEntries at: additionIndex) includesKey: #changesNothing).
 			self
 				assert: ((selectedEntries at: modificationIndex) at: #changesNothing)
-				equals: (String streamContents: [ :stream | stream << 'overridden by entry ' << additionIndex printString ]) ]
+				equals: (String streamContents: [ :stream | stream << 'overridden by entry ' << additionIndex printString ]).
+			self deny: (class includesSelector: #rescuedValue) ]
 ]
 
 { #category : 'tests' }
-MCPToolChangeHistoryTest >> testRevertingARemovalPreviewsTheSourceItRestores [
-	"Reverting a removal adds the method back: the preview says so under the removal's own index, with the source it restores."
+MCPToolChangeHistoryTest >> testRevertingARemovalShowsTheSourceItRestores [
+	"Reverting a removal adds the method back: the answer says so under the removal's own index, with the source it restored."
 
 	self withTemporaryRecoveryClassDo: [ :class |
-			| previewEntry removalIndex result source |
+			| change removalIndex result source |
 			source := String streamContents: [ :stream |
 					          stream
 						          nextPutAll: 'rescuedValue';
@@ -666,39 +626,39 @@ MCPToolChangeHistoryTest >> testRevertingARemovalPreviewsTheSourceItRestores [
 			result := self callToolWith: {
 					          (#action -> 'revertEntries').
 					          (#indexes -> { removalIndex }) } asDictionary.
-			previewEntry := ((self dataFrom: result) at: #previewEntries) first.
-			self assert: (previewEntry at: #index) equals: removalIndex.
-			self assert: (previewEntry at: #eventClass) equals: 'EpMethodAddition'.
-			self assert: (previewEntry at: #sourceAfter) equals: source.
-			self deny: (previewEntry includesKey: #sourceBefore).
+			change := ((self dataFrom: result) at: #changes) first.
+			self assert: (change at: #index) equals: removalIndex.
+			self assert: (change at: #eventClass) equals: 'EpMethodAddition'.
+			self assert: (change at: #sourceAfter) equals: source.
+			self deny: (change includesKey: #sourceBefore).
 			self assert: ((self textFrom: result) includesSubstring: (String streamContents: [ :stream |
 							  stream
 								  nextPutAll: 'sourceAfter:';
 								  lf;
-								  nextPutAll: source ])) ]
+								  nextPutAll: source ])).
+			self assert: (class >> #rescuedValue) sourceCode equals: source ]
 ]
 
 { #category : 'tests' }
 MCPToolChangeHistoryTest >> testSelectionResultDataHasExpectedShape [
 
-	| data |
+	| data index |
+	index := self recordNonCodeEntry.
 	data := self dataFrom: (self callToolWith: {
 				         (#action -> 'applyEntries').
-				         (#latestCount -> 1) } asDictionary).
+				         (#indexes -> { index }) } asDictionary).
 	self assert: data equals: {
 			(#action -> 'apply').
 			(#historyFile -> 'log.ombu').
 			(#selectionCriteria -> {
-				 (#latestCount -> 1).
+				 (#indexes -> { index }).
 				 (#codeChangesOnly -> true) } asDictionary).
 			(#selectedEntries -> #(  )).
-			(#previewEntries -> #(  )).
+			(#changes -> #(  )).
 			(#selectedCount -> 0).
 			(#selectedCodeChangeCount -> 0).
-			(#previewCount -> 0).
-			(#skippedNonCodeChangeCount -> 0).
-			(#performed -> false).
-			(#performedCount -> 0) } asDictionary
+			(#changeCount -> 0).
+			(#skippedNonCodeChangeCount -> 1) } asDictionary
 ]
 
 { #category : 'tests' }
@@ -709,7 +669,7 @@ MCPToolChangeHistoryTest >> testSelectionToolsRouteToChangeHistorySelectionComma
 		(MCPToolRevertChangeHistoryEntries -> 'revert') } do: [ :association |
 			| request tool |
 			tool := association key new.
-			request := tool requestFromToolCallArguments: { (#latestCount -> 1) } asDictionary.
+			request := tool requestFromToolCallArguments: { (#indexes -> { self recordNonCodeEntry }) } asDictionary.
 			self assert: (tool selectionFor: request in: EpMonitor current log) class equals: MCPChangeHistorySelectionCommand.
 			self assert: ((self dataFrom: (tool executeWithRequest: request) asJRPCJSON) at: #action) equals: association value ]
 ]

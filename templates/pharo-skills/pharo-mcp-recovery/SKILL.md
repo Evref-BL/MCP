@@ -19,7 +19,7 @@ standalone image without a safer environment-specific recovery surface.
    `localUrlString`; restart the existing MCP instance when possible.
 4. Create a replacement image only after preserving the original. Use
    `pharo-project-load` to restore MCP and the target project.
-5. Recover changes by inspecting Epicea history before confirmed application.
+5. Recover changes by inspecting Epicea history before applying any of it.
    History lists every change since the image started, committed or not:
    check a change against the checkout's `git log` before naming it as lost,
    as `pharo-image-sync` says. Use it too before repository attachment or

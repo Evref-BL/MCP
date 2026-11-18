@@ -1,5 +1,5 @@
 "
-Concrete history_entry_apply tool. It previews or confirms applying selected Pharo change-history entries through MCPToolChangeHistoryOperation.
+Concrete history_entry_apply tool. It applies selected Pharo change-history entries through MCPToolChangeHistoryOperation.
 "
 Class {
 	#name : 'MCPToolApplyChangeHistoryEntries',
@@ -22,8 +22,9 @@ MCPToolApplyChangeHistoryEntries >> changeHistoryToolSpec [
 		  (#title -> 'Apply Change History Entries').
 		  (#description
 		   ->
-		   'Preview or confirm applying selected Pharo change history entries to the current image. Applying an entry makes its change again: applying a method removal removes the method. The answer shows the source of each method it changes, before and after. Set confirm=true to perform the previewed changes.').
+		   'Apply change history entries, chosen by index, to the current image. Applying an entry makes its change again: applying a method removal removes the method. The answer shows the source of each method it changed, before and after, and says why a selected entry changed nothing. Find the indexes with history_entry_list, which filters by class and selector.').
 		  (#action -> 'apply').
+		  (#pastTense -> 'Applied').
 		  (#unchangedReason -> 'already applied in the image') } asDictionary
 ]
 

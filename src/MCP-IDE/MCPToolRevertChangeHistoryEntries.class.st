@@ -1,5 +1,5 @@
 "
-Concrete history_entry_revert tool. It previews or confirms reverting selected Pharo change-history entries through MCPToolChangeHistoryOperation.
+Concrete history_entry_revert tool. It reverts selected Pharo change-history entries through MCPToolChangeHistoryOperation.
 "
 Class {
 	#name : 'MCPToolRevertChangeHistoryEntries',
@@ -22,8 +22,9 @@ MCPToolRevertChangeHistoryEntries >> changeHistoryToolSpec [
 		  (#title -> 'Revert Change History Entries').
 		  (#description
 		   ->
-		   'Preview or confirm reverting selected Pharo change history entries from the current image. Reverting an entry undoes its change: reverting a method removal restores the method, and reverting an addition removes it. The answer shows the source of each method it changes, before and after. Set confirm=true to perform the previewed changes.').
+		   'Revert change history entries, chosen by index, from the current image. Reverting an entry undoes its change: reverting a method removal restores the method, and reverting an addition removes it. The answer shows the source of each method it changed, before and after, and says why a selected entry changed nothing. Find the indexes with history_entry_list, which filters by class and selector.').
 		  (#action -> 'revert').
+		  (#pastTense -> 'Reverted').
 		  (#unchangedReason -> 'already reverted in the image') } asDictionary
 ]
 

@@ -37,9 +37,7 @@ MCPToolListChangeHistoryEntries >> buildInputSchema [
 						   type: 'string'
 						   description:
 							   'List only the entries that change methods of this selector, named exactly, or of one method written as Class>>selector.').
-					  (self
-						   integerSchemaPropertyNamed: 'startIndex'
-						   description: 'List from this one-based index, as history_entry_apply and history_entry_revert take it.').
+					  (self integerSchemaPropertyNamed: 'startIndex' description: 'List from this one-based index.').
 					  (self integerSchemaPropertyNamed: 'endIndex' description: 'Last one-based index to list.').
 					  self offsetInputProperty.
 					  (self booleanSchemaPropertyNamed: 'newestFirst' description: 'List the most recent entries first.' default: false).
@@ -106,12 +104,12 @@ MCPToolListChangeHistoryEntries >> defaultPageLimit [
 { #category : 'metadata' }
 MCPToolListChangeHistoryEntries >> description [
 
-	^ 'List granular entries from the current Pharo image change history or a selected .ombu file, all of them or those that change one class or method. Use history_file_list to locate files, and history_entry_apply or history_entry_revert only when previewing or performing recovery changes.'
+	^ 'List granular entries from the current Pharo image change history or a selected .ombu file, all of them or those that change one class or method. Use history_file_list to locate files, and history_entry_apply or history_entry_revert, which take the indexes listed here, only to recover changes.'
 ]
 
 { #category : 'private - entries' }
 MCPToolListChangeHistoryEntries >> entryPairsFrom: aLog for: request [
-	"The entries of aLog the request lists, as pairs of their one-based index and the entry, the oldest first unless newestFirst. startIndex and endIndex keep the range of indexes the other history tools take, and class, side and selector the entries that change what they name."
+	"The entries of aLog the request lists, as pairs of their one-based index and the entry, the oldest first unless newestFirst. startIndex and endIndex keep a range of indexes, and class, side and selector the entries that change what they name."
 
 	| codeChangesOnly endIndex isListed pairs startIndex |
 	codeChangesOnly := request booleanArgumentNamed: 'codeChangesOnly'.
