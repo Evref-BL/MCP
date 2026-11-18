@@ -141,6 +141,97 @@ MCPJSONSchemaValidatorTest >> schemaPropertyType: typeName [
 ]
 
 { #category : 'tests' }
+MCPJSONSchemaValidatorTest >> testATypeErrorOnAnObjectNamesItsKeysWithAnExampleOfWhatWasSent [
+	"A caller that sends a list or a string where an object goes seldom knows the object's shape. The sentence names its keys, and puts what was sent under the first key that takes it, as it is or in a list. A value that names a key, or that no key takes, makes no example, and an object whose schema names no key says nothing more."
+
+	| schema sentenceFor violation |
+	schema := {
+		          (#type -> 'object').
+		          (#properties -> { ('slots' -> {
+			            (#type -> 'object').
+			            (#properties -> {
+				             ('remove' -> {
+					              (#type -> 'array').
+					              (#items -> (self schemaPropertyType: 'string')) } asDictionary).
+				             ('add' -> {
+					              (#type -> 'array').
+					              (#items -> (self schemaPropertyType: 'string')) } asDictionary).
+				             ('rename' -> (self schemaPropertyType: 'object')) } asDictionary) } asDictionary) } asDictionary) } asDictionary.
+	sentenceFor := [ :value | (self violationsFor: { ('slots' -> value) } asDictionary schema: schema) first sentence ].
+	self
+		assert: (sentenceFor value: #( 'color' ))
+		equals:
+		'slots must be object, not array. Give it as an object with the keys add, remove or rename, for example {"add":["color"]}.'.
+	self
+		assert: (sentenceFor value: 'color')
+		equals:
+		'slots must be object, not string. Give it as an object with the keys add, remove or rename, for example {"add":["color"]}.'.
+	self
+		assert: (sentenceFor value: 'rename')
+		equals: 'slots must be object, not string. Give it as an object with the keys add, remove or rename.'.
+	self
+		assert: (sentenceFor value: 3)
+		equals: 'slots must be object, not integer. Give it as an object with the keys add, remove or rename.'.
+	self assert: (sentenceFor value: { ('rename' -> #( 'a' 'b' )) } asDictionary) equals: 'slots.rename must be object, not array.'.
+	violation := (self violationsFor: { ('slots' -> #( 'color' )) } asDictionary schema: schema) first asDictionary.
+	self assert: (violation at: #keys) equals: #( 'add' 'remove' 'rename' ).
+	self assert: (violation at: #example) equals: { ('add' -> #( 'color' )) } asDictionary
+]
+
+{ #category : 'tests' }
+MCPJSONSchemaValidatorTest >> testATypeErrorOnAnObjectPutsWhatWasSentUnderAKeyThatTakesItAsItIs [
+	"A key that takes the value as it was sent is a better guess than one that takes it only in a list, wherever their names sort: a scope sent as class means the side, not a class named class. Which key a list goes under remains a guess."
+
+	| schema sentenceFor |
+	schema := {
+		          (#type -> 'object').
+		          (#properties -> { ('scope' -> {
+			            (#type -> 'object').
+			            (#properties -> {
+				             ('classes' -> {
+					              (#type -> 'array').
+					              (#items -> (self schemaPropertyType: 'string')) } asDictionary).
+				             ('side' -> {
+					              (#type -> 'string').
+					              (#enum -> #( 'instance' 'class' )) } asDictionary) } asDictionary) } asDictionary) } asDictionary) }
+		          asDictionary.
+	sentenceFor := [ :value | (self violationsFor: { ('scope' -> value) } asDictionary schema: schema) first sentence ].
+	self
+		assert: (sentenceFor value: 'class')
+		equals: 'scope must be object, not string. Give it as an object with the keys classes or side, for example {"side":"class"}.'.
+	self
+		assert: (sentenceFor value: 'Foo')
+		equals: 'scope must be object, not string. Give it as an object with the keys classes or side, for example {"classes":["Foo"]}.'
+]
+
+{ #category : 'tests' }
+MCPJSONSchemaValidatorTest >> testATypeErrorOnAnObjectReadsJSONWrittenAsAString [
+	"A caller that writes the object, or the list it meant, as JSON inside a string means what the string holds. The example is made of that rather than of the text, and text in brackets that is no JSON gives none: a slot named after the text would mislead. An object read so is the example only when it is right as it is, with keys the schema names: one that is not shows the caller its own mistake back, and put under a key that takes any object it would read as right."
+
+	| schema sentenceFor |
+	schema := {
+		          (#type -> 'object').
+		          (#properties -> { ('slots' -> {
+			            (#type -> 'object').
+			            (#properties -> {
+				             ('add' -> {
+					              (#type -> 'array').
+					              (#items -> (self schemaPropertyType: 'string')) } asDictionary).
+				             ('rename' -> (self schemaPropertyType: 'object')) } asDictionary) } asDictionary) } asDictionary) } asDictionary.
+	sentenceFor := [ :value | (self violationsFor: { ('slots' -> value) } asDictionary schema: schema) first sentence ].
+	self
+		assert: (sentenceFor value: '["color"]')
+		equals: 'slots must be object, not string. Give it as an object with the keys add or rename, for example {"add":["color"]}.'.
+	self
+		assert: (sentenceFor value: '{"add":["color"]}')
+		equals: 'slots must be object, not string. Give it as an object with the keys add or rename, for example {"add":["color"]}.'.
+	#( '["title" "text"]' '{"add":"color"}' '{"added":["color"]}' '{"rename":"color"}' '{}' ) do: [ :each |
+			self
+				assert: (sentenceFor value: each)
+				equals: 'slots must be object, not string. Give it as an object with the keys add or rename.' ]
+]
+
+{ #category : 'tests' }
 MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasAcceptRepresentativeArguments [
 
 	| argumentsByTool |

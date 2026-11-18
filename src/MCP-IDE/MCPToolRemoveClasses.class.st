@@ -145,8 +145,26 @@ MCPToolRemoveClasses >> removeClassesWith: request [
 ]
 
 { #category : 'private' }
+MCPToolRemoveClasses >> sentenceForMethodNames: someMethodNames removedWithClasses: aCount [
+	"Its 3 methods were removed with it: Foo>>a, Foo>>b and Foo class>>c. Past ten methods, only how many, since naming them all would bury the rest of the answer."
+
+	^ String streamContents: [ :stream |
+			  stream nextPutAll: (aCount = 1
+					   ifTrue: [ 'Its ' ]
+					   ifFalse: [ 'Their ' ]).
+			  someMethodNames size = 1
+				  ifTrue: [ stream << 'method ' << someMethodNames first << ' was' ]
+				  ifFalse: [ stream << someMethodNames size printString << ' methods were' ].
+			  stream nextPutAll: (aCount = 1
+					   ifTrue: [ ' removed with it' ]
+					   ifFalse: [ ' removed with them' ]).
+			  (someMethodNames size between: 2 and: 10) ifTrue: [ stream << ': ' << (MCPScopeQuery listPhraseFor: someMethodNames) ].
+			  stream nextPut: $. ]
+]
+
+{ #category : 'private' }
 MCPToolRemoveClasses >> successSummaryForClassNames: classNames removal: aRemoval [
-	"Each subclass moved up is named once, with the class it inherits from now, so that a class made again under a removed name is not taken to bring it back. A removal that warned went past what blocked it."
+	"Each subclass moved up is named once, with the class it inherits from now, so that a class made again under a removed name is not taken to bring it back. The methods that went with the classes are said, since a caller removing a class may not count them gone. A removal that warned went past what blocked it."
 
 	^ String streamContents: [ :stream |
 			  stream nextPutAll: (aRemoval warningMessages ifEmpty: [ 'Removed ' ] ifNotEmpty: [ 'Force-removed ' ]).
@@ -161,6 +179,10 @@ MCPToolRemoveClasses >> successSummaryForClassNames: classNames removal: aRemova
 							  nextPutAll: ' classes: ';
 							  nextPutAll: (', ' join: classNames) ].
 			  stream nextPut: $..
+			  aRemoval removedMethodNames ifNotEmpty: [ :names |
+					  stream
+						  space;
+						  nextPutAll: (self sentenceForMethodNames: names removedWithClasses: classNames size) ].
 			  aRemoval reparentedSubclassNamesBySuperclassName keysAndValuesDo: [ :superclassName :subclassNames |
 					  stream
 						  space;

@@ -33,6 +33,19 @@ MCPCommandError class >> detailsNaming: aName role: aRole scope: aScopeKeyOrNil 
 ]
 
 { #category : 'private - names' }
+MCPCommandError class >> joinedNames: someStrings [
+	"A, A and B, A, B and C."
+
+	^ String streamContents: [ :stream |
+			  someStrings withIndexDo: [ :each :index |
+					  index > 1 ifTrue: [
+							  stream nextPutAll: (index = someStrings size
+									   ifTrue: [ ' and ' ]
+									   ifFalse: [ ', ' ]) ].
+					  stream nextPutAll: each ] ]
+]
+
+{ #category : 'private - names' }
 MCPCommandError class >> kindOfRole: aRole [
 	"What a global variable given in aRole should have been, as in: not a class."
 
@@ -143,6 +156,101 @@ MCPCommandError class >> signalClassAlreadyExistsNamed: aClassName [
 			  ('Class {1} already exists. Change it with class_update, through tool_call when class_update is not in your list: tool_call \{"name": "class_update", "arguments": \{"name": "{1}", ...}}. class_get shows it.'
 				   format: { aClassName })
 		  details: { (#class -> aClassName) } asDictionary
+]
+
+{ #category : 'signaling' }
+MCPCommandError class >> signalClassAlreadyExistsNamed: aClassName askedForATrait: aBoolean [
+	"class_create's refusal of a name the other kind holds: a class where the call asks for a trait, or a trait where it asks for a class. class_update makes neither the other, so no call to it is written."
+
+	| asked existing |
+	asked := aBoolean
+		         ifTrue: [ 'trait' ]
+		         ifFalse: [ 'class' ].
+	existing := aBoolean
+		            ifTrue: [ 'class' ]
+		            ifFalse: [ 'trait' ].
+	^ self
+		  signalErrorCode: #ClassAlreadyExists
+		  message:
+			  ('{1} {2} already exists, and this call asks for a {3}: class_update cannot make a {4} a {3}. Choose another name for the {3}. class_get shows the {4}.'
+				   format: {
+						   existing capitalized.
+						   aClassName.
+						   asked.
+						   existing })
+		  details: { (#class -> aClassName) } asDictionary
+]
+
+{ #category : 'signaling' }
+MCPCommandError class >> signalClassAlreadyExistsNamed: aClassName package: aPackageName otherProjectThan: aRequestedPackageName [
+	"class_create's refusal of a class that exists in a package of another project than the one the call names, as Pharo's Stack, in Collections-Stack, for a call that makes a Stack of its own. That class is not the caller's to change: the class_update call written for a class of the caller's own would move it into the caller's package, reparent it and replace its comment, breaking whatever uses it. So no call is written, and the caller is asked for another name."
+
+	^ self
+		  signalErrorCode: #ClassAlreadyExists
+		  message:
+			  ('Class {1} already exists in package {2}, which belongs to another project than {3}. Choose another name for your class, such as one with your project''s prefix.'
+				   format: {
+						   aClassName.
+						   aPackageName.
+						   aRequestedPackageName })
+		  details: {
+				  (#class -> aClassName).
+				  (#package -> aPackageName) } asDictionary
+]
+
+{ #category : 'signaling' }
+MCPCommandError class >> signalClassAlreadyExistsNamed: aClassName superclass: aSuperclassName definedSlots: someAssociations [
+	"class_create's refusal of a class that exists, when the call names a superclass that already has slots the class or its subclasses define. A class cannot define a slot one of its superclasses has, so class_update refuses to move the class there, and no call to it is written: the refusal says which class defines which of those slots. someAssociations map each class that defines some, the class first and then its subclasses, to their names."
+
+	| slotNames |
+	slotNames := someAssociations inject: #(  ) into: [ :names :each | names , each value asArray ].
+	^ self
+		  signalErrorCode: #ClassAlreadyExists
+		  message: (String streamContents: [ :stream |
+					   stream << 'Class ' << aClassName << ' already exists.'.
+					   someAssociations do: [ :each |
+							   stream << ' ' << each key.
+							   each key = aClassName ifFalse: [ stream << ', a subclass of ' << aClassName << ',' ].
+							   stream << ' defines the ' << (each value size = 1
+								    ifTrue: [ 'slot ' ]
+								    ifFalse: [ 'slots ' ]) << (self joinedNames: each value) << ', which ' << aSuperclassName << ' already has.' ].
+					   stream << ' A class cannot define a slot one of its superclasses has, so class_update cannot move ' << aClassName
+					   << ' under ' << aSuperclassName << ' until ' << (self joinedNames: (someAssociations collect: [ :each | each key ]))
+					   << (someAssociations size = 1
+							    ifTrue: [ ' no longer defines ' ]
+							    ifFalse: [ ' no longer define ' ]) << (slotNames size = 1
+						    ifTrue: [ slotNames first ]
+						    ifFalse: [ 'those slots' ]) << '. class_get shows the slots a class defines.' ])
+		  details: {
+				  (#class -> aClassName).
+				  (#superclass -> aSuperclassName).
+				  (#slots -> slotNames) } asDictionary
+]
+
+{ #category : 'signaling' }
+MCPCommandError class >> signalClassAlreadyExistsNamed: aClassName update: classUpdateArguments unlisted: someAssociations [
+	"class_create's refusal of a class that exists, knowing what the call asked for. classUpdateArguments are those of the class_update call that gives the class what it lacks of that, its name first; the message writes that call, or says the class lacks nothing when they hold only its name. A client reading text sees nothing of the details, and one that calls only what it lists reaches class_update through tool_call alone. The call is written as a client reads text, its line endings line feeds: written as JSON, a carriage return would show as an escape the answer's own conversion leaves alone. someAssociations map each list the call gives that leaves out something the class has to those names. class_create gives a class whole, so the caller may mean them to go, while class_update keeps them unless told otherwise: the message names them last, after the call that keeps them."
+
+	| details |
+	details := Dictionary new.
+	details at: #class put: aClassName.
+	someAssociations ifNotEmpty: [ details at: #unlisted put: someAssociations asDictionary ].
+	^ self
+		  signalErrorCode: #ClassAlreadyExists
+		  message: (String streamContents: [ :stream |
+					   classUpdateArguments size = 1
+						   ifTrue: [
+						   stream << 'Class ' << aClassName << ' already exists and already has everything this call asks for. class_get shows it.' ]
+						   ifFalse: [
+								   stream << 'Class ' << aClassName
+								   << ' already exists. Change it with class_update, through tool_call when class_update is not in your list: tool_call '
+								   << (STONJSON toString: (MCPLineEndings leaving: (OrderedDictionary new
+												      at: 'name' put: 'class_update';
+												      at: 'arguments' put: classUpdateArguments;
+												      yourself))) << '. class_get shows it.' ].
+					   someAssociations do: [ :each |
+						   stream << ' ' << (self unlistedSentenceFor: aClassName names: each value argument: each key) ] ])
+		  details: details
 ]
 
 { #category : 'signaling - names' }
@@ -449,6 +557,32 @@ MCPCommandError class >> textForNotAClass: aName role: aRole scope: aScopeKeyOrN
 		  skipped: isSkipped
 		  suggestions: #(  )
 		  closing: nil
+]
+
+{ #category : 'private - names' }
+MCPCommandError class >> unlistedSentenceFor: aClassName names: someNames argument: anArgumentName [
+	"Say that the class has someNames, which the list the call gives as anArgumentName leaves out, and that class_update keeps them unless told otherwise: it patches slots, and replaces each other list with the one it is given."
+
+	| pronoun words |
+	words := {
+		         ('slots' -> #( 'defines' 'slot' 'removes or renames {1}' )).
+		         ('classSlots' -> #( 'defines' 'class-side slot' 'removes or renames {1}' )).
+		         ('traits' -> #( 'uses' 'trait' 'leaves {1} out' )).
+		         ('sharedVariables' -> #( 'defines' 'shared variable' 'leaves {1} out' )).
+		         ('sharedPools' -> #( 'uses' 'shared pool' 'leaves {1} out' )) } asDictionary at: anArgumentName.
+	pronoun := someNames size = 1
+		           ifTrue: [ 'it' ]
+		           ifFalse: [ 'them' ].
+	^ '{1} also {2} the {3} {4}, which this call does not list. class_update keeps {5} unless its {6} argument {7}.' format: {
+			  aClassName.
+			  words first.
+			  (someNames size = 1
+				   ifTrue: [ words second ]
+				   ifFalse: [ words second , 's' ]).
+			  (self joinedNames: someNames).
+			  pronoun.
+			  anArgumentName.
+			  (words third format: { pronoun }) }
 ]
 
 { #category : 'private - names' }
