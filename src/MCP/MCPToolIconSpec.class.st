@@ -178,6 +178,7 @@ MCPToolIconSpec class >> objectIconMap [
 			  ('protocol' -> #protocolProtected).
 			  ('file' -> #folder).
 			  ('entry' -> #changeUpdate).
+			  ('version' -> #history).
 			  ('coverage' -> #processBrowser).
 			  ('name' -> #string).
 			  ('superclass' -> #hierarchy).
