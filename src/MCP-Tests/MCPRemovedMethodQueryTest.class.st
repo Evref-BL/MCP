@@ -1,5 +1,5 @@
 "
-Tests what the change history says about removed methods, over a history of the test's own: a method removed and still missing is named, one compiled again is not, and the hint names the history tools.
+Tests what the change history says about removed methods, over a history of the test's own: a method removed and still missing is named, one compiled again is not, and the hint names method_restore.
 "
 Class {
 	#name : 'MCPRemovedMethodQueryTest',
@@ -118,17 +118,16 @@ MCPRemovedMethodQueryTest >> testAnImageWithoutAHistoryRemovedNothing [
 ]
 
 { #category : 'tests' }
-MCPRemovedMethodQueryTest >> testTheHintNamesTheMethodAndTheToolsThatBringItBack [
+MCPRemovedMethodQueryTest >> testTheHintNamesTheMethodAndTheToolThatBringsItBack [
 
 	| gone |
 	gone := self selectorNamed: 'Hinted'.
 	self logRemovalOf: gone.
 	self assert: (self query hintSelecting: [ :behavior :selector :protocol | true ]) equals: (String streamContents: [ :stream |
-				 stream << (self referenceTo: gone)
-				 << ' was removed in this session: history_entry_list and history_entry_revert can bring it back.' ]).
+			 stream << (self referenceTo: gone) << ' was removed in this session: method_restore brings it back.' ]).
 	self
 		assert: (self query hintAfterNameSelecting: [ :behavior :selector :protocol | true ])
-		equals: 'It was removed in this session: history_entry_list and history_entry_revert can bring it back.'
+		equals: 'It was removed in this session: method_restore brings it back.'
 ]
 
 { #category : 'tests' }
@@ -139,8 +138,7 @@ MCPRemovedMethodQueryTest >> testTheHintNamesThreeMethodsNewestFirstAndCountsThe
 	selectors do: [ :each | self logRemovalOf: each ].
 	self assert: (self query hintSelecting: [ :behavior :selector :protocol | true ]) equals: (String streamContents: [ :stream |
 				 stream << (self referenceTo: selectors fourth) << ', ' << (self referenceTo: selectors third) << ', '
-				 << (self referenceTo: selectors second)
-				 << ' and 1 more were removed in this session: history_entry_list and history_entry_revert can bring them back.' ])
+				 << (self referenceTo: selectors second) << ' and 1 more were removed in this session: method_restore brings them back.' ])
 ]
 
 { #category : 'tests' }

@@ -1,5 +1,5 @@
 "
-The methods the session in progress removed and has not added back, read from its change history. A tool that finds no method names them, since the history tools can bring them back, where an agent told only that a method does not exist rewrites it from memory.
+The methods the session in progress removed and has not added back, read from its change history. A tool that finds no method names them, since method_restore can bring them back, where an agent told only that a method does not exist rewrites it from memory.
 
 The newest change to a method decides, so a method removed and then compiled again is not answered, and the history is read from its newest entry. An image without a change history monitor answers none.
 "
@@ -47,12 +47,12 @@ MCPRemovedMethodQuery >> hintAfterNameSelecting: aBlock [
 	(self removedMethodsSelecting: aBlock) ifEmpty: [ ^ nil ].
 	^ String streamContents: [ :stream |
 			  stream << 'It was removed in this session: '.
-			  self toolsBringingBack: 'it' on: stream ]
+			  self toolBringingBack: 'it' on: stream ]
 ]
 
 { #category : 'querying' }
 MCPRemovedMethodQuery >> hintSelecting: aBlock [
-	"Which of the removed methods aBlock accepts the history tools can bring back, or nil when there is none. It names the tools rather than their arguments: tool_get gives those."
+	"Which of the removed methods aBlock accepts method_restore can bring back, or nil when there is none. It names the tool rather than its arguments: tool_get gives those."
 
 	| removed one |
 	removed := self removedMethodsSelecting: aBlock.
@@ -64,7 +64,7 @@ MCPRemovedMethodQuery >> hintSelecting: aBlock [
 				   ifTrue: [ ' was' ]
 				   ifFalse: [ ' were' ]) << ' removed in this session: '.
 			  self
-				  toolsBringingBack: (one
+				  toolBringingBack: (one
 						   ifTrue: [ 'it' ]
 						   ifFalse: [ 'them' ])
 				  on: stream ]
@@ -120,8 +120,8 @@ MCPRemovedMethodQuery >> setLog: anEpLogOrNil [
 ]
 
 { #category : 'private - printing' }
-MCPRemovedMethodQuery >> toolsBringingBack: aPronoun on: aStream [
-	"Names the tools without saying how to reach them: whether a client lists them or reaches them through the catalog is the server's setting, which a hint cannot know."
+MCPRemovedMethodQuery >> toolBringingBack: aPronoun on: aStream [
+	"Names the tool without saying how to reach it: whether a client lists it or reaches it through the catalog is the server's setting, which a hint cannot know."
 
-	aStream << 'history_entry_list and history_entry_revert can bring ' << aPronoun << ' back.'
+	aStream << 'method_restore brings ' << aPronoun << ' back.'
 ]

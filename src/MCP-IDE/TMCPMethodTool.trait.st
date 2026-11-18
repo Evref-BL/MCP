@@ -16,6 +16,16 @@ TMCPMethodTool >> behaviorNamed: aClassName classSide: aBoolean [
 	^ MCPImageLookup behaviorNamed: aClassName classSide: aBoolean
 ]
 
+{ #category : 'private - methods' }
+TMCPMethodTool >> behaviorNamedIn: request [
+	"The class or class side the call names by class and side. A side that says the other one than the class name is refused."
+
+	^ MCPImageLookup
+		  className: (request stringArgumentNamed: 'class')
+		  side: (request stringArgumentNamed: 'side')
+		  do: [ :className :classSide :sideGiven | self behaviorNamed: className classSide: classSide ]
+]
+
 { #category : 'private - searching' }
 TMCPMethodTool >> matchingSelectorReferencesForSelector: aSelectorSymbol inMethods: compiledMethods [
 	"The methods of compiledMethods that send aSelectorSymbol to any receiver: what method_reference_search calls senders, and what method_remove warns of."
@@ -37,7 +47,7 @@ TMCPMethodTool >> methodEntryLabel: anEntry [
 
 { #category : 'private - methods' }
 TMCPMethodTool >> methodForClassNamed: className selector: selectorString classSide: classSide [
-	"A method the class does not have is refused with the methods of that selector the caller may have meant or, when there is none, with where to look next: the history tools for a method this session removed, the tool that lists the methods the class has otherwise."
+	"A method the class does not have is refused with the methods of that selector the caller may have meant or, when there is none, with where to look next: method_restore for a method this session removed, the tool that lists the methods the class has otherwise."
 
 	| behavior selector |
 	behavior := self behaviorNamed: className classSide: classSide.
@@ -94,7 +104,7 @@ TMCPMethodTool >> methodScopeQueryFromRequest: request [
 
 { #category : 'private - methods' }
 TMCPMethodTool >> removedMethodHintSelecting: aBlock [
-	"What a lookup that found no method says when this session removed one that aBlock accepts: the history tools can bring it back. nil otherwise. aBlock takes the behavior, the selector and the protocol of each removed method."
+	"What a lookup that found no method says when this session removed one that aBlock accepts: method_restore can bring it back. nil otherwise. aBlock takes the behavior, the selector and the protocol of each removed method."
 
 	^ MCPRemovedMethodQuery inCurrentSession hintSelecting: aBlock
 ]

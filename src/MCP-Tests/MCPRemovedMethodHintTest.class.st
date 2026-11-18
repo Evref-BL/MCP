@@ -25,8 +25,7 @@ MCPRemovedMethodHintTest class >> shouldLogWithEpicea [
 MCPRemovedMethodHintTest >> hintFor: aSelector [
 
 	^ String streamContents: [ :stream |
-			  stream << self target name << '>>' << aSelector
-			  << ' was removed in this session: history_entry_list and history_entry_revert can bring it back.' ]
+		  stream << self target name << '>>' << aSelector << ' was removed in this session: method_restore brings it back.' ]
 ]
 
 { #category : 'private' }
@@ -87,7 +86,7 @@ MCPRemovedMethodHintTest >> testMethodGetSaysTheMethodWasRemovedInThisSession [
 			          (#selector -> gone) } asDictionary.
 	self assert: ((self errorFrom: result) at: #message) equals: (String streamContents: [ :stream |
 				 stream << 'Method ' << self target name << '>>' << gone
-				 << ' does not exist. It was removed in this session: history_entry_list and history_entry_revert can bring it back.' ])
+				 << ' does not exist. It was removed in this session: method_restore brings it back.' ])
 ]
 
 { #category : 'tests' }

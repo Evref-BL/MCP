@@ -128,6 +128,13 @@ MCPJSONSchemaValidatorTest >> representativeArgumentsByToolClass [
 				(#coverage -> { (#scope -> { (#classes -> #( 'MCPToolContractsTest' )) } asDictionary) } asDictionary) } asDictionary;
 		at: MCPToolApplyChangeHistoryEntries put: { (#latestCount -> 1) } asDictionary;
 		at: MCPToolRevertChangeHistoryEntries put: { (#latestCount -> 1) } asDictionary;
+		at: MCPToolListMethodVersions put: {
+				(#class -> 'MCPTool').
+				(#selector -> 'name') } asDictionary;
+		at: MCPToolRestoreMethod put: {
+				(#class -> 'MCPTool').
+				(#selector -> #( 'name' )).
+				(#version -> 1) } asDictionary;
 		at: MCPToolDebugWatch put: {
 				(#method -> 'MCPJSONSchemaValidatorTest>>testCurrentToolSchemasValidate').
 				(#run -> '1') } asDictionary.
