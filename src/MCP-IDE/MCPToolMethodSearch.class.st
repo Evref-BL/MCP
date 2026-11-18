@@ -25,8 +25,8 @@ MCPToolMethodSearch class >> isAbstract [
 ]
 
 { #category : 'private - methods' }
-MCPToolMethodSearch >> addMatchContextTo: entry sourceText: sourceText matcher: matcher [
-	"What a hit carries beyond the method it names. A tool that matches text says where it matched."
+MCPToolMethodSearch >> addMatchContextTo: entry sourceText: sourceText matchStartFinder: aFinder [
+	"What a hit carries beyond the method it names. A tool that matches text says where it matched, with the finder its matchStartFinderForPattern:mode: built."
 
 	^ self
 ]
@@ -112,6 +112,13 @@ MCPToolMethodSearch >> implementorMethodsForSelector: selectorSymbol scopeQuery:
 ]
 
 { #category : 'private - filtering' }
+MCPToolMethodSearch >> matchStartFinderForPattern: aPattern mode: aMode [
+	"What addMatchContextTo:sourceText:matchStartFinder: is given to find where the filter matched a hit's text: a block answering where the first match starts in a text, 0 when the text holds none. A tool that says where it matched builds one."
+
+	^ nil
+]
+
+{ #category : 'private - filtering' }
 MCPToolMethodSearch >> matchesFilterOnMethodEntry: anEntry sourceText: sourceText matcher: aMatcher [
 
 	^ (self filterTextsForMethodEntry: anEntry sourceText: sourceText) anySatisfy: [ :each | aMatcher value: each ]
@@ -158,11 +165,12 @@ MCPToolMethodSearch >> needsSourceForFiltering [
 MCPToolMethodSearch >> queryEntriesForRequest: request scopeQuery: scopeQuery [
 	"Every method of the scope whose text matches the filter and whose fields hold the field filters. Case matters."
 
-	| entries fieldFilters filterMode filterPattern matcher needsSourceForFiltering |
+	| entries fieldFilters filterMode filterPattern matcher matchStartFinder needsSourceForFiltering |
 	filterPattern := self filterPatternFromRequest: request.
 	filterMode := self filterModeFromRequest: request.
 	fieldFilters := self fieldFiltersFromRequest: request.
 	matcher := self matcherForPattern: filterPattern mode: filterMode caseSensitive: true.
+	matchStartFinder := self matchStartFinderForPattern: filterPattern mode: filterMode.
 	needsSourceForFiltering := self needsSourceForFiltering.
 	entries := OrderedCollection new.
 	scopeQuery methodsDo: [ :eachMethod |
@@ -179,7 +187,7 @@ MCPToolMethodSearch >> queryEntriesForRequest: request scopeQuery: scopeQuery [
 							                 mode: filterMode
 							                 caseSensitive: true ].
 			matchesFilter ifTrue: [
-					self addMatchContextTo: entry sourceText: sourceText matcher: matcher.
+					self addMatchContextTo: entry sourceText: sourceText matchStartFinder: matchStartFinder.
 					entries add: entry ] ].
 	^ self sortedMethodEntries: entries
 ]
