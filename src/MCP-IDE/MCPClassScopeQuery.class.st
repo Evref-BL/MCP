@@ -20,6 +20,13 @@ MCPClassScopeQuery >> allClasses [
 	^ self sortedClassesByName: classes
 ]
 
+{ #category : 'testing' }
+MCPClassScopeQuery >> asksForAHierarchy [
+	"Whether the scope reaches classes by inheritance, from the superclasses, subclasses or hierarchy of others: their rows then say what each inherits from, which alone gives the chain and the tree back."
+
+	^ self hierarchyClassNames isNotEmpty or: [ self subclassClassNames isNotEmpty or: [ self parentClassNames isNotEmpty ] ]
+]
+
 { #category : 'private - scope' }
 MCPClassScopeQuery >> classScopeSets [
 

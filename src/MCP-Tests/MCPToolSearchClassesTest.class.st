@@ -412,6 +412,30 @@ MCPToolSearchClassesTest >> testRowsLeadWithTheClassName [
 ]
 
 { #category : 'tests' }
+MCPToolSearchClassesTest >> testRowsReachedByInheritanceSayWhatTheyInheritFrom [
+	"Rows come by name, so a scope that reaches classes by inheritance gives each its superclass, from which the chain of superclasses and the tree of subclasses read. A row reached otherwise says nothing of it."
+
+	| result rows |
+	result := self callToolWith: { (self searchScope: { (#subclassesOf -> { self baseClassName }) }) } asDictionary.
+	rows := (self dataFrom: result) at: #classes.
+	self assert: (rows collect: [ :each | (each at: #class) -> (each at: #superclass) ] as: Array) equals: {
+			(self childClassName -> self baseClassName).
+			(self grandchildClassName -> self childClassName) }.
+	self assert: ((self textFrom: result) includesSubstring: ('{1} superclass={2}' format: {
+					  self grandchildClassName.
+					  self childClassName })).
+	rows := (self dataFrom: (self callToolWith: {
+				          (self searchScope: { (#superclassesOf -> { self grandchildClassName }) }).
+				          (#name -> self fixturePrefix) } asDictionary)) at: #classes.
+	self assert: (rows collect: [ :each | (each at: #class) -> (each at: #superclass) ] as: Array) equals: {
+			(self baseClassName -> 'Object').
+			(self childClassName -> self baseClassName) }.
+	rows := (self dataFrom: (self callToolWith: { (#name -> self fixturePrefix) } asDictionary)) at: #classes.
+	self assert: rows size equals: 3.
+	self deny: (rows anySatisfy: [ :each | each includesKey: #superclass ])
+]
+
+{ #category : 'tests' }
 MCPToolSearchClassesTest >> testScopeEntriesWrittenWithTheirSideSelectTheirClass [
 	"A class search answers whole classes, so Foo class selects Foo, in every scope key, without a warning, and the summary names Foo."
 

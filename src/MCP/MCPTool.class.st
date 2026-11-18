@@ -323,6 +323,13 @@ MCPTool >> batchSummaryVerb [
 	^ 'Handled'
 ]
 
+{ #category : 'private - batch' }
+MCPTool >> batchTargetsOf: aRequest [
+	"The values a batch runs once each: those the batch argument names."
+
+	^ aRequest stringCollectionArgumentNamed: self batchArgumentName
+]
+
 { #category : 'private - schema' }
 MCPTool >> booleanSchemaPropertyNamed: propertyName description: propertyDescription [
 
@@ -702,13 +709,12 @@ MCPTool >> executeBatchedRequest: aRequest do: executionBlock [
 
 	| targets |
 	self batchArgumentName ifNil: [ ^ executionBlock value: aRequest ].
-	targets := aRequest stringCollectionArgumentNamed: self batchArgumentName.
+	targets := self batchTargetsOf: aRequest.
 	targets ifEmpty: [
 			(aRequest namesAListAt: self batchArgumentName) ifTrue: [
 				MCPInvalidToolInput signalEmptyArgumentNamed: self batchArgumentName forTool: self ].
 			^ executionBlock value: aRequest ].
-	targets size = 1 ifTrue: [
-		^ executionBlock value: (aRequest withArgumentNamed: self batchArgumentName setTo: targets first) ].
+	targets size = 1 ifTrue: [ ^ executionBlock value: (aRequest withArgumentNamed: self batchArgumentName setTo: targets first) ].
 	^ self batchResultForTargets: targets request: aRequest do: executionBlock
 ]
 
