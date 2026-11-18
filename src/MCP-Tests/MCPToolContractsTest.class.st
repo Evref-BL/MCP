@@ -2265,12 +2265,12 @@ MCPToolContractsTest >> testMethodMutationToolsHaveAccurateNamesAndRequiredArgum
 	self assert: createTool inputSchema required asSet equals: #( 'class' 'source' ) asSet.
 	self assert: updateTool inputSchema required asSet equals: #( 'class' 'selector' ) asSet.
 	self assert: updateTool atLeastOneInputProperties asSet equals: #( 'protocol' 'newSelector' ) asSet.
-	self assert: createPropertyNames asSet equals: #( 'class' 'side' 'protocol' 'source' 'force' ) asSet.
+	self assert: createPropertyNames asSet equals: #( 'class' 'side' 'protocol' 'source' 'force' 'format' ) asSet.
 	self
 		assert: updatePropertyNames asSet
 		equals:
-		#( 'arguments' 'argumentValueExpressions' 'class' 'force' 'newSelector' 'permutation' 'protocol' 'scope' 'selector' 'side' )
-			asSet
+			#( 'arguments' 'argumentValueExpressions' 'class' 'force' 'format' 'newSelector' 'permutation' 'protocol' 'scope' 'selector'
+			   'side' ) asSet
 ]
 
 { #category : 'tests' }
@@ -2395,9 +2395,10 @@ MCPToolContractsTest >> testOperationsHoldNeitherTheToolNorItsRequest [
 { #category : 'tests' }
 MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable [
 
-	| getClassTool getMethodTool removeClassesTool removeMethodsTool rewriteMethodsTool updateMethodTool |
+	| compileMethodTool getClassTool getMethodTool removeClassesTool removeMethodsTool rewriteMethodsTool updateMethodTool |
 	getClassTool := MCPToolGetClass new.
 	getMethodTool := MCPToolGetMethod new.
+	compileMethodTool := MCPToolCompileMethod new.
 	updateMethodTool := MCPToolUpdateMethod new.
 	rewriteMethodsTool := MCPToolRewriteMethods new.
 	removeClassesTool := MCPToolRemoveClasses new.
@@ -2408,7 +2409,9 @@ MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable 
 		assert: ((self inputPropertyNamed: 'includeVariableDetails' inTool: getMethodTool) extraProperties at: #default)
 		equals: false.
 	self assert: ((self inputPropertyNamed: 'side' inTool: updateMethodTool) extraProperties at: #default) equals: 'instance'.
+	self assert: ((self inputPropertyNamed: 'format' inTool: compileMethodTool) extraProperties at: #default).
 	self assert: ((self inputPropertyNamed: 'force' inTool: updateMethodTool) extraProperties at: #default) equals: false.
+	self assert: ((self inputPropertyNamed: 'format' inTool: updateMethodTool) extraProperties at: #default).
 	self assert: ((self inputPropertyNamed: 'confirm' inTool: rewriteMethodsTool) extraProperties at: #default) equals: false.
 	self assert: ((self scopePropertyNamed: 'side' inTool: rewriteMethodsTool) extraProperties at: #default) equals: 'both'.
 	self assert: ((self inputPropertyNamed: 'force' inTool: removeClassesTool) extraProperties at: #default) equals: false.
