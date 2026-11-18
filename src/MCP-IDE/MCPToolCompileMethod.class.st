@@ -29,7 +29,7 @@ MCPToolCompileMethod >> anotherMethodIn: aSource upToLine: aLineNumber do: aBloc
 			lineNumber > aLineNumber ifTrue: [ ^ self ].
 			lineNumber > 1 ifTrue: [
 					(self selectorLineStartingAMethodIn: (source copyFrom: start to: end)) ifNotNil: [ :selectorLineNode |
-						(self parsesAsOneMethod: (source first: start - 1)) ifTrue: [ ^ aBlock value: selectorLineNode value: lineNumber ] ] ] ]
+						(self methodNodeOf: (source first: start - 1)) ifNotNil: [ :methodNode | ^ aBlock value: selectorLineNode value: lineNumber ] ] ] ]
 ]
 
 { #category : 'private - errors' }
@@ -38,7 +38,7 @@ MCPToolCompileMethod >> argumentsChoosingSide: classSide of: request [
 
 	| className startsWithReference |
 	className := request stringArgumentNamed: 'class'.
-	startsWithReference := (self headerIn: (request argumentNamed: 'source' ifAbsent: [ nil ])) isNotNil.
+	startsWithReference := (self headerIn: (request argumentNamed: 'source' ifAbsent: [ nil ]) of: request) isNotNil.
 	^ String streamContents: [ :stream |
 			  (MCPImageLookup namesClassSide: className) ifTrue: [
 					  stream << 'class ' << (MCPImageLookup baseNameOf: className) << (startsWithReference
@@ -80,6 +80,21 @@ MCPToolCompileMethod >> checkArguments: request [
 
 	self classNameAndSideOf: request do: [ :className :classSide :sideGiven |  ].
 	request argumentNamed: 'source' ifAbsent: [ MCPInvalidToolInput signalMissingRequiredArgumentNamed: 'source' forTool: self ]
+]
+
+{ #category : 'private - header' }
+MCPToolCompileMethod >> classlessHeaderIn: aLine source: aSource of: request [
+	"The method's reference aLine is when it leaves out the class, as class>>dailyRation and >>dailyRation do, read as naming the call's class: the first on the class side, the second on the side the call names. nil when aLine begins with neither, or when the source parses as written, as a method named >> does."
+
+	| namesClassSide |
+	namesClassSide := (aLine beginsWith: 'class') and: [ (aLine allButFirst: 'class' size) trimLeft beginsWith: '>>' ].
+	(namesClassSide or: [ aLine beginsWith: '>>' ]) ifFalse: [ ^ nil ].
+	(self methodNodeOf: aSource) ifNotNil: [ :methodNode | ^ nil ].
+	^ self classNameAndSideOf: request do: [ :className :classSide :sideGiven |
+			  MCPMethodReference fromString: (String streamContents: [ :stream |
+						   stream << className.
+						   (namesClassSide not and: [ classSide ]) ifTrue: [ stream << ' class' ].
+						   stream << ' ' << aLine ]) ]
 ]
 
 { #category : 'private - results' }
@@ -165,10 +180,22 @@ MCPToolCompileMethod >> forceSchemaProperty [
 ]
 
 { #category : 'private - header' }
-MCPToolCompileMethod >> headerIn: aSource [
-	"The method's reference a source begins with, as in ZooLion >> #dailyRation, read the way method_get reads one; nil when the first line is the method's own. A real method cannot begin with one: a body cannot start with a binary operator, Name >> parses only as a method named Name sending >>, and a reference needs one capitalised word before its separator."
+MCPToolCompileMethod >> headerIn: aSource of: request [
+	"The method's reference a source begins with, as in ZooLion >> #dailyRation, read the way method_get reads one, or without its class, as in class>>dailyRation; nil when the source begins with the method's own selector line. Comments may come before it. A real method cannot begin with a reference: a body cannot start with a binary operator, Name >> parses only as a method named Name sending >>, and a reference needs one capitalised word, or class, before its separator. The one exception is a method named >>, which a source that parses as written is."
 
-	^ MCPMethodReference fromString: (self firstLineOf: aSource)
+	| line |
+	aSource ifNil: [ ^ nil ].
+	line := self headerLineOf: aSource.
+	^ (MCPMethodReference fromString: line) ifNil: [ self classlessHeaderIn: line source: aSource of: request ]
+]
+
+{ #category : 'private - header' }
+MCPToolCompileMethod >> headerLineOf: aSource [
+	"The line a method's reference would be on, as written, without the spaces around it: the line of the source's first token, past the comments and blank lines it may begin with, as when a category is written above the method."
+
+	| source |
+	source := aSource asString.
+	^ self firstLineOf: (source allButFirst: (RBScanner on: source readStream) next start - 1)
 ]
 
 { #category : 'private' }
@@ -179,11 +206,11 @@ MCPToolCompileMethod >> isUnclassified: aCompiledMethod [
 		  ifNotNil: [ :protocolName | protocolName = Protocol unclassified asString ]
 ]
 
-{ #category : 'private - header' }
-MCPToolCompileMethod >> methodNodeOfSelectorLine: aSelectorLine [
-	"The method aSelectorLine, the text after a header's separator, parses as on its own, or nil when it is not a method's whole first line, as width:height:color: and >= are not, leaving out their argument names. The parser is the one selectorForMethodSource:in: uses; Pharo 12 and later signal the error after the block unless it returns."
+{ #category : 'private' }
+MCPToolCompileMethod >> methodNodeOf: aString [
+	"The method aString parses as, or nil when it is not one whole method. It reads the source before another method or before misplaced temporaries, and a header's selector line, which width:height:color: and >= are not when they leave out their argument names. The parser is the one selectorForMethodSource:in: uses; Pharo 12 and later signal the error after the block unless it returns."
 
-	^ RBParser parseMethod: aSelectorLine onError: [ :message :position | ^ nil ]
+	^ RBParser parseMethod: aString onError: [ :message :position | ^ nil ]
 ]
 
 { #category : 'private - specs' }
@@ -234,7 +261,7 @@ MCPToolCompileMethod >> mutateWith: request [
 					              classNameAndSideOf: request
 					              do: [ :className :classSide :sideGiven | MCPImageLookup compileTargetNamed: className classSide: classSide ].
 				  methodSource := request argumentNamed: 'source' ifAbsent: [ nil ].
-				  (self headerIn: methodSource) ifNotNil: [ :header |
+				  (self headerIn: methodSource of: request) ifNotNil: [ :header |
 						  behavior := self
 							              target: behavior
 							              forHeader: header
@@ -283,6 +310,25 @@ MCPToolCompileMethod >> mutateWith: request [
 ]
 
 { #category : 'private - errors' }
+MCPToolCompileMethod >> nodeDeclaringTemporariesAfter: aString [
+	"The method or block whose statement aString ends with, past blanks and comments: the innermost block aString leaves open, or the method when it leaves none, found in the method aString parses as once what it leaves open is closed. nil when aString does not end with a statement's period, when the innermost thing it leaves open is not a block, as a brace array is not, or when it does not parse."
+
+	| methodNode openers tokens |
+	tokens := self tokensIn: aString.
+	(tokens isNotEmpty and: [ tokens last isSpecial and: [ tokens last value = $. ] ]) ifFalse: [ ^ nil ].
+	openers := OrderedCollection new.
+	tokens do: [ :token |
+			(token isLiteralArrayToken or: [ token isSpecial and: [ '([{' includes: token value ] ])
+				ifTrue: [ openers addFirst: token ]
+				ifFalse: [ (token isSpecial and: [ ')]}' includes: token value ]) ifTrue: [ openers ifNotEmpty: [ openers removeFirst ] ] ] ].
+	methodNode := self methodNodeOf:
+		              aString , (String withAll: (openers collect: [ :each | ')]}' at: ('([{' indexOf: each value asString last) ])).
+	methodNode ifNil: [ ^ nil ].
+	openers ifEmpty: [ ^ methodNode ].
+	^ methodNode allChildren detect: [ :each | each isBlock and: [ each left = openers first start ] ] ifNone: [ nil ]
+]
+
+{ #category : 'private - errors' }
 MCPToolCompileMethod >> otherSideSlotTextFor: anError in: aBehaviorOrNil of: request [
 	"When the name anError found undeclared is a slot of the other side of aBehaviorOrNil's class or of a superclass, what to do about it; nil otherwise. The source alone does not show which side it was written for. A class side's own slots are its class's, not the ones every class has from Class."
 
@@ -305,14 +351,6 @@ MCPToolCompileMethod >> otherSideSlotTextFor: anError in: aBehaviorOrNil of: req
 		  ifNone: [ nil ]
 ]
 
-{ #category : 'private - errors' }
-MCPToolCompileMethod >> parsesAsOneMethod: aString [
-	"Whether aString parses as one whole method. Pharo 12 and later signal the error after the block unless it returns."
-
-	RBParser parseMethod: aString onError: [ :message :position | ^ false ].
-	^ true
-]
-
 { #category : 'private' }
 MCPToolCompileMethod >> protocolNameOf: aCompiledMethod [
 
@@ -326,6 +364,17 @@ MCPToolCompileMethod >> protocolWarningsFor: aCompiledMethod from: previousProto
 	((self isUnclassified: aCompiledMethod) and: [ previousProtocolName ~= Protocol unclassified asString ]) ifFalse: [ ^ #(  ) ].
 	^ { (String streamContents: [ :stream |
 		   stream << 'No protocol was named, so it is filed under ''' << Protocol unclassified asString << '''.' ]) }
+]
+
+{ #category : 'private - header' }
+MCPToolCompileMethod >> refusalOfHeader: aLine passingClassSide: aBoolean [
+	"What a source that begins with the method's reference aLine, which is not dropped, is to begin with instead. When aBoolean is true, the header named the class side and the call did not, and the selector line that replaces the header cannot say it."
+
+	^ String streamContents: [ :stream |
+			  stream << 'The source begins with ' << aLine
+			  <<
+			  ', a method''s reference. Start it with the method''s selector line, argument names included, then its body; class and side say where it goes.'.
+			  aBoolean ifTrue: [ stream << ' The header named the class side, so pass side class.' ] ]
 ]
 
 { #category : 'private - errors' }
@@ -353,7 +402,7 @@ MCPToolCompileMethod >> selectorLineStartingAMethodIn: aLine [
 
 	| node |
 	(aLine isEmpty or: [ aLine first isSeparator ]) ifTrue: [ ^ nil ].
-	node := self methodNodeOfSelectorLine:
+	node := self methodNodeOf:
 		        ((MCPMethodReference fromString: aLine) ifNil: [ aLine ] ifNotNil: [ :reference | reference selector ]).
 	(node isNotNil and: [ node body statements isEmpty and: [ node pragmas isEmpty ] ]) ifFalse: [ ^ nil ].
 	^ node
@@ -369,7 +418,7 @@ MCPToolCompileMethod >> sideNameFor: isClassSide [
 
 { #category : 'private - errors' }
 MCPToolCompileMethod >> signalCompileFailure: anError methodSource: methodSource in: aBehaviorOrNil of: request [
-	"A failure at or after a line that starts another method says that the source holds several, rather than what the compiler made of the second where it meets the first."
+	"A failure at or after a line that starts another method says that the source holds several, rather than what the compiler made of the second where it meets the first. A failure at temporaries declared after a statement says where they go."
 
 	anError mcpCommandErrorDo: [ :commandError | commandError signal ] otherwise: [ :compileError |
 			| commandError |
@@ -383,6 +432,9 @@ MCPToolCompileMethod >> signalCompileFailure: anError methodSource: methodSource
 						anotherMethodIn: methodSource
 						upToLine: line
 						do: [ :selectorLineNode :lineNumber | self signalSeveralMethodsFrom: selectorLineNode atLine: lineNumber ] ].
+			commandError details at: #position ifPresent: [ :position |
+					(self temporariesAfterAStatementTextIn: methodSource at: position) ifNotNil: [ :text |
+						commandError messageText: (String streamContents: [ :stream | stream << commandError messageText << '. ' << text ]) ] ].
 			commandError signal ]
 ]
 
@@ -442,28 +494,55 @@ MCPToolCompileMethod >> summaryFor: changeKind of: aCompiledMethod named: method
 
 { #category : 'private - header' }
 MCPToolCompileMethod >> target: aBehavior forHeader: aReference source: aSource of: request [
-	"The behaviour a source that begins with the method's reference aReference compiles into. The header is dropped only when it names the call's class and side and a whole method follows its separator: dropping any other would compile where the call did not say, leave the body's arguments undeclared, or empty a method. Otherwise nothing is compiled. When the call gave no side, the header's is used."
+	"The behaviour a source that begins with the method's reference aReference compiles into. The header is dropped only when it is the source's first line, names the call's class and side, and a whole method follows its separator: dropping any other would compile where the call did not say, leave the body's arguments undeclared, empty a method, or leave what came before it above the selector line. Otherwise nothing is compiled. When the call gave no side, the header's is used."
 
 	| line selectorLineNode targetSide |
-	line := self firstLineOf: aSource.
+	line := self headerLineOf: aSource.
 	^ self classNameAndSideOf: request do: [ :className :classSide :sideGiven |
 			  targetSide := sideGiven
 				                ifTrue: [ classSide ]
 				                ifFalse: [ aReference classSide ].
-			  selectorLineNode := self methodNodeOfSelectorLine: aReference selector.
-			  (aReference className = aBehavior instanceSide name asString and: [
-					   aReference classSide = targetSide and: [
-						   selectorLineNode notNil and: [ (self source: aSource holdsNoBodyAfterSelectorLine: selectorLineNode) not ] ] ]) ifFalse: [
-					  MCPCommandError
-						  signalMethodSourceHeader: line
-						  message: 'The source begins with ' , line
-							  ,
-							  ', a method''s reference. Start it with the method''s selector line, argument names included, then its body; class and side say where it goes.'
-						  className: className
-						  side: (self sideNameFor: targetSide) ].
+			  selectorLineNode := self methodNodeOf: aReference selector.
+			  (line = (self firstLineOf: aSource) and: [
+					   aReference className = aBehavior instanceSide name asString and: [
+							   aReference classSide = targetSide and: [
+								   selectorLineNode isNotNil and: [ (self source: aSource holdsNoBodyAfterSelectorLine: selectorLineNode) not ] ] ] ])
+				  ifFalse: [
+						  MCPCommandError
+							  signalMethodSourceHeader: line
+							  message:
+							  (self refusalOfHeader: line passingClassSide: (aReference classSide and: [ (sideGiven and: [ classSide ]) not ]))
+							  className: className
+							  side: (self sideNameFor: targetSide) ].
 			  targetSide
 				  ifTrue: [ aBehavior instanceSide classSide ]
 				  ifFalse: [ aBehavior instanceSide ] ]
+]
+
+{ #category : 'private - errors' }
+MCPToolCompileMethod >> temporariesAfterAStatementTextIn: aSource at: aPosition [
+	"What to do when the compiler stopped at aPosition on temporaries declared after a statement; nil when it stopped anywhere else. A method or block declares its temporaries before its first statement, so a declaration further down reads as an expression, which cannot begin with a bar. The declaration goes to the method or block it is in, into the temporaries that one already declares."
+
+	| closingBar declaringNode names owner source |
+	source := aSource asString.
+	(aPosition between: 1 and: source size) ifFalse: [ ^ nil ].
+	(source at: aPosition) = $| ifFalse: [ ^ nil ].
+	closingBar := source indexOf: $| startingAt: aPosition + 1.
+	closingBar isZero ifTrue: [ ^ nil ].
+	names := (source copyFrom: aPosition + 1 to: closingBar - 1) substrings.
+	(names isNotEmpty and: [ names allSatisfy: [ :each | RBScanner isVariable: each ] ]) ifFalse: [ ^ nil ].
+	declaringNode := (self nodeDeclaringTemporariesAfter: (source first: aPosition - 1)) ifNil: [ ^ nil ].
+	owner := declaringNode isMethod
+		         ifTrue: [ 'method''s' ]
+		         ifFalse: [ 'block''s' ].
+	^ String streamContents: [ :stream |
+			  stream << 'Temporaries are declared before the first statement, but | ' << (' ' join: names)
+			  << ' | comes after a statement: '.
+			  declaringNode temporaries ifEmpty: [ stream << 'move it above the ' << owner << ' first statement.' ] ifNotEmpty: [
+					  stream << 'add '.
+					  names allButLast do: [ :each | stream << each ] separatedBy: [ stream << ', ' ].
+					  names size > 1 ifTrue: [ stream << ' and ' ].
+					  stream << names last << ' to the ' << owner << ' declaration, above its first statement.' ] ]
 ]
 
 { #category : 'private - errors' }
@@ -480,4 +559,13 @@ MCPToolCompileMethod >> textForSlotNamed: aName of: aClass compiledOnClassSide: 
 			  << (self sideNameFor: classSide) << '-side methods do not see. Compile this method with '
 			  << (self argumentsChoosingSide: classSide not of: request) << ', or reach ' << aName << ' through ' << article << ' '
 			  << otherSide << '-side method.' ]
+]
+
+{ #category : 'private - errors' }
+MCPToolCompileMethod >> tokensIn: aString [
+	"The tokens aString scans as, without its comments."
+
+	| scanner |
+	scanner := RBScanner on: aString readStream.
+	^ Array streamContents: [ :stream | [ scanner atEnd ] whileFalse: [ stream nextPut: scanner next ] ]
 ]
