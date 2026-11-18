@@ -68,12 +68,15 @@ MCPToolSearchMethods >> metadataFilterInputProperties [
 
 { #category : 'private - results' }
 MCPToolSearchMethods >> successSummaryForRequest: request scopeQuery: scopeQuery page: page [
-	"A search whose scope selects no class or package, and that keeps no selector or protocol, lists every method in the image, or every method of one side. A client that drops an argument the schema does not have sends exactly that, so the summary says what narrows it."
+	"A search whose scope selects no class or package, and that keeps no selector or protocol, lists every method in the image, or every method of one side. A client that drops an argument the schema does not have sends exactly that, so the summary says what narrows it. A search scoped to packages or classes says what the image lost of them since its last save."
 
 	| summary |
 	summary := super successSummaryForRequest: request scopeQuery: scopeQuery page: page.
-	(self filtersRequest: request) ifTrue: [ ^ summary ].
-	scopeQuery usesImplicitImageScope ifFalse: [ ^ summary ].
+	((self filtersRequest: request) or: [ scopeQuery usesImplicitImageScope not ]) ifTrue: [
+			^ MCPToolListLostChanges
+				  summary: summary
+				  notingLostChangesToPackagesNamed: scopeQuery packageNames
+				  classesNamed: (scopeQuery classNames collect: [ :each | each copyUpTo: Character space ]) ].
 	^ summary
 	  ,
 	  ' This search names no class, package, selector or protocol: scope.classes keeps the methods of the classes it names, and selector the methods whose selector contains its text.'

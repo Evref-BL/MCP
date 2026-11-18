@@ -13,7 +13,9 @@ Class {
 		'targetState',
 		'position',
 		'knowsSavedState',
-		'isSuperseded'
+		'isSuperseded',
+		'packageName',
+		'isChangedInSessionInProgress'
 	],
 	#category : 'MCP-IDE-Queries',
 	#package : 'MCP-IDE',
@@ -60,6 +62,13 @@ MCPLostChange >> asDictionary [
 			data at: #conflict put: self conflictReason.
 			self imageVersionIfPresent: [ :version | data at: #inImage put: version ] ifAbsent: [ ] ].
 	^ data
+]
+
+{ #category : 'updating' }
+MCPLostChange >> beChangedInSessionInProgress [
+	"The session in progress changed the element after this lost change: the image went on without it."
+
+	isChangedInSessionInProgress := true
 ]
 
 { #category : 'updating' }
@@ -126,14 +135,16 @@ MCPLostChange >> initialize [
 
 	super initialize.
 	knowsSavedState := true.
-	isSuperseded := false
+	isSuperseded := false.
+	isChangedInSessionInProgress := false
 ]
 
 { #category : 'testing' }
 MCPLostChange >> isChangedSinceSave [
-	"The image holds the element neither as it was saved nor as the lost change made it: something changed it since the save, and restoring would discard that."
+	"The image holds the element not as the lost change made it, and the session in progress changed it, or the image holds it not as it was saved either: something changed it since the save, and restoring would discard that. The session in progress counts even where it put the element back as it was saved, as removing what a lost session added does."
 
-	^ knowsSavedState and: [ self imageHoldsSavedState not and: [ self isInImage not ] ]
+	self isInImage ifTrue: [ ^ false ].
+	^ isChangedInSessionInProgress or: [ knowsSavedState and: [ self imageHoldsSavedState not ] ]
 ]
 
 { #category : 'testing' }
@@ -141,6 +152,13 @@ MCPLostChange >> isInImage [
 	"Whether the image already holds what the last change made, so nothing is lost."
 
 	^ self imageHolds: targetState
+]
+
+{ #category : 'testing' }
+MCPLostChange >> isLostWithoutConflict [
+	"The image lacks what the last change made, and has not changed the element since its save: nothing replaced the work, and restoring it discards nothing."
+
+	^ self isInImage not and: [ self isChangedSinceSave not ]
 ]
 
 { #category : 'testing' }
@@ -153,6 +171,19 @@ MCPLostChange >> isNamedBy: anElementName [
 MCPLostChange >> isSuperseded [
 
 	^ isSuperseded
+]
+
+{ #category : 'accessing' }
+MCPLostChange >> packageName [
+	"The package the last change to the element was made in, nil for code in no package."
+
+	^ packageName
+]
+
+{ #category : 'updating' }
+MCPLostChange >> packageName: aPackageName [
+
+	packageName := aPackageName
 ]
 
 { #category : 'accessing' }

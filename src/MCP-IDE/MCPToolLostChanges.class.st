@@ -1,5 +1,5 @@
 "
-Shared implementation of the tools that recover what a crash, or a stop without saving, lost: history_lost_change_list shows it and history_lost_change_restore puts it back. Both read it afresh with MCPLostChangeQuery, as the image's history has it at the call, and name each change by its element, the way restoring takes it.
+Shared implementation of the tools that recover what a crash, or a stop without saving, lost: history_lost_change_list shows it and history_lost_change_restore puts it back. Both take it from MCPLostChangeQuery, read once per image session and compared with the image at each call, and name each change by its element, the way restoring takes it.
 
 They sit in the history group beside the tools that act on history entries, and answer for themselves rather than through MCPToolChangeHistory: an entry, its index and its file are not what they show.
 "
@@ -46,7 +46,7 @@ MCPToolLostChanges >> entryNameKeys [
 
 { #category : 'executing' }
 MCPToolLostChanges >> executeWithRequest: request [
-	"Each call reads the history afresh, so it answers for the image as it is. A session file that cannot be read in full qualifies the answer rather than failing it."
+	"The history is read once per image session and the image compared with it at each call, so the answer is for the image as it is. A session file that cannot be read in full qualifies the answer rather than failing it."
 
 	^ self
 		  executeRequest: request

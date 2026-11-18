@@ -1,5 +1,7 @@
 "
 Concrete history_lost_change_list tool. It lists the changes the sessions since the image's last save made and the image lacks, the last change to each element with the source restoring it installs, a page at a time.
+
+The tool is discoverable, not advertised, so the answers about a package or class the image lost changes to name it, with the sentence noticeForPackagesNamed:classesNamed: writes.
 "
 Class {
 	#name : 'MCPToolListLostChanges',
@@ -8,6 +10,58 @@ Class {
 	#package : 'MCP-IDE',
 	#tag : 'Tools'
 }
+
+{ #category : 'notices' }
+MCPToolListLostChanges class >> noticeForPackagesNamed: somePackageNames classesNamed: someClassNames [
+	"The sentence that says the image lost changes to some of those packages or classes since its last save, naming this tool, or nil when it lost none. A change counts once, whether of a package or of a class named. An answer must never fail for it, so a history that cannot be read says nothing."
+
+	| lostByName |
+	lostByName := [ MCPSessionLostChanges current lostChangesToPackagesNamed: somePackageNames classesNamed: someClassNames ]
+		              on: Error
+		              do: [ ^ nil ].
+	lostByName ifEmpty: [ ^ nil ].
+	^ self
+		  noticeOf: (lostByName flatCollect: [ :each | each value ]) asIdentitySet size
+		  changesTo: (lostByName collect: [ :each | each key ])
+]
+
+{ #category : 'private - notices' }
+MCPToolListLostChanges class >> noticeOf: aCount changesTo: someNames [
+	"Since its last save, the image lost 4 changes to Zoo-Core: history_lost_change_list lists them. The tool is named, not how to reach it: whether it is listed or found through the catalog is the server's setting."
+
+	^ String streamContents: [ :stream |
+			  stream << 'Since its last save, the image lost ' << aCount printString << (aCount = 1
+				   ifTrue: [ ' change' ]
+				   ifFalse: [ ' changes' ]) << ' to ' << (self phraseForNames: someNames) << ': ' << self toolName << ' lists '
+			  << (aCount = 1
+					   ifTrue: [ 'it.' ]
+					   ifFalse: [ 'them.' ]) ]
+]
+
+{ #category : 'private - notices' }
+MCPToolListLostChanges class >> phraseForNames: someNames [
+	"A, A and B, A, B and C, and from four names on the first three and how many more, so a page of packages does not read as a list of them."
+
+	someNames size > 3 ifFalse: [ ^ MCPScopeQuery listPhraseFor: someNames ].
+	^ String streamContents: [ :stream |
+		  stream << (', ' join: (someNames first: 3)) << ' and ' << (someNames size - 3) printString << ' more' ]
+]
+
+{ #category : 'notices' }
+MCPToolListLostChanges class >> summary: aSummary notingLostChangesToPackagesNamed: somePackageNames classesNamed: someClassNames [
+	"aSummary, followed by the sentence that says what the image lost of those packages and classes since its last save, when it lost something. An answer about code that looks complete is where an agent learns that the work on it is not."
+
+	^ (self
+		   noticeForPackagesNamed: (MCPScopeQuery distinctNamesAmong: (somePackageNames select: [ :each | each isNotNil ]))
+		   classesNamed: (MCPScopeQuery distinctNamesAmong: (someClassNames select: [ :each | each isNotNil ])))
+		  ifNil: [ aSummary ]
+		  ifNotNil: [ :notice |
+				  String streamContents: [ :stream |
+						  stream
+							  << aSummary;
+							  space;
+							  << notice ] ]
+]
 
 { #category : 'metadata' }
 MCPToolListLostChanges class >> toolName [

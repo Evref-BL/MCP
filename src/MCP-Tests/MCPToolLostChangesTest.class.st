@@ -241,6 +241,26 @@ MCPToolLostChangesTest >> testLeavesOutSessionsOfAnotherSave [
 ]
 
 { #category : 'tests' }
+MCPToolLostChangesTest >> testLeavesOutWhatALoadChanged [
+	"The files a load loaded hold what it changed, so that is not work lost. A Pharo that logs loads logs each change with the load as its trigger."
+
+	| load loadClass lostLog |
+	loadClass := self class environment at: #EpMonticelloVersionsLoad ifAbsent: [ ^ self skip: 'This Pharo does not log loads.' ].
+	self savedClass.
+	lostLog := self logNamed: 'lost' startingAt: savePoint.
+	"Sent by name: the class is not in every Pharo."
+	load := lostLog addEntryWith: (loadClass perform: #versionNames: with: #( 'MCP-Tests-Generated-1' )) tags: [ :tags |  ].
+	lostLog
+		addEntryWith: (EpMethodAddition method: (self methodDefinitionOf: #loadedValue returning: 1))
+		tags: [ :tags | tags at: EpLog triggererReferenceKey put: (lostLog referenceTo: load) ].
+	lostLog addEntryWith: (EpMethodAddition method: (self methodDefinitionOf: #rescuedValue returning: 2)) tags: [ :tags |  ].
+	lostLog store flush.
+	self
+		assert: (((self dataFrom: self list) at: #changes) collect: [ :each | each at: #element ])
+		equals: { (self savedClassName , '>>rescuedValue') }
+]
+
+{ #category : 'tests' }
 MCPToolLostChangesTest >> testListsAndRestoresALargeHistoryQuickly [
 	"Previews over 2,530 history entries took 15 minutes. A lost session of 5,000 entries, 25 versions of 200 methods, is read once, into one change per method."
 
@@ -312,6 +332,19 @@ MCPToolLostChangesTest >> testListsWhatASessionStoppedWithoutSavingAdded [
 ]
 
 { #category : 'tests' }
+MCPToolLostChangesTest >> testNothingIsLostOnceTheImageIsSaved [
+	"A save without quitting logs a snapshot in the session in progress, the save point from then on: the image saved went on without what earlier sessions lost."
+
+	| class |
+	class := self savedClass.
+	self inSessionNamed: 'lost' do: [ class compile: 'rescuedValue ^ 42' classified: 'rescuing' ].
+	self removeSelector: #rescuedValue from: class.
+	self assert: ((self dataFrom: self list) at: #lostCount) equals: 1.
+	tempMonitor sessionSnapshot.
+	self assert: (self summaryFrom: self list) equals: 'No session ran since the image was last saved, so it lost nothing.'
+]
+
+{ #category : 'tests' }
 MCPToolLostChangesTest >> testReadsTheSavedSessionPastItsSave [
 	"The session that saved went on in its own file: what it wrote before the save is in the image, what it wrote after is lost."
 
@@ -349,6 +382,23 @@ MCPToolLostChangesTest >> testRefusesAChangeTheImageMadeSinceItsSave [
 	result := self restore: { (#force -> true) }.
 	self assert: (self summaryFrom: result) equals: 'Restored 1 lost change.'.
 	self assert: (class >> #value) sourceCode equals: 'value ^ 1'
+]
+
+{ #category : 'tests' }
+MCPToolLostChangesTest >> testRefusesBringingBackWhatTheImageRemovedSince [
+	"Removing what a lost session added leaves the image as it was saved, and only the history of the session in progress tells that from a loss: restoring would bring back what was removed, so it is refused unless forced."
+
+	| class |
+	class := self savedClass.
+	self inSessionNamed: 'lost' do: [ class compile: 'rescuedValue ^ 42' classified: 'accessing' ].
+	self removeSelector: #rescuedValue from: class.
+	class compile: 'rescuedValue ^ 7' classified: 'accessing'.
+	class removeSelector: #rescuedValue.
+	self
+		assert: (((self dataFrom: self list) at: #changes) first at: #conflict)
+		equals: 'The image removed it since it was saved: restoring brings it back.'.
+	self assert: (self resultIndicatesError: (self restore: #(  ))).
+	self deny: (class includesSelector: #rescuedValue)
 ]
 
 { #category : 'tests' }

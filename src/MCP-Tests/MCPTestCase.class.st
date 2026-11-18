@@ -99,6 +99,13 @@ MCPTestCase >> ensureMethodSource: aMethodSource protocol: aProtocol on: aBehavi
 ]
 
 { #category : 'private - compatibility' }
+MCPTestCase >> epiceaLeavesTestsOut [
+	"Whether Epicea leaves out of the history what a test changes, unless the test says it logs with Epicea. Older Pharo versions log it."
+
+	^ TestCase canUnderstand: #shouldLogWithEpicea
+]
+
+{ #category : 'private - compatibility' }
 MCPTestCase >> expectedRefactoringFailureCauseClassName [
 
 	^ self refactoringsRefuseBreakingChanges
@@ -194,6 +201,14 @@ MCPTestCase >> removePackageNamed: aPackageName [
 MCPTestCase >> removeSelector: aSelector from: aBehavior [
 
 	self withoutEpiceaDuring: [ (aBehavior includesSelector: aSelector) ifTrue: [ aBehavior removeSelector: aSelector ] ]
+]
+
+{ #category : 'running' }
+MCPTestCase >> runCase [
+	"Where Epicea logs what a test changes as it logs any work, a fixture made and then removed without logging reads, after the image restarts without saving, as work it lost. There, a test runs with the image's monitor off, as the Pharo versions that leave tests out of the history do. A test that reads the history it writes logs to a monitor of its own."
+
+	self epiceaLeavesTestsOut ifTrue: [ ^ super runCase ].
+	EpMonitor disableDuring: [ super runCase ]
 ]
 
 { #category : 'private - execution' }

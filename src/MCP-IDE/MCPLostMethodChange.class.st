@@ -6,7 +6,8 @@ Class {
 	#superclass : 'MCPLostChange',
 	#instVars : [
 		'behaviorName',
-		'selector'
+		'selector',
+		'sourceMatches'
 	],
 	#category : 'MCP-IDE-Queries',
 	#package : 'MCP-IDE',
@@ -69,7 +70,7 @@ MCPLostMethodChange >> imageHolds: aMethodDefinition [
 	^ self
 		  imageMethodIfPresent: [ :method |
 				  aMethodDefinition isNotNil and: [
-					  method sourceCode = aMethodDefinition sourceCode and: [ method protocolName asString = aMethodDefinition protocol asString ] ] ]
+					  method protocolName asString = aMethodDefinition protocol asString and: [ self source: method matches: aMethodDefinition ] ] ]
 		  ifAbsent: [ aMethodDefinition isNil ]
 ]
 
@@ -130,5 +131,16 @@ MCPLostMethodChange >> restorePhase [
 MCPLostMethodChange >> setBehaviorName: aBehaviorName selector: aSelector [
 
 	behaviorName := aBehaviorName asString.
-	selector := aSelector asSymbol
+	selector := aSelector asSymbol.
+	sourceMatches := IdentityDictionary new
+]
+
+{ #category : 'private - image' }
+MCPLostMethodChange >> source: aCompiledMethod matches: aMethodDefinition [
+	"Whether the method's source is the one aMethodDefinition records. An installed method keeps its source, so the answer holds for as long as the image has that method, and only one compiled since reads its source again."
+
+	| known |
+	known := sourceMatches at: aMethodDefinition ifAbsent: [ nil ].
+	(known isNotNil and: [ known key == aCompiledMethod ]) ifTrue: [ ^ known value ].
+	^ (sourceMatches at: aMethodDefinition put: aCompiledMethod -> (aCompiledMethod sourceCode = aMethodDefinition sourceCode)) value
 ]
