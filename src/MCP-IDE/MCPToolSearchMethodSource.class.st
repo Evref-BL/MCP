@@ -105,6 +105,25 @@ MCPToolSearchMethodSource >> redundantKeys [
 	^ #( isExtension protocol line lineNumber )
 ]
 
+{ #category : 'private - results' }
+MCPToolSearchMethodSource >> successSummaryForRequest: request scopeQuery: scopeQuery page: page [
+	"Source writes an argument after each keyword of a selector, so a filter spelled as a selector of several keywords misses every method that implements or sends it. When it finds nothing, the summary says why and names the tools that look for a selector, with the scope the call gave. A scope that names nothing that exists looked nowhere, so the miss is not the selector's and the summary says only that, leaving the next step to the warning about the missing names."
+
+	| selector summary |
+	summary := super successSummaryForRequest: request scopeQuery: scopeQuery page: page.
+	page totalCount = 0 ifFalse: [ ^ summary ].
+	scopeQuery namesNothingThatExists ifTrue: [ ^ summary ].
+	selector := self filterPatternFromRequest: request.
+	selector numArgs > 1 ifFalse: [ ^ summary ].
+	^ String streamContents: [ :stream |
+			  stream << summary << ' ' << selector
+			  <<
+			  ' is a selector: source writes an argument after each of its keywords, so a method that implements or sends it does not contain that text. '.
+			  (request hasArgumentNamed: 'scope') ifTrue: [ stream << 'With the same scope, ' ].
+			  stream << 'method_reference_search with name ' << selector
+			  << ' finds its implementors and senders, and method_search with selector ' << selector << ' finds its implementors.' ]
+]
+
 { #category : 'private - schema' }
 MCPToolSearchMethodSource >> supportedFilterModes [
 
