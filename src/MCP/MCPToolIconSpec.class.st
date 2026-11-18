@@ -50,6 +50,7 @@ MCPToolIconSpec class >> actionIconMap [
 			  ('down' -> #down).
 			  ('apply' -> #accept).
 			  ('revert' -> #undo).
+			  ('restore' -> #undo).
 			  ('run' -> #play).
 			  ('capture' -> #image).
 			  ('set' -> #add).

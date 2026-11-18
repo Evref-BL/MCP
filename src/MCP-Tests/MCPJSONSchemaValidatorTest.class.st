@@ -60,6 +60,8 @@ MCPJSONSchemaValidatorTest >> baseRepresentativeArgumentsByToolClass [
 		  (MCPToolChangeHistory -> { (#action -> 'listFiles') } asDictionary).
 		  (MCPToolCaptureScreen -> Dictionary new).
 		  (MCPToolDebugSearch -> Dictionary new).
+		  (MCPToolListLostChanges -> Dictionary new).
+		  (MCPToolRestoreLostChanges -> { (#elements -> #( 'MCPTool>>name' )) } asDictionary).
 		  (MCPToolSearchMethods -> Dictionary new).
 		  (MCPToolSearchTools -> Dictionary new).
 		  (MCPToolGetTool -> { (#name -> 'class_search') } asDictionary).
