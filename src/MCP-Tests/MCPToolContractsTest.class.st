@@ -2839,16 +2839,16 @@ MCPToolContractsTest >> testSearchClassesHasAccurateNameAndSchema [
 
 { #category : 'tests' }
 MCPToolContractsTest >> testSearchClassesListsClassesForExistingPackage [
+	"A package scope finds a class of that package wherever it falls among the pages: the name narrows the search, as a package this large needs."
 
-	| classNames classes data result |
+	| result |
 	result := self callToolNamed: 'class_search' withArguments: {
-			          (self searchScope: { (#packages -> #( 'MCP-Tests' )) }) } asDictionary.
-	data := (result at: #structuredContent) at: #data.
-	classes := data at: #classes.
-	classNames := classes collect: [ :each | each at: #class ].
+			          (self searchScope: { (#packages -> #( 'MCP-Tests' )) }).
+			          (#name -> 'MCPToolMethodMutationTest') } asDictionary.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: classes isNotEmpty.
-	self assert: (classNames includes: 'MCPToolMethodMutationTest')
+	self
+		assert: ((((result at: #structuredContent) at: #data) at: #classes) collect: [ :each | each at: #class ] as: Array)
+		equals: #( 'MCPToolMethodMutationTest' )
 ]
 
 { #category : 'tests' }

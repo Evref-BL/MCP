@@ -343,7 +343,7 @@ MCPToolSearchMethodReferences >> signalUnknownName: aName failures: failures [
 
 { #category : 'private - results' }
 MCPToolSearchMethodReferences >> successSummaryForRequest: request scopeQuery: scopeQuery page: page [
-	"When nothing implements or sends the name, a sentence follows when the name says what was meant instead, or when this session removed a method of that selector."
+	"When nothing implements or sends the name, a sentence follows when the name says what was meant instead, or when the change history shows a method of that selector removed."
 
 	| hint kinds name summary |
 	summary := super successSummaryForRequest: request scopeQuery: scopeQuery page: page.

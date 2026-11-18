@@ -84,7 +84,7 @@ MCPToolSearchMethods >> removedMethodHintForRequest: request scopeQuery: scopeQu
 
 { #category : 'private - results' }
 MCPToolSearchMethods >> successSummaryForRequest: request scopeQuery: scopeQuery page: page [
-	"A search whose scope selects no class or package, and that keeps no selector or protocol, lists every method in the image, or every method of one side. A client that drops an argument the schema does not have sends exactly that, so the summary says what narrows it. A search for a selector that finds nothing says when this session removed such a method."
+	"A search whose scope selects no class or package, and that keeps no selector or protocol, lists every method in the image, or every method of one side. A client that drops an argument the schema does not have sends exactly that, so the summary says what narrows it. A search for a selector that finds nothing says when the change history shows such a method removed."
 
 	| summary |
 	summary := super successSummaryForRequest: request scopeQuery: scopeQuery page: page.
