@@ -343,13 +343,17 @@ MCPToolSearchMethodReferences >> signalUnknownName: aName failures: failures [
 
 { #category : 'private - results' }
 MCPToolSearchMethodReferences >> successSummaryForRequest: request scopeQuery: scopeQuery page: page [
-	"When nothing implements or sends the name, a sentence follows when the name says what was meant instead."
+	"When nothing implements or sends the name, a sentence follows when the name says what was meant instead, or when the change history shows a method of that selector removed."
 
-	| hint name summary |
+	| hint kinds name summary |
 	summary := super successSummaryForRequest: request scopeQuery: scopeQuery page: page.
 	page totalCount = 0 ifFalse: [ ^ summary ].
 	name := self filterPatternFromRequest: request.
-	hint := (self noHitHintForKinds: (self kindsForName: name fromRequest: request) name: name) ifNil: [ ^ summary ].
+	kinds := self kindsForName: name fromRequest: request.
+	hint := (self noHitHintForKinds: kinds name: name) ifNil: [
+			        (kinds anySatisfy: [ :kind | self selectorKinds includes: kind ]) ifFalse: [ ^ summary ].
+			        (self removedMethodHintSelecting: [ :behavior :selector :protocol |
+				         selector = name asSymbol and: [ scopeQuery reaches: behavior ] ]) ifNil: [ ^ summary ] ].
 	^ String streamContents: [ :stream | stream << summary << ' ' << hint ]
 ]
 

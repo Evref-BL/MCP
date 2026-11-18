@@ -50,6 +50,7 @@ MCPToolIconSpec class >> actionIconMap [
 			  ('down' -> #down).
 			  ('apply' -> #accept).
 			  ('revert' -> #undo).
+			  ('restore' -> #undo).
 			  ('run' -> #play).
 			  ('capture' -> #image).
 			  ('set' -> #add).
@@ -177,6 +178,7 @@ MCPToolIconSpec class >> objectIconMap [
 			  ('protocol' -> #protocolProtected).
 			  ('file' -> #folder).
 			  ('entry' -> #changeUpdate).
+			  ('version' -> #history).
 			  ('coverage' -> #processBrowser).
 			  ('name' -> #string).
 			  ('superclass' -> #hierarchy).

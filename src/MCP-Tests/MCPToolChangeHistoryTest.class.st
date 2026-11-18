@@ -122,6 +122,21 @@ MCPToolChangeHistoryTest >> tearDown [
 ]
 
 { #category : 'tests' }
+MCPToolChangeHistoryTest >> testACompileKeepingTheSourceIsLoggedOnce [
+	"A method compiled with format false is logged once, as compiled: no reformat follows it."
+
+	self withTemporaryRecoveryClassDo: [ :class |
+			self callToolNamed: 'method_compile' withArguments: {
+					(#class -> class name).
+					(#protocol -> 'testing').
+					(#format -> false).
+					(#source -> 'rescuedValue ^ 42') } asDictionary.
+			EpMonitor current sessionStore flush.
+			EpMonitor current log refresh.
+			self assert: (EpMonitor current log entries count: [ :each | self isRecoverableMethodEntry: each forClass: class ]) equals: 1 ]
+]
+
+{ #category : 'tests' }
 MCPToolChangeHistoryTest >> testADirectoryWithoutAFileIsRefusedWhereTheSessionIsNot [
 	"Answering the session in progress would read another history than the directory asked for."
 
