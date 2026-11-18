@@ -131,6 +131,16 @@ MCPToolSearchPackages >> searchedNoun [
 	^ 'package'
 ]
 
+{ #category : 'private - results' }
+MCPToolSearchPackages >> successSummaryForRequest: request scopeQuery: scopeQuery page: page [
+	"A package the page lists or the scope names says what the image lost of it since its last save: what the image holds of a package is not all the work done on it."
+
+	^ MCPToolListLostChanges
+		  summary: (super successSummaryForRequest: request scopeQuery: scopeQuery page: page)
+		  notingLostChangesToPackagesNamed: (page entries collect: [ :each | each at: #package ]) , scopeQuery packageNames
+		  classesNamed: #(  )
+]
+
 { #category : 'metadata' }
 MCPToolSearchPackages >> title [
 

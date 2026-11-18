@@ -151,6 +151,16 @@ MCPToolSearchClasses >> searchedNoun [
 	^ 'class'
 ]
 
+{ #category : 'private - results' }
+MCPToolSearchClasses >> successSummaryForRequest: request scopeQuery: scopeQuery page: page [
+	"The package of a class the page lists, a package the scope names and a class it names say what the image lost of them since its last save. A package is named rather than each class listed, since a class lost with the rest of the work is in no list."
+
+	^ MCPToolListLostChanges
+		  summary: (super successSummaryForRequest: request scopeQuery: scopeQuery page: page)
+		  notingLostChangesToPackagesNamed: (page entries collect: [ :each | each at: #package ]) , scopeQuery packageNames
+		  classesNamed: (scopeQuery classNames collect: [ :each | each copyUpTo: Character space ])
+]
+
 { #category : 'metadata' }
 MCPToolSearchClasses >> title [
 
