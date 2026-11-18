@@ -1326,29 +1326,47 @@ MCPToolMethodMutationTest >> testCompileOffersNoRewriteThatCanChangeWhatAMethodA
 ]
 
 { #category : 'tests' }
-MCPToolMethodMutationTest >> testCompileOffersTheClassSideOnlyForAMethodOfTheProject [
-	"A send to a class whose instances have the method may mean the method belongs on the class side, as a constructor. The critique offers to compile it there only when the method is of the caller's project: its package is named like the package of the method's class up to the first dash, as a class and its tests are. A class of a library, as OrderedCollection, is not the caller's to change."
+MCPToolMethodMutationTest >> testCompileOffersTheClassSideOnlyToAMisplacedConstructor [
+	"A send to a class whose instances have the method may mean the method belongs on the class side, as a constructor compiled on the instance side. The critique offers to compile it there only when it is one, as evaluate and test_run do: compiled since the image shipped, it sends new to self, which an instance cannot run. Any other method is sent to an instance, as label:, a setter sent to the class when new was forgotten, or add:, one of Pharo's own. That holds whether the receiver is the class's name or self in a class-side method, where the note first says what self is."
 
-	| className |
-	className := 'MCPToolCompileProjectProbe'.
-	self
-		createClassNamed: className
-		superclassName: 'Object'
-		slots: #(  )
-		classSlots: #(  ).
+	| target |
+	target := MCPNotUnderstoodNoteTestTarget name.
 	[
-		self deny: (self resultIndicatesError: (self compileSource: 'probeBuild ^ self' into: className side: nil)).
 		{
-			('critiqueNoteProbe ^ MCPToolCompileProjectProbe probeBuild'
+			({
+				 'critiqueNoteProbe ^ MCPNotUnderstoodNoteTestTarget withLabel: ''a'''.
+				 MCPToolMethodMutationTestTarget name.
+				 nil }
 			 ->
-			 'MCPToolCompileProjectProbe itself does not understand probeBuild, its instances do: it is on the instance side. Send it to an instance, or compile probeBuild with side class.').
-			('critiqueNoteProbe ^ OrderedCollection add: 3'
-			 -> 'OrderedCollection itself does not understand add:, its instances do: it is on the instance side. Send it to an instance.') }
+			 'MCPNotUnderstoodNoteTestTarget itself does not understand withLabel:, its instances do: it is on the instance side. It sends new to self, which instances of MCPNotUnderstoodNoteTestTarget do not understand: compile it with method_compile and side class to send it to MCPNotUnderstoodNoteTestTarget.').
+			({
+				 'critiqueNoteProbe ^ MCPNotUnderstoodNoteTestTarget label: ''a'''.
+				 MCPToolMethodMutationTestTarget name.
+				 nil }
+			 ->
+			 'MCPNotUnderstoodNoteTestTarget itself does not understand label:, its instances do: it is on the instance side. Send it to an instance.').
+			({
+				 'critiqueNoteProbe ^ OrderedCollection add: 3'.
+				 MCPToolMethodMutationTestTarget name.
+				 nil }
+			 -> 'OrderedCollection itself does not understand add:, its instances do: it is on the instance side. Send it to an instance.').
+			({
+				 'critiqueNoteProbe ^ self withLabel: ''a'''.
+				 target.
+				 'class' }
+			 ->
+			 'This method is on the class side, where self is MCPNotUnderstoodNoteTestTarget. MCPNotUnderstoodNoteTestTarget itself does not understand withLabel:, its instances do: it is on the instance side. It sends new to self, which instances of MCPNotUnderstoodNoteTestTarget do not understand: compile it with method_compile and side class to send it to MCPNotUnderstoodNoteTestTarget.').
+			({
+				 'critiqueNoteProbe ^ self label: ''a'''.
+				 target.
+				 'class' }
+			 ->
+			 'This method is on the class side, where self is MCPNotUnderstoodNoteTestTarget. MCPNotUnderstoodNoteTestTarget itself does not understand label:, its instances do: it is on the instance side. Send it to an instance.') }
 			do: [ :each |
-				self assert: (self noteOnTheSendIn: each key compiledInto: MCPToolMethodMutationTestTarget name side: nil) equals: each value ] ]
+				self assert: (self noteOnTheSendIn: each key first compiledInto: each key second side: each key third) equals: each value ] ]
 		ensure: [
 				self removeSelector: #critiqueNoteProbe from: MCPToolMethodMutationTestTarget.
-				self removeClassNamed: className ]
+				self removeSelector: #critiqueNoteProbe from: MCPNotUnderstoodNoteTestTarget classSide ]
 ]
 
 { #category : 'tests' }
@@ -2026,10 +2044,10 @@ MCPToolMethodMutationTest >> testCompileSaysWhichSideUnderstandsASend [
 			({ 'critiqueNoteProbe ^ MCPToolMethodMutationTestTarget combine: ''a'' with: ''b'''.
 			 nil }
 			 ->
-			 'MCPToolMethodMutationTestTarget itself does not understand combine:with:, its instances do: it is on the instance side. Send it to an instance, or compile combine:with: with side class.').
+			 'MCPToolMethodMutationTestTarget itself does not understand combine:with:, its instances do: it is on the instance side. Send it to an instance.').
 			({ 'critiqueNoteProbe ^ self combine: ''a'' with: ''b'''. 'class' }
 			 ->
-			 'MCPToolMethodMutationTestTarget itself does not understand combine:with:, its instances do, and this method is on the class side, where self is MCPToolMethodMutationTestTarget. Send it to an instance of MCPToolMethodMutationTestTarget.').
+			 'This method is on the class side, where self is MCPToolMethodMutationTestTarget. MCPToolMethodMutationTestTarget itself does not understand combine:with:, its instances do: it is on the instance side. Send it to an instance.').
 			({ 'critiqueNoteProbe ^ self mcpProbeNoSideHasIt'. nil } -> nil) } do: [ :each |
 			self assert: (self noteOnTheSendIn: each key first compiledInto: target side: each key second) equals: each value ] ] ensure: [
 			self removeSelector: #critiqueNoteProbe from: MCPToolMethodMutationTestTarget.

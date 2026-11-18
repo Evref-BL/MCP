@@ -194,9 +194,9 @@ MCPToolRunTests >> issueCountsOn: stream for: data [
 
 { #category : 'private - results' }
 MCPToolRunTests >> issueLineOn: stream for: entry labelled: aLabel [
-	"failed <who>[: <message>][, at <statement> | , in <locations>]; error <who> (<ErrorClass>)[: <message>][, in <locations>]; skipped <who>[: <reason>]. A message loses one trailing period when a place follows it."
+	"failed <who>[: <message>][, at <statement> | , in <locations>]; error <who> (<ErrorClass>)[: <message>][, in <locations>][. <note>]; skipped <who>[: <reason>]. A message loses one trailing period when something follows it."
 
-	| locations message statement |
+	| locations message note statement |
 	stream
 		nextPut: Character lf;
 		nextPutAll: aLabel;
@@ -205,15 +205,17 @@ MCPToolRunTests >> issueLineOn: stream for: entry labelled: aLabel [
 	(self valueIn: entry at: #errorClass) ifNotNil: [ :errorClass | stream << ' (' << errorClass << ')' ].
 	statement := self valueIn: entry at: #statement.
 	locations := (self valueIn: entry at: #locations) ifNil: [ #(  ) ].
+	note := self valueIn: entry at: #note.
 	message := (self valueIn: entry at: #message) ifNil: [ self valueIn: entry at: #reason ].
 	message ifNotNil: [
 			stream
 				nextPutAll: ': ';
-				nextPutAll: ((statement isNil and: [ locations isEmpty ])
+				nextPutAll: ((statement isNil and: [ locations isEmpty and: [ note isNil ] ])
 						 ifTrue: [ message ]
 						 ifFalse: [ self textWithoutTrailingPeriod: message ]) ].
 	statement ifNotNil: [ stream << ', at ' << statement ].
-	locations ifNotEmpty: [ stream << ', in ' << (self joinedNames: locations) ]
+	locations ifNotEmpty: [ stream << ', in ' << (self joinedNames: locations) ].
+	note ifNotNil: [ stream << '. ' << note ]
 ]
 
 { #category : 'private - results' }

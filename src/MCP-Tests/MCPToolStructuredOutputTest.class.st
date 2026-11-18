@@ -186,6 +186,17 @@ MCPToolStructuredOutputTest >> testEvaluateLeavesANameNeverAssignedUndeclared [
 ]
 
 { #category : 'tests' }
+MCPToolStructuredOutputTest >> testEvaluateNamesAnUndeclaredVariable [
+	"Pharo 13's notice says only Undeclared variable, and Pharo 14's names it in the DoIt the code was compiled as, so MCP names it itself."
+
+	| result |
+	result := self callToolNamed: 'evaluate' withArguments: { (#code -> 'MCPNoSuchGlobalForThisTest new') } asDictionary.
+	self assert: (result at: #isError).
+	self compilerReadsUndeclaredNamesAsNil ifTrue: [ ^ self ].
+	self assert: ((self summaryFrom: result) endsWith: '): Undeclared variable: MCPNoSuchGlobalForThisTest Line 1')
+]
+
+{ #category : 'tests' }
 MCPToolStructuredOutputTest >> testEvaluatePutsTheTranscriptBackAfterAFailure [
 
 	| previous result |

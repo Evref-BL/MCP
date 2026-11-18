@@ -145,7 +145,7 @@ MCPStructuredTestResult class >> textForDuration: aDuration [
 
 { #category : 'private' }
 MCPStructuredTestResult >> addIssueOfKind: aKind errorClass: anErrorClassName message: aMessage location: aLocationOrNil statement: aStatementOrNil [
-	"An issue of the kind, error class and message of one the test already raised is the same issue, raised again somewhere else, such as in setUp and again in tearDown: its place joins the others once."
+	"An issue of the kind, error class and message of one the test already raised is the same issue, raised again somewhere else, such as in setUp and again in tearDown: its place joins the others once. Answer the issue."
 
 	| issue |
 	issue := issues
@@ -160,7 +160,8 @@ MCPStructuredTestResult >> addIssueOfKind: aKind errorClass: anErrorClassName me
 						          yourself) ].
 	(aLocationOrNil isNil or: [ (issue at: #locations) includes: aLocationOrNil ]) ifFalse: [
 		(issue at: #locations) add: aLocationOrNil ].
-	(aStatementOrNil isNil or: [ issue includesKey: #statement ]) ifFalse: [ issue at: #statement put: aStatementOrNil ]
+	(aStatementOrNil isNil or: [ issue includesKey: #statement ]) ifFalse: [ issue at: #statement put: aStatementOrNil ].
+	^ issue
 ]
 
 { #category : 'initialization' }
@@ -199,21 +200,22 @@ MCPStructuredTestResult >> messageOf: anException forTestCase: aTestCase [
 
 { #category : 'private' }
 MCPStructuredTestResult >> recordIssueFrom: anException forTestCase: aTestCase [
-	"Recorded while the stack that signalled is still live, so that the issue says where it came from: a place outside the test method, or, for a failure in the test method, the statement that failed."
+	"Recorded while the stack that signalled is still live, so that the issue says where it came from: a place outside the test method, or, for a failure in the test method, the statement that failed; and, for a message not understood, what it was most likely meant to be."
 
-	| context kind location statement |
+	| context issue kind location statement |
 	kind := self issueKindOf: anException.
 	context := self class locationContextFrom: anException signalerContext in: aTestCase.
 	context ifNotNil: [
 			(self class isTestMethodContext: context of: aTestCase)
 				ifTrue: [ kind = 'failure' ifTrue: [ statement := self class statementOf: context ] ]
 				ifFalse: [ location := self class locationTextOf: context ] ].
-	self
-		addIssueOfKind: kind
-		errorClass: anException class name
-		message: (self messageOf: anException forTestCase: aTestCase)
-		location: location
-		statement: statement
+	issue := self
+		         addIssueOfKind: kind
+		         errorClass: anException class name
+		         message: (self messageOf: anException forTestCase: aTestCase)
+		         location: location
+		         statement: statement.
+	anException mcpTestIssueNote ifNotNil: [ :note | issue at: #note ifAbsentPut: [ note ] ]
 ]
 
 { #category : 'running' }

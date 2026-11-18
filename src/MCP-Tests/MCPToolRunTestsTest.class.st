@@ -472,6 +472,20 @@ MCPToolRunTestsTest >> testAnInheritedTestMethodRuns [
 		equals: 'Ran 1 test (1 passed).'
 ]
 
+{ #category : 'tests - answers' }
+MCPToolRunTestsTest >> testAnInstanceMessageSentToTheClassSaysItsInstancesUnderstandIt [
+	"A constructor compiled on the instance side reads, from a test that sends it to the class, as a message nothing understands. Its send of new says it was meant for the class side. The message is not asserted: its wording differs before Pharo 12."
+
+	| lines |
+	lines := self issueLinesFrom:
+		         (self runTests: { (#methods -> #( 'MCPToolRunTestsNotUnderstoodTarget>>#testSendsAnInstanceMessageToTheClass' )) }).
+	self assert: lines size equals: 1.
+	self assert: (lines first beginsWith:
+			 'error MCPToolRunTestsNotUnderstoodTarget>>#testSendsAnInstanceMessageToTheClass (MessageNotUnderstood): ').
+	self assert: (lines first endsWith:
+			 '. Instances of MCPNotUnderstoodNoteTestTarget understand withLabel:, but MCPNotUnderstoodNoteTestTarget itself does not: withLabel: is an instance-side method. It sends new to self, which instances of MCPNotUnderstoodNoteTestTarget do not understand: compile it with method_compile and side class to send it to MCPNotUnderstoodNoteTestTarget.')
+]
+
 { #category : 'tests - timeouts' }
 MCPToolRunTestsTest >> testAnInterruptedTestIsNotCountedAndDoesNotDelayTheAnswer [
 	"The fixture's tearDown waits 30 seconds and its class's time limit is 5: without the second the interrupted test gets for its tearDown, the answer would take 5 seconds."
@@ -691,6 +705,20 @@ MCPToolRunTestsTest >> testTheTimeoutIsSaidOnce [
 	self assert: (text includesSubstring: 'notRun:') description: text.
 	#( 'timedOut:' 'timeoutMilliseconds:' 'interrupted:' 'notRunCount:' ) do: [ :each |
 		self deny: (text includesSubstring: each) description: text ]
+]
+
+{ #category : 'tests - answers' }
+MCPToolRunTestsTest >> testTwoMessagesRunTogetherSayTheyAreOneMessage [
+	"sorted:collect: was meant as sorted: then collect:, which the compile critique says, and so does the test that sends it. The message is not asserted: its wording differs before Pharo 12."
+
+	| lines |
+	lines := self issueLinesFrom:
+		         (self runTests: { (#methods -> #( 'MCPToolRunTestsNotUnderstoodTarget>>#testRunsTwoMessagesTogether' )) }).
+	self assert: lines size equals: 1.
+	self assert:
+		(lines first beginsWith: 'error MCPToolRunTestsNotUnderstoodTarget>>#testRunsTwoMessagesTogether (MessageNotUnderstood): ').
+	self assert: (lines first endsWith:
+			 '. sorted:collect: is one message. To send collect: to what sorted: answers, put the sorted: send in parentheses: (... sorted: ...) collect: ...')
 ]
 
 { #category : 'tests - timeouts' }

@@ -34,13 +34,10 @@ MCPToolMethodMutation >> addChainedSendNoteAt: anInterval flaggedBy: aRuleClassN
 		sendAt: anInterval
 		in: aString
 		ifFound: [ :send |
-				| keywords |
-				keywords := send selector keywords.
-				(1 to: keywords size - 1)
-					detect: [ :split |
-							(self isImplementedSelector: ('' join: (keywords first: split))) and: [
-								self isImplementedSelector: ('' join: (keywords allButFirst: split)) ] ]
-					ifFound: [ :split | data at: #note put: (self chainedSendNote: send selector splitAt: split) ] ]
+				(MCPNotUnderstoodNote
+					 chainedSendTextFor: send selector
+					 whereFirstPart: [ :firstPart | MCPNotUnderstoodNote isImplementedSelector: firstPart ]) ifNotNil: [ :note |
+					data at: #note put: note ] ]
 		ifNone: [ ]
 ]
 
@@ -171,22 +168,6 @@ MCPToolMethodMutation >> blockingCritiqueDataForMethodNode: aMethodNode in: aBeh
 MCPToolMethodMutation >> blockingPreCompileRuleClasses [
 
 	^ { ReDeadBlockRule }
-]
-
-{ #category : 'private' }
-MCPToolMethodMutation >> chainedSendNote: aSelector splitAt: anIndex [
-	"As in: sorted:collect: is one message. To send collect: to what sorted: answers, put the sorted: send in parentheses: (... sorted: ...) collect: ..."
-
-	| first firstSelector rest |
-	first := aSelector keywords first: anIndex.
-	rest := aSelector keywords allButFirst: anIndex.
-	firstSelector := '' join: first.
-	^ String streamContents: [ :stream |
-			  stream << aSelector << ' is one message. To send ' << ('' join: rest) << ' to what ' << firstSelector << ' answers, put the '
-			  << firstSelector << ' send in parentheses: (...'.
-			  first do: [ :each | stream << ' ' << each << ' ...' ].
-			  stream nextPut: $).
-			  rest do: [ :each | stream << ' ' << each << ' ...' ] ]
 ]
 
 { #category : 'private - arguments' }
@@ -497,34 +478,17 @@ MCPToolMethodMutation >> inputProperties [
 
 { #category : 'private' }
 MCPToolMethodMutation >> instanceSideNoteFor: aSend of: aClass in: aBehavior [
-	"When aClass itself does not understand aSend and its instances do, as a constructor compiled on the instance side and sent to the class: that its instances have it, and what to do from the side the method of aBehavior is on. Moving the method to the class side is offered only when it is in the project of aBehavior, never for a class of a library."
+	"When aClass itself does not understand aSend and its instances do, as a constructor compiled on the instance side and sent to the class: that its instances have it, and what to do, as MCPNotUnderstoodNote says when the send is made. Sent to self, the method of aBehavior is on the class side, which the note says first."
 
 	| method selector |
 	selector := aSend selector.
 	method := aClass lookupSelector: selector.
 	method ifNil: [ ^ nil ].
 	^ String streamContents: [ :stream |
-			  stream << aClass name << ' itself does not understand ' << selector << ', its instances do'.
-			  (self isSelfOrSuper: aSend receiver)
-				  ifTrue: [
-						  stream << ', and this method is on the class side, where self is ' << aClass name << '. Send it to an instance of '
-						  << aClass name << '.' ]
-				  ifFalse: [
-						  stream << ': it is on the instance side. Send it to an instance'.
-						  (self
-							   isPackageNamed: (method package ifNotNil: [ :package | package name ])
-							   inTheProjectOf: (aBehavior instanceSide package ifNotNil: [ :package | package name ])) ifTrue: [
-							  stream << ', or compile ' << selector << ' with side class' ].
-						  stream << '.' ] ]
-]
-
-{ #category : 'private' }
-MCPToolMethodMutation >> isImplementedSelector: aString [
-	"Whether a method somewhere in the image has aString as its selector. A string no symbol was ever made of is no method's selector."
-
-	| selector |
-	selector := Symbol findInterned: aString.
-	^ selector isNotNil and: [ (SystemNavigation default allImplementorsOf: selector) isNotEmpty ]
+			  (self isSelfOrSuper: aSend receiver) ifTrue: [
+				  stream << 'This method is on the class side, where self is ' << aClass name << '. ' ].
+			  stream << aClass name << ' itself does not understand ' << selector << ', its instances do: it is on the instance side. '
+			  << (MCPNotUnderstoodNote instanceSideAdviceFor: method of: aClass) ]
 ]
 
 { #category : 'private' }
