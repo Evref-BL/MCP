@@ -146,6 +146,19 @@ MCPToolMethodMutationTest >> compileSource: aSource into: aClassName side: aSide
 	^ self callToolNamed: 'method_compile' withArguments: arguments
 ]
 
+{ #category : 'private - classes' }
+MCPToolMethodMutationTest >> createProbeClassNamed: aClassName with: someArguments [
+	"A class in the package tests generate, made by class_create, which takes shared variables and pools the same way in every Pharo."
+
+	| arguments |
+	arguments := someArguments asDictionary.
+	arguments
+		at: #name put: aClassName;
+		at: #package put: self generatedPackageName;
+		at: #tag put: self generatedTagName.
+	self deny: (self resultIndicatesError: (self callToolNamed: 'class_create' withArguments: arguments))
+]
+
 { #category : 'private' }
 MCPToolMethodMutationTest >> createRenameScopeFixtureClassNamed: aClassName packageName: aPackageName [
 
@@ -269,6 +282,21 @@ MCPToolMethodMutationTest >> methodSourceLineFeedOffendersInPackageNamed: packag
 
 	(self methodDefinitionsInPackageNamed: packageName) do: [ :definition |
 		(definition source includes: Character lf) ifTrue: [ aBlock value: (self methodSourceLineFeedOffenderNameFor: definition) ] ]
+]
+
+{ #category : 'private' }
+MCPToolMethodMutationTest >> noteOnTheSendIn: aSource compiledInto: aClassName side: aSideOrNil [
+	"Compile aSource, which sends one message that its receiver does not understand, and answer the note its critique adds after the rule's title, or nil when it adds none."
+
+	| critiques result |
+	result := self compileSource: aSource into: aClassName side: aSideOrNil.
+	critiques := ((self dataFrom: result) at: #critiques) select: [ :each |
+		             MCPToolCompileMethod new unimplementedSendRuleNames includes: (each at: #ruleClass) asSymbol ].
+	self assert: critiques size equals: 1.
+	^ critiques first at: #note ifPresent: [ :note |
+			  self assert: ((self textOf: result) includesSubstring:
+					   (String streamContents: [ :stream | stream << (critiques first at: #title) << '. ' << note ])).
+			  note ]
 ]
 
 { #category : 'private' }
@@ -846,6 +874,24 @@ MCPToolMethodMutationTest >> testCompileCanReplaceMethodOnToolClass [
 ]
 
 { #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileCritiqueQuotesACommentOnOneLine [
+	"A comment changes nothing in the program, so a quote reads the blanks and line breaks in it as the code around it: one space each run, and the quote stays on one line. The formatter keeps a comment that opens a block where it is."
+
+	| codes result |
+	self removeSelector: #commentQuoteProbe from: MCPToolMethodMutationTestTarget.
+	[
+		result := self compileProbe: 'commentQuoteProbe
+	^ self mcpQuoted: [ "a   comment
+	on two lines" 3 ]'.
+		codes := ((self dataFrom: result) at: #critiques)
+			         select: [ :each | (each at: #ruleClass) = ReSentNotImplementedRule name asString ]
+			         thenCollect: [ :each | each at: #code ].
+		self assert: codes asArray equals: #( 'self mcpQuoted: [ "a comment on two lines" 3 ]' ).
+		self assert: ((self textOf: result) lines includes: '    self mcpQuoted: [ "a comment on two lines" 3 ]') ] ensure: [
+		self removeSelector: #commentQuoteProbe from: MCPToolMethodMutationTestTarget ]
+]
+
+{ #category : 'tests' }
 MCPToolMethodMutationTest >> testCompileCritiqueQuotesItsCodeAcrossLines [
 	"The formatter puts a cascade's receiver on a line of its own, so the code a critique of its first message flags starts on a line that holds only the receiver. The quote follows that code onto the next lines, each run of blanks and line breaks read as one space."
 
@@ -858,6 +904,24 @@ MCPToolMethodMutationTest >> testCompileCritiqueQuotesItsCodeAcrossLines [
 		self assert: (critique at: #code) equals: 'stream << self printString'.
 		self assert: ((self textOf: result) lines includes: '    stream << self printString') ] ensure: [
 		self removeSelector: #cascadeQuoteProbe from: MCPToolMethodMutationTestTarget ]
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileCritiqueQuotesLiteralsAsWritten [
+	"A quote reads each run of blanks and line breaks between tokens as one space, but quotes a string, symbol or character literal as written: 'a   b' is another string than 'a b', and a character literal of a space keeps its space, at the end of the quote too."
+
+	| codes result |
+	self removeSelector: #literalQuoteProbe from: MCPToolMethodMutationTestTarget.
+	[
+		result := self compileProbe: 'literalQuoteProbe
+	self mcpQuoted: $  with: ''a   b''.
+	^ self mcpQuoted: #''c   d'' with: $ ; yourself'.
+		codes := ((self dataFrom: result) at: #critiques)
+			         select: [ :each | (each at: #ruleClass) = ReSentNotImplementedRule name asString ]
+			         thenCollect: [ :each | each at: #code ].
+		self assert: codes asArray equals: #( 'self mcpQuoted: $  with: ''a   b''' 'self mcpQuoted: #''c   d'' with: $ ' ).
+		self assert: ((self textOf: result) lines includes: '    self mcpQuoted: #''c   d'' with: $ ') ] ensure: [
+		self removeSelector: #literalQuoteProbe from: MCPToolMethodMutationTestTarget ]
 ]
 
 { #category : 'tests' }
@@ -1106,6 +1170,32 @@ MCPToolMethodMutationTest >> testCompileNamesOnlyTheRulesMethodRewriteCanApply [
 		self deny: (MCPMethodRewriteNamedRuleSpec canApplyRuleClass: ReUsesTrueRule).
 		self deny: (MCPMethodRewriteNamedRuleSpec canApplyRuleClass: Object) ] ensure: [
 		self removeSelector: #fixableProbe from: MCPToolMethodMutationTestTarget ]
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileOffersTheClassSideOnlyForAMethodOfTheProject [
+	"A send to a class whose instances have the method may mean the method belongs on the class side, as a constructor. The critique offers to compile it there only when the method is of the caller's project: its package is named like the package of the method's class up to the first dash, as a class and its tests are. A class of a library, as OrderedCollection, is not the caller's to change."
+
+	| className |
+	className := 'MCPToolCompileProjectProbe'.
+	self
+		createClassNamed: className
+		superclassName: 'Object'
+		slots: #(  )
+		classSlots: #(  ).
+	[
+		self deny: (self resultIndicatesError: (self compileSource: 'probeBuild ^ self' into: className side: nil)).
+		{
+			('critiqueNoteProbe ^ MCPToolCompileProjectProbe probeBuild'
+			 ->
+			 'MCPToolCompileProjectProbe itself does not understand probeBuild, its instances do: it is on the instance side. Send it to an instance, or compile probeBuild with side class.').
+			('critiqueNoteProbe ^ OrderedCollection add: 3'
+			 -> 'OrderedCollection itself does not understand add:, its instances do: it is on the instance side. Send it to an instance.') }
+			do: [ :each |
+				self assert: (self noteOnTheSendIn: each key compiledInto: MCPToolMethodMutationTestTarget name side: nil) equals: each value ] ]
+		ensure: [
+				self removeSelector: #critiqueNoteProbe from: MCPToolMethodMutationTestTarget.
+				self removeClassNamed: className ]
 ]
 
 { #category : 'tests' }
@@ -1592,35 +1682,69 @@ MCPToolMethodMutationTest >> testCompileSaysAChainedKeywordSendIsOneMessage [
 ]
 
 { #category : 'tests' }
-MCPToolMethodMutationTest >> testCompileStatesAnUnimplementedSendOnce [
-	"Renraku flags a send that nothing implements, and flags it again when its receiver is self or a global, which cannot understand it either. The answer states each such send once, quoted with its receiver since the whole send fits in the quote."
+MCPToolMethodMutationTest >> testCompileSaysAClassVariableSentAsAMessageIsAVariable [
+	"A unary send to a class that names one of its class variables, as Units Dozen, reads the variable as a message. The critique says that it is a class variable, and how the method's class reads it: by name where it is in scope, as in the class itself or in a class that uses it as a pool, and through a method of its class elsewhere."
 
-	| critiques result |
-	self removeSelector: #unimplementedOnceProbe from: MCPToolMethodMutationTestTarget.
+	| pool user |
+	pool := 'MCPToolCompileUnitsProbe'.
+	user := 'MCPToolCompileStockProbe'.
+	self createProbeClassNamed: pool with: {
+			(#superclass -> 'SharedPool').
+			(#sharedVariables -> #( 'ProbeDozen' )) }.
+	self createProbeClassNamed: user with: { (#sharedPools -> { pool }) }.
 	[
-		result := self compileProbe: 'unimplementedOnceProbe ^ self mcpProbeQuantity // Object mcpProbeDozen'.
-		critiques := (self dataFrom: result) at: #critiques.
-		self assert: critiques size equals: 2.
-		self assert: (critiques allSatisfy: [ :each | (each at: #ruleClass) = ReSentNotImplementedRule name asString ]).
-		self
-			assert: (critiques collect: [ :each | each at: #code ] as: Set)
-			equals: #( 'self mcpProbeQuantity' 'Object mcpProbeDozen' ) asSet ] ensure: [
-		self removeSelector: #unimplementedOnceProbe from: MCPToolMethodMutationTestTarget ]
+		{
+			({
+				 'critiqueNoteProbe ^ MCPToolCompileUnitsProbe ProbeDozen'.
+				 user.
+				 nil }
+			 ->
+			 'ProbeDozen is a class variable of MCPToolCompileUnitsProbe, not a message. MCPToolCompileStockProbe can read it by name: write ProbeDozen alone.').
+			({
+				 'critiqueNoteProbe ^ self ProbeDozen'.
+				 pool.
+				 'class' }
+			 ->
+			 'ProbeDozen is a class variable of MCPToolCompileUnitsProbe, not a message. MCPToolCompileUnitsProbe can read it by name: write ProbeDozen alone.').
+			({
+				 'critiqueNoteProbe ^ MCPToolCompileUnitsProbe ProbeDozen'.
+				 MCPToolMethodMutationTestTarget name.
+				 nil }
+			 ->
+			 'ProbeDozen is a class variable of MCPToolCompileUnitsProbe, not a message. MCPToolMethodMutationTestTarget cannot read it by name: only MCPToolCompileUnitsProbe, its subclasses and the classes that use it as a pool can. Add a class-side method to MCPToolCompileUnitsProbe that answers it, and send that.') }
+			do: [ :each |
+				self assert: (self noteOnTheSendIn: each key first compiledInto: each key second side: each key third) equals: each value ] ]
+		ensure: [
+				self removeSelector: #critiqueNoteProbe from: MCPToolMethodMutationTestTarget.
+				self removeClassNamed: user.
+				self removeClassNamed: pool ]
 ]
 
 { #category : 'tests' }
-MCPToolMethodMutationTest >> testCompileStatesAnUnimplementedSendToSuperOnce [
-	"Renraku flags a send to super that nothing implements for that, and again as neither the class nor its superclass understands it. The answer states it once."
+MCPToolMethodMutationTest >> testCompileSaysASlotSentAsAMessageHasNoAccessor [
+	"A send to the object running the method that is a slot's name, or its name and a colon, is an accessor nothing defines. The critique says the slot has no accessor and that the method can read or assign it directly. A slot of the other side is not one the method sees, so it gets no such note."
 
-	| critiques result |
-	self removeSelector: #superOnceProbe from: MCPToolMethodMutationTestTarget.
+	| className |
+	className := 'MCPToolCompileSlotProbe'.
+	self
+		createClassNamed: className
+		superclassName: 'Object'
+		slots: #( #probeQuantity )
+		classSlots: #( #probeMade ).
 	[
-		result := self compileProbe: 'superOnceProbe ^ super mcpProbeZork: 3'.
-		critiques := (self dataFrom: result) at: #critiques.
-		self assert: critiques size equals: 1.
-		self assert: (critiques first at: #ruleClass) equals: ReSentNotImplementedRule name asString.
-		self assert: (critiques first at: #code) equals: 'super mcpProbeZork: 3' ] ensure: [
-		self removeSelector: #superOnceProbe from: MCPToolMethodMutationTestTarget ]
+		{
+			({ 'critiqueNoteProbe MCPToolCompileSlotProbe probeMade: 0'. 'class' }
+			 ->
+			 'probeMade is a class-side slot of MCPToolCompileSlotProbe with no accessor probeMade:. This method can assign it directly, as probeMade := ...').
+			({ 'critiqueNoteProbe ^ self probeMade'. 'class' }
+			 ->
+			 'probeMade is a class-side slot of MCPToolCompileSlotProbe with no accessor probeMade. This method can read it directly, as probeMade.').
+			({ 'critiqueNoteProbe ^ self probeQuantity'. nil }
+			 ->
+			 'probeQuantity is an instance-side slot of MCPToolCompileSlotProbe with no accessor probeQuantity. This method can read it directly, as probeQuantity.').
+			({ 'critiqueNoteProbe ^ self probeMade'. nil } -> nil) } do: [ :each |
+			self assert: (self noteOnTheSendIn: each key first compiledInto: className side: each key second) equals: each value ] ]
+		ensure: [ self removeClassNamed: className ]
 ]
 
 { #category : 'tests' }
@@ -1681,6 +1805,66 @@ MCPToolMethodMutationTest >> testCompileSaysAnUndeclaredNameIsASlotOfTheOtherSid
 					equals: each value ].
 		self deny: ((self classNamed: className) includesSelector: #probeReset).
 		self deny: ((self classNamed: className) classSide includesSelector: #probeReset) ] ensure: [ self removeClassNamed: className ]
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileSaysWhichSideUnderstandsASend [
+	"A send the receiver does not understand while the other side of its class does, as a constructor compiled on the instance side and sent to the class, says which side has it and what to do from where the method is. On the instance side, a method only counts when the class side defines it, as buildValue:, or when it is an instance creation method of Behavior, as new. What every class has from Class or Behavior, as name, is an accessor the instance lacks, not a message for self class. A send neither side understands gets no such note."
+
+	| target |
+	target := MCPToolMethodMutationTestTarget name.
+	[
+		{
+			({ 'critiqueNoteProbe ^ self new'. nil }
+			 ->
+			 'Instances of MCPToolMethodMutationTestTarget do not understand new, MCPToolMethodMutationTestTarget itself does: this method is on the instance side, where self is an instance. Send it to self class, or compile this method with side class.').
+			({ 'critiqueNoteProbe ^ self buildValue: 3'. nil }
+			 ->
+			 'Instances of MCPToolMethodMutationTestTarget do not understand buildValue:, MCPToolMethodMutationTestTarget itself does: this method is on the instance side, where self is an instance. Send it to self class, or compile this method with side class.').
+			({ 'critiqueNoteProbe ^ self name'. nil } -> nil).
+			({ 'critiqueNoteProbe ^ MCPToolMethodMutationTestTarget combine: ''a'' with: ''b'''.
+			 nil }
+			 ->
+			 'MCPToolMethodMutationTestTarget itself does not understand combine:with:, its instances do: it is on the instance side. Send it to an instance, or compile combine:with: with side class.').
+			({ 'critiqueNoteProbe ^ self combine: ''a'' with: ''b'''. 'class' }
+			 ->
+			 'MCPToolMethodMutationTestTarget itself does not understand combine:with:, its instances do, and this method is on the class side, where self is MCPToolMethodMutationTestTarget. Send it to an instance of MCPToolMethodMutationTestTarget.').
+			({ 'critiqueNoteProbe ^ self mcpProbeNoSideHasIt'. nil } -> nil) } do: [ :each |
+			self assert: (self noteOnTheSendIn: each key first compiledInto: target side: each key second) equals: each value ] ] ensure: [
+			self removeSelector: #critiqueNoteProbe from: MCPToolMethodMutationTestTarget.
+			self removeSelector: #critiqueNoteProbe from: MCPToolMethodMutationTestTarget classSide ]
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileStatesAnUnimplementedSendOnce [
+	"Renraku flags a send that nothing implements, and flags it again when its receiver is self or a global, which cannot understand it either. The answer states each such send once, quoted with its receiver since the whole send fits in the quote."
+
+	| critiques result |
+	self removeSelector: #unimplementedOnceProbe from: MCPToolMethodMutationTestTarget.
+	[
+		result := self compileProbe: 'unimplementedOnceProbe ^ self mcpProbeQuantity // Object mcpProbeDozen'.
+		critiques := (self dataFrom: result) at: #critiques.
+		self assert: critiques size equals: 2.
+		self assert: (critiques allSatisfy: [ :each | (each at: #ruleClass) = ReSentNotImplementedRule name asString ]).
+		self
+			assert: (critiques collect: [ :each | each at: #code ] as: Set)
+			equals: #( 'self mcpProbeQuantity' 'Object mcpProbeDozen' ) asSet ] ensure: [
+		self removeSelector: #unimplementedOnceProbe from: MCPToolMethodMutationTestTarget ]
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileStatesAnUnimplementedSendToSuperOnce [
+	"Renraku flags a send to super that nothing implements for that, and again as neither the class nor its superclass understands it. The answer states it once."
+
+	| critiques result |
+	self removeSelector: #superOnceProbe from: MCPToolMethodMutationTestTarget.
+	[
+		result := self compileProbe: 'superOnceProbe ^ super mcpProbeZork: 3'.
+		critiques := (self dataFrom: result) at: #critiques.
+		self assert: critiques size equals: 1.
+		self assert: (critiques first at: #ruleClass) equals: ReSentNotImplementedRule name asString.
+		self assert: (critiques first at: #code) equals: 'super mcpProbeZork: 3' ] ensure: [
+		self removeSelector: #superOnceProbe from: MCPToolMethodMutationTestTarget ]
 ]
 
 { #category : 'tests' }
