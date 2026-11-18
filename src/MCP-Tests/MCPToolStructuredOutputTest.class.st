@@ -381,13 +381,13 @@ MCPToolStructuredOutputTest >> testGetClassReturnsStructuredError [
 
 { #category : 'tests' }
 MCPToolStructuredOutputTest >> testGetClassReturnsStructuredSuccess [
+	"The first page holds the class's definition as its file writes it, class variables included, beside how many methods each side holds; the summary names the class, so no field says it again."
 
-	| contentText data expectedSharedVariableNames result structured |
+	| contentText data result structured |
 	result := self callToolNamed: 'class_get' withArguments: { (#name -> 'MCPToolGetMethodTestTarget') } asDictionary.
 	structured := self structuredContentFrom: result.
 	data := self dataFrom: result.
 	contentText := (result at: #content) first at: #text.
-	expectedSharedVariableNames := MCPToolGetMethodTestTarget classVarNames collect: [ :each | each asString ] as: Array.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self deny: (structured includesKey: #warnings).
 	self assert: (contentText includesSubstring: (structured at: #summary)).
@@ -396,13 +396,9 @@ MCPToolStructuredOutputTest >> testGetClassReturnsStructuredSuccess [
 	self assert: (data at: #class) equals: 'MCPToolGetMethodTestTarget'.
 	self assert: (data at: #methods) equals: 1.
 	self assert: (data at: #classMethods) equals: 1.
-	self assert: (data at: #sharedVariables) equals: expectedSharedVariableNames.
-	self deny: (data includesKey: #layout).
-	self deny: (data includesKey: #traitComposition).
-	self deny: (data includesKey: #classTraitComposition).
-	self deny: (data includesKey: #comment).
-	self deny: (data includesKey: #superclasses).
-	self deny: (data includesKey: #subclasses)
+	self assert: MCPToolGetMethodTestTarget classVarNames isNotEmpty.
+	MCPToolGetMethodTestTarget classVarNames do: [ :each | self assert: ((data at: #source) includesSubstring: each) ].
+	#( #superclass #sharedVariables #comment #superclasses #subclasses ) do: [ :each | self deny: (data includesKey: each) ]
 ]
 
 { #category : 'tests' }
@@ -573,19 +569,15 @@ MCPToolStructuredOutputTest >> testMethodRecordsReadAsMethodReferences [
 { #category : 'tests' }
 MCPToolStructuredOutputTest >> testRecordListsCarryTheirLabel [
 
-	| contentText lines result subclasses superclasses |
-	result := self callToolNamed: 'class_get' withArguments: {
-			          (#name -> 'MCPToolMutation').
-			          (#subclassDepth -> 1).
-			          (#upToSuperclass -> 'Object') } asDictionary.
-	contentText := (result at: #content) first at: #text.
-	lines := contentText lines.
+	| lines result |
+	result := self
+		          callToolNamed: 'class_search'
+		          withArguments: { (self searchScope: { (#subclassesOf -> #( 'MCPToolMutation' )) }) } asDictionary.
+	lines := ((result at: #content) first at: #text) lines.
 	self deny: (self resultIndicatesError: result).
-	subclasses := lines findFirst: [ :each | each beginsWith: 'subclasses' ].
-	superclasses := lines findFirst: [ :each | each beginsWith: 'superclasses' ].
-	self assert: (lines first beginsWith: 'Got class MCPToolMutation.').
-	self assert: subclasses > 1.
-	self assert: subclasses < superclasses
+	self assert: (lines first includesSubstring: 'in the subclasses of MCPToolMutation').
+	self assert: (lines second beginsWith: 'classes').
+	self assert: (lines third beginsWith: '  ')
 ]
 
 { #category : 'tests' }

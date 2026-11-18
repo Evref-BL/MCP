@@ -1,5 +1,5 @@
 "
-Returns structured metadata for one class, with optional superclass and subclass context. It is meant for single-class lookup rather than broad search.
+Answers a class or trait as its Tonel file, a page at a time: offset 0 is the comment and definition, as the file opens, and offset n starts at the nth method, so the pages put end to end are the file. A class's superclasses and subclasses are class_search's, through its scope.
 "
 Class {
 	#name : 'MCPToolGetClass',
@@ -50,36 +50,7 @@ MCPToolGetClass >> batchSummaryVerb [
 { #category : 'metadata' }
 MCPToolGetClass >> buildInputSchema [
 
-	| includeCommentProperty includeSourceProperty subclassDepthProperty upToSuperclassNameProperty nameProperty |
-	includeCommentProperty := MCPStructureProperties new
-		                          name: 'includeComment';
-		                          type: 'boolean';
-		                          description: 'Include class comments.';
-		                          default: false;
-		                          yourself.
-	includeSourceProperty := MCPStructureProperties new
-		                         name: 'includeSource';
-		                         type: 'boolean';
-		                         description:
-			                         ('Answer each class as its Tonel file, as an export writes it: definition, comment, and the methods its package defines on both sides. offset pages it: a page holds up to {1} methods and {2} characters, but at least one method.'
-				                          format: {
-						                          self defaultPageLimit.
-						                          self pageCharacterLimit asStringWithCommas });
-		                         default: false;
-		                         yourself.
-	upToSuperclassNameProperty := MCPStructureProperties new
-		                              name: 'upToSuperclass';
-		                              type: 'string';
-		                              description: 'Also list superclasses up to, not including, this class.';
-		                              yourself.
-	subclassDepthProperty := MCPStructureProperties new
-		                         name: 'subclassDepth';
-		                         type: 'integer';
-		                         description: 'Return subclasses down to the given level.';
-		                         default: 0;
-		                         minimum: 0;
-		                         maximum: self maximumSubclassDepth;
-		                         yourself.
+	| nameProperty |
 	nameProperty := MCPStructureProperties new
 		                name: 'name';
 		                type: #( 'string' 'array' );
@@ -92,10 +63,6 @@ MCPToolGetClass >> buildInputSchema [
 		  type: 'object';
 		  properties: {
 				  nameProperty.
-				  includeCommentProperty.
-				  includeSourceProperty.
-				  upToSuperclassNameProperty.
-				  subclassDepthProperty.
 				  self offsetInputProperty };
 		  required: #( 'name' );
 		  yourself
@@ -115,37 +82,55 @@ MCPToolGetClass >> defaultExposure [
 
 { #category : 'metadata' }
 MCPToolGetClass >> defaultPageLimit [
-	"With includeSource, how many methods a page of a class's Tonel file holds at most. A page also keeps within pageCharacterLimit, so a page of long methods holds fewer."
+	"How many methods a page after the definition holds at most. A page also keeps within pageCharacterLimit, so a page of long methods holds fewer."
 
 	^ 50
+]
+
+{ #category : 'private - source' }
+MCPToolGetClass >> definitionDictionaryForClass: aClass [
+	"The first page: the comment and the definition, as the class's Tonel file opens, and how many methods the pages after it hold on each side. What other packages add to the class is in their own files, so it is counted and their names given instead. No file holds the users of a trait, so they come beside it."
+
+	| data extensions methods |
+	methods := self tonelMethodDefinitionsOf: aClass.
+	data := Dictionary new.
+	data
+		at: #class put: aClass name asString;
+		at: #source put: (self tonelTextOf: aClass asClassDefinition methods: #(  ));
+		at: #methods put: (methods count: [ :each | each classIsMeta not ]);
+		at: #classMethods put: (methods count: [ :each | each classIsMeta ]).
+	aClass isTrait ifTrue: [
+			data at: #isTrait put: true.
+			(self userNamesOf: aClass) ifNotEmpty: [ :names | data at: #users put: names ] ].
+	extensions := self extensionMethodsOf: aClass.
+	extensions ifNotEmpty: [
+			data
+				at: #extensionMethods put: extensions size;
+				at: #extensionPackages put: (extensions collect: [ :each | each package name asString ] as: Set) asArray sort ].
+	methods ifNotEmpty: [ data at: #nextOffset put: 1 ].
+	^ data
+]
+
+{ #category : 'private - results' }
+MCPToolGetClass >> definitionSummaryForClass: aClass data: data [
+	"What the first page holds, how many methods the pages after it hold, what the file leaves out, and where the methods start."
+
+	^ String streamContents: [ :stream |
+			  stream << 'Got the definition of ' << (self kindAndNameOf: aClass) << ', as its Tonel file opens.'.
+			  self methodCountSummaryOn: stream instanceSide: (data at: #methods) classSide: (data at: #classMethods).
+			  data at: #extensionMethods ifPresent: [ :count |
+					  self
+						  extensionSummaryOn: stream
+						  of: aClass
+						  methodCount: count
+						  packageCount: (data at: #extensionPackages) size ].
+			  data at: #nextOffset ifPresent: [ :nextOffset | stream << ' Next page: offset ' << nextOffset printString << '.' ] ]
 ]
 
 { #category : 'metadata' }
 MCPToolGetClass >> description [
 
-	^ 'Get class or trait definitions by name: superclass, slots, traits, package. includeSource answers each as its Tonel file, a page of methods at a time. method_search lists their methods.'
-]
-
-{ #category : 'private - hierarchy' }
-MCPToolGetClass >> descriptionDictionariesForClasses: someClasses includeComment: includeComment [
-
-	^ someClasses collect: [ :each | self descriptionDictionaryForClass: each includeComment: includeComment ] as: Array
-]
-
-{ #category : 'private - hierarchy' }
-MCPToolGetClass >> descriptionDictionaryForClass: aClass includeComment: includeComment [
-
-	| data |
-	data := (MCPClassDescriptionInfo fromClass: aClass) asDictionary copy.
-	includeComment ifTrue: [ data at: #comment put: (aClass comment ifNil: [ '' ]) ].
-	^ data
-]
-
-{ #category : 'private - results' }
-MCPToolGetClass >> entryNameKeys [
-	"A superclass or subclass record is a class."
-
-	^ #( class )
+	^ 'Get classes or traits by name as their Tonel files, a page at a time. Offset 0 answers the comment and definition (superclass, slots, traits, variables, pools, package), later offsets the methods of both sides. class_search lists superclasses and subclasses.'
 ]
 
 { #category : 'private' }
@@ -215,55 +200,19 @@ MCPToolGetClass >> failureMessageForClassName: className error: anError [
 
 { #category : 'private - execution' }
 MCPToolGetClass >> getClassWith: request [
-	"The answer names the class found, not the name asked for: Foo class reads as Foo, and the summary says Foo. With includeSource, the class's Tonel file stands in for its description, which the file's definition holds."
+	"The class's Tonel file, a page at a time: offset 0 is its comment and definition, and offset n starts at its nth method. The answer names the class found, not the name asked for: Foo class reads as Foo."
 
-	| data includeComment includeSource offset subclasses superclasses targetClass |
+	| data offset targetClass |
 	targetClass := self resolvedClassNamed: (self classNameFromRequest: request).
-	superclasses := self superclassesOf: targetClass upTo: (request stringArgumentNamed: 'upToSuperclass').
-	subclasses := self subclassesOf: targetClass downTo: (request integerArgumentNamed: 'subclassDepth').
-	includeComment := request booleanArgumentNamed: 'includeComment'.
-	includeSource := request booleanArgumentNamed: 'includeSource'.
 	offset := request integerArgumentNamed: 'offset'.
-	data := includeSource
-		        ifTrue: [ self tonelDictionaryForClass: targetClass offset: offset ]
-		        ifFalse: [ self descriptionDictionaryForClass: targetClass includeComment: includeComment ].
-	superclasses ifNotEmpty: [
-		data at: #superclasses put: (self descriptionDictionariesForClasses: superclasses includeComment: includeComment) ].
-	subclasses ifNotEmpty: [
-		data at: #subclasses put: (self descriptionDictionariesForClasses: subclasses includeComment: includeComment) ].
+	data := offset = 0
+		        ifTrue: [ self definitionDictionaryForClass: targetClass ]
+		        ifFalse: [ self methodsDictionaryForClass: targetClass from: offset ].
 	^ self
-		  successResultText: (includeSource
-				   ifTrue: [
-						   self
-							   tonelSummaryForClass: targetClass
-							   page: data
-							   offset: offset
-							   superclasses: superclasses
-							   subclasses: subclasses ]
-				   ifFalse: [ self successSummaryForClass: targetClass superclasses: superclasses subclasses: subclasses ])
+		  successResultText: (offset = 0
+				   ifTrue: [ self definitionSummaryForClass: targetClass data: data ]
+				   ifFalse: [ self methodsSummaryForClass: targetClass data: data from: offset ])
 		  data: data
-]
-
-{ #category : 'private - results' }
-MCPToolGetClass >> hierarchySummaryOn: aStream superclassCount: superclassCount subclassCount: subclassCount [
-	"How many superclasses and subclasses the answer lists, said only when it lists some."
-
-	superclassCount + subclassCount = 0 ifTrue: [ ^ self ].
-	aStream
-		space;
-		nextPutAll: 'Included ';
-		print: superclassCount;
-		nextPutAll: ' superclass';
-		nextPutAll: (superclassCount = 1
-				 ifTrue: [ '' ]
-				 ifFalse: [ 'es' ]);
-		nextPutAll: ' and ';
-		print: subclassCount;
-		nextPutAll: ' subclass';
-		nextPutAll: (subclassCount = 1
-				 ifTrue: [ '' ]
-				 ifFalse: [ 'es' ]);
-		nextPut: $.
 ]
 
 { #category : 'private - source' }
@@ -275,16 +224,16 @@ MCPToolGetClass >> isMethod: aMethod filedWith: aClass [
 
 { #category : 'private - results' }
 MCPToolGetClass >> keyOrder [
-	"What a class is, then where it lives, then how big it is. The comment is not named, so it lands after the inline values like any block of text."
+	"The users of a trait and the packages that add to the class are short lists, read before the file's text."
 
-	^ #( superclass package tag layout methods classMethods traits instanceSlots classSlots sharedVariables sharedPools users )
+	^ #( users extensionPackages )
 ]
 
 { #category : 'private - results' }
 MCPToolGetClass >> keysStatedInSummary [
-	"The summary opens with the class name and says whether it is a trait, so repeating either says it twice. With includeSource, it also says which methods the page holds, how many methods other packages add, and where the next page starts."
+	"The summary opens with the class name and says whether it is a trait, how many methods its file holds on each side, which methods the page holds, how many methods other packages add, and where the next page starts."
 
-	^ #( class isTrait pagination nextOffset extensionMethods )
+	^ #( class isTrait methods classMethods pagination nextOffset extensionMethods )
 ]
 
 { #category : 'private - results' }
@@ -296,51 +245,70 @@ MCPToolGetClass >> kindAndNameOf: aClass [
 		   ifFalse: [ 'class ' ]) , aClass name
 ]
 
-{ #category : 'defaults' }
-MCPToolGetClass >> maximumSubclassDepth [
+{ #category : 'private - results' }
+MCPToolGetClass >> methodCountSummaryOn: aStream instanceSide: instanceCount classSide: classCount [
+	"How many methods the class's file holds, and on which side: 3 methods, 2 on the instance side and 1 on the class side."
 
-	^ 10
+	| sides |
+	instanceCount + classCount = 0 ifTrue: [ ^ aStream << ' Its file holds no methods.' ].
+	sides := OrderedCollection new.
+	instanceCount > 0 ifTrue: [ sides add: instanceCount printString , ' on the instance side' ].
+	classCount > 0 ifTrue: [ sides add: classCount printString , ' on the class side' ].
+	aStream << ' Its file holds ' << (self textForCount: instanceCount + classCount noun: 'method') << ', ' << (' and ' join: sides)
+	<< '.'
+]
+
+{ #category : 'private - source' }
+MCPToolGetClass >> methodsDictionaryForClass: aClass from: anOffset [
+	"A page of the methods of the class's Tonel file, from its anOffset-th method on: what the file writes for them after its definition, so the pages put end to end after the first are the rest of the file."
+
+	| data definition methods page pagination source |
+	definition := aClass asClassDefinition.
+	methods := self tonelMethodDefinitionsOf: aClass.
+	page := MCPPaginationResult
+		        fromEntries: methods
+		        limit: (self tonelMethodCountFrom: anOffset of: methods in: definition)
+		        offset: anOffset - 1.
+	pagination := page paginationDictionary.
+	data := Dictionary new.
+	data
+		at: #class put: aClass name asString;
+		at: #pagination put: pagination.
+	aClass isTrait ifTrue: [ data at: #isTrait put: true ].
+	page entries ifNotEmpty: [ :entries |
+			source := (self tonelTextOf: definition methods: entries) allButFirst: (self tonelTextOf: definition methods: #(  )) size.
+			data at: #source put: source ].
+	page nextOffset ifNotNil: [ :index |
+			pagination at: #nextOffset put: index + 1.
+			data at: #nextOffset put: index + 1 ].
+	^ data
+]
+
+{ #category : 'private - results' }
+MCPToolGetClass >> methodsSummaryForClass: aClass data: data from: anOffset [
+	"Which methods the page holds of the class's Tonel file, or that there are none from anOffset, and where the next page starts."
+
+	| name pagination returned total |
+	name := self kindAndNameOf: aClass.
+	pagination := data at: #pagination.
+	returned := pagination at: #returnedCount.
+	total := pagination at: #totalCount.
+	^ String streamContents: [ :stream |
+			  returned = 0
+				  ifTrue: [
+						  stream << 'No methods from offset ' << anOffset printString << ': the Tonel file of ' << name << ' holds '
+						  << (self textForCount: total noun: 'method') << '.' ]
+				  ifFalse: [
+						  stream << 'Got ' << (self tonelMethodRangeFrom: anOffset count: returned) << ' of ' << total printString
+						  << ' in the Tonel file of ' << name << '.' ].
+			  data at: #nextOffset ifPresent: [ :nextOffset | stream << ' Next page: offset ' << nextOffset printString << '.' ] ]
 ]
 
 { #category : 'metadata' }
 MCPToolGetClass >> pageCharacterLimit [
-	"With includeSource, how many characters of a class's Tonel file a page holds at most, so that a large class comes in pages a model's context holds several of. A method longer than that still comes, alone on its page, since a page holds at least one method."
+	"How many characters of a class's Tonel file a page of methods holds at most, so that a large class comes in pages a model's context holds several of. A method longer than that still comes, alone on its page, since a page holds at least one method."
 
 	^ 10000
-]
-
-{ #category : 'private - hierarchy' }
-MCPToolGetClass >> subclassesOf: aClass downTo: aDepth [
-
-	| subclasses |
-	aDepth = 0 ifTrue: [ ^ #(  ) ].
-	subclasses := OrderedCollection new.
-	aClass
-		allSubclassesWithLevelDo: [ :eachClass :level | (level between: 1 and: aDepth) ifTrue: [ subclasses add: eachClass ] ]
-		startingLevel: 0.
-	^ subclasses asArray
-]
-
-{ #category : 'private - results' }
-MCPToolGetClass >> successSummaryForClass: aClass superclasses: superclasses subclasses: subclasses [
-	"A trait is named as one. It is not a class, and it has users rather than superclasses and subclasses."
-
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Got ';
-				  nextPutAll: (self kindAndNameOf: aClass);
-				  nextPut: $..
-			  self hierarchySummaryOn: stream superclassCount: superclasses size subclassCount: subclasses size ]
-]
-
-{ #category : 'private - hierarchy' }
-MCPToolGetClass >> superclassesOf: aClass upTo: aSuperclassName [
-	"The superclasses of aClass up to, not including, the one aSuperclassName names. None when no name is given."
-
-	| targetSuperclass |
-	aSuperclassName ifNil: [ ^ #(  ) ].
-	targetSuperclass := MCPImageLookup classNamed: aSuperclassName role: #superclass details: { (#class -> aClass name asString) }.
-	^ aClass allSuperclasses asArray copyUpTo: targetSuperclass
 ]
 
 { #category : 'metadata' }
@@ -350,51 +318,15 @@ MCPToolGetClass >> title [
 ]
 
 { #category : 'private - source' }
-MCPToolGetClass >> tonelDictionaryForClass: aClass offset: anOffset [
-	"The class's Tonel file, a page of methods at a time. The first page opens with the definition and the comment, and a later one holds its methods alone, so the pages put end to end are the file. What other packages add to the class is in their own files, so it is counted and their names given instead. No file holds the users of a trait, so they come beside it, as in the description the file stands for."
+MCPToolGetClass >> tonelMethodCountFrom: anOffset of: someMethodDefinitions in: aClassDefinition [
+	"How many methods the page from the anOffset-th method holds: up to defaultPageLimit, and as many as keep its text within pageCharacterLimit, but at least one, so a method longer than a page is read too. A method adds to the file what the writer writes for it after the definition."
 
-	| data definition extensions methods opening page source |
-	definition := aClass asClassDefinition.
-	methods := self tonelMethodDefinitionsOf: aClass.
-	opening := self tonelTextOf: definition methods: #(  ).
-	page := MCPPaginationResult
-		        fromEntries: methods
-		        limit: (self
-				         tonelMethodCountFrom: anOffset
-				         of: methods
-				         in: definition
-				         opening: opening)
-		        offset: anOffset.
-	source := self tonelTextOf: definition methods: page entries.
-	anOffset > 0 ifTrue: [ source := source allButFirst: opening size ].
-	data := Dictionary new.
-	data
-		at: #class put: aClass name asString;
-		at: #pagination put: page paginationDictionary.
-	aClass isTrait ifTrue: [
-			data at: #isTrait put: true.
-			(MCPClassDescriptionInfo fromClass: aClass) userNames ifNotEmpty: [ :names | data at: #users put: names ] ].
-	source ifNotEmpty: [ data at: #source put: source ].
-	page nextOffset ifNotNil: [ :nextOffset | data at: #nextOffset put: nextOffset ].
-	extensions := self extensionMethodsOf: aClass.
-	extensions ifNotEmpty: [
-			data
-				at: #extensionMethods put: extensions size;
-				at: #extensionPackages put: (extensions collect: [ :each | each package name asString ] as: Set) asArray sort ].
-	^ data
-]
-
-{ #category : 'private - source' }
-MCPToolGetClass >> tonelMethodCountFrom: anOffset of: someMethodDefinitions in: aClassDefinition opening: anOpeningString [
-	"How many methods the page from anOffset holds: up to defaultPageLimit, and as many as keep its text within pageCharacterLimit, but at least one, so a method longer than a page is read too. The first page opens with the definition and the comment, anOpeningString, which counts toward it. A method adds to the file what the writer writes for it after the opening."
-
-	| count size |
+	| count opening size |
 	count := 0.
-	size := anOffset = 0
-		        ifTrue: [ anOpeningString size ]
-		        ifFalse: [ 0 ].
-	someMethodDefinitions from: anOffset + 1 to: (someMethodDefinitions size min: anOffset + self defaultPageLimit) do: [ :each |
-			size := size + (self tonelTextOf: aClassDefinition methods: { each }) size - anOpeningString size.
+	size := 0.
+	opening := (self tonelTextOf: aClassDefinition methods: #(  )) size.
+	someMethodDefinitions from: anOffset to: (someMethodDefinitions size min: anOffset + self defaultPageLimit - 1) do: [ :each |
+			size := size + (self tonelTextOf: aClassDefinition methods: { each }) size - opening.
 			(count > 0 and: [ size > self pageCharacterLimit ]) ifTrue: [ ^ count ].
 			count := count + 1 ].
 	^ count
@@ -426,54 +358,6 @@ MCPToolGetClass >> tonelMethodRangeFrom: aFirstIndex count: aCount [
 			  (aFirstIndex + aCount - 1) }
 ]
 
-{ #category : 'private - results' }
-MCPToolGetClass >> tonelPageSummaryForClass: aClass pagination: pagination offset: anOffset [
-	"What the page holds of the class's Tonel file: the whole file, its definition with the first methods, or later methods alone."
-
-	| name range returned total |
-	name := self kindAndNameOf: aClass.
-	returned := pagination at: #returnedCount.
-	total := pagination at: #totalCount.
-	range := self tonelMethodRangeFrom: anOffset + 1 count: returned.
-	anOffset = 0 ifTrue: [
-			^ (pagination at: #truncated)
-				  ifTrue: [
-						  'Got {1} as its Tonel file, with {2} of {3}.' format: {
-								  name.
-								  range.
-								  total } ]
-				  ifFalse: [ 'Got {1} as its Tonel file.' format: { name } ] ].
-	returned = 0 ifTrue: [
-			^ 'No methods from offset {1}: the Tonel file of {2} holds {3}.' format: {
-					  anOffset.
-					  name.
-					  (self textForCount: total noun: 'method') } ].
-	^ 'Got {1} of {2} in the Tonel file of {3}.' format: {
-			  range.
-			  total.
-			  name }
-]
-
-{ #category : 'private - results' }
-MCPToolGetClass >> tonelSummaryForClass: aClass page: data offset: anOffset superclasses: superclasses subclasses: subclasses [
-	"What the page holds of the class's Tonel file, then what else the answer lists, what the file leaves out, and where the next page starts."
-
-	^ String streamContents: [ :stream |
-			  stream nextPutAll: (self tonelPageSummaryForClass: aClass pagination: (data at: #pagination) offset: anOffset).
-			  self hierarchySummaryOn: stream superclassCount: superclasses size subclassCount: subclasses size.
-			  data at: #extensionMethods ifPresent: [ :count |
-					  self
-						  extensionSummaryOn: stream
-						  of: aClass
-						  methodCount: count
-						  packageCount: (data at: #extensionPackages) size ].
-			  data at: #nextOffset ifPresent: [ :nextOffset |
-					  stream
-						  nextPutAll: ' Next page: offset ';
-						  print: nextOffset;
-						  nextPut: $. ] ]
-]
-
 { #category : 'private - source' }
 MCPToolGetClass >> tonelTextOf: aClassDefinition methods: someMethodDefinitions [
 	"What Pharo's Tonel writer writes for the class holding these methods, which is what an export writes in its file."
@@ -484,17 +368,9 @@ MCPToolGetClass >> tonelTextOf: aClassDefinition methods: someMethodDefinitions 
 	^ String streamContents: [ :stream | writer writeClass: aClassDefinition on: stream ]
 ]
 
-{ #category : 'validating' }
-MCPToolGetClass >> validateRequest: aToolRequest [
-	"offset pages the Tonel file includeSource answers. Without includeSource the answer is a description, which has no pages, so an offset past the first would be ignored; it is refused instead, saying what it goes with."
+{ #category : 'private - source' }
+MCPToolGetClass >> userNamesOf: aTrait [
+	"The classes using the trait, which is what a trait has instead of subclasses, by name."
 
-	super validateRequest: aToolRequest.
-	((aToolRequest integerArgumentNamed: 'offset') > 0 and: [ (aToolRequest booleanArgumentNamed: 'includeSource') not ]) ifFalse: [
-		^ self ].
-	MCPInvalidToolInput signalForTool: self violations: { (MCPJSONSchemaViolation
-			 path: #( 'offset' )
-			 keyword: #dependentRequired
-			 message: 'offset pages the Tonel file that includeSource answers; pass includeSource: true with it, or leave offset out.'
-			 expected: #( 'includeSource' )
-			 actual: nil) }
+	^ (aTrait users collect: [ :each | each instanceSide name asString ] as: Array) sort
 ]

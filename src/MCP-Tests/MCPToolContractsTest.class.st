@@ -255,13 +255,6 @@ MCPToolContractsTest >> missingClassCases [
 					each fourth } ].
 	cases
 		add: {
-				'class_get'.
-				{
-					(#name -> target).
-					(#upToSuperclass -> 'Zzqxw') }.
-				'SuperclassNotFound'.
-				'Superclass Zzqxw' };
-		add: {
 				'test_run'.
 				{ (#classes -> #( 'Zzqxw' )) }.
 				'ClassNotFound'.
@@ -1719,7 +1712,7 @@ MCPToolContractsTest >> testGetClassHasAccurateNameAndRequiredArguments [
 	inputPropertyNames := tool inputSchema properties collect: [ :each | each name ].
 	self assert: tool name equals: 'class_get'.
 	self assert: tool inputSchema required asSet equals: #( 'name' ) asSet.
-	self assert: (inputPropertyNames includes: 'includeComment')
+	self assert: (inputPropertyNames includes: 'offset')
 ]
 
 { #category : 'tests' }
@@ -2409,8 +2402,7 @@ MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable 
 	rewriteMethodsTool := MCPToolRewriteMethods new.
 	removeClassesTool := MCPToolRemoveClasses new.
 	removeMethodsTool := MCPToolRemoveMethods new.
-	self assert: ((self inputPropertyNamed: 'includeComment' inTool: getClassTool) extraProperties at: #default) equals: false.
-	self assert: ((self inputPropertyNamed: 'subclassDepth' inTool: getClassTool) extraProperties at: #default) equals: 0.
+	self assert: ((self inputPropertyNamed: 'offset' inTool: getClassTool) extraProperties at: #default) equals: 0.
 	self assert: ((self inputPropertyNamed: 'side' inTool: getMethodTool) extraProperties at: #default) equals: 'instance'.
 	self
 		assert: ((self inputPropertyNamed: 'includeVariableDetails' inTool: getMethodTool) extraProperties at: #default)

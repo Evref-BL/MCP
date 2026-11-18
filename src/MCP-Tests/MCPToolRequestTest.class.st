@@ -12,22 +12,28 @@ Class {
 MCPToolRequestTest >> testASuppliedArgumentWinsOverItsSchemaDefault [
 
 	| request |
-	request := MCPToolGetClass new requestFromToolCallArguments: {
-			           (#name -> 'Object').
-			           (#subclassDepth -> 2).
-			           (#includeComment -> true) } asDictionary.
-	self assert: (request integerArgumentNamed: 'subclassDepth') equals: 2.
-	self assert: (request booleanArgumentNamed: 'includeComment')
+	request := MCPToolEvaluate new requestFromToolCallArguments: {
+			           (#code -> '3 + 4').
+			           (#timeoutSeconds -> 7) } asDictionary.
+	self assert: (request integerArgumentNamed: 'timeoutSeconds') equals: 7.
+	request := MCPToolGetMethod new requestFromToolCallArguments: {
+			           (#class -> 'Object').
+			           (#selector -> 'yourself').
+			           (#includeVariableDetails -> true) } asDictionary.
+	self assert: (request booleanArgumentNamed: 'includeVariableDetails')
 ]
 
 { #category : 'tests' }
 MCPToolRequestTest >> testAnArgumentLeftOutAnswersTheDefaultItsSchemaDeclares [
 
 	| request |
-	request := MCPToolGetClass new requestFromToolCallArguments: { (#name -> 'Object') } asDictionary.
-	self assert: (request integerArgumentNamed: 'subclassDepth') equals: 0.
-	self deny: (request booleanArgumentNamed: 'includeComment').
-	self deny: (request hasArgumentNamed: 'subclassDepth')
+	request := MCPToolEvaluate new requestFromToolCallArguments: { (#code -> '3 + 4') } asDictionary.
+	self assert: (request integerArgumentNamed: 'timeoutSeconds') equals: MCPToolEvaluate new defaultTimeoutSeconds.
+	self deny: (request hasArgumentNamed: 'timeoutSeconds').
+	request := MCPToolGetMethod new requestFromToolCallArguments: {
+			           (#class -> 'Object').
+			           (#selector -> 'yourself') } asDictionary.
+	self deny: (request booleanArgumentNamed: 'includeVariableDetails')
 ]
 
 { #category : 'tests' }
@@ -174,12 +180,12 @@ MCPToolRequestTest >> testRequestAccessorsProvideDefaultsUniqueCollectionsSymbol
 MCPToolRequestTest >> testToolRequestClampsArgumentsAboveSchemaMaximumBeforeValidation [
 
 	| request |
-	request := MCPToolGetClass new requestFromToolCallArguments: {
-		           (#name -> 'Object').
-		           (#subclassDepth -> 1000) } asDictionary.
+	request := MCPToolEvaluate new requestFromToolCallArguments: {
+			           (#code -> '3 + 4').
+			           (#timeoutSeconds -> 100000) } asDictionary.
 	self
-		assert: (request argumentNamed: 'subclassDepth' ifAbsent: [ self fail: 'Expected a normalized depth.' ])
-		equals: MCPToolGetClass new maximumSubclassDepth
+		assert: (request argumentNamed: 'timeoutSeconds' ifAbsent: [ self fail: 'Expected a normalized timeout.' ])
+		equals: MCPToolEvaluate new maximumTimeoutSeconds
 ]
 
 { #category : 'tests' }
