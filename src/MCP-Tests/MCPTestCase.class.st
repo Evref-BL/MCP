@@ -205,10 +205,18 @@ MCPTestCase >> removeSelector: aSelector from: aBehavior [
 
 { #category : 'running' }
 MCPTestCase >> runCase [
-	"Where Epicea logs what a test changes as it logs any work, a fixture made and then removed without logging reads, after the image restarts without saving, as work it lost. There, a test runs with the image's monitor off, as the Pharo versions that leave tests out of the history do. A test that reads the history it writes logs to a monitor of its own."
+	"A test runs with a change history of its own, empty, in memory and off: what the tools say from the history, a change the image lost or a method it removed, is then the test's, not whatever the image went through before the run. Where Epicea logs what a test changes as it logs any work, before Pharo 12, a fixture made and then removed without logging would read, after the image restarts without saving, as work it lost, so the image's monitor is off besides. A test that reads the history it writes logs to a monitor of its own."
 
-	self epiceaLeavesTestsOut ifTrue: [ ^ super runCase ].
-	EpMonitor disableDuring: [ super runCase ]
+	| imageMonitor directory |
+	imageMonitor := EpMonitor current.
+	directory := (FileSystem memory / ('mcp-test-history-' , UUID new asString36)) ensureCreateDirectory.
+	EpMonitor current: (EpMonitor newWithLog: (EpLog newWithStore: (OmBlockFileStore named: 'test' inDirectory: directory))).
+	[
+		self epiceaLeavesTestsOut
+			ifTrue: [ super runCase ]
+			ifFalse: [ imageMonitor disableDuring: [ super runCase ] ] ] ensure: [
+			EpMonitor current: imageMonitor.
+			directory ensureDeleteAll ]
 ]
 
 { #category : 'private - execution' }
