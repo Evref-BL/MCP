@@ -125,10 +125,10 @@ MCPRemovedMethodQueryTest >> testTheHintNamesTheMethodAndTheToolsThatBringItBack
 	self logRemovalOf: gone.
 	self assert: (self query hintSelecting: [ :behavior :selector :protocol | true ]) equals: (String streamContents: [ :stream |
 				 stream << (self referenceTo: gone)
-				 << ' was removed in this session: history_entry_list and history_entry_revert, through tool_call, can bring it back.' ]).
+				 << ' was removed in this session: history_entry_list and history_entry_revert can bring it back.' ]).
 	self
 		assert: (self query hintAfterNameSelecting: [ :behavior :selector :protocol | true ])
-		equals: 'It was removed in this session: history_entry_list and history_entry_revert, through tool_call, can bring it back.'
+		equals: 'It was removed in this session: history_entry_list and history_entry_revert can bring it back.'
 ]
 
 { #category : 'tests' }
@@ -140,8 +140,7 @@ MCPRemovedMethodQueryTest >> testTheHintNamesThreeMethodsNewestFirstAndCountsThe
 	self assert: (self query hintSelecting: [ :behavior :selector :protocol | true ]) equals: (String streamContents: [ :stream |
 				 stream << (self referenceTo: selectors fourth) << ', ' << (self referenceTo: selectors third) << ', '
 				 << (self referenceTo: selectors second)
-				 <<
-				 ' and 1 more were removed in this session: history_entry_list and history_entry_revert, through tool_call, can bring them back.' ])
+				 << ' and 1 more were removed in this session: history_entry_list and history_entry_revert can bring them back.' ])
 ]
 
 { #category : 'tests' }

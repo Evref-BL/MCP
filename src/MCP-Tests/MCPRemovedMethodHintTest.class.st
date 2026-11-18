@@ -26,7 +26,7 @@ MCPRemovedMethodHintTest >> hintFor: aSelector [
 
 	^ String streamContents: [ :stream |
 			  stream << self target name << '>>' << aSelector
-			  << ' was removed in this session: history_entry_list and history_entry_revert, through tool_call, can bring it back.' ]
+			  << ' was removed in this session: history_entry_list and history_entry_revert can bring it back.' ]
 ]
 
 { #category : 'private' }
@@ -87,8 +87,22 @@ MCPRemovedMethodHintTest >> testMethodGetSaysTheMethodWasRemovedInThisSession [
 			          (#selector -> gone) } asDictionary.
 	self assert: ((self errorFrom: result) at: #message) equals: (String streamContents: [ :stream |
 				 stream << 'Method ' << self target name << '>>' << gone
-				 <<
-				 ' does not exist. It was removed in this session: history_entry_list and history_entry_revert, through tool_call, can bring it back.' ])
+				 << ' does not exist. It was removed in this session: history_entry_list and history_entry_revert can bring it back.' ])
+]
+
+{ #category : 'tests' }
+MCPRemovedMethodHintTest >> testMethodReferenceSearchForSendersSaysTheMethodWasRemoved [
+	"Who sends a method is asked of one that is gone as well: the answer says it was removed."
+
+	| gone result |
+	gone := self selectorNamed: 'Senders'.
+	self removeInThisSession: gone.
+	result := self callToolNamed: 'method_reference_search' withArguments: {
+			          (#name -> gone).
+			          (#kind -> 'senders') } asDictionary.
+	self
+		assert: (self summaryFrom: result)
+		equals: (String streamContents: [ :stream | stream << 'No senders of ' << gone << ' in the image. ' << (self hintFor: gone) ])
 ]
 
 { #category : 'tests' }

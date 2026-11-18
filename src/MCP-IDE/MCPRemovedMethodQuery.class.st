@@ -121,6 +121,7 @@ MCPRemovedMethodQuery >> setLog: anEpLogOrNil [
 
 { #category : 'private - printing' }
 MCPRemovedMethodQuery >> toolsBringingBack: aPronoun on: aStream [
+	"Names the tools without saying how to reach them: whether a client lists them or reaches them through the catalog is the server's setting, which a hint cannot know."
 
-	aStream << 'history_entry_list and history_entry_revert, through tool_call, can bring ' << aPronoun << ' back.'
+	aStream << 'history_entry_list and history_entry_revert can bring ' << aPronoun << ' back.'
 ]

@@ -351,7 +351,7 @@ MCPToolSearchMethodReferences >> successSummaryForRequest: request scopeQuery: s
 	name := self filterPatternFromRequest: request.
 	kinds := self kindsForName: name fromRequest: request.
 	hint := (self noHitHintForKinds: kinds name: name) ifNil: [
-			        (kinds includes: 'implementors') ifFalse: [ ^ summary ].
+			        (kinds anySatisfy: [ :kind | self selectorKinds includes: kind ]) ifFalse: [ ^ summary ].
 			        (self removedMethodHintSelecting: [ :behavior :selector :protocol |
 				         selector = name asSymbol and: [ scopeQuery reaches: behavior ] ]) ifNil: [ ^ summary ] ].
 	^ String streamContents: [ :stream | stream << summary << ' ' << hint ]
