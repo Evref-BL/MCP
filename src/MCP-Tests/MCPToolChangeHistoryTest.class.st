@@ -165,13 +165,12 @@ MCPToolChangeHistoryTest >> testADirectoryWithoutAFileListsTheSessionWhereItIs [
 
 { #category : 'tests' }
 MCPToolChangeHistoryTest >> testANonCodeEntryChangesNothing [
-	"Kept in the selection when codeChangesOnly is false, an entry that is no code change has nothing to apply, and says so."
+	"An entry that is no code change is selected like any other, has nothing to apply, and says so."
 
 	| entry |
 	entry := ((self dataFrom: (self callToolWith: {
 				            (#action -> 'applyEntries').
-				            (#indexes -> { self recordNonCodeEntry }).
-				            (#codeChangesOnly -> false) } asDictionary)) at: #selectedEntries) first.
+				            (#indexes -> { self recordNonCodeEntry }) } asDictionary)) at: #selectedEntries) first.
 	self assert: (entry at: #eventClass) equals: 'EpSessionStart'.
 	self assert: (entry at: #changesNothing) equals: 'not a code change'
 ]
@@ -324,8 +323,25 @@ MCPToolChangeHistoryTest >> testClassSideEntryReadsAsAClassSideMethod [
 ]
 
 { #category : 'tests' }
+MCPToolChangeHistoryTest >> testListEntriesFromAnOffset [
+	"offset pages the list as it is filtered: the entries listed from an offset are those the whole list holds past it."
+
+	self withTemporaryRecoveryClassDo: [ :class |
+			| entries |
+			self recordRescuedValue: 'rescuedValue ^ 42' on: class.
+			self recordRescuedValue: 'rescuedValue ^ 43' on: class.
+			entries := self entriesListedFor: { (#class -> class name asString) }.
+			self assert: entries size >= 2.
+			self
+				assert: (self entriesListedFor: {
+							 (#class -> class name asString).
+							 (#offset -> 1) })
+				equals: entries allButFirst ]
+]
+
+{ #category : 'tests' }
 MCPToolChangeHistoryTest >> testListEntriesOfOneClass [
-	"class alone lists the entries that change the class or a method on its side, and no other class's."
+	"class lists every change to the class, on both sides: its definition, its comment and its methods. Another class's changes are left out, and Foo class names the same class as Foo."
 
 	self withTemporaryRecoveryClassDo: [ :class |
 			| entries otherClassName |
@@ -338,44 +354,19 @@ MCPToolChangeHistoryTest >> testListEntriesOfOneClass [
 					 classSlots: #(  )) compile: 'rescuedValue ^ 1' classified: 'testing'.
 				self recordRescuedValue: 'rescuedValue ^ 42' on: class.
 				class classSide compile: 'rescuedValue ^ 7' classified: 'testing'.
+				class comment: 'Recovered.'.
+				class addInstVarNamed: 'rescuedState'.
 				EpMonitor current sessionStore flush.
 				entries := self entriesListedFor: { (#class -> class name asString) }.
-				self assert: (entries anySatisfy: [ :each | (each at: #selector ifAbsent: [ nil ]) = 'rescuedValue' ]).
 				self assert: (entries allSatisfy: [ :each | (each at: #behavior) = class name asString ]).
-				self deny: (entries anySatisfy: [ :each | each includesKey: #side ]) ] ensure: [ self removeClassNamed: otherClassName ] ]
-]
-
-{ #category : 'tests' }
-MCPToolChangeHistoryTest >> testListEntriesOfOneMethod [
-	"class, side and selector list the entries of one method, named as method_get names it: the same selector on the class side, and the class's other methods, are left out."
-
-	self withTemporaryRecoveryClassDo: [ :class |
-			| classSideEntries instanceIndex indexesListedFor |
-			instanceIndex := self recordRescuedValue: 'rescuedValue ^ 42' on: class.
-			class compile: 'otherValue ^ 1' classified: 'testing'.
-			class classSide compile: 'rescuedValue ^ 7' classified: 'testing'.
-			EpMonitor current sessionStore flush.
-			indexesListedFor := [ :arguments | (self entriesListedFor: arguments) collect: [ :each | each at: #index ] as: Array ].
-			self
-				assert: (indexesListedFor value: {
-							 (#class -> class name asString).
-							 (#selector -> 'rescuedValue') })
-				equals: { instanceIndex }.
-			self
-				assert:
-				(indexesListedFor value: { (#selector -> (String streamContents: [ :stream | stream << class name << '>>rescuedValue' ])) })
-				equals: { instanceIndex }.
-			classSideEntries := self entriesListedFor: {
-					                    (#class -> class name asString).
-					                    (#side -> 'class').
-					                    (#selector -> 'rescuedValue') }.
-			self assert: classSideEntries size equals: 1.
-			self assert: (classSideEntries first at: #side) equals: 'class'.
-			self
-				assert:
-				(indexesListedFor value:
-					 { (#selector -> (String streamContents: [ :stream | stream << class name << ' class>>rescuedValue' ])) })
-				equals: (classSideEntries collect: [ :each | each at: #index ] as: Array) ]
+				self assert:
+					((entries collect: [ :each | (each at: #eventClass) -> (each at: #side ifAbsent: [ 'instance' ]) ] as: Set) includesAll: {
+							 ('EpMethodAddition' -> 'instance').
+							 ('EpMethodAddition' -> 'class').
+							 ('EpBehaviorCommentChange' -> 'instance').
+							 ('EpClassModification' -> 'instance') }).
+				self assert: (self entriesListedFor: { (#class -> (class name asString , ' class')) }) equals: entries ] ensure: [
+				self removeClassNamed: otherClassName ] ]
 ]
 
 { #category : 'tests' }
@@ -459,20 +450,6 @@ MCPToolChangeHistoryTest >> testListEntriesSupportsHistoryFileName [
 			entries := data at: #entries.
 			self assert: (data at: #historyFile) equals: (file at: #file).
 			self assert: entries size <= MCPToolListChangeHistoryEntries new defaultPageLimit ]
-]
-
-{ #category : 'tests' }
-MCPToolChangeHistoryTest >> testListEntriesWithinARange [
-
-	self withTemporaryRecoveryClassDo: [ :class |
-			| entries index |
-			index := self recordMethodAdditionOn: class.
-			entries := (self dataFrom: (self callToolWith: {
-						             (#action -> 'listEntries').
-						             (#startIndex -> index).
-						             (#endIndex -> index) } asDictionary)) at: #entries.
-			self assert: (entries collect: [ :each | each at: #index ] as: Array) equals: { index }.
-			self removeSelector: #rescuedValue from: class ]
 ]
 
 { #category : 'tests' }
@@ -627,23 +604,22 @@ MCPToolChangeHistoryTest >> testRevertingARemovalShowsTheSourceItRestores [
 { #category : 'tests' }
 MCPToolChangeHistoryTest >> testSelectionResultDataHasExpectedShape [
 
-	| data index |
+	| data entry index |
 	index := self recordNonCodeEntry.
-	data := self dataFrom: (self callToolWith: {
-				         (#action -> 'applyEntries').
-				         (#indexes -> { index }) } asDictionary).
+	data := (self dataFrom: (self callToolWith: {
+				          (#action -> 'applyEntries').
+				          (#indexes -> { index }) } asDictionary)) copy.
+	entry := (data removeKey: #selectedEntries) first.
 	self assert: data equals: {
 			(#action -> 'apply').
 			(#historyFile -> 'log.ombu').
-			(#selectionCriteria -> {
-				 (#indexes -> { index }).
-				 (#codeChangesOnly -> true) } asDictionary).
-			(#selectedEntries -> #(  )).
+			(#selectionCriteria -> { (#indexes -> { index }) } asDictionary).
 			(#changes -> #(  )).
-			(#selectedCount -> 0).
+			(#selectedCount -> 1).
 			(#selectedCodeChangeCount -> 0).
-			(#changeCount -> 0).
-			(#skippedNonCodeChangeCount -> 1) } asDictionary
+			(#changeCount -> 0) } asDictionary.
+	self assert: (entry at: #index) equals: index.
+	self assert: (entry at: #changesNothing) equals: 'not a code change'
 ]
 
 { #category : 'tests' }
@@ -657,6 +633,18 @@ MCPToolChangeHistoryTest >> testSelectionToolsRouteToChangeHistorySelectionComma
 			request := tool requestFromToolCallArguments: { (#indexes -> { self recordNonCodeEntry }) } asDictionary.
 			self assert: (tool selectionFor: request in: EpMonitor current log) class equals: MCPChangeHistorySelectionCommand.
 			self assert: ((self dataFrom: (tool executeWithRequest: request) asJRPCJSON) at: #action) equals: association value ]
+]
+
+{ #category : 'tests' }
+MCPToolChangeHistoryTest >> testTraitClassSideEntryReadsAsAClassSideMethod [
+	"Epicea names a trait's class side with classTrait. The entry names the trait alone and carries the side apart, as for a class, and class finds it under the trait's name."
+
+	| entry trait |
+	trait := self classNamed: 'TMCPToolMethodSearchFixture'.
+	entry := MCPChangeHistoryEntryInfo fromEvent: (EpMethodAddition method: trait classTrait >> #mcpTraitFixtureValue).
+	self assert: (entry asDictionary at: #behavior) equals: trait name asString.
+	self assert: (entry asDictionary at: #side) equals: 'class'.
+	self assert: (entry changesClassNamed: trait name asString)
 ]
 
 { #category : 'private - calling' }

@@ -39,7 +39,6 @@ MCPToolChangeHistoryOperation >> addEntriesOf: aSelection in: aLog to: data [
 	data at: #changes put: (changes collect: [ :each | each asDictionary ] as: Array).
 	data at: #selectedCount put: selectedEntries size.
 	data at: #selectedCodeChangeCount put: (selectedEntries count: [ :each | each isCodeChange ]).
-	data at: #skippedNonCodeChangeCount put: aSelection skippedNonCodeChangeCount.
 	data at: #changeCount put: changes size
 ]
 
@@ -138,34 +137,23 @@ MCPToolChangeHistoryOperation >> reverts [
 MCPToolChangeHistoryOperation >> selectionCriteriaFrom: request [
 	"The selection as the caller gave it."
 
-	^ {
-		  (#indexes -> (request arrayArgumentNamed: 'indexes')).
-		  (#codeChangesOnly -> (request booleanArgumentNamed: 'codeChangesOnly')) } asDictionary
+	^ { (#indexes -> (request arrayArgumentNamed: 'indexes')) } asDictionary
 ]
 
 { #category : 'private - execution' }
 MCPToolChangeHistoryOperation >> selectionFor: request in: aLog [
 	"The operation that selects the entries of aLog the request names, and applies or reverts them."
 
-	^ MCPChangeHistorySelectionCommand
-		  revert: self reverts
-		  log: aLog
-		  indexes: (request arrayArgumentNamed: 'indexes')
-		  codeChangesOnly: (request booleanArgumentNamed: 'codeChangesOnly')
+	^ MCPChangeHistorySelectionCommand revert: self reverts log: aLog indexes: (request arrayArgumentNamed: 'indexes')
 ]
 
 { #category : 'private - schema' }
 MCPToolChangeHistoryOperation >> selectionInputProperties [
 
-	^ self historyLocationInputProperties , {
-		  (self
-			   integerArraySchemaNamed: 'indexes'
-			   description: 'The entries to act on, by the one-based index history_entry_list prints.'
-			   itemDescription: 'Entry index.').
-		  (self
-			   booleanSchemaPropertyNamed: 'codeChangesOnly'
-			   description: 'Leave out everything that is not a class or method change.'
-			   default: true) }
+	^ self historyLocationInputProperties , { (self
+		   integerArraySchemaNamed: 'indexes'
+		   description: 'The entries to act on, by the one-based index history_entry_list prints.'
+		   itemDescription: 'Entry index.') }
 ]
 
 { #category : 'private - validation' }

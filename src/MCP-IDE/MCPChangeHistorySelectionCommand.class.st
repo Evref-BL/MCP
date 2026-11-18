@@ -1,7 +1,7 @@
 "
 Selects change history entries of a log by index, and previews what applying or reverting them would change using Epicea's apply preview machinery.
 
-execute answers the preview log, and selectedPairs, previewPairs, overridingIndexes and skippedNonCodeChangeCount then say what it selected, which entry each previewed change comes from, and why the others change nothing. performPreviewLog: carries the preview out.
+execute answers the preview log, and selectedPairs, previewPairs and overridingIndexes then say what it selected, which entry each previewed change comes from, and why the others change nothing. performPreviewLog: carries the preview out.
 "
 Class {
 	#name : 'MCPChangeHistorySelectionCommand',
@@ -9,11 +9,10 @@ Class {
 	#instVars : [
 		'revert',
 		'indexes',
-		'codeChangesOnly',
 		'log',
 		'previewPairs',
 		'overridingIndexes',
-		'rawSelectedPairs'
+		'selectedPairs'
 	],
 	#category : 'MCP-IDE-Commands',
 	#package : 'MCP-IDE',
@@ -21,14 +20,13 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPChangeHistorySelectionCommand class >> revert: revertBoolean log: aLog indexes: someIndexes codeChangesOnly: codeChangesOnlyBoolean [
-	"The entries of aLog at someIndexes, keeping the code changes only when codeChangesOnlyBoolean."
+MCPChangeHistorySelectionCommand class >> revert: revertBoolean log: aLog indexes: someIndexes [
+	"The entries of aLog at someIndexes, to apply, or to revert when revertBoolean."
 
 	^ self new
 		  revert: revertBoolean;
 		  log: aLog;
 		  indexes: someIndexes;
-		  codeChangesOnly: codeChangesOnlyBoolean;
 		  yourself
 ]
 
@@ -49,12 +47,6 @@ MCPChangeHistorySelectionCommand >> change: aChange overrides: anotherChange [
 	^ aChange isCodeChange and: [ aChange doesOverride: anotherChange ]
 ]
 
-{ #category : 'accessing' }
-MCPChangeHistorySelectionCommand >> codeChangesOnly: aBoolean [
-
-	codeChangesOnly := aBoolean
-]
-
 { #category : 'private - entries' }
 MCPChangeHistorySelectionCommand >> entryAtIndex: anIndex inLog: aLog [
 
@@ -73,7 +65,7 @@ MCPChangeHistorySelectionCommand >> entryAtIndex: anIndex inLog: aLog [
 MCPChangeHistorySelectionCommand >> execute [
 	"Select the entries, and answer the log that previews applying or reverting them. performPreviewLog: carries it out."
 
-	rawSelectedPairs := self rawSelectedEntryPairsFrom: log.
+	selectedPairs := self selectedEntryPairsFrom: log.
 	self previewSelectedPairs.
 	^ EpLog newWithEvents: (previewPairs collect: [ :pair | pair second ] as: Array)
 ]
@@ -82,12 +74,6 @@ MCPChangeHistorySelectionCommand >> execute [
 MCPChangeHistorySelectionCommand >> indexes: someIndexes [
 
 	indexes := someIndexes
-]
-
-{ #category : 'private - entries' }
-MCPChangeHistorySelectionCommand >> isCodeChangeEntry: anEntry [
-
-	^ anEntry content isCodeChange
 ]
 
 { #category : 'accessing' }
@@ -161,12 +147,6 @@ MCPChangeHistorySelectionCommand >> previewedChangesOf: aCodeChange [
 		   ifFalse: [ aCodeChange ]) previewedApplyEvents
 ]
 
-{ #category : 'private - selection' }
-MCPChangeHistorySelectionCommand >> rawSelectedEntryPairsFrom: aLog [
-
-	^ self uniqueSortedPairsFrom: (self addEntriesAt: indexes to: OrderedCollection new fromLog: aLog)
-]
-
 { #category : 'accessing' }
 MCPChangeHistorySelectionCommand >> revert: aBoolean [
 
@@ -174,24 +154,16 @@ MCPChangeHistorySelectionCommand >> revert: aBoolean [
 ]
 
 { #category : 'private - selection' }
-MCPChangeHistorySelectionCommand >> selectedEntryPairsFromRawPairs: rawPairs [
+MCPChangeHistorySelectionCommand >> selectedEntryPairsFrom: aLog [
 
-	codeChangesOnly ifFalse: [ ^ rawPairs ].
-	^ rawPairs select: [ :pair | self isCodeChangeEntry: pair second ]
+	^ self uniqueSortedPairsFrom: (self addEntriesAt: indexes to: OrderedCollection new fromLog: aLog)
 ]
 
 { #category : 'accessing' }
 MCPChangeHistorySelectionCommand >> selectedPairs [
 	"The selected entries execute previewed, as pairs of their one-based index and the entry, in index order."
 
-	^ self selectedEntryPairsFromRawPairs: rawSelectedPairs
-]
-
-{ #category : 'accessing' }
-MCPChangeHistorySelectionCommand >> skippedNonCodeChangeCount [
-	"How many selected entries execute left out for not being code changes."
-
-	^ rawSelectedPairs size - self selectedPairs size
+	^ selectedPairs
 ]
 
 { #category : 'private - selection' }
