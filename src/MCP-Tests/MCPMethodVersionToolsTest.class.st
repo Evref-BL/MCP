@@ -1,5 +1,5 @@
 "
-Tests method_version_list and method_restore through the server, over a change history of the test's own: what the list shows, and what a restore puts back, as before the last change or as a version, and what it refuses. The changes are made while a change history monitor of the test's own logs them, as the session's would log an agent's.
+Tests method_version_list and method_restore through the server, over a change history of the test's own: what the list shows, and what a restore puts back, as before the last change or as a version, from this session or from before the image was last saved, and what it refuses. The changes are made while a change history monitor of the test's own logs them, as the session's would log an agent's; its session store moves to a new file at a restart, as an image saved and started again does.
 "
 Class {
 	#name : 'MCPMethodVersionToolsTest',
@@ -8,8 +8,8 @@ Class {
 		'originalMonitor',
 		'originalMonitorWasEnabled',
 		'temporaryMonitor',
-		'memoryDirectory',
-		'target'
+		'target',
+		'directory'
 	],
 	#category : 'MCP-Tests',
 	#package : 'MCP-Tests'
@@ -56,6 +56,15 @@ MCPMethodVersionToolsTest >> remove: aSelector [
 ]
 
 { #category : 'private' }
+MCPMethodVersionToolsTest >> restart [
+	"Save the image at the session's last entry and start it again: the next session is a new file, which has logged nothing yet and continues from that entry."
+
+	temporaryMonitor sessionStore
+		flush;
+		resetWithNextStoreName
+]
+
+{ #category : 'private' }
 MCPMethodVersionToolsTest >> restore: someAssociations [
 
 	^ self callToolNamed: 'method_restore' withArguments: ({ (#class -> self targetName) } , someAssociations) asDictionary
@@ -70,6 +79,7 @@ MCPMethodVersionToolsTest >> sentence: aString about: aSelector [
 
 { #category : 'running' }
 MCPMethodVersionToolsTest >> setUp [
+	"The monitor logs to a session store, as the image's does, in a directory of the test's own: on disk, since a session store needs a file system that says it is writable, which a memory one does not."
 
 	super setUp.
 	target := self
@@ -80,8 +90,8 @@ MCPMethodVersionToolsTest >> setUp [
 	originalMonitor := EpMonitor current.
 	originalMonitorWasEnabled := originalMonitor isEnabled.
 	originalMonitor disable.
-	memoryDirectory := (FileSystem memory / ('mcp-method-version-tools-test-' , UUID new asString36)) ensureCreateDirectory.
-	temporaryMonitor := EpMonitor newWithLog: (EpLog newWithStore: (OmBlockFileStore named: 'log' inDirectory: memoryDirectory)).
+	directory := (FileLocator temp asFileReference / ('mcp-method-version-tools-test-' , UUID new asString36)) ensureCreateDirectory.
+	temporaryMonitor := EpMonitor newWithLog: (EpLog newWithStore: (OmSessionStore newWithBaseLocator: directory)).
 	EpMonitor current: temporaryMonitor.
 	temporaryMonitor enable
 ]
@@ -101,7 +111,7 @@ MCPMethodVersionToolsTest >> tearDown [
 			originalMonitorWasEnabled
 				ifTrue: [ originalMonitor enable ]
 				ifFalse: [ originalMonitor disable ] ].
-	memoryDirectory ifNotNil: [ memoryDirectory ensureDeleteAll ].
+	directory ifNotNil: [ directory ensureDeleteAll ].
 	self removeClassNamed: self targetName.
 	super tearDown
 ]
@@ -148,6 +158,20 @@ MCPMethodVersionToolsTest >> testRestoreAnswersWhatItInstalled [
 	self assert: (data at: #source) equals: source.
 	self assert: (data at: #protocol) equals: 'testing'.
 	self assert: ((self textFrom: result) includesSubstring: source)
+]
+
+{ #category : 'tests' }
+MCPMethodVersionToolsTest >> testRestoreBringsBackAMethodRemovedBeforeTheLastSave [
+	"Removed, then the image saved and started again: the removal is in the file of the session before, which this one continues."
+
+	| result source |
+	source := self compile: 'probe ^ 1'.
+	self remove: 'probe'.
+	self restart.
+	result := self restore: { (#selector -> 'probe') }.
+	self assert: (self summaryFrom: result) equals: (self sentence: 'Restored {1} as it was before its removal.' about: 'probe').
+	self assert: (target >> #probe) sourceCode equals: source.
+	self assert: (target >> #probe) protocolName asString equals: 'testing'
 ]
 
 { #category : 'tests' }

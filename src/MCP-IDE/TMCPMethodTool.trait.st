@@ -47,7 +47,7 @@ TMCPMethodTool >> methodEntryLabel: anEntry [
 
 { #category : 'private - methods' }
 TMCPMethodTool >> methodForClassNamed: className selector: selectorString classSide: classSide [
-	"A method the class does not have is refused with the methods of that selector the caller may have meant or, when there is none, with where to look next: method_restore for a method this session removed, the tool that lists the methods the class has otherwise."
+	"A method the class does not have is refused with the methods of that selector the caller may have meant or, when there is none, with where to look next: method_restore for a method the change history shows removed, the tool that lists the methods the class has otherwise."
 
 	| behavior selector |
 	behavior := self behaviorNamed: className classSide: classSide.
@@ -104,7 +104,7 @@ TMCPMethodTool >> methodScopeQueryFromRequest: request [
 
 { #category : 'private - methods' }
 TMCPMethodTool >> removedMethodHintSelecting: aBlock [
-	"What a lookup that found no method says when this session removed one that aBlock accepts: method_restore can bring it back. nil otherwise. aBlock takes the behavior, the selector and the protocol of each removed method."
+	"What a lookup that found no method says when the change history shows one that aBlock accepts removed, in this session or before the image was last saved: method_restore can bring it back. nil otherwise. aBlock takes the behavior, the selector and the protocol of each removed method."
 
 	^ MCPRemovedMethodQuery inCurrentSession hintSelecting: aBlock
 ]

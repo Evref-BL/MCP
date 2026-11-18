@@ -3,7 +3,7 @@ The versions of one method that the image's change history records, oldest first
 
 They come from the session in progress and from the earlier sessions it continues. A session's first entry follows the entry of the session before at which the image was last saved: that file's entries up to it are part of the image's history, and its own first entry leads further back. The changes after that entry are lost ones, which the image never had. The query follows that chain through the directory of the session in progress, as long as the earlier files it reads stay under a size limit, so that the first query stays short.
 
-Each file is read once into an MCPMethodChangeIndex, and only the entries of the method asked for are read again. The class keeps the indexes: the session in progress's, brought up to date at each query, and the earlier files', which no longer change.
+Each file is read once into an MCPMethodChangeIndex, and only the entries of the method asked for are read again. The class keeps the indexes: the session in progress's, brought up to date at each query, and the earlier files', which no longer change. MCPRemovedMethodQuery reads the same indexes for the methods whose newest version is a removal.
 "
 Class {
 	#name : 'MCPMethodVersionQuery',
@@ -81,11 +81,12 @@ MCPMethodVersionQuery class >> onLog: anEpLogOrNil directory: aDirectoryOrNil [
 		  yourself
 ]
 
-{ #category : 'private - history' }
+{ #category : 'enumerating' }
 MCPMethodVersionQuery >> indexesDo: aBlock [
-	"aBlock gets the index of each file versions come from, newest first, with the number of its last entry that is the image's: the session in progress whole, then each earlier session up to the entry the one after it follows, while the earlier files read stay under the size limit."
+	"aBlock gets the index of each file versions come from, newest first, with the number of its last entry that is the image's: the session in progress whole, then each earlier session up to the entry the one after it follows, while the earlier files read stay under the size limit. An image without a history has none."
 
 	| file index reference size |
+	log ifNil: [ ^ self ].
 	index := self class indexOfSession: log.
 	aBlock value: index value: index count.
 	directory ifNil: [ ^ self ].
@@ -113,7 +114,6 @@ MCPMethodVersionQuery >> versionsOf: aBehavior selector: aSelector [
 	"Every version of the method the history records, oldest first and numbered from 1: the earlier sessions', then this session's."
 
 	| versions |
-	log ifNil: [ ^ #(  ) ].
 	versions := OrderedCollection new.
 	self indexesDo: [ :index :lastNumber |
 		versions addAllFirst: (index versionsOfBehaviorNamed: aBehavior name selector: aSelector upTo: lastNumber) ].

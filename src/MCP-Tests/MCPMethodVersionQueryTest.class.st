@@ -183,6 +183,24 @@ MCPMethodVersionQueryTest >> testARemovalKeepsWhatItRemoved [
 ]
 
 { #category : 'tests' }
+MCPMethodVersionQueryTest >> testASessionThatHasLoggedNothingYetFollowsWhereTheImageWasSaved [
+	"Started again from a save, a session's file holds no entry until a change is made, and its log's head is the entry the image was saved at: the versions are the earlier session's. A session store needs a file system that says it is writable, which a memory one does not."
+
+	| directory store session |
+	directory := (FileLocator temp asFileReference / ('mcp-method-version-query-test-' , UUID new asString36)) ensureCreateDirectory.
+	[
+		store := OmSessionStore newWithBaseLocator: directory.
+		session := EpLog newWithStore: store.
+		session addEntryWith: (EpMethodAddition method: (self compile: 'probe ^ 1')) tags: [ :tags |  ].
+		store
+			flush;
+			resetWithNextStoreName.
+		self
+			assert: (self sourcesOf: ((MCPMethodVersionQuery onLog: session directory: directory) versionsOf: target selector: #probe))
+			equals: #( 'probe ^ 1' ) ] ensure: [ directory ensureDeleteAll ]
+]
+
+{ #category : 'tests' }
 MCPMethodVersionQueryTest >> testAVersionHasTheTimeTheLogGivesIt [
 	"Pharo 14 no longer writes the time of an entry; an older one does, and a version says it."
 
