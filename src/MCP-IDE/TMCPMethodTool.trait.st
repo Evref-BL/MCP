@@ -37,16 +37,20 @@ TMCPMethodTool >> methodEntryLabel: anEntry [
 
 { #category : 'private - methods' }
 TMCPMethodTool >> methodForClassNamed: className selector: selectorString classSide: classSide [
-	"A method the class does not have is refused with the methods of that selector the caller may have meant or, when there is none, with the tool that lists the methods the class has."
+	"A method the class does not have is refused with the methods of that selector the caller may have meant or, when there is none, with where to look next: the history tools for a method this session removed, the tool that lists the methods the class has otherwise."
 
-	| behavior |
+	| behavior selector |
 	behavior := self behaviorNamed: className classSide: classSide.
-	^ behavior compiledMethodAt: selectorString asSymbol ifAbsent: [
+	selector := selectorString asSymbol.
+	^ behavior compiledMethodAt: selector ifAbsent: [
 			  MCPCommandError
 				  signalMissingMethod: selectorString
 				  in: behavior
 				  closingWhenNoMatch:
-				  (String streamContents: [ :stream | stream << 'method_search with scope.classes lists the methods of ' << className << '.' ]) ]
+					  ((MCPRemovedMethodQuery inCurrentSession hintAfterNameSelecting: [ :removedFrom :removedSelector :protocol |
+						    removedFrom == behavior and: [ removedSelector = selector ] ]) ifNil: [
+						   String streamContents: [ :stream |
+							   stream << 'method_search with scope.classes lists the methods of ' << className << '.' ] ]) ]
 ]
 
 { #category : 'private - schema' }
@@ -86,6 +90,13 @@ TMCPMethodTool >> methodScopeQueryFromRequest: request [
 		  parentClassNames: (self searchScopeStringCollectionNamed: 'superclassesOf' fromRequest: request);
 		  side: (self searchScopeSideFromRequest: request);
 		  yourself
+]
+
+{ #category : 'private - methods' }
+TMCPMethodTool >> removedMethodHintSelecting: aBlock [
+	"What a lookup that found no method says when this session removed one that aBlock accepts: the history tools can bring it back. nil otherwise. aBlock takes the behavior, the selector and the protocol of each removed method."
+
+	^ MCPRemovedMethodQuery inCurrentSession hintSelecting: aBlock
 ]
 
 { #category : 'private - request' }
