@@ -44,7 +44,8 @@ MCPToolChangeHistoryToolsTest >> testChangeHistoryToolsDeclareExpectedInputs [
 	self assert: fileProperties asArray equals: #( 'directoryPath' 'offset' ).
 	self
 		assert: entryProperties asArray
-		equals: #( 'directoryPath' 'historyFile' 'startIndex' 'endIndex' 'offset' 'newestFirst' 'codeChangesOnly' ).
+		equals:
+		#( 'directoryPath' 'historyFile' 'class' 'side' 'selector' 'startIndex' 'endIndex' 'offset' 'newestFirst' 'codeChangesOnly' ).
 	self assert: applyProperties asArray equals: selectionProperties.
 	self assert: revertProperties asArray equals: selectionProperties
 ]

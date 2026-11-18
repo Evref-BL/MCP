@@ -5,3 +5,10 @@ EpCodeChange >> mcpAddChangeHistoryInfoTo: anEntryInfo [
 
 	anEntryInfo addCodeChangeInfoFrom: self
 ]
+
+{ #category : '*MCP-IDE' }
+EpCodeChange >> mcpAddSourcesTo: anEntryInfo [
+	"Only a method change has a source to show."
+
+	
+]

@@ -22,15 +22,9 @@ MCPToolApplyChangeHistoryEntries >> changeHistoryToolSpec [
 		  (#title -> 'Apply Change History Entries').
 		  (#description
 		   ->
-		   'Preview or confirm applying selected Pharo change history entries to the current image. Set confirm=true to perform the previewed changes.').
-		  (#action -> 'apply') } asDictionary
-]
-
-{ #category : 'private - results' }
-MCPToolApplyChangeHistoryEntries >> redundantKeys [
-	"An apply's preview holds the very entries it selected, so they are printed once, as the preview."
-
-	^ super redundantKeys , #( selectedEntries )
+		   'Preview or confirm applying selected Pharo change history entries to the current image. Applying an entry makes its change again: applying a method removal removes the method. The answer shows the source of each method it changes, before and after. Set confirm=true to perform the previewed changes.').
+		  (#action -> 'apply').
+		  (#unchangedReason -> 'already applied in the image') } asDictionary
 ]
 
 { #category : 'private - actions' }

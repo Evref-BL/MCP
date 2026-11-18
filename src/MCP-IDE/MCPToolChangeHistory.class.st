@@ -115,9 +115,9 @@ MCPToolChangeHistory >> integerArraySchemaNamed: aName description: aDescription
 
 { #category : 'private - results' }
 MCPToolChangeHistory >> keyOrder [
-	"index is the handle every history tool takes, so it leads, then what happened and when."
+	"index is the handle every history tool takes, so it leads, then what happened and when, then what a method was before the change and after it."
 
-	^ #( index eventClass time )
+	^ #( index eventClass time sourceBefore sourceAfter )
 ]
 
 { #category : 'private - results' }

@@ -22,8 +22,9 @@ MCPToolRevertChangeHistoryEntries >> changeHistoryToolSpec [
 		  (#title -> 'Revert Change History Entries').
 		  (#description
 		   ->
-		   'Preview or confirm reverting selected Pharo change history entries from the current image. Set confirm=true to perform the previewed changes.').
-		  (#action -> 'revert') } asDictionary
+		   'Preview or confirm reverting selected Pharo change history entries from the current image. Reverting an entry undoes its change: reverting a method removal restores the method, and reverting an addition removes it. The answer shows the source of each method it changes, before and after. Set confirm=true to perform the previewed changes.').
+		  (#action -> 'revert').
+		  (#unchangedReason -> 'already reverted in the image') } asDictionary
 ]
 
 { #category : 'private - actions' }

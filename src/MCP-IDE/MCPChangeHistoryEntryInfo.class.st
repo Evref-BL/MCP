@@ -16,7 +16,10 @@ Class {
 		'behaviorName',
 		'classSide',
 		'selector',
-		'protocol'
+		'protocol',
+		'sourceBefore',
+		'sourceAfter',
+		'noChangeReason'
 	],
 	#category : 'MCP-IDE-DTOs',
 	#package : 'MCP-IDE',
@@ -36,6 +39,15 @@ MCPChangeHistoryEntryInfo class >> fromEvent: anEvent [
 
 	^ self new
 		  initializeFromEvent: anEvent;
+		  yourself
+]
+
+{ #category : 'instance creation' }
+MCPChangeHistoryEntryInfo class >> fromPreviewedChange: aCodeChange index: anInteger [
+	"A change a preview holds, under the index of the selected entry it comes from, with the source it changes."
+
+	^ self new
+		  initializeFromPreviewedChange: aCodeChange index: anInteger;
 		  yourself
 ]
 
@@ -68,6 +80,15 @@ MCPChangeHistoryEntryInfo >> addMethodChangeInfoFrom: aMethodChange [
 	protocol := self stringFrom: aMethodChange methodAffectedProtocol
 ]
 
+{ #category : 'private - converting' }
+MCPChangeHistoryEntryInfo >> addOutcomeTo: data [
+	"What applying or reverting the entry does: the source of the method before and after, or why it changes nothing."
+
+	sourceBefore ifNotNil: [ data at: #sourceBefore put: sourceBefore ].
+	sourceAfter ifNotNil: [ data at: #sourceAfter put: sourceAfter ].
+	noChangeReason ifNotNil: [ data at: #changesNothing put: noChangeReason ]
+]
+
 { #category : 'adding' }
 MCPChangeHistoryEntryInfo >> addPackageChangeInfoFrom: aPackageChange [
 
@@ -78,6 +99,18 @@ MCPChangeHistoryEntryInfo >> addPackageChangeInfoFrom: aPackageChange [
 MCPChangeHistoryEntryInfo >> addPackageTagChangeInfoFrom: aPackageTagChange [
 
 	packageName := self stringFrom: aPackageTagChange packageName
+]
+
+{ #category : 'adding' }
+MCPChangeHistoryEntryInfo >> addSourceAfter: aString [
+
+	sourceAfter := aString
+]
+
+{ #category : 'adding' }
+MCPChangeHistoryEntryInfo >> addSourceBefore: aString [
+
+	sourceBefore := aString
 ]
 
 { #category : 'converting' }
@@ -97,7 +130,25 @@ MCPChangeHistoryEntryInfo >> asDictionary [
 	classSide == true ifTrue: [ data at: #side put: 'class' ].
 	selector ifNotNil: [ data at: #selector put: selector ].
 	protocol ifNotNil: [ data at: #protocol put: protocol ].
+	self addOutcomeTo: data.
 	^ data
+]
+
+{ #category : 'testing' }
+MCPChangeHistoryEntryInfo >> changesClassNamed: aClassNameOrNil side: isClassSide selector: aSelectorOrNil [
+	"Whether the entry changes the class or the method so named, on that side. A nil class or selector stands for any; an entry that names no class changes none."
+
+	^ behaviorName isNotNil and: [
+			  classSide = isClassSide and: [
+					  (aClassNameOrNil isNil or: [ self instanceSideBehaviorName = aClassNameOrNil ]) and: [
+						  aSelectorOrNil isNil or: [ selector = aSelectorOrNil ] ] ] ]
+]
+
+{ #category : 'adding' }
+MCPChangeHistoryEntryInfo >> changesNothingBecause: aString [
+	"Say why the entry, though selected, changes nothing."
+
+	noChangeReason := aString
 ]
 
 { #category : 'private' }
@@ -131,6 +182,14 @@ MCPChangeHistoryEntryInfo >> initializeFromEntry: anEntry index: anInteger log: 
 MCPChangeHistoryEntryInfo >> initializeFromEvent: anEvent [
 
 	self initializeEventFieldsFrom: anEvent
+]
+
+{ #category : 'initialization' }
+MCPChangeHistoryEntryInfo >> initializeFromPreviewedChange: aCodeChange index: anInteger [
+
+	index := anInteger.
+	self initializeEventFieldsFrom: aCodeChange.
+	aCodeChange mcpAddSourcesTo: self
 ]
 
 { #category : 'private - initialization' }

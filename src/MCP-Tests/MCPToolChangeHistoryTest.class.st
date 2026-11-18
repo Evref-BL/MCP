@@ -46,6 +46,13 @@ MCPToolChangeHistoryTest >> defaultHistoryDirectoryPath [
 ]
 
 { #category : 'private' }
+MCPToolChangeHistoryTest >> entriesListedFor: someAssociations [
+	"The entries history_entry_list lists for the arguments someAssociations name."
+
+	^ (self dataFrom: (self callToolWith: (someAssociations copyWith: #action -> 'listEntries') asDictionary)) at: #entries
+]
+
+{ #category : 'private' }
 MCPToolChangeHistoryTest >> isRecoverableMethodEntry: anEntry forClass: aClass [
 
 	^ (MCPChangeHistoryEntryInfo fromEvent: anEntry content) isMethodChangeForSelector: #rescuedValue inBehaviorNamed: aClass name
@@ -77,6 +84,15 @@ MCPToolChangeHistoryTest >> recordRecoverableMethodAdditionOn: aClass [
 	index := self recordMethodAdditionOn: aClass.
 	self removeSelector: #rescuedValue from: aClass.
 	^ index
+]
+
+{ #category : 'private' }
+MCPToolChangeHistoryTest >> recordRescuedValue: aSource on: aClass [
+	"Compile aSource as aClass's rescuedValue, and answer the index of the entry that records it."
+
+	aClass compile: aSource classified: 'testing'.
+	EpMonitor current sessionStore flush.
+	^ self latestRecoverableMethodEntryIndexFor: aClass
 ]
 
 { #category : 'running' }
@@ -153,6 +169,23 @@ MCPToolChangeHistoryTest >> testADirectoryWithoutAFileListsTheSessionWhereItIs [
 ]
 
 { #category : 'tests' }
+MCPToolChangeHistoryTest >> testANonCodeEntryChangesNothing [
+	"Kept in the selection when codeChangesOnly is false, an entry that is no code change has nothing to apply, and says so."
+
+	| entry index |
+	EpMonitor current addEvent: EpSessionStart new.
+	EpMonitor current sessionStore flush.
+	EpMonitor current log refresh.
+	index := EpMonitor current log entries size.
+	entry := ((self dataFrom: (self callToolWith: {
+				            (#action -> 'applyEntries').
+				            (#indexes -> { index }).
+				            (#codeChangesOnly -> false) } asDictionary)) at: #selectedEntries) first.
+	self assert: (entry at: #eventClass) equals: 'EpSessionStart'.
+	self assert: (entry at: #changesNothing) equals: 'not a code change'
+]
+
+{ #category : 'tests' }
 MCPToolChangeHistoryTest >> testARelativeDirectoryIsRefusedNamingTheImageDirectory [
 	"The image would read history against its own working directory, which is not the caller's."
 
@@ -171,6 +204,24 @@ MCPToolChangeHistoryTest >> testARelativeDirectoryIsRefusedNamingTheImageDirecto
 						 <<
 						 'Change history directory history is not an absolute path, and the image would resolve it against its own working directory, '
 						 << FileSystem workingDirectory fullName << '. Give the full path.' ]) ]
+]
+
+{ #category : 'tests' }
+MCPToolChangeHistoryTest >> testApplyAndRevertPrintWhatTheySelected [
+	"Each prints the entries it selected beside the changes it previews, so an entry that changes nothing can be told; the selection criteria are the request read back."
+
+	self withTemporaryRecoveryClassDo: [ :class |
+			| textFor |
+			textFor := [ :action :entryIndex |
+				           self textFrom: (self callToolWith: {
+							            (#action -> action).
+							            (#indexes -> { entryIndex }) } asDictionary) ].
+			{
+				(textFor value: 'applyEntries' value: (self recordRecoverableMethodAdditionOn: class)).
+				(textFor value: 'revertEntries' value: (self recordMethodAdditionOn: class)) } do: [ :text |
+					self deny: (text includesSubstring: 'selectionCriteria').
+					self assert: (text includesSubstring: 'selectedEntries').
+					self assert: (text includesSubstring: 'previewEntries') ] ]
 ]
 
 { #category : 'tests' }
@@ -271,23 +322,41 @@ MCPToolChangeHistoryTest >> testApplyEntriesWithoutConfirmOnlyPreviews [
 ]
 
 { #category : 'tests' }
-MCPToolChangeHistoryTest >> testApplyPreviewDoesNotEchoTheSelection [
-	"An apply previews the very entries it selected, and its selection criteria are the request read back, so its text prints the preview alone. A revert previews the inverse changes, so it prints what it selected as well."
+MCPToolChangeHistoryTest >> testApplySaysWhichSelectedEntriesChangeNothing [
+	"Applying two changes to one method previews the later alone, and the image already holds it: each selected entry says why it changes nothing."
 
 	self withTemporaryRecoveryClassDo: [ :class |
-			| applyText revertText textFor |
-			textFor := [ :action :entryIndex |
-				           ((self callToolWith: {
-						             (#action -> action).
-						             (#indexes -> { entryIndex }) } asDictionary) at: #content) first at: #text ].
-			applyText := textFor value: 'applyEntries' value: (self recordRecoverableMethodAdditionOn: class).
-			self deny: (applyText includesSubstring: 'selectionCriteria').
-			self deny: (applyText includesSubstring: 'selectedEntries').
-			self assert: (applyText includesSubstring: 'previewEntries').
-			revertText := textFor value: 'revertEntries' value: (self recordMethodAdditionOn: class).
-			self deny: (revertText includesSubstring: 'selectionCriteria').
-			self assert: (revertText includesSubstring: 'selectedEntries').
-			self assert: (revertText includesSubstring: 'previewEntries') ]
+			| additionIndex data modificationIndex reasons |
+			additionIndex := self recordRescuedValue: 'rescuedValue ^ 42' on: class.
+			modificationIndex := self recordRescuedValue: 'rescuedValue ^ 43' on: class.
+			data := self dataFrom: (self callToolWith: {
+						         (#action -> 'applyEntries').
+						         (#indexes -> {
+							          additionIndex.
+							          modificationIndex }) } asDictionary).
+			reasons := (data at: #selectedEntries) collect: [ :each | (each at: #index) -> (each at: #changesNothing) ] as: Dictionary.
+			self assert: (data at: #previewEntries) isEmpty.
+			self
+				assert: (reasons at: additionIndex)
+				equals: (String streamContents: [ :stream | stream << 'overridden by entry ' << modificationIndex printString ]).
+			self assert: (reasons at: modificationIndex) equals: 'already applied in the image' ]
+]
+
+{ #category : 'tests' }
+MCPToolChangeHistoryTest >> testApplyingAnOlderVersionPreviewsTheSourceBeforeAndAfter [
+	"Applying a method's addition once the method has changed puts the source it added back: the preview is a modification from the source in the image to that one, under the addition's own index."
+
+	self withTemporaryRecoveryClassDo: [ :class |
+			| additionIndex previewEntry |
+			additionIndex := self recordRescuedValue: 'rescuedValue ^ 42' on: class.
+			self recordRescuedValue: 'rescuedValue ^ 43' on: class.
+			previewEntry := ((self dataFrom: (self callToolWith: {
+						                   (#action -> 'applyEntries').
+						                   (#indexes -> { additionIndex }) } asDictionary)) at: #previewEntries) first.
+			self assert: (previewEntry at: #index) equals: additionIndex.
+			self assert: (previewEntry at: #eventClass) equals: 'EpMethodModification'.
+			self assert: (previewEntry at: #sourceBefore) equals: 'rescuedValue ^ 43'.
+			self assert: (previewEntry at: #sourceAfter) equals: 'rescuedValue ^ 42' ]
 ]
 
 { #category : 'tests' }
@@ -322,6 +391,61 @@ MCPToolChangeHistoryTest >> testListEntriesKeepsTheRangeTheOtherToolsTake [
 						             (#endIndex -> index) } asDictionary)) at: #entries.
 			self assert: (entries collect: [ :each | each at: #index ] as: Array) equals: { index }.
 			self removeSelector: #rescuedValue from: class ]
+]
+
+{ #category : 'tests' }
+MCPToolChangeHistoryTest >> testListEntriesOfOneClass [
+	"class alone lists the entries that change the class or a method on its side, and no other class's."
+
+	self withTemporaryRecoveryClassDo: [ :class |
+			| entries otherClassName |
+			otherClassName := 'MCPToolChangeHistoryOtherTemp'.
+			[
+				(self
+					 createClassNamed: otherClassName
+					 superclassName: 'Object'
+					 slots: #(  )
+					 classSlots: #(  )) compile: 'rescuedValue ^ 1' classified: 'testing'.
+				self recordRescuedValue: 'rescuedValue ^ 42' on: class.
+				class classSide compile: 'rescuedValue ^ 7' classified: 'testing'.
+				EpMonitor current sessionStore flush.
+				entries := self entriesListedFor: { (#class -> class name asString) }.
+				self assert: (entries anySatisfy: [ :each | (each at: #selector ifAbsent: [ nil ]) = 'rescuedValue' ]).
+				self assert: (entries allSatisfy: [ :each | (each at: #behavior) = class name asString ]).
+				self deny: (entries anySatisfy: [ :each | each includesKey: #side ]) ] ensure: [ self removeClassNamed: otherClassName ] ]
+]
+
+{ #category : 'tests' }
+MCPToolChangeHistoryTest >> testListEntriesOfOneMethod [
+	"class, side and selector list the entries of one method, named as method_get names it: the same selector on the class side, and the class's other methods, are left out."
+
+	self withTemporaryRecoveryClassDo: [ :class |
+			| classSideEntries instanceIndex indexesListedFor |
+			instanceIndex := self recordRescuedValue: 'rescuedValue ^ 42' on: class.
+			class compile: 'otherValue ^ 1' classified: 'testing'.
+			class classSide compile: 'rescuedValue ^ 7' classified: 'testing'.
+			EpMonitor current sessionStore flush.
+			indexesListedFor := [ :arguments | (self entriesListedFor: arguments) collect: [ :each | each at: #index ] as: Array ].
+			self
+				assert: (indexesListedFor value: {
+							 (#class -> class name asString).
+							 (#selector -> 'rescuedValue') })
+				equals: { instanceIndex }.
+			self
+				assert:
+				(indexesListedFor value: { (#selector -> (String streamContents: [ :stream | stream << class name << '>>rescuedValue' ])) })
+				equals: { instanceIndex }.
+			classSideEntries := self entriesListedFor: {
+					                    (#class -> class name asString).
+					                    (#side -> 'class').
+					                    (#selector -> 'rescuedValue') }.
+			self assert: classSideEntries size equals: 1.
+			self assert: (classSideEntries first at: #side) equals: 'class'.
+			self
+				assert:
+				(indexesListedFor value:
+					 { (#selector -> (String streamContents: [ :stream | stream << class name << ' class>>rescuedValue' ])) })
+				equals: (classSideEntries collect: [ :each | each at: #index ] as: Array) ]
 ]
 
 { #category : 'tests' }
@@ -496,6 +620,62 @@ MCPToolChangeHistoryTest >> testRevertEntriesRevertsConfirmedChanges [
 			self assert: (data at: #performed).
 			self assert: (data at: #performedCount) equals: 1.
 			self deny: (class includesSelector: #rescuedValue) ]
+]
+
+{ #category : 'tests' }
+MCPToolChangeHistoryTest >> testRevertUndoesTheOldestOfTheChangesToOneMethod [
+	"A revert undoes the newest entry first, so reverting a method's addition and a later change to it comes down to removing the method: the preview is the addition's, and the later change is overridden by it."
+
+	self withTemporaryRecoveryClassDo: [ :class |
+			| additionIndex data modificationIndex previewEntry selectedEntries |
+			additionIndex := self recordRescuedValue: 'rescuedValue ^ 42' on: class.
+			modificationIndex := self recordRescuedValue: 'rescuedValue ^ 43' on: class.
+			data := self dataFrom: (self callToolWith: {
+						         (#action -> 'revertEntries').
+						         (#indexes -> {
+							          additionIndex.
+							          modificationIndex }) } asDictionary).
+			previewEntry := (data at: #previewEntries) first.
+			selectedEntries := (data at: #selectedEntries) collect: [ :each | (each at: #index) -> each ] as: Dictionary.
+			self assert: (data at: #previewEntries) size equals: 1.
+			self assert: (previewEntry at: #index) equals: additionIndex.
+			self assert: (previewEntry at: #eventClass) equals: 'EpMethodRemoval'.
+			self assert: (previewEntry at: #sourceBefore) equals: 'rescuedValue ^ 43'.
+			self deny: ((selectedEntries at: additionIndex) includesKey: #changesNothing).
+			self
+				assert: ((selectedEntries at: modificationIndex) at: #changesNothing)
+				equals: (String streamContents: [ :stream | stream << 'overridden by entry ' << additionIndex printString ]) ]
+]
+
+{ #category : 'tests' }
+MCPToolChangeHistoryTest >> testRevertingARemovalPreviewsTheSourceItRestores [
+	"Reverting a removal adds the method back: the preview says so under the removal's own index, with the source it restores."
+
+	self withTemporaryRecoveryClassDo: [ :class |
+			| previewEntry removalIndex result source |
+			source := String streamContents: [ :stream |
+					          stream
+						          nextPutAll: 'rescuedValue';
+						          lf;
+						          tab;
+						          nextPutAll: '^ 42' ].
+			self recordRescuedValue: source on: class.
+			class removeSelector: #rescuedValue.
+			EpMonitor current sessionStore flush.
+			removalIndex := self latestRecoverableMethodEntryIndexFor: class.
+			result := self callToolWith: {
+					          (#action -> 'revertEntries').
+					          (#indexes -> { removalIndex }) } asDictionary.
+			previewEntry := ((self dataFrom: result) at: #previewEntries) first.
+			self assert: (previewEntry at: #index) equals: removalIndex.
+			self assert: (previewEntry at: #eventClass) equals: 'EpMethodAddition'.
+			self assert: (previewEntry at: #sourceAfter) equals: source.
+			self deny: (previewEntry includesKey: #sourceBefore).
+			self assert: ((self textFrom: result) includesSubstring: (String streamContents: [ :stream |
+							  stream
+								  nextPutAll: 'sourceAfter:';
+								  lf;
+								  nextPutAll: source ])) ]
 ]
 
 { #category : 'tests' }
