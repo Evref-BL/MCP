@@ -1,5 +1,5 @@
 "
-Selects change history entries of a log by index, by range and by a count of the latest ones, and previews what applying or reverting them would change using Epicea's apply preview machinery.
+Selects change history entries of a log by index, and previews what applying or reverting them would change using Epicea's apply preview machinery.
 
 execute answers the preview log, and selectedPairs, previewPairs, overridingIndexes and skippedNonCodeChangeCount then say what it selected, which entry each previewed change comes from, and why the others change nothing. performPreviewLog: carries the preview out.
 "
@@ -9,8 +9,6 @@ Class {
 	#instVars : [
 		'revert',
 		'indexes',
-		'range',
-		'latestCount',
 		'codeChangesOnly',
 		'log',
 		'previewPairs',
@@ -23,15 +21,13 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPChangeHistorySelectionCommand class >> revert: revertBoolean log: aLog indexes: someIndexes range: rangeIndexes latestCount: aCountOrNil codeChangesOnly: codeChangesOnlyBoolean [
-	"The entries of aLog at someIndexes and rangeIndexes, then the latest aCountOrNil of them, keeping the code changes only when codeChangesOnlyBoolean."
+MCPChangeHistorySelectionCommand class >> revert: revertBoolean log: aLog indexes: someIndexes codeChangesOnly: codeChangesOnlyBoolean [
+	"The entries of aLog at someIndexes, keeping the code changes only when codeChangesOnlyBoolean."
 
 	^ self new
 		  revert: revertBoolean;
 		  log: aLog;
 		  indexes: someIndexes;
-		  range: rangeIndexes;
-		  latestCount: aCountOrNil;
 		  codeChangesOnly: codeChangesOnlyBoolean;
 		  yourself
 ]
@@ -43,20 +39,6 @@ MCPChangeHistorySelectionCommand >> addEntriesAt: someIndexes to: pairs fromLog:
 			pairs add: {
 					index.
 					(self entryAtIndex: index inLog: aLog) } ].
-	^ pairs
-]
-
-{ #category : 'private - selection' }
-MCPChangeHistorySelectionCommand >> addLatestSelectionTo: pairs fromLog: aLog [
-
-	| allPairs selected start |
-	latestCount ifNil: [ ^ pairs ].
-	allPairs := self entryPairsFromLog: aLog.
-	codeChangesOnly ifTrue: [ allPairs := allPairs select: [ :pair | self isCodeChangeEntry: pair second ] ].
-	allPairs ifEmpty: [ ^ pairs ].
-	start := allPairs size - latestCount + 1 max: 1.
-	selected := allPairs copyFrom: start to: allPairs size.
-	pairs addAll: selected.
 	^ pairs
 ]
 
@@ -87,18 +69,6 @@ MCPChangeHistorySelectionCommand >> entryAtIndex: anIndex inLog: aLog [
 	^ aLog entries at: anIndex
 ]
 
-{ #category : 'private - entries' }
-MCPChangeHistorySelectionCommand >> entryPairsFromLog: aLog [
-
-	| pairs |
-	pairs := OrderedCollection new.
-	aLog entries doWithIndex: [ :entry :index |
-			pairs add: {
-					index.
-					entry } ].
-	^ pairs
-]
-
 { #category : 'executing' }
 MCPChangeHistorySelectionCommand >> execute [
 	"Select the entries, and answer the log that previews applying or reverting them. performPreviewLog: carries it out."
@@ -118,12 +88,6 @@ MCPChangeHistorySelectionCommand >> indexes: someIndexes [
 MCPChangeHistorySelectionCommand >> isCodeChangeEntry: anEntry [
 
 	^ anEntry content isCodeChange
-]
-
-{ #category : 'accessing' }
-MCPChangeHistorySelectionCommand >> latestCount: aCountOrNil [
-
-	latestCount := aCountOrNil
 ]
 
 { #category : 'accessing' }
@@ -197,21 +161,10 @@ MCPChangeHistorySelectionCommand >> previewedChangesOf: aCodeChange [
 		   ifFalse: [ aCodeChange ]) previewedApplyEvents
 ]
 
-{ #category : 'accessing' }
-MCPChangeHistorySelectionCommand >> range: someIndexes [
-
-	range := someIndexes
-]
-
 { #category : 'private - selection' }
 MCPChangeHistorySelectionCommand >> rawSelectedEntryPairsFrom: aLog [
 
-	| pairs |
-	pairs := OrderedCollection new.
-	self addEntriesAt: indexes to: pairs fromLog: aLog.
-	self addEntriesAt: range to: pairs fromLog: aLog.
-	self addLatestSelectionTo: pairs fromLog: aLog.
-	^ self uniqueSortedPairsFrom: pairs
+	^ self uniqueSortedPairsFrom: (self addEntriesAt: indexes to: OrderedCollection new fromLog: aLog)
 ]
 
 { #category : 'accessing' }

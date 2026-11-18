@@ -1,5 +1,5 @@
 "
-Shared implementation for change-history selection tools. It checks the selection the request names, reads the history it comes from, previews it through MCPChangeHistorySelectionCommand and carries it out when confirmed, and describes the selected and previewed entries, so apply and revert select, preview, confirm and answer alike. A subclass says whether it reverts.
+Shared implementation for change-history selection tools. It checks the entries the request names, reads the history they come from, applies or reverts them through MCPChangeHistorySelectionCommand, and describes the selected entries and the changes made, so apply and revert select, act and answer alike. A subclass says whether it reverts.
 "
 Class {
 	#name : 'MCPToolChangeHistoryOperation',
@@ -23,24 +23,24 @@ MCPToolChangeHistoryOperation >> actionName [
 
 { #category : 'private - results' }
 MCPToolChangeHistoryOperation >> addEntriesOf: aSelection in: aLog to: data [
-	"The entries aSelection took from aLog, each saying why it changes nothing when the preview holds no change of its own, and the changes it previews, each under the index of the entry it comes from and with the source it changes, with how many of each."
+	"The entries aSelection took from aLog, each saying why it changes nothing when it made no change of its own, and the changes it made, each under the index of the entry it comes from and with the source it changes, with how many of each."
 
-	| previewedIndexes previewEntries selectedEntries |
-	previewedIndexes := aSelection previewPairs collect: [ :pair | pair first ] as: Set.
+	| changedIndexes changes selectedEntries |
+	changedIndexes := aSelection previewPairs collect: [ :pair | pair first ] as: Set.
 	selectedEntries := aSelection selectedPairs collect: [ :pair |
 			                   | entry |
 			                   entry := MCPChangeHistoryEntryInfo fromEntry: pair second index: pair first log: aLog.
-			                   (previewedIndexes includes: pair first) ifFalse: [
+			                   (changedIndexes includes: pair first) ifFalse: [
 				                   entry changesNothingBecause: (self reasonEntryChangesNothing: pair in: aSelection) ].
 			                   entry ].
-	previewEntries := aSelection previewPairs collect: [ :pair |
-		                  MCPChangeHistoryEntryInfo fromPreviewedChange: pair second index: pair first ].
+	changes := aSelection previewPairs collect: [ :pair |
+		           MCPChangeHistoryEntryInfo fromPreviewedChange: pair second index: pair first ].
 	data at: #selectedEntries put: (selectedEntries collect: [ :each | each asDictionary ] as: Array).
-	data at: #previewEntries put: (previewEntries collect: [ :each | each asDictionary ] as: Array).
+	data at: #changes put: (changes collect: [ :each | each asDictionary ] as: Array).
 	data at: #selectedCount put: selectedEntries size.
 	data at: #selectedCodeChangeCount put: (selectedEntries count: [ :each | each isCodeChange ]).
 	data at: #skippedNonCodeChangeCount put: aSelection skippedNonCodeChangeCount.
-	data at: #previewCount put: previewEntries size
+	data at: #changeCount put: changes size
 ]
 
 { #category : 'metadata' }
@@ -49,18 +49,9 @@ MCPToolChangeHistoryOperation >> buildInputSchema [
 	^ MCPStructureInputSchema new
 		  type: 'object';
 		  properties: self selectionInputProperties;
-		  required: #(  );
+		  required: #( 'indexes' );
 		  additionalProperties: false;
 		  yourself
-]
-
-{ #category : 'private - results' }
-MCPToolChangeHistoryOperation >> changeCountTextForData: data [
-	"How many previewed changes were performed once confirmed, else how many the preview holds."
-
-	^ (data at: #performed)
-		  ifTrue: [ self textForCount: (data at: #performedCount) noun: 'previewed change' ]
-		  ifFalse: [ self textForCount: (data at: #previewCount) noun: 'applicable change' ]
 ]
 
 { #category : 'private - specs' }
@@ -71,52 +62,35 @@ MCPToolChangeHistoryOperation >> changeHistoryToolSpec [
 
 { #category : 'private - validation' }
 MCPToolChangeHistoryOperation >> checkArguments: request [
-	"A selection names entries by positive index, by a range given in order, or by a count of the latest ones, and names at least one of them."
+	"The schema requires indexes, but an empty list names no entry, and an index counts from one."
 
-	| endIndex indexes latestCount startIndex |
+	| indexes |
 	indexes := request arrayArgumentNamed: 'indexes'.
+	indexes ifEmpty: [
+			self
+				signalInvalidSelection: 'indexes must name at least one entry, by the index history_entry_list prints.'
+				details: Dictionary new ].
 	indexes do: [ :each |
 			each > 0 ifFalse: [
 					self signalInvalidSelection: 'indexes must contain only positive integers.' details: {
 							(#argumentName -> 'indexes').
-							(#actualValue -> each) } asDictionary ] ].
-	startIndex := self positiveIntegerArgumentNamed: 'startIndex' in: request.
-	endIndex := self positiveIntegerArgumentNamed: 'endIndex' in: request.
-	latestCount := self positiveIntegerArgumentNamed: 'latestCount' in: request.
-	(startIndex isNil and: [ endIndex isNil ]) ifFalse: [
-			(startIndex isNil or: [ endIndex isNil ]) ifTrue: [
-					self signalInvalidSelection: 'startIndex and endIndex must be provided together for range selection.' details: {
-							(#startIndex -> startIndex).
-							(#endIndex -> endIndex) } asDictionary ].
-			startIndex > endIndex ifTrue: [
-					self signalInvalidSelection: 'startIndex must be less than or equal to endIndex.' details: {
-							(#startIndex -> startIndex).
-							(#endIndex -> endIndex) } asDictionary ] ].
-	(indexes isEmpty and: [ startIndex isNil and: [ latestCount isNil ] ]) ifTrue: [
-			self
-				signalInvalidSelection: 'Provide at least one selection criterion: indexes, startIndex/endIndex, or latestCount.'
-				details: Dictionary new ]
+							(#actualValue -> each) } asDictionary ] ]
 ]
 
 { #category : 'private - execution' }
 MCPToolChangeHistoryOperation >> dataFor: request [
-	"Check the selection, read the history it comes from, preview applying or reverting the entries it takes, and carry that out when confirmed."
+	"Check the selection, read the history it comes from, and apply or revert the entries it takes. Epicea carries out the changes it previews, so the preview is both what the call does and what the answer shows."
 
-	| data logAndFileName performedCount previewLog selection |
+	| data logAndFileName selection |
 	self checkArguments: request.
 	logAndFileName := self logAndFileNameFor: request.
 	selection := self selectionFor: request in: logAndFileName first.
-	previewLog := selection execute.
-	performedCount := (request booleanArgumentNamed: 'confirm')
-		                  ifTrue: [ selection performPreviewLog: previewLog ]
-		                  ifFalse: [ 0 ].
+	selection performPreviewLog: selection execute.
 	data := Dictionary new.
 	data at: #action put: self actionName.
 	logAndFileName second ifNotNil: [ :fileName | data at: #historyFile put: fileName ].
 	data at: #selectionCriteria put: (self selectionCriteriaFrom: request).
 	self addEntriesOf: selection in: logAndFileName first to: data.
-	data at: #performed put: (request booleanArgumentNamed: 'confirm').
-	data at: #performedCount put: performedCount.
 	^ data
 ]
 
@@ -128,30 +102,9 @@ MCPToolChangeHistoryOperation >> description [
 
 { #category : 'private - results' }
 MCPToolChangeHistoryOperation >> keysStatedInSummary [
-	"The summary already reads 'Previewed apply for 3 applicable changes from 5 selected history entries.'"
+	"The summary already reads 'Applied 3 changes from 5 selected history entries.'"
 
-	^ #( action performed performedCount previewCount selectedCount )
-]
-
-{ #category : 'private - validation' }
-MCPToolChangeHistoryOperation >> positiveIntegerArgumentNamed: anArgumentName in: request [
-	"The argument, nil when the caller left it out. The schema has checked that it is an integer; an entry index or a count must also be positive."
-
-	^ (request integerArgumentNamed: anArgumentName) ifNotNil: [ :value |
-			  value > 0 ifFalse: [
-					  self signalInvalidSelection: anArgumentName , ' must be a positive integer.' details: {
-							  (#argumentName -> anArgumentName).
-							  (#actualValue -> value) } asDictionary ].
-			  value ]
-]
-
-{ #category : 'private - execution' }
-MCPToolChangeHistoryOperation >> rangeFrom: request [
-	"The indexes of the range the request names, as an interval: a range that runs past the last entry fails at the first index missing, without being built in full."
-
-	^ (request integerArgumentNamed: 'startIndex')
-		  ifNil: [ #(  ) ]
-		  ifNotNil: [ :startIndex | startIndex to: (request integerArgumentNamed: 'endIndex') ]
+	^ #( action changeCount selectedCount )
 ]
 
 { #category : 'private - results' }
@@ -185,27 +138,19 @@ MCPToolChangeHistoryOperation >> reverts [
 MCPToolChangeHistoryOperation >> selectionCriteriaFrom: request [
 	"The selection as the caller gave it."
 
-	| criteria |
-	criteria := Dictionary new.
-	(request arrayArgumentNamed: 'indexes') ifNotEmpty: [ :values | criteria at: #indexes put: values ].
-	(request integerArgumentNamed: 'startIndex') ifNotNil: [ :startIndex |
-			criteria at: #startIndex put: startIndex.
-			criteria at: #endIndex put: (request integerArgumentNamed: 'endIndex') ].
-	(request integerArgumentNamed: 'latestCount') ifNotNil: [ :value | criteria at: #latestCount put: value ].
-	criteria at: #codeChangesOnly put: (request booleanArgumentNamed: 'codeChangesOnly').
-	^ criteria
+	^ {
+		  (#indexes -> (request arrayArgumentNamed: 'indexes')).
+		  (#codeChangesOnly -> (request booleanArgumentNamed: 'codeChangesOnly')) } asDictionary
 ]
 
 { #category : 'private - execution' }
 MCPToolChangeHistoryOperation >> selectionFor: request in: aLog [
-	"The operation that selects the entries of aLog the request names, and previews or carries out applying or reverting them."
+	"The operation that selects the entries of aLog the request names, and applies or reverts them."
 
 	^ MCPChangeHistorySelectionCommand
 		  revert: self reverts
 		  log: aLog
 		  indexes: (request arrayArgumentNamed: 'indexes')
-		  range: (self rangeFrom: request)
-		  latestCount: (request integerArgumentNamed: 'latestCount')
 		  codeChangesOnly: (request booleanArgumentNamed: 'codeChangesOnly')
 ]
 
@@ -217,19 +162,10 @@ MCPToolChangeHistoryOperation >> selectionInputProperties [
 			   integerArraySchemaNamed: 'indexes'
 			   description: 'The entries to act on, by the one-based index history_entry_list prints.'
 			   itemDescription: 'Entry index.').
-		  (self integerSchemaPropertyNamed: 'startIndex' description: 'Act on a range of entries, starting at this one-based index.').
-		  (self integerSchemaPropertyNamed: 'endIndex' description: 'Last one-based index of that range.').
-		  (self
-			   integerSchemaPropertyNamed: 'latestCount'
-			   description: 'Act on this many of the most recent entries instead of naming them.').
 		  (self
 			   booleanSchemaPropertyNamed: 'codeChangesOnly'
 			   description: 'Leave out everything that is not a class or method change.'
-			   default: true).
-		  (self
-			   booleanSchemaPropertyNamed: 'confirm'
-			   description: 'False lists what would happen and changes nothing; true carries it out.'
-			   default: false) }
+			   default: true) }
 ]
 
 { #category : 'private - validation' }
@@ -240,15 +176,11 @@ MCPToolChangeHistoryOperation >> signalInvalidSelection: aMessage details: aDict
 
 { #category : 'private - results' }
 MCPToolChangeHistoryOperation >> successSummaryForData: data [
-	"'Previewed apply for 3 applicable changes from 5 selected history entries.' A confirmed call says Performed instead, and counts the previewed changes it carried out."
+	"'Applied 3 changes from 5 selected history entries.' A selected entry that made no change says why in the answer."
 
-	| verb |
-	verb := (data at: #performed)
-		        ifTrue: [ 'Performed ' ]
-		        ifFalse: [ 'Previewed ' ].
 	^ String streamContents: [ :stream |
-			  stream << verb << (data at: #action) << ' for ' << (self changeCountTextForData: data) << ' from '
-			  << (self textForCount: (data at: #selectedCount) noun: 'selected history entry') << '.' ]
+			  stream << (self changeHistoryToolSpec at: #pastTense) << ' ' << (self textForCount: (data at: #changeCount) noun: 'change')
+			  << ' from ' << (self textForCount: (data at: #selectedCount) noun: 'selected history entry') << '.' ]
 ]
 
 { #category : 'metadata' }
