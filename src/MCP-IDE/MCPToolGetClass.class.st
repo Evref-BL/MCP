@@ -200,18 +200,22 @@ MCPToolGetClass >> failureMessageForClassName: className error: anError [
 
 { #category : 'private - execution' }
 MCPToolGetClass >> getClassWith: request [
-	"The class's Tonel file, a page at a time: offset 0 is its comment and definition, and offset n starts at its nth method. The answer names the class found, not the name asked for: Foo class reads as Foo."
+	"The class's Tonel file, a page at a time: offset 0 is its comment and definition, and offset n starts at its nth method. The answer names the class found, not the name asked for: Foo class reads as Foo. Every page says what the image lost of the class since its last save."
 
-	| data offset targetClass |
+	| data offset summary targetClass |
 	targetClass := self resolvedClassNamed: (self classNameFromRequest: request).
 	offset := request integerArgumentNamed: 'offset'.
 	data := offset = 0
 		        ifTrue: [ self definitionDictionaryForClass: targetClass ]
 		        ifFalse: [ self methodsDictionaryForClass: targetClass from: offset ].
+	summary := offset = 0
+		           ifTrue: [ self definitionSummaryForClass: targetClass data: data ]
+		           ifFalse: [ self methodsSummaryForClass: targetClass data: data from: offset ].
 	^ self
-		  successResultText: (offset = 0
-				   ifTrue: [ self definitionSummaryForClass: targetClass data: data ]
-				   ifFalse: [ self methodsSummaryForClass: targetClass data: data from: offset ])
+		  successResultText: (MCPToolListLostChanges
+				   summary: summary
+				   notingLostChangesToPackagesNamed: #(  )
+				   classesNamed: { targetClass instanceSide name asString })
 		  data: data
 ]
 

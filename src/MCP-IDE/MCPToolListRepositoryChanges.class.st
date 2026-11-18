@@ -84,10 +84,13 @@ MCPToolListRepositoryChanges >> repositoryToolSpec [
 
 { #category : 'private - results' }
 MCPToolListRepositoryChanges >> summaryForChangesOf: aRepository imageModifiedPackages: packageNames modifiedPaths: paths [
-	"Whether either side holds something its last commit does not."
+	"Whether either side holds something its last commit does not, and what the image lost of the repository's packages since its last save, which neither side holds."
 
-	^ String streamContents: [ :stream |
-			  stream << 'Repository ' << aRepository name << ((packageNames isNotEmpty or: [ paths isNotEmpty ])
-				   ifTrue: [ ' has uncommitted changes.' ]
-				   ifFalse: [ ' has no uncommitted changes: the image matches its files and git sees none.' ]) ]
+	^ MCPToolListLostChanges
+		  summary: (String streamContents: [ :stream |
+					   stream << 'Repository ' << aRepository name << ((packageNames isNotEmpty or: [ paths isNotEmpty ])
+						    ifTrue: [ ' has uncommitted changes.' ]
+						    ifFalse: [ ' has no uncommitted changes: the image matches its files and git sees none.' ]) ])
+		  notingLostChangesToPackagesNamed: (self packageNamesRegisteredIn: aRepository)
+		  classesNamed: #(  )
 ]
