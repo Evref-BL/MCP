@@ -136,8 +136,10 @@ a file, which a later call reads.
 
 Compiling is the case that bites. Method source separates lines with CR, and
 `method_compile` normalizes what it is given, while a bare `compile:` from
-`evaluate` stores whatever it receives, so source written with LF compares
-unequal to every other method in the image.
+`evaluate` stores whatever it receives, so source read from a file keeps its LF
+and compares unequal to every other method in the image. To keep a method's text
+as written rather than formatted, as when restoring it from another branch, pass
+`format: false` to `method_compile` instead.
 
 A debugger somebody opened is theirs. Read it, act on what it shows with the
 ordinary class and method tools, and leave stepping, resuming and terminating
