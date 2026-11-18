@@ -135,13 +135,10 @@ MCPChangeHistoryEntryInfo >> asDictionary [
 ]
 
 { #category : 'testing' }
-MCPChangeHistoryEntryInfo >> changesClassNamed: aClassNameOrNil side: isClassSide selector: aSelectorOrNil [
-	"Whether the entry changes the class or the method so named, on that side. A nil class or selector stands for any; an entry that names no class changes none."
+MCPChangeHistoryEntryInfo >> changesClassNamed: aClassName [
+	"Whether the entry changes the class so named, on either side: its definition, its comment, or one of its methods or protocols. An entry that names no class changes none."
 
-	^ behaviorName isNotNil and: [
-			  classSide = isClassSide and: [
-					  (aClassNameOrNil isNil or: [ self instanceSideBehaviorName = aClassNameOrNil ]) and: [
-						  aSelectorOrNil isNil or: [ selector = aSelectorOrNil ] ] ] ]
+	^ behaviorName isNotNil and: [ self instanceSideBehaviorName = aClassName ]
 ]
 
 { #category : 'adding' }
@@ -153,9 +150,10 @@ MCPChangeHistoryEntryInfo >> changesNothingBecause: aString [
 
 { #category : 'private' }
 MCPChangeHistoryEntryInfo >> classSideFromBehaviorName: aString [
+	"Whether Epicea's name for a behavior names a class side: Foo class, or TFoo classTrait for a trait."
 
 	aString ifNil: [ ^ nil ].
-	^ aString endsWith: ' class'
+	^ MCPImageLookup namesClassSide: aString
 ]
 
 { #category : 'private - initialization' }
@@ -210,11 +208,9 @@ MCPChangeHistoryEntryInfo >> initializeTriggerReferenceFromEntry: anEntry log: a
 
 { #category : 'private' }
 MCPChangeHistoryEntryInfo >> instanceSideBehaviorName [
-	"Epicea's name for the behavior without the class suffix a class-side change carries."
+	"Epicea's name for the behavior without the class or classTrait a class-side change carries."
 
-	^ classSide == true
-		  ifTrue: [ behaviorName allButLast: ' class' size ]
-		  ifFalse: [ behaviorName ]
+	^ MCPImageLookup baseNameOf: behaviorName
 ]
 
 { #category : 'accessing' }

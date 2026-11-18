@@ -30,15 +30,8 @@ MCPToolListChangeHistoryEntries >> buildInputSchema [
 					  (self
 						   schemaPropertyNamed: 'class'
 						   type: 'string'
-						   description: 'List only the entries that change this class or its methods, named exactly, as Foo or Foo class.').
-					  (self targetSideSchemaPropertyDescribedAs: 'Which side of the class, or of the selector''s classes, the entries change.').
-					  (self
-						   schemaPropertyNamed: 'selector'
-						   type: 'string'
 						   description:
-							   'List only the entries that change methods of this selector, named exactly, or of one method written as Class>>selector.').
-					  (self integerSchemaPropertyNamed: 'startIndex' description: 'List from this one-based index.').
-					  (self integerSchemaPropertyNamed: 'endIndex' description: 'Last one-based index to list.').
+							   'List only the entries that change this class, named exactly: its definition, its comment, and its methods on either side.').
 					  self offsetInputProperty.
 					  (self booleanSchemaPropertyNamed: 'newestFirst' description: 'List the most recent entries first.' default: false).
 					  (self
@@ -52,28 +45,12 @@ MCPToolListChangeHistoryEntries >> buildInputSchema [
 
 { #category : 'private - entries' }
 MCPToolListChangeHistoryEntries >> changeFilterFor: request [
-	"A block telling whether an event changes what class, side and selector name, read as method_get reads them: a selector written as Class>>selector names its class and side, and a class written as Foo class names its side."
+	"A block telling whether an event changes the class the request names, on either side. Foo class names Foo, as every class name is read; with no class, every event is listed."
 
-	| selector |
-	selector := request stringArgumentNamed: 'selector'.
-	^ (MCPMethodReference fromString: selector)
-		  ifNil: [
-				  MCPImageLookup
-					  className: (request stringArgumentNamed: 'class')
-					  side: (request stringArgumentNamed: 'side')
-					  do: [ :className :isClassSide :isSideGiven |
-					  self changeFilterForClassNamed: className side: isClassSide selector: selector ] ]
-		  ifNotNil: [ :reference |
-		  self changeFilterForClassNamed: reference className side: reference classSide selector: reference selector ]
-]
-
-{ #category : 'private - entries' }
-MCPToolListChangeHistoryEntries >> changeFilterForClassNamed: aClassNameOrNil side: isClassSide selector: aSelectorOrNil [
-	"The side narrows a class or a selector; with neither, every event is listed."
-
-	(aClassNameOrNil isNil and: [ aSelectorOrNil isNil ]) ifTrue: [ ^ [ :event | true ] ].
-	^ [ :event |
-	  (MCPChangeHistoryEntryInfo fromEvent: event) changesClassNamed: aClassNameOrNil side: isClassSide selector: aSelectorOrNil ]
+	^ (request stringArgumentNamed: 'class') ifNil: [ [ :event | true ] ] ifNotNil: [ :name |
+			  | className |
+			  className := MCPImageLookup baseNameOf: name.
+			  [ :event | (MCPChangeHistoryEntryInfo fromEvent: event) changesClassNamed: className ] ]
 ]
 
 { #category : 'private - execution' }
@@ -104,22 +81,19 @@ MCPToolListChangeHistoryEntries >> defaultPageLimit [
 { #category : 'metadata' }
 MCPToolListChangeHistoryEntries >> description [
 
-	^ 'List granular entries from the current Pharo image change history or a selected .ombu file, all of them or those that change one class or method. Use history_file_list to locate files, and history_entry_apply or history_entry_revert, which take the indexes listed here, only to recover changes.'
+	^ 'List granular entries from the current Pharo image change history or a selected .ombu file, all of them or every change to one class. Use history_file_list to locate files, and history_entry_apply or history_entry_revert, which take the indexes listed here, only to recover changes.'
 ]
 
 { #category : 'private - entries' }
 MCPToolListChangeHistoryEntries >> entryPairsFrom: aLog for: request [
-	"The entries of aLog the request lists, as pairs of their one-based index and the entry, the oldest first unless newestFirst. startIndex and endIndex keep a range of indexes, and class, side and selector the entries that change what they name."
+	"The entries of aLog the request lists, as pairs of their one-based index and the entry, the oldest first unless newestFirst. class keeps the entries that change the class it names."
 
-	| codeChangesOnly endIndex isListed pairs startIndex |
+	| codeChangesOnly isListed pairs |
 	codeChangesOnly := request booleanArgumentNamed: 'codeChangesOnly'.
-	startIndex := (request integerArgumentNamed: 'startIndex') ifNil: [ 1 ].
-	endIndex := (request integerArgumentNamed: 'endIndex') ifNil: [ SmallInteger maxVal ].
 	isListed := self changeFilterFor: request.
 	pairs := OrderedCollection new.
 	aLog entries doWithIndex: [ :entry :index |
-			((index between: startIndex and: endIndex) and: [
-				 (codeChangesOnly not or: [ entry content isCodeChange ]) and: [ isListed value: entry content ] ]) ifTrue: [
+			((codeChangesOnly not or: [ entry content isCodeChange ]) and: [ isListed value: entry content ]) ifTrue: [
 					pairs add: {
 							index.
 							entry } ] ].
