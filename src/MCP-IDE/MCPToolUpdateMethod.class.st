@@ -75,7 +75,7 @@ MCPToolUpdateMethod >> changeProtocolOf: request [
 
 { #category : 'private - updating' }
 MCPToolUpdateMethod >> changeSelector: action of: request [
-	"A rename, or arguments added or removed: the method is looked up, its selector changed across the scope's model, senders included, and the answer names the method before and after."
+	"A rename, or arguments added or removed: the method is looked up, its selector changed across the scope's model, senders included, and the answer names the method before and after. The refactoring keeps the method's text but for its selector line, and the method is then reformatted unless format is false. The senders are left as the refactoring writes them."
 
 	| behavior newSelector oldMethodReference selector |
 	selector := (request stringArgumentNamed: 'selector') asSymbol.
@@ -99,7 +99,7 @@ MCPToolUpdateMethod >> changeSelector: action of: request [
 					   argumentValueExpressions: (request stringCollectionArgumentNamed: 'argumentValueExpressions')
 					   model: (self refactoringModelForScopeSpec: (self refactoringScopeSpecFromRequest: request) anchoredAtBehavior: behavior))
 					  execute.
-				  self reformattedMethodForBehavior: behavior selector: newSelector ]
+				  (request booleanArgumentNamed: 'format') ifTrue: [ self reformattedMethodForBehavior: behavior selector: newSelector ] ]
 		  successResult: [ :warningMessages |
 				  self
 					  successResultText: ((self selectorChangeSummaryFormatFor: action) format: {
@@ -175,6 +175,8 @@ MCPToolUpdateMethod >> methodToolSpec [
 				    yourself).
 			   (self targetSideSchemaPropertyDescribedAs: 'Which side the method is on.').
 			   self forceSchemaProperty.
+			   (self formatSchemaPropertyDescribedAs:
+				    'Reformat the method with its package''s formatter after a selector change. False keeps its source as written but for its selector line. Senders are left as Pharo''s refactoring writes them either way: a rename changes only the send, adding or removing arguments reformats each sender.').
 			   (MCPStructureProperties new
 				    name: 'selector';
 				    type: 'string';

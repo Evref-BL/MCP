@@ -193,6 +193,22 @@ MCPToolMethodMutationTest >> createRenameScopeFixtureClassNamed: aClassName pack
 			builder install ]
 ]
 
+{ #category : 'private - calling' }
+MCPToolMethodMutationTest >> dataAnsweredThroughTheProtocolBy: aToolName arguments: someArguments [
+	"The data a client reads from calling the tool with someArguments, the call and its answer written in JSON, so that their line endings are converted at the protocol boundary, as a client's are."
+
+	| answer request |
+	request := STONJSON toString: {
+			           ('jsonrpc' -> '2.0').
+			           ('id' -> 1).
+			           ('method' -> 'tools/call').
+			           ('params' -> {
+				            ('name' -> aToolName).
+				            ('arguments' -> someArguments) } asDictionary) } asDictionary.
+	answer := STONJSON fromString: (self mcpWithoutObservabilityExport server messageProcessor handleJSON: request).
+	^ ((answer at: 'result') at: 'structuredContent') at: 'data'
+]
+
 { #category : 'private' }
 MCPToolMethodMutationTest >> droppedHeaderWarning [
 
@@ -268,6 +284,13 @@ MCPToolMethodMutationTest >> instanceRenameArguments [
 MCPToolMethodMutationTest >> instanceSelector [
 
 	^ ('combine:' , 'with:') asSymbol
+]
+
+{ #category : 'private' }
+MCPToolMethodMutationTest >> lines: someLines [
+	"someLines as one source, each line ending with a CR but the last, as a tool is handed a source a client wrote."
+
+	^ String cr join: someLines
 ]
 
 { #category : 'private' }
@@ -2438,6 +2461,52 @@ MCPToolMethodMutationTest >> testForceDoesNotUpdateAMethodInstalledFromATrait [
 ]
 
 { #category : 'tests' }
+MCPToolMethodMutationTest >> testFormatFalseKeepsEveryMethodOfACallAsWritten [
+	"format applies to every method a call compiles, a method written as a Tonel file writes it included, whose body then ends with its last line rather than with the empty lines above its closing bracket."
+
+	| result selectors |
+	selectors := #( #asWrittenProbe #asWrittenTonelProbe ).
+	selectors do: [ :each | self removeSelector: each from: MCPToolMethodMutationTestTarget ].
+	[
+		result := self callToolWith: {
+				          (#class -> MCPToolMethodMutationTestTarget name).
+				          (#protocol -> 'tests').
+				          (#format -> false).
+				          (#source -> {
+					           'asWrittenProbe ^1+1'.
+					           (self lines: #( '{ #category : ''tests'' }' 'MCPToolMethodMutationTestTarget >> asWrittenTonelProbe ['
+						               '    ^ 2+2' '' ']' )) }) } asDictionary.
+		self assert: (self summaryFrom: result) equals: 'Compiled 2 of 2 methods.'.
+		self assert: (MCPToolMethodMutationTestTarget >> #asWrittenProbe) sourceCode equals: 'asWrittenProbe ^1+1'.
+		self
+			assert: (MCPToolMethodMutationTestTarget >> #asWrittenTonelProbe) sourceCode
+			equals: (self lines: #( 'asWrittenTonelProbe' '    ^ 2+2' )) ] ensure: [
+		selectors do: [ :each | self removeSelector: each from: MCPToolMethodMutationTestTarget ] ]
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testFormatFalseKeepsTheSourceAsWritten [
+	"With format false, the method is stored as the client wrote it but for its line endings, CR in the image, and the empty lines it ended with, so method_get answers it as sent."
+
+	| lines |
+	lines := #( 'asWrittenProbe' '    "Indented with spaces."' '    ^ (1+2)' ).
+	self removeSelector: #asWrittenProbe from: MCPToolMethodMutationTestTarget.
+	[
+		self dataAnsweredThroughTheProtocolBy: 'method_compile' arguments: {
+				('class' -> MCPToolMethodMutationTestTarget name asString).
+				('protocol' -> 'tests').
+				('format' -> false).
+				('source' -> (String lf join: lines , #( '' '  ' '' ))) } asDictionary.
+		self
+			assert: ((self dataAnsweredThroughTheProtocolBy: 'method_get' arguments: {
+						  ('class' -> MCPToolMethodMutationTestTarget name asString).
+						  ('selector' -> 'asWrittenProbe') } asDictionary) at: 'source')
+			equals: (String lf join: lines).
+		self assert: (MCPToolMethodMutationTestTarget >> #asWrittenProbe) sourceCode equals: (self lines: lines) ] ensure: [
+		self removeSelector: #asWrittenProbe from: MCPToolMethodMutationTestTarget ]
+]
+
+{ #category : 'tests' }
 MCPToolMethodMutationTest >> testHeaderNamingTheTargetIsDropped [
 	"A source that begins with the reference of the method it compiles, as the agents copy it from a search result, says nothing the call does not say, so the reference is dropped with a warning."
 
@@ -2556,11 +2625,11 @@ MCPToolMethodMutationTest >> testMethodToolSchemasDeclareExpectedInputs [
 	createPropertyNames := MCPToolCompileMethod new inputSchema properties collect: [ :each | each name ].
 	updatePropertyNames := MCPToolUpdateMethod new inputSchema properties collect: [ :each | each name ].
 	classSideProperty := MCPToolCompileMethod new inputSchema properties detect: [ :each | each name = 'side' ].
-	self assert: createPropertyNames asArray equals: #( 'class' 'side' 'source' 'protocol' 'force' ).
+	self assert: createPropertyNames asArray equals: #( 'class' 'side' 'source' 'protocol' 'force' 'format' ).
 	self
 		assert: updatePropertyNames asArray
-		equals:
-		#( 'class' 'side' 'force' 'selector' 'protocol' 'newSelector' 'arguments' 'argumentValueExpressions' 'permutation' 'scope' ).
+		equals: #( 'class' 'side' 'force' 'format' 'selector' 'protocol' 'newSelector' 'arguments' 'argumentValueExpressions'
+			   'permutation' 'scope' ).
 	self assert: MCPToolCompileMethod new inputSchema required asSet equals: #( 'class' 'source' ) asSet.
 	self assert: MCPToolUpdateMethod new inputSchema required asSet equals: #( 'class' 'selector' ) asSet.
 	self assert: (classSideProperty extraProperties at: #default) equals: 'instance'
@@ -2883,6 +2952,36 @@ MCPToolMethodMutationTest >> testRenameUpdatesSendersAndPermutesArguments [
 	self assert: MCPToolMethodMutationTestSender new callInstanceTarget equals: 'first-second'.
 	senderSource := (MCPToolMethodMutationTestSender >> #callInstanceTarget) sourceCode.
 	self assert: (senderSource includesSubstring: 'with: ''second'' combine: ''first''')
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testRenameWithFormatFalseKeepsTheMethodAsWritten [
+	"Renamed with format false, the method keeps its text but for its selector line. Its sender has only the send changed, as the refactoring writes it whatever format says."
+
+	| selectors |
+	selectors := #( #asWrittenTarget: #asWrittenAim: #asWrittenSender ).
+	selectors do: [ :each | self removeSelector: each from: MCPToolMethodMutationTestTarget ].
+	[
+		self callToolWith: {
+				(#class -> MCPToolMethodMutationTestTarget name).
+				(#protocol -> 'tests').
+				(#format -> false).
+				(#source -> {
+					 (self lines: #( 'asWrittenTarget: a' '    ^ a+1' )).
+					 (self lines: #( 'asWrittenSender' '    ^ (self asWrittenTarget: 1)+2' )) }) } asDictionary.
+		self callToolWith: {
+				(#class -> MCPToolMethodMutationTestTarget name).
+				(#selector -> 'asWrittenTarget:').
+				(#newSelector -> 'asWrittenAim:').
+				(#format -> false).
+				(self searchScope: { (#classes -> { MCPToolMethodMutationTestTarget name }) }) } asDictionary.
+		self
+			assert: (MCPToolMethodMutationTestTarget >> #asWrittenAim:) sourceCode
+			equals: (self lines: #( 'asWrittenAim: a' '    ^ a+1' )).
+		self
+			assert: (MCPToolMethodMutationTestTarget >> #asWrittenSender) sourceCode
+			equals: (self lines: #( 'asWrittenSender' '    ^ (self asWrittenAim: 1)+2' )) ] ensure: [
+		selectors do: [ :each | self removeSelector: each from: MCPToolMethodMutationTestTarget ] ]
 ]
 
 { #category : 'tests' }

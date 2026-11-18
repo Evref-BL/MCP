@@ -1,7 +1,7 @@
 "
 Tool that compiles one method source into a class.
 
-The compile operation creates the method when its selector is absent and replaces the existing method when the selector is already defined.
+The compile operation creates the method when its selector is absent and replaces the existing method when the selector is already defined. The method is stored reformatted by its package's formatter, or as written when format is false.
 "
 Class {
 	#name : 'MCPToolCompileMethod',
@@ -251,16 +251,19 @@ MCPToolCompileMethod >> methodToolSpec [
 				    description:
 					    'Protocol for the method; a replaced method keeps its own when omitted. Extension methods take *Package-Name.';
 				    yourself).
-			   self forceSchemaProperty }).
+			   self forceSchemaProperty.
+			   (self formatSchemaPropertyDescribedAs:
+				    'Reformat each method with its package''s formatter. False keeps the source as written, only trimming the whitespace it begins and ends with.') }).
 		  (#requiredProperties -> #( 'class' 'source' )) } asDictionary
 ]
 
 { #category : 'executing' }
 MCPToolCompileMethod >> mutateWith: request [
-	"Compile the source into the class the call names, on the side it names or, when it names none, the side a header names. A method written as a Tonel file writes it compiles without its header and brackets, its category line giving the protocol when the call names none. The answer says whether the method was created or replaced, and what its critiques find in it as stored."
+	"Compile the source into the class the call names, on the side it names or, when it names none, the side a header names. A method written as a Tonel file writes it compiles without its header and brackets, its category line giving the protocol when the call names none. The method is reformatted unless format is false, which keeps it as written. The answer says whether the method was created or replaced, and what its critiques find in it as stored."
 
-	| behavior changeKind compiledMethod critiques force headerWarnings methodReference methodSource previousProtocolName protocol selector |
+	| behavior changeKind compiledMethod critiques force format headerWarnings methodReference methodSource previousProtocolName protocol selector |
 	force := request booleanArgumentNamed: 'force'.
+	format := request booleanArgumentNamed: 'format'.
 	headerWarnings := #(  ).
 	^ self
 		  executeMutationAction: 'compile'
@@ -306,7 +309,9 @@ MCPToolCompileMethod >> mutateWith: request [
 								              methodSource: methodSource
 								              in: behavior
 								              of: request ].
-				  compiledMethod := self reformattedMethodForBehavior: behavior selector: selector.
+				  compiledMethod := format
+					                    ifTrue: [ self reformattedMethodForBehavior: behavior selector: selector ]
+					                    ifFalse: [ behavior >> selector ].
 				  methodReference := self methodReferenceForBehavior: behavior selector: selector.
 				  critiques := self critiqueDataForMethod: compiledMethod ]
 		  successResult: [ :warningMessages |

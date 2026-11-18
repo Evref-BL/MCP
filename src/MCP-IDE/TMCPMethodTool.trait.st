@@ -16,6 +16,16 @@ TMCPMethodTool >> behaviorNamed: aClassName classSide: aBoolean [
 	^ MCPImageLookup behaviorNamed: aClassName classSide: aBoolean
 ]
 
+{ #category : 'private - methods' }
+TMCPMethodTool >> behaviorNamedIn: request [
+	"The class or class side the call names by class and side. A side that says the other one than the class name is refused."
+
+	^ MCPImageLookup
+		  className: (request stringArgumentNamed: 'class')
+		  side: (request stringArgumentNamed: 'side')
+		  do: [ :className :classSide :sideGiven | self behaviorNamed: className classSide: classSide ]
+]
+
 { #category : 'private - searching' }
 TMCPMethodTool >> matchingSelectorReferencesForSelector: aSelectorSymbol inMethods: compiledMethods [
 	"The methods of compiledMethods that send aSelectorSymbol to any receiver: what method_reference_search calls senders, and what method_remove warns of."
@@ -37,16 +47,20 @@ TMCPMethodTool >> methodEntryLabel: anEntry [
 
 { #category : 'private - methods' }
 TMCPMethodTool >> methodForClassNamed: className selector: selectorString classSide: classSide [
-	"A method the class does not have is refused with the methods of that selector the caller may have meant or, when there is none, with the tool that lists the methods the class has."
+	"A method the class does not have is refused with the methods of that selector the caller may have meant or, when there is none, with where to look next: method_restore for a method the change history shows removed, the tool that lists the methods the class has otherwise."
 
-	| behavior |
+	| behavior selector |
 	behavior := self behaviorNamed: className classSide: classSide.
-	^ behavior compiledMethodAt: selectorString asSymbol ifAbsent: [
+	selector := selectorString asSymbol.
+	^ behavior compiledMethodAt: selector ifAbsent: [
 			  MCPCommandError
 				  signalMissingMethod: selectorString
 				  in: behavior
 				  closingWhenNoMatch:
-				  (String streamContents: [ :stream | stream << 'method_search with scope.classes lists the methods of ' << className << '.' ]) ]
+					  ((MCPRemovedMethodQuery inCurrentSession hintAfterNameSelecting: [ :removedFrom :removedSelector :protocol |
+						    removedFrom == behavior and: [ removedSelector = selector ] ]) ifNil: [
+						   String streamContents: [ :stream |
+							   stream << 'method_search with scope.classes lists the methods of ' << className << '.' ] ]) ]
 ]
 
 { #category : 'private - schema' }
@@ -86,6 +100,13 @@ TMCPMethodTool >> methodScopeQueryFromRequest: request [
 		  parentClassNames: (self searchScopeStringCollectionNamed: 'superclassesOf' fromRequest: request);
 		  side: (self searchScopeSideFromRequest: request);
 		  yourself
+]
+
+{ #category : 'private - methods' }
+TMCPMethodTool >> removedMethodHintSelecting: aBlock [
+	"What a lookup that found no method says when the change history shows one that aBlock accepts removed, in this session or before the image was last saved: method_restore can bring it back. nil otherwise. aBlock takes the behavior, the selector and the protocol of each removed method."
+
+	^ MCPRemovedMethodQuery inCurrentSession hintSelecting: aBlock
 ]
 
 { #category : 'private - request' }
