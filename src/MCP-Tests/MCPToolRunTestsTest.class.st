@@ -29,6 +29,33 @@ MCPToolRunTestsTest >> commandResultForClasses: classNames timeoutMilliseconds: 
 ]
 
 { #category : 'private - fixtures' }
+MCPToolRunTestsTest >> createTestClassNamed: aClassName traits: aTraitCompositionOrNil [
+	"A subclass of TestCase in the generated package, using aTraitCompositionOrNil when there is one."
+
+	^ self withoutEpiceaDuring: [
+			  | builder |
+			  self packageOrganizer ensurePackage: self generatedPackageName.
+			  builder := TestCase << aClassName asSymbol.
+			  aTraitCompositionOrNil ifNotNil: [ builder traits: aTraitCompositionOrNil ].
+			  builder package: self generatedPackageName.
+			  builder tag: self generatedTagName.
+			  builder install ]
+]
+
+{ #category : 'private - fixtures' }
+MCPToolRunTestsTest >> createTraitNamed: aTraitName [
+	"A trait in the generated package."
+
+	^ self withoutEpiceaDuring: [
+			  | builder |
+			  self packageOrganizer ensurePackage: self generatedPackageName.
+			  builder := Trait << aTraitName asSymbol.
+			  builder package: self generatedPackageName.
+			  builder tag: self generatedTagName.
+			  builder install ]
+]
+
+{ #category : 'private - fixtures' }
 MCPToolRunTestsTest >> fixtureNamed: aClassName [
 	"A fixture by its name, so that this class adds no reference to it."
 
@@ -54,6 +81,15 @@ MCPToolRunTestsTest >> onlyIssueOf: anOutcome [
 MCPToolRunTestsTest >> outcomesFor: someArguments [
 
 	^ (self commandResultFor: someArguments) outcomes
+]
+
+{ #category : 'private - fixtures' }
+MCPToolRunTestsTest >> removeClassesNamed: someClassNames [
+	"Removes each class, and the binding its removal leaves in Undeclared, where a class later made under its name would take it over."
+
+	someClassNames do: [ :each |
+			self removeClassNamed: each.
+			Undeclared removeKey: each asSymbol ifAbsent: [ nil ] ]
 ]
 
 { #category : 'private - fixtures' }
@@ -169,6 +205,16 @@ MCPToolRunTestsTest >> testAGroupOfSomeTestsNamesThem [
 		#( 'error MCPToolRunTestsSomeFailTarget>>#testA, MCPToolRunTestsSomeFailTarget>>#testB (Error): fixture broken, in MCPToolRunTestsRaiser>>fail' )
 ]
 
+{ #category : 'tests - refusals' }
+MCPToolRunTestsTest >> testAHelperOfATraitIsRefusedNamingNoMethod [
+	"A helper is no test in the classes that use its trait either, so naming it in one of them would be refused too: their tests are named instead."
+
+	self
+		assert: (self summaryFrom: (self runTests: { (#methods -> #( 'TMCPToolRunTestsTraitTarget>>#helperFromTheTrait' )) }))
+		equals:
+		'TMCPToolRunTestsTraitTarget>>#helperFromTheTrait is not a test: TMCPToolRunTestsTraitTarget is a trait, and its tests run in the test classes that use it: MCPToolRunTestsTraitOtherUserTarget and MCPToolRunTestsTraitUserTarget. None of them runs that method as a test: name one of their test methods instead, or one of them to run all its tests.'
+]
+
 { #category : 'tests - outcomes' }
 MCPToolRunTestsTest >> testALocationNamesTheMethodClassWhenItIsInherited [
 
@@ -209,7 +255,50 @@ MCPToolRunTestsTest >> testAMethodOfANonTestClassIsRefused [
 		           (self
 			            callToolNamed: 'test_run'
 			            withArguments: { (#methods -> #( 'MCPToolCoverageTarget>>#coveredMethod' )) } asDictionary).
-	self assert: summary equals: 'MCPToolCoverageTarget>>#coveredMethod is not a test: MCPToolCoverageTarget is not a test class.'
+	self
+		assert: summary
+		equals:
+		'MCPToolCoverageTarget>>#coveredMethod is not a test: MCPToolCoverageTarget is a subclass of Object, and a test class subclasses TestCase. If MCPToolCoverageTarget is meant to hold tests, make TestCase its superclass with class_update, through tool_call when class_update is not in your list: tool_call {"name": "class_update", "arguments": {"name": "MCPToolCoverageTarget", "superclass": "TestCase"}}.'
+]
+
+{ #category : 'tests - refusals' }
+MCPToolRunTestsTest >> testAMethodOfATraitIsNamedInATestClassThatRunsIt [
+	"A class that uses a trait can leave one of its tests out: the method is named in the first class, by name, that runs it, and the answer says which ones do."
+
+	[
+		self
+			createTestClassNamed: 'MCPToolRunTestsTraitExcludingTarget'
+			traits: (self fixtureNamed: 'TMCPToolRunTestsTraitTarget') - { #testFromTheTrait }.
+		self
+			assert: (self summaryFrom: (self runTests: { (#methods -> #( 'TMCPToolRunTestsTraitTarget>>#testFromTheTrait' )) }))
+			equals:
+			'TMCPToolRunTestsTraitTarget>>#testFromTheTrait is not a test: TMCPToolRunTestsTraitTarget is a trait, and its tests run in the test classes that use it: MCPToolRunTestsTraitExcludingTarget, MCPToolRunTestsTraitOtherUserTarget and MCPToolRunTestsTraitUserTarget. Only MCPToolRunTestsTraitOtherUserTarget and MCPToolRunTestsTraitUserTarget run that method as a test: name it in one of them instead, as MCPToolRunTestsTraitOtherUserTarget>>#testFromTheTrait.' ]
+		ensure: [ self removeClassesNamed: #( 'MCPToolRunTestsTraitExcludingTarget' ) ]
+]
+
+{ #category : 'tests - refusals' }
+MCPToolRunTestsTest >> testAMethodOfATraitIsRefusedNamingItInATestClassThatUsesIt [
+
+	self
+		assert: (self summaryFrom: (self runTests: { (#methods -> #( 'TMCPToolRunTestsTraitTarget>>#testFromTheTrait' )) }))
+		equals:
+		'TMCPToolRunTestsTraitTarget>>#testFromTheTrait is not a test: TMCPToolRunTestsTraitTarget is a trait, and its tests run in the test classes that use it: MCPToolRunTestsTraitOtherUserTarget and MCPToolRunTestsTraitUserTarget. Name the method in one of them instead, as MCPToolRunTestsTraitOtherUserTarget>>#testFromTheTrait.'
+]
+
+{ #category : 'tests - refusals' }
+MCPToolRunTestsTest >> testAMethodOfATraitItsOnlyTestClassLeavesOutIsRefusedNamingThatClass [
+	"No class runs the method as a test, so none is named with it: the class's own tests are."
+
+	[
+		| trait |
+		trait := self createTraitNamed: 'TMCPToolRunTestsTraitExcludedTarget'.
+		self ensureMethodSource: 'testExcluded self assert: true' protocol: 'tests' on: trait.
+		self createTestClassNamed: 'MCPToolRunTestsTraitExcludingTarget' traits: trait - { #testExcluded }.
+		self
+			assert: (self summaryFrom: (self runTests: { (#methods -> #( 'TMCPToolRunTestsTraitExcludedTarget>>#testExcluded' )) }))
+			equals:
+			'TMCPToolRunTestsTraitExcludedTarget>>#testExcluded is not a test: TMCPToolRunTestsTraitExcludedTarget is a trait, and its tests run in the test classes that use it: MCPToolRunTestsTraitExcludingTarget. MCPToolRunTestsTraitExcludingTarget does not run that method as a test: name one of its test methods instead, or MCPToolRunTestsTraitExcludingTarget to run them all.' ]
+		ensure: [ self removeClassesNamed: #( 'MCPToolRunTestsTraitExcludingTarget' 'TMCPToolRunTestsTraitExcludedTarget' ) ]
 ]
 
 { #category : 'tests - refusals' }
@@ -244,7 +333,10 @@ MCPToolRunTestsTest >> testANonTestClassIsRefused [
 	result := self callToolNamed: 'test_run' withArguments: { (#classes -> #( 'MCPToolRunTestsUnreferencedTarget' )) } asDictionary.
 	self assert: (self resultIndicatesError: result).
 	self assert: ((self errorFrom: result) at: #errorCode) equals: 'NotATestClass'.
-	self assert: (self summaryFrom: result) equals: 'MCPToolRunTestsUnreferencedTarget is not a test class.'
+	self
+		assert: (self summaryFrom: result)
+		equals:
+		'MCPToolRunTestsUnreferencedTarget is not a test class: it is a subclass of Object, and a test class subclasses TestCase. If MCPToolRunTestsUnreferencedTarget is meant to hold tests, make TestCase its superclass with class_update, through tool_call when class_update is not in your list: tool_call {"name": "class_update", "arguments": {"name": "MCPToolRunTestsUnreferencedTarget", "superclass": "TestCase"}}.'
 ]
 
 { #category : 'tests - timeouts' }
@@ -262,6 +354,34 @@ MCPToolRunTestsTest >> testANotRunSelectionThatLostCasesIsListedByMethod [
 	self assert: ((notRun at: #methods) includes: 'MCPToolRunTestsSlowInheritingTarget>>#testWaits').
 	self assert: (data at: #interrupted) equals: { (#test -> 'MCPToolRunTestsSlowInheritingTarget>>#testWaits') } asDictionary.
 	self assert: (data at: #notRunCount) equals: 1
+]
+
+{ #category : 'tests - answers' }
+MCPToolRunTestsTest >> testANotUnderstoodNoteNamesARemovedClassByItsOwnName [
+	"A message not understood whose receiver's other side implements it gets a note that names that side. When the receiver is an instance of a removed class, the note names the class by its own name, as the message does, not by the one Pharo gives it on removal."
+
+	| classNames line lines |
+	classNames := #( 'MCPToolRunTestsRemovedTargetTest' 'MCPToolRunTestsRemovedTarget' ).
+	[
+		self ensureMethodSource: 'buildRemoved ^ self new' protocol: 'instance creation' on: (self
+				 createClassNamed: 'MCPToolRunTestsRemovedTarget'
+				 superclassName: 'Object'
+				 slots: #(  )
+				 classSlots: #(  )) classSide.
+		self
+			ensureMethodSource: 'testSendsAClassMessageToAnInstance MCPToolRunTestsRemovedTarget new buildRemoved'
+			protocol: 'tests'
+			on: (self createTestClassNamed: 'MCPToolRunTestsRemovedTargetTest' traits: nil).
+		self removeClassNamed: 'MCPToolRunTestsRemovedTarget'.
+		lines := self issueLinesFrom:
+			         (self runTests: { (#methods -> #( 'MCPToolRunTestsRemovedTargetTest>>#testSendsAClassMessageToAnInstance' )) }).
+		self assert: lines size equals: 1.
+		line := lines first.
+		self deny: (line includesSubstring: 'AnObsolete') description: line.
+		self
+			assert: (line includesSubstring:
+					 '; MCPToolRunTestsRemovedTarget was removed. MCPToolRunTestsRemovedTarget itself understands buildRemoved')
+			description: line ] ensure: [ self removeClassesNamed: classNames ]
 ]
 
 { #category : 'tests - selections without tests' }
@@ -398,6 +518,34 @@ MCPToolRunTestsTest >> testATearDownFailureAfterASetUpErrorIsLabelledAFailure [
 ]
 
 { #category : 'tests - answers' }
+MCPToolRunTestsTest >> testATestFromATraitThatStillHoldsTheRemovedCopyNamesTheTraitsMethodToCompile [
+	"A test a class gets from a trait is the trait's method: compiling the class's copy would add a method of the class's own, and leave the trait, and the other classes that use it, holding the removed copy. Compiling the trait's method again is enough."
+
+	self
+		withRemovedClasses: #( 'MCPToolRunTestsRemovedTarget' )
+		traitMethods: #( 'testFromTheTrait self assert: MCPToolRunTestsRemovedTarget new notNil' )
+		testMethods: #(  )
+		do: [
+				Undeclared removeKey: #MCPToolRunTestsRemovedTarget ifAbsent: [ nil ].
+				self
+					createClassNamed: 'MCPToolRunTestsRemovedTarget'
+					superclassName: 'Object'
+					slots: #(  )
+					classSlots: #(  ).
+				self
+					assert: (self summaryFrom: (self runTests: { (#classes -> #( 'MCPToolRunTestsRemovedTargetTest' )) }))
+					equals:
+					'Ran 1 test (1 passed). MCPToolRunTestsRemovedTargetTest>>#testFromTheTrait refers to MCPToolRunTestsRemovedTarget, a removed class, so it ran the obsolete copy of MCPToolRunTestsRemovedTarget. MCPToolRunTestsRemovedTarget exists again, but TMCPToolRunTestsRemovedTargetTest>>#testFromTheTrait still refers to its removed copy: compile that method again with method_compile, unchanged, and it will refer to the current MCPToolRunTestsRemovedTarget.'.
+				self
+					ensureMethodSource: 'testFromTheTrait self assert: MCPToolRunTestsRemovedTarget new notNil'
+					protocol: 'tests'
+					on: (self fixtureNamed: 'TMCPToolRunTestsRemovedTargetTest').
+				self
+					assert: (self summaryFrom: (self runTests: { (#classes -> #( 'MCPToolRunTestsRemovedTargetTest' )) }))
+					equals: 'Ran 1 test (1 passed).' ]
+]
+
+{ #category : 'tests - answers' }
 MCPToolRunTestsTest >> testATestPastItsTimeLimitSaysSo [
 
 	self
@@ -415,6 +563,34 @@ MCPToolRunTestsTest >> testATestThatFinishesBeforeTheTimeoutIsNotInterrupted [
 			          (#timeoutSeconds -> 30) }.
 	self assert: (self summaryFrom: result) equals: 'Ran 1 test (1 passed).'.
 	self deny: ((self dataFrom: result) includesKey: #timedOut)
+]
+
+{ #category : 'tests - answers' }
+MCPToolRunTestsTest >> testATestThatRefersToARemovedClassSaysSo [
+	"A removed class's obsolete copy stays in the methods that referred to it, so the tests that refer to it still run, and can pass."
+
+	self withRemovedClassDo: [
+			self
+				assert: (self summaryFrom: (self runTests: { (#classes -> #( 'MCPToolRunTestsRemovedTargetTest' )) }))
+				equals:
+				'Ran 2 tests (1 passed). 1 error. MCPToolRunTestsRemovedTargetTest>>#testBreaks and MCPToolRunTestsRemovedTargetTest>>#testPasses refer to MCPToolRunTestsRemovedTarget, a removed class, so they ran the obsolete copy of MCPToolRunTestsRemovedTarget. Create MCPToolRunTestsRemovedTarget again with class_create, or change the tests.' ]
+]
+
+{ #category : 'tests - answers' }
+MCPToolRunTestsTest >> testATestThatStillHoldsTheRemovedCopyOfAClassMadeAgainNamesTheMethodsToCompile [
+	"A class renamed to a removed one's name gets a binding of its own, as does one made under that name once the removed one's binding has left Undeclared: the methods that named the removed class keep its obsolete copy until they are compiled again, and a references search finds only the new class's references."
+
+	self withRemovedClassDo: [
+			Undeclared removeKey: #MCPToolRunTestsRemovedTarget ifAbsent: [ nil ].
+			self
+				createClassNamed: 'MCPToolRunTestsRemovedTarget'
+				superclassName: 'Object'
+				slots: #(  )
+				classSlots: #(  ).
+			self
+				assert: (self summaryFrom: (self runTests: { (#classes -> #( 'MCPToolRunTestsRemovedTargetTest' )) }))
+				equals:
+				'Ran 2 tests (1 passed). 1 error. MCPToolRunTestsRemovedTargetTest>>#testBreaks and MCPToolRunTestsRemovedTargetTest>>#testPasses refer to MCPToolRunTestsRemovedTarget, a removed class, so they ran the obsolete copy of MCPToolRunTestsRemovedTarget. MCPToolRunTestsRemovedTarget exists again, but MCPToolRunTestsRemovedTargetTest>>#testBreaks and MCPToolRunTestsRemovedTargetTest>>#removedInstance still refer to its removed copy: compile those methods again with method_compile, unchanged, and they will refer to the current MCPToolRunTestsRemovedTarget.' ]
 ]
 
 { #category : 'tests - timeouts' }
@@ -442,6 +618,43 @@ MCPToolRunTestsTest >> testATimeoutThatLeavesNothingUnrunIsNotReported [
 				         (#timeoutSeconds -> 0) } asDictionary).
 	self assert: (data at: #runCount) equals: 0.
 	self deny: (data includesKey: #timedOut)
+]
+
+{ #category : 'tests - refusals' }
+MCPToolRunTestsTest >> testATraitIsRefusedNamingTheTestClassesThatRunItsTests [
+	"A trait has no superclass to set: its tests run in the test classes that use it."
+
+	| result |
+	result := self runTests: { (#classes -> #( 'TMCPToolRunTestsTraitTarget' )) }.
+	self assert: (self resultIndicatesError: result).
+	self assert: ((self errorFrom: result) at: #errorCode) equals: 'NotATestClass'.
+	self
+		assert: (self summaryFrom: result)
+		equals:
+		'TMCPToolRunTestsTraitTarget is not a test class: it is a trait, and its tests run in the test classes that use it: MCPToolRunTestsTraitOtherUserTarget and MCPToolRunTestsTraitUserTarget. Name one of them instead.'
+]
+
+{ #category : 'tests - refusals' }
+MCPToolRunTestsTest >> testATraitNoTestClassUsesIsRefusedSayingSo [
+	"TMCPToolMethodSearchFixture is method_search's fixture: classes use it, and none of them is a test class."
+
+	self
+		assert: (self summaryFrom: (self runTests: { (#classes -> #( 'TMCPToolMethodSearchFixture' )) }))
+		equals:
+		'TMCPToolMethodSearchFixture is not a test class: it is a trait, and no test class uses it. A trait''s tests run in the test classes that use it.'
+]
+
+{ #category : 'tests - answers' }
+MCPToolRunTestsTest >> testAnErrorInAKernelMethodNamesTheCodeThatCalledIt [
+	"Integer's comparison is where Pharo noticed the error, not where it was made: the line also names the code under test that called it, at the line it was running. The message is not asserted, since its wording differs between Pharo versions."
+
+	| lines |
+	lines := self issueLinesFrom: (self runTests: { (#methods -> #( 'MCPToolRunTestsLocationTarget>>#testComparesWithNil' )) }).
+	self assert: lines size equals: 1.
+	self
+		assert:
+		(lines first endsWith: ', called from MCPToolRunTestsRaiser>>compareWithNil at line 4: #( 1 ) do: [ :each | each > nil ]')
+		description: lines first
 ]
 
 { #category : 'tests - answers' }
@@ -513,6 +726,36 @@ MCPToolRunTestsTest >> testAnInterruptedTestIsNotCountedAndDoesNotDelayTheAnswer
 ]
 
 { #category : 'tests - answers' }
+MCPToolRunTestsTest >> testAnIssueNamesARemovedClassByItsOwnName [
+	"Pharo renames a class it removes AnObsolete followed by its name. The message is not asserted whole, since its wording differs between Pharo versions."
+
+	self withRemovedClassDo: [
+			| line lines |
+			lines := self issueLinesFrom: (self runTests: { (#methods -> #( 'MCPToolRunTestsRemovedTargetTest>>#testBreaks' )) }).
+			self assert: lines size equals: 1.
+			line := lines first.
+			self deny: (line includesSubstring: 'AnObsolete') description: line.
+			self
+				assert: (line endsWith: ', in MCPToolRunTestsRemovedTarget>>breaks; MCPToolRunTestsRemovedTarget was removed')
+				description: line ]
+]
+
+{ #category : 'tests - answers' }
+MCPToolRunTestsTest >> testAnIssueNamesARemovedClassWithItsOwnArticleButNotInAStringOrASymbol [
+	"Pharo prints an instance of a removed ZooLion as an AnObsoleteZooLion, and ZooLion's own name takes a. A name in a string or a symbol, quoted with its article or without, is what the code compared or printed, not a class that ran."
+
+	| names |
+	names := OrderedCollection new.
+	self
+		assert: (MCPStructuredTestResult
+				 textNamingRemovedClassesIn:
+				 'Got an AnObsoleteZooLion instead of #AnObsoleteZooOwl. An AnObsoleteAnObsoleteZooEmu named ''AnObsoleteZooElk'' printed ''an AnObsoleteZooYak'''
+				 into: names)
+		equals: 'Got a ZooLion instead of #AnObsoleteZooOwl. A ZooEmu named ''AnObsoleteZooElk'' printed ''an AnObsoleteZooYak'''.
+	self assert: names asArray equals: #( 'ZooLion' 'ZooEmu' )
+]
+
+{ #category : 'tests - answers' }
 MCPToolRunTestsTest >> testAnUnexpectedPassIsAFailureThatSaysSo [
 
 	| byName result |
@@ -527,6 +770,27 @@ MCPToolRunTestsTest >> testAnUnexpectedPassIsAFailureThatSaysSo [
 	self assert: (byName at: 'testFailsAsExpected') outcome equals: 'passed'.
 	self assertEmpty: (byName at: 'testFailsAsExpected') issues.
 	self assert: (byName at: 'testPassesUnexpectedly') outcome equals: 'failure'
+]
+
+{ #category : 'tests - answers' }
+MCPToolRunTestsTest >> testClassesMadeAgainThatATestStillHoldsShareOneSentence [
+	"Each method that still holds a removed copy is named once, however many of the classes made again it refers to."
+
+	self
+		withRemovedClasses: #( 'MCPToolRunTestsRemovedTarget' 'MCPToolRunTestsRemovedOtherTarget' )
+		testMethods: #( 'testBoth self assert: { MCPToolRunTestsRemovedTarget. MCPToolRunTestsRemovedOtherTarget } size equals: 2' )
+		do: [
+				#( 'MCPToolRunTestsRemovedTarget' 'MCPToolRunTestsRemovedOtherTarget' ) do: [ :each |
+						Undeclared removeKey: each asSymbol ifAbsent: [ nil ].
+						self
+							createClassNamed: each
+							superclassName: 'Object'
+							slots: #(  )
+							classSlots: #(  ) ].
+				self
+					assert: (self summaryFrom: (self runTests: { (#classes -> #( 'MCPToolRunTestsRemovedTargetTest' )) }))
+					equals:
+					'Ran 1 test (1 passed). MCPToolRunTestsRemovedTargetTest>>#testBoth refers to MCPToolRunTestsRemovedOtherTarget and MCPToolRunTestsRemovedTarget, removed classes, so it ran the obsolete copies of those classes. MCPToolRunTestsRemovedOtherTarget and MCPToolRunTestsRemovedTarget exist again, but MCPToolRunTestsRemovedTargetTest>>#testBoth still refers to their removed copies: compile that method again with method_compile, unchanged, and it will refer to the current MCPToolRunTestsRemovedOtherTarget and MCPToolRunTestsRemovedTarget.' ]
 ]
 
 { #category : 'tests - answers' }
@@ -586,7 +850,7 @@ MCPToolRunTestsTest >> testEveryBadSelectionIsNamedInOneRefusal [
 	self
 		assert: (self summaryFrom: result)
 		equals:
-		'MCPToolRunTestsUnreferencedTarget is not a test class. MCPToolStructuredOutputTestTarget>>#setUp is not one of MCPToolStructuredOutputTestTarget''s tests. Name one of its test methods, or the class to run them all.'.
+		'MCPToolRunTestsUnreferencedTarget is not a test class: it is a subclass of Object, and a test class subclasses TestCase. If MCPToolRunTestsUnreferencedTarget is meant to hold tests, make TestCase its superclass with class_update, through tool_call when class_update is not in your list: tool_call {"name": "class_update", "arguments": {"name": "MCPToolRunTestsUnreferencedTarget", "superclass": "TestCase"}}. MCPToolStructuredOutputTestTarget>>#setUp is not one of MCPToolStructuredOutputTestTarget''s tests. Name one of its test methods, or the class to run them all.'.
 	self assert: notTests size equals: 2.
 	self assert: notTests first equals: {
 			(#selection -> 'MCPToolRunTestsUnreferencedTarget').
@@ -630,6 +894,22 @@ MCPToolRunTestsTest >> testNoSelectionAsksForOne [
 	self
 		assert: (self summaryFrom: (self callToolNamed: 'test_run' withArguments: Dictionary new))
 		equals: 'Invalid arguments for test_run. Name at least one package, class or method to run.'
+]
+
+{ #category : 'tests - answers' }
+MCPToolRunTestsTest >> testTestsThatReferToTheSameRemovedClassesInAnyOrderShareOneSentence [
+	"Each test's code names the removed classes in its own order: the answer groups the tests by the classes, whatever that order."
+
+	self
+		withRemovedClasses: #( 'MCPToolRunTestsRemovedTarget' 'MCPToolRunTestsRemovedOtherTarget' )
+		testMethods:
+			#( 'testOtherFirst self assert: { MCPToolRunTestsRemovedOtherTarget. MCPToolRunTestsRemovedTarget } size equals: 2'
+			   'testTargetFirst self assert: { MCPToolRunTestsRemovedTarget. MCPToolRunTestsRemovedOtherTarget } size equals: 2' )
+		do: [
+				self
+					assert: (self summaryFrom: (self runTests: { (#classes -> #( 'MCPToolRunTestsRemovedTargetTest' )) }))
+					equals:
+					'Ran 2 tests (2 passed). MCPToolRunTestsRemovedTargetTest>>#testOtherFirst and MCPToolRunTestsRemovedTargetTest>>#testTargetFirst refer to MCPToolRunTestsRemovedOtherTarget and MCPToolRunTestsRemovedTarget, removed classes, so they ran the obsolete copies of those classes. Create MCPToolRunTestsRemovedOtherTarget and MCPToolRunTestsRemovedTarget again with class_create, or change the tests.' ]
 ]
 
 { #category : 'tests - arguments' }
@@ -747,4 +1027,55 @@ MCPToolRunTestsTest >> testWhatAPackageLeavesIsListedByClass [
 		assert: (notRun value: (testCases copyWithout: broken first) value: 2)
 		equals:
 		#( 'MCPToolRunTestsSomeFailTarget>>#testB' 'MCPToolRunTestsSomeFailTarget>>#testC' 'MCPToolRunTestsBrokenFixtureTarget>>#testTwo' )
+]
+
+{ #category : 'private - fixtures' }
+MCPToolRunTestsTest >> withRemovedClassDo: aBlock [
+	"Runs aBlock while MCPToolRunTestsRemovedTargetTest's tests refer to MCPToolRunTestsRemovedTarget, a class removed since, testPasses through a helper of its class. The removed class's breaks sends a message it does not understand."
+
+	self
+		withRemovedClasses: #( 'MCPToolRunTestsRemovedTarget' )
+		testMethods: #( 'removedInstance ^ MCPToolRunTestsRemovedTarget new' 'testBreaks MCPToolRunTestsRemovedTarget new breaks'
+			   'testPasses self assert: self removedInstance notNil' )
+		do: aBlock
+]
+
+{ #category : 'private - fixtures' }
+MCPToolRunTestsTest >> withRemovedClasses: someClassNames testMethods: someSources do: aBlock [
+	"Runs aBlock while MCPToolRunTestsRemovedTargetTest, holding the methods someSources define, refers to the classes someClassNames name, removed since."
+
+	self
+		withRemovedClasses: someClassNames
+		traitMethods: #(  )
+		testMethods: someSources
+		do: aBlock
+]
+
+{ #category : 'private - fixtures' }
+MCPToolRunTestsTest >> withRemovedClasses: someClassNames traitMethods: someTraitSources testMethods: someSources do: aBlock [
+	"Runs aBlock while MCPToolRunTestsRemovedTargetTest, holding the methods someSources define, and using TMCPToolRunTestsRemovedTargetTest, holding those someTraitSources define, when there are any, refers to the classes someClassNames name, removed since. Each removed class's breaks sends a message it does not understand."
+
+	| classNames |
+	classNames := #( 'MCPToolRunTestsRemovedTargetTest' 'TMCPToolRunTestsRemovedTargetTest' ) , someClassNames.
+	[
+		| testClass trait |
+		someClassNames do: [ :each |
+				self ensureMethodSource: 'breaks ^ self notUnderstoodByTheRemovedClass' protocol: 'fixture' on: (self
+						 createClassNamed: each
+						 superclassName: 'Object'
+						 slots: #(  )
+						 classSlots: #(  )) ].
+		someTraitSources ifNotEmpty: [
+				trait := self createTraitNamed: 'TMCPToolRunTestsRemovedTargetTest'.
+				someTraitSources do: [ :each | self ensureMethodSource: each protocol: 'tests' on: trait ] ].
+		testClass := self createTestClassNamed: 'MCPToolRunTestsRemovedTargetTest' traits: trait.
+		someSources do: [ :each |
+				self
+					ensureMethodSource: each
+					protocol: ((each beginsWith: 'test')
+							 ifTrue: [ 'tests' ]
+							 ifFalse: [ 'fixture' ])
+					on: testClass ].
+		someClassNames do: [ :each | self removeClassNamed: each ].
+		aBlock value ] ensure: [ self removeClassesNamed: classNames ]
 ]

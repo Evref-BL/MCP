@@ -9,6 +9,13 @@ Class {
 }
 
 { #category : 'tests' }
+MCPToolRunTestsLocationTarget >> testComparesWithNil [
+	"This is a fixture test method; the error is intentional and exercised by MCP test-running tool tests."
+
+	MCPToolRunTestsRaiser new compareWithNil
+]
+
+{ #category : 'tests' }
 MCPToolRunTestsLocationTarget >> testEqualityFails [
 	"This is a fixture test method; the failure is intentional and exercised by MCP test-running tool tests."
 

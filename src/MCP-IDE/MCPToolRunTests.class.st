@@ -62,6 +62,39 @@ MCPToolRunTests >> checkArguments: request [
 	self testSelectionsFrom: request
 ]
 
+{ #category : 'private' }
+MCPToolRunTests >> classesDefinedAgainSentenceFor: someEntries [
+	"<classes> exist(s) again, but <methods> still refer(s) to its|their removed copy|copies: compile that method|those methods again with method_compile, unchanged, and it|they will refer to the current <classes>. A references search finds only the current classes' references, so the methods are named, each once."
+
+	| classNames methods |
+	classNames := someEntries collect: [ :each | self valueIn: each at: #class ].
+	methods := OrderedCollection new.
+	someEntries do: [ :each | (self valueIn: each at: #methods) do: [ :method | methods addIfNotPresent: method ] ].
+	^ String streamContents: [ :stream |
+			  stream
+				  nextPutAll: (self joinedNames: classNames);
+				  nextPutAll: (classNames size = 1
+						   ifTrue: [ ' exists again, but ' ]
+						   ifFalse: [ ' exist again, but ' ]);
+				  nextPutAll: (self joinedNames: methods);
+				  nextPutAll: (methods size = 1
+						   ifTrue: [ ' still refers to ' ]
+						   ifFalse: [ ' still refer to ' ]);
+				  nextPutAll: (classNames size = 1
+						   ifTrue: [ 'its removed copy' ]
+						   ifFalse: [ 'their removed copies' ]);
+				  nextPutAll: (methods size = 1
+						   ifTrue: [ ': compile that method' ]
+						   ifFalse: [ ': compile those methods' ]);
+				  nextPutAll: ' again with method_compile, unchanged, and ';
+				  nextPutAll: (methods size = 1
+						   ifTrue: [ 'it' ]
+						   ifFalse: [ 'they' ]);
+				  nextPutAll: ' will refer to the current ';
+				  nextPutAll: (self joinedNames: classNames);
+				  nextPut: $. ]
+]
+
 { #category : 'private - coverage schema' }
 MCPToolRunTests >> coverageOptionsObjectSchema [
 
@@ -194,9 +227,9 @@ MCPToolRunTests >> issueCountsOn: stream for: data [
 
 { #category : 'private - results' }
 MCPToolRunTests >> issueLineOn: stream for: entry labelled: aLabel [
-	"failed <who>[: <message>][, at <statement> | , in <locations>]; error <who> (<ErrorClass>)[: <message>][, in <locations>][. <note>]; skipped <who>[: <reason>]. A message loses one trailing period when something follows it."
+	"failed <who>[: <message>][, at <statement> | , in <locations>][; <classes> was|were removed]; error <who> (<ErrorClass>)[: <message>][, in <locations>][; <classes> was|were removed][. <note>]; skipped <who>[: <reason>]. A message loses one trailing period when something follows it."
 
-	| locations message note statement |
+	| locations message note removedClasses statement |
 	stream
 		nextPut: Character lf;
 		nextPutAll: aLabel;
@@ -206,15 +239,23 @@ MCPToolRunTests >> issueLineOn: stream for: entry labelled: aLabel [
 	statement := self valueIn: entry at: #statement.
 	locations := (self valueIn: entry at: #locations) ifNil: [ #(  ) ].
 	note := self valueIn: entry at: #note.
+	removedClasses := (self valueIn: entry at: #removedClasses) ifNil: [ #(  ) ].
 	message := (self valueIn: entry at: #message) ifNil: [ self valueIn: entry at: #reason ].
 	message ifNotNil: [
 			stream
 				nextPutAll: ': ';
-				nextPutAll: ((statement isNil and: [ locations isEmpty and: [ note isNil ] ])
+				nextPutAll: ((statement isNil and: [ locations isEmpty and: [ removedClasses isEmpty and: [ note isNil ] ] ])
 						 ifTrue: [ message ]
 						 ifFalse: [ self textWithoutTrailingPeriod: message ]) ].
 	statement ifNotNil: [ stream << ', at ' << statement ].
 	locations ifNotEmpty: [ stream << ', in ' << (self joinedNames: locations) ].
+	removedClasses ifNotEmpty: [
+			stream
+				nextPutAll: '; ';
+				nextPutAll: (self joinedNames: removedClasses);
+				nextPutAll: (removedClasses size = 1
+						 ifTrue: [ ' was removed' ]
+						 ifFalse: [ ' were removed' ]) ].
 	note ifNotNil: [ stream << '. ' << note ]
 ]
 
@@ -233,9 +274,10 @@ MCPToolRunTests >> joinedNames: someStrings [
 
 { #category : 'private - results' }
 MCPToolRunTests >> keysStatedInSummary [
-	"The summary already says the counts, the selections that held no test and the timeout: 'Ran 2 tests (0 passed). 2 errors. Timed out after 90 seconds, during T>>#testC. 7 tests not run, listed below as test_run arguments.'"
+	"The summary already says the counts, the tests that refer to removed classes, the selections that held no test and the timeout: 'Ran 2 tests (0 passed). 2 errors. Timed out after 90 seconds, during T>>#testC. 7 tests not run, listed below as test_run arguments.'"
 
-	^ #( runCount passedCount failureCount errorCount skippedCount withoutTests timedOut timeoutMilliseconds interrupted notRunCount )
+	^ #( runCount passedCount failureCount errorCount skippedCount removedClassReferences classesDefinedAgain withoutTests
+	     timedOut timeoutMilliseconds interrupted notRunCount )
 ]
 
 { #category : 'private - execution' }
@@ -277,6 +319,60 @@ MCPToolRunTests >> refuseEmptySelectionIn: request [
 			 actual: nil) }
 ]
 
+{ #category : 'private' }
+MCPToolRunTests >> removedClassReferenceSentenceFor: entry [
+	"<tests> refers to <class>, a removed class, so it ran the obsolete copy of <class>. <tests> refer to <classes>, removed classes, so they ran the obsolete copies of those classes."
+
+	| classes tests |
+	classes := self valueIn: entry at: #classes.
+	tests := self valueIn: entry at: #tests.
+	^ String streamContents: [ :stream |
+			  stream
+				  nextPutAll: (self joinedNames: tests);
+				  nextPutAll: (tests size = 1
+						   ifTrue: [ ' refers to ' ]
+						   ifFalse: [ ' refer to ' ]);
+				  nextPutAll: (self joinedNames: classes);
+				  nextPutAll: (classes size = 1
+						   ifTrue: [ ', a removed class, so ' ]
+						   ifFalse: [ ', removed classes, so ' ]);
+				  nextPutAll: (tests size = 1
+						   ifTrue: [ 'it' ]
+						   ifFalse: [ 'they' ]);
+				  nextPutAll: (classes size = 1
+						   ifTrue: [ ' ran the obsolete copy of ' , classes first ]
+						   ifFalse: [ ' ran the obsolete copies of those classes' ]);
+				  nextPut: $. ]
+]
+
+{ #category : 'private' }
+MCPToolRunTests >> removedClassReferencesSentencesOn: stream for: data [
+	"One sentence per set of removed classes that tests refer to, then: Create <the classes nothing has the name of> again with class_create, or change the test(s). Then one sentence for the classes that exist again, naming each method that still refers to a removed copy once."
+
+	| classesDefinedAgain missingClassNames namesDefinedAgain sentences testCount |
+	classesDefinedAgain := (self valueIn: data at: #classesDefinedAgain) ifNil: [ #(  ) ].
+	namesDefinedAgain := classesDefinedAgain collect: [ :each | self valueIn: each at: #class ].
+	missingClassNames := OrderedCollection new.
+	testCount := 0.
+	sentences := OrderedCollection new.
+	(self valueIn: data at: #removedClassReferences) do: [ :entry |
+			sentences add: (self removedClassReferenceSentenceFor: entry).
+			((self valueIn: entry at: #classes) reject: [ :each | namesDefinedAgain includes: each ]) ifNotEmpty: [ :missing |
+					missing do: [ :each | missingClassNames addIfNotPresent: each ].
+					testCount := testCount + (self valueIn: entry at: #tests) size ] ].
+	missingClassNames ifNotEmpty: [
+			sentences add: (String streamContents: [ :sentence |
+						 sentence
+							 nextPutAll: 'Create ';
+							 nextPutAll: (self joinedNames: missingClassNames);
+							 nextPutAll: ' again with class_create, or change the ';
+							 nextPutAll: (testCount = 1
+									  ifTrue: [ 'test.' ]
+									  ifFalse: [ 'tests.' ]) ]) ].
+	classesDefinedAgain ifNotEmpty: [ sentences add: (self classesDefinedAgainSentenceFor: classesDefinedAgain) ].
+	stream nextPutAll: (' ' join: sentences)
+]
+
 { #category : 'private - execution' }
 MCPToolRunTests >> runTestsWith: request [
 	"Runs the selections the checked arguments name, and says what they did."
@@ -289,7 +385,7 @@ MCPToolRunTests >> runTestsWith: request [
 
 { #category : 'private' }
 MCPToolRunTests >> successSummaryForData: data [
-	"Ran <N test(s)> (<P> passed).[ <F failure(s)>, <E error(s)>.][ <S> skipped.][ <selection sentences>][ <timeout sentence>][ Coverage[ so far]: <p>%.] The opening stays on every answer that runs, a timeout's included, since graders read it."
+	"Ran <N test(s)> (<P> passed).[ <F failure(s)>, <E error(s)>.][ <S> skipped.][ <removed class sentences>][ <selection sentences>][ <timeout sentence>][ Coverage[ so far]: <p>%.] The opening stays on every answer that runs, a timeout's included, since graders read it."
 
 	| timedOut |
 	timedOut := (self valueIn: data at: #timedOut) = true.
@@ -306,6 +402,9 @@ MCPToolRunTests >> successSummaryForData: data [
 						  space;
 						  print: count;
 						  nextPutAll: ' skipped.' ].
+			  (self valueIn: data at: #removedClassReferences) ifNotNil: [
+					  stream space.
+					  self removedClassReferencesSentencesOn: stream for: data ].
 			  ((self valueIn: data at: #withoutTests) ifNil: [ #(  ) ]) do: [ :entry |
 					  stream space.
 					  self withoutTestsSentenceOn: stream for: entry ].

@@ -134,6 +134,23 @@ MCPRunTestsCommand >> initializeSelections: someSelections timeoutMilliseconds: 
 	methodLimit := aLimit
 ]
 
+{ #category : 'private - validation' }
+MCPRunTestsCommand >> isTestSelector: aSelector in: aTestClass [
+	"Whether a test_run selection that names aSelector in aTestClass runs it as a test: the class answers it, and the class's suite holds a case of it. A class that uses a trait can leave out the trait's test, and a trait's helper is no test anywhere."
+
+	^ (aTestClass lookupSelector: aSelector) isNotNil and: [
+		  (self testCasesFromSuite: aTestClass suite) anySatisfy: [ :each | each selector == aSelector ] ]
+]
+
+{ #category : 'private - validation' }
+MCPRunTestsCommand >> listPhraseForFirstFiveOf: someNames [
+	"someNames as a list phrase, the first five then how many more: A, B, C, D, E and 3 more."
+
+	^ MCPScopeQuery listPhraseFor: (someNames size > 5
+			   ifTrue: [ (someNames first: 5) copyWith: (someNames size - 5) printString , ' more' ]
+			   ifFalse: [ someNames ])
+]
+
 { #category : 'private - timeout' }
 MCPRunTestsCommand >> locationOf: aContext in: aTestCase [
 	"Where the test was running when the timeout fell, unless that was the test method."
@@ -162,6 +179,16 @@ MCPRunTestsCommand >> millisecondsRemainingUntil: deadline [
 	^ 0 max: deadline - Time millisecondClockValue
 ]
 
+{ #category : 'private - validation' }
+MCPRunTestsCommand >> notATestClassReasonOn: aStream for: aClass selection: aSelection [
+	"After the words that name aClass, what it is instead of a test class, and what to do: a trait's tests run in the test classes that use it, a class becomes a test class once it subclasses TestCase, which class_update changes, and a class with no superclass is left at that."
+
+	aClass isTrait ifTrue: [ ^ self traitTestClassesOn: aStream for: aClass selection: aSelection ].
+	aClass superclass ifNil: [ ^ aStream nextPutAll: ' has no superclass, and a test class subclasses TestCase.' ].
+	aStream nextPutAll: ' is a subclass of '.
+	self testCaseSuperclassAdviceOn: aStream for: aClass
+]
+
 { #category : 'private - not run' }
 MCPRunTestsCommand >> notRunSelectionsFor: aSelection testCases: testCases uniqueTestCases: uniqueTestCases startingAt: startIndex [
 	"What is left of the selection a timeout fell in, as test_run arguments: the selection itself when none of its cases ran or was lost to an earlier selection; else, for a package, each class from the interrupted one on, whole when none of its cases ran or was lost, else its cases left as methods; for a class or a method, its cases left as methods."
@@ -185,7 +212,7 @@ MCPRunTestsCommand >> partiallyCoveredMethodsFromCoverageResult: coverageResult 
 
 { #category : 'private - validation' }
 MCPRunTestsCommand >> refusalOf: aSelection [
-	"Nil for a selection that holds tests, or a package; else its sentence and its entry. A test class whose suite holds no case of the method is refused, and so is any class that is not a test class."
+	"Nil for a selection that holds tests, or a package; else its sentence and its entry. A test class whose suite holds no case of the method is refused, and so is any class that is not a test class, saying what it is instead."
 
 	| entry selectionText testClass |
 	aSelection isPackageSelection ifTrue: [ ^ nil ].
@@ -196,8 +223,10 @@ MCPRunTestsCommand >> refusalOf: aSelection [
 	entry at: #class put: testClass name asString.
 	testClass isTestCase ifFalse: [
 			^ (String streamContents: [ :stream |
-					   aSelection hasTestMethod ifTrue: [ stream << selectionText << ' is not a test: ' ].
-					   stream << testClass name << ' is not a test class.' ]) -> entry ].
+					   aSelection hasTestMethod
+						   ifTrue: [ stream << selectionText << ' is not a test: ' << testClass name ]
+						   ifFalse: [ stream << testClass name << ' is not a test class: it' ].
+					   self notATestClassReasonOn: stream for: testClass selection: aSelection ]) -> entry ].
 	aSelection hasTestMethod ifFalse: [ ^ nil ].
 	(self testCasesFor: aSelection) ifNotEmpty: [ ^ nil ].
 	^ (self textForMethod: selectionText notATestOf: testClass name) -> entry
@@ -371,6 +400,20 @@ MCPRunTestsCommand >> testCaseDeduplicationKeyFor: aTestCase [
 				  nextPutAll: aTestCase nameForReport ]
 ]
 
+{ #category : 'private - validation' }
+MCPRunTestsCommand >> testCaseSuperclassAdviceOn: aStream for: aClass [
+	"A class made with no superclass subclasses Object, so the advice says what a test class subclasses and how to change it. class_update is not in every client's list, and a client that calls only what it lists reaches it through tool_call alone, so the advice gives that call."
+
+	aStream
+		nextPutAll: aClass superclass name;
+		nextPutAll: ', and a test class subclasses TestCase. If ';
+		nextPutAll: aClass name;
+		nextPutAll:
+			' is meant to hold tests, make TestCase its superclass with class_update, through tool_call when class_update is not in your list: tool_call {"name": "class_update", "arguments": {"name": "';
+		nextPutAll: aClass name;
+		nextPutAll: '", "superclass": "TestCase"}}.'
+]
+
 { #category : 'private - not run' }
 MCPRunTestsCommand >> testCasesByClassIn: someTestCases [
 	"Each class of someTestCases, in order, with its cases among them."
@@ -424,6 +467,21 @@ MCPRunTestsCommand >> testClassesInPackageNamed: packageName [
 ]
 
 { #category : 'private - validation' }
+MCPRunTestsCommand >> testClassesUsing: aTrait [
+	"The test classes that use aTrait, directly or through the traits that use it, sorted by name."
+
+	| classes traits |
+	classes := IdentitySet new.
+	traits := OrderedCollection with: aTrait.
+	[ traits isEmpty ] whileFalse: [
+			traits removeFirst users do: [ :each |
+					each isTrait
+						ifTrue: [ traits add: each ]
+						ifFalse: [ each isTestCase ifTrue: [ classes add: each ] ] ] ].
+	^ classes asArray sort: [ :left :right | left name <= right name ]
+]
+
+{ #category : 'private - validation' }
 MCPRunTestsCommand >> textForMethod: aSelectionText notATestOf: aClassName [
 	"The class's tests are the answer, so SUnit's rule for a test selector is not spelt out."
 
@@ -448,6 +506,64 @@ MCPRunTestsCommand >> timedOutResultFor: resultEntries interruption: anOutcomeOr
 MCPRunTestsCommand >> timeoutMilliseconds [
 
 	^ timeoutMilliseconds
+]
+
+{ #category : 'private - validation' }
+MCPRunTestsCommand >> traitMethodAdviceOn: aStream for: aSelection in: someTestClasses [
+	"After the test classes that use the method's trait: the method named in the first of them, by name, that runs it as a test, and which ones do when not all of them do. When none does, the method is a helper, or each of them leaves it out, so their test methods or the classes themselves are named instead."
+
+	| names runners |
+	runners := someTestClasses select: [ :each | self isTestSelector: aSelection testMethodName asSymbol in: each ].
+	runners ifEmpty: [
+			someTestClasses size = 1 ifFalse: [
+					^ aStream nextPutAll:
+						  'None of them runs that method as a test: name one of their test methods instead, or one of them to run all its tests.' ].
+			^ aStream
+				  nextPutAll: someTestClasses first name;
+				  nextPutAll: ' does not run that method as a test: name one of its test methods instead, or ';
+				  nextPutAll: someTestClasses first name;
+				  nextPutAll: ' to run them all.' ].
+	names := runners collect: [ :each | each name asString ].
+	runners size = someTestClasses size
+		ifTrue: [
+				aStream nextPutAll: (names size = 1
+						 ifTrue: [ 'Name ' ]
+						 ifFalse: [ 'Name the method in one of them instead, as ' ]) ]
+		ifFalse: [
+				aStream
+					nextPutAll: 'Only ';
+					nextPutAll: (self listPhraseForFirstFiveOf: names);
+					nextPutAll: (names size = 1
+							 ifTrue: [ ' runs that method as a test: name ' ]
+							 ifFalse: [ ' run that method as a test: name it in one of them instead, as ' ]) ].
+	aStream
+		nextPutAll: names first;
+		nextPutAll: '>>#';
+		nextPutAll: aSelection testMethodName;
+		nextPutAll: (names size = 1
+				 ifTrue: [ ' instead.' ]
+				 ifFalse: [ '.' ])
+]
+
+{ #category : 'private - validation' }
+MCPRunTestsCommand >> traitTestClassesOn: aStream for: aTrait selection: aSelection [
+	"After the words that name the trait: that it is one, and the test classes that run its tests, the first five then how many more, with what to name instead. A method is named in a class that runs it as a test."
+
+	| names users |
+	users := self testClassesUsing: aTrait.
+	users ifEmpty: [
+		^ aStream nextPutAll: ' is a trait, and no test class uses it. A trait''s tests run in the test classes that use it.' ].
+	names := users collect: [ :each | each name asString ].
+	aStream
+		nextPutAll: ' is a trait, and its tests run in the test classes that use it: ';
+		nextPutAll: (self listPhraseForFirstFiveOf: names);
+		nextPutAll: '. '.
+	aSelection hasTestMethod ifTrue: [ ^ self traitMethodAdviceOn: aStream for: aSelection in: users ].
+	names size = 1 ifFalse: [ ^ aStream nextPutAll: 'Name one of them instead.' ].
+	aStream
+		nextPutAll: 'Name ';
+		nextPutAll: names first;
+		nextPutAll: ' instead.'
 ]
 
 { #category : 'private' }

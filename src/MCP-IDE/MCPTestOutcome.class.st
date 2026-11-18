@@ -4,6 +4,8 @@ The outcome of one test case in a test_run call, counted once.
 A test that finished is error, failure, skipped or passed, read from SUnit's own bookkeeping of a result that ran that test alone, in that precedence: an unexpected error, then an unexpected failure or a pass of a test marked <expectedFailure>, then a skip; an expected pass or an expected defect passed. Its issues are the exceptions it raised, one per kind, error class and message, with the places they came from; a test that passed shows none.
 
 A test a timeout stopped was interrupted, and says where it was; one the deadline reached first never started. Neither is counted.
+
+It also names the classes removed since that the test's own code still refers to, and the methods of that code that refer to each: those methods keep the obsolete copy of each, and the test runs that.
 "
 Class {
 	#name : 'MCPTestOutcome',
@@ -14,7 +16,8 @@ Class {
 		'parameters',
 		'outcome',
 		'issues',
-		'location'
+		'location',
+		'removedClassReferences'
 	],
 	#category : 'MCP-IDE-Utilities',
 	#package : 'MCP-IDE',
@@ -30,6 +33,13 @@ MCPTestOutcome class >> interrupted: aTestCase location: aLocationOrNil [
 		  outcome: 'interrupted'
 		  issues: #(  )
 		  location: aLocationOrNil
+]
+
+{ #category : 'private' }
+MCPTestOutcome class >> isRemovedClassBinding: aLiteral [
+	"Whether aLiteral is the binding of a variable that holds a removed class, which Pharo keeps as an obsolete class for the methods that still refer to it."
+
+	^ aLiteral isVariableBinding and: [ aLiteral value isBehavior and: [ aLiteral value isObsolete ] ]
 ]
 
 { #category : 'instance creation' }
@@ -51,6 +61,46 @@ MCPTestOutcome class >> outcomeOf: aTestResult [
 	(aTestResult unexpectedFailureCount > 0 or: [ aTestResult unexpectedPassCount > 0 ]) ifTrue: [ ^ 'failure' ].
 	aTestResult skippedCount > 0 ifTrue: [ ^ 'skipped' ].
 	^ 'passed'
+]
+
+{ #category : 'private' }
+MCPTestOutcome class >> ownMethodsOf: aTestCase [
+	"The code the test brings, in the order found: its test method, setUp and tearDown as its class has them, and the methods of that class they name, and those they name in turn, short of SUnit's own."
+
+	| methods selectors |
+	methods := OrderedCollection new.
+	selectors := OrderedCollection with: aTestCase selector with: #setUp with: #tearDown.
+	[ selectors isEmpty ] whileFalse: [
+			(aTestCase class lookupSelector: selectors removeFirst) ifNotNil: [ :method |
+					((method methodClass inheritsFrom: TestCase) and: [ (methods identityIncludes: method) not ]) ifTrue: [
+							methods add: method.
+							selectors addAll: (method literalsEvenTheOnesInTheInnerBlocks select: [ :each | each isSymbol ]) ] ] ].
+	^ methods
+]
+
+{ #category : 'private' }
+MCPTestOutcome class >> referenceTextOf: aMethod [
+	"The method as method_compile takes it, in the class or trait that defines it: ZooKeeperTest>>#testFeeding, or TZooFeedingTest>>#testFeeding for a method a class gets from that trait, since compiling the class's copy would leave the trait, and the other classes that use it, as they were. An alias has no method of its selector in its trait, so it is named in its class."
+
+	| definingClass |
+	definingClass := (aMethod isFromTrait and: [ aMethod origin includesSelector: aMethod selector ])
+		                 ifTrue: [ aMethod origin ]
+		                 ifFalse: [ aMethod methodClass ].
+	^ String streamContents: [ :stream | stream << definingClass name << '>>#' << aMethod selector ]
+]
+
+{ #category : 'removed classes' }
+MCPTestOutcome class >> removedClassReferencesOf: aTestCase [
+	"The classes removed since that the test's own code still refers to, by their own names, each with the methods of that code that refer to it, in the order found. A method keeps the binding of a class it names, and once the class is removed, that binding holds the class's obsolete copy, which the test then runs."
+
+	| references |
+	references := Dictionary new.
+	(self ownMethodsOf: aTestCase) do: [ :method |
+			method literalsEvenTheOnesInTheInnerBlocks do: [ :each |
+					(self isRemovedClassBinding: each) ifTrue: [
+							(references at: each value originalName asString ifAbsentPut: [ OrderedCollection new ]) addIfNotPresent:
+								(self referenceTextOf: method) ] ] ].
+	^ references
 ]
 
 { #category : 'instance creation' }
@@ -83,6 +133,7 @@ MCPTestOutcome >> asDictionary [
 	data at: #outcome put: self outcome.
 	self issues ifNotEmpty: [ data at: #issues put: self issues ].
 	self location ifNotNil: [ data at: #location put: self location ].
+	self removedClassNames ifNotEmpty: [ :names | data at: #removedClasses put: names ].
 	^ data
 ]
 
@@ -100,7 +151,8 @@ MCPTestOutcome >> initializeTestCase: aTestCase outcome: anOutcome issues: someI
 	parameters := aTestCase mcpParameterPrintStrings asArray.
 	outcome := anOutcome.
 	issues := self issuesShownFor: anOutcome from: someIssues.
-	location := aLocationOrNil
+	location := aLocationOrNil.
+	removedClassReferences := self class removedClassReferencesOf: aTestCase
 ]
 
 { #category : 'testing' }
@@ -168,6 +220,13 @@ MCPTestOutcome >> location [
 	^ location
 ]
 
+{ #category : 'accessing' }
+MCPTestOutcome >> methodsReferringToRemovedClassNamed: aClassName [
+	"The methods of the test's own code that still refer to the removed class of that name: ZooKeeperTest>>#testFeeding."
+
+	^ self removedClassReferences at: aClassName ifAbsent: [ #(  ) ]
+]
+
 { #category : 'printing' }
 MCPTestOutcome >> name [
 	"The test as test_run names it: its reference, and the parameters of a parameterized case."
@@ -201,6 +260,20 @@ MCPTestOutcome >> reference [
 	"The test as test_run takes it back in methods."
 
 	^ String streamContents: [ :stream | stream << className << '>>#' << selector ]
+]
+
+{ #category : 'accessing' }
+MCPTestOutcome >> removedClassNames [
+	"The classes removed since that the test's own code still refers to, by their own names, sorted, so that tests that refer to the same classes name them alike, whatever order their code names them in."
+
+	^ self removedClassReferences keys sort
+]
+
+{ #category : 'accessing' }
+MCPTestOutcome >> removedClassReferences [
+	"The classes removed since that the test's own code still refers to, by their own names, each with the methods that refer to it: the test ran their obsolete copies."
+
+	^ removedClassReferences ifNil: [ Dictionary new ]
 ]
 
 { #category : 'accessing' }

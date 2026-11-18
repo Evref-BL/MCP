@@ -16,6 +16,13 @@ MCPToolRunTestsRaiser >> addToNil [
 ]
 
 { #category : 'raising' }
+MCPToolRunTestsRaiser >> compareWithNil [
+	"This is a fixture method; comparing with nil is intentional and exercised by MCP test-running tool tests."
+
+	#( 1 ) do: [ :each | each > nil ]
+]
+
+{ #category : 'raising' }
 MCPToolRunTestsRaiser >> fail [
 	"This is a fixture method; the error is intentional and exercised by MCP test-running tool tests."
 
