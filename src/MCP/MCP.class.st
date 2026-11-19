@@ -180,22 +180,10 @@ MCP >> addPrompt: aPromptOrPromptClass [
 ]
 
 { #category : 'configuration' }
-MCP >> addPrompts: promptsOrPromptClasses [
-
-	^ self promptRegistry addPrompts: promptsOrPromptClasses
-]
-
-{ #category : 'configuration' }
 MCP >> addResource: aResourceOrResourceClass [
 	"Register one resource, as a class or as a ready instance. Every registered resource is listed by resources/list."
 
 	^ self resourceRegistry addResource: aResourceOrResourceClass
-]
-
-{ #category : 'configuration' }
-MCP >> addResources: resourcesOrResourceClasses [
-
-	^ self resourceRegistry addResources: resourcesOrResourceClasses
 ]
 
 { #category : 'configuration' }
@@ -633,18 +621,18 @@ MCP >> onInitialize: protocolVersion [
 MCP >> onlyPrompts: promptsOrPromptClasses [
 	"Replace the prompt catalog with exactly these. A server built this way discovers nothing, so it keeps what it was given."
 
-	promptRegistry := MCPPromptRegistry empty
-		                  addPrompts: promptsOrPromptClasses;
-		                  yourself
+	self promptRegistry: (MCPPromptRegistry empty
+			 addPrompts: promptsOrPromptClasses;
+			 yourself)
 ]
 
 { #category : 'configuration' }
 MCP >> onlyResources: resourcesOrResourceClasses [
 	"Replace the resource catalog with exactly these. A server built this way discovers nothing, so it keeps what it was given."
 
-	resourceRegistry := MCPResourceRegistry empty
-		                    addResources: resourcesOrResourceClasses;
-		                    yourself
+	self resourceRegistry: (MCPResourceRegistry empty
+			 addResources: resourcesOrResourceClasses;
+			 yourself)
 ]
 
 { #category : 'configuration' }
@@ -676,12 +664,6 @@ MCP >> port [
 MCP >> port: aPortNumber [
 
 	self server port: aPortNumber
-]
-
-{ #category : 'configuration' }
-MCP >> promptNames [
-
-	^ self promptRegistry promptNames
 ]
 
 { #category : 'accessing' }
@@ -717,18 +699,6 @@ MCP >> refreshToolsList [
 ]
 
 { #category : 'configuration' }
-MCP >> removePrompt: aName [
-
-	self promptRegistry removePromptNamed: aName
-]
-
-{ #category : 'configuration' }
-MCP >> removeResource: aUri [
-
-	self resourceRegistry removeResourceAt: aUri
-]
-
-{ #category : 'configuration' }
 MCP >> removeTool: aToolName [
 
 	self toolRegistry removeToolNamed: aToolName.
@@ -745,12 +715,6 @@ MCP >> resourceRegistry [
 MCP >> resourceRegistry: aResourceRegistry [
 
 	resourceRegistry := self listeningRegistry: (aResourceRegistry ifNil: [ MCPResourceRegistry default ]) notifying: 'resources'
-]
-
-{ #category : 'configuration' }
-MCP >> resourceUris [
-
-	^ self resourceRegistry resourceUris
 ]
 
 { #category : 'start' }

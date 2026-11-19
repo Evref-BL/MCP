@@ -45,6 +45,17 @@ MCPEventStreamTest >> testASilentStreamKeepsItsConnectionAlive [
 ]
 
 { #category : 'tests' }
+MCPEventStreamTest >> testAddingAPromptToACuratedCatalogTellsListeningClients [
+
+	| mcp stream |
+	mcp := self mcpWithoutObservabilityExport.
+	mcp onlyPrompts: #(  ).
+	stream := MCPEventStream new.
+	mcp server addEventStream: stream.
+	self text: stream whileDoing: [ mcp addPrompt: MCPGreetingTestPrompt ] untilItIncludes: 'notifications/prompts/list_changed'
+]
+
+{ #category : 'tests' }
 MCPEventStreamTest >> testAddingAToolTellsListeningClients [
 
 	| mcp stream text |
