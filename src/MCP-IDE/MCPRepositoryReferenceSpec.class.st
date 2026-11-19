@@ -31,9 +31,10 @@ MCPRepositoryReferenceSpec class >> name: aName location: aLocation [
 
 { #category : 'converting' }
 MCPRepositoryReferenceSpec >> asDictionary [
+	"The reference as the call wrote it, under the names of its arguments."
 
 	^ {
-		  (#name -> self name).
+		  (#repository -> self name).
 		  (#location -> self location) } asDictionary
 ]
 
@@ -83,6 +84,50 @@ MCPRepositoryReferenceSpec >> name [
 	^ name
 ]
 
+{ #category : 'private - resolving' }
+MCPRepositoryReferenceSpec >> notFoundTextAmong: registeredRepositories [
+	"What a call that named no registered repository is told: what it named, then the repositories of that name elsewhere, the registered ones when they are few, or the names closest to the one it gave."
+
+	| names sameName |
+	names := (registeredRepositories collect: [ :each | self repositoryNameFor: each ] as: Array) sort.
+	sameName := self hasName
+		            ifTrue: [ registeredRepositories select: [ :each | (self repositoryNameFor: each) = self name ] ]
+		            ifFalse: [ #(  ) ].
+	^ String streamContents: [ :stream |
+			  stream << 'No repository '.
+			  self hasName ifTrue: [ stream << 'named ' << self name << ' ' ].
+			  stream << 'is registered'.
+			  self hasLocation ifTrue: [ stream << ' at ' << self location ].
+			  stream << '.'.
+			  sameName
+				  ifNotEmpty: [
+						  stream << ' ' << self name << ' is registered at '.
+						  sameName do: [ :each | stream << (self repositoryLocationFor: each) ] separatedBy: [ stream << ', ' ].
+						  stream << '.' ]
+				  ifEmpty: [ self printRegisteredNames: names on: stream ] ]
+]
+
+{ #category : 'private - resolving' }
+MCPRepositoryReferenceSpec >> printRegisteredNames: names on: aStream [
+	"The registered repositories when they are few, the names closest to the one asked for when they are many, or that the image has none."
+
+	| suggestions |
+	names ifEmpty: [ ^ aStream << ' The image has none: repository_attach registers an existing checkout.' ].
+	names size <= MCPScopeNameSuggester defaultLimit ifTrue: [ ^ aStream << ' Registered: ' << (', ' join: names) << '.' ].
+	suggestions := self hasName
+		               ifTrue: [
+				               MCPScopeNameSuggester
+					               suggestionsFor: self name
+					               candidates: (names collect: [ :each |
+								                {
+									                (#name -> each).
+									                (#bucket -> each) } asDictionary ])
+					               max: MCPScopeNameSuggester defaultLimit ]
+		               ifFalse: [ #(  ) ].
+	suggestions ifNotEmpty: [ ^ aStream << ' Did you mean: ' << (', ' join: suggestions) << '?' ].
+	aStream << ' ' << names size printString << ' repositories are registered: repository_search lists them.'
+]
+
 { #category : 'resolving' }
 MCPRepositoryReferenceSpec >> repository [
 
@@ -116,6 +161,7 @@ MCPRepositoryReferenceSpec >> requestedContext [
 
 { #category : 'private - signaling' }
 MCPRepositoryReferenceSpec >> signalAmbiguousRepository: repositories [
+	"Several registered repositories match: each is named with its location, which tells them apart."
 
 	| details matchingRepositoryNames |
 	details := self requestedContext copy.
@@ -123,7 +169,12 @@ MCPRepositoryReferenceSpec >> signalAmbiguousRepository: repositories [
 	details at: #matchingRepositories put: matchingRepositoryNames.
 	MCPCommandError
 		signalErrorCode: #RepositoryReferenceAmbiguous
-		message: 'More than one registered Iceberg repository matches the requested repository reference.'
+		message: (String streamContents: [ :stream |
+					 stream << 'More than one registered repository matches: '.
+					 (repositories asArray sort: [ :a :b | (self repositoryLocationFor: a) <= (self repositoryLocationFor: b) ])
+						 do: [ :each | stream << (self repositoryNameFor: each) << ' at ' << (self repositoryLocationFor: each) ]
+						 separatedBy: [ stream << ', ' ].
+					 stream << '. Pass location to choose one.' ])
 		details: details
 ]
 
@@ -132,17 +183,19 @@ MCPRepositoryReferenceSpec >> signalMissingRepositoryReference [
 
 	MCPCommandError
 		signalErrorCode: #RepositoryReferenceRequired
-		message: 'Repository tools require name, location, or both.'
+		message: 'Repository tools require repository, location, or both.'
 		details: self requestedContext
 ]
 
 { #category : 'private - signaling' }
 MCPRepositoryReferenceSpec >> signalRepositoryNotFound [
+	"No registered repository matches: the answer says what the call named and what the image holds."
 
-	MCPCommandError
-		signalErrorCode: #RepositoryNotFound
-		message: 'No registered Iceberg repository matches the requested repository reference.'
-		details: self requestedContext
+	| details registered |
+	registered := IceRepository repositories asArray.
+	details := self requestedContext copy.
+	details at: #registeredRepositories put: (registered collect: [ :each | self repositoryNameFor: each ] as: Array) sort.
+	MCPCommandError signalErrorCode: #RepositoryNotFound message: (self notFoundTextAmong: registered) details: details
 ]
 
 { #category : 'private - resolving' }
