@@ -220,15 +220,6 @@ MCPToolGetMethod >> keyOrder [
 	^ #( inheritedFrom trait protocol )
 ]
 
-{ #category : 'private - analysis' }
-MCPToolGetMethod >> matchingSummaryForNodeName: aName kind: aKind ownerName: anOwnerName in: summaries [
-
-	^ summaries
-		  detect: [ :each |
-			  (each at: #name) = aName and: [ (each at: #kind) = aKind and: [ (each at: #ownerName ifAbsent: [ nil ]) = anOwnerName ] ] ]
-		  ifNone: [ nil ]
-]
-
 { #category : 'private - request' }
 MCPToolGetMethod >> methodNamedIn: request do: aBlock [
 	"Give aBlock the class name without its side, the selector, whether the class side is meant and, to a block that takes it, whether the call said which side. A selector written as a reference names it alone, and its side with it; a bare one needs class, and a class written with its side must agree with side."
@@ -374,17 +365,13 @@ MCPToolGetMethod >> variableSummariesForMethod: aCompiledMethod methodBehavior: 
 	summaries := OrderedCollection new.
 	aCompiledMethod ast allChildren do: [ :node |
 			node isVariable ifTrue: [
-					| kind ownerName summary |
+					| kind ownerName |
 					kind := self variableKindForNode: node methodBehavior: aBehavior.
 					ownerName := self ownerNameForNode: node kind: kind methodBehavior: aBehavior.
-					summary := self
-						           matchingSummaryForNodeName: node name asString
-						           kind: kind
-						           ownerName: ownerName
-						           in: summaries.
-					summary ifNil: [
-							summary := self newVariableSummaryForNode: node kind: kind methodBehavior: aBehavior.
-							summaries add: summary ].
-					self incrementReferenceCountInSummary: summary ] ].
+					self incrementReferenceCountInSummary: (summaries
+							 detect: [ :each |
+								 (each at: #name) = node name asString and: [
+									 (each at: #kind) = kind and: [ (each at: #ownerName ifAbsent: [ nil ]) = ownerName ] ] ]
+							 ifNone: [ summaries add: (self newVariableSummaryForNode: node kind: kind methodBehavior: aBehavior) ]) ] ].
 	^ summaries asArray
 ]

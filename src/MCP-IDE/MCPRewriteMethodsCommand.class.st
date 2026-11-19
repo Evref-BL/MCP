@@ -43,7 +43,7 @@ MCPRewriteMethodsCommand >> execute [
 	"Answer the changes the rules make to the methods in scope, sorted by class, side and selector. Nothing changes until they are given to applyChanges:, so a caller can describe them first, while the methods still hold the sources they replace."
 
 	methods := scopeQuery methods.
-	^ self sortedChanges: (self rewriteChangesFor: (self rewritableMethodsIn: methods))
+	^ self sortedChanges: (self rewriteChangesFor: self rewritableMethods)
 ]
 
 { #category : 'initialization' }
@@ -70,21 +70,21 @@ MCPRewriteMethodsCommand >> refactoringChangeManager [
 ]
 
 { #category : 'private - rewriting' }
-MCPRewriteMethodsCommand >> rewritableMethodsIn: methods [
+MCPRewriteMethodsCommand >> rewritableMethods [
 	"A trait's method is installed in every class that uses the trait, so a scope naming those classes holds the copies too. Rewriting a copy would write a changed method into that class alone, shadowing the trait, so the copies are left out and the method is rewritten where it is defined."
 
 	^ methods reject: [ :each | each isFromTrait ]
 ]
 
 { #category : 'private - rewriting' }
-MCPRewriteMethodsCommand >> rewriteChangesFor: methods [
+MCPRewriteMethodsCommand >> rewriteChangesFor: someMethods [
 
 	| transformationRule |
-	methods ifEmpty: [ ^ #(  ) ].
+	someMethods ifEmpty: [ ^ #(  ) ].
 	transformationRule := RBTransformationRule new
 		                      rewriteRule: self rewriteRule;
 		                      yourself.
-	methods do: [ :eachMethod | transformationRule checkMethod: eachMethod ].
+	someMethods do: [ :eachMethod | transformationRule checkMethod: eachMethod ].
 	^ transformationRule changes asArray
 ]
 
@@ -99,7 +99,7 @@ MCPRewriteMethodsCommand >> rewriteRule [
 MCPRewriteMethodsCommand >> skippedTraitChanges [
 	"Once executed, what the rules would change in the trait methods behind the copies in scope, which were left out: a changed copy would shadow the trait in that class alone. A scope naming the users of a trait and not the trait itself reports no change at all otherwise, and nothing would say where the method lives. Only the methods the rules actually match count, since every traited class carries copies of Pharo's own trait methods and they are nobody's business here."
 
-	^ self rewriteChangesFor: (self traitOriginMethodsFor: methods)
+	^ self rewriteChangesFor: self traitOriginMethods
 ]
 
 { #category : 'private - rewriting' }
@@ -122,7 +122,7 @@ MCPRewriteMethodsCommand >> sortsChange: leftChange before: rightChange [
 ]
 
 { #category : 'private - rewriting' }
-MCPRewriteMethodsCommand >> traitOriginMethodsFor: methods [
+MCPRewriteMethodsCommand >> traitOriginMethods [
 	"The trait methods behind the copies in scope, less the ones the scope holds anyway: those are rewritten like any other method. An alias installs a copy under a selector its trait does not answer, so it has no origin to name here."
 
 	| inScope |

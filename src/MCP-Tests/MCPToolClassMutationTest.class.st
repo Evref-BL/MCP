@@ -1006,8 +1006,7 @@ MCPToolClassMutationTest >> testRefactoringWarningListsEveryImpact [
 						  ifFalse: [ each ])) ].
 	self
 		assert: (MCPToolUpdateClass new
-				 refactoringWarningSummaryFor: nil
-				 action: 'removeSlot'
+				 refactoringWarningSummaryForAction: 'removeSlot'
 				 requestedContext: {
 						 (#class -> 'ZooAnimal').
 						 (#slot -> 'weight') } asDictionary
@@ -1016,15 +1015,13 @@ MCPToolClassMutationTest >> testRefactoringWarningListsEveryImpact [
 		'Refactoring warning for removeSlot on ZooAnimal slot weight: ZooAnimal>>dailyRation reads weight; ZooAnimal>>weigh: writes weight. Rerun with force: true to proceed anyway.'.
 	self
 		assert: (MCPToolUpdateClass new
-				 refactoringWarningSummaryFor: nil
-				 action: 'removeSlot'
+				 refactoringWarningSummaryForAction: 'removeSlot'
 				 requestedContext: { (#class -> 'ZooAnimal') } asDictionary
 				 impactMessages: #(  ))
 		equals: 'Refactoring warning for removeSlot on ZooAnimal. Rerun with force: true to proceed anyway.'.
 	self
 		assert: (MCPToolUpdateClass new
-				 refactoringWarningSummaryFor: nil
-				 action: 'pullUpSlot'
+				 refactoringWarningSummaryForAction: 'pullUpSlot'
 				 requestedContext: { (#class -> 'ZooAnimal') } asDictionary
 				 impactMessages: #( 'Not all subclasses have it. Pull it up anyway?' ))
 		equals:
