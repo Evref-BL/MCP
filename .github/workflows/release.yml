@@ -1,0 +1,71 @@
+# Creates the release for the version MCP class >> version declares, once CI
+# passes on main and that release does not exist yet. The release pull request
+# sets the version, and publish-npm.yml publishes the package from the release.
+name: Release
+
+on:
+  workflow_run:
+    workflows: [ CI ]
+    types: [ completed ]
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_repository.full_name == github.repository)
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+    steps:
+      - name: Require main
+        env:
+          RELEASE_BRANCH: ${{ github.event.workflow_run.head_branch || github.ref_name }}
+        run: |
+          if [ "$RELEASE_BRANCH" != "main" ]; then
+            echo "Run this workflow from main." >&2
+            exit 1
+          fi
+
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ env.RELEASE_SHA }}
+
+      - name: Read the declared version
+        id: version
+        run: |
+          version="$(awk '/^MCP class >> version \[/ { found = 1 }
+            found && match($0, /[0-9]+\.[0-9]+\.[0-9]+/) { print substr($0, RSTART, RLENGTH); exit }' src/MCP/MCP.class.st)"
+          if [ -z "$version" ]; then
+            echo "MCP class >> version declares no release version." >&2
+            exit 1
+          fi
+          tag="v$version"
+          if git ls-remote --exit-code --refs origin "refs/tags/$tag" >/dev/null; then
+            echo "Release $tag already exists; nothing to release."
+            echo 'should_release=false' >> "$GITHUB_OUTPUT"
+          else
+            { echo "tag=$tag"; echo 'should_release=true'; } >> "$GITHUB_OUTPUT"
+          fi
+
+      # A release made with the workflow's own token starts no other workflow,
+      # so the npm publish would never run.
+      - uses: actions/create-github-app-token@v2
+        if: steps.version.outputs.should_release == 'true'
+        id: app-token
+        with:
+          app-id: ${{ secrets.DEVNEXUS_AUTOMATION_APP_ID }}
+          private-key: ${{ secrets.DEVNEXUS_AUTOMATION_PRIVATE_KEY }}
+
+      - name: Create the GitHub release
+        if: steps.version.outputs.should_release == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: gh release create "$TAG" --target "$RELEASE_SHA" --generate-notes
