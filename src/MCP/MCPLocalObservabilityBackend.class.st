@@ -18,7 +18,10 @@ Class {
 		'lastActivityAt',
 		'exportDirectory',
 		'exportInstanceDirectory',
-		'resourceMetadata'
+		'resourceMetadata',
+		'lastMetricsExportAt',
+		'metricsExportPending',
+		'metricsExportIntervalMilliseconds'
 	],
 	#category : 'MCP-Observability',
 	#package : 'MCP',
@@ -210,8 +213,25 @@ MCPLocalObservabilityBackend >> exportLogMessage: aString timestamp: timestamp [
 
 { #category : 'private - exporting' }
 MCPLocalObservabilityBackend >> exportMetrics [
+	"The metrics file is a snapshot of every call so far, so rewriting it after each call only repeats itself: it is written at once when the last write is older than the interval, and otherwise once, when the interval has passed, however many calls end in between."
+
+	| elapsed |
+	self exportEnabled ifFalse: [ ^ self ].
+	(metricsExportPending ifNil: [ false ]) ifTrue: [ ^ self ].
+	elapsed := lastMetricsExportAt ifNil: [ self metricsExportIntervalMilliseconds ] ifNotNil: [ :at | Time millisecondsSince: at ].
+	elapsed >= self metricsExportIntervalMilliseconds ifTrue: [ ^ self exportMetricsNow ].
+	metricsExportPending := true.
+	[
+		(Delay forMilliseconds: self metricsExportIntervalMilliseconds - elapsed) wait.
+		metricsExportPending := false.
+		self exportMetricsNow ] forkAt: Processor userBackgroundPriority named: 'MCP metrics export'
+]
+
+{ #category : 'private - exporting' }
+MCPLocalObservabilityBackend >> exportMetricsNow [
 
 	self exportEnabled ifFalse: [ ^ self ].
+	lastMetricsExportAt := Time millisecondClockValue.
 	[ self writeMetricsSnapshot ]
 		on: Error
 		do: [ :ignored | nil ]
@@ -229,7 +249,7 @@ MCPLocalObservabilityBackend >> exportTraceRecord: aRecord [
 { #category : 'actions' }
 MCPLocalObservabilityBackend >> forceFlush [
 
-	self exportMetrics
+	self exportMetricsNow
 ]
 
 { #category : 'initialization' }
@@ -244,7 +264,9 @@ MCPLocalObservabilityBackend >> initialize [
 	maxLogEntries := 200.
 	outlierFactor := 3.
 	minimumOutlierMilliseconds := 250.
-	outputBudgetBytes := self defaultOutputBudgetBytes
+	outputBudgetBytes := self defaultOutputBudgetBytes.
+	metricsExportIntervalMilliseconds := 5000.
+	metricsExportPending := false
 ]
 
 { #category : 'testing' }
@@ -392,6 +414,19 @@ MCPLocalObservabilityBackend >> maxTraceStringLength [
 MCPLocalObservabilityBackend >> metrics [
 
 	^ self statsByTool values asSortedCollection: [ :left :right | left toolName <= right toolName ]
+]
+
+{ #category : 'accessing' }
+MCPLocalObservabilityBackend >> metricsExportIntervalMilliseconds [
+	"The least time between two writes of the metrics file."
+
+	^ metricsExportIntervalMilliseconds ifNil: [ 5000 ]
+]
+
+{ #category : 'accessing' }
+MCPLocalObservabilityBackend >> metricsExportIntervalMilliseconds: anInteger [
+
+	metricsExportIntervalMilliseconds := anInteger
 ]
 
 { #category : 'accessing' }
@@ -600,6 +635,7 @@ MCPLocalObservabilityBackend >> recordToolCallFinish: aRecord result: aToolResul
 
 { #category : 'recording' }
 MCPLocalObservabilityBackend >> recordToolCallStart: aToolName input: inputObject dispatchPath: dispatchPath context: contextDictionary [
+	"A call is logged once, when it ends, with everything known about it then; until then it is in the record this answers."
 
 	| record startTimestamp |
 	self enabled ifFalse: [ ^ nil ].
@@ -610,8 +646,6 @@ MCPLocalObservabilityBackend >> recordToolCallStart: aToolName input: inputObjec
 	record inputByteCount: (inputObject ifNil: [ 0 ] ifNotNil: [ self approximateOutputBytesForObject: inputObject ]).
 	record dispatchPath: dispatchPath asString.
 	lastActivityAt := startTimestamp.
-	self recordLog:
-		(String streamContents: [ :stream | stream << 'Begin tool ' << aToolName asString << ' #' << record id asString ]).
 	^ record
 ]
 
