@@ -18,6 +18,7 @@ MCPLocalObservabilityBackendTest >> testDefaultExportDirectoryIsImageLocal [
 
 { #category : 'tests' }
 MCPLocalObservabilityBackendTest >> testEnabledByDefaultRecords [
+	"A call is recorded from its start, and logged only when it ends."
 
 	| record state |
 	state := MCPLocalObservabilityBackend new.
@@ -25,7 +26,7 @@ MCPLocalObservabilityBackendTest >> testEnabledByDefaultRecords [
 	self assert: state enabled.
 	self assert: record isNotNil.
 	self assert: state totalCallCount equals: 0.
-	self assert: state logs isNotEmpty
+	self assert: state logs isEmpty
 ]
 
 { #category : 'tests' }
@@ -175,6 +176,33 @@ MCPLocalObservabilityBackendTest >> testMCPTestToolsDoNotRecordObservability [
 ]
 
 { #category : 'tests' }
+MCPLocalObservabilityBackendTest >> testMetricsFileIsWrittenAtMostOncePerInterval [
+
+	| directory state calls |
+	directory := FileLocator temp asFileReference / ('mcp-observability-' , UUID new asString).
+	[
+		directory exists ifTrue: [ directory deleteAll ].
+		state := MCPLocalObservabilityBackend new.
+		state exportDirectory: directory.
+		state metricsExportIntervalMilliseconds: 200.
+		calls := [ :count |
+			         count timesRepeat: [
+					         state
+						         recordToolCallFinish: (state recordToolCallStart: 'class_search')
+						         result: (MCPStructureCallToolResult content: #(  ))
+						         error: nil ] ].
+		calls value: 1.
+		self assert: ((STONJSON fromString: state metricsFileReference contents) at: 'totalCallCount') equals: 1.
+		calls value: 2.
+		"Calls within the interval do not rewrite the file..."
+		self assert: ((STONJSON fromString: state metricsFileReference contents) at: 'totalCallCount') equals: 1.
+		(Delay forMilliseconds: 400) wait.
+		"...and one write follows once the interval has passed."
+		self assert: ((STONJSON fromString: state metricsFileReference contents) at: 'totalCallCount') equals: 3 ] ensure: [
+		directory exists ifTrue: [ directory deleteAll ] ]
+]
+
+{ #category : 'tests' }
 MCPLocalObservabilityBackendTest >> testOutlierExplanationUsesPriorAverage [
 
 	| state stats start record explanation |
@@ -310,8 +338,7 @@ MCPLocalObservabilityBackendTest >> testRecordsSuccessfulCallMetricsAndLogs [
 	self assert: stats successCount equals: 1.
 	self assert: stats errorCount equals: 0.
 	self assert: state recentCallRecords size equals: 1.
-	self assert: state logs size >= 2.
-	self assert: (state logs anySatisfy: [ :each | each includesSubstring: 'Begin tool method_search #' ]).
+	self assert: (state logs count: [ :each | each includesSubstring: 'tool method_search #' ]) equals: 1.
 	self assert: (state logs anySatisfy: [ :each | each includesSubstring: 'OK tool method_search #' ]).
 	self deny: (state logs anySatisfy: [ :each | each includesSubstring: 'ok tool method_search #' ]).
 	self assert: (state statusText beginsWith: 'Observability enabled. Calls: 1')
