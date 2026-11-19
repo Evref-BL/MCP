@@ -3035,6 +3035,19 @@ MCPToolMethodMutationTest >> testRenameReturnsStructuredErrorWhenScopedPackageIs
 ]
 
 { #category : 'tests' }
+MCPToolMethodMutationTest >> testRenameScopeOffersOnlyWhatTheRefactoringReads [
+	"The refactoring reads packages, classes and hierarchies, so a scope naming subclasses is refused rather than widened to the whole image."
+
+	| arguments |
+	arguments := self instanceRenameArguments copy.
+	arguments removeKey: #action.
+	arguments at: #scope put: { (#subclassesOf -> { MCPToolMethodMutationTestTarget name }) } asDictionary.
+	self
+		assertResult: (self callDiscoveredToolNamed: 'method_update' withArguments: arguments)
+		refusesArgumentsSaying: 'scope.subclassesOf is not accepted here; expected one of classes, hierarchyOf, packages.'
+]
+
+{ #category : 'tests' }
 MCPToolMethodMutationTest >> testRenameUpdatesSendersAndPermutesArguments [
 
 	| senderSource |
