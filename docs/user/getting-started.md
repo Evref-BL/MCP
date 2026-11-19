@@ -1,11 +1,10 @@
 # Getting Started
 
-This is the canonical guide for loading MCP, starting its HTTP endpoint, and
-connecting a client.
+This page starts MCP's HTTP endpoint in an image and connects a client to it.
 
 ## Requirements
 
-- Pharo 10, 11, 12, 13, 14, or 15
+- A Pharo version the [README](../../README.md#supported-versions) supports
 - An MCP client that supports Streamable HTTP directly or through a local bridge
 - Network access from the client to the image host
 
@@ -14,47 +13,10 @@ For local use, keep the image and client on the same machine and use
 
 ## Load MCP
 
-Evaluate in a supported image:
-
-```smalltalk
-Metacello new
-   baseline: 'MCP';
-   repository: 'github://Evref-BL/MCP:main/src';
-   load.
-```
-
-As a project dependency:
-
-```smalltalk
-spec
-   baseline: 'MCP'
-   with: [ spec repository: 'github://Evref-BL/MCP:main/src' ].
-```
-
-## Load Groups
-
-The default load includes the server, optional UI, and their tests.
-
-| Group | Contents |
-| --- | --- |
-| `default` | `Core`, `UI`, `Tests`, and `UI Tests` |
-| `Core` | The `MCP` server package |
-| `UI` | `MCP-UI` and its required core package |
-| `Tests` | Core server tests and test resources |
-| `UI Tests` | UI tests and their required test dependencies |
-| `OpenTelemetry` | Optional OpenTelemetry backend |
-| `all` | Every package, including the optional OpenTelemetry backend |
-
-For a headless image, load only the core server:
-
-```smalltalk
-Metacello new
-   baseline: 'MCP';
-   repository: 'github://Evref-BL/MCP:main/src';
-   load: 'Core'.
-```
-
-Dependencies can select the same group with `loads: #( 'Core' )`.
+Load MCP as the README's [Install And Start](../../README.md#install-and-start)
+shows, which also says what each baseline group holds. A project whose baseline
+depends on MCP declares it as [Building on MCP](building-on-mcp.md#load-the-server-alone)
+shows.
 
 ## Start And Stop
 
@@ -62,15 +24,24 @@ Dependencies can select the same group with `loads: #( 'Core' )`.
 mcp := MCP startOnPort: 4000.
 ```
 
-That answers the server already on 4000 when the image has one, rather than
-failing on the port it holds. Build one by hand when it needs configuring
-before it starts:
+That answers the server already on 4000 when the image has one, starting it if
+it was stopped, and makes one only when the image has none there, so running it
+again after a restart is safe. Port 0 asks the operating system for a free port,
+so it names no particular server and always makes a new one. Starting a second
+server on a port another MCP in the image listens on fails without retrying, and
+the error says how to reach it; on a port held by anything else it fails after a
+couple of seconds.
+
+Build one by hand when it needs configuring before it starts:
 
 ```smalltalk
 mcp := MCP new.
 mcp port: 4000.
 mcp start.
 ```
+
+Starting it on a port that is taken fails, and the error says so when the port
+is held by another MCP in the same image.
 
 Tool calls return canonical LLM-facing `content` by default. If a client or
 integration needs programmatic payloads, configure the response fields before
@@ -106,15 +77,8 @@ using the client documentation rather than copying another client's JSON.
 Loopback addresses work only when the client connects from the local machine;
 cloud-brokered connectors cannot reach `127.0.0.1`.
 
-Install the supplied guide, local references, workflow skills, and direct MCP
-configuration into the current agent project:
-
-```sh
-npx @evref-bl/pharo-mcp install --host codex
-```
-
-Use `--host claude` or `--host opencode` for those hosts. The direct MCP
-configuration expects port `4000`; update it when the image uses another port.
+To install the guide, references, skills and MCP configuration for an agent
+host into a project, see the README's [Agent Templates](../../README.md#agent-templates).
 
 ## First Calls
 

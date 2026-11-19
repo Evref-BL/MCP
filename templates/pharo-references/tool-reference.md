@@ -36,15 +36,14 @@ naming them, which `package_search` answers.
 
 ## Several Targets At Once
 
-Some tools take either one value or a list where they name their target, and
-every other argument then applies to all of them: `method_get` and
-`method_compile` by `selector` and `source`, `class_get` and `class_create` by
-`name`.
+A tool whose schema takes either one value or a list where it names its target
+applies every other argument to all of them, and attempts every target. The
+summary says how many succeeded, `data` carries one entry per target under
+`results` in request order, and an entry that failed carries its own `error`.
+The call is flagged `isError` only when every target failed.
 
-Every target is attempted. The summary says how many succeeded, `data` carries
-one entry per target under `results` in request order, and an entry that failed
-carries its own `error`. The call is flagged `isError` only when every target
-failed.
+A removal given several names is the exception: it removes them together, as
+one change, or removes none of them.
 
 `class_update` and `method_update` are the opposite case: they take the whole
 change to one target and stop at the first part that fails, rather than leaving

@@ -28,8 +28,10 @@ produces logs.
 
 ## Helper
 
+The helper is in this skill's directory:
+
 ```sh
-skills/pharo-ci-repro/scripts/run-smalltalkci-docker.sh \
+scripts/run-smalltalkci-docker.sh \
   --repo /path/to/repo \
   --platform Pharo64-14 \
   --attempts 3

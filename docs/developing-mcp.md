@@ -60,8 +60,6 @@ Rules:
   keywords, standard tool annotations, or schema-inspection expectations.
 - When changing tool registration or exposure, keep the distinction between the
   registry source of truth and MCP's cached `tools/list` surface explicit.
-- For debugger tools, keep state references opaque and scoped to the debug
-  state that returned them.
 - Keep UI changes separate from core MCP tool behavior unless the task
   needs both.
 
@@ -75,51 +73,42 @@ Static checks that do not require a live image:
 - review of `src/BaselineOfMCP/BaselineOfMCP.class.st`
 - search for affected classes and tests in exported source
 
+They show that the exported source and the package declarations agree. They
+cannot show that the image loaded the code, that the server starts, or that a
+tool works.
+
 Live checks require an approved safe image boundary:
 
 - loading `BaselineOfMCP` into a clean image;
 - starting `MCP` over HTTP;
 - verifying MCP tool listing and specific tool calls;
-- running `MCP-Tests` or `MCP-UI-Tests` in the image;
+- running the test packages `.smalltalk.ston` lists under `#testing`;
 - exercising edit/export/repository operation tools;
-- exercising debugger tools against a captured or attached debug session when
-  debugger behavior changes.
+- `debug_search` and `debug_watch` calls when debugger behavior changes.
 
-Use `docs/mcp-verification.md` for MCP-specific verification details.
+When the work is not approved to launch or change a live image, stop at the
+static checks, say the verification is static only, and name the live checks
+left undone. When live checks run, report the image version, the checkout or
+repository loaded, the calls or test packages run, the result, and the cleanup
+done.
 
 ## Skills Strategy
 
-Keep always-on guidance in `AGENTS.md` and focused modules. Use skills for
-repeatable workflows that have a clear trigger and multiple steps.
-
-Reusable workflow skills under `templates/pharo-skills/` are already
-workflow-oriented:
-
-- project loading;
-- image-to-Git handoff;
-- CI/smalltalkCI reproduction;
-- code profiling and performance optimization.
-
-A generic Pharo clean-code skill can be useful if shared across repositories,
-but for MCP development the Pharo coding guidance should remain in
-`templates/pharo-references/pharo-coding.md` and be loaded by context
-routing. Add a specialized skill only when a workflow needs
-procedural steps, scripts, or tool-specific checks beyond ordinary reading.
+Add a skill under `templates/pharo-skills/` only for a workflow with a clear
+trigger and procedural steps.
 
 ## Guidance Maintenance
 
-When updating Pharo coding rules, style heuristics, or reusable template
-guidance, use `docs/pharo-guidance-bibliography.md` to keep public sources
-separate from operational user instructions. Do not link that bibliography from
-`templates/` or require it for agents that only use MCP in another project.
+The public sources behind the Pharo guidance are in
+`docs/pharo-guidance-bibliography.md`.
 
 ## Version Compatibility
 
 The core baseline loads PharoBackwardCompatibility, JRPC, and PCRE2.
-OpenTelemetry is loaded only by the optional `Telemetry` group. CI covers
-Pharo 10, 11, 12, 13, 14, and 15. Code should target the Pharo 14 API;
-PharoBackwardCompatibility backports supported APIs to older images. It has no
-surface groups, so its default baseline is the whole of it:
+OpenTelemetry is loaded only by the optional `Telemetry` group. Code should
+target the Pharo 14 API; PharoBackwardCompatibility backports supported APIs to
+older images. It has no surface groups, so its default baseline is the whole of
+it:
 
 ```smalltalk
 spec
