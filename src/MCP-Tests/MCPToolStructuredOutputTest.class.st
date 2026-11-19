@@ -949,8 +949,8 @@ MCPToolStructuredOutputTest >> testSearchFailureNamesTheScope [
 	| error result |
 	result := self callToolNamed: 'method_source_search' withArguments: {
 			          (self searchScope: { (#classes -> #( 'MCPToolMethodSearchTestTarget' 'MCPNoSuchSummaryClass' )) }).
-			          (#filterMode -> 'regex').
-			          (#filter -> '[') } asDictionary.
+			          (#queryMode -> 'regex').
+			          (#query -> '[') } asDictionary.
 	error := self errorFrom: result.
 	self assert: (self resultIndicatesError: result).
 	self assert: ((self summaryFrom: result) beginsWith:
@@ -1007,12 +1007,12 @@ MCPToolStructuredOutputTest >> testSearchSummaryCountsOneInTheSingular [
 		assert: (self summaryOfTool: 'class_search' with: { (self searchScope: { (#classes -> #( 'MCPToolHierarchyTestMid' )) }) })
 		equals: '1 class in MCPToolHierarchyTestMid.'.
 	self
-		assert: (self summaryOfTool: 'class_search' with: { (#name -> 'MCPToolHierarchyTestMid') })
+		assert: (self summaryOfTool: 'class_search' with: { (#query -> 'MCPToolHierarchyTestMid') })
 		equals: '1 class matches in the image.'.
 	self
 		assert: (self summaryOfTool: 'method_search' with: {
 					 (self searchScope: { (#classes -> #( 'MCPToolMethodSearchTestTarget' )) }).
-					 (#selector -> 'classNeedleSelector') })
+					 (#query -> 'classNeedleSelector') })
 		equals: '1 method matches in MCPToolMethodSearchTestTarget.'
 ]
 
@@ -1031,7 +1031,7 @@ MCPToolStructuredOutputTest >> testSearchSummaryLeavesOutANameOnlyWhereItIsMissi
 			          (self searchScope: {
 					           (#packages -> #( 'MCP-Tests-Resources' )).
 					           (#hierarchyOf -> #( 'MCP-Tests-Resources' )) }).
-			          (#selector -> 'classNeedleSelector') } asDictionary.
+			          (#query -> 'classNeedleSelector') } asDictionary.
 	self assert: (self summaryFrom: result) equals: '1 method matches in package MCP-Tests-Resources.'.
 	self assert: (self warningsFrom: result) size equals: 1.
 	self assert: ((self warningsFrom: result) first includesSubstring: 'Class MCP-Tests-Resources')
@@ -1051,7 +1051,7 @@ MCPToolStructuredOutputTest >> testSearchSummaryLeavesOutANameThatDoesNotExist [
 	self assert: ((self warningsFrom: result) first includesSubstring: 'MCPNoSuchSummaryClass').
 	result := self callToolNamed: 'method_search' withArguments: {
 			          (self searchScope: { (#classes -> #( 'MCPNoSuchSummaryClass' )) }).
-			          (#selector -> 'size') } asDictionary.
+			          (#query -> 'size') } asDictionary.
 	self assert: (self summaryFrom: result) equals: 'No methods match: the scope names nothing that exists.'.
 	self assert: ((self warningsFrom: result) first includesSubstring: 'MCPNoSuchSummaryClass')
 ]
@@ -1073,7 +1073,7 @@ MCPToolStructuredOutputTest >> testSearchSummaryNamesTheScopeItSearched [
 		(self summaryOfTool: 'class_search' with: { (self searchScope: { (#subclassesOf -> #( 'MCPToolHierarchyTestBase' )) }) })
 		equals: '2 classes in the subclasses of MCPToolHierarchyTestBase.'.
 	self
-		assert: (self summaryOfTool: 'class_search' with: { (#name -> 'MCPToolHierarchyTest') })
+		assert: (self summaryOfTool: 'class_search' with: { (#query -> 'MCPToolHierarchyTest') })
 		equals: '3 classes match in the image.'.
 	self
 		assert: (self
@@ -1092,7 +1092,7 @@ MCPToolStructuredOutputTest >> testSearchSummaryNamesTheScopeItSearched [
 MCPToolStructuredOutputTest >> testSearchSummarySaysWhenNothingMatched [
 
 	self
-		assert: (self summaryOfTool: 'class_search' with: { (#name -> 'MCPNoClassIsNamedLikeThisAnywhere') })
+		assert: (self summaryOfTool: 'class_search' with: { (#query -> 'MCPNoClassIsNamedLikeThisAnywhere') })
 		equals: 'No classes match in the image.'.
 	self
 		assert:

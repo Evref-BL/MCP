@@ -50,7 +50,7 @@ MCPRepositorySpecTest >> testAdoptHeadReadsItsRequest [
 	| request tool |
 	tool := MCPToolAdoptRepositoryHead new.
 	request := tool requestFromToolCallArguments: {
-			           (#name -> 'MCP Repo').
+			           (#repository -> 'MCP Repo').
 			           (#branch -> 'main') } asDictionary.
 	self assert: (tool mutationActionFor: request checked: true) equals: 'adoptHead'.
 	self assert: (tool repositoryReferenceFor: request) name equals: 'MCP Repo'.
@@ -64,7 +64,7 @@ MCPRepositorySpecTest >> testAttachReadsItsRequest [
 	| context request tool |
 	tool := MCPToolAttachRepository new.
 	request := tool requestFromToolCallArguments: {
-			           (#name -> 'MCP Repo').
+			           (#repository -> 'MCP Repo').
 			           (#location -> 'C:/src/MCP').
 			           (#subdirectory -> 'src').
 			           (#packages -> #( 'MCP' 'MCP-Tests' )) } asDictionary.
@@ -134,7 +134,7 @@ MCPRepositorySpecTest >> testMutationToolsReadTheirRequests [
 	| context request tool |
 	tool := MCPToolCreateRepository new.
 	request := tool requestFromToolCallArguments: {
-			           (#name -> 'MCP Repo').
+			           (#repository -> 'MCP Repo').
 			           (#location -> 'C:/src/MCP').
 			           (#subdirectory -> 'src').
 			           (#packages -> #( 'MCP' 'MCP-Tests' )) } asDictionary.
@@ -146,7 +146,7 @@ MCPRepositorySpecTest >> testMutationToolsReadTheirRequests [
 	self assert: (context at: #packages) equals: #( 'MCP' 'MCP-Tests' ).
 	tool := MCPToolUpdateRepository new.
 	request := tool requestFromToolCallArguments: {
-			           (#name -> 'MCP Repo').
+			           (#repository -> 'MCP Repo').
 			           (#subdirectory -> 'src').
 			           (#addPackages -> #( 'New-Package' )).
 			           (#removePackages -> #( 'Old-Package' )) } asDictionary.
@@ -157,21 +157,21 @@ MCPRepositorySpecTest >> testMutationToolsReadTheirRequests [
 		assert: ((tool requestedContextFor: request checked: true) at: #updateActions)
 		equals: #( 'setSubdirectory' 'addPackages' 'removePackages' ).
 	tool := MCPToolExportRepository new.
-	request := tool requestFromToolCallArguments: { (#name -> 'MCP Repo') } asDictionary.
+	request := tool requestFromToolCallArguments: { (#repository -> 'MCP Repo') } asDictionary.
 	self assert: (tool mutationActionFor: request checked: true) equals: 'export'.
 	self assert: (tool repositoryReferenceFor: request) name equals: 'MCP Repo'.
 	tool := MCPToolListRepositoryChanges new.
-	request := tool requestFromToolCallArguments: { (#name -> 'MCP Repo') } asDictionary.
+	request := tool requestFromToolCallArguments: { (#repository -> 'MCP Repo') } asDictionary.
 	self assert: (tool mutationActionFor: request checked: true) equals: 'diff'.
 	self assert: (tool repositoryReferenceFor: request) name equals: 'MCP Repo'.
 	tool := MCPToolCommitRepository new.
 	request := tool requestFromToolCallArguments: {
-			           (#name -> 'MCP Repo').
+			           (#repository -> 'MCP Repo').
 			           (#message -> 'Commit from test') } asDictionary.
 	self assert: (tool mutationActionFor: request checked: true) equals: 'commit'.
 	self assert: (tool messageIn: request) equals: 'Commit from test'.
 	tool := MCPToolReloadRepository new.
-	request := tool requestFromToolCallArguments: { (#name -> 'MCP Repo') } asDictionary.
+	request := tool requestFromToolCallArguments: { (#repository -> 'MCP Repo') } asDictionary.
 	self assert: (tool mutationActionFor: request checked: true) equals: 'reload'.
 	self assert: (tool repositoryReferenceFor: request) name equals: 'MCP Repo'
 ]
@@ -220,7 +220,7 @@ MCPRepositorySpecTest >> testVerifyIdentityReadsItsRequest [
 	| context reference request tool |
 	tool := MCPToolVerifyRepositoryIdentity new.
 	request := tool requestFromToolCallArguments: {
-			           (#name -> 'MCP Repo').
+			           (#repository -> 'MCP Repo').
 			           (#location -> '/tmp/MCP').
 			           (#branch -> 'main').
 			           (#subdirectory -> 'src').
@@ -250,7 +250,7 @@ MCPRepositorySpecTest >> testVerifyIdentitySuccessAnswersNoData [
 	tool := MCPToolVerifyRepositoryIdentity new.
 	self withRepositories: { repository } do: [
 			result := tool executeWithRequest: (tool requestFromToolCallArguments: {
-						           (#name -> repository name).
+						           (#repository -> repository name).
 						           (#branch -> 'main').
 						           (#packages -> #( 'MCP' 'MCP-Tests' )).
 						           (#isModified -> true) } asDictionary) ].

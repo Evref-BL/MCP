@@ -148,7 +148,7 @@ MCPLostChangeNoticeTest >> summariesAboutSavedClass [
 	"What package_search, class_search, class_get and method_search answer about the saved class and its package."
 
 	^ {
-		  (self summaryOf: 'package_search' with: { (#name -> self generatedPackageName) }).
+		  (self summaryOf: 'package_search' with: { (#query -> self generatedPackageName) }).
 		  (self summaryOf: 'class_search' with: { (#package -> self generatedPackageName) }).
 		  (self summaryOf: 'class_get' with: { (#name -> self savedClassName) }).
 		  (self summaryOf: 'method_search' with: { (self searchScope: { (#packages -> { self generatedPackageName }) }) }) }
@@ -216,8 +216,7 @@ MCPLostChangeNoticeTest >> testMethodSearchScopedToPackagesOrClassesSaysWhatThey
 					   (#packages -> { self generatedPackageName }).
 					   (#classes -> { self savedClassName }) }) }) endsWith: (self noticeOfOneChangeTo:
 				  (String streamContents: [ :stream | stream << self generatedPackageName << ' and ' << self savedClassName ]))).
-	self deny:
-		((self summaryOf: 'method_search' with: { (#selector -> 'rescuedValue') }) includesSubstring: 'history_lost_change_list')
+	self deny: ((self summaryOf: 'method_search' with: { (#query -> 'rescuedValue') }) includesSubstring: 'history_lost_change_list')
 ]
 
 { #category : 'tests' }
@@ -225,7 +224,7 @@ MCPLostChangeNoticeTest >> testPackageSearchSaysWhatThePackageLost [
 	"In every run of the lost-changes eval, the agent's first call was package_search on the package, and nothing in the answer said the work on it was gone."
 
 	self loseAMethod.
-	self assert: ((self summaryOf: 'package_search' with: { (#name -> self generatedPackageName) }) endsWith:
+	self assert: ((self summaryOf: 'package_search' with: { (#query -> self generatedPackageName) }) endsWith:
 			 (self noticeOfOneChangeTo: self generatedPackageName))
 ]
 

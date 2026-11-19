@@ -24,20 +24,20 @@ MCPJSONSchemaValidatorTest >> baseRepresentativeArgumentsByToolClass [
 			   (#selector -> #( 'temporarySelector' )) } asDictionary).
 		  (MCPToolSearchRepositories -> Dictionary new).
 		  (MCPToolVerifyRepositoryIdentity -> {
-			   (#name -> 'MCP').
+			   (#repository -> 'MCP').
 			   (#branch -> 'main') } asDictionary).
-		  (MCPToolListRepositoryChanges -> { (#name -> 'MCP') } asDictionary).
-		  (MCPToolDiscardRepositoryChanges -> { (#name -> 'MCP') } asDictionary).
+		  (MCPToolListRepositoryChanges -> { (#repository -> 'MCP') } asDictionary).
+		  (MCPToolDiscardRepositoryChanges -> { (#repository -> 'MCP') } asDictionary).
 		  (MCPToolRepositoryOperation -> {
 			   (#action -> 'update').
-			   (#name -> 'MCP').
+			   (#repository -> 'MCP').
 			   (#addPackages -> #( 'MCP' )) } asDictionary).
-		  (MCPToolExportRepository -> { (#name -> 'MCP') } asDictionary).
+		  (MCPToolExportRepository -> { (#repository -> 'MCP') } asDictionary).
 		  (MCPToolCommitRepository -> {
-			   (#name -> 'MCP').
+			   (#repository -> 'MCP').
 			   (#message -> 'Example commit') } asDictionary).
-		  (MCPToolAdoptRepositoryHead -> { (#name -> 'MCP') } asDictionary).
-		  (MCPToolReloadRepository -> { (#name -> 'MCP') } asDictionary).
+		  (MCPToolAdoptRepositoryHead -> { (#repository -> 'MCP') } asDictionary).
+		  (MCPToolReloadRepository -> { (#repository -> 'MCP') } asDictionary).
 		  (MCPToolSearchClasses -> Dictionary new).
 		  (MCPToolSearchPackages -> Dictionary new).
 		  (MCPToolClassMutation -> {
@@ -54,7 +54,7 @@ MCPJSONSchemaValidatorTest >> baseRepresentativeArgumentsByToolClass [
 				    (#match -> 'self').
 				    (#replacement -> 'self') } asDictionary }).
 			   (#scope -> { (#classes -> { 'MCPJSONSchemaValidatorTest' }) } asDictionary) } asDictionary).
-		  (MCPToolSearchMethodReferences -> { (#name -> 'toolName') } asDictionary).
+		  (MCPToolSearchMethodReferences -> { (#query -> 'toolName') } asDictionary).
 		  (MCPToolListChangeHistoryFiles -> Dictionary new).
 		  (MCPToolListChangeHistoryEntries -> Dictionary new).
 		  (MCPToolChangeHistory -> { (#action -> 'listFiles') } asDictionary).
@@ -103,7 +103,7 @@ MCPJSONSchemaValidatorTest >> representativeArgumentsByToolClass [
 	self classMutationRepresentativeArgumentsByToolClass keysAndValuesDo: [ :toolClass :representativeArguments |
 		arguments at: toolClass put: representativeArguments ].
 	arguments
-		at: MCPToolSearchMethodSource put: { (#filter -> 'method') } asDictionary;
+		at: MCPToolSearchMethodSource put: { (#query -> 'method') } asDictionary;
 		at: MCPToolSearchEquivalentMethods put: {
 				(#class -> 'Object').
 				(#selector -> 'class') } asDictionary;
@@ -119,12 +119,12 @@ MCPJSONSchemaValidatorTest >> representativeArgumentsByToolClass [
 				(#selector -> 'name').
 				(#protocol -> 'accessing') } asDictionary;
 		at: MCPToolCreateRepository put: {
-				(#name -> 'MCP Test Repository').
+				(#repository -> 'MCP Test Repository').
 				(#location -> '/tmp/mcp-test-repository') } asDictionary;
 		at: MCPToolAttachRepository put: {
-				(#name -> 'MCP Test Repository').
+				(#repository -> 'MCP Test Repository').
 				(#location -> '/tmp/mcp-test-repository') } asDictionary;
-		at: MCPToolUpdateRepository put: { (#name -> 'MCP') } asDictionary;
+		at: MCPToolUpdateRepository put: { (#repository -> 'MCP') } asDictionary;
 		at: MCPToolRunTestCoverage put: {
 				(#classes -> { 'MCPToolContractsTest' }).
 				(#coverage -> { (#scope -> { (#classes -> #( 'MCPToolContractsTest' )) } asDictionary) } asDictionary) } asDictionary;
@@ -264,8 +264,8 @@ MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasAdvertiseGroupedSearchS
 		                        :each | each name ].
 	methodScopeProperties := ((methodProperties detect: [ :each | each name = 'scope' ]) extraProperties at: #properties) collect: [
 		                         :each | each name ].
-	self assert: (classProperties collect: [ :each | each name ] as: Set) equals: #( 'scope' 'name' 'package' 'tag' 'offset' ) asSet.
-	self assert: (methodProperties collect: [ :each | each name ] as: Set) equals: #( 'scope' 'selector' 'protocol' 'offset' ) asSet.
+	self assert: (classProperties collect: [ :each | each name ] as: Set) equals: #( 'scope' 'query' 'package' 'tag' 'offset' ) asSet.
+	self assert: (methodProperties collect: [ :each | each name ] as: Set) equals: #( 'scope' 'query' 'protocol' 'offset' ) asSet.
 	self assert: classScopeProperties asSet equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' 'hierarchyOf' ) asSet.
 	self assert: methodScopeProperties asSet equals: classScopeProperties asSet , #( 'side' ) asSet
 ]

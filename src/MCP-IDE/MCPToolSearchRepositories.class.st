@@ -86,13 +86,13 @@ MCPToolSearchRepositories >> failureScopePhraseFromRequest: request [
 { #category : 'private - request' }
 MCPToolSearchRepositories >> fieldFilterNames [
 
-	^ #( 'name' 'location' 'subdirectory' 'package' 'class' 'modifiedPackage' )
+	^ #( 'query' 'location' 'subdirectory' 'package' 'class' 'modifiedPackage' )
 ]
 
 { #category : 'private - filtering' }
 MCPToolSearchRepositories >> fieldTextsForRepositoryEntry: anEntry fieldName: fieldName [
 
-	fieldName = 'name' ifTrue: [ ^ { (anEntry at: #name) } ].
+	fieldName = 'query' ifTrue: [ ^ { (anEntry at: #name) } ].
 	fieldName = 'location' ifTrue: [ ^ { (anEntry at: #location) } ].
 	fieldName = 'subdirectory' ifTrue: [ ^ { (anEntry at: #subdirectory) } ].
 	fieldName = 'package' ifTrue: [ ^ anEntry at: #packages ].
@@ -147,7 +147,9 @@ MCPToolSearchRepositories >> repositoryEntry: anEntry matches: request fieldFilt
 MCPToolSearchRepositories >> repositoryFieldFilterInputProperties [
 
 	^ {
-		  (self repositoryTextFilterPropertyNamed: 'name' description: 'Keep repositories whose name contains this text, ignoring case.').
+		  (self
+			   repositoryTextFilterPropertyNamed: 'query'
+			   description: 'Keep repositories whose name contains this text, ignoring case.').
 		  (self
 			   repositoryTextFilterPropertyNamed: 'location'
 			   description: 'Keep repositories whose checkout path contains this text, ignoring case.').

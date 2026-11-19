@@ -18,7 +18,8 @@ MCPToolCreateRepository class >> toolName [
 { #category : 'private - errors' }
 MCPToolCreateRepository >> failureSummaryPrefixFor: request [
 
-	^ String streamContents: [ :stream | stream << 'Failed to create repository ' << (request stringArgumentNamed: 'name') << ': ' ]
+	^ String streamContents: [ :stream |
+		  stream << 'Failed to create repository ' << (request stringArgumentNamed: 'repository') << ': ' ]
 ]
 
 { #category : 'private - execution' }
@@ -51,7 +52,7 @@ MCPToolCreateRepository >> repositoryToolSpec [
 		  (#action -> 'create').
 		  (#referenceInputProperties -> #(  )).
 		  (#inputProperties -> {
-			   (self schemaPropertyNamed: 'name' type: 'string' description: 'Repository name for the new repository.').
+			   (self schemaPropertyNamed: 'repository' type: 'string' description: 'Repository name for the new repository.').
 			   (self
 				    schemaPropertyNamed: 'location'
 				    type: 'string'
@@ -65,7 +66,7 @@ MCPToolCreateRepository >> repositoryToolSpec [
 				    stringArraySchemaNamed: 'packages'
 				    description: 'Packages of the image the repository holds.'
 				    itemDescription: 'A package name.') }).
-		  (#requiredProperties -> #( 'name' )) } asDictionary
+		  (#requiredProperties -> #( 'repository' )) } asDictionary
 ]
 
 { #category : 'private - errors' }

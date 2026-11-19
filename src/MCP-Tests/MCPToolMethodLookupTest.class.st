@@ -42,7 +42,7 @@ MCPToolMethodLookupTest >> testAClassNameThatNamesNoClassIsSaidByTheLookup [
 	| error result |
 	result := self callToolNamed: 'method_reference_search' withArguments: {
 			          (#kind -> 'class').
-			          (#name -> 'MCPToolMethodSearchReferenceTargt') } asDictionary.
+			          (#query -> 'MCPToolMethodSearchReferenceTargt') } asDictionary.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
@@ -50,7 +50,7 @@ MCPToolMethodLookupTest >> testAClassNameThatNamesNoClassIsSaidByTheLookup [
 	self assert: ((error at: #suggestions) includes: 'MCPToolMethodSearchReferenceTarget').
 	result := self callToolNamed: 'method_reference_search' withArguments: {
 			          (#kind -> 'class').
-			          (#name -> 'Transcript') } asDictionary.
+			          (#query -> 'Transcript') } asDictionary.
 	error := self errorFrom: result.
 	self assert: (error at: #errorCode) equals: 'NotAClass'.
 	self assert: (error at: #message) equals: 'Transcript is a global variable, not a class.'
@@ -63,10 +63,10 @@ MCPToolMethodLookupTest >> testAClassSideNameAnswersReferencesToItsClass [
 	| data references |
 	data := self
 		        toolNamed: 'method_reference_search'
-		        dataFromArguments: { (#name -> 'MCPToolMethodSearchReferenceTarget class') } asDictionary.
+		        dataFromArguments: { (#query -> 'MCPToolMethodSearchReferenceTarget class') } asDictionary.
 	references := self
 		              toolNamed: 'method_reference_search'
-		              dataFromArguments: { (#name -> 'MCPToolMethodSearchReferenceTarget') } asDictionary.
+		              dataFromArguments: { (#query -> 'MCPToolMethodSearchReferenceTarget') } asDictionary.
 	self denyEmpty: (data at: #methods).
 	(data at: #methods) do: [ :each | self assert: (each at: #reference) equals: 'class' ].
 	self assert: (data at: #methods) equals: (references at: #methods)
@@ -77,7 +77,7 @@ MCPToolMethodLookupTest >> testALowercaseNameNothingUsesFindsNoImplementorsOrSen
 	"A lowercase name reads as a selector, and then as a variable. When nothing implements or sends it and no variable has that name, nothing was found: the answer says so, rather than that the name is unknown."
 
 	| result |
-	result := self callToolNamed: 'method_reference_search' withArguments: { (#name -> 'mcpNoSuchSelectorAnywhere') } asDictionary.
+	result := self callToolNamed: 'method_reference_search' withArguments: { (#query -> 'mcpNoSuchSelectorAnywhere') } asDictionary.
 	self deny: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
 	self assert: (self summaryFrom: result) equals: 'No implementors or senders of mcpNoSuchSelectorAnywhere in the image.'
 ]
@@ -88,7 +88,7 @@ MCPToolMethodLookupTest >> testANameThatIsNotASelectorIsUnknownRatherThanUnused 
 
 	#( '#printString' 'self printString' ) do: [ :name |
 			| error result |
-			result := self callToolNamed: 'method_reference_search' withArguments: { (#name -> name) } asDictionary.
+			result := self callToolNamed: 'method_reference_search' withArguments: { (#query -> name) } asDictionary.
 			self assert: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
 			error := self errorFrom: result.
 			self assert: (error at: #errorCode) equals: 'ReferenceSubjectNotFound'.
@@ -103,7 +103,7 @@ MCPToolMethodLookupTest >> testClassNameAnswersClassReferences [
 	| data |
 	data := self
 		        toolNamed: 'method_reference_search'
-		        dataFromArguments: { (#name -> 'MCPToolMethodSearchReferenceTarget') } asDictionary.
+		        dataFromArguments: { (#query -> 'MCPToolMethodSearchReferenceTarget') } asDictionary.
 	(data at: #methods) do: [ :each | self assert: (each at: #reference) equals: 'class' ]
 ]
 
@@ -112,8 +112,8 @@ MCPToolMethodLookupTest >> testKindNarrowsWhatIsLookedFor [
 
 	| data |
 	data := self toolNamed: 'method_reference_search' dataFromArguments: {
-		        (#kind -> 'implementors').
-		        (#name -> 'sharedTarget') } asDictionary.
+			        (#kind -> 'implementors').
+			        (#query -> 'sharedTarget') } asDictionary.
 	(data at: #methods) do: [ :each | self assert: (each at: #reference) equals: 'implementors' ]
 ]
 
@@ -123,7 +123,7 @@ MCPToolMethodLookupTest >> testLookupSchemasRequireDedicatedArguments [
 	| commonProperties expectations |
 	commonProperties := #( 'scope' 'offset' ).
 	expectations := {
-		                (MCPToolSearchMethodReferences -> #( 'name' 'kind' )).
+		                (MCPToolSearchMethodReferences -> #( 'query' 'kind' )).
 		                (MCPToolSearchEquivalentMethods -> #( 'class' 'selector' 'side' )) }.
 	expectations do: [ :expectation |
 			| propertyNames schema |
@@ -160,7 +160,7 @@ MCPToolMethodLookupTest >> testMethodSourceSearchSearchesSourceText [
 	| data result |
 	result := self callToolNamed: 'method_source_search' withArguments: {
 			          (self searchScope: { (#classes -> { self targetClassName }) }).
-			          (#filter -> 'gamma value') } asDictionary.
+			          (#query -> 'gamma value') } asDictionary.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	data := self dataFrom: result.
 	self assert: (data at: #methods) size equals: 1.
@@ -174,19 +174,19 @@ MCPToolMethodLookupTest >> testNoHitsForAClassPointToKindClass [
 
 	self
 		assert: (self referenceSummaryFor: {
-					 (#name -> 'MCPToolMethodSearchReferenceFixture').
+					 (#query -> 'MCPToolMethodSearchReferenceFixture').
 					 (#kind -> 'senders') })
 		equals:
 		'No senders of MCPToolMethodSearchReferenceFixture in the image. MCPToolMethodSearchReferenceFixture is a class; kind: class finds the methods that refer to it.'.
 	self
 		assert: (self referenceSummaryFor: {
-					 (#name -> 'TMCPToolMethodSearchFixture').
+					 (#query -> 'TMCPToolMethodSearchFixture').
 					 (#kind -> 'implementors') })
 		equals:
 		'No implementors of TMCPToolMethodSearchFixture in the image. TMCPToolMethodSearchFixture is a trait; kind: class finds the methods that refer to it.'.
 	self
 		assert: (self referenceSummaryFor: {
-					 (#name -> 'MCPToolMethodSearchReferenceFixture class').
+					 (#query -> 'MCPToolMethodSearchReferenceFixture class').
 					 (#kind -> 'senders') })
 		equals:
 		'No senders of MCPToolMethodSearchReferenceFixture class in the image. MCPToolMethodSearchReferenceFixture is a class; kind: class finds the methods that refer to it.'
@@ -198,7 +198,7 @@ MCPToolMethodLookupTest >> testNoHitsForAMethodNameTheSelector [
 
 	self
 		assert: (self referenceSummaryFor: {
-					 (#name -> 'MCPToolMethodSearchReferenceFixture>>#sharedTarget').
+					 (#query -> 'MCPToolMethodSearchReferenceFixture>>#sharedTarget').
 					 (#kind -> 'senders') })
 		equals:
 		'No senders of MCPToolMethodSearchReferenceFixture>>#sharedTarget in the image. MCPToolMethodSearchReferenceFixture>>#sharedTarget names a method; name its selector alone: sharedTarget.'
@@ -210,17 +210,17 @@ MCPToolMethodLookupTest >> testNoHitsSayWhatWasLookedFor [
 
 	self
 		assert: (self referenceSummaryFor: {
-					 (#name -> 'mcpNoSuchSelectorAnywhere').
+					 (#query -> 'mcpNoSuchSelectorAnywhere').
 					 (#kind -> 'senders') })
 		equals: 'No senders of mcpNoSuchSelectorAnywhere in the image.'.
 	self
 		assert: (self referenceSummaryFor: {
-					 (#name -> 'trackedSlot').
+					 (#query -> 'trackedSlot').
 					 (#kind -> 'implementors') })
 		equals: 'No implementors of trackedSlot in the image.'.
 	self
 		assert: (self referenceSummaryFor: {
-					 (#name -> 'MCPToolMethodSearchReferenceTarget').
+					 (#query -> 'MCPToolMethodSearchReferenceTarget').
 					 (#kind -> 'class').
 					 (self searchScope: { (#classes -> #( 'MCPToolMethodSearchVariableReferenceTarget' )) }) })
 		equals: 'No methods refer to MCPToolMethodSearchReferenceTarget in MCPToolMethodSearchVariableReferenceTarget.'
@@ -232,7 +232,7 @@ MCPToolMethodLookupTest >> testSearchClassReferencesReturnsClassBindingReference
 	| data |
 	data := self
 		        toolNamed: 'method_reference_search'
-		        dataFromArguments: { (#name -> 'MCPToolMethodSearchReferenceTarget') } asDictionary.
+		        dataFromArguments: { (#query -> 'MCPToolMethodSearchReferenceTarget') } asDictionary.
 	self assert: (data at: #methods) size equals: 2.
 	self entryForReference: 'MCPToolMethodSearchReferenceFixture>>referenceExtensionTarget' in: (data at: #methods).
 	self entryForReference: 'MCPToolMethodSearchReferenceFixture class>>referenceExtensionTarget' in: (data at: #methods)
@@ -271,7 +271,7 @@ MCPToolMethodLookupTest >> testSearchMethodImplementorsReturnsExactSelectorMatch
 
 	| data |
 	data := self toolNamed: 'method_reference_search' dataFromArguments: {
-			        (#name -> 'alphaNeedleSelector').
+			        (#query -> 'alphaNeedleSelector').
 			        (self searchScope: { (#classes -> { self targetClassName }) }) } asDictionary.
 	self assert: (data at: #methods) size equals: 1.
 	self entryForReference: self targetClassName , '>>alphaNeedleSelector' in: (data at: #methods)
@@ -281,8 +281,9 @@ MCPToolMethodLookupTest >> testSearchMethodImplementorsReturnsExactSelectorMatch
 MCPToolMethodLookupTest >> testSearchMethodSendersReturnsSelectorReferences [
 
 	| data |
-	data := self toolNamed: 'method_reference_search' dataFromArguments: { (#kind -> 'senders').
-			          (#name -> 'sharedTarget') } asDictionary.
+	data := self toolNamed: 'method_reference_search' dataFromArguments: {
+			        (#kind -> 'senders').
+			        (#query -> 'sharedTarget') } asDictionary.
 	self assert: (data at: #methods) size equals: 2.
 	self entryForReference: 'MCPToolMethodSearchReferenceFixture>>instanceSendShared' in: (data at: #methods).
 	self entryForReference: 'MCPToolMethodSearchReferenceFixture class>>classSendShared' in: (data at: #methods)
@@ -293,7 +294,7 @@ MCPToolMethodLookupTest >> testSearchVariableReferencesReturnsVariableReferences
 
 	| data |
 	data := self toolNamed: 'method_reference_search' dataFromArguments: {
-			        (#name -> 'trackedSlot').
+			        (#query -> 'trackedSlot').
 			        (self searchScope: { (#classes -> #( 'MCPToolMethodSearchVariableReferenceTarget' )) } side: 'instance') } asDictionary.
 	self assert: (data at: #methods) size equals: 2.
 	self entryForReference: 'MCPToolMethodSearchVariableReferenceTarget>>readTrackedSlot' in: (data at: #methods).
@@ -304,7 +305,7 @@ MCPToolMethodLookupTest >> testSearchVariableReferencesReturnsVariableReferences
 MCPToolMethodLookupTest >> testSelectorNameAnswersImplementorsAndSendersLabelled [
 
 	| data kinds |
-	data := self toolNamed: 'method_reference_search' dataFromArguments: { (#name -> 'sharedTarget') } asDictionary.
+	data := self toolNamed: 'method_reference_search' dataFromArguments: { (#query -> 'sharedTarget') } asDictionary.
 	kinds := (data at: #methods) collect: [ :each | each at: #reference ] as: Set.
 	self assert: kinds equals: #( 'implementors' 'senders' ) asSet
 ]
@@ -312,23 +313,19 @@ MCPToolMethodLookupTest >> testSelectorNameAnswersImplementorsAndSendersLabelled
 { #category : 'tests' }
 MCPToolMethodLookupTest >> testSourceAndEquivalentSearchSchemasUseDedicatedInputs [
 
-	| equivalentPropertyNames equivalentRequired equivalentSchema filterModeProperty sourcePropertyNames sourceRequired sourceSchema |
+	| equivalentPropertyNames equivalentRequired equivalentSchema queryModeProperty sourcePropertyNames sourceRequired sourceSchema |
 	sourceSchema := MCPToolSearchMethodSource new inputSchema.
 	sourceRequired := sourceSchema required asArray.
 	sourcePropertyNames := sourceSchema properties collect: [ :each | each name ].
-	filterModeProperty := sourceSchema properties detect: [ :each | each name = 'filterMode' ].
-	self assert: sourceRequired equals: #( 'filter' ).
-	self
-		assert: sourcePropertyNames asSet
-		equals: #( 'scope' 'filter' 'filterMode' 'offset' ) asSet.
-	self assert: (filterModeProperty extraProperties at: #enum) asArray equals: #( 'substring' 'regex' ).
+	queryModeProperty := sourceSchema properties detect: [ :each | each name = 'queryMode' ].
+	self assert: sourceRequired equals: #( 'query' ).
+	self assert: sourcePropertyNames asSet equals: #( 'scope' 'query' 'queryMode' 'offset' ) asSet.
+	self assert: (queryModeProperty extraProperties at: #enum) asArray equals: #( 'substring' 'regex' ).
 	equivalentSchema := MCPToolSearchEquivalentMethods new inputSchema.
 	equivalentRequired := equivalentSchema required asArray.
 	equivalentPropertyNames := equivalentSchema properties collect: [ :each | each name ].
 	self assert: equivalentRequired equals: #( 'class' 'selector' ).
-	self
-		assert: equivalentPropertyNames asSet
-		equals: #( 'scope' 'selector' 'side' 'class' 'offset' ) asSet
+	self assert: equivalentPropertyNames asSet equals: #( 'scope' 'selector' 'side' 'class' 'offset' ) asSet
 ]
 
 { #category : 'tests' }
@@ -337,28 +334,28 @@ MCPToolMethodLookupTest >> testSummaryNamesTheKindAndTheName [
 
 	| pagedSummary |
 	self
-		assert: (self referenceSummaryFor: { (#name -> 'sharedTarget') })
+		assert: (self referenceSummaryFor: { (#query -> 'sharedTarget') })
 		equals: '2 implementors and 2 senders of sharedTarget in the image.'.
 	self
 		assert: (self referenceSummaryFor: {
-					 (#name -> 'sharedTarget').
+					 (#query -> 'sharedTarget').
 					 (#kind -> 'senders') })
 		equals: '2 senders of sharedTarget in the image.'.
 	self
-		assert: (self referenceSummaryFor: { (#name -> 'MCPToolMethodSearchReferenceTarget') })
+		assert: (self referenceSummaryFor: { (#query -> 'MCPToolMethodSearchReferenceTarget') })
 		equals: '2 methods refer to MCPToolMethodSearchReferenceTarget in the image.'.
 	self
 		assert: (self referenceSummaryFor: {
-					 (#name -> 'trackedSlot').
+					 (#query -> 'trackedSlot').
 					 (self searchScope: { (#classes -> #( 'MCPToolMethodSearchVariableReferenceTarget' )) } side: 'instance') })
 		equals: '2 methods use trackedSlot in MCPToolMethodSearchVariableReferenceTarget, instance side.'.
 	self
 		assert: (self referenceSummaryFor: {
-					 (#name -> 'sharedTarget').
+					 (#query -> 'sharedTarget').
 					 (#offset -> 30) })
 		equals: 'No implementors or senders from offset 30; 2 implementors and 2 senders of sharedTarget in the image.'.
 	pagedSummary := self referenceSummaryFor: {
-			                (#name -> 'printString').
+			                (#query -> 'printString').
 			                (#kind -> 'senders') }.
 	self assert: (pagedSummary beginsWith: '25 of ').
 	self assert: (pagedSummary endsWith: ' senders of printString in the image. Next page: offset 25, or narrow the search.')
@@ -369,7 +366,7 @@ MCPToolMethodLookupTest >> testTextGroupsHitsByKind [
 	"Hits read under the kind of reference they are, so no row repeats it; the data keeps reference on each entry."
 
 	| contentText lines result |
-	result := self callToolNamed: 'method_reference_search' withArguments: { (#name -> 'sharedTarget') } asDictionary.
+	result := self callToolNamed: 'method_reference_search' withArguments: { (#query -> 'sharedTarget') } asDictionary.
 	contentText := (result at: #content) first at: #text.
 	lines := contentText lines.
 	self assert: (lines at: 2) equals: 'implementors (each package=MCP-Tests-Resources):'.

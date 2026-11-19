@@ -209,14 +209,14 @@ MCPToolSearch >> fieldFiltersFromRequest: request [
 { #category : 'private - request' }
 MCPToolSearch >> filterModeFromRequest: request [
 
-	^ request stringArgumentNamed: 'filterMode' default: self defaultFilterMode
+	^ request stringArgumentNamed: 'queryMode' default: self defaultFilterMode
 ]
 
 { #category : 'private - schema' }
 MCPToolSearch >> filterModeSchemaPropertyWithDescription: modeDescription values: modeValues [
 
 	^ self
-		  stringEnumSchemaPropertyNamed: 'filterMode'
+		  stringEnumSchemaPropertyNamed: 'queryMode'
 		  description: modeDescription
 		  values: modeValues
 		  default: self defaultFilterMode
@@ -225,14 +225,14 @@ MCPToolSearch >> filterModeSchemaPropertyWithDescription: modeDescription values
 { #category : 'private - request' }
 MCPToolSearch >> filterPatternFromRequest: request [
 
-	(request hasArgumentNamed: 'filter') ifFalse: [ ^ nil ].
-	^ (request argumentNamed: 'filter' ifAbsent: [ nil ]) ifNotNil: [ :value | value asString trimBoth ]
+	(request hasArgumentNamed: 'query') ifFalse: [ ^ nil ].
+	^ (request argumentNamed: 'query' ifAbsent: [ nil ]) ifNotNil: [ :value | value asString trimBoth ]
 ]
 
 { #category : 'private - schema' }
 MCPToolSearch >> filterSchemaPropertyWithDescription: filterDescription [
 
-	^ self schemaPropertyNamed: 'filter' type: 'string' description: filterDescription
+	^ self schemaPropertyNamed: 'query' type: 'string' description: filterDescription
 ]
 
 { #category : 'private - results' }
