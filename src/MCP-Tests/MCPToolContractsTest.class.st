@@ -24,22 +24,15 @@ MCPToolContractsTest >> addSelfSentNotImplementedCritiquesFrom: aMethod using: a
 ]
 
 { #category : 'private' }
-MCPToolContractsTest >> addUnimplementedResponsibilitiesFor: aClass behavior: aBehavior side: sideName to: issues [
+MCPToolContractsTest >> addUnimplementedResponsibilitiesOf: aBehavior among: selectors to: issues [
 
-	aBehavior allSelectors do: [ :selector |
-			| method |
-			selector = #subclassResponsibility ifFalse: [
-					method := aBehavior lookupSelector: selector.
-					(method isNotNil and: [ self methodSendsSubclassResponsibility: method ]) ifTrue: [
+	selectors do: [ :selector |
+			(aBehavior lookupSelector: selector) ifNotNil: [ :method |
+					(selector ~= #subclassResponsibility and: [ self methodSendsSubclassResponsibility: method ]) ifTrue: [
 							issues add: (String streamContents: [ :stream |
-										 stream
-											 nextPutAll: aClass name asString;
-											 space;
-											 nextPutAll: sideName;
-											 nextPutAll: ' #';
-											 nextPutAll: selector asString;
-											 nextPutAll: ' inherited from ';
-											 nextPutAll: method methodClass name asString ]) ] ] ]
+										 stream << aBehavior instanceSide name << (aBehavior isMeta
+											  ifTrue: [ ' class #' ]
+											  ifFalse: [ ' instance #' ]) << selector << ' inherited from ' << method methodClass name ]) ] ] ]
 ]
 
 { #category : 'private' }
@@ -196,6 +189,14 @@ MCPToolContractsTest >> mcpClassesInPackageTagNamed: aTagName [
 
 	^ ((MCPTool builtInPackageNames flatCollect: [ :each | (self packageOrganizer packageNamed: each asSymbol) definedClasses ])
 		   select: [ :each | each packageTagName asString = aTagName ]) asArray
+]
+
+{ #category : 'private' }
+MCPToolContractsTest >> mcpMethodsReferringTo: aLiteral [
+	"The methods of MCP's loaded packages that hold aLiteral. A method that sends a selector holds it, unless the virtual machine special-cases that selector, so only these need parsing to find the sends."
+
+	^ self mcpPackageNames flatCollect: [ :name |
+		  (self packageOrganizer packageNamed: name) methods select: [ :each | each refersToLiteral: aLiteral ] ]
 ]
 
 { #category : 'private' }
@@ -2418,10 +2419,9 @@ MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable 
 { #category : 'tests' }
 MCPToolContractsTest >> testProjectMethodsDoNotHandleMessageNotUnderstoodAsControlFlow [
 
-	| methods offendingMethods rule |
+	| offendingMethods rule |
 	rule := MCPMessageNotUnderstoodHandlerRule new.
-	methods := #( 'MCP' 'MCP-Tests' ) flatCollect: [ :packageName | (self packageOrganizer packageNamed: packageName) methods ].
-	offendingMethods := methods select: [ :method |
+	offendingMethods := (self mcpMethodsReferringTo: #on:do:) select: [ :method |
 		                    method sendNodes anySatisfy: [ :sendNode | rule isMessageNotUnderstoodHandlerSend: sendNode ] ].
 	self assert: offendingMethods isEmpty description: ('Methods handling MessageNotUnderstood: {1}' format:
 			 { (offendingMethods collect: [ :method | method printString ] as: Array) printString })
@@ -2430,10 +2430,9 @@ MCPToolContractsTest >> testProjectMethodsDoNotHandleMessageNotUnderstoodAsContr
 { #category : 'tests' }
 MCPToolContractsTest >> testProjectMethodsDoNotSendReflectiveProtocolChecks [
 
-	| forbiddenSelector methods offendingMethods |
+	| forbiddenSelector offendingMethods |
 	forbiddenSelector := MCPRespondsToUsageRule forbiddenSelector.
-	methods := #( 'MCP' 'MCP-Tests' ) flatCollect: [ :packageName | (self packageOrganizer packageNamed: packageName) methods ].
-	offendingMethods := methods select: [ :method |
+	offendingMethods := (self mcpMethodsReferringTo: forbiddenSelector) select: [ :method |
 		                    method sendNodes anySatisfy: [ :sendNode | sendNode selector = forbiddenSelector ] ].
 	self assert: offendingMethods isEmpty description: ('Methods sending {1}: {2}' format: {
 				 forbiddenSelector.
@@ -3528,23 +3527,17 @@ MCPToolContractsTest >> underEitherPreemptionRuleDo: aBlock [
 
 { #category : 'private' }
 MCPToolContractsTest >> unimplementedResponsibilitiesForConcreteMCPClasses [
+	"A concrete class leaves a responsibility unimplemented when the method it answers for a selector sends subclassResponsibility. That method is in its lookup chain, so only the selectors of the chains' methods that send it are looked up."
 
-	| classes issues |
-	classes := (MCPTool builtInPackageNames flatCollect: [ :name | (self packageOrganizer packageNamed: name) definedClasses ])
-		           reject: [ :each | each isTrait ].
+	| behaviors issues selectors |
+	behaviors := ((MCPTool builtInPackageNames flatCollect: [ :name | (self packageOrganizer packageNamed: name) definedClasses ])
+		              reject: [ :each | each isTrait or: [ each isAbstract ] ]) flatCollect: [ :each |
+		             Array with: each with: each class ].
+	selectors := IdentitySet new.
+	(behaviors flatCollect: [ :each | each withAllSuperclasses ]) asIdentitySet do: [ :behavior |
+		behavior methods do: [ :method | (method sendsSelector: #subclassResponsibility) ifTrue: [ selectors add: method selector ] ] ].
 	issues := OrderedCollection new.
-	classes do: [ :class |
-			class isAbstract ifFalse: [
-					self
-						addUnimplementedResponsibilitiesFor: class
-						behavior: class
-						side: 'instance'
-						to: issues.
-					self
-						addUnimplementedResponsibilitiesFor: class
-						behavior: class class
-						side: 'class'
-						to: issues ] ].
+	behaviors do: [ :each | self addUnimplementedResponsibilitiesOf: each among: selectors to: issues ].
 	^ issues asArray sort
 ]
 

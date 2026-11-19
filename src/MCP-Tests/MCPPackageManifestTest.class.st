@@ -13,7 +13,7 @@ MCPPackageManifestTest >> testEveryPackageAnswersTheFormatterOfTheBaseline [
 	"A package without a manifest gets the image's default formatter, and wherever that default agrees with MCP's, formatted code cannot tell the two apart. So each manifest is asked whether its formatter is the baseline's. The baseline names the packages of the running Pharo version, and a package left unloaded has nothing to format."
 
 	| packageNames |
-	packageNames := BaselineOfMCP allPackageNames select: [ :name | self packageOrganizer hasPackage: name ].
+	packageNames := self mcpPackageNames.
 	self denyEmpty: packageNames.
 	packageNames do: [ :name |
 			| manifest |

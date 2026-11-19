@@ -521,10 +521,10 @@ MCPToolRunTestsTest >> testATestFromATraitThatStillHoldsTheRemovedCopyNamesTheTr
 					assert: (self summaryFrom: (self runTests: { (#classes -> #( 'MCPToolRunTestsRemovedTargetTest' )) }))
 					equals:
 					'Ran 1 test (1 passed). MCPToolRunTestsRemovedTargetTest>>#testFromTheTrait refers to MCPToolRunTestsRemovedTarget, a removed class, so it ran the obsolete copy of MCPToolRunTestsRemovedTarget. MCPToolRunTestsRemovedTarget exists again, but TMCPToolRunTestsRemovedTargetTest>>#testFromTheTrait still refers to its removed copy: compile that method again with method_compile, unchanged, and it will refer to the current MCPToolRunTestsRemovedTarget.'.
-				self
-					ensureMethodSource: 'testFromTheTrait self assert: MCPToolRunTestsRemovedTarget new notNil'
-					protocol: 'tests'
-					on: (self fixtureNamed: 'TMCPToolRunTestsRemovedTargetTest').
+				self withoutEpiceaDuring: [
+						(self fixtureNamed: 'TMCPToolRunTestsRemovedTargetTest')
+							compile: 'testFromTheTrait self assert: MCPToolRunTestsRemovedTarget new notNil'
+							classified: 'tests' ].
 				self
 					assert: (self summaryFrom: (self runTests: { (#classes -> #( 'MCPToolRunTestsRemovedTargetTest' )) }))
 					equals: 'Ran 1 test (1 passed).' ]

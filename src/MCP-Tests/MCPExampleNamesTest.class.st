@@ -10,18 +10,19 @@ Class {
 
 { #category : 'tests' }
 MCPExampleNamesTest >> testNothingIsNamedLikeATaskFixture [
-	"The tasks name their classes with Eval and a capital letter, and their packages with Eval and a dash. An MCP class, comment or method naming one that way is read, in a task's image, as evidence about the task's own classes."
+	"The tasks name their classes with Eval and a capital letter, and their packages with Eval and a dash. An MCP class, comment or method naming one that way is read, in a task's image, as evidence about the task's own classes. Only a text holding Eval can match, so the pattern reads only those."
 
-	| hits packageNames pattern |
+	| hits matches packageNames pattern |
 	pattern := 'Eval-?[A-Z]' asRegex.
-	packageNames := BaselineOfMCP allPackageNames select: [ :name | self packageOrganizer hasPackage: name ].
+	matches := [ :text | (text includesSubstring: 'Eval') and: [ pattern search: text ] ].
+	packageNames := self mcpPackageNames.
 	self denyEmpty: packageNames.
 	hits := OrderedCollection new.
 	packageNames do: [ :name |
 			| package |
 			package := self packageOrganizer packageNamed: name.
 			package definedClasses do: [ :class |
-				((pattern search: class name) or: [ pattern search: class comment ]) ifTrue: [ hits add: class name ] ].
-			package methods do: [ :method | (pattern search: method sourceCode) ifTrue: [ hits add: method printString ] ] ].
+				((matches value: class name) or: [ matches value: class comment ]) ifTrue: [ hits add: class name ] ].
+			package methods do: [ :method | (matches value: method sourceCode) ifTrue: [ hits add: method printString ] ] ].
 	self assert: hits isEmpty description: 'Named like a task fixture: ' , (', ' join: hits)
 ]

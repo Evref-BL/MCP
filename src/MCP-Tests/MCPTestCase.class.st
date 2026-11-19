@@ -81,14 +81,17 @@ MCPTestCase >> createGeneratedPackageManifestWithNarrowFormatter [
 
 { #category : 'private - methods' }
 MCPTestCase >> ensureMethodSource: aMethodSource protocol: aProtocol on: aBehavior [
-	"An extension protocol only makes the method an extension when the package it names exists, so it is created on demand. The method is formatted the way the tools format it, with the formatter of its class's package."
+	"An extension protocol only makes the method an extension when the package it names exists, so it is created on demand. The method is formatted the way the tools format it, with the formatter of its class's package, and compiled only when aBehavior does not have it so, in that protocol."
 
+	| source tree |
+	tree := RBParser parseMethod: aMethodSource.
+	source := tree formattedCodeIn: aBehavior.
+	((aBehavior includesSelector: tree selector) and: [
+		 (aBehavior >> tree selector) sourceCode = source and: [
+			 (aBehavior >> tree selector) protocolName asString = aProtocol asString ] ]) ifTrue: [ ^ self ].
 	self withoutEpiceaDuring: [
-			| method selector |
 			(aProtocol beginsWith: '*') ifTrue: [ self packageOrganizer ensurePackage: aProtocol allButFirst ].
-			selector := aBehavior compile: aMethodSource classified: aProtocol.
-			method := aBehavior >> selector.
-			aBehavior compile: (method ast formattedCodeIn: aBehavior) classified: method protocol ]
+			aBehavior compile: source classified: aProtocol ]
 ]
 
 { #category : 'private - compatibility' }
@@ -138,6 +141,13 @@ MCPTestCase >> generatedTagName [
 	^ 'Internal'
 ]
 
+{ #category : 'private - packages' }
+MCPTestCase >> mcpPackageNames [
+	"The packages the baseline names for this Pharo version that the image has loaded. The baseline's own package is not among them."
+
+	^ BaselineOfMCP allPackageNames select: [ :name | self packageOrganizer hasPackage: name ]
+]
+
 { #category : 'private - observability' }
 MCPTestCase >> mcpWithoutObservabilityExport [
 
@@ -156,12 +166,11 @@ MCPTestCase >> refactoringsRefuseBreakingChanges [
 
 { #category : 'private - classes' }
 MCPTestCase >> removeClassNamed: aClassName [
+	"Removing the class may leave a generated package empty, which then goes too. Looking for an absent package costs a sweep of all of them, so nothing is looked for when there was no class to remove."
 
-	| classSymbol |
-	classSymbol := aClassName asSymbol.
-	self withoutEpiceaDuring: [
-		(Smalltalk globals includesKey: classSymbol) ifTrue: [ (Smalltalk globals at: classSymbol) removeFromSystem ] ].
-	self removeGeneratedPackagesIfEmpty
+	Smalltalk globals at: aClassName asSymbol ifPresent: [ :class |
+			self withoutEpiceaDuring: [ class removeFromSystem ].
+			self removeGeneratedPackagesIfEmpty ]
 ]
 
 { #category : 'private - packages' }
@@ -194,6 +203,23 @@ MCPTestCase >> removePackageNamed: aPackageName [
 MCPTestCase >> removeSelector: aSelector from: aBehavior [
 
 	self withoutEpiceaDuring: [ (aBehavior includesSelector: aSelector) ifTrue: [ aBehavior removeSelector: aSelector ] ]
+]
+
+{ #category : 'private - classes' }
+MCPTestCase >> restoreClassNamed: originalName renamedTo: renamedName [
+	"A fixture class a test renamed gets its name back, and a copy a failed test left under the new name beside it goes. The fixture and every reference to it are in the fixtures' package, so the rename reads that package rather than the whole image."
+
+	| original renamed |
+	original := originalName asSymbol.
+	renamed := renamedName asSymbol.
+	self withoutEpiceaDuring: [
+			((Smalltalk globals includesKey: original) and: [ Smalltalk globals includesKey: renamed ]) ifTrue: [
+				(Smalltalk globals at: renamed) removeFromSystem ].
+			((Smalltalk globals includesKey: renamed) and: [ (Smalltalk globals includesKey: original) not ]) ifTrue: [
+					(ReRenameClassRefactoring
+						 model: (RBNamespace onEnvironment: (RBBrowserEnvironment new forPackageNames: #( 'MCP-Tests-Resources' )))
+						 rename: renamedName
+						 to: originalName) execute ] ]
 ]
 
 { #category : 'running' }

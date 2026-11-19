@@ -56,9 +56,6 @@ MCPCompiledMethodInfoTest >> instanceSelector [
 MCPCompiledMethodInfoTest >> restoreFixtureMethods [
 
 	self createTargetClass.
-	self removeSelector: self instanceSelector from: self targetClass.
-	self removeSelector: self classSelector from: self classTarget.
-	self removeSelector: self extensionSelector from: self targetClass.
 	self
 		ensureMethodSource: 'infoTarget
 
