@@ -336,7 +336,7 @@ MCPRepositoryCommand >> sourceRepositoryClassForWriter: aWriterClass [
 	writer nothing here reads back answers nil."
 
 	aWriterClass id = #tonel ifTrue: [ ^ TonelRepository ].
-	aWriterClass id = #filetree ifTrue: [ ^ Smalltalk globals at: #MCFileTreeRepository ifAbsent: [ nil ] ].
+	aWriterClass id = #filetree ifTrue: [ ^ MCFileTreeRepository ].
 	^ nil
 ]
 

@@ -2,7 +2,7 @@ Extension { #name : 'MCPDebugWatchCommand' }
 
 { #category : '*MCP-IDE-Compatibility-Before12' }
 MCPDebugWatchCommand >> probeForTarget: aTarget index: anIndex [
-	"Pharo 11 has no debug points, so the probe is a metalink of its own."
+	"Before Pharo 12, Pharo has no debug points, so the probe is a metalink of its own."
 
 	| node |
 	node := self nodeMatching: aTarget.

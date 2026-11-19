@@ -10,7 +10,7 @@ MCPRemoveClassesCommand >> performRemovalWithPreparedRefactoring: aRefactoring [
 
 { #category : '*MCP-IDE-Compatibility-Before12' }
 MCPRemoveClassesCommand >> preparedRefactoringForClassNames: someClassNames [
-	"Pharo 11 computes the changes of a refactoring as it transforms, so there is nothing to prepare."
+	"Before Pharo 12, a refactoring computes its changes as it transforms, so there is nothing to prepare."
 
 	^ RBRemoveClassRefactoring classNames: (someClassNames collect: #asSymbol)
 ]

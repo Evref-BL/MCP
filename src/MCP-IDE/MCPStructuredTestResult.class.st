@@ -59,9 +59,7 @@ MCPStructuredTestResult class >> frameworkPackageNames [
 
 	| names |
 	names := Set with: TestCase package name asString.
-	self environment
-		at: #BaselineOfPharoBootstrap
-		ifPresent: [ :baseline | baseline kernelPackageNames do: [ :each | names add: each asString ] ].
+	BaselineOfPharoBootstrap kernelPackageNames do: [ :each | names add: each asString ].
 	^ names
 ]
 
