@@ -436,10 +436,10 @@ MCPToolUpdateClass >> failureMessageForMoveSlotNamed: slotName onClassNamed: cla
 
 { #category : 'private - errors' }
 MCPToolUpdateClass >> failureMessageForRemoveSlotNamed: slotName onClassNamed: className classSide: classSide error: anError [
-	"Before Pharo 12, removing a slot that methods use fails rather than warns, an RBRefactoringError on the instance side and a breaking-change Warning on the class side, whatever force says, and the refactoring's text names none of them: they are named as a warning names them from Pharo 12 on."
+	"Before Pharo 12, removing an instance-side slot that methods use fails rather than warns, an RBRefactoringError whatever force says, and the refactoring's text names none of them: they are named as a warning names them."
 
 	| uses |
-	uses := ((anError isKindOf: RBRefactoringError) or: [ anError isKindOf: Warning ])
+	uses := (anError isKindOf: RBRefactoringError)
 		        ifTrue: [ self usesOfSlotNamed: slotName inClassNamed: className classSide: classSide ]
 		        ifFalse: [ #(  ) ].
 	^ String streamContents: [ :stream |

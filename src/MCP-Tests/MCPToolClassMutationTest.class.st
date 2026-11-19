@@ -1057,14 +1057,7 @@ MCPToolClassMutationTest >> testRemovingAClassSideSlotInUseNamesTheClassSideMeth
 			           classSide: true).
 	expected := 'MCPToolClassMutationTestWarningRemoveSlotTarget class>>readsUsedClassSlot reads usedClassSlot'.
 	self assert: (result at: #isError).
-	self refactoringsRefuseBreakingChanges
-		ifTrue: [
-				self
-					assert: (self summaryFrom: result)
-					equals:
-						('Failed to remove class-side slot usedClassSlot from class MCPToolClassMutationTestWarningRemoveSlotTarget: {1}. Change them first.'
-							 format: { expected }) ]
-		ifFalse: [ self assert: ((self errorFrom: result) at: #impactMessages) asArray equals: { expected } ].
+	self assert: ((self errorFrom: result) at: #impactMessages) asArray equals: { expected }.
 	self
 		assert: ((self classNamed: 'MCPToolClassMutationTestWarningRemoveSlotTarget') classSide slots collect: #name as: Array)
 		equals: #( #usedClassSlot )
