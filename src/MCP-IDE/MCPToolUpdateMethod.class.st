@@ -389,9 +389,7 @@ MCPToolUpdateMethod >> updateTargetBehaviorFor: request [
 	"The behaviour every update action works on. A method the class got from a trait is the trait's to rename, recategorize or re-argument, so the actions stop here rather than each learning what a trait is."
 
 	| behavior |
-	behavior := self
-		            classNameAndSideOf: request
-		            do: [ :className :classSide :sideGiven | self behaviorNamed: className classSide: classSide ].
+	behavior := self behaviorNamedIn: request.
 	self signalTraitOriginBeforeUpdating: (request stringArgumentNamed: 'selector') in: behavior.
 	^ behavior
 ]

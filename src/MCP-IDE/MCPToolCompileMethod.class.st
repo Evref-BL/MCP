@@ -86,10 +86,9 @@ MCPToolCompileMethod >> changeSummaryVerbFor: changeKindString [
 
 { #category : 'executing' }
 MCPToolCompileMethod >> checkArguments: request [
-	"A side that says the other one than the class name is refused, as is a call without a source."
+	"A side that says the other one than the class name is refused."
 
-	self classNameAndSideOf: request do: [ :className :classSide :sideGiven |  ].
-	request argumentNamed: 'source' ifAbsent: [ MCPInvalidToolInput signalMissingRequiredArgumentNamed: 'source' forTool: self ]
+	self classNameAndSideOf: request do: [ :className :classSide :sideGiven |  ]
 ]
 
 { #category : 'private - header' }

@@ -4,6 +4,8 @@ Runs Renraku critique rules over a requested image scope and returns paginated c
 Class {
 	#name : 'MCPToolRunCritiques',
 	#superclass : 'MCPToolSearch',
+	#traits : 'TMCPMethodTool',
+	#classTraits : 'TMCPMethodTool classTrait',
 	#category : 'MCP-IDE-Tools',
 	#package : 'MCP-IDE',
 	#tag : 'Tools'
@@ -26,9 +28,7 @@ MCPToolRunCritiques >> addIntervalFromAnchor: sourceAnchor of: target flaggedBy:
 	"A hit in a method also says the line of the method as stored where it is and the code there, as a compile's critiques do; the interval stays for a tool that reads offsets."
 
 	| interval |
-	(sourceAnchor class canUnderstand: #interval) ifFalse: [ ^ self ].
-	interval := sourceAnchor interval.
-	interval ifNil: [ ^ self ].
+	interval := (self sourceIntervalOf: sourceAnchor) ifNil: [ ^ self ].
 	data at: #interval put: (String streamContents: [ :stream | stream << interval first asString << '-' << interval last asString ]).
 	(target isNotNil and: [ target isCompiledMethod ]) ifFalse: [ ^ self ].
 	self
@@ -76,16 +76,6 @@ MCPToolRunCritiques >> buildInputSchema [
 				  self ruleClassesSchemaProperty.
 				  self offsetInputProperty }
 		  required: #(  )
-]
-
-{ #category : 'private - running' }
-MCPToolRunCritiques >> classCritiquesOfRuleClass: ruleClass in: scopeQuery runsOn: runsOnBlock do: aBlock [
-
-	| rule |
-	rule := ruleClass new.
-	self sortedBehaviorsIn: scopeQuery do: [ :eachBehavior |
-			(runsOnBlock value: rule value: eachBehavior) ifTrue: [
-				rule check: eachBehavior forCritiquesDo: [ :critique | aBlock value: critique value: rule value: eachBehavior ] ] ]
 ]
 
 { #category : 'private - results' }
@@ -154,14 +144,23 @@ MCPToolRunCritiques >> critiqueEntryFor: critique rule: rule fallbackEntity: fal
 	^ entry
 ]
 
+{ #category : 'private - running' }
+MCPToolRunCritiques >> critiquesOfRule: aRule on: entities runsOn: runsOnBlock do: aBlock [
+	"Each critique aRule makes on each of entities it runs on, with the rule and the entity it was checking."
+
+	entities do: [ :each |
+			(runsOnBlock value: aRule value: each) ifTrue: [
+				aRule check: each forCritiquesDo: [ :critique | aBlock value: critique value: aRule value: each ] ] ]
+]
+
 { #category : 'private - rules' }
 MCPToolRunCritiques >> critiquesOfRuleClass: ruleClass in: scopeQuery runsOn: runsOnBlock do: aBlock [
 	"Each critique the rule makes in scopeQuery, with the rule and the entity it was checking, on every kind of entity the rule checks."
 
 	ruleClass checksMethod ifTrue: [
 			self
-				methodCritiquesOfRuleClass: ruleClass
-				in: scopeQuery
+				critiquesOfRule: ruleClass new
+				on: (self sortedMethodsIn: scopeQuery)
 				runsOn: runsOnBlock
 				do: aBlock ].
 	ruleClass checksNode ifTrue: [
@@ -172,14 +171,14 @@ MCPToolRunCritiques >> critiquesOfRuleClass: ruleClass in: scopeQuery runsOn: ru
 				do: aBlock ].
 	ruleClass checksClass ifTrue: [
 			self
-				classCritiquesOfRuleClass: ruleClass
-				in: scopeQuery
+				critiquesOfRule: ruleClass new
+				on: (self sortedBehaviorsIn: scopeQuery)
 				runsOn: runsOnBlock
 				do: aBlock ].
 	ruleClass checksPackage ifTrue: [
 			self
-				packageCritiquesOfRuleClass: ruleClass
-				in: scopeQuery
+				critiquesOfRule: ruleClass new
+				on: (self sortedPackagesIn: scopeQuery)
 				runsOn: runsOnBlock
 				do: aBlock ]
 ]
@@ -244,12 +243,11 @@ MCPToolRunCritiques >> hitDataForCritique: critique rule: rule fallbackEntity: f
 		          ifNil: [ fallbackEntity ]
 		          ifNotNil: [ :sourceAnchor | self targetEntityFromAnchor: sourceAnchor fallbackEntity: fallbackEntity ].
 	self addTarget: target toHitData: data.
-	anchor ifNotNil: [
-			self
-				addIntervalFromAnchor: anchor
-				of: target
-				flaggedBy: rule class name
-				toHitData: data ].
+	self
+		addIntervalFromAnchor: anchor
+		of: target
+		flaggedBy: rule class name
+		toHitData: data.
 	^ data
 ]
 
@@ -279,42 +277,10 @@ MCPToolRunCritiques >> hitTextOn: stream for: hit [
 	stream nextPutAll: (hit at: #entity ifAbsent: [ '' ])
 ]
 
-{ #category : 'private - running' }
-MCPToolRunCritiques >> methodCritiquesOfRuleClass: ruleClass in: scopeQuery runsOn: runsOnBlock do: aBlock [
-
-	| rule |
-	rule := ruleClass new.
-	self sortedMethodsIn: scopeQuery do: [ :eachMethod |
-			(runsOnBlock value: rule value: eachMethod) ifTrue: [
-				rule check: eachMethod forCritiquesDo: [ :critique | aBlock value: critique value: rule value: eachMethod ] ] ]
-]
-
-{ #category : 'private - methods' }
-MCPToolRunCritiques >> methodReferenceForBehavior: aBehavior selector: aSelector [
-
-	^ String streamContents: [ :stream |
-			  stream nextPutAll: (self targetNameForBehavior: aBehavior).
-			  stream nextPutAll: '>>'.
-			  stream nextPutAll: aSelector asString ]
-]
-
 { #category : 'private - methods' }
 MCPToolRunCritiques >> methodReferenceForCompiledMethod: aCompiledMethod [
 
 	^ self methodReferenceForBehavior: aCompiledMethod methodClass selector: aCompiledMethod selector
-]
-
-{ #category : 'private - scope' }
-MCPToolRunCritiques >> methodScopeQueryFromRequest: request [
-
-	^ MCPCompiledMethodScopeQuery new
-		  packageNames: (self searchScopeStringCollectionNamed: 'packages' fromRequest: request);
-		  classNames: (self searchScopeStringCollectionNamed: 'classes' fromRequest: request);
-		  hierarchyClassNames: (self searchScopeStringCollectionNamed: 'hierarchyOf' fromRequest: request);
-		  subclassClassNames: (self searchScopeStringCollectionNamed: 'subclassesOf' fromRequest: request);
-		  parentClassNames: (self searchScopeStringCollectionNamed: 'superclassesOf' fromRequest: request);
-		  side: (self searchScopeSideFromRequest: request);
-		  yourself
 ]
 
 { #category : 'private - results' }
@@ -341,19 +307,9 @@ MCPToolRunCritiques >> nodeCritiquesOfRuleClass: ruleClass in: scopeQuery runsOn
 
 	| rule |
 	rule := ruleClass new.
-	self sortedMethodsIn: scopeQuery do: [ :eachMethod |
+	(self sortedMethodsIn: scopeQuery) do: [ :eachMethod |
 			((runsOnBlock value: rule value: eachMethod) and: [ rule shouldCheckMethod: eachMethod ]) ifTrue: [
 				self nodeCritiquesOfRule: rule method: eachMethod do: aBlock ] ]
-]
-
-{ #category : 'private - running' }
-MCPToolRunCritiques >> packageCritiquesOfRuleClass: ruleClass in: scopeQuery runsOn: runsOnBlock do: aBlock [
-
-	| rule |
-	rule := ruleClass new.
-	self sortedPackagesIn: scopeQuery do: [ :eachPackage |
-			(runsOnBlock value: rule value: eachPackage) ifTrue: [
-				rule check: eachPackage forCritiquesDo: [ :critique | aBlock value: critique value: rule value: eachPackage ] ] ]
 ]
 
 { #category : 'private - scope' }
@@ -512,30 +468,22 @@ MCPToolRunCritiques >> searchedNoun [
 ]
 
 { #category : 'private - scope' }
-MCPToolRunCritiques >> sortedBehaviorsIn: scopeQuery do: aBlock [
+MCPToolRunCritiques >> sortedBehaviorsIn: scopeQuery [
 
-	| behaviors |
-	behaviors := scopeQuery behaviors asArray.
-	behaviors sort: [ :left :right | (self targetNameForBehavior: left) <= (self targetNameForBehavior: right) ].
-	behaviors do: aBlock
+	^ scopeQuery behaviors asArray sort: [ :left :right | (self targetNameForBehavior: left) <= (self targetNameForBehavior: right) ]
 ]
 
 { #category : 'private - scope' }
-MCPToolRunCritiques >> sortedMethodsIn: scopeQuery do: aBlock [
+MCPToolRunCritiques >> sortedMethodsIn: scopeQuery [
 
-	| methods |
-	methods := scopeQuery methods asArray.
-	methods sort: [ :left :right | (self methodReferenceForCompiledMethod: left) <= (self methodReferenceForCompiledMethod: right) ].
-	methods do: aBlock
+	^ scopeQuery methods asArray sort: [ :left :right |
+		  (self methodReferenceForCompiledMethod: left) <= (self methodReferenceForCompiledMethod: right) ]
 ]
 
 { #category : 'private - scope' }
-MCPToolRunCritiques >> sortedPackagesIn: scopeQuery do: aBlock [
+MCPToolRunCritiques >> sortedPackagesIn: scopeQuery [
 
-	| packages |
-	packages := self packagesIn: scopeQuery.
-	packages sort: [ :left :right | left name <= right name ].
-	packages do: aBlock
+	^ (self packagesIn: scopeQuery) sort: [ :left :right | left name <= right name ]
 ]
 
 { #category : 'private - entries' }
@@ -553,14 +501,6 @@ MCPToolRunCritiques >> targetEntityFromAnchor: sourceAnchor fallbackEntity: fall
 	entity := sourceAnchor entity ifNil: [ ^ fallbackEntity ].
 	(self hasCanonicalTargetDataFor: entity) ifTrue: [ ^ entity ].
 	^ fallbackEntity
-]
-
-{ #category : 'private - methods' }
-MCPToolRunCritiques >> targetNameForBehavior: aBehavior [
-
-	^ aBehavior isMeta
-		  ifTrue: [ aBehavior instanceSide name , ' class' ]
-		  ifFalse: [ aBehavior name ]
 ]
 
 { #category : 'metadata' }

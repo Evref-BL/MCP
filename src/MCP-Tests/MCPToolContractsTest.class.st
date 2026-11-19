@@ -2244,9 +2244,11 @@ MCPToolContractsTest >> testMethodToolTraitOwnsSharedMethodHelpers [
 		                     MCPToolMethodMutation.
 		                     MCPToolMethodSearch.
 		                     MCPToolRewriteMethods.
-		                     MCPToolRemoveMethods }.
-	sharedSelectors := #( selectorStringFromRequest: behaviorNamed:classSide: methodReferenceForBehavior:selector:
-	                      methodReferenceForClassName:selector:isClassSide: methodScopeQueryFromRequest: ).
+		                     MCPToolRemoveMethods.
+		                     MCPToolRunCritiques }.
+	sharedSelectors := #( behaviorNamed:classSide: classNameAndSideOf:do: classReferenceNameFor:classSide:
+	                      methodReferenceForBehavior:selector: methodReferenceForClassName:selector:isClassSide:
+	                      methodScopeQueryFromRequest: requestedClassNameIn: requestedClassSideIn: ).
 	methodToolClasses do: [ :toolClass |
 			self assert: (toolClass withAllSuperclasses anySatisfy: [ :each | each traits includes: TMCPMethodTool ]).
 			sharedSelectors do: [ :selector |

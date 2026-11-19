@@ -48,12 +48,6 @@ MCPToolSearchMethodSource >> defaultExposure [
 	^ 'static'
 ]
 
-{ #category : 'private - request' }
-MCPToolSearchMethodSource >> defaultFilterMode [
-
-	^ 'substring'
-]
-
 { #category : 'metadata' }
 MCPToolSearchMethodSource >> description [
 
@@ -120,13 +114,6 @@ MCPToolSearchMethodSource >> matcherForPattern: aPattern mode: aMode caseSensiti
 MCPToolSearchMethodSource >> needsSourceForFiltering [
 
 	^ true
-]
-
-{ #category : 'private - template' }
-MCPToolSearchMethodSource >> queryEntriesForRequest: request scopeQuery: scopeQuery [
-
-	self requiredFilterPatternFromRequest: request.
-	^ super queryEntriesForRequest: request scopeQuery: scopeQuery
 ]
 
 { #category : 'private - results' }

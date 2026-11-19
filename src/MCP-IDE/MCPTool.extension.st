@@ -136,6 +136,19 @@ MCPTool >> quoteIntervalAt: anInterval flaggedBy: aRuleClassName in: aString [
 ]
 
 { #category : '*MCP-IDE' }
+MCPTool >> scopeQuery: aScopeQuery fromRequest: request [
+	"aScopeQuery, given the entries the request's scope names."
+
+	^ aScopeQuery
+		  packageNames: (self searchScopeStringCollectionNamed: 'packages' fromRequest: request);
+		  classNames: (self searchScopeStringCollectionNamed: 'classes' fromRequest: request);
+		  hierarchyClassNames: (self searchScopeStringCollectionNamed: 'hierarchyOf' fromRequest: request);
+		  subclassClassNames: (self searchScopeStringCollectionNamed: 'subclassesOf' fromRequest: request);
+		  parentClassNames: (self searchScopeStringCollectionNamed: 'superclassesOf' fromRequest: request);
+		  yourself
+]
+
+{ #category : '*MCP-IDE' }
 MCPTool >> searchScopeFromRequest: request [
 
 	^ request argumentNamed: 'scope' ifAbsent: [ Dictionary new ]
@@ -209,6 +222,13 @@ MCPTool >> sideNameFor: isClassSide [
 	^ isClassSide
 		  ifTrue: [ 'class' ]
 		  ifFalse: [ 'instance' ]
+]
+
+{ #category : '*MCP-IDE' }
+MCPTool >> sourceIntervalOf: aSourceAnchor [
+	"Where in its source a critique's anchor points, or nil when it gives no interval."
+
+	^ (aSourceAnchor isNotNil and: [ aSourceAnchor providesInterval ]) ifTrue: [ aSourceAnchor interval ]
 ]
 
 { #category : '*MCP-IDE' }

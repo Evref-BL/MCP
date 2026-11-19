@@ -76,16 +76,15 @@ MCPToolGetMethod >> classNameFor: request checked: aBoolean [
 	"The class an error names: the one the arguments name once checked, else the class argument as written, without the side it may name."
 
 	aBoolean ifTrue: [ ^ self methodNamedIn: request do: [ :className :selector :classSide | className ] ].
-	^ (request stringArgumentNamed: 'class') ifNil: [ '' ] ifNotNil: [ :className | MCPImageLookup baseNameOf: className ]
+	^ (self requestedClassNameIn: request) ifNil: [ '' ]
 ]
 
 { #category : 'private - errors' }
 MCPToolGetMethod >> classSideFor: request checked: aBoolean [
-	"Whether an error names the class side: the side the arguments name once checked, else the class side when the call said so, by side or by a class written as Foo class."
+	"Whether an error names the class side: the side the arguments name once checked, else the class side when the call said so."
 
 	aBoolean ifTrue: [ ^ self methodNamedIn: request do: [ :className :selector :classSide | classSide ] ].
-	^ (request stringArgumentNamed: 'side') = 'class' or: [
-		  (request stringArgumentNamed: 'class') ifNil: [ false ] ifNotNil: [ :className | MCPImageLookup namesClassSide: className ] ]
+	^ self requestedClassSideIn: request
 ]
 
 { #category : 'private - results' }
@@ -235,7 +234,7 @@ MCPToolGetMethod >> methodNamedIn: request do: aBlock [
 	"Give aBlock the class name without its side, the selector, whether the class side is meant and, to a block that takes it, whether the call said which side. A selector written as a reference names it alone, and its side with it; a bare one needs class, and a class written with its side must agree with side."
 
 	| className text |
-	text := self selectorStringFromRequest: request.
+	text := request stringArgumentNamed: 'selector'.
 	(MCPMethodReference fromString: text) ifNotNil: [ :reference |
 			^ aBlock
 				  cull: reference className

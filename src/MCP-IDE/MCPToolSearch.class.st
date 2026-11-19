@@ -16,22 +16,6 @@ MCPToolSearch >> annotations [
 ]
 
 { #category : 'private - schema' }
-MCPToolSearch >> basicFilterModes [
-
-	^ #( 'substring' 'prefix' 'exact' 'regex' )
-]
-
-{ #category : 'private - filtering' }
-MCPToolSearch >> basicRegexMatcherForPattern: aPattern caseSensitive: aBoolean [
-
-	| regex |
-	regex := aBoolean
-		         ifTrue: [ aPattern asRegex ]
-		         ifFalse: [ aPattern asRegexIgnoringCase ].
-	^ [ :candidate | regex search: (self regexSubjectFrom: candidate) ]
-]
-
-{ #category : 'private - schema' }
 MCPToolSearch >> classQueryScopeInputProperties [
 
 	^ { self searchScopeSchemaProperty }
@@ -40,13 +24,7 @@ MCPToolSearch >> classQueryScopeInputProperties [
 { #category : 'private - request' }
 MCPToolSearch >> classScopeQueryFromRequest: request [
 
-	^ MCPClassScopeQuery new
-		  packageNames: (self searchScopeStringCollectionNamed: 'packages' fromRequest: request);
-		  classNames: (self searchScopeStringCollectionNamed: 'classes' fromRequest: request);
-		  hierarchyClassNames: (self searchScopeStringCollectionNamed: 'hierarchyOf' fromRequest: request);
-		  subclassClassNames: (self searchScopeStringCollectionNamed: 'subclassesOf' fromRequest: request);
-		  parentClassNames: (self searchScopeStringCollectionNamed: 'superclassesOf' fromRequest: request);
-		  yourself
+	^ self scopeQuery: MCPClassScopeQuery new fromRequest: request
 ]
 
 { #category : 'private - results' }
@@ -62,19 +40,11 @@ MCPToolSearch >> countTextForPage: page offset: offset noun: aNoun filtering: aB
 							  nextPutAll: 'No ';
 							  nextPutAll: (self pluralNounFor: aNoun) ]
 				  ifFalse: [
-						  offset >= total
-							  ifTrue: [
-									  stream
-										  nextPutAll: 'No ';
-										  nextPutAll: (self pluralNounFor: aNoun);
-										  nextPutAll: ' from offset ';
-										  print: offset;
-										  nextPutAll: '; ' ]
-							  ifFalse: [
-									  (offset = 0 and: [ page nextOffset isNil ]) ifFalse: [
-											  stream
-												  print: page returnedCount;
-												  nextPutAll: ' of ' ] ].
+						  self
+							  pagePrefixOn: stream
+							  page: page
+							  offset: offset
+							  nouns: (self pluralNounFor: aNoun).
 						  stream nextPutAll: (self textForCount: total noun: aNoun) ].
 			  stream nextPutAll: (self matchTextAfterCount: total filtering: aBoolean) ]
 ]
@@ -238,7 +208,7 @@ MCPToolSearch >> filtersRequest: request [
 { #category : 'private - results' }
 MCPToolSearch >> isRegexSyntaxError: anError [
 
-	^ anError class = RegexSyntaxError or: [ anError class = PCRE2CompileError ]
+	^ anError class = PCRE2CompileError
 ]
 
 { #category : 'private - results' }
@@ -250,11 +220,11 @@ MCPToolSearch >> keysStatedInSummary [
 
 { #category : 'private - filtering' }
 MCPToolSearch >> literalRegexSourceFor: aString [
-	"A regex that matches aString as written in either engine: each character either engine reads as syntax is escaped, the colon included, which Rx reads as the start of a class such as :alpha:."
+	"A regex that matches aString as written: each character a regex reads as syntax is escaped."
 
 	^ String streamContents: [ :stream |
 			  aString do: [ :each |
-					  ('\^$.|?*+()[]{}:' includes: each) ifTrue: [ stream nextPut: $\ ].
+					  ('\^$.|?*+()[]{}' includes: each) ifTrue: [ stream nextPut: $\ ].
 					  stream nextPut: each ] ]
 ]
 
@@ -288,13 +258,9 @@ MCPToolSearch >> matcherForPattern: aPattern mode: aMode caseSensitive: aBoolean
 	| normalizedPattern |
 	aPattern ifNil: [ ^ [ :candidate | true ] ].
 	aMode = 'regex' ifTrue: [ ^ self regexMatcherForPattern: aPattern caseSensitive: aBoolean ].
+	aMode = 'substring' ifFalse: [ Error signal: 'Unsupported filter mode: ' , aMode ].
 	normalizedPattern := self normalizeFilterString: aPattern caseSensitive: aBoolean.
-	aMode = 'substring' ifTrue: [
-		^ [ :candidate | (self normalizeFilterString: candidate caseSensitive: aBoolean) includesSubstring: normalizedPattern ] ].
-	aMode = 'prefix' ifTrue: [
-		^ [ :candidate | (self normalizeFilterString: candidate caseSensitive: aBoolean) beginsWith: normalizedPattern ] ].
-	aMode = 'exact' ifTrue: [ ^ [ :candidate | (self normalizeFilterString: candidate caseSensitive: aBoolean) = normalizedPattern ] ].
-	Error signal: 'Unsupported filter mode: ' , aMode
+	^ [ :candidate | (self normalizeFilterString: candidate caseSensitive: aBoolean) includesSubstring: normalizedPattern ]
 ]
 
 { #category : 'private - filtering' }
@@ -327,21 +293,15 @@ MCPToolSearch >> normalizeFilterString: aValue caseSensitive: aBoolean [
 		  ifFalse: [ normalized asLowercase ]
 ]
 
-{ #category : 'private - filtering' }
-MCPToolSearch >> pcre2RegexLibraryAvailable [
-	"PCRE2 is an optional dependency: answer whether there is an engine to compile a pattern with."
+{ #category : 'private - results' }
+MCPToolSearch >> pagePrefixOn: aStream page: page offset: offset nouns: aPluralText [
+	"What a count opens with: No methods from offset 40; past the end, 25 of on a page that holds part of what was found, nothing on one that holds it all."
 
-	^ PCRE2Compiler nativeLibraryAvailable
-]
-
-{ #category : 'private - filtering' }
-MCPToolSearch >> pcre2RegexMatcherForPattern: aPattern caseSensitive: aBoolean [
-
-	| regex |
-	regex := aBoolean
-		         ifTrue: [ aPattern asPerlCompatibleRegex ]
-		         ifFalse: [ aPattern asPerlCompatibleRegexIgnoringCase ].
-	^ [ :candidate | regex search: (self regexSubjectFrom: candidate) ]
+	offset >= page totalCount ifTrue: [ ^ aStream << 'No ' << aPluralText << ' from offset ' << offset printString << '; ' ].
+	(offset = 0 and: [ page nextOffset isNil ]) ifFalse: [
+			aStream
+				print: page returnedCount;
+				nextPutAll: ' of ' ]
 ]
 
 { #category : 'private - template' }
@@ -373,18 +333,12 @@ MCPToolSearch >> readingNoteForPage: page [
 
 { #category : 'private - filtering' }
 MCPToolSearch >> regexMatchStartFinderForPattern: aPattern caseSensitive: aBoolean [
-	"A block answering where the first match of aPattern starts in a text, as the index of its first character, or 0 when the text holds none. It runs the engine regexMatcherForPattern:caseSensitive: runs; after a search, either engine answers the 0-based position the match starts at."
+	"A block answering where the first match of aPattern starts in a text, as the index of its first character, or 0 when the text holds none. After a search, PCRE2 answers the 0-based position the match starts at."
 
 	| regex |
-	regex := self pcre2RegexLibraryAvailable
-		         ifTrue: [
-				         aBoolean
-					         ifTrue: [ aPattern asPerlCompatibleRegex ]
-					         ifFalse: [ aPattern asPerlCompatibleRegexIgnoringCase ] ]
-		         ifFalse: [
-				         aBoolean
-					         ifTrue: [ aPattern asRegex ]
-					         ifFalse: [ aPattern asRegexIgnoringCase ] ].
+	regex := aBoolean
+		         ifTrue: [ aPattern asPerlCompatibleRegex ]
+		         ifFalse: [ aPattern asPerlCompatibleRegexIgnoringCase ].
 	^ [ :candidate |
 		  (regex search: (self regexSubjectFrom: candidate))
 			  ifTrue: [ (regex subBeginning: 1) first + 1 ]
@@ -394,9 +348,9 @@ MCPToolSearch >> regexMatchStartFinderForPattern: aPattern caseSensitive: aBoole
 { #category : 'private - filtering' }
 MCPToolSearch >> regexMatcherForPattern: aPattern caseSensitive: aBoolean [
 
-	^ self pcre2RegexLibraryAvailable
-		  ifTrue: [ self pcre2RegexMatcherForPattern: aPattern caseSensitive: aBoolean ]
-		  ifFalse: [ self basicRegexMatcherForPattern: aPattern caseSensitive: aBoolean ]
+	| finder |
+	finder := self regexMatchStartFinderForPattern: aPattern caseSensitive: aBoolean.
+	^ [ :candidate | (finder value: candidate) > 0 ]
 ]
 
 { #category : 'private - filtering' }
@@ -462,12 +416,6 @@ MCPToolSearch >> successSummaryForRequest: request scopeQuery: scopeQuery page: 
 		  searchSummaryForCountText: (self countTextForRequest: request page: page)
 		  scopePhrase: (self scopePhraseForScopeQuery: scopeQuery)
 		  page: page
-]
-
-{ #category : 'private - schema' }
-MCPToolSearch >> supportedFilterModes [
-
-	^ self basicFilterModes
 ]
 
 { #category : 'private - results' }

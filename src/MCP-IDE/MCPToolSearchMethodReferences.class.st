@@ -3,7 +3,7 @@ Concrete method_reference_search tool. It answers where a name is used, working 
 "
 Class {
 	#name : 'MCPToolSearchMethodReferences',
-	#superclass : 'MCPToolMethodLookupOperation',
+	#superclass : 'MCPToolMethodSearch',
 	#category : 'MCP-IDE-Tools',
 	#package : 'MCP-IDE',
 	#tag : 'Tools'
@@ -15,29 +15,43 @@ MCPToolSearchMethodReferences class >> toolName [
 	^ 'method_reference_search'
 ]
 
+{ #category : 'metadata' }
+MCPToolSearchMethodReferences >> buildInputSchema [
+
+	^ MCPStructureInputSchema
+		  properties: self methodQueryScopeInputProperties , {
+				  (self filterSchemaPropertyWithDescription: 'Selector, class name or variable name.').
+				  (self
+					   stringEnumSchemaPropertyNamed: 'kind'
+					   description: 'Read query as this kind of thing, instead of deciding from its spelling.'
+					   values: self referenceKinds).
+				  self offsetInputProperty }
+		  required: #( 'query' )
+]
+
+{ #category : 'private - methods' }
+MCPToolSearchMethodReferences >> classReferenceEntriesForClassNamed: className scopeQuery: scopeQuery [
+	"The class is looked up before the scope's methods are collected, so a missing one is said at once."
+
+	| query |
+	query := MCPClassReferenceQuery forClass: (MCPImageLookup classNamed: className).
+	^ self methodEntriesFromMethods: (query methodsReferringIn: scopeQuery collectedMethods)
+]
+
 { #category : 'private - results' }
 MCPToolSearchMethodReferences >> countTextForRequest: request page: page [
 	"What was looked for and how much of it was found, counted over every hit rather than the page: 1 implementor and 3 senders of dailyRation, 25 of 40 methods refer to ZooLion. Nothing found names the kinds that were looked for."
 
-	| counts name offset |
+	| counts name |
 	name := self filterPatternFromRequest: request.
 	page totalCount = 0 ifTrue: [ ^ self noHitTextForKinds: (self kindsForName: name fromRequest: request) name: name ].
 	counts := page countsByKind.
-	offset := request integerArgumentNamed: 'offset'.
 	^ String streamContents: [ :stream |
-			  offset >= page totalCount
-				  ifTrue: [
-						  stream
-							  nextPutAll: 'No ';
-							  nextPutAll: (self kindNounsTextForCounts: counts);
-							  nextPutAll: ' from offset ';
-							  print: offset;
-							  nextPutAll: '; ' ]
-				  ifFalse: [
-						  (offset = 0 and: [ page nextOffset isNil ]) ifFalse: [
-								  stream
-									  print: page returnedCount;
-									  nextPutAll: ' of ' ] ].
+			  self
+				  pagePrefixOn: stream
+				  page: page
+				  offset: (request integerArgumentNamed: 'offset')
+				  nouns: (self kindNounsTextForCounts: counts).
 			  stream nextPutAll: (self hitCountTextForCounts: counts name: name) ]
 ]
 
@@ -111,17 +125,6 @@ MCPToolSearchMethodReferences >> entriesOfKind: aKind forName: aName scopeQuery:
 			  entry ]
 ]
 
-{ #category : 'private - schema' }
-MCPToolSearchMethodReferences >> extraInputProperties [
-
-	^ { ((self
-		    schemaPropertyNamed: 'kind'
-		    type: 'string'
-		    description: 'Read query as this kind of thing, instead of deciding from its spelling.')
-		   enum: self referenceKinds;
-		   yourself) }
-]
-
 { #category : 'private - lookup' }
 MCPToolSearchMethodReferences >> fallbackKindsFor: kinds [
 	"A lowercase name is read as a selector, but an instance variable looks exactly the same, so a
@@ -170,6 +173,27 @@ MCPToolSearchMethodReferences >> hitCountTextForCounts: counts name: aName [
 			  stream nextPutAll: aName ]
 ]
 
+{ #category : 'private - methods' }
+MCPToolSearchMethodReferences >> implementorEntriesForSelector: selectorString scopeQuery: scopeQuery [
+
+	^ self methodEntriesFromMethods: (self implementorMethodsForSelector: selectorString asSymbol scopeQuery: scopeQuery)
+]
+
+{ #category : 'private - methods' }
+MCPToolSearchMethodReferences >> implementorMethodsForSelector: selectorSymbol scopeQuery: scopeQuery [
+
+	| methods |
+	scopeQuery packageNames ifNotEmpty: [
+		^ (scopeQuery collectedMethods select: [ :eachMethod | eachMethod selector = selectorSymbol ]) asArray ].
+	methods := OrderedCollection new.
+	scopeQuery behaviors do: [ :eachBehavior |
+			(eachBehavior includesSelector: selectorSymbol) ifTrue: [
+					| method |
+					method := eachBehavior >> selectorSymbol.
+					(scopeQuery isInstalledFromTraitedClass: method) ifFalse: [ methods add: method ] ] ].
+	^ methods asArray
+]
+
 { #category : 'private - lookup' }
 MCPToolSearchMethodReferences >> isSelectorName: aName [
 	"Whether aName can be a selector, as audit, at:put: and + can, and #audit, self audit and audit.total cannot."
@@ -198,18 +222,6 @@ MCPToolSearchMethodReferences >> kindsForName: aName fromRequest: request [
 	^ (MCPImageLookup isClassName: aName)
 		  ifTrue: [ #( 'class' ) ]
 		  ifFalse: [ #( 'variable' ) ]
-]
-
-{ #category : 'private - schema' }
-MCPToolSearchMethodReferences >> lookupArgumentDescription [
-
-	^ 'Selector, class name or variable name.'
-]
-
-{ #category : 'private - schema' }
-MCPToolSearchMethodReferences >> lookupArgumentName [
-
-	^ 'query'
 ]
 
 { #category : 'private - results' }
@@ -245,12 +257,18 @@ MCPToolSearchMethodReferences >> noHitTextForKinds: kinds name: aName [
 			  stream nextPutAll: aName ]
 ]
 
+{ #category : 'private - searching' }
+MCPToolSearchMethodReferences >> noVariableMessageFor: aVariableName [
+
+	^ String streamContents: [ :stream | stream << 'No variable named ' << aVariableName << ' is accessible in the requested scope.' ]
+]
+
 { #category : 'private - template' }
 MCPToolSearchMethodReferences >> queryEntriesForRequest: request scopeQuery: scopeQuery [
 	"The name is read as its spelling says, then the other way when that finds nothing. When neither finds anything and a reading failed, the name is unknown, except for a selector: a selector always resolves, so its first reading answers that nothing implements or sends it. A name that can be neither a selector nor a variable, such as #audit, is unknown before anything is swept: its reading as a variable is what fails."
 
 	| entries fallback kinds name failures |
-	name := self requiredFilterPatternFromRequest: request.
+	name := self filterPatternFromRequest: request.
 	kinds := self kindsForName: name fromRequest: request.
 	(self requestedKindFromRequest: request) ifNotNil: [ ^ self entriesForKinds: kinds name: name scopeQuery: scopeQuery ].
 	((kinds includes: 'class') or: [ self isSelectorName: name ]) ifFalse: [
@@ -307,7 +325,7 @@ MCPToolSearchMethodReferences >> referenceKinds [
 
 { #category : 'private - lookup' }
 MCPToolSearchMethodReferences >> requestedKindFromRequest: request [
-	"The kind the caller asked name to be read as, or nil to decide it from the name's spelling."
+	"The kind the caller asked query to be read as, or nil to decide it from its spelling."
 
 	^ request stringArgumentNamed: 'kind'
 ]
@@ -328,6 +346,13 @@ MCPToolSearchMethodReferences >> selectorKinds [
 	"The kinds a selector is looked up as, in the order their hits are listed."
 
 	^ #( 'implementors' 'senders' )
+]
+
+{ #category : 'private - methods' }
+MCPToolSearchMethodReferences >> selectorReferenceEntriesForSelector: selectorString scopeQuery: scopeQuery [
+
+	^ self methodEntriesFromMethods:
+		  (self matchingSelectorReferencesForSelector: selectorString asSymbol inMethods: scopeQuery collectedMethods)
 ]
 
 { #category : 'private - lookup' }
@@ -363,4 +388,27 @@ MCPToolSearchMethodReferences >> successSummaryForRequest: request scopeQuery: s
 MCPToolSearchMethodReferences >> title [
 
 	^ 'Search Method References'
+]
+
+{ #category : 'private - searching' }
+MCPToolSearchMethodReferences >> variableBindingsNamed: aVariableName inBehaviors: behaviors [
+
+	| name variables |
+	name := aVariableName asSymbol.
+	variables := IdentitySet new.
+	behaviors do: [ :eachBehavior |
+			eachBehavior allSlots do: [ :eachSlot | eachSlot name = name ifTrue: [ variables add: eachSlot ] ].
+			(eachBehavior bindingOf: name) ifNotNil: [ :binding | variables add: binding ] ].
+	^ variables asArray
+]
+
+{ #category : 'private - methods' }
+MCPToolSearchMethodReferences >> variableReferenceEntriesForVariableNamed: variableName scopeQuery: scopeQuery [
+	"The variables are looked up before the scope's methods are collected, so a name that no variable has sweeps no method."
+
+	| variables |
+	variables := self variableBindingsNamed: variableName inBehaviors: scopeQuery behaviors.
+	variables ifEmpty: [ Error signal: (self noVariableMessageFor: variableName) ].
+	^ self methodEntriesFromMethods:
+		  (scopeQuery collectedMethods select: [ :each | MCPClassReferenceQuery method: each referencesAnyVariable: variables ])
 ]

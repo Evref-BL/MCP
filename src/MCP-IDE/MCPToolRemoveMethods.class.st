@@ -41,32 +41,7 @@ MCPToolRemoveMethods >> buildInputSchema [
 MCPToolRemoveMethods >> checkArguments: request [
 	"A side that says the other one than the class name is refused, as is a selector list that names none."
 
-	MCPImageLookup
-		className: (request stringArgumentNamed: 'class')
-		side: (request stringArgumentNamed: 'side')
-		do: [ :className :classSide :sideGiven | self selectorsFromRequest: request ]
-]
-
-{ #category : 'private - errors' }
-MCPToolRemoveMethods >> classNameFor: request checked: aBoolean [
-	"The class an error names. Before the arguments are checked, a call that gave none reads as an empty name."
-
-	^ (self classNameOf: request) ifNil: [ aBoolean ifFalse: [ '' ] ]
-]
-
-{ #category : 'private' }
-MCPToolRemoveMethods >> classNameOf: request [
-	"The class the call names, without the side it may name."
-
-	^ (request stringArgumentNamed: 'class') ifNotNil: [ :className | MCPImageLookup baseNameOf: className ]
-]
-
-{ #category : 'private' }
-MCPToolRemoveMethods >> classSideOf: request [
-	"The class side is meant when the call says so, by side or by a class written as Foo class."
-
-	^ (request stringArgumentNamed: 'side') = 'class' or: [
-		  (request stringArgumentNamed: 'class') ifNil: [ false ] ifNotNil: [ :className | MCPImageLookup namesClassSide: className ] ]
+	self classNameAndSideOf: request do: [ :className :classSide :sideGiven | self selectorsFromRequest: request ]
 ]
 
 { #category : 'metadata' }
@@ -94,8 +69,8 @@ MCPToolRemoveMethods >> executeWithRequest: request [
 				  self removeWith: request ]
 		  onError: [ :error |
 				  | className classSide selectors |
-				  className := self classNameFor: request checked: checked.
-				  classSide := self classSideOf: request.
+				  className := (self requestedClassNameIn: request) ifNil: [ checked ifFalse: [ '' ] ].
+				  classSide := self requestedClassSideIn: request.
 				  selectors := self selectorsFor: request checked: checked.
 				  self
 					  errorResultFor: error
@@ -198,8 +173,8 @@ MCPToolRemoveMethods >> removeWith: request [
 	"Senders do not stop a removal. Once the methods are gone, the answer warns of the sends they left without a method."
 
 	| behavior className classSide selectorSymbols selectors |
-	className := self classNameOf: request.
-	classSide := self classSideOf: request.
+	className := self requestedClassNameIn: request.
+	classSide := self requestedClassSideIn: request.
 	selectors := self selectorsFromRequest: request.
 	selectorSymbols := selectors collect: #asSymbol.
 	behavior := self behaviorNamed: className classSide: classSide.

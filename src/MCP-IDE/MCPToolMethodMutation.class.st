@@ -156,13 +156,6 @@ MCPToolMethodMutation >> blockingPreCompileRuleClasses [
 	^ { ReDeadBlockRule }
 ]
 
-{ #category : 'private - arguments' }
-MCPToolMethodMutation >> classNameAndSideOf: request do: aBlock [
-	"aBlock gets the class the call names without its side, whether the class side is meant, and whether the call said which side, by side or by a class written as Foo class. A side that says the other one is refused."
-
-	^ MCPImageLookup className: (request stringArgumentNamed: 'class') side: (request stringArgumentNamed: 'side') do: aBlock
-]
-
 { #category : 'private' }
 MCPToolMethodMutation >> classSideNoteFor: aSelector of: aClass [
 	"When an instance of aClass, sent aSelector by a method of its own, does not understand it and the class side has a method of its own for it, as new: that the class has it, and how to reach it. The class side also understands all that Class, ClassDescription and Behavior give every class, as name, comment or category. An instance-side method that sends one of those to self lacks an accessor, and self class name would quietly answer the name of the class. So only a method defined on a class side counts, of aClass or of a superclass, and the instance creation methods of Behavior."
@@ -267,7 +260,7 @@ MCPToolMethodMutation >> critiqueDataFor: aCritique source: aString in: aBehavio
 		        (#ruleClass -> ruleClassName asString).
 		        (#title -> aCritique title asString).
 		        (#description -> aCritique description asString) } asDictionary.
-	interval := self sourceIntervalForCritique: aCritique.
+	interval := self sourceIntervalOf: aCritique sourceAnchor.
 	interval ifNotNil: [
 			data
 				at: #start put: interval first;
@@ -498,14 +491,4 @@ MCPToolMethodMutation >> slotNoteFor: aSelector receivedBy: aReceiverBehavior in
 							  ifTrue: [ stream << 'read it directly, as ' << slotName << '.' ]
 							  ifFalse: [ stream << 'assign it directly, as ' << slotName << ' := ...' ] ] ]
 		  ifNone: [ nil ]
-]
-
-{ #category : 'private' }
-MCPToolMethodMutation >> sourceIntervalForCritique: aCritique [
-
-	| sourceAnchor |
-	sourceAnchor := aCritique sourceAnchor.
-	sourceAnchor ifNil: [ ^ nil ].
-	sourceAnchor providesInterval ifFalse: [ ^ nil ].
-	^ sourceAnchor interval
 ]

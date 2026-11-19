@@ -20,10 +20,14 @@ TMCPMethodTool >> behaviorNamed: aClassName classSide: aBoolean [
 TMCPMethodTool >> behaviorNamedIn: request [
 	"The class or class side the call names by class and side. A side that says the other one than the class name is refused."
 
-	^ MCPImageLookup
-		  className: (request stringArgumentNamed: 'class')
-		  side: (request stringArgumentNamed: 'side')
-		  do: [ :className :classSide :sideGiven | self behaviorNamed: className classSide: classSide ]
+	^ self classNameAndSideOf: request do: [ :className :classSide :sideGiven | self behaviorNamed: className classSide: classSide ]
+]
+
+{ #category : 'private - request' }
+TMCPMethodTool >> classNameAndSideOf: request do: aBlock [
+	"aBlock gets the class the call names without its side, whether the class side is meant, and whether the call said which side, by side or by a class written as Foo class. A side that says the other one is refused."
+
+	^ MCPImageLookup className: (request stringArgumentNamed: 'class') side: (request stringArgumentNamed: 'side') do: aBlock
 ]
 
 { #category : 'private - methods' }
@@ -100,12 +104,7 @@ TMCPMethodTool >> methodReferenceForClassName: aClassName selector: aSelector is
 { #category : 'private - methods' }
 TMCPMethodTool >> methodScopeQueryFromRequest: request [
 
-	^ MCPCompiledMethodScopeQuery new
-		  packageNames: (self searchScopeStringCollectionNamed: 'packages' fromRequest: request);
-		  classNames: (self searchScopeStringCollectionNamed: 'classes' fromRequest: request);
-		  hierarchyClassNames: (self searchScopeStringCollectionNamed: 'hierarchyOf' fromRequest: request);
-		  subclassClassNames: (self searchScopeStringCollectionNamed: 'subclassesOf' fromRequest: request);
-		  parentClassNames: (self searchScopeStringCollectionNamed: 'superclassesOf' fromRequest: request);
+	^ (self scopeQuery: MCPCompiledMethodScopeQuery new fromRequest: request)
 		  side: (self searchScopeSideFromRequest: request);
 		  yourself
 ]
@@ -118,9 +117,18 @@ TMCPMethodTool >> removedMethodHintSelecting: aBlock [
 ]
 
 { #category : 'private - request' }
-TMCPMethodTool >> selectorStringFromRequest: request [
+TMCPMethodTool >> requestedClassNameIn: request [
+	"The class the call names, without the side it may name, as written and unchecked, for an error to echo; nil when it names none."
 
-	^ request stringArgumentNamed: 'selector'
+	^ (request stringArgumentNamed: 'class') ifNotNil: [ :className | MCPImageLookup baseNameOf: className ]
+]
+
+{ #category : 'private - request' }
+TMCPMethodTool >> requestedClassSideIn: request [
+	"Whether the call says the class side, by side or by a class written as Foo class, as written and unchecked, for an error to echo."
+
+	^ (request stringArgumentNamed: 'side') = 'class' or: [
+		  (request stringArgumentNamed: 'class') ifNil: [ false ] ifNotNil: [ :className | MCPImageLookup namesClassSide: className ] ]
 ]
 
 { #category : 'private - traits' }
