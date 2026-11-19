@@ -1,11 +1,11 @@
 "
-Spec presenter used by the inspector for an MCP server object. It shows server state, endpoint configuration, lifecycle controls, registered tools, and observability data. The observability area separates aggregate tool metrics, trace records for errors and outliers, and recent logs. The main dashboard widgets are arranged with draggable splitters and disclosure-style section headers so the tools, metrics, traces, and log tables can be resized or collapsed while inspecting the server. Observability data can be refreshed manually or through the auto-refresh checkbox while the presenter is displayed.
+Spec presenter used by the inspector for an MCP server object. It shows the server's state, endpoint and port, and its debug mode; starts, stops and restarts it; and lists every tool the server could run, with whether it has each one and whether tools/list shows it. What the server recorded about its calls is MCPObservabilityPresenter's tab.
 "
 Class {
 	#name : 'MCPDashboardPresenter',
 	#superclass : 'SpPresenterWithModel',
-	#traits : 'TMCPServerStatusDisplay + TMCPToolRowIcon + TMCPToolTable',
-	#classTraits : 'TMCPServerStatusDisplay classTrait + TMCPToolRowIcon classTrait + TMCPToolTable classTrait',
+	#traits : 'TMCPServerStatusDisplay + TMCPToolTable',
+	#classTraits : 'TMCPServerStatusDisplay classTrait + TMCPToolTable classTrait',
 	#instVars : [
 		'statusIcon',
 		'statusLabel',
@@ -20,8 +20,7 @@ Class {
 		'stopButton',
 		'restartButton',
 		'toolsLabel',
-		'toolsTable',
-		'rowIcons'
+		'toolsTable'
 	],
 	#category : 'MCP-UI',
 	#package : 'MCP-UI'
@@ -50,12 +49,9 @@ MCPDashboardPresenter class >> openOn: anMCP [
 
 { #category : 'actions' }
 MCPDashboardPresenter >> applyPort [
-	"Apply does one thing now: it moves the server to the port in the field. Debug mode takes effect when it is ticked."
+	"Apply moves the server to the port in the field. Debug mode takes effect when it is ticked."
 
-	[ self model changePortTo: self readPortFromInput ]
-		on: Error
-		do: [ :error | UIManager default alert: error messageText ].
-	self refreshView
+	self serverDo: [ :mcp | mcp changePortTo: ((self portFrom: portInput text) ifNil: [ Error signal: self invalidPortText ]) ]
 ]
 
 { #category : 'layout' }
@@ -82,8 +78,8 @@ MCPDashboardPresenter >> connectPresenters [
 	debugCheckBox whenChangedDo: [ :enabled | self debugModeChangedTo: enabled ].
 	refreshButton action: [ self refreshView ].
 	startButton action: [ self startServer ].
-	stopButton action: [ self stopServer ].
-	restartButton action: [ self restartServer ]
+	stopButton action: [ self serverDo: [ :mcp | mcp stop ] ].
+	restartButton action: [ self serverDo: [ :mcp | mcp restart ] ]
 ]
 
 { #category : 'actions' }
@@ -141,7 +137,6 @@ MCPDashboardPresenter >> headerLayout [
 { #category : 'initialization' }
 MCPDashboardPresenter >> initializePresenters [
 
-	rowIcons := Dictionary new.
 	statusIcon := self newImage.
 	statusLabel := self newLabel.
 	statusValueLabel := self newLabel.
@@ -150,9 +145,9 @@ MCPDashboardPresenter >> initializePresenters [
 	portInput := self newTextInput.
 	debugCheckBox := self newCheckBox.
 	applyButton := self newButton.
-	refreshButton := self newButton.
-	startButton := self newButton.
-	stopButton := self newButton.
+	refreshButton := self newRefreshButton.
+	startButton := self newStartButton.
+	stopButton := self newStopButton.
 	restartButton := self newButton.
 	toolsLabel := self newLabel.
 	toolsTable := self newTable.
@@ -167,15 +162,6 @@ MCPDashboardPresenter >> initializePresenters [
 		label: 'Apply';
 		icon: (self iconNamed: #accept);
 		enabled: false.
-	refreshButton
-		label: 'Refresh';
-		icon: (self iconNamed: #refreshCircling).
-	startButton
-		label: 'Start';
-		icon: (self iconNamed: #go).
-	stopButton
-		label: 'Stop';
-		icon: self serverStopIcon.
 	restartButton
 		label: 'Restart';
 		icon: (self iconNamed: #restart).
@@ -188,9 +174,7 @@ MCPDashboardPresenter >> initializeToolsTable [
 
 	toolsTable
 		addColumn: self rowIconColumn;
-		addColumn: ((SpStringTableColumn title: 'Tool' evaluated: #name)
-				 beSortable;
-				 yourself);
+		addColumn: self toolNameColumn;
 		addColumn: ((SpCheckBoxTableColumn title: 'Enabled' evaluated: [ :tool | self isToolEnabled: tool ])
 				 onActivation: [ :tool | self enableTool: tool ];
 				 onDeactivation: [ :tool | self disableTool: tool ];
@@ -199,10 +183,8 @@ MCPDashboardPresenter >> initializeToolsTable [
 				 onActivation: [ :tool | self listTool: tool ];
 				 onDeactivation: [ :tool | self unlistTool: tool ];
 				 yourself);
-		addColumn: ((SpStringTableColumn title: 'Title' evaluated: [ :tool | tool title ifNil: [ '' ] ])
-				 beSortable;
-				 yourself);
-		addColumn: (SpStringTableColumn title: 'Description' evaluated: [ :tool | tool description ifNil: [ '' ] ]);
+		addColumn: self toolTitleColumn;
+		addColumn: self toolDescriptionColumn;
 		beResizable.
 	self connectToolsTable
 ]
@@ -218,12 +200,9 @@ MCPDashboardPresenter >> initializeWindow: aWindowPresenter [
 MCPDashboardPresenter >> isPortChangePending [
 	"Apply has something to do only when the field holds a port that is not the one the server is on."
 
-	| mcp typed |
+	| mcp |
 	mcp := self model ifNil: [ ^ false ].
-	typed := [ self readPortFromInput ]
-		         on: Error
-		         do: [ :error | ^ false ].
-	^ typed ~= mcp port
+	^ (self portFrom: portInput text) ifNil: [ false ] ifNotNil: [ :port | port ~= mcp port ]
 ]
 
 { #category : 'tools' }
@@ -264,23 +243,6 @@ MCPDashboardPresenter >> modelChanged [
 	self refreshView
 ]
 
-{ #category : 'private' }
-MCPDashboardPresenter >> readPortFromInput [
-
-	| parsedPort trimmedPort |
-	trimmedPort := portInput text asString trimBoth.
-
-	trimmedPort isEmpty ifTrue: [ self error: 'Port cannot be empty.' ].
-
-	parsedPort := [ trimmedPort asInteger ]
-		              on: Error
-		              do: [ :error | self error: 'Port must be a valid integer.' ].
-
-	(parsedPort between: 1 and: 65535) ifFalse: [ self error: 'Port must be between 1 and 65535.' ].
-
-	^ parsedPort
-]
-
 { #category : 'updating' }
 MCPDashboardPresenter >> refreshView [
 
@@ -305,29 +267,19 @@ MCPDashboardPresenter >> refreshView [
 ]
 
 { #category : 'actions' }
-MCPDashboardPresenter >> restartServer [
+MCPDashboardPresenter >> serverDo: aBlock [
+	"Act on the server, alert what stopped it, and show where it left the server."
 
-	[ self model restart ]
+	[ aBlock value: self model ]
 		on: Error
 		do: [ :error | UIManager default alert: error messageText ].
-
 	self refreshView
-]
-
-{ #category : 'tools' }
-MCPDashboardPresenter >> rowIconCache [
-
-	^ rowIcons
 ]
 
 { #category : 'actions' }
 MCPDashboardPresenter >> startServer [
 
-	[ self model start ]
-		on: Error
-		do: [ :error | UIManager default alert: error messageText ].
-
-	self refreshView
+	self serverDo: [ :mcp | mcp start ]
 ]
 
 { #category : 'layout' }
@@ -343,16 +295,6 @@ MCPDashboardPresenter >> statusRowLayout [
 					  height: 18 ];
 		  add: statusValueLabel expand: false;
 		  yourself
-]
-
-{ #category : 'actions' }
-MCPDashboardPresenter >> stopServer [
-
-	[ self model stop ]
-		on: Error
-		do: [ :error | UIManager default alert: error messageText ].
-
-	self refreshView
 ]
 
 { #category : 'api' }

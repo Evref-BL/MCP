@@ -30,6 +30,12 @@ MCPNamedToolIconSpec >> cacheKey [
 		  self iconSymbol }
 ]
 
+{ #category : 'rendering' }
+MCPNamedToolIconSpec >> formUsing: anIconFactory [
+
+	^ anIconFactory highScaleFormNamed: self iconSymbol
+]
+
 { #category : 'accessing' }
 MCPNamedToolIconSpec >> iconSymbol [
 
@@ -40,10 +46,4 @@ MCPNamedToolIconSpec >> iconSymbol [
 MCPNamedToolIconSpec >> iconSymbol: anIconSymbol [
 
 	iconSymbol := anIconSymbol asSymbol
-]
-
-{ #category : 'rendering' }
-MCPNamedToolIconSpec >> renderUsing: anIconFactory [
-
-	^ anIconFactory iconForForm: (anIconFactory highScaleFormNamed: self iconSymbol)
 ]

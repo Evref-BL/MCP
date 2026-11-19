@@ -116,18 +116,6 @@ MCPTool class >> toolCatalogGroupName [
 	^ 'tool-catalog'
 ]
 
-{ #category : 'scripts' }
-MCPTool class >> toolGroups [
-
-	^ MCPToolRegistry default toolGroups
-]
-
-{ #category : 'scripts' }
-MCPTool class >> toolIconFormOf: aToolClass [
-
-	^ Form fromBase64String: (aToolClass toolIcons first src copyAfter: $,)
-]
-
 { #category : 'icons' }
 MCPTool class >> toolIconSpec [
 
@@ -925,24 +913,6 @@ MCPTool >> pluralNounFor: aNoun [
 		^ (aNoun allButLast: 1) , 'ies' ].
 	(#( 's' 'x' 'z' 'ch' 'sh' ) anySatisfy: [ :ending | aNoun endsWith: ending ]) ifTrue: [ ^ aNoun , 'es' ].
 	^ aNoun , 's'
-]
-
-{ #category : 'private - icons' }
-MCPTool >> pngDataUriForForm: aForm [
-
-	^ MCPStructureIcon pngDataUriForForm: aForm
-]
-
-{ #category : 'private - icons' }
-MCPTool >> pngIconNamed: anIconSymbol [
-
-	^ MCPStructureIcon pngIconNamed: anIconSymbol
-]
-
-{ #category : 'private - icons' }
-MCPTool >> pngSizeStringForForm: aForm [
-
-	^ String streamContents: [ :stream | stream << aForm width asString << 'x' << aForm height asString ]
 ]
 
 { #category : 'private - results' }

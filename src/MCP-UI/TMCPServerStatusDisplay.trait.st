@@ -1,5 +1,5 @@
 "
-Names and icons for the state of an MCP server, shared by the presenters that display one.
+What the presenters that display an MCP server share: the names and icons of its state, the buttons that start, stop and refresh it, and the reading of a port typed into a field.
 
 Running and listening are two facts, not one: a server whose socket died is still running, and a socket that outlived its server is still holding the port. Both are worth saying out loud, since the second is what makes a port look mysteriously taken.
 "
@@ -8,6 +8,49 @@ Trait {
 	#category : 'MCP-UI',
 	#package : 'MCP-UI'
 }
+
+{ #category : 'server port' }
+TMCPServerStatusDisplay >> invalidPortText [
+
+	^ 'Enter a port between 0 and 65535, or 0 for a free one.'
+]
+
+{ #category : 'server actions' }
+TMCPServerStatusDisplay >> newRefreshButton [
+
+	^ self newButton
+		  label: 'Refresh';
+		  icon: (self iconNamed: #refreshCircling);
+		  yourself
+]
+
+{ #category : 'server actions' }
+TMCPServerStatusDisplay >> newStartButton [
+
+	^ self newButton
+		  label: 'Start';
+		  icon: (self iconNamed: #go);
+		  yourself
+]
+
+{ #category : 'server actions' }
+TMCPServerStatusDisplay >> newStopButton [
+
+	^ self newButton
+		  label: 'Stop';
+		  icon: self serverStopIcon;
+		  yourself
+]
+
+{ #category : 'server port' }
+TMCPServerStatusDisplay >> portFrom: aString [
+	"The port a field asks for, or nil when its text is not one. Only digits are read, since asInteger takes the first run of digits wherever it is. 0 asks for a free port."
+
+	| text |
+	text := aString asString trimBoth.
+	(text isNotEmpty and: [ (text allSatisfy: [ :each | each isDigit ]) and: [ text asInteger <= 65535 ] ]) ifFalse: [ ^ nil ].
+	^ text asInteger
+]
 
 { #category : 'server status' }
 TMCPServerStatusDisplay >> serverStatusIconNameFor: anMCP [

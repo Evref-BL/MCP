@@ -154,7 +154,7 @@ MCPObservabilityPresenter >> initializeWindow: aWindowPresenter [
 
 	super initializeWindow: aWindowPresenter.
 	aWindowPresenter
-		title: 'MCP Observability';
+		title: self title;
 		whenClosedDo: [ self stopAutoRefresh ]
 ]
 

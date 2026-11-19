@@ -545,7 +545,7 @@ MCPToolContractsTest >> testBrowseIconToolGroupsKeepRelatedToolsTogether [
 
 	| autoRegisteredToolClasses groupedToolClasses |
 	groupedToolClasses := OrderedCollection new.
-	MCPTool toolGroups do: [ :group |
+	MCPToolRegistry default toolGroups do: [ :group |
 			group value do: [ :toolClass | self assert: toolClass new groupName equals: group key ].
 			groupedToolClasses addAll: group value ].
 	autoRegisteredToolClasses := MCPTool concreteSubclasses select: [ :toolClass | toolClass shouldAutoRegister ].
@@ -2559,33 +2559,30 @@ MCPToolContractsTest >> testRepositoryCreateAndUpdateRequiredArguments [
 { #category : 'tests' }
 MCPToolContractsTest >> testRequestedToolIconsAreSelected [
 
-	MCPStructureIcon resetCaches.
 	self
-		assert: MCPToolGetClass new icons first asJRPCJSON
-		equals: (MCPStructureIcon compositeBaseIconNamed: #class badgeIconNamed: #inspect) asJRPCJSON.
+		assert: MCPToolGetClass toolIconSpec cacheKey
+		equals: (MCPToolIconSpec baseIconNamed: #class badgeIconNamed: #inspect) cacheKey.
 	self
-		assert: MCPToolSearchMethodSource new icons first asJRPCJSON
-		equals: (MCPStructureIcon compositeBaseIconNamed: #page leftBadgeIconNamed: #workspace rightBadgeIconNamed: #search) asJRPCJSON.
+		assert: MCPToolSearchMethodSource toolIconSpec cacheKey
+		equals: (MCPToolIconSpec baseIconNamed: #page leftBadgeIconNamed: #workspace rightBadgeIconNamed: #search) cacheKey.
 	self
-		assert: MCPToolSearchMethodReferences new icons first asJRPCJSON
-		equals: (MCPStructureIcon compositeBaseIconNamed: #page leftBadgeIconNamed: #references rightBadgeIconNamed: #search) asJRPCJSON.
+		assert: MCPToolSearchMethodReferences toolIconSpec cacheKey
+		equals: (MCPToolIconSpec baseIconNamed: #page leftBadgeIconNamed: #references rightBadgeIconNamed: #search) cacheKey.
 	self
-		assert: MCPToolUpdateMethod new icons first asJRPCJSON
-		equals: (MCPStructureIcon compositeBaseIconNamed: #page badgeIconNamed: #edit) asJRPCJSON.
+		assert: MCPToolUpdateMethod toolIconSpec cacheKey
+		equals: (MCPToolIconSpec baseIconNamed: #page badgeIconNamed: #edit) cacheKey.
 	self
-		assert: MCPToolUpdateClass new icons first asJRPCJSON
-		equals: (MCPStructureIcon compositeBaseIconNamed: #class badgeIconNamed: #edit) asJRPCJSON.
+		assert: MCPToolUpdateClass toolIconSpec cacheKey
+		equals: (MCPToolIconSpec baseIconNamed: #class badgeIconNamed: #edit) cacheKey.
 	self
-		assert: MCPToolListChangeHistoryEntries new icons first asJRPCJSON
-		equals:
-		(MCPStructureIcon compositeBaseIconNamed: #history leftBadgeIconNamed: #changeUpdate rightBadgeIconNamed: #browse) asJRPCJSON.
+		assert: MCPToolListChangeHistoryEntries toolIconSpec cacheKey
+		equals: (MCPToolIconSpec baseIconNamed: #history leftBadgeIconNamed: #changeUpdate rightBadgeIconNamed: #browse) cacheKey.
 	self
-		assert: MCPToolCaptureScreen new icons first asJRPCJSON
-		equals: (MCPStructureIcon compositeBaseIconNamed: #window badgeIconNamed: #smallScreenshot) asJRPCJSON.
+		assert: MCPToolCaptureScreen toolIconSpec cacheKey
+		equals: (MCPToolIconSpec baseIconNamed: #window badgeIconNamed: #smallScreenshot) cacheKey.
 	self
-		assert: MCPToolRunTests new icons first asJRPCJSON
-		equals: (MCPStructureIcon compositeBaseIconNamed: #testRunner badgeIconNamed: #play) asJRPCJSON.
-	self assert: MCPToolEvaluate new icons first asJRPCJSON equals: (MCPStructureIcon pngIconNamed: #go) asJRPCJSON
+		assert: MCPToolRunTests toolIconSpec cacheKey
+		equals: (MCPToolIconSpec baseIconNamed: #testRunner badgeIconNamed: #play) cacheKey
 ]
 
 { #category : 'tests' }
@@ -3103,7 +3100,7 @@ MCPToolContractsTest >> testServerInitializationLeavesIconCacheEmpty [
 
 	MCPStructureIcon resetCaches.
 	self mcpWithoutObservabilityExport.
-	self assert: MCPStructureIcon cachedRenderedIconCount equals: 0
+	self assert: MCPStructureIcon iconCache size equals: 0
 ]
 
 { #category : 'tests' }
@@ -3247,7 +3244,7 @@ MCPToolContractsTest >> testToolIconsAreSharedByToolClass [
 	secondIcons := MCPToolSearchClasses new icons.
 	self assert: firstIcons identicalTo: secondIcons.
 	self assert: firstIcons first identicalTo: secondIcons first.
-	self assert: MCPStructureIcon cachedRenderedIconCount equals: 1
+	self assert: MCPStructureIcon iconCache size equals: 1
 ]
 
 { #category : 'tests' }

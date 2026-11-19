@@ -840,12 +840,6 @@ MCP >> serverInfrastructureMetadata [
 	^ { (#'io.github.evref-bl/pharo' -> self pharoRuntimeMetadata) } asDictionary
 ]
 
-{ #category : 'accessing' }
-MCP >> sortedTools [
-
-	^ self toolsList values asSortedCollection: [ :left :right | left name <= right name ]
-]
-
 { #category : 'start' }
 MCP >> start [
 

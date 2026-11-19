@@ -69,6 +69,15 @@ MCPCompositeToolIconSpec >> cacheKey [
 		  self badgeIconSymbol }
 ]
 
+{ #category : 'rendering' }
+MCPCompositeToolIconSpec >> formUsing: anIconFactory [
+
+	^ anIconFactory
+		  compositeFormBaseIconNamed: self baseIconSymbol
+		  leftBadgeIconNamed: self leftBadgeIconSymbol
+		  rightBadgeIconNamed: self badgeIconSymbol
+]
+
 { #category : 'accessing' }
 MCPCompositeToolIconSpec >> leftBadgeIconSymbol [
 
@@ -79,16 +88,4 @@ MCPCompositeToolIconSpec >> leftBadgeIconSymbol [
 MCPCompositeToolIconSpec >> leftBadgeIconSymbol: anIconSymbol [
 
 	leftBadgeIconSymbol := anIconSymbol ifNotNil: [ anIconSymbol asSymbol ]
-]
-
-{ #category : 'rendering' }
-MCPCompositeToolIconSpec >> renderUsing: anIconFactory [
-
-	self leftBadgeIconSymbol ifNil: [
-		^ anIconFactory iconForForm:
-			  (anIconFactory compositeFormBaseIconNamed: self baseIconSymbol badgeIconNamed: self badgeIconSymbol) ].
-	^ anIconFactory iconForForm: (anIconFactory
-			   compositeFormBaseIconNamed: self baseIconSymbol
-			   leftBadgeIconNamed: self leftBadgeIconSymbol
-			   rightBadgeIconNamed: self badgeIconSymbol)
 ]
