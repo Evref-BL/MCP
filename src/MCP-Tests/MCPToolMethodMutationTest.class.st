@@ -532,6 +532,36 @@ MCPToolMethodMutationTestTarget >> tonelProbe
 ]
 
 { #category : 'tests' }
+MCPToolMethodMutationTest >> testAClassDefinitionIsRefusedForTheClassTools [
+	"A class definition as a Tonel file writes it, its class comment above it and its methods after it, is refused before anything is compiled, saying which tools make and change a class."
+
+	| error result |
+	result := self callToolNamed: 'method_compile' withArguments: {
+			          (#class -> MCPToolMethodMutationTestTarget name).
+			          (#source -> '"
+A target.
+"
+Class {
+	#name : ''MCPToolMethodMutationTestTarget'',
+	#superclass : ''Object'',
+	#category : ''MCP-Tests-Resources''
+}
+
+{ #category : ''accessing'' }
+MCPToolMethodMutationTestTarget >> tonelProbe [
+	^ 5
+]') } asDictionary.
+	error := self errorFrom: result.
+	self assert: (error at: #errorCode) equals: 'MethodSourceClassDefinition'.
+	self assert: (error at: #definition) equals: 'Class {'.
+	self
+		assert: (self textFrom: result)
+		equals:
+		'The source is a class definition, as a Tonel file writes it, not a method. class_create makes a class and class_update changes one; compile its methods here.'.
+	self deny: (MCPToolMethodMutationTestTarget includesSelector: #tonelProbe)
+]
+
+{ #category : 'tests' }
 MCPToolMethodMutationTest >> testAHeaderWithNothingAfterItIsRefused [
 	"A source that is only a method's reference names the method and writes none of it. Dropping the header would compile an empty method, replacing the body of one that exists, so it is refused and nothing is compiled. A body on the header's own line is a body."
 
@@ -645,6 +675,66 @@ MCPToolMethodMutationTestTarget>>headerProbe
 	^ 1'
 		side: nil
 		closingWith: ''
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testAMethodEndingWithABlockKeepsItsBracket [
+	"Only a bracket the source cannot parse with is dropped: a method whose last statement is a block parses as written and compiles with its bracket."
+
+	[
+		| result |
+		result := self callToolNamed: 'method_compile' withArguments: {
+				          (#class -> MCPToolMethodMutationTestTarget name).
+				          (#protocol -> 'accessing').
+				          (#source -> 'tonelProbe
+	^ [ 4 ]') } asDictionary.
+		self deny: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
+		self assert: ((MCPToolMethodMutationTestTarget >> #tonelProbe) sourceCode endsWith: '[ 4 ]').
+		self assert: (MCPToolMethodMutationTestTarget new perform: #tonelProbe) value equals: 4 ] ensure: [ self removeTonelProbes ]
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testASourceEndingWithTheTonelClosingBracketCompilesWithoutIt [
+	"A method copied out of a Tonel file keeps the bracket that closes it there, with or without the header and the bracket that opens it. The bracket closes nothing in the source, which compiles without it and says nothing of it. A second stray bracket is still refused."
+
+	| result |
+	[
+		result := self callToolNamed: 'method_compile' withArguments: {
+				          (#class -> MCPToolMethodMutationTestTarget name).
+				          (#protocol -> 'accessing').
+				          (#source -> 'tonelProbe
+	^ 1
+]') } asDictionary.
+		self deny: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
+		self assert: (self summaryFrom: result) equals: 'Created MCPToolMethodMutationTestTarget>>tonelProbe.'.
+		self assert: (self warningsFrom: result) isEmpty.
+		self deny: ((MCPToolMethodMutationTestTarget >> #tonelProbe) sourceCode includes: $]).
+		self assert: (MCPToolMethodMutationTestTarget new perform: #tonelProbe) equals: 1.
+
+		result := self callToolNamed: 'method_compile' withArguments: {
+				          (#class -> MCPToolMethodMutationTestTarget name).
+				          (#source -> '{ #category : ''testing'' }
+MCPToolMethodMutationTestTarget >> tonelProbe
+
+	^ 2
+]') } asDictionary.
+		self deny: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
+		self
+			assert: (self summaryFrom: result)
+			equals: 'Replaced MCPToolMethodMutationTestTarget>>tonelProbe, moving it from accessing to testing.'.
+		self assert: (MCPToolMethodMutationTestTarget new perform: #tonelProbe) equals: 2.
+
+		result := self callToolNamed: 'method_compile' withArguments: {
+				          (#class -> MCPToolMethodMutationTestTarget name).
+				          (#source -> 'tonelProbe
+	^ 3
+]
+]') } asDictionary.
+		self assert: (result at: #isError ifAbsent: [ false ]).
+		self assert:
+			((self textFrom: result) beginsWith:
+				 'Unable to compile method on MCPToolMethodMutationTestTarget: Missing opener for closer: ]').
+		self assert: (MCPToolMethodMutationTestTarget new perform: #tonelProbe) equals: 2 ] ensure: [ self removeTonelProbes ]
 ]
 
 { #category : 'tests' }
