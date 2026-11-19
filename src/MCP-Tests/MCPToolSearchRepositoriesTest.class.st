@@ -48,25 +48,19 @@ MCPToolSearchRepositoriesTest >> testCanFilterByClassName [
 ]
 
 { #category : 'tests' }
-MCPToolSearchRepositoriesTest >> testCanFilterByMissingStateAndDirectory [
+MCPToolSearchRepositoriesTest >> testCanFilterByLocation [
 
-	| data missing missingLocation present repositoryNames result |
+	| data missingLocation result |
 	missingLocation := FileLocator imageDirectory / 'MCPDefinitelyMissingRepositoryLocation'.
-	missing := self newRepositoryNamed: 'MCP Missing Repository' location: missingLocation packageNames: #(  ).
-	present := self newRepositoryNamed: 'MCP Present Repository' location: FileLocator imageDirectory packageNames: #(  ).
 	self
 		withRepositories: {
-				missing.
-				present }
+				(self newRepositoryNamed: 'MCP Missing Repository' location: missingLocation packageNames: #(  )).
+				(self newRepositoryNamed: 'MCP Present Repository' location: FileLocator imageDirectory packageNames: #(  )) }
 		do: [
-				result := self callToolWith: {
-						          (#location -> missingLocation pathString).
-						          (#isMissing -> true) } asDictionary.
+				result := self callToolWith: { (#location -> missingLocation pathString) } asDictionary.
 				data := self dataFrom: result.
-				repositoryNames := (data at: #repositories) collect: [ :each | each at: #name ].
 				self deny: (result at: #isError ifAbsent: [ false ]).
-				self assert: (data at: #repositories) size equals: 1.
-				self assert: repositoryNames equals: #( 'MCP Missing Repository' ) ]
+				self assert: ((data at: #repositories) collect: [ :each | each at: #name ]) equals: #( 'MCP Missing Repository' ) ]
 ]
 
 { #category : 'tests' }
@@ -271,7 +265,7 @@ MCPToolSearchRepositoriesTest >> testSummaryCountsTheRepositoriesOfTheImage [
 					assert: (self summaryFrom: (self callToolWith: { (#query -> 'Alpha') } asDictionary))
 					equals: '1 repository matches in the image.'.
 				self
-					assert: (self summaryFrom: (self callToolWith: { (#isMissing -> true) } asDictionary))
+					assert: (self summaryFrom: (self callToolWith: { (#isModified -> false) } asDictionary))
 					equals: 'No repositories match in the image.' ]
 ]
 

@@ -2857,9 +2857,7 @@ MCPToolContractsTest >> testSearchRepositoriesHasAccurateNameAndSchema [
 	propertyNames := schema properties collect: [ :each | each name ].
 	self assert: MCPToolSearchRepositories new name equals: 'repository_search'.
 	self assert: schema required equals: #(  ).
-	self
-		assert: propertyNames asSet
-		equals: #( 'isModified' 'isMissing' 'query' 'location' 'subdirectory' 'package' 'class' 'modifiedPackage' 'offset' ) asSet
+	self assert: propertyNames asSet equals: #( 'isModified' 'query' 'location' 'subdirectory' 'package' 'class' 'offset' ) asSet
 ]
 
 { #category : 'tests' }

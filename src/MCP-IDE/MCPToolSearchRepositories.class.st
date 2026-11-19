@@ -1,7 +1,7 @@
 "
 Lists Iceberg repositories registered in the image.
 
-The tool is read-only. It supports direct filters for repository names, locations, package names, modified state, and missing state, plus generic field filtering and pagination.
+The tool is read-only. It filters by repository name, location, subdirectory, package, class and modified state, with pagination.
 "
 Class {
 	#name : 'MCPToolSearchRepositories',
@@ -38,9 +38,6 @@ MCPToolSearchRepositories >> buildInputSchema [
 		              (self
 			               booleanSchemaPropertyNamed: 'isModified'
 			               description: 'Keep only repositories the image holds changes for, or only those it does not.').
-		              (self
-			               booleanSchemaPropertyNamed: 'isMissing'
-			               description: 'Keep only repositories whose checkout directory is gone, or only those still on disk.').
 		              self offsetInputProperty }.
 	^ self queryInputSchemaWithProperties: properties
 ]
@@ -86,7 +83,7 @@ MCPToolSearchRepositories >> failureScopePhraseFromRequest: request [
 { #category : 'private - request' }
 MCPToolSearchRepositories >> fieldFilterNames [
 
-	^ #( 'query' 'location' 'subdirectory' 'package' 'class' 'modifiedPackage' )
+	^ #( 'query' 'location' 'subdirectory' 'package' 'class' )
 ]
 
 { #category : 'private - filtering' }
@@ -97,16 +94,14 @@ MCPToolSearchRepositories >> fieldTextsForRepositoryEntry: anEntry fieldName: fi
 	fieldName = 'subdirectory' ifTrue: [ ^ { (anEntry at: #subdirectory) } ].
 	fieldName = 'package' ifTrue: [ ^ anEntry at: #packages ].
 	fieldName = 'class' ifTrue: [ ^ self classNamesForRepositoryEntry: anEntry ].
-	fieldName = 'modifiedPackage' ifTrue: [ ^ anEntry at: #modifiedPackages ].
 	^ #(  )
 ]
 
 { #category : 'private - template' }
 MCPToolSearchRepositories >> filtersRequest: request [
-	"Its filters are its fields and the two states it can keep."
+	"Its filters are its fields and the modified state it can keep."
 
-	^ (self fieldFiltersFromRequest: request) isNotEmpty or: [
-		  self stateNames anySatisfy: [ :each | request hasArgumentNamed: each ] ]
+	^ (self fieldFiltersFromRequest: request) isNotEmpty or: [ request hasArgumentNamed: 'isModified' ]
 ]
 
 { #category : 'private - template' }
@@ -132,10 +127,10 @@ MCPToolSearchRepositories >> queryResultDataForPage: page [
 
 { #category : 'private - filtering' }
 MCPToolSearchRepositories >> repositoryEntry: anEntry matches: request fieldFilters: fieldFilters [
+	"A modified state is kept only when the caller names it, true or false."
 
-	self stateNames do: [ :stateName |
-			(request hasArgumentNamed: stateName) ifTrue: [
-				(anEntry at: stateName asSymbol) = (request booleanArgumentNamed: stateName) ifFalse: [ ^ false ] ] ].
+	((request hasArgumentNamed: 'isModified') and: [ (anEntry at: #isModified) ~= (request booleanArgumentNamed: 'isModified') ])
+		ifTrue: [ ^ false ].
 	^ self
 		  fieldFilters: fieldFilters
 		  matchUsing: [ :fieldName | self fieldTextsForRepositoryEntry: anEntry fieldName: fieldName ]
@@ -161,10 +156,7 @@ MCPToolSearchRepositories >> repositoryFieldFilterInputProperties [
 			   description: 'Keep repositories managing a package whose name contains this text, ignoring case.').
 		  (self
 			   repositoryTextFilterPropertyNamed: 'class'
-			   description: 'Keep repositories whose managed packages hold a class whose name contains this text, ignoring case.').
-		  (self
-			   repositoryTextFilterPropertyNamed: 'modifiedPackage'
-			   description: 'Keep repositories holding a modified package whose name contains this text, ignoring case.') }
+			   description: 'Keep repositories whose managed packages hold a class whose name contains this text, ignoring case.') }
 ]
 
 { #category : 'private - schema' }
@@ -191,13 +183,6 @@ MCPToolSearchRepositories >> scopeQueryFromRequest: request [
 MCPToolSearchRepositories >> searchedNoun [
 
 	^ 'repository'
-]
-
-{ #category : 'private - request' }
-MCPToolSearchRepositories >> stateNames [
-	"The states a caller keeps by naming them, true or false. Left out, a state keeps every repository."
-
-	^ #( 'isModified' 'isMissing' )
 ]
 
 { #category : 'metadata' }
