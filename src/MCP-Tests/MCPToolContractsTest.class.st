@@ -217,8 +217,7 @@ MCPToolContractsTest >> missingClassCases [
 		('method_compile' -> { (#source -> 'probe ^ 1') }).
 		('method_get' -> { (#selector -> 'probe') }).
 		('method_update' -> rename).
-		('method_remove' -> { (#selector -> 'probe') }).
-		('method_equivalent_search' -> { (#selector -> 'probe') }) } do: [ :each |
+		('method_remove' -> { (#selector -> 'probe') }) } do: [ :each |
 			cases add: {
 					each key.
 					({ (#class -> 'Zzqxw') } , each value).
@@ -2938,8 +2937,7 @@ MCPToolContractsTest >> testSearchToolSchemasAdvertiseGroupedScopeProperties [
 		               MCPToolSearchClasses new.
 		               MCPToolSearchMethods new.
 		               MCPToolSearchMethodSource new.
-		               MCPToolSearchMethodReferences new.
-		               MCPToolSearchEquivalentMethods new }.
+		               MCPToolSearchMethodReferences new }.
 	searchTools do: [ :tool |
 			| propertyNames scopeProperty |
 			propertyNames := tool inputSchema properties collect: [ :each | each name ].
@@ -3117,7 +3115,7 @@ MCPToolContractsTest >> testSearchToolsRanksEveryToolFirstForItsOwnName [
 MCPToolContractsTest >> testSearchToolsRanksMoreMatchedWordsFirst [
 
 	self assert: (self searchedToolNamesFor: 'method source') first equals: 'method_source_search'.
-	self assert: (self searchedToolNamesFor: 'method equivalent') first equals: 'method_equivalent_search'.
+	self assert: (self searchedToolNamesFor: 'method version') first equals: 'method_version_list'.
 	self assert: (self searchedToolNamesFor: 'repository reload') first equals: 'repository_reload'
 ]
 
@@ -3209,7 +3207,7 @@ MCPToolContractsTest >> testSingularSearchTermsUseGenericInflectionRules [
 MCPToolContractsTest >> testSpecializedClassAndMethodToolsAreDiscoverableOnly [
 
 	| discoverableOnlyNames |
-	discoverableOnlyNames := #( 'method_equivalent_search' 'test_coverage_run' ).
+	discoverableOnlyNames := #( 'test_coverage_run' ).
 	discoverableOnlyNames do: [ :each |
 			| tool |
 			self assert: (self toolRegistry toolNames includes: each).

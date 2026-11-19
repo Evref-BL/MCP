@@ -104,9 +104,6 @@ MCPJSONSchemaValidatorTest >> representativeArgumentsByToolClass [
 		arguments at: toolClass put: representativeArguments ].
 	arguments
 		at: MCPToolSearchMethodSource put: { (#query -> 'method') } asDictionary;
-		at: MCPToolSearchEquivalentMethods put: {
-				(#class -> 'Object').
-				(#selector -> 'class') } asDictionary;
 		at: MCPToolRunCritiques put: {
 				(#scope -> { (#classes -> { 'MCPToolRunCritiquesTest' }) } asDictionary).
 				(#ruleClasses -> { ReAssignmentInBlockRule name }) } asDictionary;
