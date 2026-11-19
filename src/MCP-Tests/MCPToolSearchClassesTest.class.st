@@ -294,23 +294,6 @@ MCPToolSearchClassesTest >> testNameFilterIgnoresCase [
 ]
 
 { #category : 'tests' }
-MCPToolSearchClassesTest >> testPackageFilterMatchesPartOfThePackageName [
-	"scope.packages names packages exactly; this filter is how a caller narrows by part of a package name, as every other search already allows."
-
-	| classNames data result |
-	result := self callToolWith: {
-			          (#package -> self generatedPackageName asLowercase).
-			          (#query -> self fixturePrefix) } asDictionary.
-	data := self dataFrom: result.
-	classNames := (data at: #classes) collect: [ :each | each at: #class ].
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: classNames equals: {
-			self baseClassName.
-			self childClassName.
-			self grandchildClassName } asArray
-]
-
-{ #category : 'tests' }
 MCPToolSearchClassesTest >> testPackageNamesReturnPackageClasses [
 
 	| classNames data result |

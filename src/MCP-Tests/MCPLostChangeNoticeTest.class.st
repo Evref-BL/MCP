@@ -149,7 +149,7 @@ MCPLostChangeNoticeTest >> summariesAboutSavedClass [
 
 	^ {
 		  (self summaryOf: 'package_search' with: { (#query -> self generatedPackageName) }).
-		  (self summaryOf: 'class_search' with: { (#package -> self generatedPackageName) }).
+		  (self summaryOf: 'class_search' with: { (#query -> self savedClassName) }).
 		  (self summaryOf: 'class_get' with: { (#name -> self savedClassName) }).
 		  (self summaryOf: 'method_search' with: { (self searchScope: { (#packages -> { self generatedPackageName }) }) }) }
 ]
@@ -195,8 +195,7 @@ MCPLostChangeNoticeTest >> testClassSearchSaysWhatThePackageOfItsClassesLost [
 	self removeClassNamed: self addedClassName.
 	self removeSelector: #rescuedValue from: class.
 	self assert:
-		((self summaryOf: 'class_search' with: { (#package -> self generatedPackageName) }) endsWith:
-			 (String streamContents: [ :stream |
+		((self summaryOf: 'class_search' with: { (#query -> self savedClassName) }) endsWith: (String streamContents: [ :stream |
 					  stream << ' Since its last save, the image lost 2 changes to ' << self generatedPackageName
 					  << ': history_lost_change_list lists them.' ]))
 ]

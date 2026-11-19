@@ -37,11 +37,6 @@ MCPToolSearchClasses >> classFilterInputProperties [
 	^ {
 		  (self schemaPropertyNamed: 'query' type: 'string' description: 'Keep classes whose name contains this text, ignoring case.').
 		  (self
-			   schemaPropertyNamed: 'package'
-			   type: 'string'
-			   description:
-			   'Keep classes whose package name contains this text, ignoring case. Name packages exactly under scope.packages instead.').
-		  (self
 			   schemaPropertyNamed: 'tag'
 			   type: 'string'
 			   description: 'Keep classes whose package tag contains this text, ignoring case.') }
@@ -76,14 +71,13 @@ MCPToolSearchClasses >> entryNameKeys [
 { #category : 'private - request' }
 MCPToolSearchClasses >> fieldFilterNames [
 
-	^ #( 'query' 'package' 'tag' )
+	^ #( 'query' 'tag' )
 ]
 
 { #category : 'private - filtering' }
 MCPToolSearchClasses >> fieldTextsForClassEntry: anEntry fieldName: fieldName [
 
 	fieldName = 'query' ifTrue: [ ^ { (anEntry at: #class) } ].
-	fieldName = 'package' ifTrue: [ ^ { (anEntry at: #package ifAbsent: [ '' ]) } ].
 	fieldName = 'tag' ifTrue: [ ^ { (anEntry at: #tag) } ].
 	^ #(  )
 ]

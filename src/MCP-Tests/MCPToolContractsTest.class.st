@@ -2526,7 +2526,7 @@ MCPToolContractsTest >> testRPCRefreshesCachedToolMetadata [
 	toolDefinitions := mcp rpcToolsList at: #tools.
 	toolDefinition := toolDefinitions detect: [ :each | (each at: #name) = 'class_search' ].
 	propertyNames := ((toolDefinition at: #inputSchema) at: #properties) keys asSet.
-	self assert: propertyNames equals: #( 'scope' 'query' 'package' 'tag' 'offset' ) asSet.
+	self assert: propertyNames equals: #( 'scope' 'query' 'tag' 'offset' ) asSet.
 	result := mcp rpcToolCall: 'class_search' withParams: { (self searchScope: {
 				           (#classes -> #( 'MCPToolContractsTest' )).
 				           (#packages -> #( 'MCP-Tests' )) }) } asDictionary.
@@ -2791,7 +2791,7 @@ MCPToolContractsTest >> testSearchClassesHasAccurateNameAndSchema [
 	scopePropertyNames := (scopeProperty extraProperties at: #properties) collect: [ :each | each name ].
 	self assert: MCPToolSearchClasses new name equals: 'class_search'.
 	self assert: schema required equals: #(  ).
-	self assert: propertyNames asSet equals: #( 'scope' 'query' 'package' 'tag' 'offset' ) asSet.
+	self assert: propertyNames asSet equals: #( 'scope' 'query' 'tag' 'offset' ) asSet.
 	self assert: scopePropertyNames asSet equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' 'hierarchyOf' ) asSet
 ]
 
