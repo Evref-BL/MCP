@@ -78,6 +78,18 @@ MCP class >> legacyProtocolVersions [
 ]
 
 { #category : 'protocol' }
+MCP class >> metaIn: someParams [
+	"Answer the _meta a request carries, or nil when it carries none."
+
+	| meta |
+	someParams isDictionary ifFalse: [ ^ nil ].
+	meta := someParams at: '_meta' ifAbsent: [ ^ nil ].
+	^ meta isDictionary
+		  ifTrue: [ meta ]
+		  ifFalse: [ nil ]
+]
+
+{ #category : 'protocol' }
 MCP class >> modernProtocolVersionKey [
 
 	^ 'io.modelcontextprotocol/protocolVersion'
@@ -111,11 +123,7 @@ MCP class >> onlyTools: toolsOrToolClasses [
 MCP class >> requestedProtocolVersionIn: someParams [
 	"Answer the protocol version a request declares for itself, or nil when it declares none."
 
-	| meta |
-	someParams isDictionary ifFalse: [ ^ nil ].
-	meta := someParams at: '_meta' ifAbsent: [ ^ nil ].
-	meta isDictionary ifFalse: [ ^ nil ].
-	^ meta at: self modernProtocolVersionKey ifAbsent: [ nil ]
+	^ (self metaIn: someParams) ifNotNil: [ :meta | meta at: self modernProtocolVersionKey ifAbsent: [ nil ] ]
 ]
 
 { #category : 'protocol' }
@@ -403,7 +411,7 @@ MCP >> executeTool: tool named: toolName withParams: arguments dispatchPath: dis
 				                       recordToolCallStart: toolName
 				                       input: arguments
 				                       dispatchPath: dispatchPath
-				                       context: Dictionary new ].
+				                       context: (self observabilityContextFor: tool) ].
 	^ [
 		  request := tool requestFromToolCallArguments: arguments.
 		  result := tool executeWithRequest: request.
@@ -530,6 +538,15 @@ MCP >> observability [
 MCP >> observability: anObservabilityBackend [
 
 	observability := anObservabilityBackend
+]
+
+{ #category : 'observability' }
+MCP >> observabilityContextFor: aTool [
+	"What a backend may want to know about a call beyond its name and arguments: the tool, for its schema, and the request's _meta, for the caller's trace context."
+
+	^ {
+		  (#tool -> aTool).
+		  (#meta -> (MCPRequestMeta value ifNil: [ Dictionary new ])) } asDictionary
 ]
 
 { #category : 'observability' }
@@ -694,7 +711,7 @@ MCP >> recordToolCallWrapperStartFor: callTool arguments: arguments [
 		  recordToolCallStart: callTool name
 		  input: arguments
 		  dispatchPath: 'direct'
-		  context: Dictionary new
+		  context: (self observabilityContextFor: callTool)
 ]
 
 { #category : 'private - tools' }

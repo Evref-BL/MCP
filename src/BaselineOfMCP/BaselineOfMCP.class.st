@@ -26,7 +26,7 @@ BaselineOfMCP >> defineDependencies: spec [
 		baseline: 'PCRE2' with: [ spec repository: 'github://Gabriel-Darbord/pharo-pcre2:v2.2.0/src' ];
 		baseline: 'OpenTelemetry' with: [
 			spec
-				repository: 'github://Gabriel-Darbord/opentelemetry-pharo:v1.1.0/src';
+				repository: 'github://Gabriel-Darbord/opentelemetry-pharo:v1.2.0/src';
 				loads: #( 'traces' 'metrics' 'logs' ) ]
 ]
 

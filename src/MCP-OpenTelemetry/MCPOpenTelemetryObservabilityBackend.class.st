@@ -12,34 +12,23 @@ Class {
 		'meter',
 		'logger',
 		'nextCallId',
-		'callCounter',
-		'errorCounter',
-		'durationHistogram',
 		'inputSizeHistogram',
 		'outputSizeHistogram',
 		'outputBudgetExceededCounter',
 		'recordsById',
-		'outputBudgetBytes'
+		'outputBudgetBytes',
+		'operationDurationHistogram'
 	],
 	#category : 'MCP-OpenTelemetry',
 	#package : 'MCP-OpenTelemetry'
 }
 
-{ #category : 'private - metrics' }
-MCPOpenTelemetryObservabilityBackend >> attributesForRecord: aRecord [
+{ #category : 'private - reporting' }
+MCPOpenTelemetryObservabilityBackend >> argumentNamesIn: inputObject [
+	"The names of the arguments a call was given, sorted, without their values."
 
-	^ {
-		  ('tool.name' -> aRecord toolName).
-		  ('mcp.dispatch_path' -> aRecord dispatchPath).
-		  ('mcp.status' -> aRecord status) }
-]
-
-{ #category : 'private - instruments' }
-MCPOpenTelemetryObservabilityBackend >> callCounter [
-
-	callCounter ifNotNil: [ ^ callCounter ].
-	callCounter := self meter counterNamed: 'mcp.tool.calls' unit: '1' description: 'MCP tool calls'.
-	^ callCounter
+	inputObject isDictionary ifFalse: [ ^ #(  ) ].
+	^ ((inputObject keys collect: [ :each | each asString ] as: Array) select: [ :each | self isReportableName: each ]) sort
 ]
 
 { #category : 'private - budgets' }
@@ -52,14 +41,6 @@ MCPOpenTelemetryObservabilityBackend >> defaultOutputBudgetBytes [
 MCPOpenTelemetryObservabilityBackend >> disable [
 
 	enabled := false
-]
-
-{ #category : 'private - instruments' }
-MCPOpenTelemetryObservabilityBackend >> durationHistogram [
-
-	durationHistogram ifNotNil: [ ^ durationHistogram ].
-	durationHistogram := self meter histogramNamed: 'mcp.tool.duration' unit: 'ms' description: 'MCP tool-call duration'.
-	^ durationHistogram
 ]
 
 { #category : 'private - logging' }
@@ -93,64 +74,46 @@ MCPOpenTelemetryObservabilityBackend >> enabled: aBoolean [
 ]
 
 { #category : 'private - spans' }
-MCPOpenTelemetryObservabilityBackend >> endSpan: span withRecord: aRecord error: anError at: finishedAt [
+MCPOpenTelemetryObservabilityBackend >> endSpan: span withAttributes: attributes record: aRecord at: finishedAt [
+	"Instrumentation leaves a successful span's status unset. A failed one is marked without a description, because the conventions would put the error message there and a message is a value."
 
-	| attributes |
 	span ifNil: [ ^ nil ].
-	attributes := self attributesForRecord: aRecord.
-	self
-		enrichSpan: span
-		withRecord: aRecord
-		attributes: attributes
-		error: anError.
+	attributes do: [ :each | span attributeAt: each key put: each value ].
+	aRecord outputBudgetExceeded ifTrue: [ span addEventNamed: 'pharo.mcp.output_budget_exceeded' attributes: #(  ) ].
+	aRecord status = 'error' ifTrue: [ span setStatus: OTSpan error description: '' ].
 	span end: finishedAt
 ]
 
+{ #category : 'private - reporting' }
+MCPOpenTelemetryObservabilityBackend >> errorTypeFor: anError [
+	"error.type as the conventions for MCP spell it: the JSON-RPC code of a protocol error, and tool_error for a call answered with a result that reports one."
+
+	(anError isNotNil and: [ anError mcpIsProtocolError ]) ifFalse: [ ^ 'tool_error' ].
+	^ [ (anError asJRPCResponseWithId: nil) error code printString ]
+		  on: Error
+		  do: [ :error | '_OTHER' ]
+]
+
 { #category : 'private - spans' }
-MCPOpenTelemetryObservabilityBackend >> enrichSpan: span withRecord: aRecord attributes: attributes error: anError [
+MCPOpenTelemetryObservabilityBackend >> finishAttributesFor: aRecord error: anError errorType: errorType [
+	"What is known once a call is answered: sizes, and for a failure its kind. An exception is named by its nearest class in Pharo or MCP, and never by its message or stack."
 
-	span
-		attributeAt: 'mcp.call.id' put: aRecord id;
-		attributeAt: 'mcp.tool.name' put: aRecord toolName;
-		attributeAt: 'mcp.dispatch_path' put: aRecord dispatchPath;
-		attributeAt: 'mcp.status' put: aRecord status;
-		attributeAt: 'mcp.input.bytes' put: aRecord inputByteCount;
-		attributeAt: 'mcp.output.bytes' put: aRecord outputByteCount;
-		attributeAt: 'mcp.output.tokens.approx' put: aRecord approximateOutputTokenCount;
-		attributeAt: 'mcp.output_budget.exceeded' put: aRecord outputBudgetExceeded.
-	aRecord outputBudgetExceeded ifTrue: [ span addEventNamed: 'mcp.output_budget_exceeded' attributes: attributes ].
-	aRecord errorKind ifNotEmpty: [ :kind | span attributeAt: 'mcp.error.kind' put: kind ].
-	aRecord errorCode ifNotEmpty: [ :code | span attributeAt: 'mcp.error.code' put: code ].
-	aRecord errorClass ifNotEmpty: [ :className | span attributeAt: 'error.type' put: className ].
-	aRecord causeClass ifNotEmpty: [ :className | span attributeAt: 'mcp.error.cause_class' put: className ].
+	| attributes |
+	attributes := OrderedCollection new.
+	attributes
+		add: 'pharo.mcp.input.bytes' -> aRecord inputByteCount;
+		add: 'pharo.mcp.output.bytes' -> aRecord outputByteCount;
+		add: 'pharo.mcp.output.tokens.approx' -> aRecord approximateOutputTokenCount;
+		add: 'pharo.mcp.output_budget.exceeded' -> aRecord outputBudgetExceeded.
+	errorType ifNil: [ ^ attributes asArray ].
+	attributes add: 'error.type' -> errorType.
+	aRecord errorKind ifNotEmpty: [ :kind | attributes add: 'pharo.mcp.error.kind' -> kind ].
+	(aRecord errorCode isNotEmpty and: [ self isReportableName: aRecord errorCode ]) ifTrue: [
+		attributes add: 'pharo.mcp.error.code' -> aRecord errorCode ].
 	aRecord schemaViolationCount > 0 ifTrue: [
-		span attributeAt: 'mcp.error.schema.violation_count' put: aRecord schemaViolationCount ].
-	aRecord status = 'error' ifTrue: [
-			span setStatus: OTSpan error description: aRecord displaySummary.
-			anError ifNotNil: [ span recordException: anError ] ].
-	aRecord status = 'ok' ifTrue: [ span setStatus: OTSpan ok description: '' ]
-]
-
-{ #category : 'private - metrics' }
-MCPOpenTelemetryObservabilityBackend >> errorAttributesForRecord: aRecord baseAttributes: attributes [
-
-	| errorAttributes |
-	errorAttributes := OrderedCollection withAll: attributes.
-	aRecord errorClass ifNotEmpty: [ :className | errorAttributes add: 'error.type' -> className ].
-	aRecord errorKind ifNotEmpty: [ :kind | errorAttributes add: 'mcp.error.kind' -> kind ].
-	aRecord errorCode ifNotEmpty: [ :code | errorAttributes add: 'mcp.error.code' -> code ].
-	aRecord causeClass ifNotEmpty: [ :className | errorAttributes add: 'mcp.error.cause_class' -> className ].
-	aRecord schemaViolationCount > 0 ifTrue: [
-		errorAttributes add: 'mcp.error.schema.violation_count' -> aRecord schemaViolationCount ].
-	^ errorAttributes asArray
-]
-
-{ #category : 'private - instruments' }
-MCPOpenTelemetryObservabilityBackend >> errorCounter [
-
-	errorCounter ifNotNil: [ ^ errorCounter ].
-	errorCounter := self meter counterNamed: 'mcp.tool.errors' unit: '1' description: 'MCP tool-call errors'.
-	^ errorCounter
+		attributes add: 'pharo.mcp.error.schema.violation_count' -> aRecord schemaViolationCount ].
+	anError ifNotNil: [ attributes add: 'pharo.mcp.exception.type' -> (self reportableClassNameOf: anError class) ].
+	^ attributes asArray
 ]
 
 { #category : 'private - records' }
@@ -188,7 +151,7 @@ MCPOpenTelemetryObservabilityBackend >> initialize [
 MCPOpenTelemetryObservabilityBackend >> inputSizeHistogram [
 
 	inputSizeHistogram ifNotNil: [ ^ inputSizeHistogram ].
-	inputSizeHistogram := self meter histogramNamed: 'mcp.tool.input.size' unit: 'By' description: 'MCP tool-call input size'.
+	inputSizeHistogram := self meter histogramNamed: 'pharo.mcp.tool.input.size' unit: 'By' description: 'MCP tool-call input size'.
 	^ inputSizeHistogram
 ]
 
@@ -196,6 +159,19 @@ MCPOpenTelemetryObservabilityBackend >> inputSizeHistogram [
 MCPOpenTelemetryObservabilityBackend >> isNoop [
 
 	^ false
+]
+
+{ #category : 'private - reporting' }
+MCPOpenTelemetryObservabilityBackend >> isReportableName: aString [
+	"A name the caller chose leaves the image only when it reads as an identifier, so a value put where a name belongs is never exported."
+
+	^ aString size <= 64 and: [ aString matchesRegex: '[A-Za-z_][A-Za-z0-9_-]*' ]
+]
+
+{ #category : 'private - reporting' }
+MCPOpenTelemetryObservabilityBackend >> isReportablePackageName: aName [
+
+	^ #( 'Kernel' 'Collections' 'MCP' ) anySatisfy: [ :prefix | aName = prefix or: [ aName beginsWith: prefix , '-' ] ]
 ]
 
 { #category : 'accessing' }
@@ -221,6 +197,17 @@ MCPOpenTelemetryObservabilityBackend >> nextCallId [
 	^ nextCallId
 ]
 
+{ #category : 'private - instruments' }
+MCPOpenTelemetryObservabilityBackend >> operationDurationHistogram [
+
+	operationDurationHistogram ifNotNil: [ ^ operationDurationHistogram ].
+	operationDurationHistogram := self meter
+		                              histogramNamed: 'mcp.server.operation.duration'
+		                              unit: 's'
+		                              description: 'MCP request duration as observed on the receiver'.
+	^ operationDurationHistogram
+]
+
 { #category : 'private - budgets' }
 MCPOpenTelemetryObservabilityBackend >> outputBudgetBytes [
 
@@ -238,7 +225,7 @@ MCPOpenTelemetryObservabilityBackend >> outputBudgetExceededCounter [
 
 	outputBudgetExceededCounter ifNotNil: [ ^ outputBudgetExceededCounter ].
 	outputBudgetExceededCounter := self meter
-		                               counterNamed: 'mcp.tool.output_budget.exceeded'
+		                               counterNamed: 'pharo.mcp.tool.output_budget.exceeded'
 		                               unit: '1'
 		                               description: 'MCP tool calls exceeding output budget'.
 	^ outputBudgetExceededCounter
@@ -261,20 +248,50 @@ MCPOpenTelemetryObservabilityBackend >> outputBudgetExplanationForByteCount: byt
 MCPOpenTelemetryObservabilityBackend >> outputSizeHistogram [
 
 	outputSizeHistogram ifNotNil: [ ^ outputSizeHistogram ].
-	outputSizeHistogram := self meter histogramNamed: 'mcp.tool.output.size' unit: 'By' description: 'MCP tool-call output size'.
+	outputSizeHistogram := self meter
+		                       histogramNamed: 'pharo.mcp.tool.output.size'
+		                       unit: 'By'
+		                       description: 'MCP tool-call output size'.
 	^ outputSizeHistogram
 ]
 
-{ #category : 'private - metrics' }
-MCPOpenTelemetryObservabilityBackend >> recordMetricsForRecord: aRecord attributes: attributes [
+{ #category : 'private - spans' }
+MCPOpenTelemetryObservabilityBackend >> parentContextIn: contextDictionary [
+	"The caller's trace context, which travels in the request's _meta under the unprefixed W3C keys (SEP-414), or the current context when the request carries none. A malformed one is ignored rather than allowed to fail the call."
 
-	self callCounter add: 1 attributes: attributes.
-	self durationHistogram record: aRecord durationMilliseconds attributes: attributes.
+	| meta |
+	meta := contextDictionary at: #meta ifAbsent: [ nil ].
+	(meta isDictionary and: [ meta isNotEmpty ]) ifFalse: [ ^ OpenTelemetry currentContext ].
+	^ [ OpenTelemetry textMapPropagator extract: OpenTelemetry currentContext from: meta ]
+		  on: Error
+		  do: [ :error | OpenTelemetry currentContext ]
+]
+
+{ #category : 'private - spans' }
+MCPOpenTelemetryObservabilityBackend >> protocolVersionIn: contextDictionary [
+	"The protocol version a modern request declares in its _meta; a legacy one declares it only at initialize, which this call does not see."
+
+	| meta |
+	meta := contextDictionary at: #meta ifAbsent: [ ^ nil ].
+	meta isDictionary ifFalse: [ ^ nil ].
+	^ meta at: MCP modernProtocolVersionKey ifAbsent: [ nil ]
+]
+
+{ #category : 'private - metrics' }
+MCPOpenTelemetryObservabilityBackend >> recordMetricsForRecord: aRecord errorType: errorType [
+
+	| attributes |
+	attributes := OrderedCollection new.
+	attributes
+		add: 'mcp.method.name' -> 'tools/call';
+		add: 'gen_ai.tool.name' -> aRecord toolName;
+		add: 'gen_ai.operation.name' -> 'execute_tool'.
+	errorType ifNotNil: [ attributes add: 'error.type' -> errorType ].
+	attributes := attributes asArray.
+	self operationDurationHistogram record: aRecord durationMilliseconds / 1000.0 attributes: attributes.
 	self inputSizeHistogram record: aRecord inputByteCount attributes: attributes.
 	self outputSizeHistogram record: aRecord outputByteCount attributes: attributes.
-	aRecord outputBudgetExceeded ifTrue: [ self outputBudgetExceededCounter add: 1 attributes: attributes ].
-	aRecord status = 'error' ifTrue: [
-		self errorCounter add: 1 attributes: (self errorAttributesForRecord: aRecord baseAttributes: attributes) ]
+	aRecord outputBudgetExceeded ifTrue: [ self outputBudgetExceededCounter add: 1 attributes: attributes ]
 ]
 
 { #category : 'private - budgets' }
@@ -306,46 +323,49 @@ MCPOpenTelemetryObservabilityBackend >> recordSessionStartFor: anMCP [
 { #category : 'recording' }
 MCPOpenTelemetryObservabilityBackend >> recordToolCallFinish: aRecord result: aToolResult error: anError [
 
-	| attributes finishedAt span |
-	aRecord ifNil: [ ^ nil ].
-	span := self recordsById removeKey: aRecord id ifAbsent: [ nil ].
-	self enabled ifFalse: [
-			span ifNotNil: [ span end: DateAndTime now ].
-			aRecord inputObject: nil.
-			^ aRecord ].
-	finishedAt := DateAndTime now.
-	self
-		finishRecord: aRecord
-		result: aToolResult
-		error: anError
-		at: finishedAt.
-	attributes := self attributesForRecord: aRecord.
-	self recordMetricsForRecord: aRecord attributes: attributes.
-	self
-		endSpan: span
-		withRecord: aRecord
-		error: anError
-		at: finishedAt.
-	^ aRecord
+	| errorType finishedAt span |
+	^ self withoutFailingTheCall: [
+			  aRecord ifNil: [ ^ nil ].
+			  span := self recordsById removeKey: aRecord id ifAbsent: [ nil ].
+			  self enabled ifFalse: [
+					  span ifNotNil: [ span end: DateAndTime now ].
+					  aRecord inputObject: nil.
+					  ^ aRecord ].
+			  finishedAt := DateAndTime now.
+			  self
+				  finishRecord: aRecord
+				  result: aToolResult
+				  error: anError
+				  at: finishedAt.
+			  errorType := aRecord status = 'error'
+				               ifTrue: [ self errorTypeFor: anError ]
+				               ifFalse: [ nil ].
+			  self recordMetricsForRecord: aRecord errorType: errorType.
+			  self
+				  endSpan: span
+				  withAttributes: (self finishAttributesFor: aRecord error: anError errorType: errorType)
+				  record: aRecord
+				  at: finishedAt.
+			  ^ aRecord ]
 ]
 
 { #category : 'recording' }
 MCPOpenTelemetryObservabilityBackend >> recordToolCallStart: aToolName input: inputObject dispatchPath: dispatchPath context: contextDictionary [
 
-	| attributes record span |
-	self enabled ifFalse: [ ^ nil ].
-	record := MCPToolCallRecord id: self nextCallId toolName: aToolName asString startedAt: DateAndTime now.
-	record inputObject: inputObject.
-	record inputByteCount: (inputObject ifNil: [ 0 ] ifNotNil: [ self sizeInBytesForObject: inputObject ]).
-	record dispatchPath: dispatchPath asString.
-	attributes := {
-		              ('tool.name' -> record toolName).
-		              ('mcp.dispatch_path' -> record dispatchPath) }.
-	span := (self tracer spanBuilderNamed: 'mcp.tool_call')
-		        attributes: attributes;
-		        startSpan.
-	self recordsById at: record id put: span.
-	^ record
+	| record span |
+	^ self withoutFailingTheCall: [
+			  self enabled ifFalse: [ ^ nil ].
+			  record := MCPToolCallRecord id: self nextCallId toolName: aToolName asString startedAt: DateAndTime now.
+			  record inputObject: inputObject.
+			  record inputByteCount: (inputObject ifNil: [ 0 ] ifNotNil: [ self sizeInBytesForObject: inputObject ]).
+			  record dispatchPath: dispatchPath asString.
+			  span := (self tracer spanBuilderNamed: 'tools/call ' , record toolName)
+				          kind: OTSpan server;
+				          inContext: (self parentContextIn: contextDictionary);
+				          attributes: (self startAttributesFor: record input: inputObject context: contextDictionary);
+				          startSpan.
+			  self recordsById at: record id put: span.
+			  ^ record ]
 ]
 
 { #category : 'private' }
@@ -354,6 +374,18 @@ MCPOpenTelemetryObservabilityBackend >> recordsById [
 	recordsById ifNotNil: [ ^ recordsById ].
 	recordsById := Dictionary new.
 	^ recordsById
+]
+
+{ #category : 'private - reporting' }
+MCPOpenTelemetryObservabilityBackend >> reportableClassNameOf: aClass [
+	"The nearest class, from aClass up, that Pharo's kernel or collections or MCP defines, so that no class of the user's leaves the image under its own name."
+
+	| class |
+	class := aClass.
+	[ class isNotNil ] whileTrue: [
+			(self isReportablePackageName: class package name) ifTrue: [ ^ class name asString ].
+			class := class superclass ].
+	^ '_OTHER'
 ]
 
 { #category : 'actions' }
@@ -383,6 +415,27 @@ MCPOpenTelemetryObservabilityBackend >> sizeInBytesForToolResult: aToolResult er
 			  (#message -> (anError messageText ifNil: [ anError asString ])) } asDictionary
 ]
 
+{ #category : 'private - spans' }
+MCPOpenTelemetryObservabilityBackend >> startAttributesFor: aRecord input: inputObject context: contextDictionary [
+	"The attributes known when a call starts, set before the span starts so a sampler sees them. They follow the OpenTelemetry conventions for MCP where those name the fact, and say nothing the caller passed but argument names."
+
+	| attributes tool |
+	attributes := OrderedCollection new.
+	attributes
+		add: 'mcp.method.name' -> 'tools/call';
+		add: 'gen_ai.tool.name' -> aRecord toolName;
+		add: 'gen_ai.operation.name' -> 'execute_tool';
+		add: 'network.transport' -> 'tcp';
+		add: 'network.protocol.name' -> 'http';
+		add: 'pharo.mcp.dispatch_path' -> aRecord dispatchPath.
+	(self protocolVersionIn: contextDictionary) ifNotNil: [ :version | attributes add: 'mcp.protocol.version' -> version ].
+	(self argumentNamesIn: inputObject) ifNotEmpty: [ :names | attributes add: 'pharo.mcp.argument.names' -> names ].
+	tool := contextDictionary at: #tool ifAbsent: [ nil ].
+	(self unknownArgumentNamesIn: inputObject for: tool) ifNotEmpty: [ :names |
+		attributes add: 'pharo.mcp.argument.unknown_names' -> names ].
+	^ attributes asArray
+]
+
 { #category : 'private' }
 MCPOpenTelemetryObservabilityBackend >> statusForResult: aToolResult error: anError [
 
@@ -407,6 +460,18 @@ MCPOpenTelemetryObservabilityBackend >> tracer [
 	^ tracer
 ]
 
+{ #category : 'private - reporting' }
+MCPOpenTelemetryObservabilityBackend >> unknownArgumentNamesIn: inputObject for: aTool [
+	"The argument names a call was given that its tool's schema does not declare: what agents expect a tool to take."
+
+	| known |
+	aTool ifNil: [ ^ #(  ) ].
+	known := [ aTool inputSchema properties collect: [ :each | each name asString ] as: Set ]
+		         on: Error
+		         do: [ :error | ^ #(  ) ].
+	^ (self argumentNamesIn: inputObject) reject: [ :each | known includes: each ]
+]
+
 { #category : 'private' }
 MCPOpenTelemetryObservabilityBackend >> updateEventKindsForRecord: aRecord [
 
@@ -415,4 +480,13 @@ MCPOpenTelemetryObservabilityBackend >> updateEventKindsForRecord: aRecord [
 	aRecord status = 'error' ifTrue: [ kinds add: 'error' ].
 	aRecord outputBudgetExceeded ifTrue: [ kinds add: 'output_budget_exceeded' ].
 	aRecord eventKinds: kinds asArray
+]
+
+{ #category : 'private - recording' }
+MCPOpenTelemetryObservabilityBackend >> withoutFailingTheCall: aBlock [
+	"Recording is never a reason for a tool call to fail: whatever goes wrong while recording, warnings included, is dropped, and the call goes on unrecorded."
+
+	^ aBlock
+		  on: Error , Warning
+		  do: [ :exception | exception return: nil ]
 ]
