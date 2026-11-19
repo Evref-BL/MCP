@@ -103,7 +103,6 @@ MCPOpenTelemetryObservabilityBackend >> finishAttributesFor: aRecord error: anEr
 	attributes
 		add: 'pharo.mcp.input.bytes' -> aRecord inputByteCount;
 		add: 'pharo.mcp.output.bytes' -> aRecord outputByteCount;
-		add: 'pharo.mcp.output.tokens.approx' -> aRecord approximateOutputTokenCount;
 		add: 'pharo.mcp.output_budget.exceeded' -> aRecord outputBudgetExceeded.
 	errorType ifNil: [ ^ attributes asArray ].
 	attributes add: 'error.type' -> errorType.
