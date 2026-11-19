@@ -4,28 +4,15 @@ A lost change to the definition of one class or trait. Its states are Epicea's c
 Class {
 	#name : 'MCPLostClassChange',
 	#superclass : 'MCPLostChange',
-	#instVars : [
-		'className'
-	],
 	#category : 'MCP-IDE-Queries',
 	#package : 'MCP-IDE',
 	#tag : 'Queries'
 }
 
-{ #category : 'instance creation' }
-MCPLostClassChange class >> className: aClassName saved: aClassDefinition [
-	"The change to the definition of aClassName, which was aClassDefinition at the save, nil when the class did not exist."
-
-	^ self new
-		  setClassName: aClassName;
-		  savedState: aClassDefinition;
-		  yourself
-]
-
 { #category : 'restoring' }
 MCPLostClassChange >> addDefinitionTo: classChangesByName [
 
-	targetState ifNotNil: [ classChangesByName at: className put: self ]
+	targetState ifNotNil: [ classChangesByName at: affectedClassName put: self ]
 ]
 
 { #category : 'converting' }
@@ -50,12 +37,6 @@ MCPLostClassChange >> addition [
 ]
 
 { #category : 'accessing' }
-MCPLostClassChange >> affectedClassName [
-
-	^ className
-]
-
-{ #category : 'accessing' }
 MCPLostClassChange >> changeDescription [
 
 	^ String streamContents: [ :stream |
@@ -66,12 +47,6 @@ MCPLostClassChange >> changeDescription [
 								   (knowsSavedState and: [ savedState isNil ])
 									   ifTrue: [ 'added' ]
 									   ifFalse: [ 'modified' ] ]) ]
-]
-
-{ #category : 'accessing' }
-MCPLostClassChange >> element [
-
-	^ className
 ]
 
 { #category : 'testing' }
@@ -141,12 +116,6 @@ MCPLostClassChange >> restorePhase [
 	^ targetState isTrait
 		  ifTrue: [ 1 ]
 		  ifFalse: [ 2 ]
-]
-
-{ #category : 'initialization' }
-MCPLostClassChange >> setClassName: aClassName [
-
-	className := aClassName asString
 ]
 
 { #category : 'testing' }

@@ -5,7 +5,7 @@ Some changes are logged as two entries in a row, and make one version. method_co
 "
 Class {
 	#name : 'MCPMethodVersionInfo',
-	#superclass : 'MCPDataTransferObject',
+	#superclass : 'Object',
 	#instVars : [
 		'number',
 		'kind',

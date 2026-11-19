@@ -9,7 +9,7 @@ It also names the classes removed since that the test's own code still refers to
 "
 Class {
 	#name : 'MCPTestOutcome',
-	#superclass : 'MCPDataTransferObject',
+	#superclass : 'Object',
 	#instVars : [
 		'className',
 		'selector',

@@ -11,9 +11,9 @@ Class {
 	#instVars : [
 		'issues'
 	],
-	#category : 'MCP-IDE-DTOs',
+	#category : 'MCP-IDE-Results',
 	#package : 'MCP-IDE',
-	#tag : 'DTOs'
+	#tag : 'Results'
 }
 
 { #category : 'private - removed classes' }

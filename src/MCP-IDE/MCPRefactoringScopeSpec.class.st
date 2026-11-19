@@ -50,8 +50,7 @@ MCPRefactoringScopeSpec >> initializePackageNames: packageNamesCollection classN
 
 	packageNames := packageNamesCollection ifNil: [ #(  ) ].
 	classNames := classNamesCollection ifNil: [ #(  ) ].
-	hierarchyClassNames := hierarchyClassNamesCollection ifNil: [ #(  ) ].
-	^ self
+	hierarchyClassNames := hierarchyClassNamesCollection ifNil: [ #(  ) ]
 ]
 
 { #category : 'testing' }
@@ -64,15 +63,4 @@ MCPRefactoringScopeSpec >> isDefaultImageScope [
 MCPRefactoringScopeSpec >> packageNames [
 
 	^ packageNames ifNil: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
-MCPRefactoringScopeSpec >> scope [
-
-	self isDefaultImageScope ifTrue: [ ^ 'image' ].
-	(self packageNames isNotEmpty and: [ self classNames isEmpty and: [ self hierarchyClassNames isEmpty ] ]) ifTrue: [ ^ 'packages' ].
-	(self classNames isNotEmpty and: [ self packageNames isEmpty and: [ self hierarchyClassNames isEmpty ] ]) ifTrue: [ ^ 'classes' ].
-	(self hierarchyClassNames isNotEmpty and: [ self packageNames isEmpty and: [ self classNames isEmpty ] ]) ifTrue: [
-		^ 'hierarchy' ].
-	^ 'custom'
 ]

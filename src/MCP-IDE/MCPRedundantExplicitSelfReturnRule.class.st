@@ -4,6 +4,8 @@ Renraku rule that warns about a redundant explicit return of self as the final t
 Class {
 	#name : 'MCPRedundantExplicitSelfReturnRule',
 	#superclass : 'ReAbstractRule',
+	#traits : 'TMCPAgentRule',
+	#classTraits : 'TMCPAgentRule classTrait',
 	#category : 'MCP-IDE-Critiques',
 	#package : 'MCP-IDE',
 	#tag : 'Critiques'
@@ -13,12 +15,6 @@ Class {
 MCPRedundantExplicitSelfReturnRule class >> checksMethod [
 
 	^ true
-]
-
-{ #category : 'accessing' }
-MCPRedundantExplicitSelfReturnRule class >> group [
-
-	^ #'Design Flaws'
 ]
 
 { #category : 'accessing' }
@@ -33,33 +29,14 @@ MCPRedundantExplicitSelfReturnRule class >> ruleName [
 	^ 'Remove redundant final explicit self return'
 ]
 
-{ #category : 'accessing' }
-MCPRedundantExplicitSelfReturnRule class >> severity [
-
-	^ #warning
-]
-
-{ #category : 'accessing' }
-MCPRedundantExplicitSelfReturnRule class >> uniqueIdentifierName [
-
-	^ self name asString
-]
-
 { #category : 'running' }
-MCPRedundantExplicitSelfReturnRule >> check: aMethod forCritiquesDo: aCriticBlock [
+MCPRedundantExplicitSelfReturnRule >> agentCheck: aMethod forCritiquesDo: aCriticBlock [
 
 	| returnNode statements |
-	MCPAgentCritiquing value ifFalse: [ ^ self ].
 	statements := aMethod ast body statements.
 	statements size <= 1 ifTrue: [ ^ self ].
 	returnNode := statements last.
 	(returnNode isReturn and: [ returnNode value isSelfVariable ]) ifFalse: [ ^ self ].
 	aCriticBlock cull:
 		(self createTrivialCritiqueOn: aMethod intervalOf: returnNode hint: 'Remove the redundant final explicit return of self.')
-]
-
-{ #category : 'accessing' }
-MCPRedundantExplicitSelfReturnRule >> name [
-
-	^ self class ruleName
 ]

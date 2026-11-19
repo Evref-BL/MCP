@@ -5,7 +5,6 @@ Class {
 	#name : 'MCPLostCommentChange',
 	#superclass : 'MCPLostChange',
 	#instVars : [
-		'className',
 		'targetStamp'
 	],
 	#category : 'MCP-IDE-Queries',
@@ -13,26 +12,10 @@ Class {
 	#tag : 'Queries'
 }
 
-{ #category : 'instance creation' }
-MCPLostCommentChange class >> className: aClassName saved: aComment [
-	"The change to the comment of aClassName, which was aComment at the save."
-
-	^ self new
-		  setClassName: aClassName;
-		  savedState: aComment;
-		  yourself
-]
-
 { #category : 'converting' }
 MCPLostCommentChange >> addTargetTo: aDictionary [
 
 	aDictionary at: #comment put: targetState
-]
-
-{ #category : 'accessing' }
-MCPLostCommentChange >> affectedClassName [
-
-	^ className
 ]
 
 { #category : 'updating' }
@@ -46,13 +29,6 @@ MCPLostCommentChange >> becomes: aComment stamped: aStamp at: anInteger [
 MCPLostCommentChange >> changeDescription [
 
 	^ 'comment changed'
-]
-
-{ #category : 'accessing' }
-MCPLostCommentChange >> element [
-	"A comment is restored with its class's definition, under the class's name."
-
-	^ className
 ]
 
 { #category : 'testing' }
@@ -80,17 +56,12 @@ MCPLostCommentChange >> restoreIfImpossible: aBlock [
 
 	self
 		imageClassIfPresent: [ :class | class comment: targetState stamp: targetStamp ]
-		ifAbsent: [ aBlock value: (String streamContents: [ :stream | stream << 'Its class ' << className << ' is not in the image.' ]) ]
+		ifAbsent: [
+		aBlock value: (String streamContents: [ :stream | stream << 'Its class ' << affectedClassName << ' is not in the image.' ]) ]
 ]
 
 { #category : 'restoring' }
 MCPLostCommentChange >> restorePhase [
 
 	^ 3
-]
-
-{ #category : 'initialization' }
-MCPLostCommentChange >> setClassName: aClassName [
-
-	className := aClassName asString
 ]

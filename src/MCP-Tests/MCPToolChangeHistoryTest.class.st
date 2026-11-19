@@ -55,7 +55,9 @@ MCPToolChangeHistoryTest >> entriesListedFor: someAssociations [
 { #category : 'private' }
 MCPToolChangeHistoryTest >> isRecoverableMethodEntry: anEntry forClass: aClass [
 
-	^ (MCPChangeHistoryEntryInfo fromEvent: anEntry content) isMethodChangeForSelector: #rescuedValue inBehaviorNamed: aClass name
+	| data |
+	data := (MCPChangeHistoryEntryInfo fromEvent: anEntry content) asDictionary.
+	^ (data at: #selector ifAbsent: [ nil ]) = 'rescuedValue' and: [ (data at: #behavior ifAbsent: [ nil ]) = aClass name ]
 ]
 
 { #category : 'private' }

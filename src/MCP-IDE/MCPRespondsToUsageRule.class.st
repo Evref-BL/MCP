@@ -6,6 +6,8 @@ In ordinary Smalltalk code, collaborators and internal APIs should be modeled di
 Class {
 	#name : 'MCPRespondsToUsageRule',
 	#superclass : 'ReAbstractRule',
+	#traits : 'TMCPAgentRule',
+	#classTraits : 'TMCPAgentRule classTrait',
 	#category : 'MCP-IDE-Critiques',
 	#package : 'MCP-IDE',
 	#tag : 'Critiques'
@@ -24,12 +26,6 @@ MCPRespondsToUsageRule class >> forbiddenSelector [
 ]
 
 { #category : 'accessing' }
-MCPRespondsToUsageRule class >> group [
-
-	^ #'Design Flaws'
-]
-
-{ #category : 'accessing' }
 MCPRespondsToUsageRule class >> rationale [
 
 	^ 'Avoid respondsTo: in ordinary Smalltalk production code. Prefer clear collaborator contracts, testing protocol, or PharoBackwardCompatibility for version differences; reserve reflective selector probes for true meta-programming boundaries.'
@@ -41,32 +37,13 @@ MCPRespondsToUsageRule class >> ruleName [
 	^ 'Avoid respondsTo:'
 ]
 
-{ #category : 'accessing' }
-MCPRespondsToUsageRule class >> severity [
-
-	^ #warning
-]
-
-{ #category : 'accessing' }
-MCPRespondsToUsageRule class >> uniqueIdentifierName [
-
-	^ 'MCPRespondsToUsageRule'
-]
-
 { #category : 'running' }
-MCPRespondsToUsageRule >> check: aMethod forCritiquesDo: aCriticBlock [
+MCPRespondsToUsageRule >> agentCheck: aMethod forCritiquesDo: aCriticBlock [
 
-	MCPAgentCritiquing value ifFalse: [ ^ self ].
 	aMethod sendNodes do: [ :sendNode |
 			sendNode selector = self class forbiddenSelector ifTrue: [
 					aCriticBlock cull: (self
 							 createTrivialCritiqueOn: aMethod
 							 intervalOf: sendNode
 							 hint: 'Use collaborator contracts, testing protocol, or PharoBackwardCompatibility first.') ] ]
-]
-
-{ #category : 'accessing' }
-MCPRespondsToUsageRule >> name [
-
-	^ self class ruleName
 ]

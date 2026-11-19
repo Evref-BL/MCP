@@ -249,7 +249,7 @@ MCPToolMutation >> impactMessageForRefactoringCondition: aCondition [
 
 	| message |
 	message := String streamContents: [ :stream | aCondition violationMessageOn: stream ].
-	^ MCPRefactoringText withoutNegation: (MCPRefactoringText singleLine: message)
+	^ MCPRefactoringText conditionText: message
 ]
 
 { #category : 'private - warnings' }

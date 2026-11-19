@@ -5,7 +5,7 @@ It reports package metadata needed by repository management tools without exposi
 "
 Class {
 	#name : 'MCPRepositoryPackageInfo',
-	#superclass : 'MCPDataTransferObject',
+	#superclass : 'Object',
 	#instVars : [
 		'name',
 		'directoryName',

@@ -18,10 +18,11 @@ MCPRefactoringTextTest >> testSingleLineJoinsLinesAndRunsOfSpaces [
 		assert: (MCPRefactoringText singleLine: 'NOT ZooAnimal is not empty.  and ZooAnimal has subclasses. ')
 		equals: 'NOT ZooAnimal is not empty. and ZooAnimal has subclasses.'.
 	self
-		assert: (MCPRefactoringText singleLine: ('one{1}two{2} three' format: {
+		assert: (MCPRefactoringText singleLine: ('one{1}two{2} three{3}four' format: {
 						  String cr.
-						  String lf }))
-		equals: 'one two three'.
+						  String lf.
+						  String tab }))
+		equals: 'one two three four'.
 	self assert: (MCPRefactoringText singleLine: nil) equals: ''
 ]
 

@@ -402,6 +402,28 @@ MCPToolLostChangesTest >> testRefusesBringingBackWhatTheImageRemovedSince [
 ]
 
 { #category : 'tests' }
+MCPToolLostChangesTest >> testRestoresAClassMovedToAnotherTag [
+	"A move records the class's definition after it, not before, so restoring it moves the class back without telling a conflict."
+
+	| change |
+	self savedClass.
+	self inSessionNamed: 'lost' do: [
+			self callToolNamed: 'class_update' withArguments: {
+					(#name -> self savedClassName).
+					(#tag -> 'Moved') } asDictionary ].
+	self withoutEpiceaDuring: [
+			self callToolNamed: 'class_update' withArguments: {
+					(#name -> self savedClassName).
+					(#tag -> self generatedTagName) } asDictionary ].
+	change := ((self dataFrom: self list) at: #changes) first.
+	self assert: (change at: #element) equals: self savedClassName.
+	self assert: (change at: #change) equals: 'class modified'.
+	self deny: (change includesKey: #conflict).
+	self restore: #(  ).
+	self assert: (self classNamed: self savedClassName) mcpTagName equals: 'Moved'
+]
+
+{ #category : 'tests' }
 MCPToolLostChangesTest >> testRestoresARemoval [
 
 	| class data result |

@@ -97,20 +97,9 @@ MCPImageLookup class >> classNamed: aName inScope: aScopeKey [
 
 	^ self
 		  classNamed: aName
-		  ifList: [ MCPCommandError signalClassNameIsAList: aName scope: aScopeKey details: #(  ) ]
-		  ifNotAClass: [ :baseName |
-				  MCPCommandError
-					  signalNotAClass: baseName
-					  role: #class
-					  scope: aScopeKey
-					  details: #(  ) ]
-		  ifAbsent: [ :baseName |
-				  MCPCommandError
-					  signalMissing: baseName
-					  role: #class
-					  scope: aScopeKey
-					  suggestions: (self suggestionsFor: baseName role: #class)
-					  details: #(  ) ]
+		  role: #class
+		  scope: aScopeKey
+		  details: #(  )
 ]
 
 { #category : 'resolving - scopes' }
@@ -137,25 +126,48 @@ MCPImageLookup class >> classNamed: aName inScope: aScopeKey ifSkipped: aBlock [
 
 { #category : 'resolving' }
 MCPImageLookup class >> classNamed: aName role: aRole details: someAssociations [
-	"The class aName names, on its instance side, for a name given in aRole: #class, #superclass, #trait, #sharedPool, #layoutClass, #critiqueRule or #rewriteRule. someAssociations are what the caller already reports, such as the class being made. Anything else is refused: a list, a global variable that is no class, a missing name, and a class that is not of the role's kind."
+	"The class aName names, on its instance side, for a name given in aRole, as classNamed:role:scope:details: reads it outside any scope."
+
+	^ self
+		  classNamed: aName
+		  role: aRole
+		  scope: nil
+		  details: someAssociations
+]
+
+{ #category : 'resolving' }
+MCPImageLookup class >> classNamed: aName role: aRole scope: aScopeKey details: someAssociations [
+	"The class aName names, on its instance side, for a name given in aRole: #class, #superclass, #trait, #sharedPool, #layoutClass, #critiqueRule or #rewriteRule, under aScopeKey when it is a scope entry. someAssociations are what the caller already reports, such as the class being made. Anything else is refused: a list, a global variable that is no class, a missing name, and a class that is not of the role's kind."
+
+	^ self
+		  classNamed: aName
+		  role: aRole
+		  scope: aScopeKey
+		  details: someAssociations
+		  ifAbsent: [ :baseName |
+				  MCPCommandError
+					  signalMissing: baseName
+					  role: aRole
+					  scope: aScopeKey
+					  suggestions: (self suggestionsFor: baseName role: aRole)
+					  details: someAssociations ]
+]
+
+{ #category : 'resolving' }
+MCPImageLookup class >> classNamed: aName role: aRole scope: aScopeKey details: someAssociations ifAbsent: absentBlock [
+	"As classNamed:role:scope:details:, but absentBlock answers for a missing name, given without its side."
 
 	| behavior |
 	behavior := self
 		            classNamed: aName
-		            ifList: [ MCPCommandError signalClassNameIsAList: aName scope: nil details: someAssociations ]
+		            ifList: [ MCPCommandError signalClassNameIsAList: aName scope: aScopeKey details: someAssociations ]
 		            ifNotAClass: [ :baseName |
 				            MCPCommandError
 					            signalNotAClass: baseName
 					            role: aRole
-					            scope: nil
+					            scope: aScopeKey
 					            details: someAssociations ]
-		            ifAbsent: [ :baseName |
-				            MCPCommandError
-					            signalMissing: baseName
-					            role: aRole
-					            scope: nil
-					            suggestions: (self suggestionsFor: baseName role: aRole)
-					            details: someAssociations ].
+		            ifAbsent: absentBlock.
 	(self behavior: behavior isOfRole: aRole) ifFalse: [
 		MCPCommandError signalWrongKind: (self baseNameOf: aName) role: aRole details: someAssociations ].
 	^ behavior
@@ -168,13 +180,9 @@ MCPImageLookup class >> compileTargetNamed: aName classSide: aBoolean [
 	| class |
 	class := self
 		         classNamed: aName
-		         ifList: [ MCPCommandError signalClassNameIsAList: aName scope: nil details: #(  ) ]
-		         ifNotAClass: [ :baseName |
-				         MCPCommandError
-					         signalNotAClass: baseName
-					         role: #class
-					         scope: nil
-					         details: #(  ) ]
+		         role: #class
+		         scope: nil
+		         details: #(  )
 		         ifAbsent: [ :baseName |
 		         MCPCommandError signalMissingCompileTarget: baseName suggestions: (self suggestionsFor: baseName role: #class) ].
 	^ self sideOf: class named: aName classSide: aBoolean
@@ -229,13 +237,7 @@ MCPImageLookup class >> newClassName: aName ifClassExists: aBlock [
 { #category : 'resolving' }
 MCPImageLookup class >> packageNamed: aName [
 
-	^ self packageOrganizer packageNamed: aName asSymbol ifAbsent: [
-			  MCPCommandError
-				  signalMissing: aName
-				  role: #package
-				  scope: nil
-				  suggestions: (MCPScopeNameSuggester packageSuggestionsFor: aName)
-				  details: #(  ) ]
+	^ self packageNamed: aName inScope: nil
 ]
 
 { #category : 'resolving - scopes' }

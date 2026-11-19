@@ -5,7 +5,7 @@ It reads, from the method it keeps, its selector, declaring class, class-side fl
 "
 Class {
 	#name : 'MCPCompiledMethodInfo',
-	#superclass : 'MCPDataTransferObject',
+	#superclass : 'Object',
 	#instVars : [
 		'method'
 	],

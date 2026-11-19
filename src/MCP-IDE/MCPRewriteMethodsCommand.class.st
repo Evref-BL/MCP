@@ -35,11 +35,7 @@ MCPRewriteMethodsCommand >> applyChanges: changes [
 { #category : 'private - rewriting' }
 MCPRewriteMethodsCommand >> classNameForChange: aChange [
 
-	| behavior |
-	behavior := aChange changeClass.
-	^ behavior isMeta
-		  ifTrue: [ behavior instanceSide name asString ]
-		  ifFalse: [ behavior name asString ]
+	^ aChange changeClass instanceSide name asString
 ]
 
 { #category : 'executing' }

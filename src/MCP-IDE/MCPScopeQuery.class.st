@@ -25,10 +25,7 @@ Class {
 MCPScopeQuery class >> distinctNamesAmong: someNames [
 	"Each name once, as a string, in the order given."
 
-	| names |
-	names := OrderedCollection new.
-	someNames do: [ :each | (names includes: each asString) ifFalse: [ names add: each asString ] ].
-	^ names asArray
+	^ (someNames collect: [ :each | each asString ] as: OrderedCollection) removeDuplicates asArray
 ]
 
 { #category : 'phrasing' }

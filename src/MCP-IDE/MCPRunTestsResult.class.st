@@ -7,13 +7,13 @@ Class {
 	#name : 'MCPRunTestsResult',
 	#superclass : 'MCPResult',
 	#instVars : [
-		'results',
 		'timedOut',
 		'unrunTests',
 		'interruption',
 		'notRunCount',
 		'timeoutMilliseconds',
-		'withoutTests'
+		'withoutTests',
+		'outcomes'
 	],
 	#category : 'MCP-IDE-Results',
 	#package : 'MCP-IDE',
@@ -21,9 +21,9 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPRunTestsResult class >> results: resultCollection timedOut: aBoolean unrunTests: testCollection [
+MCPRunTestsResult class >> outcomes: someOutcomes timedOut: aBoolean unrunTests: testCollection [
 
-	^ self new initializeResults: resultCollection timedOut: aBoolean unrunTests: testCollection
+	^ self new initializeOutcomes: someOutcomes timedOut: aBoolean unrunTests: testCollection
 ]
 
 { #category : 'converting' }
@@ -82,7 +82,7 @@ MCPRunTestsResult >> classesDefinedAgainEntries [
 { #category : 'converting' }
 MCPRunTestsResult >> countOf: aSelector [
 
-	^ self results inject: 0 into: [ :sum :each | sum + (each perform: aSelector) ]
+	^ self outcomes count: [ :each | each perform: aSelector ]
 ]
 
 { #category : 'converting' }
@@ -108,7 +108,7 @@ MCPRunTestsResult >> entryForIssueGroup: someTestIssues [
 { #category : 'converting' }
 MCPRunTestsResult >> errorCount [
 
-	^ self countOf: #errorCount
+	^ self countOf: #isError
 ]
 
 { #category : 'converting' }
@@ -120,7 +120,7 @@ MCPRunTestsResult >> errorDictionaries [
 { #category : 'converting' }
 MCPRunTestsResult >> failureCount [
 
-	^ self countOf: #failureCount
+	^ self countOf: #isFailure
 ]
 
 { #category : 'converting' }
@@ -130,12 +130,11 @@ MCPRunTestsResult >> failureDictionaries [
 ]
 
 { #category : 'initialization' }
-MCPRunTestsResult >> initializeResults: resultCollection timedOut: aBoolean unrunTests: testCollection [
+MCPRunTestsResult >> initializeOutcomes: someOutcomes timedOut: aBoolean unrunTests: testCollection [
 
-	results := resultCollection asArray.
+	outcomes := someOutcomes asArray.
 	timedOut := aBoolean.
-	unrunTests := testCollection asArray.
-	^ self
+	unrunTests := testCollection asArray
 ]
 
 { #category : 'converting' }
@@ -228,7 +227,7 @@ MCPRunTestsResult >> notRunDictionary [
 MCPRunTestsResult >> outcomes [
 	"Every test that finished, each once, in the order they ran."
 
-	^ Array streamContents: [ :stream | self results do: [ :each | stream nextPutAll: each outcomes ] ]
+	^ outcomes
 ]
 
 { #category : 'private' }
@@ -241,7 +240,7 @@ MCPRunTestsResult >> outcomesReferringToRemovedClasses [
 { #category : 'converting' }
 MCPRunTestsResult >> passedCount [
 
-	^ self countOf: #passedCount
+	^ self countOf: #isPassed
 ]
 
 { #category : 'converting' }
@@ -263,22 +262,17 @@ MCPRunTestsResult >> removedClassReferenceEntries [
 		  as: Array
 ]
 
-{ #category : 'accessing' }
-MCPRunTestsResult >> results [
-
-	^ results
-]
-
 { #category : 'converting' }
 MCPRunTestsResult >> runCount [
+	"As SUnit counts a run: the tests that passed, failed or erred, skipped ones left out. Each test counts once, however many exceptions it raised."
 
-	^ self countOf: #runCount
+	^ self passedCount + self failureCount + self errorCount
 ]
 
 { #category : 'converting' }
 MCPRunTestsResult >> skippedCount [
 
-	^ self countOf: #skippedCount
+	^ self countOf: #isSkipped
 ]
 
 { #category : 'converting' }
@@ -291,7 +285,7 @@ MCPRunTestsResult >> skippedDictionaries [
 MCPRunTestsResult >> testNamesOf: someOutcomes [
 	"The tests' names, each once, in the order they ran."
 
-	^ self uniqueStringsFrom: (someOutcomes collect: [ :each | each name ])
+	^ MCPScopeQuery distinctNamesAmong: (someOutcomes collect: [ :each | each name ])
 ]
 
 { #category : 'accessing' }
@@ -314,21 +308,9 @@ MCPRunTestsResult >> timeoutMilliseconds: anInteger [
 ]
 
 { #category : 'converting' }
-MCPRunTestsResult >> uniqueStringsFrom: strings [
-
-	| seen |
-	seen := Set new.
-	^ Array streamContents: [ :stream |
-			  strings do: [ :each |
-					  (seen includes: each) ifFalse: [
-							  seen add: each.
-							  stream nextPut: each ] ] ]
-]
-
-{ #category : 'converting' }
 MCPRunTestsResult >> unrunClassNames [
 
-	^ self uniqueStringsFrom: (Array streamContents: [ :stream |
+	^ MCPScopeQuery distinctNamesAmong: (Array streamContents: [ :stream |
 				   self unrunTests do: [ :selection |
 					   (selection isPackageSelection not and: [ selection hasTestMethod not ]) ifTrue: [ stream nextPut: selection className ] ] ])
 ]
@@ -336,14 +318,14 @@ MCPRunTestsResult >> unrunClassNames [
 { #category : 'converting' }
 MCPRunTestsResult >> unrunMethodReferences [
 
-	^ self uniqueStringsFrom: (Array streamContents: [ :stream |
+	^ MCPScopeQuery distinctNamesAmong: (Array streamContents: [ :stream |
 			   self unrunTests do: [ :selection | selection hasTestMethod ifTrue: [ stream nextPut: selection displayName ] ] ])
 ]
 
 { #category : 'converting' }
 MCPRunTestsResult >> unrunPackageNames [
 
-	^ self uniqueStringsFrom: (Array streamContents: [ :stream |
+	^ MCPScopeQuery distinctNamesAmong: (Array streamContents: [ :stream |
 			   self unrunTests do: [ :selection | selection isPackageSelection ifTrue: [ stream nextPut: selection packageName ] ] ])
 ]
 
