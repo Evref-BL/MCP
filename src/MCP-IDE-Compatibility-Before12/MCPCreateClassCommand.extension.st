@@ -13,7 +13,8 @@ MCPCreateClassCommand >> buildClass [
 	self classSlots ifNotEmpty: [ builder classSlots: self classSlots ].
 	self traits ifNotEmpty: [ builder traits: self resolvedTraits ].
 	self sharedVariables ifNotEmpty: [ builder sharedVariables: self sharedVariables ].
-	self sharedPools ifNotEmpty: [ builder sharedPools: (self resolvedSharedPools collect: [ :pool | pool name ]) ].
+	self sharedPools ifNotEmpty: [
+		builder sharedPools: ((self resolvedSharedPoolsNamed: self sharedPools) collect: [ :pool | pool name ]) ].
 	self layout ifNotNil: [ :layoutName | builder layout: (self resolvedLayoutClassNamed: layoutName) ].
 	^ builder install
 ]

@@ -25,6 +25,13 @@ MCPMoveSlotCommand class >> className: aClassName slotName: aSlotName direction:
 		  yourself
 ]
 
+{ #category : 'private' }
+MCPMoveSlotCommand >> applyToBehavior: aBehavior [
+
+	self validatePullUpInto: aBehavior.
+	(self refactoringForBehavior: aBehavior) execute
+]
+
 { #category : 'accessing' }
 MCPMoveSlotCommand >> direction [
 
@@ -37,37 +44,17 @@ MCPMoveSlotCommand >> direction: aDirection [
 	direction := aDirection
 ]
 
-{ #category : 'executing' }
-MCPMoveSlotCommand >> execute [
-
-	| refactoringBehavior |
-	refactoringBehavior := self refactoringBehaviorForClass: self currentClass.
-	self validatePullUpInto: refactoringBehavior.
-	(self refactoringForBehavior: refactoringBehavior) execute.
-	^ Smalltalk globals at: self className asSymbol
-]
-
-{ #category : 'private' }
-MCPMoveSlotCommand >> normalizedAffectedClassNameFor: aBehavior [
-
-	^ (aBehavior isMeta
-		   ifTrue: [ aBehavior instanceSide name ]
-		   ifFalse: [ aBehavior name ]) asString
-]
-
 { #category : 'private' }
 MCPMoveSlotCommand >> pullUpRefusalFor: aSlot in: aBehavior [
 	"A slot the class defines itself suggests the caller named the class the slot is in, so the answer names the superclass to use. A slot a trait supplies is not the class's to move, and no superclass would help."
 
-	| holderName |
-	holderName := self normalizedAffectedClassNameFor: aBehavior.
 	^ String streamContents: [ :stream |
-			  stream << holderName << ' already has ' << self slotName.
+			  stream << self className << ' already has ' << self slotName.
 			  aSlot isDefinedByOwningClass
 				  ifTrue: [
 						  stream << '. pullUp moves a slot into the class it names, from the subclasses that define it'.
 						  aBehavior instanceSide superclass ifNotNil: [ :superclass |
-							  stream << ': name ' << superclass name << ' to move ' << self slotName << ' up from ' << holderName ] ]
+							  stream << ': name ' << superclass name << ' to move ' << self slotName << ' up from ' << self className ] ]
 				  ifFalse: [ stream << ', which the trait ' << aSlot definingClass name << ' supplies' ].
 			  stream nextPut: $. ]
 ]

@@ -38,14 +38,7 @@ MCPChangeClassCommentCommand >> execute [
 	"A comment already as asked is not set again."
 
 	| targetClass |
-	targetClass := self targetClass.
-	targetClass mcpComment = self classComment ifTrue: [ ^ targetClass ].
-	targetClass comment: self classComment.
-	^ Smalltalk globals at: self className asSymbol
-]
-
-{ #category : 'private' }
-MCPChangeClassCommentCommand >> targetClass [
-
-	^ MCPImageLookup classNamed: self className
+	targetClass := self currentClass.
+	targetClass mcpComment = self classComment ifFalse: [ targetClass comment: self classComment ].
+	^ targetClass
 ]

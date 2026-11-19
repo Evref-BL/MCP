@@ -23,19 +23,6 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPCreateClassCommand class >> className: aClassName superclassName: aSuperclassName packageName: aPackageName tag: aTag slots: someSlots classSlots: someClassSlots [
-
-	^ self new
-		  className: aClassName;
-		  superclassName: aSuperclassName;
-		  packageName: aPackageName;
-		  tag: aTag;
-		  slots: someSlots;
-		  classSlots: someClassSlots;
-		  yourself
-]
-
-{ #category : 'instance creation' }
 MCPCreateClassCommand class >> className: aClassName superclassName: aSuperclassName packageName: aPackageName tag: aTag slots: someSlots classSlots: someClassSlots traits: someTraits sharedVariables: someSharedVariables sharedPools: someSharedPools layout: aLayout [
 
 	^ self new
@@ -64,12 +51,6 @@ MCPCreateClassCommand >> classSlots: someSlots [
 	classSlots := someSlots ifNil: [ #(  ) ] ifNotNil: [ someSlots asArray ]
 ]
 
-{ #category : 'private' }
-MCPCreateClassCommand >> ensurePackageNamed: aPackageName [
-
-	self packageOrganizer ensurePackage: aPackageName
-]
-
 { #category : 'executing' }
 MCPCreateClassCommand >> execute [
 	"The package is made first, for the class to land in, and removed again when the class does not build, so that a create that fails leaves nothing behind."
@@ -77,7 +58,7 @@ MCPCreateClassCommand >> execute [
 	| packageIsNew |
 	MCPImageLookup newClassName: self className.
 	packageIsNew := (self packageOrganizer hasPackage: self packageName) not.
-	self ensurePackageNamed: self packageName.
+	self packageOrganizer ensurePackage: self packageName.
 	^ [ self buildClass ] ifCurtailed: [ packageIsNew ifTrue: [ self removePackageIfEmptyNamed: self packageName ] ]
 ]
 
@@ -106,15 +87,9 @@ MCPCreateClassCommand >> packageName: aString [
 ]
 
 { #category : 'private' }
-MCPCreateClassCommand >> resolvedSharedPools [
-
-	^ self sharedPools collect: [ :each | self resolvedSharedPoolNamed: each ] as: Array
-]
-
-{ #category : 'private' }
 MCPCreateClassCommand >> resolvedTraits [
 
-	^ self traits collect: [ :each | MCPImageLookup traitNamed: each details: { (#class -> self className) } ] as: Array
+	^ self resolvedTraitsNamed: self traits
 ]
 
 { #category : 'accessing' }
@@ -156,7 +131,7 @@ MCPCreateClassCommand >> slots: someSlots [
 { #category : 'private' }
 MCPCreateClassCommand >> superclass [
 
-	^ MCPImageLookup classNamed: self superclassName role: #superclass details: { (#class -> self className) }
+	^ self resolvedSuperclassNamed: self superclassName
 ]
 
 { #category : 'accessing' }

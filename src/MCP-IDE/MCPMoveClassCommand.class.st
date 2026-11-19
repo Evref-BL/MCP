@@ -29,23 +29,17 @@ MCPMoveClassCommand class >> className: aClassName packageName: aPackageName tag
 MCPMoveClassCommand >> destinationValidation [
 
 	| package |
-	package := self ensurePackageNamed: self packageName.
+	package := self packageOrganizer ensurePackage: self packageName.
 	self tag ifNotNil: [ package ensureTag: self tag ]
-]
-
-{ #category : 'private' }
-MCPMoveClassCommand >> ensurePackageNamed: aPackageName [
-
-	^ self packageOrganizer ensurePackage: aPackageName
 ]
 
 { #category : 'executing' }
 MCPMoveClassCommand >> execute [
 
-	MCPImageLookup classNamed: self className.
+	self currentClass.
 	self destinationValidation.
 	self performMove.
-	^ Smalltalk globals at: self className asSymbol
+	^ self currentClass
 ]
 
 { #category : 'accessing' }

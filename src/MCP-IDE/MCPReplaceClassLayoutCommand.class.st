@@ -24,7 +24,7 @@ MCPReplaceClassLayoutCommand class >> className: aClassName layout: aLayoutName 
 { #category : 'executing' }
 MCPReplaceClassLayoutCommand >> execute [
 
-	^ self replaceLayoutOn: self targetClass
+	^ self replaceLayoutOn: self currentClass
 ]
 
 { #category : 'accessing' }
@@ -37,10 +37,4 @@ MCPReplaceClassLayoutCommand >> layout [
 MCPReplaceClassLayoutCommand >> layout: aLayoutName [
 
 	layout := aLayoutName
-]
-
-{ #category : 'private' }
-MCPReplaceClassLayoutCommand >> targetClass [
-
-	^ MCPImageLookup classNamed: self className
 ]

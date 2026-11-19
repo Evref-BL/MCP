@@ -9,6 +9,23 @@ Class {
 }
 
 { #category : 'private' }
+MCPCreateClassCommandTest >> commandCreating: aClassName superclass: aSuperclassName [
+	"The command class_create builds for a class given only its superclass."
+
+	^ MCPCreateClassCommand
+		  className: aClassName
+		  superclassName: aSuperclassName
+		  packageName: self generatedPackageName
+		  tag: nil
+		  slots: nil
+		  classSlots: nil
+		  traits: nil
+		  sharedVariables: nil
+		  sharedPools: nil
+		  layout: nil
+]
+
+{ #category : 'private' }
 MCPCreateClassCommandTest >> createdClassNames [
 
 	^ #( 'MCPCreateClassCommandTestGenerated' 'MCPCreateClassCommandTestTagged' 'MCPCreateClassCommandTestClassSlots'
@@ -26,13 +43,7 @@ MCPCreateClassCommandTest >> errorCreating: aClassName superclass: aSuperclassNa
 MCPCreateClassCommandTest >> errorCreating: aClassName superclass: aSuperclassName configuredBy: aBlock [
 
 	| command |
-	command := MCPCreateClassCommand
-		           className: aClassName
-		           superclassName: aSuperclassName
-		           packageName: self generatedPackageName
-		           tag: nil
-		           slots: nil
-		           classSlots: nil.
+	command := self commandCreating: aClassName superclass: aSuperclassName.
 	aBlock value: command.
 	^ self captureCommandError: [ command execute ]
 ]
@@ -123,13 +134,7 @@ MCPCreateClassCommandTest >> testAPackageIsRemovedOnlyWhileItDefinesNoClass [
 
 	| command |
 	command := MCPCreateClassCommand new.
-	self executeCommand: (MCPCreateClassCommand
-			 className: 'MCPCreateClassCommandTestGenerated'
-			 superclassName: 'Object'
-			 packageName: self generatedPackageName
-			 tag: nil
-			 slots: nil
-			 classSlots: nil).
+	self executeCommand: (self commandCreating: 'MCPCreateClassCommandTestGenerated' superclass: 'Object').
 	self deny: (self aroundCommandExecution: [ command removePackageIfEmptyNamed: self generatedPackageName ]).
 	self assert: (self packageOrganizer hasPackage: self generatedPackageName).
 	self withoutEpiceaDuring: [ (self classNamed: 'MCPCreateClassCommandTestGenerated') removeFromSystem ].
@@ -168,13 +173,7 @@ MCPCreateClassCommandTest >> testClassesOfTheWrongKindAreRefusedSayingWhatTheRol
 MCPCreateClassCommandTest >> testCreatesClassAndAnswersIt [
 
 	| result createdClass |
-	result := self executeCommand: (MCPCreateClassCommand
-			           className: 'MCPCreateClassCommandTestGenerated'
-			           superclassName: 'Object'
-			           packageName: self generatedPackageName
-			           tag: nil
-			           slots: nil
-			           classSlots: nil).
+	result := self executeCommand: (self commandCreating: 'MCPCreateClassCommandTestGenerated' superclass: 'Object').
 	createdClass := self classNamed: 'MCPCreateClassCommandTestGenerated'.
 	self assert: createdClass superclass equals: Object.
 	self assert: createdClass packageName asString equals: self generatedPackageName.
@@ -185,13 +184,11 @@ MCPCreateClassCommandTest >> testCreatesClassAndAnswersIt [
 MCPCreateClassCommandTest >> testCreatesClassWithTagSlotsAndClassSlots [
 
 	| createdClass result |
-	result := self executeCommand: (MCPCreateClassCommand
-			           className: 'MCPCreateClassCommandTestTagged'
-			           superclassName: 'Object'
-			           packageName: self generatedPackageName
-			           tag: 'Generated'
-			           slots: #( #firstName #lastName )
-			           classSlots: #( #defaultName )).
+	result := self executeCommand: ((self commandCreating: 'MCPCreateClassCommandTestTagged' superclass: 'Object')
+			           tag: 'Generated';
+			           slots: #( #firstName #lastName );
+			           classSlots: #( #defaultName );
+			           yourself).
 	createdClass := self classNamed: 'MCPCreateClassCommandTestTagged'.
 	self assert: (createdClass slots collect: #name as: Array) equals: #( #firstName #lastName ).
 	self assert: (createdClass classSide slots collect: #name as: Array) equals: #( #defaultName ).
@@ -229,13 +226,7 @@ MCPCreateClassCommandTest >> testCreatesClassWithTraitsSharedVariablesSharedPool
 MCPCreateClassCommandTest >> testCreatesTraitWhenSuperclassIsTrait [
 
 	| createdTrait |
-	self executeCommand: (MCPCreateClassCommand
-			 className: 'TMCPCreateClassCommandTestTrait'
-			 superclassName: 'Trait'
-			 packageName: self generatedPackageName
-			 tag: nil
-			 slots: nil
-			 classSlots: nil).
+	self executeCommand: (self commandCreating: 'TMCPCreateClassCommandTestTrait' superclass: 'Trait').
 	createdTrait := self classNamed: 'TMCPCreateClassCommandTestTrait'.
 	self assert: createdTrait isTrait.
 	self assert: createdTrait superclass isNil
@@ -245,21 +236,8 @@ MCPCreateClassCommandTest >> testCreatesTraitWhenSuperclassIsTrait [
 MCPCreateClassCommandTest >> testExistingClassSignalsCommandError [
 
 	| error |
-	self executeCommand: (MCPCreateClassCommand
-			 className: 'MCPCreateClassCommandTestGenerated'
-			 superclassName: 'Object'
-			 packageName: self generatedPackageName
-			 tag: nil
-			 slots: nil
-			 classSlots: nil).
-	error := self captureCommandError: [
-			         (MCPCreateClassCommand
-				          className: 'MCPCreateClassCommandTestGenerated'
-				          superclassName: 'Object'
-				          packageName: self generatedPackageName
-				          tag: nil
-				          slots: nil
-				          classSlots: nil) execute ].
+	self executeCommand: (self commandCreating: 'MCPCreateClassCommandTestGenerated' superclass: 'Object').
+	error := self errorCreating: 'MCPCreateClassCommandTestGenerated' superclass: 'Object'.
 	self assert: error errorCode equals: #ClassAlreadyExists.
 	self assert: (error structuredDetails at: #class) equals: 'MCPCreateClassCommandTestGenerated'.
 	self assert: (error messageText includesSubstring: 'Change it with class_update')
@@ -269,14 +247,7 @@ MCPCreateClassCommandTest >> testExistingClassSignalsCommandError [
 MCPCreateClassCommandTest >> testMissingSuperclassSignalsCommandError [
 
 	| error |
-	error := self captureCommandError: [
-			         (MCPCreateClassCommand
-				          className: 'MCPCreateClassCommandTestGenerated'
-				          superclassName: 'DefinitelyMissingSuperclass'
-				          packageName: self generatedPackageName
-				          tag: nil
-				          slots: nil
-				          classSlots: nil) execute ].
+	error := self errorCreating: 'MCPCreateClassCommandTestGenerated' superclass: 'DefinitelyMissingSuperclass'.
 	self assert: error errorCode equals: #SuperclassNotFound.
 	self assert: (error structuredDetails at: #superclass) equals: 'DefinitelyMissingSuperclass'
 ]

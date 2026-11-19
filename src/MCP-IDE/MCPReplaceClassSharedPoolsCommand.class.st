@@ -24,13 +24,7 @@ MCPReplaceClassSharedPoolsCommand class >> className: aClassName sharedPoolNames
 { #category : 'executing' }
 MCPReplaceClassSharedPoolsCommand >> execute [
 
-	^ self replaceSharedPoolsOn: self targetClass
-]
-
-{ #category : 'private' }
-MCPReplaceClassSharedPoolsCommand >> resolvedSharedPools [
-
-	^ self sharedPools collect: [ :each | self resolvedSharedPoolNamed: each ] as: Array
+	^ self replaceSharedPoolsOn: self currentClass
 ]
 
 { #category : 'accessing' }
@@ -43,16 +37,4 @@ MCPReplaceClassSharedPoolsCommand >> sharedPoolNames [
 MCPReplaceClassSharedPoolsCommand >> sharedPoolNames: someNames [
 
 	sharedPoolNames := someNames ifNil: [ #(  ) ] ifNotNil: [ someNames asArray ]
-]
-
-{ #category : 'accessing' }
-MCPReplaceClassSharedPoolsCommand >> sharedPools [
-
-	^ self sharedPoolNames
-]
-
-{ #category : 'private' }
-MCPReplaceClassSharedPoolsCommand >> targetClass [
-
-	^ MCPImageLookup classNamed: self className
 ]

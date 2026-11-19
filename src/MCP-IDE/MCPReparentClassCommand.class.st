@@ -29,14 +29,8 @@ MCPReparentClassCommand >> execute [
 	currentClass := self currentClass.
 	currentSuperclassName := currentClass superclass ifNil: [ '' ] ifNotNil: [ :aSuperclass | aSuperclass name asString ].
 	currentSuperclassName = self superclassName ifTrue: [ ^ currentClass ].
-	(self builderForReparenting: currentClass toSuperclass: self newSuperclass) install.
-	^ Smalltalk globals at: self className asSymbol
-]
-
-{ #category : 'private' }
-MCPReparentClassCommand >> newSuperclass [
-
-	^ MCPImageLookup classNamed: self superclassName role: #superclass details: { (#class -> self className) }
+	(self builderForReparenting: currentClass toSuperclass: (self resolvedSuperclassNamed: self superclassName)) install.
+	^ self currentClass
 ]
 
 { #category : 'accessing' }

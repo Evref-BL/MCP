@@ -19,15 +19,8 @@ MCPAddSlotCommand class >> className: aClassName slotName: aSlotName classSide: 
 		  yourself
 ]
 
-{ #category : 'executing' }
-MCPAddSlotCommand >> execute [
-
-	(self refactoringForBehavior: (self refactoringBehaviorForClass: self currentClass)) execute.
-	^ Smalltalk globals at: self className asSymbol
-]
-
 { #category : 'private' }
-MCPAddSlotCommand >> refactoringForBehavior: aBehavior [
+MCPAddSlotCommand >> applyToBehavior: aBehavior [
 
-	^ RBAddInstanceVariableRefactoring variable: self slotName class: aBehavior
+	(RBAddInstanceVariableRefactoring variable: self slotName class: aBehavior) execute
 ]

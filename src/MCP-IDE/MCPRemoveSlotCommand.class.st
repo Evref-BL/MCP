@@ -1,5 +1,5 @@
 "
-Removes a slot from a class or metaclass through the refactoring engine.
+Removes a slot from a class through the refactoring engine, or from its class side directly, refusing a slot the class side does not define itself and warning while methods use it.
 "
 Class {
 	#name : 'MCPRemoveSlotCommand',
@@ -20,43 +20,16 @@ MCPRemoveSlotCommand class >> className: aClassName slotName: aSlotName classSid
 ]
 
 { #category : 'private' }
-MCPRemoveSlotCommand >> directlyDefinesSlotNamed: aSlotName inBehavior: aBehavior [
+MCPRemoveSlotCommand >> applyToBehavior: aBehavior [
 
-	^ aBehavior slots anySatisfy: [ :each | each name asString = aSlotName ]
-]
-
-{ #category : 'executing' }
-MCPRemoveSlotCommand >> execute [
-
-	| refactoringBehavior |
-	refactoringBehavior := self refactoringBehaviorForClass: self currentClass.
-	self classSide
-		ifTrue: [ self removeClassSideSlotFromBehavior: refactoringBehavior ]
-		ifFalse: [ (self refactoringForBehavior: refactoringBehavior) execute ].
-	^ Smalltalk globals at: self className asSymbol
-]
-
-{ #category : 'private' }
-MCPRemoveSlotCommand >> normalizedBehaviorNameFor: aBehavior [
-
-	^ (aBehavior isMeta
-		   ifTrue: [ aBehavior instanceSide name ]
-		   ifFalse: [ aBehavior name ]) asString
-]
-
-{ #category : 'private' }
-MCPRemoveSlotCommand >> refactoringForBehavior: aBehavior [
-
-	^ ReRemoveInstanceVariableRefactoring remove: self slotName from: aBehavior
+	self classSide ifTrue: [ ^ self removeClassSideSlotFromBehavior: aBehavior ].
+	(ReRemoveInstanceVariableRefactoring remove: self slotName from: aBehavior) execute
 ]
 
 { #category : 'private' }
 MCPRemoveSlotCommand >> removeClassSideSlotFromBehavior: aBehavior [
 
-	(self directlyDefinesSlotNamed: self slotName inBehavior: aBehavior) ifFalse: [
-			RBApplicabilityChecksFailedError signal: (String streamContents: [ :stream |
-						 stream << 'The variable ' << self slotName << ' is not directly defined in the class '
-						 << (self normalizedBehaviorNameFor: aBehavior) ]) ].
+	self validateSlotIsDefinedIn: aBehavior.
 	self signalReferenceWarningIfNeededForBehavior: aBehavior.
 	aBehavior removeInstVarNamed: self slotName
 ]
