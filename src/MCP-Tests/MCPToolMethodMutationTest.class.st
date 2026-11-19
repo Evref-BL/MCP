@@ -235,7 +235,7 @@ MCPToolMethodMutationTest >> extensionProtocolSelector [
 
 { #category : 'private' }
 MCPToolMethodMutationTest >> fixturePackageScope [
-	"The fixtures and their senders are all in one package, so a refactoring scoped to it proves at a fraction of the cost what it proves image-wide. testRenameUpdatesSendersAndPermutesArguments and testAddArgumentsUpdatesClassSideSenders keep the image-wide default."
+	"The fixtures and their senders are all in one package, so a refactoring scoped to it proves at a fraction of the cost what it proves image-wide. Two tests keep the image-wide default."
 
 	^ self searchScope: { (#packages -> #( 'MCP-Tests-Resources' )) }
 ]

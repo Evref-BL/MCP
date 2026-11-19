@@ -392,11 +392,12 @@ MCP >> ensureLocalObservabilityBackend [
 
 { #category : 'private - start' }
 MCP >> ensureServerIsListening [
-	"The listener binds in a process above its caller's priority, so a bind that fails has usually failed by now. A port another MCP in this image listens on stays held however long this one waits for it, so that failure is signalled at once."
+	"The listener binds in a process above its caller's priority, so a bind that fails has usually failed by now. A port another MCP in this image listens on stays held however long this one waits for it, so that failure is signalled as soon as it is seen: at once, or after the first wait when the bind had not failed yet."
 
 	server lastListenError ifNotNil: [
 		self anotherServerListeningOnThisPortDo: [ :holder | Error signal: self notListeningDescription ] ].
 	(self waitUntilListeningForMilliseconds: 1000) ifTrue: [ ^ self ].
+	self anotherServerListeningOnThisPortDo: [ :holder | Error signal: self notListeningDescription ].
 	server stop.
 	server start.
 	(self waitUntilListeningForMilliseconds: 1000) ifTrue: [ ^ self ].

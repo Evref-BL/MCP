@@ -1,5 +1,5 @@
 "
-An evaluate command whose stack and memory bounds a test sets, low enough for the code it evaluates to pass them without growing the image by much. It looks at the code every 10 ms rather than 100, so the code is stopped soon after it passes them.
+An evaluate command whose stack and memory bounds a test sets, low enough for the code it evaluates to pass them without growing the image by much. It looks at the code more often than the command does, so the code is stopped soon after it passes them.
 "
 Class {
 	#name : 'MCPEvaluateCommandStoppingEarly',

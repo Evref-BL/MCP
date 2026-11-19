@@ -1,5 +1,5 @@
 "
-A test-running command that gives the test a timeout interrupts a tenth of a second for its tearDown, the shortest limit SUnit takes, rather than a second, so that a test of that tearDown answers sooner.
+A test-running command that gives the test a timeout interrupts the shortest time SUnit takes for its tearDown, rather than the command's, so that a test of that tearDown answers sooner.
 "
 Class {
 	#name : 'MCPRunTestsCommandTearingDownBriefly',

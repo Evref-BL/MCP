@@ -1,5 +1,5 @@
 "
-Test fixture server that keeps every socket a listening attempt created, so a test can check that a failed attempt destroyed its own socket instead of leaking it. It retries a failed bind after 20 ms rather than 250, so a test that frees the port sees it bound soon after.
+Test fixture server that keeps every socket a listening attempt created, so a test can check that a failed attempt destroyed its own socket instead of leaking it. It retries a failed bind sooner than the server does, so a test that frees the port sees it bound soon after.
 "
 Class {
 	#name : 'MCPSocketRecordingTestServer',

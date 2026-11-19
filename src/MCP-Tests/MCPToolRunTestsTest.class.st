@@ -21,7 +21,7 @@ MCPToolRunTestsTest >> commandResultFor: someArguments [
 
 { #category : 'private - running' }
 MCPToolRunTestsTest >> commandResultForClasses: classNames timeoutMilliseconds: milliseconds [
-	"What test_run's operation answers for a timeout finer than timeoutSeconds can say, giving the test it interrupts a tenth of a second for its tearDown."
+	"What test_run's operation answers for a timeout finer than timeoutSeconds can say, giving the test it interrupts the shortest time SUnit takes for its tearDown."
 
 	^ (MCPRunTestsCommandTearingDownBriefly
 		   selections: (classNames collect: [ :each | MCPTestSelectionSpec className: each ] as: Array)

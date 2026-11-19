@@ -112,19 +112,12 @@ MCPToolContractsTest >> evaluate: aString within: seconds [
 
 	| actions result |
 	actions := OrderedCollection new.
-	result := self evaluate: aString within: seconds deferringInto: actions.
+	result := MCPPostResponseActions value: actions during: [
+			          self callDiscoveredToolNamed: 'evaluate' withArguments: {
+					          (#code -> aString).
+					          (#timeoutSeconds -> seconds) } asDictionary ].
 	actions do: [ :each | each value ].
 	^ result
-]
-
-{ #category : 'private - evaluate' }
-MCPToolContractsTest >> evaluate: aString within: seconds deferringInto: actions [
-	"The answer of an evaluation with a time limit, as a call gets it, leaving in actions what the call deferred until after its response."
-
-	^ MCPPostResponseActions value: actions during: [
-			  self callDiscoveredToolNamed: 'evaluate' withArguments: {
-					  (#code -> aString).
-					  (#timeoutSeconds -> seconds) } asDictionary ]
 ]
 
 { #category : 'private - evaluate' }
@@ -406,33 +399,21 @@ MCPToolContractsTest >> stoppedEarlyResultOf: aString bounds: aBlock [
 ]
 
 { #category : 'private - evaluate' }
-MCPToolContractsTest >> stoppedText: aString [
-	"A text that must be the answer to a stop at the tests' limit."
-
-	^ self stoppedText: aString after: self stopLimitSeconds
-]
-
-{ #category : 'private - evaluate' }
-MCPToolContractsTest >> stoppedText: aString after: seconds [
-	"A text that must be the answer to a stop at a limit of seconds."
-
-	self assert: (aString lines first: 2) equals: {
-			('Evaluation stopped after ' , seconds printString , ' s, its time limit.').
-			'What it changed before then stays changed.' }.
-	^ aString
-]
-
-{ #category : 'private - evaluate' }
 MCPToolContractsTest >> stoppedTextOf: aResult [
 	"The text of an evaluation's answer that must be a stop at the tests' limit."
 
+	| text |
 	self assert: aResult isError.
-	^ self stoppedText: aResult content first text
+	text := aResult content first text.
+	self assert: (text lines first: 2) equals: {
+			('Evaluation stopped after ' , self stopLimitSeconds printString , ' s, its time limit.').
+			'What it changed before then stays changed.' }.
+	^ text
 ]
 
 { #category : 'private - evaluate' }
 MCPToolContractsTest >> stoppedTextUnwindingBrieflyOf: aString deferringInto: actions [
-	"The text of an evaluation of aString that must be stopped at the tests' limit, by a command that waits briefly rather than 5 s for the stopped code to unwind, leaving in actions what the call deferred until after its response. A test whose stopped code unwinds slowly waits that bound in full."
+	"The text of an evaluation of aString that must be stopped at the tests' limit, by a command that waits less than the command's bound for the stopped code to unwind, leaving in actions what the call deferred until after its response. A test whose stopped code unwinds slowly waits that shorter bound in full."
 
 	| command tool |
 	tool := MCPToolEvaluate new.
@@ -1031,16 +1012,16 @@ MCPToolContractsTest >> testEvaluateLetsNotificationsUseTheirDefaultAction [
 
 { #category : 'tests - evaluate' }
 MCPToolContractsTest >> testEvaluateLooksAtTheMemoryOnlyOnceTheCodeHasStarted [
-	"Before the code has started, whatever grows the image is not the code, so only the time limit stops it. A bound below any growth stands for one the image passed. Code that has ended is never stopped. No code runs, so the limit is shorter than the other tests'."
+	"Before the code has started, whatever grows the image is not the code, so only the time limit stops it. A bound below any growth stands for one the image passed. Code that has ended is never stopped."
 
 	| command tool unstarted |
 	tool := MCPToolEvaluate new.
-	command := MCPEvaluateCommandStoppingEarly code: '3 + 4' timeLimit: 0.02 previewLimit: 100.
+	command := MCPEvaluateCommandStoppingEarly code: '3 + 4' timeLimit: self unstartedLimitSeconds previewLimit: 100.
 	command memoryGrowthLimit: -1024 * 1024 * 1024.
 	unstarted := [ 3 + 4 ] newProcess.
 	self
 		assert: (tool stopSummaryFor: (command watch: unstarted until: Semaphore new started: [ false ]) of: command)
-		equals: 'Evaluation stopped after ' , 0.02 printString , ' s, its time limit.'.
+		equals: 'Evaluation stopped after ' , self unstartedLimitSeconds printString , ' s, its time limit.'.
 	self assert: ((tool stopSummaryFor: (command watch: unstarted until: Semaphore new started: [ true ]) of: command) beginsWith:
 			 'Evaluation stopped: the image''s memory grew by more than ').
 	self assert: (command
@@ -1562,22 +1543,22 @@ MCPToolContractsTest >> testEvaluateStopsCodeThatKeepsMoreMemoryThanItsBound [
 
 { #category : 'tests - evaluate' }
 MCPToolContractsTest >> testEvaluateThatNeverStartedSaysSo [
-	"Whether an evaluation behind a computing process ever gets a turn depends on how the virtual machine schedules processes of one priority, so the double leaves it unstarted, as if it never did. None of it runs, so the limit is shorter than the other tests'."
+	"Whether an evaluation behind a computing process ever gets a turn depends on how the virtual machine schedules processes of one priority, so the double leaves it unstarted, as if it never did."
 
 	| command error holder result |
 	self timeLimit: 30 seconds.
 	holder := [ [ true ] whileTrue ] forkAt: Processor activePriority - 1 named: 'mcp-evaluate-holder-probe'.
 	[
-		command := MCPEvaluateCommandNeverStarting code: '3 + 4' timeLimit: 0.02 previewLimit: 100.
+		command := MCPEvaluateCommandNeverStarting code: '3 + 4' timeLimit: self unstartedLimitSeconds previewLimit: 100.
 		result := MCPToolEvaluate new answerFor: command execute ] ensure: [ holder terminate ].
 	error := result structuredContent at: #error.
 	self assert: result isError.
 	self
 		assert: (result structuredContent at: #summary)
-		equals: 'Evaluation did not start within ' , 0.02 printString , ' s, its time limit; none of it ran.'.
+		equals: 'Evaluation did not start within ' , self unstartedLimitSeconds printString , ' s, its time limit; none of it ran.'.
 	self assert: ((error at: #heldBy) anySatisfy: [ :each |
 			 each beginsWith: 'a process an evaluation forked, named mcp-evaluate-holder-probe, in ' ]).
-	self assert: (error at: #timeoutSeconds) equals: 0.02.
+	self assert: (error at: #timeoutSeconds) equals: self unstartedLimitSeconds.
 	self assert: command evaluator isTerminated
 ]
 
@@ -3539,6 +3520,13 @@ MCPToolContractsTest >> unimplementedResponsibilitiesForConcreteMCPClasses [
 	issues := OrderedCollection new.
 	behaviors do: [ :each | self addUnimplementedResponsibilitiesOf: each among: selectors to: issues ].
 	^ issues asArray sort
+]
+
+{ #category : 'private - evaluate' }
+MCPToolContractsTest >> unstartedLimitSeconds [
+	"The time limit of an evaluation whose code a test never runs: nothing has to be reached first, so it is shorter than the tests' limit for code they let stop."
+
+	^ 0.02
 ]
 
 { #category : 'private - evaluate' }

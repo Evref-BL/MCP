@@ -81,14 +81,14 @@ MCPTestCase >> createGeneratedPackageManifestWithNarrowFormatter [
 
 { #category : 'private - methods' }
 MCPTestCase >> ensureMethodSource: aMethodSource protocol: aProtocol on: aBehavior [
-	"An extension protocol only makes the method an extension when the package it names exists, so it is created on demand. The method is formatted the way the tools format it, with the formatter of its class's package, and compiled only when aBehavior does not have it so, in that protocol."
+	"An extension protocol only makes the method an extension when the package it names exists, so it is created on demand. The method is formatted the way the tools format it, with the formatter of its class's package, and compiled only when aBehavior does not itself define it so, in that protocol: a copy from a trait is not its own."
 
 	| source tree |
 	tree := RBParser parseMethod: aMethodSource.
 	source := tree formattedCodeIn: aBehavior.
-	((aBehavior includesSelector: tree selector) and: [
-		 (aBehavior >> tree selector) sourceCode = source and: [
-			 (aBehavior >> tree selector) protocolName asString = aProtocol asString ] ]) ifTrue: [ ^ self ].
+	aBehavior compiledMethodAt: tree selector ifPresent: [ :method |
+			(method isFromTrait not and: [ method sourceCode = source and: [ method protocolName asString = aProtocol asString ] ])
+				ifTrue: [ ^ self ] ].
 	self withoutEpiceaDuring: [
 			(aProtocol beginsWith: '*') ifTrue: [ self packageOrganizer ensurePackage: aProtocol allButFirst ].
 			aBehavior compile: source classified: aProtocol ]
