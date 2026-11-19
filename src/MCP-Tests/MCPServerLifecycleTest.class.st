@@ -36,9 +36,9 @@ MCPServerLifecycleTest >> stopAndForget: anMCP [
 
 { #category : 'tests' }
 MCPServerLifecycleTest >> testAPortHeldByAnotherServerIsNamedInTheError [
-	"The socket error says the address is in use; it does not say that the image itself is using it."
+	"The socket error says the address is in use; it does not say that the image itself is using it. Nor will that server let go of the port while this one waits for it, so the start fails at once."
 
-	| holder blocked message |
+	| holder blocked message milliseconds |
 	holder := self mcpWithoutObservabilityExport
 		          port: 0;
 		          start;
@@ -47,14 +47,16 @@ MCPServerLifecycleTest >> testAPortHeldByAnotherServerIsNamedInTheError [
 		           port: holder port;
 		           yourself.
 	[
-		message := [
-			           blocked start.
-			           nil ]
-			           on: Error
-			           do: [ :error | error messageText ].
+		milliseconds := Time millisecondsToRun: [
+				                message := [
+					                           blocked start.
+					                           nil ]
+					                           on: Error
+					                           do: [ :error | error messageText ] ].
 		self assert: message isNotNil description: 'Starting on a held port should fail.'.
 		self assert: (message includesSubstring: 'Another MCP in this image is listening on that port').
-		self assert: (message includesSubstring: holder port asString) ] ensure: [
+		self assert: (message includesSubstring: holder port asString).
+		self assert: milliseconds < 1000 ] ensure: [
 			blocked stop.
 			holder stop ]
 ]
@@ -281,11 +283,11 @@ MCPServerLifecycleTest >> testSocketSafeServerRestartsAfterBindFailure [
 	| occupiedSocket port server |
 	occupiedSocket := ZnNetworkingUtils serverSocketOn: 0.
 	port := occupiedSocket port.
-	server := MCPSocketSafeZnServer new.
+	server := MCPSocketRecordingTestServer new.
 	[
 		server port: port.
 		server start.
-		(Delay forMilliseconds: 100) wait.
+		self assert: (self waitUntil: [ server lastListenError isNotNil ] forMilliseconds: 3000).
 		self deny: server isListening.
 		occupiedSocket destroy.
 		occupiedSocket := nil.
@@ -461,20 +463,22 @@ MCPServerLifecycleTest >> testStoppingServerClosesActiveConnections [
 
 { #category : 'tests' }
 MCPServerLifecycleTest >> testStoppingServerStopsBindRetryLoop [
+	"The retry loop runs in the listener's process, so a stopped server whose listener has ended never binds the port once it is free."
 
-	| occupiedSocket port server |
+	| listener occupiedSocket port server |
 	occupiedSocket := ZnNetworkingUtils serverSocketOn: 0.
 	port := occupiedSocket port.
 	server := MCPSocketSafeZnServer new.
 	[
 		server port: port.
 		server start.
-		(Delay forMilliseconds: 100) wait.
+		self assert: (self waitUntil: [ server lastListenError isNotNil ] forMilliseconds: 3000).
 		self deny: server isListening.
+		listener := server process.
 		server stop: false.
 		occupiedSocket destroy.
 		occupiedSocket := nil.
-		(Delay forMilliseconds: 500) wait.
+		self assert: listener isTerminated.
 		self deny: server isRunning.
 		self deny: server isListening ] ensure: [
 			server stop: false.
@@ -497,8 +501,8 @@ MCPServerLifecycleTest >> testUnstartedServersNobodyHoldsAreNotListed [
 MCPServerLifecycleTest >> waitUntil: conditionBlock forMilliseconds: milliseconds [
 
 	| attempts delay |
-	delay := Delay forMilliseconds: 50.
-	attempts := milliseconds // 50 max: 1.
+	delay := Delay forMilliseconds: 5.
+	attempts := milliseconds // 5 max: 1.
 	attempts timesRepeat: [
 			conditionBlock value ifTrue: [ ^ true ].
 			delay wait ].

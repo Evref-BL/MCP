@@ -21,9 +21,9 @@ MCPToolRunTestsTest >> commandResultFor: someArguments [
 
 { #category : 'private - running' }
 MCPToolRunTestsTest >> commandResultForClasses: classNames timeoutMilliseconds: milliseconds [
-	"What test_run's operation answers for a timeout finer than timeoutSeconds can say."
+	"What test_run's operation answers for a timeout finer than timeoutSeconds can say, giving the test it interrupts a tenth of a second for its tearDown."
 
-	^ (MCPRunTestsCommand
+	^ (MCPRunTestsCommandTearingDownBriefly
 		   selections: (classNames collect: [ :each | MCPTestSelectionSpec className: each ] as: Array)
 		   timeoutMilliseconds: milliseconds) execute
 ]
@@ -331,7 +331,7 @@ MCPToolRunTestsTest >> testANotRunSelectionThatLostCasesIsListedByMethod [
 	| data notRun result |
 	result := self
 		          commandResultForClasses: #( 'MCPToolRunTestsInheritingTarget' 'MCPToolRunTestsAbstractTarget' )
-		          timeoutMilliseconds: 200.
+		          timeoutMilliseconds: 100.
 	data := result asDictionary.
 	notRun := data at: #notRun.
 	self assert: (data at: #timedOut).
@@ -536,7 +536,7 @@ MCPToolRunTestsTest >> testATestPastItsTimeLimitSaysSo [
 	self
 		assert: (self issueLinesFrom: (self runTests: { (#classes -> #( 'MCPToolRunTestsTimeLimitTarget' )) }))
 		equals:
-		#( 'error MCPToolRunTestsTimeLimitTarget>>#testWaitsTooLong (TestTookTooMuchTime): took longer than its time limit of 200 milliseconds' )
+		#( 'error MCPToolRunTestsTimeLimitTarget>>#testWaitsTooLong (TestTookTooMuchTime): took longer than its time limit of 100 milliseconds' )
 ]
 
 { #category : 'tests - timeouts' }
@@ -686,10 +686,10 @@ MCPToolRunTestsTest >> testAnInstanceMessageSentToTheClassSaysItsInstancesUnders
 
 { #category : 'tests - timeouts' }
 MCPToolRunTestsTest >> testAnInterruptedTestIsNotCountedAndDoesNotDelayTheAnswer [
-	"The fixture's tearDown waits 30 seconds and its class's time limit is 5: without the second the interrupted test gets for its tearDown, the answer would take 5 seconds."
+	"The fixture's tearDown waits 30 seconds and its class's time limit is 5: without the short time the interrupted test gets for its tearDown, the answer would take 5 seconds."
 
 	| data milliseconds result |
-	milliseconds := [ result := self commandResultForClasses: #( 'MCPToolRunTestsSlowTearDownTarget' ) timeoutMilliseconds: 200 ]
+	milliseconds := [ result := self commandResultForClasses: #( 'MCPToolRunTestsSlowTearDownTarget' ) timeoutMilliseconds: 100 ]
 		                timeToRun asMilliSeconds.
 	data := result asDictionary.
 	self assert: (data at: #timedOut).
@@ -700,11 +700,11 @@ MCPToolRunTestsTest >> testAnInterruptedTestIsNotCountedAndDoesNotDelayTheAnswer
 			(#location -> 'MCPToolRunTestsRaiser>>waitHalfASecond') } asDictionary.
 	self assert: ((data at: #notRun) at: #classes) equals: #( 'MCPToolRunTestsSlowTearDownTarget' ).
 	self assert: (data at: #notRunCount) equals: 1.
-	self assert: (data at: #timeoutMilliseconds) equals: 200.
+	self assert: (data at: #timeoutMilliseconds) equals: 100.
 	self
 		assert: (self summaryForResult: result)
 		equals:
-		'Ran 0 tests (0 passed). Timed out after 200 milliseconds, during MCPToolRunTestsSlowTearDownTarget>>#testWaits, in MCPToolRunTestsRaiser>>waitHalfASecond. 1 test not run, listed below as test_run arguments.'.
+		'Ran 0 tests (0 passed). Timed out after 100 milliseconds, during MCPToolRunTestsSlowTearDownTarget>>#testWaits, in MCPToolRunTestsRaiser>>waitHalfASecond. 1 test not run, listed below as test_run arguments.'.
 	self
 		assert: milliseconds < 3000
 		description: [ String streamContents: [ :stream | stream << 'took ' << milliseconds printString << ' ms' ] ]

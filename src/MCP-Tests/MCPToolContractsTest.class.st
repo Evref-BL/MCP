@@ -147,13 +147,16 @@ MCPToolContractsTest >> evaluateBriefly: aString [
 
 { #category : 'private - evaluate' }
 MCPToolContractsTest >> evaluateBriefly: aString deferringInto: actions [
-	"The answer to an evaluation of aString with the tests' short limit, leaving in actions what the call deferred until after its response."
+	"The answer to an evaluation of aString with the tests' short limit, counted from when its code runs, leaving in actions what the call deferred until after its response."
 
 	| tool |
 	tool := MCPToolEvaluate new.
 	^ MCPPostResponseActions value: actions during: [
 			  tool answerFor:
-				  (MCPEvaluateCommand code: aString timeLimit: self stopLimitSeconds previewLimit: tool resultPreviewCharacterLimit) execute ]
+				  (MCPEvaluateCommandWaitingForTheCode
+					   code: aString
+					   timeLimit: self stopLimitSeconds
+					   previewLimit: tool resultPreviewCharacterLimit) execute ]
 ]
 
 { #category : 'private' }
@@ -382,9 +385,9 @@ MCPToolContractsTest >> signalHaltForMCPMessageProcessorTest [
 
 { #category : 'private - evaluate' }
 MCPToolContractsTest >> stopLimitSeconds [
-	"The time limit of an evaluation a test lets stop: the command takes a fraction of a second, which the tool's schema does not, so these tests wait a fifth of what a whole second would cost."
+	"The time limit of an evaluation a test lets stop, counted from when its code runs: the command takes a fraction of a second, which the tool's schema does not, so these tests wait a tenth of what a whole second would cost."
 
-	^ 0.2
+	^ 0.1
 ]
 
 { #category : 'private - evaluate' }
@@ -1027,16 +1030,16 @@ MCPToolContractsTest >> testEvaluateLetsNotificationsUseTheirDefaultAction [
 
 { #category : 'tests - evaluate' }
 MCPToolContractsTest >> testEvaluateLooksAtTheMemoryOnlyOnceTheCodeHasStarted [
-	"Before the code has started, whatever grows the image is not the code, so only the time limit stops it. A bound below any growth stands for one the image passed. Code that has ended is never stopped."
+	"Before the code has started, whatever grows the image is not the code, so only the time limit stops it. A bound below any growth stands for one the image passed. Code that has ended is never stopped. No code runs, so the limit is shorter than the other tests'."
 
 	| command tool unstarted |
 	tool := MCPToolEvaluate new.
-	command := MCPEvaluateCommandStoppingEarly code: '3 + 4' timeLimit: self stopLimitSeconds previewLimit: 100.
+	command := MCPEvaluateCommandStoppingEarly code: '3 + 4' timeLimit: 0.02 previewLimit: 100.
 	command memoryGrowthLimit: -1024 * 1024 * 1024.
 	unstarted := [ 3 + 4 ] newProcess.
 	self
 		assert: (tool stopSummaryFor: (command watch: unstarted until: Semaphore new started: [ false ]) of: command)
-		equals: 'Evaluation stopped after ' , self stopLimitSeconds printString , ' s, its time limit.'.
+		equals: 'Evaluation stopped after ' , 0.02 printString , ' s, its time limit.'.
 	self assert: ((tool stopSummaryFor: (command watch: unstarted until: Semaphore new started: [ true ]) of: command) beginsWith:
 			 'Evaluation stopped: the image''s memory grew by more than ').
 	self assert: (command
@@ -1276,7 +1279,7 @@ MCPToolContractsTest >> testEvaluateStopCollectsGarbageAfterTheAnswer [
 	[
 		self assert: actions size equals: 1.
 		self assert: helpers size equals: 1.
-		(Delay forMilliseconds: 100) wait.
+		(Delay forMilliseconds: 20) wait.
 		self deny: helpers first isTerminated ] ensure: [ actions do: #value ].
 	self waitUntilEnded: helpers first.
 	self assert: helpers first isTerminated
@@ -1398,9 +1401,7 @@ A fork has no time limit, and at this priority it holds up no evaluation.' lines
 
 { #category : 'tests - evaluate' }
 MCPToolContractsTest >> testEvaluateStopsAComputingLoopUnderEitherPreemptionRule [
-	"A loop that computes never yields, so only a process above it can take the processor back, whichever way the virtual machine requeues the process it preempts. The process that terminates the loop runs at the loop's priority, so the loop is taken off the run queue first, and has unwound under either rule by the time the answer goes.
-
-	The limit is a second, not the tests' fifth of one: the stop must find the loop running, and a loaded machine does not promise to start it, or to reach it, in 0.2 s."
+	"A loop that computes never yields, so only a process above it can take the processor back, whichever way the virtual machine requeues the process it preempts. The process that terminates the loop runs at the loop's priority, so the loop is taken off the run queue first, and has unwound under either rule by the time the answer goes."
 
 	self timeLimit: 30 seconds.
 	self underEitherPreemptionRuleDo: [ :yields |
@@ -1409,10 +1410,9 @@ MCPToolContractsTest >> testEvaluateStopsAComputingLoopUnderEitherPreemptionRule
 			before := self processesNamed: 'evaluate'.
 			actions := OrderedCollection new.
 			[
-				milliseconds := Time millisecondsToRun: [ result := self evaluate: '[ true ] whileTrue' within: 1 deferringInto: actions ].
+				milliseconds := Time millisecondsToRun: [ result := self evaluateBriefly: '[ true ] whileTrue' deferringInto: actions ].
 				evaluators := (self processesNamed: 'evaluate') copyWithoutAll: before ] ensure: [ actions do: #value ].
-			self assert: (self resultIndicatesError: result).
-			lines := (self stoppedText: (self firstTextFromToolResult: result) after: 1) lines.
+			lines := (self stoppedTextOf: result) lines.
 			self deny: (lines includes: 'Its ensure blocks were still running when this answer was sent.') description: rule.
 			self assert: (lines includes: 'Stopped in:').
 			self assert: (lines includes: 'UndefinedObject>>DoIt').
@@ -1541,7 +1541,7 @@ MCPToolContractsTest >> testEvaluateStopsCodeThatCatchesEveryException [
 
 { #category : 'tests - evaluate' }
 MCPToolContractsTest >> testEvaluateStopsCodeThatKeepsMoreMemoryThanItsBound [
-	"Code that keeps what it allocates without recursing passes no stack bound, so the image's memory backs the stack up. The bound is set low and the code keeps 64 MB, then waits, so the test allocates no GBs. A collection beforehand keeps garbage freed meanwhile from hiding the growth."
+	"Code that keeps what it allocates without recursing passes no stack bound, so the image's memory backs the stack up. The bound is set low and the code keeps 24 MB, then waits, so the test allocates no GBs. A collection beforehand keeps garbage freed meanwhile from hiding the growth."
 
 	| lines milliseconds result |
 	self timeLimit: 30 seconds.
@@ -1549,7 +1549,7 @@ MCPToolContractsTest >> testEvaluateStopsCodeThatKeepsMoreMemoryThanItsBound [
 	milliseconds := Time millisecondsToRun: [
 			                result := self
 				                          stoppedEarlyResultOf:
-				                          '| kept | kept := (1 to: 8) collect: [ :each | ByteArray new: 8 * 1024 * 1024 ]. (Delay forSeconds: 60) wait. kept size'
+				                          '| kept | kept := (1 to: 3) collect: [ :each | ByteArray new: 8 * 1024 * 1024 ]. (Delay forSeconds: 60) wait. kept size'
 				                          bounds: [ :command | command memoryGrowthLimit: 16 * 1024 * 1024 ] ].
 	self assert: result isError.
 	lines := (self textOfEvaluateResult: result) lines.
@@ -1561,22 +1561,22 @@ MCPToolContractsTest >> testEvaluateStopsCodeThatKeepsMoreMemoryThanItsBound [
 
 { #category : 'tests - evaluate' }
 MCPToolContractsTest >> testEvaluateThatNeverStartedSaysSo [
-	"Whether an evaluation behind a computing process ever gets a turn depends on how the virtual machine schedules processes of one priority, so the double leaves it unstarted, as if it never did."
+	"Whether an evaluation behind a computing process ever gets a turn depends on how the virtual machine schedules processes of one priority, so the double leaves it unstarted, as if it never did. None of it runs, so the limit is shorter than the other tests'."
 
 	| command error holder result |
 	self timeLimit: 30 seconds.
 	holder := [ [ true ] whileTrue ] forkAt: Processor activePriority - 1 named: 'mcp-evaluate-holder-probe'.
 	[
-		command := MCPEvaluateCommandNeverStarting code: '3 + 4' timeLimit: self stopLimitSeconds previewLimit: 100.
+		command := MCPEvaluateCommandNeverStarting code: '3 + 4' timeLimit: 0.02 previewLimit: 100.
 		result := MCPToolEvaluate new answerFor: command execute ] ensure: [ holder terminate ].
 	error := result structuredContent at: #error.
 	self assert: result isError.
 	self
 		assert: (result structuredContent at: #summary)
-		equals: 'Evaluation did not start within ' , self stopLimitSeconds printString , ' s, its time limit; none of it ran.'.
+		equals: 'Evaluation did not start within ' , 0.02 printString , ' s, its time limit; none of it ran.'.
 	self assert: ((error at: #heldBy) anySatisfy: [ :each |
 			 each beginsWith: 'a process an evaluation forked, named mcp-evaluate-holder-probe, in ' ]).
-	self assert: (error at: #timeoutSeconds) equals: self stopLimitSeconds.
+	self assert: (error at: #timeoutSeconds) equals: 0.02.
 	self assert: command evaluator isTerminated
 ]
 
@@ -3554,5 +3554,5 @@ MCPToolContractsTest >> waitUntilEnded: aProcess [
 
 	| deadline |
 	deadline := Time millisecondClockValue + 5000.
-	[ aProcess isTerminated or: [ Time millisecondClockValue > deadline ] ] whileFalse: [ (Delay forMilliseconds: 50) wait ]
+	[ aProcess isTerminated or: [ Time millisecondClockValue > deadline ] ] whileFalse: [ (Delay forMilliseconds: 5) wait ]
 ]

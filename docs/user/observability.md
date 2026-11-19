@@ -24,8 +24,8 @@ MCP startOnPort: 4000
 
 That answers the server already on 4000, starting it if it was stopped, and
 makes one only when the image has none there. Starting a second server on a
-taken port fails after a couple of seconds, and the error now says when the
-port is held by another MCP in the same image.
+port another MCP in the same image listens on fails at once, and the error
+says so; on a port held by anything else it fails after a couple of seconds.
 
 An inspected `MCP` object has a dashboard tab and an observability tab. The
 dashboard runs the server:

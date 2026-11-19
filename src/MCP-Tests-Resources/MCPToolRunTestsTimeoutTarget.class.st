@@ -19,6 +19,6 @@ MCPToolRunTestsTimeoutTarget >> testFastPass [
 MCPToolRunTestsTimeoutTarget >> testSlowPass [
 	"This is a fixture test method; the delay is intentional and exercised by MCP test-running timeout tests."
 
-	(Delay forMilliseconds: 300) wait.
+	(Delay forMilliseconds: 150) wait.
 	self assert: true
 ]

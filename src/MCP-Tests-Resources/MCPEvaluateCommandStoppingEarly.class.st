@@ -1,5 +1,5 @@
 "
-An evaluate command whose stack and memory bounds a test sets, low enough for the code it evaluates to pass them without growing the image by much.
+An evaluate command whose stack and memory bounds a test sets, low enough for the code it evaluates to pass them without growing the image by much. It looks at the code every 10 ms rather than 100, so the code is stopped soon after it passes them.
 "
 Class {
 	#name : 'MCPEvaluateCommandStoppingEarly',
@@ -34,4 +34,10 @@ MCPEvaluateCommandStoppingEarly >> stackDepthLimit [
 MCPEvaluateCommandStoppingEarly >> stackDepthLimit: anInteger [
 
 	stackDepthLimit := anInteger
+]
+
+{ #category : 'private' }
+MCPEvaluateCommandStoppingEarly >> watchMilliseconds [
+
+	^ 10
 ]
