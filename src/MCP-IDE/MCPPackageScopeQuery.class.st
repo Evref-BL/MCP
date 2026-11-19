@@ -1,45 +1,13 @@
 "
-Parsed scope query for package listings.
-
-It resolves projectNames and packageNames into a union of packages. Empty scope properties mean all packages in the image.
+Where package_search looks: every package in the image, each with the projects that own it.
 "
 Class {
 	#name : 'MCPPackageScopeQuery',
 	#superclass : 'Object',
-	#instVars : [
-		'projectNames',
-		'packageNames'
-	],
 	#category : 'MCP-IDE-Queries',
 	#package : 'MCP-IDE',
 	#tag : 'Queries'
 }
-
-{ #category : 'private - scope' }
-MCPPackageScopeQuery >> allPackages [
-
-	^ self sortedPackagesByName: self packageOrganizer packages
-]
-
-{ #category : 'initialization' }
-MCPPackageScopeQuery >> initialize [
-
-	super initialize.
-	projectNames := #(  ).
-	packageNames := #(  )
-]
-
-{ #category : 'accessing' }
-MCPPackageScopeQuery >> packageNames [
-
-	^ packageNames ifNil: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
-MCPPackageScopeQuery >> packageNames: somePackageNames [
-
-	packageNames := somePackageNames ifNil: [ #(  ) ] ifNotNil: [ somePackageNames asArray ]
-]
 
 { #category : 'private - querying' }
 MCPPackageScopeQuery >> packageProjectNamesMap [
@@ -58,32 +26,7 @@ MCPPackageScopeQuery >> packageProjectNamesMap [
 { #category : 'querying' }
 MCPPackageScopeQuery >> packages [
 
-	| packages |
-	self validate.
-	self usesImplicitImageScope ifTrue: [ ^ self allPackages ].
-	packages := IdentitySet new.
-	self packageNames ifNotEmpty: [ packages addAll: self packagesForPackageNames ].
-	self projectNames ifNotEmpty: [ packages addAll: self packagesForProjectNames ].
-	^ self sortedPackagesByName: packages
-]
-
-{ #category : 'private - scope' }
-MCPPackageScopeQuery >> packagesForPackageNames [
-
-	| packages |
-	packages := IdentitySet new.
-	self packageNames do: [ :eachName | packages add: (self resolvedPackageNamed: eachName) ].
-	^ self sortedPackagesByName: packages
-]
-
-{ #category : 'private - scope' }
-MCPPackageScopeQuery >> packagesForProjectNames [
-
-	| packages |
-	packages := IdentitySet new.
-	(self resolvedProjectsNamed: projectNames) do: [ :eachProject |
-		packages addAll: (self packagesForProjectRegistration: eachProject) ].
-	^ self sortedPackagesByName: packages
+	^ self packageOrganizer packages asArray sort: [ :left :right | left name <= right name ]
 ]
 
 { #category : 'private - querying' }
@@ -94,18 +37,6 @@ MCPPackageScopeQuery >> packagesForProjectRegistration: aProjectRegistration [
 	aProjectRegistration projectVersion packages do: [ :eachSpec |
 		self packageOrganizer packageNamed: eachSpec name asSymbol ifPresent: [ :package | packages add: package ] ].
 	^ packages asArray
-]
-
-{ #category : 'accessing' }
-MCPPackageScopeQuery >> projectNames [
-
-	^ projectNames
-]
-
-{ #category : 'accessing' }
-MCPPackageScopeQuery >> projectNames: someProjectNames [
-
-	projectNames := someProjectNames ifNil: [ #(  ) ] ifNotNil: [ someProjectNames asArray ]
 ]
 
 { #category : 'private - testing' }
@@ -136,51 +67,11 @@ MCPPackageScopeQuery >> projectRegistrations [
 	^ MetacelloProjectRegistration registry registrations select: [ :each | self shouldUseProjectRegistration: each ]
 ]
 
-{ #category : 'private - querying' }
-MCPPackageScopeQuery >> projectsByName [
-
-	| projectsByName |
-	projectsByName := Dictionary new.
-	self projectRegistrations do: [ :eachProject | projectsByName at: eachProject projectName asString put: eachProject ].
-	^ projectsByName
-]
-
-{ #category : 'private - resolution' }
-MCPPackageScopeQuery >> resolvedPackageNamed: packageName [
-
-	^ MCPImageLookup packageNamed: packageName
-]
-
-{ #category : 'private - resolution' }
-MCPPackageScopeQuery >> resolvedProjectsNamed: someProjectNames [
-
-	| projects projectsByName |
-	projectsByName := self projectsByName.
-	projects := OrderedCollection new.
-	someProjectNames do: [ :eachName |
-		projects add: (projectsByName at: eachName ifAbsent: [ MCPCommandError signalMissingProjectNamed: eachName ]) ].
-	^ projects asArray
-]
-
 { #category : 'phrasing' }
 MCPPackageScopeQuery >> scopePhrase [
-	"Where the query looks, in words: the image when it was given no name, otherwise its projects and then its packages. A name that does not exist stops the query with an error, so every name is named."
+	"Where the query looks, in words."
 
-	| parts |
-	parts := OrderedCollection new.
-	{
-		(MCPScopeQuery
-			 phraseForNames: (MCPScopeQuery distinctNamesAmong: self projectNames)
-			 one: 'project '
-			 several: 'projects '
-			 many: '{1} projects').
-		(MCPScopeQuery
-			 phraseForNames: (MCPScopeQuery distinctNamesAmong: self packageNames)
-			 one: 'package '
-			 several: 'packages '
-			 many: '{1} packages') } do: [ :each | each ifNotNil: [ parts add: each ] ].
-	parts ifEmpty: [ ^ 'the image' ].
-	^ ' and ' join: parts
+	^ 'the image'
 ]
 
 { #category : 'private - testing' }
@@ -188,24 +79,6 @@ MCPPackageScopeQuery >> shouldUseProjectRegistration: aProjectRegistration [
 
 	^ (self projectRegistrationLoadedInImage: aProjectRegistration) or: [
 		  self projectRegistrationPackagesArePresent: aProjectRegistration ]
-]
-
-{ #category : 'private - scope' }
-MCPPackageScopeQuery >> sortedPackagesByName: somePackages [
-
-	^ somePackages asArray sort: [ :left :right | left name <= right name ]
-]
-
-{ #category : 'private - source' }
-MCPPackageScopeQuery >> usesImplicitImageScope [
-
-	^ self projectNames isEmpty and: [ self packageNames isEmpty ]
-]
-
-{ #category : 'validating' }
-MCPPackageScopeQuery >> validate [
-
-	^ self
 ]
 
 { #category : 'accessing' }

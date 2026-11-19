@@ -2835,29 +2835,18 @@ MCPToolContractsTest >> testSearchPackagesHasAccurateNameAndSchema [
 	propertyNames := schema properties collect: [ :each | each name ].
 	self assert: MCPToolSearchPackages new name equals: 'package_search'.
 	self assert: schema required equals: #(  ).
-	self assert: propertyNames asSet equals: #( 'projects' 'packages' 'query' 'project' 'tag' 'offset' ) asSet
+	self assert: propertyNames asSet equals: #( 'query' 'project' 'tag' 'offset' ) asSet
 ]
 
 { #category : 'tests' }
 MCPToolContractsTest >> testSearchPackagesListsPackagesForExistingProject [
 
 	| entries packageNames |
-	entries := self packageSearchFixtureEntriesLoadedInImage: false.
+	entries := self packageSearchFixtureEntries.
 	packageNames := entries collect: [ :each | each at: #package ].
 	self assert: entries isNotEmpty.
 	self assert: packageNames equals: self packageSearchFixturePackageNames.
 	self assert: (entries allSatisfy: [ :each | (each at: #projects) = { self packageSearchFixtureProjectName } ])
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testSearchPackagesReturnsErrorResultForMissingProject [
-
-	| result text |
-	result := self callToolNamed: 'package_search' withArguments: { (#projects -> #( 'DefinitelyMissingProject' )) } asDictionary.
-	text := self firstTextFromToolResult: result.
-	self assert: (result at: #isError).
-	self assert: (text includesSubstring: 'Project DefinitelyMissingProject does not exist.').
-	self deny: (text includesSubstring: 'Tool package_search failed')
 ]
 
 { #category : 'tests' }

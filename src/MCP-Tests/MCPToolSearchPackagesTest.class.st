@@ -85,28 +85,12 @@ MCPToolSearchPackagesTest >> testImageScopeCanPaginateFilteredPackages [
 ]
 
 { #category : 'tests' }
-MCPToolSearchPackagesTest >> testImageScopeReturnsExactPackageNameMatch [
-
-	| data packageNames result |
-	result := self callToolWith: { (#packages -> #( 'MCP-Tests' )) } asDictionary.
-	data := self dataFrom: result.
-	packageNames := (data at: #packages) collect: [ :each | each at: #package ].
-
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #packages) size equals: 1.
-	self assert: packageNames equals: #( 'MCP-Tests' )
-]
-
-{ #category : 'tests' }
 MCPToolSearchPackagesTest >> testImageScopeReturnsStructuredPackages [
 
-	| data entry packages result |
-	result := self callToolWith: { (#packages -> #( 'MCP-Tests-Resources' )) } asDictionary.
-	data := self dataFrom: result.
-	packages := data at: #packages.
-	entry := self entryNamed: 'MCP-Tests-Resources' in: packages.
+	| entry result |
+	result := self callToolWith: { (#query -> 'MCP-Tests-Resources') } asDictionary.
+	entry := self entryNamed: 'MCP-Tests-Resources' in: ((self dataFrom: result) at: #packages).
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: packages size equals: 1.
 	self assert: (entry includesKey: #projects).
 	self assert: (entry includesKey: #tags).
 	self deny: (entry includesKey: #definedClassCount).
@@ -115,50 +99,11 @@ MCPToolSearchPackagesTest >> testImageScopeReturnsStructuredPackages [
 ]
 
 { #category : 'tests' }
-MCPToolSearchPackagesTest >> testPackageNamesSelectExactPackages [
+MCPToolSearchPackagesTest >> testProjectFilterKeepsTheProjectsPackages [
 
-	| data packageNames result |
-	result := self callToolWith: { (#packages -> #( 'MCP' 'MCP-Tests' )) } asDictionary.
-	data := self dataFrom: result.
-	packageNames := (data at: #packages) collect: [ :each | each at: #package ].
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #packages) size equals: 2.
-	self assert: packageNames equals: #( 'MCP' 'MCP-Tests' )
-]
-
-{ #category : 'tests' }
-MCPToolSearchPackagesTest >> testProjectNamesReturnStructuredErrorWhenProjectIsMissing [
-
-	| error result structured |
-	result := self callToolWith: { (#projects -> #( 'DefinitelyMissingProject' )) } asDictionary.
-	structured := self structuredContentFrom: result.
-	error := self errorFrom: result.
-	self assert: (result at: #isError).
-	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
-	self assert: (error at: #errorCode) equals: 'ProjectNotFound'.
-	self assert: (error at: #project) equals: 'DefinitelyMissingProject'.
-	self assert: (error at: #scope) equals: 'projects'
-]
-
-{ #category : 'tests' }
-MCPToolSearchPackagesTest >> testProjectNamesSearchPackagesForNamedProject [
-
-	| entries packageNames |
-	entries := self packageSearchFixtureEntriesLoadedInImage: true.
-	packageNames := entries collect: [ :each | each at: #package ].
-	self assert: entries size equals: self packageSearchFixturePackageNames size.
-	self assert: packageNames equals: self packageSearchFixturePackageNames.
-	self assert: (entries allSatisfy: [ :each | (each at: #projects) = { self packageSearchFixtureProjectName } ])
-]
-
-{ #category : 'tests' }
-MCPToolSearchPackagesTest >> testProjectNamesSelectProjectScope [
-
-	| entries packageNames |
-	entries := self packageSearchFixtureEntriesLoadedInImage: false.
-	packageNames := entries collect: [ :each | each at: #package ].
-	self assert: entries size equals: self packageSearchFixturePackageNames size.
-	self assert: packageNames equals: self packageSearchFixturePackageNames.
+	| entries |
+	entries := self packageSearchFixtureEntries.
+	self assert: (entries collect: [ :each | each at: #package ]) equals: self packageSearchFixturePackageNames.
 	self assert: (entries allSatisfy: [ :each | (each at: #projects) = { self packageSearchFixtureProjectName } ])
 ]
 

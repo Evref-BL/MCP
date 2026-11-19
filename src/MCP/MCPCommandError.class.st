@@ -432,17 +432,6 @@ MCPCommandError class >> signalMissingMethod: aSelectorString in: aBehavior clos
 ]
 
 { #category : 'signaling' }
-MCPCommandError class >> signalMissingProjectNamed: aProjectName [
-	"Projects are named only by package_search's projects, which is where the scope says the name was given."
-
-	| message |
-	message := String streamContents: [ :stream | stream << 'Project ' << aProjectName << ' does not exist.' ].
-	^ self signalErrorCode: #ProjectNotFound message: message details: {
-			  (#project -> aProjectName).
-			  (#scope -> 'projects') } asDictionary
-]
-
-{ #category : 'signaling' }
 MCPCommandError class >> signalMissingTag: aTag packageName: aPackageName forClassNamed: aClassName [
 
 	| message |

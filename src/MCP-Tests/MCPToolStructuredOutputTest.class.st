@@ -573,8 +573,8 @@ MCPToolStructuredOutputTest >> testRecordsLeadWithTheirName [
 	self assert: (lines anySatisfy: [ :each | each beginsWith: '  MCPToolGetClass package=MCP-IDE' ]).
 	self assert: (lines anySatisfy: [ :each | each beginsWith: '  MCPToolHierarchyTestMid package=MCP-Tests-Resources' ]).
 	self deny: (lines anySatisfy: [ :each | each includesSubstring: 'class=' ]).
-	lines := (((self callToolNamed: 'package_search' withArguments: { (#packages -> #( 'MCP-Tests-Resources' )) } asDictionary) at:
-		           #content) first at: #text) lines.
+	lines := (((self callToolNamed: 'package_search' withArguments: { (#query -> 'MCP-Tests-Resources') } asDictionary) at: #content)
+		          first at: #text) lines.
 	self assert: (lines includes: '  MCP-Tests-Resources').
 	self deny: (lines anySatisfy: [ :each | each includesSubstring: 'package=' ]).
 	lines := (MCPToolListChangeHistoryFiles new contentTextForStructuredContent: (Dictionary new
@@ -856,45 +856,14 @@ MCPToolStructuredOutputTest >> testSearchFailureNamesTheScope [
 ]
 
 { #category : 'tests' }
-MCPToolStructuredOutputTest >> testSearchPackagesDefaultsToImageScopeWhenScopePropertiesAreOmitted [
-
-	| data packageNames packages result |
-	result := self callToolNamed: 'package_search' withArguments: { (#packages -> #( 'MCP-Tests-Resources' )) } asDictionary.
-	data := self dataFrom: result.
-	packages := data at: #packages.
-	packageNames := packages collect: [ :each | each at: #package ].
-	self deny: (self resultIndicatesError: result).
-	self assert: packages size equals: 1.
-	self assert: packageNames equals: #( 'MCP-Tests-Resources' )
-]
-
-{ #category : 'tests' }
 MCPToolStructuredOutputTest >> testSearchPackagesReturnsStructuredArrayData [
 
-	| data packageNames packages result |
-	result := self
-		          callToolNamed: 'package_search'
-		          withArguments: { (#packages -> self packageSearchFixturePackageNames) } asDictionary.
-	data := self dataFrom: result.
-	packages := data at: #packages.
-	packageNames := packages collect: [ :each | each at: #package ].
+	| packages result |
+	result := self callToolNamed: 'package_search' withArguments: { (#query -> 'MCP-Tests-R') } asDictionary.
+	packages := (self dataFrom: result) at: #packages.
 	self deny: (self resultIndicatesError: result).
-	self assert: packages size equals: self packageSearchFixturePackageNames size.
 	self assert: (packages allSatisfy: [ :each | (each includesKey: #package) and: [ each includesKey: #projects ] ]).
-	self assert: packageNames equals: self packageSearchFixturePackageNames
-]
-
-{ #category : 'tests' }
-MCPToolStructuredOutputTest >> testSearchPackagesReturnsStructuredError [
-
-	| result structured error |
-	result := self callToolNamed: 'package_search' withArguments: { (#projects -> #( 'DefinitelyMissingProject' )) } asDictionary.
-	structured := self structuredContentFrom: result.
-	error := self errorFrom: result.
-	self assert: (result at: #isError).
-	self assert: (error at: #project) equals: 'DefinitelyMissingProject'.
-	self assert: (error at: #scope) equals: 'projects'.
-	self assert: ((error at: #message) includesSubstring: 'Project DefinitelyMissingProject does not exist.')
+	self assert: ((packages collect: [ :each | each at: #package ]) includesAll: self packageSearchFixturePackageNames)
 ]
 
 { #category : 'tests' }
@@ -962,9 +931,6 @@ MCPToolStructuredOutputTest >> testSearchSummaryNamesTheScopeItSearched [
 				 summaryOfTool: 'class_search'
 				 with: { (self searchScope: { (#classes -> #( 'MCPToolHierarchyTestBase' 'MCPToolHierarchyTestMid' )) }) })
 		equals: '2 classes in MCPToolHierarchyTestBase and MCPToolHierarchyTestMid.'.
-	self
-		assert: (self summaryOfTool: 'package_search' with: { (#packages -> #( 'MCP-Tests-Resources' )) })
-		equals: '1 package in package MCP-Tests-Resources.'.
 	self
 		assert:
 		(self summaryOfTool: 'class_search' with: { (self searchScope: { (#subclassesOf -> #( 'MCPToolHierarchyTestBase' )) }) })
