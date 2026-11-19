@@ -214,26 +214,21 @@ MCPToolGetMethod >> failureMessageForClassNamed: className selector: selectorStr
 
 { #category : 'private - execution' }
 MCPToolGetMethod >> getMethod: selector in: className classSide: classSide sideGiven: isSideGiven includeVariableDetails: includeVariableDetails [
-	"A bare selector given no side is read on the instance side, unless only the class side has a method of its own: it then names one method, which is read there."
+	"The method a send of selector would run on the side read: the class's own, or the one it inherits, which is answered where it is defined. A bare selector given no side is read on the instance side, unless the class side alone has a method of its own, or alone understands it."
 
-	| compiledMethod data isClassSide |
+	| behavior compiledMethod data isClassSide |
 	isClassSide := classSide or: [ isSideGiven not and: [ self isOnClassSideOnly: selector in: className ] ].
-	compiledMethod := self methodForClassNamed: className selector: selector classSide: isClassSide.
+	behavior := self behaviorNamed: className classSide: isClassSide.
+	compiledMethod := (behavior lookupSelector: selector asSymbol) ifNil: [
+		                  self methodForClassNamed: className selector: selector classSide: isClassSide ].
 	data := {
 		        (#protocol -> (compiledMethod protocolName ifNil: [ '' ] ifNotNil: [ :protocol | protocol asString ])).
 		        (#source -> (compiledMethod sourceCode ifNil: [ '' ])) } asDictionary.
+	compiledMethod methodClass == behavior ifFalse: [ data at: #inheritedFrom put: compiledMethod methodClass name asString ].
 	(MCPCompiledMethodInfo fromMethod: compiledMethod) traitName ifNotNil: [ :traitName | data at: #trait put: traitName ].
 	includeVariableDetails ifTrue: [
-			data
-				at: #variableReferences
-				put: (self variableSummariesForMethod: compiledMethod methodBehavior: (self behaviorNamed: className classSide: isClassSide)) ].
-	^ self
-		  successResultText: (self
-				   successSummaryForClassName: className
-				   selector: selector
-				   classSide: isClassSide
-				   sideGiven: isSideGiven)
-		  data: data
+		data at: #variableReferences put: (self variableSummariesForMethod: compiledMethod methodBehavior: compiledMethod methodClass) ].
+	^ self successResultText: (self successSummaryForMethod: compiledMethod readIn: behavior sideGiven: isSideGiven) data: data
 ]
 
 { #category : 'private - analysis' }
@@ -244,17 +239,22 @@ MCPToolGetMethod >> incrementReferenceCountInSummary: aSummary [
 
 { #category : 'private - execution' }
 MCPToolGetMethod >> isOnClassSideOnly: selector in: className [
-	"Whether the class side of className has a method selector of its own while its instance side has none. method_get reads no inherited method, so a bare selector then names one method it can read, even when the instance side inherits one."
+	"Whether a bare selector given no side names a class-side method: the class side has a method of its own while the instance side has none, or the class side alone understands it. A method of its own comes first, so the class side's own is read rather than one the instance side inherits."
 
-	^ ((self behaviorNamed: className classSide: false) includesSelector: selector asSymbol) not and: [
-		  (self behaviorNamed: className classSide: true) includesSelector: selector asSymbol ]
+	| classSide instanceSide symbol |
+	symbol := selector asSymbol.
+	instanceSide := self behaviorNamed: className classSide: false.
+	(instanceSide includesSelector: symbol) ifTrue: [ ^ false ].
+	classSide := self behaviorNamed: className classSide: true.
+	(classSide includesSelector: symbol) ifTrue: [ ^ true ].
+	^ (instanceSide canUnderstand: symbol) not and: [ classSide canUnderstand: symbol ]
 ]
 
 { #category : 'private - results' }
 MCPToolGetMethod >> keyOrder [
-	"Where the method is defined comes before anything about it: a method a class got from a trait is read in the trait and changed there."
+	"Where the method is defined comes before anything about it: a method a class inherits is read in the class that defines it, and one it got from a trait in the trait, and changed there."
 
-	^ #( trait protocol )
+	^ #( inheritedFrom trait protocol )
 ]
 
 { #category : 'private - analysis' }
@@ -359,18 +359,29 @@ MCPToolGetMethod >> selectorFor: request checked: aBoolean [
 ]
 
 { #category : 'private - results' }
-MCPToolGetMethod >> successSummaryForClassName: className selector: selector classSide: classSide sideGiven: isSideGiven [
-	"The class side of a call that gave no side was read because only it has a method of its own, which the answer says."
+MCPToolGetMethod >> successSummaryForMethod: aCompiledMethod readIn: aBehavior sideGiven: isSideGiven [
+	"The method is named where it is defined, which is where it would be changed, and a method aBehavior inherits is followed by aBehavior, the class it was asked of. The class side of a call that gave no side was read because only it has a method of its own, or only it understands the selector, which the answer says."
 
+	| definingClass selector |
+	definingClass := aCompiledMethod methodClass.
+	selector := aCompiledMethod selector asString.
 	^ String streamContents: [ :stream |
 			  stream
 				  nextPutAll: 'Got method ';
-				  nextPutAll: (self methodReferenceTextForClassName: className selector: selector classSide: classSide);
-				  nextPut: $..
-			  (classSide and: [ isSideGiven not ]) ifTrue: [
+				  nextPutAll: (self
+						   methodReferenceTextForClassName: definingClass instanceSide name asString
+						   selector: selector
+						   classSide: definingClass isClassSide).
+			  definingClass == aBehavior ifFalse: [
+					  stream
+						  nextPutAll: ', which ';
+						  nextPutAll: aBehavior name asString;
+						  nextPutAll: ' inherits' ].
+			  stream nextPut: $..
+			  (aBehavior isClassSide and: [ isSideGiven not ]) ifTrue: [
 					  stream
 						  space;
-						  nextPutAll: (self classSideNoteForClassName: className selector: selector) ] ]
+						  nextPutAll: (self classSideNoteForClassName: aBehavior instanceSide name asString selector: selector) ] ]
 ]
 
 { #category : 'metadata' }

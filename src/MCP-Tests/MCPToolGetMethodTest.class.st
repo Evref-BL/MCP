@@ -9,6 +9,45 @@ Class {
 }
 
 { #category : 'tests' }
+MCPToolGetMethodTest >> testGetMethodAnswersAnInheritedMethodInABatch [
+	"Each target of a call is looked up on its own, so one the class inherits is answered beside one it has."
+
+	| entries result |
+	result := self callToolWith:
+		          { (#selector -> #( 'MCPToolHierarchyTestChild>>hierarchyProbe' 'MCPToolHierarchyTestChild>>hierarchyTarget' )) }
+			          asDictionary.
+	self assert: (self summaryFrom: result) equals: 'Got 2 of 2 methods.'.
+	entries := (self dataFrom: result) at: #results.
+	self deny: (entries first includesKey: #inheritedFrom).
+	self assert: ((entries first at: #source) includesSubstring: '''child''').
+	self assert: (entries second at: #inheritedFrom) equals: 'MCPToolHierarchyTestBase'.
+	self assert: ((entries second at: #source) includesSubstring: '''base-target''')
+]
+
+{ #category : 'tests' }
+MCPToolGetMethodTest >> testGetMethodAnswersAnInheritedMethodWhereItIsDefined [
+	"A class with no method of its own for a selector may still understand it: the method a send would run is answered, named in the class that defines it, on either side."
+
+	| data result |
+	result := self callToolWith: { (#selector -> 'MCPToolHierarchyTestChild>>baseHierarchySender') } asDictionary.
+	self deny: (self resultIndicatesError: result) description: [ self summaryFrom: result ].
+	self
+		assert: (self summaryFrom: result)
+		equals: 'Got method MCPToolHierarchyTestBase>>baseHierarchySender, which MCPToolHierarchyTestChild inherits.'.
+	data := self dataFrom: result.
+	self assert: (data at: #inheritedFrom) equals: 'MCPToolHierarchyTestBase'.
+	self assert: ((data at: #source) beginsWith: 'baseHierarchySender').
+	result := self callToolWith: { (#selector -> 'MCPToolRunTestsInheritingTarget class>>isAbstract') } asDictionary.
+	self
+		assert: (self summaryFrom: result)
+		equals: 'Got method MCPToolRunTestsAbstractTarget class>>isAbstract, which MCPToolRunTestsInheritingTarget class inherits.'.
+	self assert: ((self dataFrom: result) at: #inheritedFrom) equals: 'MCPToolRunTestsAbstractTarget class'.
+	result := self callToolWith: { (#selector -> 'MCPToolGetMethodTestTarget class>>new') } asDictionary.
+	self assert: (self summaryFrom: result) equals: 'Got method Behavior>>new, which MCPToolGetMethodTestTarget class inherits.'.
+	self assert: ((self dataFrom: result) at: #inheritedFrom) equals: 'Behavior'
+]
+
+{ #category : 'tests' }
 MCPToolGetMethodTest >> testGetMethodMissSaysWhereTheClassMethodsAreListed [
 	"A selector the class does not have, such as a guess at a wildcard, is refused with the tool that lists the methods it does have."
 
@@ -75,21 +114,18 @@ MCPToolGetMethodTest >> testGetMethodOfAClassWrittenWithItsSideRefusesSideInstan
 ]
 
 { #category : 'tests' }
-MCPToolGetMethodTest >> testGetMethodOfAnInheritedMethodNamesTheClassItIsInheritedFrom [
-	"A class with no method of its own for a selector may still understand it: the miss says which class it inherits the method from, on either side."
+MCPToolGetMethodTest >> testGetMethodReadsABareSelectorOnTheClassSideWhenOnlyItUnderstandsIt [
+	"A bare selector given no side that neither side has a method of its own for, and only the class side understands, is read there, inherited."
 
 	| result |
 	result := self callToolWith: {
 			          (#class -> 'MCPToolGetMethodTestTarget').
-			          (#selector -> 'printOn:') } asDictionary.
-	self assert: (self resultIndicatesError: result).
+			          (#selector -> 'new') } asDictionary.
+	self deny: (self resultIndicatesError: result) description: [ self summaryFrom: result ].
 	self
-		assert: ((self errorFrom: result) at: #message)
-		equals: 'Method MCPToolGetMethodTestTarget>>printOn: does not exist. MCPToolGetMethodTestTarget inherits Object>>printOn:.'.
-	result := self callToolWith: { (#selector -> 'MCPToolGetMethodTestTarget class>>new') } asDictionary.
-	self
-		assert: ((self errorFrom: result) at: #message)
-		equals: 'Method MCPToolGetMethodTestTarget class>>new does not exist. MCPToolGetMethodTestTarget class inherits Behavior>>new.'
+		assert: (self summaryFrom: result)
+		equals:
+		'Got method Behavior>>new, which MCPToolGetMethodTestTarget class inherits. It is on the class side, the only side that has it.'
 ]
 
 { #category : 'tests' }
@@ -113,8 +149,20 @@ MCPToolGetMethodTest >> testGetMethodReadsABareSelectorOnTheOnlySideThatHasIt [
 ]
 
 { #category : 'tests' }
+MCPToolGetMethodTest >> testGetMethodReadsAnInheritedMethodsVariablesWhereItIsDefined [
+	"An inherited method's variables are those of the class that defines it, which is where self is bound when it runs."
+
+	| data result |
+	result := self callToolWith: {
+			          (#selector -> 'MCPToolHierarchyTestChild>>baseHierarchySender').
+			          (#includeVariableDetails -> true) } asDictionary.
+	data := self dataFrom: result.
+	self assert: ((self variableNamed: 'self' in: (data at: #variableReferences)) at: #ownerName) equals: 'MCPToolHierarchyTestBase'
+]
+
+{ #category : 'tests' }
 MCPToolGetMethodTest >> testGetMethodReadsTheClassSideOfASelectorTheInstanceSideOnlyInherits [
-	"method_get reads no inherited method, so a bare selector given no side that the class side has and the instance side only inherits names one method. The answer names the inherited one, in case it was meant."
+	"A method of its own comes before one inherited, so a bare selector given no side that the class side has and the instance side only inherits is read on the class side. The answer names the inherited one, in case it was meant."
 
 	| result |
 	result := self callToolWith: {
