@@ -1,5 +1,5 @@
 "
-One selection test_run and test_coverage_run run: a package, a test class, or one test method of a class, by the names the call gave.
+One selection test_run runs: a package, a test class, or one test method of a class, by the names the call gave.
 
 It resolves those names in the image, and names itself back as test_run takes it, which is how a timeout lists what is left to run.
 "
@@ -99,7 +99,7 @@ MCPTestSelectionSpec >> resolvedName [
 
 { #category : 'resolving' }
 MCPTestSelectionSpec >> testClass [
-	"The class a class or method selection names, on its instance side, refused in the lookup's words when it names none. It is looked up the first time it is asked, before anything runs, and kept: the run uses the class its selection was checked against, and its own lookups stay out of the coverage it measures."
+	"The class a class or method selection names, on its instance side, refused in the lookup's words when it names none. It is looked up the first time it is asked, before anything runs, and kept: the run uses the class its selection was checked against."
 
 	^ testClass ifNil: [ testClass := MCPImageLookup classNamed: className ]
 ]

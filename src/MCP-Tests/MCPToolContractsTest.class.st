@@ -2604,10 +2604,6 @@ MCPToolContractsTest >> testRequestedToolIconsAreSelected [
 		equals:
 		(MCPStructureIcon compositeBaseIconNamed: #history leftBadgeIconNamed: #changeUpdate rightBadgeIconNamed: #browse) asJRPCJSON.
 	self
-		assert: MCPToolRunTestCoverage new icons first asJRPCJSON
-		equals:
-		(MCPStructureIcon compositeBaseIconNamed: #testRunner leftBadgeIconNamed: #processBrowser rightBadgeIconNamed: #play) asJRPCJSON.
-	self
 		assert: MCPToolCaptureScreen new icons first asJRPCJSON
 		equals: (MCPStructureIcon compositeBaseIconNamed: #window badgeIconNamed: #smallScreenshot) asJRPCJSON.
 	self
@@ -2709,49 +2705,14 @@ MCPToolContractsTest >> testRpcToolCallRejectsLegacyScopeArgument [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testRunTestCoverageParsesCompactSelections [
+MCPToolContractsTest >> testRunTestsHasAccurateNameAndSchema [
 
-	| command request tool |
-	tool := MCPToolRunTestCoverage new.
-	request := tool requestFromToolCallArguments: {
-			           (#classes -> #( 'MCPToolContractsTest' )).
-			           (#coverage -> { (#scope -> { (#classes -> #( 'MCPToolContractsTest' )) } asDictionary) } asDictionary) }
-			           asDictionary.
-	command := tool operationFor: request.
-	command validateSelections.
-	self assert: command coverageScope class equals: MCPCompiledMethodScopeQuery.
-	self assert: command selections first class equals: MCPTestSelectionSpec.
-	self assert: command selections first testClass equals: MCPToolContractsTest
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testRunTestToolsHaveAccurateNamesAndRequiredArguments [
-
-	| coverageInputProperties coverageInputProperty coverageTool inputPropertyNames timeoutDescription tool |
+	| inputPropertyNames tool |
 	tool := MCPToolRunTests new.
 	self assert: tool name equals: 'test_run'.
 	self assert: (tool inputSchema required ifNil: [ #(  ) ]) isEmpty.
 	inputPropertyNames := tool inputSchema properties collect: [ :each | each name ].
-	self assert: inputPropertyNames asSet equals: #( 'packages' 'classes' 'methods' 'timeoutSeconds' ) asSet.
-	self deny: (inputPropertyNames includes: 'tests').
-	self deny: (inputPropertyNames includes: 'timeoutMilliseconds').
-	self deny: (inputPropertyNames includes: 'coverage').
-
-	coverageTool := MCPToolRunTestCoverage new.
-	self assert: coverageTool name equals: 'test_coverage_run'.
-	self assert: coverageTool inputSchema required asSet equals: #( 'coverage' ) asSet.
-	inputPropertyNames := coverageTool inputSchema properties collect: [ :each | each name ].
-	self assert: inputPropertyNames asSet equals: #( 'packages' 'classes' 'methods' 'coverage' 'timeoutSeconds' ) asSet.
-	self deny: (inputPropertyNames includes: 'tests').
-	self deny: (inputPropertyNames includes: 'timeoutMilliseconds').
-	coverageInputProperty := coverageTool inputSchema properties detect: [ :each | each name = 'coverage' ].
-	coverageInputProperties := coverageInputProperty asJRPCJSON at: #properties.
-	self assert: coverageInputProperties keys asSet equals: #( 'scope' 'includeCoveredMethods' 'methodLimit' ) asSet.
-
-	timeoutDescription := [ :aTool |
-	                      (aTool inputSchema properties detect: [ :each | each name = 'timeoutSeconds' ]) asJRPCJSON at: #description ].
-	self assert: (timeoutDescription value: coverageTool) equals: (timeoutDescription value: tool).
-	self deny: (coverageTool description includesSubstring: 'per-package')
+	self assert: inputPropertyNames asSet equals: #( 'packages' 'classes' 'methods' 'timeoutSeconds' ) asSet
 ]
 
 { #category : 'tests' }
@@ -3064,7 +3025,6 @@ MCPToolContractsTest >> testSearchToolsMatchesAgentGuidanceKeywords [
 		                ('diff' -> 'repository_change_list').
 		                ('stale' -> 'repository_reload').
 		                ('SUnit' -> 'test_run').
-		                ('coverage' -> 'test_coverage_run').
 		                ('file' -> 'history_file_list').
 		                ('entry' -> 'history_entry_list').
 		                ('recover' -> 'history_entry_apply').
@@ -3201,20 +3161,6 @@ MCPToolContractsTest >> testSingularSearchTermsUseGenericInflectionRules [
 	self assert: (registry singularSearchTermFor: 'classes') equals: 'class'.
 	self assert: (registry singularSearchTermFor: 'repositories') equals: 'repository'.
 	self assert: (registry singularSearchTermFor: 'histories') equals: 'history'
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testSpecializedClassAndMethodToolsAreDiscoverableOnly [
-
-	| discoverableOnlyNames |
-	discoverableOnlyNames := #( 'test_coverage_run' ).
-	discoverableOnlyNames do: [ :each |
-			| tool |
-			self assert: (self toolRegistry toolNames includes: each).
-			self deny: (self toolRegistry advertisedToolNames includes: each).
-			tool := self toolRegistry toolNamed: each ifAbsent: [ self fail: 'Missing tool ' , each ].
-			self assert: tool defaultExposure equals: 'discoverable'.
-			self assert: tool searchMetadata keys asSet equals: #( name description ) asSet ]
 ]
 
 { #category : 'tests' }

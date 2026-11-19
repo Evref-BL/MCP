@@ -1,17 +1,14 @@
 "
-Runs test selections until a deadline: the operation behind test_run and test_coverage_run.
+Runs test selections until a deadline: the operation behind test_run.
 
-Every selection is resolved and checked before any test runs. Each test then runs into a result of its own, so that it counts once, until the deadline stops one, and what is left is listed as selections to run next. Given a coverage scope, it also measures which of the scope's methods the tests executed. It answers an MCPRunTestsResult.
+Every selection is resolved and checked before any test runs. Each test then runs into a result of its own, so that it counts once, until the deadline stops one, and what is left is listed as selections to run next. It answers an MCPRunTestsResult.
 "
 Class {
 	#name : 'MCPRunTestsCommand',
 	#superclass : 'MCPCommand',
 	#instVars : [
 		'selections',
-		'timeoutMilliseconds',
-		'coverageScope',
-		'includeCoveredMethods',
-		'methodLimit'
+		'timeoutMilliseconds'
 	],
 	#category : 'MCP-IDE-Commands',
 	#package : 'MCP-IDE',
@@ -20,26 +17,9 @@ Class {
 
 { #category : 'instance creation' }
 MCPRunTestsCommand class >> selections: someSelections timeoutMilliseconds: anInteger [
-	"Runs the selections until the deadline, measuring no coverage."
+	"Runs the selections until the deadline."
 
-	^ self
-		  selections: someSelections
-		  timeoutMilliseconds: anInteger
-		  coverageScope: nil
-		  includeCoveredMethods: false
-		  methodLimit: 0
-]
-
-{ #category : 'instance creation' }
-MCPRunTestsCommand class >> selections: someSelections timeoutMilliseconds: anInteger coverageScope: aScopeQueryOrNil includeCoveredMethods: aBoolean methodLimit: aLimit [
-	"Runs the selections until the deadline, measuring the coverage of the methods aScopeQueryOrNil selects, if any. Coverage lists at most aLimit methods each, and the covered ones only when aBoolean is true."
-
-	^ self new
-		  initializeSelections: someSelections
-		  timeoutMilliseconds: anInteger
-		  coverageScope: aScopeQueryOrNil
-		  includeCoveredMethods: aBoolean
-		  methodLimit: aLimit
+	^ self new initializeSelections: someSelections timeoutMilliseconds: anInteger
 ]
 
 { #category : 'private - not run' }
@@ -73,28 +53,6 @@ MCPRunTestsCommand >> aggregateDataForResults: resultEntries timedOut: timedOut 
 	^ MCPRunTestsResult results: resultEntries timedOut: timedOut unrunTests: unrunTests
 ]
 
-{ #category : 'private - coverage' }
-MCPRunTestsCommand >> coverableMethods [
-
-	^ (coverageScope methods reject: [ :method | self shouldIgnoreMethodForCoverage: method ]) asArray
-]
-
-{ #category : 'private - coverage' }
-MCPRunTestsCommand >> coverageCollectorForMethods: methods [
-
-	| collector |
-	collector := self coverageCollectorClass new.
-	collector methods: methods.
-	^ collector
-]
-
-{ #category : 'accessing' }
-MCPRunTestsCommand >> coverageScope [
-	"The methods whose coverage the run measures, as a scope query that holds the warnings it raised once run, or nil."
-
-	^ coverageScope
-]
-
 { #category : 'private - timeout' }
 MCPRunTestsCommand >> deadlineForTimeoutMilliseconds: milliseconds [
 
@@ -108,14 +66,7 @@ MCPRunTestsCommand >> execute [
 	| deadline |
 	self validateSelections.
 	deadline := self deadlineForTimeoutMilliseconds: timeoutMilliseconds.
-	^ coverageScope ifNil: [ self runSelectionsUntil: deadline ] ifNotNil: [ self runCoverageUntil: deadline ]
-]
-
-{ #category : 'private - coverage' }
-MCPRunTestsCommand >> hasAllSequenceNodesCoveredIn: aCompiledMethod [
-
-	aCompiledMethod ast nodesDo: [ :node | node isSequence ifTrue: [ node hasBeenExecuted ifFalse: [ ^ false ] ] ].
-	^ true
+	^ self runSelectionsUntil: deadline
 ]
 
 { #category : 'private - timeout' }
@@ -125,13 +76,10 @@ MCPRunTestsCommand >> hasTimedOutAt: deadline [
 ]
 
 { #category : 'initialization' }
-MCPRunTestsCommand >> initializeSelections: someSelections timeoutMilliseconds: anInteger coverageScope: aScopeQueryOrNil includeCoveredMethods: aBoolean methodLimit: aLimit [
+MCPRunTestsCommand >> initializeSelections: someSelections timeoutMilliseconds: anInteger [
 
 	selections := someSelections.
-	timeoutMilliseconds := anInteger.
-	coverageScope := aScopeQueryOrNil.
-	includeCoveredMethods := aBoolean.
-	methodLimit := aLimit
+	timeoutMilliseconds := anInteger
 ]
 
 { #category : 'private - validation' }
@@ -204,12 +152,6 @@ MCPRunTestsCommand >> notRunSelectionsFor: aSelection testCases: testCases uniqu
 						  ifFalse: [ stream nextPutAll: (self methodSelectionsForTestCases: each value) ] ] ]
 ]
 
-{ #category : 'private - coverage' }
-MCPRunTestsCommand >> partiallyCoveredMethodsFromCoverageResult: coverageResult [
-
-	^ (coverageResult methods select: [ :method | (self hasAllSequenceNodesCoveredIn: method) not ]) asArray
-]
-
 { #category : 'private - validation' }
 MCPRunTestsCommand >> refusalOf: aSelection [
 	"Nil for a selection that holds tests, or a package; else its sentence and its entry. A test class whose suite holds no case of the method is refused, and so is any class that is not a test class, saying what it is instead."
@@ -256,27 +198,6 @@ MCPRunTestsCommand >> resolve: aSelection [
 	testClass := aSelection testClass.
 	aSelection testMethodName ifNotNil: [ :selector |
 		(testClass lookupSelector: selector asSymbol) ifNil: [ MCPCommandError signalMissingMethod: selector in: testClass ] ]
-]
-
-{ #category : 'private - coverage' }
-MCPRunTestsCommand >> runCoverageUntil: deadline [
-
-	| collector coverageResult partialMethods runResult |
-	collector := self coverageCollectorForMethods: self coverableMethods.
-	[
-		collector installOn: [
-				collector reset.
-				runResult := self runSelectionsUntil: deadline.
-				"Collect before resetting annotations so partial node coverage remains observable."
-				collector remapMethods.
-				coverageResult := collector basicCollectResult.
-				partialMethods := self partiallyCoveredMethodsFromCoverageResult: coverageResult ] ] ensure: [ collector reset ].
-	runResult coverage: (MCPTestCoverageResult
-			 coverageResult: coverageResult
-			 includeCoveredMethods: includeCoveredMethods
-			 methodLimit: methodLimit
-			 partiallyCoveredMethods: partialMethods).
-	^ runResult
 ]
 
 { #category : 'private' }
@@ -377,15 +298,6 @@ MCPRunTestsCommand >> shortenTimeLimitOf: aTestCase [
 	"The test a timeout interrupts gets a second for its tearDown: SUnit's own watchdog then stops a tearDown that hangs, and the call answers about a second late. A deadline that falls outside the test's managed run has no limit to shorten."
 
 	aTestCase executionEnvironment isTest ifTrue: [ aTestCase timeLimit: 1 second ]
-]
-
-{ #category : 'private - coverage' }
-MCPRunTestsCommand >> shouldIgnoreMethodForCoverage: aCompiledMethod [
-
-	aCompiledMethod isTestMethod ifTrue: [ ^ true ].
-	aCompiledMethod methodClass instanceSide isTestCase ifTrue: [ ^ true ].
-	aCompiledMethod isAbstract ifTrue: [ ^ true ].
-	^ aCompiledMethod hasPragmaNamed: #ignoreForCoverage
 ]
 
 { #category : 'private' }

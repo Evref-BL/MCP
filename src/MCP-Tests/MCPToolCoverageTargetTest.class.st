@@ -1,5 +1,5 @@
 "
-SUnit tests for MCPToolCoverageTarget used to exercise MCP coverage reporting.
+Fixture test class that the test_run tests run among other selections.
 "
 Class {
 	#name : 'MCPToolCoverageTargetTest',

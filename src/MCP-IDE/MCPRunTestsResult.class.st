@@ -1,7 +1,7 @@
 "
-The tests a test_run or test_coverage_run call ran, counted and grouped for its answer.
+The tests a test_run call ran, counted and grouped for its answer.
 
-It counts each test once, from the outcomes of the selections it ran, and says each issue once: the issues of the same kind, error class, message and places, across tests, are one entry naming every test they hit. It also names the tests that still refer to removed classes, grouped by those classes, with the methods that still hold a removed class whose name a class has again, and the selections that selected no test, lists what a timeout left to run as test_run arguments, and carries the coverage when it was measured.
+It counts each test once, from the outcomes of the selections it ran, and says each issue once: the issues of the same kind, error class, message and places, across tests, are one entry naming every test they hit. It also names the tests that still refer to removed classes, grouped by those classes, with the methods that still hold a removed class whose name a class has again, and the selections that selected no test, and lists what a timeout left to run as test_run arguments.
 "
 Class {
 	#name : 'MCPRunTestsResult',
@@ -10,7 +10,6 @@ Class {
 		'results',
 		'timedOut',
 		'unrunTests',
-		'coverage',
 		'interruption',
 		'notRunCount',
 		'timeoutMilliseconds',
@@ -40,7 +39,7 @@ MCPRunTestsResult >> addTimeoutTo: data [
 
 { #category : 'converting' }
 MCPRunTestsResult >> asDictionary [
-	"The counts, each test counted once and a count of none left out but for the run and the passes; each issue once, naming every test it hit; the tests that still refer to removed classes, and the classes among those that exist again; the selections that held no test; what a timeout left to run; and coverage."
+	"The counts, each test counted once and a count of none left out but for the run and the passes; each issue once, naming every test it hit; the tests that still refer to removed classes, and the classes among those that exist again; the selections that held no test; and what a timeout left to run."
 
 	| data |
 	data := Dictionary new.
@@ -57,7 +56,6 @@ MCPRunTestsResult >> asDictionary [
 		(#removedClassReferences -> self removedClassReferenceEntries).
 		(#classesDefinedAgain -> self classesDefinedAgainEntries).
 		(#withoutTests -> self withoutTestsEntries) } do: [ :each | each value ifNotEmpty: [ data at: each key put: each value ] ].
-	self coverage ifNotNil: [ :coverageResult | data at: #coverage put: coverageResult asDictionary ].
 	self timedOut ifTrue: [ self addTimeoutTo: data ].
 	^ data
 ]
@@ -85,18 +83,6 @@ MCPRunTestsResult >> classesDefinedAgainEntries [
 MCPRunTestsResult >> countOf: aSelector [
 
 	^ self results inject: 0 into: [ :sum :each | sum + (each perform: aSelector) ]
-]
-
-{ #category : 'accessing' }
-MCPRunTestsResult >> coverage [
-
-	^ coverage
-]
-
-{ #category : 'accessing' }
-MCPRunTestsResult >> coverage: aCoverageResult [
-
-	coverage := aCoverageResult
 ]
 
 { #category : 'converting' }
