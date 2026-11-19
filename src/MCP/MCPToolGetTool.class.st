@@ -94,13 +94,10 @@ MCPToolGetTool >> description [
 { #category : 'executing' }
 MCPToolGetTool >> executeWithRequest: request [
 
-	^ self
-		  executeRequest: request
-		  do: [
-				  | contract |
-				  contract := self toolRegistry contractForToolNamed: (request stringArgumentNamed: 'name').
-				  self successResultText: (self summaryForContract: contract) data: { (#tool -> contract) } asDictionary ]
-		  onError: [ :error | self errorResultFor: error ]
+	^ self executeRequest: request do: [
+			  | contract |
+			  contract := self toolRegistry contractForToolNamed: (request stringArgumentNamed: 'name').
+			  self successResultText: (self summaryForContract: contract) data: { (#tool -> contract) } asDictionary ]
 ]
 
 { #category : 'private - results' }

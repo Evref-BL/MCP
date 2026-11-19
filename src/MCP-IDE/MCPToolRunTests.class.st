@@ -65,11 +65,11 @@ MCPToolRunTests >> classesDefinedAgainSentenceFor: someEntries [
 	someEntries do: [ :each | (self valueIn: each at: #methods) do: [ :method | methods addIfNotPresent: method ] ].
 	^ String streamContents: [ :stream |
 			  stream
-				  nextPutAll: (self joinedNames: classNames);
+				  nextPutAll: (MCPCommandError joinedNames: classNames);
 				  nextPutAll: (classNames size = 1
 						   ifTrue: [ ' exists again, but ' ]
 						   ifFalse: [ ' exist again, but ' ]);
-				  nextPutAll: (self joinedNames: methods);
+				  nextPutAll: (MCPCommandError joinedNames: methods);
 				  nextPutAll: (methods size = 1
 						   ifTrue: [ ' still refers to ' ]
 						   ifFalse: [ ' still refer to ' ]);
@@ -84,7 +84,7 @@ MCPToolRunTests >> classesDefinedAgainSentenceFor: someEntries [
 						   ifTrue: [ 'it' ]
 						   ifFalse: [ 'they' ]);
 				  nextPutAll: ' will refer to the current ';
-				  nextPutAll: (self joinedNames: classNames);
+				  nextPutAll: (MCPCommandError joinedNames: classNames);
 				  nextPut: $. ]
 ]
 
@@ -121,17 +121,6 @@ MCPToolRunTests >> description [
 	^ 'Run SUnit tests by package, class or Class>>selector, and report failures and errors.'
 ]
 
-{ #category : 'private' }
-MCPToolRunTests >> errorResultForError: anError testNames: testNames [
-
-	^ anError
-		  mcpCommandErrorDo: [ :commandError | self errorResultText: commandError messageText details: commandError structuredDetails ]
-		  otherwise: [ :toolError |
-				  self errorResultText: (self failureMessageForTestNames: testNames error: toolError) details: {
-						  (#errorClass -> toolError class name).
-						  (#message -> toolError messageText) } asDictionary ]
-]
-
 { #category : 'executing' }
 MCPToolRunTests >> executeWithRequest: request [
 	"The arguments are checked, then the selections they name run. An error raised before the arguments are checked names the tests as the caller wrote them."
@@ -144,23 +133,13 @@ MCPToolRunTests >> executeWithRequest: request [
 				  self checkArguments: request.
 				  checked := true.
 				  self runTestsWith: request ]
-		  onError: [ :error | self errorResultForError: error testNames: (self testNamesFor: request checked: checked) ]
-]
-
-{ #category : 'private' }
-MCPToolRunTests >> failureMessageForTestNames: testNames error: anError [
-
-	^ String streamContents: [ :stream |
-			  stream nextPutAll: 'Unable to run tests'.
-			  testNames ifNotEmpty: [
-					  stream
-						  nextPutAll: ': ';
-						  nextPutAll: (', ' join: testNames) ].
-			  stream
-				  nextPutAll: ' (';
-				  nextPutAll: anError class name;
-				  nextPutAll: '): ';
-				  nextPutAll: anError messageText ]
+		  onError: [ :error |
+				  | testNames |
+				  testNames := self testNamesFor: request checked: checked.
+				  self
+					  errorResultFor: error
+					  unableTo: (testNames ifEmpty: [ 'run tests' ] ifNotEmpty: [ 'run tests: ' , (', ' join: testNames) ])
+					  details: #(  ) ]
 ]
 
 { #category : 'private' }
@@ -199,30 +178,17 @@ MCPToolRunTests >> issueLineOn: stream for: entry labelled: aLabel [
 				nextPutAll: ': ';
 				nextPutAll: ((statement isNil and: [ locations isEmpty and: [ removedClasses isEmpty and: [ note isNil ] ] ])
 						 ifTrue: [ message ]
-						 ifFalse: [ self textWithoutTrailingPeriod: message ]) ].
+						 ifFalse: [ self textWithoutFinalPeriod: message ]) ].
 	statement ifNotNil: [ stream << ', at ' << statement ].
-	locations ifNotEmpty: [ stream << ', in ' << (self joinedNames: locations) ].
+	locations ifNotEmpty: [ stream << ', in ' << (MCPCommandError joinedNames: locations) ].
 	removedClasses ifNotEmpty: [
 			stream
 				nextPutAll: '; ';
-				nextPutAll: (self joinedNames: removedClasses);
+				nextPutAll: (MCPCommandError joinedNames: removedClasses);
 				nextPutAll: (removedClasses size = 1
 						 ifTrue: [ ' was removed' ]
 						 ifFalse: [ ' were removed' ]) ].
 	note ifNotNil: [ stream << '. ' << note ]
-]
-
-{ #category : 'private - results' }
-MCPToolRunTests >> joinedNames: someStrings [
-	"A, A and B, A, B and C."
-
-	^ String streamContents: [ :stream |
-			  someStrings withIndexDo: [ :each :index |
-					  index > 1 ifTrue: [
-							  stream nextPutAll: (index = someStrings size
-									   ifTrue: [ ' and ' ]
-									   ifFalse: [ ', ' ]) ].
-					  stream nextPutAll: each ] ]
 ]
 
 { #category : 'private - results' }
@@ -281,11 +247,11 @@ MCPToolRunTests >> removedClassReferenceSentenceFor: entry [
 	tests := self valueIn: entry at: #tests.
 	^ String streamContents: [ :stream |
 			  stream
-				  nextPutAll: (self joinedNames: tests);
+				  nextPutAll: (MCPCommandError joinedNames: tests);
 				  nextPutAll: (tests size = 1
 						   ifTrue: [ ' refers to ' ]
 						   ifFalse: [ ' refer to ' ]);
-				  nextPutAll: (self joinedNames: classes);
+				  nextPutAll: (MCPCommandError joinedNames: classes);
 				  nextPutAll: (classes size = 1
 						   ifTrue: [ ', a removed class, so ' ]
 						   ifFalse: [ ', removed classes, so ' ]);
@@ -317,7 +283,7 @@ MCPToolRunTests >> removedClassReferencesSentencesOn: stream for: data [
 			sentences add: (String streamContents: [ :sentence |
 						 sentence
 							 nextPutAll: 'Create ';
-							 nextPutAll: (self joinedNames: missingClassNames);
+							 nextPutAll: (MCPCommandError joinedNames: missingClassNames);
 							 nextPutAll: ' again with class_create, or change the ';
 							 nextPutAll: (testCount = 1
 									  ifTrue: [ 'test.' ]
@@ -405,15 +371,6 @@ MCPToolRunTests >> testSelectorIn: aSelectorText [
 	index := aSelectorText indexOfSubCollection: ' with '.
 	index isZero ifTrue: [ ^ aSelectorText ].
 	^ (aSelectorText first: index - 1) trimBoth
-]
-
-{ #category : 'private - results' }
-MCPToolRunTests >> textWithoutTrailingPeriod: aString [
-	"One period, so that 'Got 1 instead of 2.' reads on into ', at ...' and an ellipsis keeps two."
-
-	^ (aString isNotEmpty and: [ aString last = $. ])
-		  ifTrue: [ aString allButLast ]
-		  ifFalse: [ aString ]
 ]
 
 { #category : 'private - arguments' }

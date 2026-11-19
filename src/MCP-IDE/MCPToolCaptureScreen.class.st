@@ -52,13 +52,10 @@ MCPToolCaptureScreen >> description [
 { #category : 'executing' }
 MCPToolCaptureScreen >> executeWithRequest: request [
 
-	^ self
-		  executeRequest: request
-		  do: [
-				  | window |
-				  window := request stringArgumentNamed: 'window'.
-				  self resultForCaptureOf: (self targetMorphNamed: window) window: window ]
-		  onError: [ :error | self errorResultForError: error ]
+	^ self executeRequest: request do: [
+			  | window |
+			  window := request stringArgumentNamed: 'window'.
+			  self resultForCaptureOf: (self targetMorphNamed: window) window: window ]
 ]
 
 { #category : 'private - results' }

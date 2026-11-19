@@ -26,6 +26,14 @@ TMCPMethodTool >> behaviorNamedIn: request [
 		  do: [ :className :classSide :sideGiven | self behaviorNamed: className classSide: classSide ]
 ]
 
+{ #category : 'private - methods' }
+TMCPMethodTool >> classReferenceNameFor: className classSide: classSide [
+
+	^ classSide
+		  ifTrue: [ className , ' class' ]
+		  ifFalse: [ className ]
+]
+
 { #category : 'private - searching' }
 TMCPMethodTool >> matchingSelectorReferencesForSelector: aSelectorSymbol inMethods: compiledMethods [
 	"The methods of compiledMethods that send aSelectorSymbol to any receiver: what method_reference_search calls senders, and what method_remove warns of."

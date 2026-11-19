@@ -325,7 +325,7 @@ MCPCreateRepositoryCommand >> signalLocation: aLocation holdsFiles: filePaths [
 					 stream << self refusalPrefix << aLocation fullName << ' already holds '.
 					 filePaths size = 1
 						 ifTrue: [ stream << 'a file, ' << filePaths first ]
-						 ifFalse: [ stream << 'files, such as ' << (MCPScopeQuery listPhraseFor: filePaths) ].
+						 ifFalse: [ stream << 'files, such as ' << (MCPCommandError joinedNames: filePaths) ].
 					 stream
 					 <<
 					 '. Give a location that does not exist yet or holds no file; to keep what is there, run git init there and register it with repository_attach.' ])

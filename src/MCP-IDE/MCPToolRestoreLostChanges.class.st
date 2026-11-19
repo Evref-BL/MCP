@@ -184,7 +184,7 @@ MCPToolRestoreLostChanges >> signalNothingRestored: data [
 					 stream << 'Restored no lost change.'.
 					 (data at: #notRestored) do: [ :each | stream lf << (each at: #element) << ': ' << (each at: #reason) ].
 					 (data at: #alreadyInImage) ifNotEmpty: [ :names |
-						 stream lf << 'The image already holds ' << (MCPScopeQuery listPhraseFor: names) << '.' ] ])
+						 stream lf << 'The image already holds ' << (MCPCommandError joinedNames: names) << '.' ] ])
 		details: { (#notRestored -> (data at: #notRestored) asArray) } asDictionary
 ]
 
@@ -200,7 +200,7 @@ MCPToolRestoreLostChanges >> successSummaryForData: data [
 				  ifEmpty: [ 'Nothing to restore: the image holds every change made since it was last saved.' ]
 				  ifNotEmpty: [ :names |
 						  String streamContents: [ :stream |
-							  stream << 'Nothing to restore: the image already holds ' << (MCPScopeQuery listPhraseFor: names) << '.' ] ] ].
+							  stream << 'Nothing to restore: the image already holds ' << (MCPCommandError joinedNames: names) << '.' ] ] ].
 	^ String streamContents: [ :stream |
 			  stream << 'Restored '.
 			  restoredCount < totalCount ifTrue: [
@@ -211,7 +211,7 @@ MCPToolRestoreLostChanges >> successSummaryForData: data [
 			  restoredCount < totalCount ifTrue: [ stream << '; ' << (totalCount - restoredCount) printString << ' could not be' ].
 			  stream << '.'.
 			  (data at: #alreadyInImage) ifNotEmpty: [ :names |
-				  stream << ' The image already held ' << (MCPScopeQuery listPhraseFor: names) << '.' ] ]
+				  stream << ' The image already held ' << (MCPCommandError joinedNames: names) << '.' ] ]
 ]
 
 { #category : 'metadata' }

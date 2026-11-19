@@ -81,26 +81,6 @@ MCPToolRemoveMethods >> description [
 	^ 'Remove methods from one class. Senders do not stop it; the answer warns of sends it leaves without a method.'
 ]
 
-{ #category : 'private' }
-MCPToolRemoveMethods >> errorResultForError: anError className: className classSide: classSide selectors: selectors [
-
-	^ anError
-		  mcpCommandErrorDo: [ :commandError | self errorResultText: commandError messageText details: commandError structuredDetails ]
-		  otherwise: [ :toolError |
-				  self
-					  errorResultText: (self
-							   failureMessageForClassNamed: className
-							   classSide: classSide
-							   selectors: selectors
-							   error: toolError)
-					  details: {
-							  (#errorClass -> toolError class name).
-							  (#message -> toolError messageText).
-							  (#class -> className).
-							  (#side -> (classSide ifTrue: [ 'class' ] ifFalse: [ 'instance' ])).
-							  (#selectors -> selectors asArray) } asDictionary ]
-]
-
 { #category : 'executing' }
 MCPToolRemoveMethods >> executeWithRequest: request [
 
@@ -113,30 +93,19 @@ MCPToolRemoveMethods >> executeWithRequest: request [
 				  checked := true.
 				  self removeWith: request ]
 		  onError: [ :error |
+				  | className classSide selectors |
+				  className := self classNameFor: request checked: checked.
+				  classSide := self classSideOf: request.
+				  selectors := self selectorsFor: request checked: checked.
 				  self
-					  errorResultForError: error
-					  className: (self classNameFor: request checked: checked)
-					  classSide: (self classSideOf: request)
-					  selectors: (self selectorsFor: request checked: checked) ]
-]
-
-{ #category : 'private' }
-MCPToolRemoveMethods >> failureMessageForClassNamed: className classSide: classSide selectors: selectors error: anError [
-
-	| targetName |
-	targetName := classSide
-		              ifTrue: [ className , ' class' ]
-		              ifFalse: [ className ].
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Unable to remove methods from ';
-				  nextPutAll: targetName;
-				  nextPutAll: ': ';
-				  nextPutAll: (', ' join: selectors);
-				  nextPutAll: ' (';
-				  nextPutAll: anError class name;
-				  nextPutAll: '): ';
-				  nextPutAll: anError messageText ]
+					  errorResultFor: error
+					  unableTo: (String streamContents: [ :stream |
+							   stream << 'remove methods from ' << (self classReferenceNameFor: className classSide: classSide) << ': '
+							   << (', ' join: selectors) ])
+					  details: {
+							  (#class -> className).
+							  (#side -> (self sideNameFor: classSide)).
+							  (#selectors -> selectors asArray) } ]
 ]
 
 { #category : 'private - warnings' }
@@ -198,7 +167,7 @@ MCPToolRemoveMethods >> listTextForMethods: someMethods [
 	references := (someMethods
 		               collect: [ :each | self methodReferenceForBehavior: each methodClass selector: each selector ]
 		               as: Array) sort.
-	references size > 10 ifFalse: [ ^ MCPScopeQuery listPhraseFor: references ].
+	references size > 10 ifFalse: [ ^ MCPCommandError joinedNames: references ].
 	^ String streamContents: [ :stream |
 			  (references first: 10) do: [ :each | stream nextPutAll: each ] separatedBy: [ stream nextPutAll: ', ' ].
 			  stream
@@ -283,9 +252,7 @@ MCPToolRemoveMethods >> successSummaryForClassName: className classSide: classSi
 						  stream
 							  print: selectors size;
 							  nextPutAll: ' methods from ';
-							  nextPutAll: className.
-						  classSide ifTrue: [ stream nextPutAll: ' class' ].
-						  stream
+							  nextPutAll: (self classReferenceNameFor: className classSide: classSide);
 							  nextPutAll: ': ';
 							  nextPutAll: (', ' join: selectors) ].
 			  stream nextPut: $. ]

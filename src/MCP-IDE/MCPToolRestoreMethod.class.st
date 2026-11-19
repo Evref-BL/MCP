@@ -121,9 +121,7 @@ MCPToolRestoreMethod >> detailsFor: aSelector in: aBehavior [
 
 	^ Dictionary new
 		  at: #class put: aBehavior instanceSide name asString;
-		  at: #side put: (aBehavior isClassSide
-				   ifTrue: [ 'class' ]
-				   ifFalse: [ 'instance' ]);
+		  at: #side put: (self sideNameFor: aBehavior isClassSide);
 		  at: #selector put: aSelector asString;
 		  yourself
 ]
@@ -132,13 +130,11 @@ MCPToolRestoreMethod >> detailsFor: aSelector in: aBehavior [
 MCPToolRestoreMethod >> executeWithRequest: request [
 	"A version is one method's, so a call naming one restores one selector. Each selector is restored on its own."
 
-	^ self
-		  executeRequest: request
-		  do: [
-				  self checkVersionNamesOneMethodIn: request.
-				  self executeBatchedRequest: request do: [ :targetRequest |
-					  self executeRequest: targetRequest do: [ self restoreWith: targetRequest ] onError: [ :error | self errorResultFor: error ] ] ]
-		  onError: [ :error | self errorResultFor: error ]
+	^ self executeRequest: request do: [
+			  self checkVersionNamesOneMethodIn: request.
+			  self
+				  executeBatchedRequest: request
+				  do: [ :targetRequest | self executeRequest: targetRequest do: [ self restoreWith: targetRequest ] ] ]
 ]
 
 { #category : 'private - restoring' }

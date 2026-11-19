@@ -99,7 +99,7 @@ MCPToolGetMethod >> classSideNoteForClassName: className selector: selector [
 						  stream
 							  nextPutAll: 'It is on the class side, the only side that has one of its own. The instance side inherits ';
 							  nextPutAll:
-								  (self methodReferenceTextForClassName: inheritedMethod methodClass name asString selector: selector classSide: false);
+								  (self methodReferenceForClassName: inheritedMethod methodClass name asString selector: selector isClassSide: false);
 							  nextPut: $. ] ]
 ]
 
@@ -142,19 +142,12 @@ MCPToolGetMethod >> errorResultForError: anError className: className selector: 
 				  self errorResultText: commandError messageText details: details ]
 		  otherwise: [ :toolError |
 				  self
-					  errorResultText: (self
-							   failureMessageForClassNamed: className
-							   selector: selectorString
-							   classSide: classSide
-							   error: toolError)
+					  errorResultFor: toolError
+					  unableTo: 'get method ' , (self methodReferenceForClassName: className selector: selectorString isClassSide: classSide)
 					  details: {
-							  (#errorClass -> toolError class name).
-							  (#message -> toolError messageText).
 							  (#class -> className).
 							  (#selector -> selectorString).
-							  (#side -> (classSide
-								    ifTrue: [ 'class' ]
-								    ifFalse: [ 'instance' ])) } asDictionary ]
+							  (#side -> (self sideNameFor: classSide)) } ]
 ]
 
 { #category : 'executing' }
@@ -181,19 +174,6 @@ MCPToolGetMethod >> executeWithRequest: request [
 							  className: (self classNameFor: targetRequest checked: checked)
 							  selector: (self selectorFor: targetRequest checked: checked)
 							  classSide: (self classSideFor: targetRequest checked: checked) ] ]
-]
-
-{ #category : 'private - results' }
-MCPToolGetMethod >> failureMessageForClassNamed: className selector: selectorString classSide: classSide error: anError [
-
-	^ String streamContents: [ :stream |
-		  stream
-			  nextPutAll: 'Unable to get method ';
-			  nextPutAll: (self methodReferenceTextForClassName: className selector: selectorString classSide: classSide);
-			  nextPutAll: ' (';
-			  nextPutAll: anError class name;
-			  nextPutAll: '): ';
-			  nextPutAll: anError messageText ]
 ]
 
 { #category : 'private - execution' }
@@ -277,14 +257,6 @@ MCPToolGetMethod >> methodNamedIn: request do: aBlock [
 				  cull: isSideGiven ]
 ]
 
-{ #category : 'private - results' }
-MCPToolGetMethod >> methodReferenceTextForClassName: className selector: selector classSide: classSide [
-
-	^ className , (classSide
-		   ifTrue: [ ' class>>' ]
-		   ifFalse: [ '>>' ]) , selector
-]
-
 { #category : 'private - analysis' }
 MCPToolGetMethod >> newVariableSummaryForNode: aVariableNode kind: aKind methodBehavior: aBehavior [
 
@@ -353,9 +325,9 @@ MCPToolGetMethod >> successSummaryForMethod: aCompiledMethod readIn: aBehavior s
 			  stream
 				  nextPutAll: 'Got method ';
 				  nextPutAll: (self
-						   methodReferenceTextForClassName: definingClass instanceSide name asString
+						   methodReferenceForClassName: definingClass instanceSide name asString
 						   selector: selector
-						   classSide: definingClass isClassSide).
+						   isClassSide: definingClass isClassSide).
 			  definingClass == aBehavior ifFalse: [
 					  stream
 						  nextPutAll: ', which ';

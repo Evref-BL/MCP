@@ -157,8 +157,7 @@ MCPToolVerifyRepositoryIdentity >> repositoryToVerifyFor: request [
 MCPToolVerifyRepositoryIdentity >> requestedContextFor: request [
 
 	| context |
-	context := (super requestedContextFor: request) copy.
-	(self expectedBranchNameIn: request) ifNotEmpty: [ :branchName | context at: #branch put: branchName ].
+	context := super requestedContextFor: request.
 	(request hasArgumentNamed: 'subdirectory') ifTrue: [ context at: #subdirectory put: (self expectedSubdirectoryIn: request) ].
 	(request hasArgumentNamed: 'packages') ifTrue: [
 		context at: #packages put: (request uniqueStringCollectionArgumentNamed: 'packages') ].

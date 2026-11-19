@@ -69,7 +69,7 @@ MCPToolUpdateRepository >> remove: packageNames from: aRepository with: steps re
 MCPToolUpdateRepository >> requestedContextFor: request [
 
 	| context supplied |
-	context := (super requestedContextFor: request) copy.
+	context := super requestedContextFor: request.
 	supplied := self suppliedUpdateArgumentNamesIn: request.
 	supplied do: [ :each |
 			context at: each asSymbol put: (each = 'subdirectory'

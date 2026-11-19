@@ -125,9 +125,10 @@ MCPToolUpdateClass >> executeAddSlotWithPlan: plan request: request [
 						  << className << '.' ] ]
 		  failureSummary: [ :error |
 				  self
-					  failureMessageForAddSlotNamed: plan slotName
-					  onClassNamed: className
-					  classSide: plan classSide
+					  failureMessage: ('Failed to add {1} {2} to class {3}' format: {
+								   (self slotDescriptionForClassSide: plan classSide).
+								   plan slotName.
+								   className })
 					  error: error ]
 ]
 
@@ -171,10 +172,12 @@ MCPToolUpdateClass >> executeMoveSlotWithPlan: plan request: request [
 		  summary: [ :updatedClass | self moveSlotSummaryFor: plan ofClassNamed: className ]
 		  failureSummary: [ :error |
 				  self
-					  failureMessageForMoveSlotNamed: plan slotName
-					  onClassNamed: className
-					  classSide: plan classSide
-					  operation: plan updateAction
+					  failureMessage: ((plan updateAction = 'pullUpSlot'
+							    ifTrue: [ 'Failed to pull up {1} {2} to class {3}' ]
+							    ifFalse: [ 'Failed to push down {1} {2} from class {3}' ]) format: {
+								   (self slotDescriptionForClassSide: plan classSide).
+								   plan slotName.
+								   className })
 					  error: error ]
 ]
 
@@ -192,9 +195,10 @@ MCPToolUpdateClass >> executeMoveWithPlan: plan request: request [
 		  summary: [ :movedClass | self moveSummaryForClassInfo: (MCPClassInfo fromClass: movedClass) ]
 		  failureSummary: [ :error |
 				  self
-					  failureMessageForMoveClassNamed: className
-					  packageName: packageName
-					  tag: tag
+					  failureMessage: ('Unable to move class {1} to package {2}{3}' format: {
+								   className.
+								   packageName.
+								   (tag ifNil: [ '' ] ifNotNil: [ ' tag ' , tag ]) })
 					  error: error ]
 ]
 
@@ -238,10 +242,11 @@ MCPToolUpdateClass >> executeRenameSlotWithPlan: plan request: request [
 					  stream << 'Renamed slot ' << plan slotName << ' to ' << plan newSlotName << ' in class ' << className << '.' ] ]
 		  failureSummary: [ :error |
 				  self
-					  failureMessageForRenameSlotNamed: plan slotName
-					  to: plan newSlotName
-					  onClassNamed: className
-					  classSide: plan classSide
+					  failureMessage: ('Failed to rename {1} {2} to {3} in class {4}' format: {
+								   (self slotDescriptionForClassSide: plan classSide).
+								   plan slotName.
+								   plan newSlotName.
+								   className })
 					  error: error ]
 ]
 
@@ -257,7 +262,12 @@ MCPToolUpdateClass >> executeRenameWithPlan: plan request: request [
 		  work: [ (MCPRenameClassCommand className: className newClassName: newClassName) execute ]
 		  summary: [ :renamedClass |
 		  String streamContents: [ :stream | stream << 'Renamed class ' << className << ' to ' << newClassName << '.' ] ]
-		  failureSummary: [ :error | self failureMessageForRenameClassNamed: className to: newClassName error: error ]
+		  failureSummary: [ :error |
+				  self
+					  failureMessage: ('Unable to rename class {1} to {2}' format: {
+								   className.
+								   newClassName })
+					  error: error ]
 ]
 
 { #category : 'private - execution' }
@@ -272,7 +282,12 @@ MCPToolUpdateClass >> executeReparentWithPlan: plan request: request [
 		  work: [ (MCPReparentClassCommand className: className superclassName: superclassName) execute ]
 		  summary: [ :updatedClass |
 			  String streamContents: [ :stream | stream << 'Reparented class ' << className << ' to superclass ' << superclassName << '.' ] ]
-		  failureSummary: [ :error | self failureMessageForReparentClassNamed: className superclassName: superclassName error: error ]
+		  failureSummary: [ :error |
+				  self
+					  failureMessage: ('Unable to reparent class {1} to superclass {2}' format: {
+								   className.
+								   superclassName })
+					  error: error ]
 ]
 
 { #category : 'private - execution' }
@@ -290,7 +305,7 @@ MCPToolUpdateClass >> executeReplaceDefinitionWithPlan: plan request: request [
 		  work: [ command execute ]
 		  summary: [ :updatedClass |
 		  String streamContents: [ :stream | stream << 'Replaced slot definition for class ' << className << '.' ] ]
-		  failureSummary: [ :error | self failureMessageForReplaceDefinitionOnClassNamed: className error: error ]
+		  failureSummary: [ :error | self failureMessage: 'Unable to replace slot definition for class ' , className error: error ]
 ]
 
 { #category : 'private - execution' }
@@ -303,7 +318,7 @@ MCPToolUpdateClass >> executeReplaceLayoutWithPlan: plan request: request [
 		  force: false
 		  work: [ (MCPReplaceClassLayoutCommand className: className layout: (request stringArgumentNamed: 'layout')) execute ]
 		  summary: [ :updatedClass | String streamContents: [ :stream | stream << 'Replaced layout for class ' << className << '.' ] ]
-		  failureSummary: [ :error | self failureMessageForReplaceLayoutOnClassNamed: className error: error ]
+		  failureSummary: [ :error | self failureMessage: 'Unable to replace layout for class ' , className error: error ]
 ]
 
 { #category : 'private - execution' }
@@ -320,7 +335,7 @@ MCPToolUpdateClass >> executeReplaceSharedPoolsWithPlan: plan request: request [
 					   sharedPoolNames: (request stringCollectionArgumentNamed: 'sharedPools')) execute ]
 		  summary: [ :updatedClass |
 		  String streamContents: [ :stream | stream << 'Replaced shared pools for class ' << className << '.' ] ]
-		  failureSummary: [ :error | self failureMessageForReplaceSharedPoolsOnClassNamed: className error: error ]
+		  failureSummary: [ :error | self failureMessage: 'Unable to replace shared pools for class ' , className error: error ]
 ]
 
 { #category : 'private - execution' }
@@ -337,7 +352,7 @@ MCPToolUpdateClass >> executeReplaceSharedVariablesWithPlan: plan request: reque
 					   sharedVariableNames: (request stringCollectionArgumentNamed: 'sharedVariables')) execute ]
 		  summary: [ :updatedClass |
 		  String streamContents: [ :stream | stream << 'Replaced shared variables for class ' << className << '.' ] ]
-		  failureSummary: [ :error | self failureMessageForReplaceSharedVariablesOnClassNamed: className error: error ]
+		  failureSummary: [ :error | self failureMessage: 'Unable to replace shared variables for class ' , className error: error ]
 ]
 
 { #category : 'private - execution' }
@@ -351,7 +366,7 @@ MCPToolUpdateClass >> executeReplaceTraitsWithPlan: plan request: request [
 		  work: [
 		  (MCPReplaceClassTraitsCommand className: className traitNames: (request stringCollectionArgumentNamed: 'traits')) execute ]
 		  summary: [ :updatedClass | String streamContents: [ :stream | stream << 'Replaced traits for class ' << className << '.' ] ]
-		  failureSummary: [ :error | self failureMessageForReplaceTraitsOnClassNamed: className error: error ]
+		  failureSummary: [ :error | self failureMessage: 'Unable to replace traits for class ' , className error: error ]
 ]
 
 { #category : 'private - execution' }
@@ -364,161 +379,23 @@ MCPToolUpdateClass >> executeSetCommentWithPlan: plan request: request [
 		  force: (request booleanArgumentNamed: 'force')
 		  work: [ (MCPChangeClassCommentCommand className: className classComment: (self classCommentIn: request)) execute ]
 		  summary: [ :updatedClass | String streamContents: [ :stream | stream << 'Set comment for class ' << className << '.' ] ]
-		  failureSummary: [ :error | self failureMessageForSetCommentOnClassNamed: className error: error ]
-]
-
-{ #category : 'private - errors' }
-MCPToolUpdateClass >> failureMessageForAddSlotNamed: slotName onClassNamed: className classSide: classSide error: anError [
-
-	^ String streamContents: [ :stream |
-			  stream << 'Failed to add ' << (self slotDescriptionForClassSide: classSide) << ' ' << slotName << ' to class ' << className
-			  << ': ' << (self normalizedCauseMessageForMutationError: anError) ]
-]
-
-{ #category : 'private - errors' }
-MCPToolUpdateClass >> failureMessageForMoveClassNamed: className packageName: packageName tag: tag error: anError [
-
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Unable to move class ';
-				  nextPutAll: className;
-				  nextPutAll: ' to package ';
-				  nextPutAll: packageName.
-			  tag ifNotNil: [
-					  stream
-						  nextPutAll: ' tag ';
-						  nextPutAll: tag ].
-			  stream
-				  nextPutAll: ': ';
-				  nextPutAll: (self normalizedCauseMessageForMutationError: anError) ]
-]
-
-{ #category : 'private - errors' }
-MCPToolUpdateClass >> failureMessageForMoveSlotNamed: slotName onClassNamed: className classSide: classSide operation: operation error: anError [
-
-	operation = 'pullUpSlot' ifTrue: [
-			^ String streamContents: [ :stream |
-					  stream << 'Failed to pull up ' << (self slotDescriptionForClassSide: classSide) << ' ' << slotName << ' to class '
-					  << className << ': ' << (self normalizedCauseMessageForMutationError: anError) ] ].
-	^ String streamContents: [ :stream |
-			  stream << 'Failed to push down ' << (self slotDescriptionForClassSide: classSide) << ' ' << slotName << ' from class '
-			  << className << ': ' << (self normalizedCauseMessageForMutationError: anError) ]
+		  failureSummary: [ :error | self failureMessage: 'Unable to set comment for class ' , className error: error ]
 ]
 
 { #category : 'private - errors' }
 MCPToolUpdateClass >> failureMessageForRemoveSlotNamed: slotName onClassNamed: className classSide: classSide error: anError [
 	"Before Pharo 12, removing an instance-side slot that methods use fails rather than warns, an RBRefactoringError whatever force says, and the refactoring's text names none of them: they are named as a warning names them."
 
-	| uses |
+	| phrase uses |
+	phrase := 'Failed to remove {1} {2} from class {3}' format: {
+			          (self slotDescriptionForClassSide: classSide).
+			          slotName.
+			          className }.
 	uses := (anError isKindOf: RBRefactoringError)
 		        ifTrue: [ self usesOfSlotNamed: slotName inClassNamed: className classSide: classSide ]
 		        ifFalse: [ #(  ) ].
-	^ String streamContents: [ :stream |
-			  stream << 'Failed to remove ' << (self slotDescriptionForClassSide: classSide) << ' ' << slotName << ' from class '
-			  << className << ': '.
-			  uses ifEmpty: [ stream << (self normalizedCauseMessageForMutationError: anError) ] ifNotEmpty: [
-					  uses do: [ :each | stream << each ] separatedBy: [ stream << '; ' ].
-					  stream << '. Change them first.' ] ]
-]
-
-{ #category : 'private - errors' }
-MCPToolUpdateClass >> failureMessageForRenameClassNamed: className to: newClassName error: anError [
-
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Unable to rename class ';
-				  nextPutAll: className;
-				  nextPutAll: ' to ';
-				  nextPutAll: newClassName;
-				  nextPutAll: ': ';
-				  nextPutAll: (self normalizedCauseMessageForMutationError: anError) ]
-]
-
-{ #category : 'private - errors' }
-MCPToolUpdateClass >> failureMessageForRenameSlotNamed: slotName to: newSlotName onClassNamed: className classSide: classSide error: anError [
-
-	^ String streamContents: [ :stream |
-			  stream << 'Failed to rename ' << (self slotDescriptionForClassSide: classSide) << ' ' << slotName << ' to ' << newSlotName
-			  << ' in class ' << className << ': ' << (self normalizedCauseMessageForMutationError: anError) ]
-]
-
-{ #category : 'private - errors' }
-MCPToolUpdateClass >> failureMessageForReparentClassNamed: className superclassName: superclassName error: anError [
-
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Unable to reparent class ';
-				  nextPutAll: className;
-				  nextPutAll: ' to superclass ';
-				  nextPutAll: superclassName;
-				  nextPutAll: ': ';
-				  nextPutAll: (self normalizedCauseMessageForMutationError: anError) ]
-]
-
-{ #category : 'private - errors' }
-MCPToolUpdateClass >> failureMessageForReplaceDefinitionOnClassNamed: className error: anError [
-
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Unable to replace slot definition for class ';
-				  nextPutAll: className;
-				  nextPutAll: ': ';
-				  nextPutAll: (self normalizedCauseMessageForMutationError: anError) ]
-]
-
-{ #category : 'private - errors' }
-MCPToolUpdateClass >> failureMessageForReplaceLayoutOnClassNamed: className error: anError [
-
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Unable to replace layout for class ';
-				  nextPutAll: className;
-				  nextPutAll: ': ';
-				  nextPutAll: (self normalizedCauseMessageForMutationError: anError) ]
-]
-
-{ #category : 'private - errors' }
-MCPToolUpdateClass >> failureMessageForReplaceSharedPoolsOnClassNamed: className error: anError [
-
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Unable to replace shared pools for class ';
-				  nextPutAll: className;
-				  nextPutAll: ': ';
-				  nextPutAll: (self normalizedCauseMessageForMutationError: anError) ]
-]
-
-{ #category : 'private - errors' }
-MCPToolUpdateClass >> failureMessageForReplaceSharedVariablesOnClassNamed: className error: anError [
-
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Unable to replace shared variables for class ';
-				  nextPutAll: className;
-				  nextPutAll: ': ';
-				  nextPutAll: (self normalizedCauseMessageForMutationError: anError) ]
-]
-
-{ #category : 'private - errors' }
-MCPToolUpdateClass >> failureMessageForReplaceTraitsOnClassNamed: className error: anError [
-
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Unable to replace traits for class ';
-				  nextPutAll: className;
-				  nextPutAll: ': ';
-				  nextPutAll: (self normalizedCauseMessageForMutationError: anError) ]
-]
-
-{ #category : 'private - errors' }
-MCPToolUpdateClass >> failureMessageForSetCommentOnClassNamed: className error: anError [
-
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Unable to set comment for class ';
-				  nextPutAll: className;
-				  nextPutAll: ': ';
-				  nextPutAll: (self normalizedCauseMessageForMutationError: anError) ]
+	uses ifEmpty: [ ^ self failureMessage: phrase error: anError ].
+	^ String streamContents: [ :stream | stream << phrase << ': ' << ('; ' join: uses) << '. Change them first.' ]
 ]
 
 { #category : 'private - warnings' }
@@ -709,9 +586,7 @@ MCPToolUpdateClass >> slotPlansIn: request side: classSide [
 		           | context |
 		           context := Dictionary new
 			                      at: #class put: (request stringArgumentNamed: 'name');
-			                      at: #side put: (classSide
-					                       ifTrue: [ 'class' ]
-					                       ifFalse: [ 'instance' ]);
+			                      at: #side put: (self sideNameFor: classSide);
 			                      at: #slot put: slotName;
 			                      yourself.
 		           newSlotName ifNotNil: [ context at: #newSlot put: newSlotName ].

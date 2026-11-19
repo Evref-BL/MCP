@@ -71,6 +71,19 @@ MCPTool >> copyLiteralFrom: code to: aStream [
 ]
 
 { #category : '*MCP-IDE' }
+MCPTool >> errorResultFor: anError unableTo: aPhrase details: someAssociations [
+	"Unable to get class Foo (Error): the message, with what the call named in the details. A command error says it in its own words."
+
+	^ self errorResultFor: anError otherwise: [ :toolError |
+			  self
+				  errorResultText: (String streamContents: [ :stream |
+						   stream << 'Unable to ' << aPhrase << ' (' << toolError class name << '): ' << toolError messageText ])
+				  details: ({
+						   (#errorClass -> toolError class name).
+						   (#message -> toolError messageText) } , someAssociations) asDictionary ]
+]
+
+{ #category : '*MCP-IDE' }
 MCPTool >> flaggedCodeFor: anInterval in: aString [
 	"The code an interval flags, from its first character to its last, as compactedCode: reads it. The formatter spreads a long expression over several lines, so the line the code starts on can hold only the receiver of what is flagged."
 
@@ -191,6 +204,14 @@ MCPTool >> sendAt: anInterval in: aString ifFound: foundBlock ifNone: noneBlock 
 ]
 
 { #category : '*MCP-IDE' }
+MCPTool >> sideNameFor: isClassSide [
+
+	^ isClassSide
+		  ifTrue: [ 'class' ]
+		  ifFalse: [ 'instance' ]
+]
+
+{ #category : '*MCP-IDE' }
 MCPTool >> targetSideSchemaPropertyDescribedAs: aDescription [
 	"Which side the thing this tool was given is on. A single target is on one side, so there is no 'both' here; scope.side is where a sweep says which sides to cover."
 
@@ -199,6 +220,15 @@ MCPTool >> targetSideSchemaPropertyDescribedAs: aDescription [
 		  description: aDescription
 		  values: #( 'instance' 'class' )
 		  default: 'instance'
+]
+
+{ #category : '*MCP-IDE' }
+MCPTool >> textWithoutFinalPeriod: aString [
+	"One period, so that 'Got 1 instead of 2.' reads on as a clause of a longer sentence, and an ellipsis keeps two."
+
+	^ (aString endsWith: '.')
+		  ifTrue: [ aString allButLast ]
+		  ifFalse: [ aString ]
 ]
 
 { #category : '*MCP-IDE' }

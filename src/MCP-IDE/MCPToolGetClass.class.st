@@ -114,27 +114,15 @@ MCPToolGetClass >> description [
 	^ 'Get classes or traits by name as their Tonel files, a page at a time. Offset 0 answers the comment and definition (superclass, slots, traits, variables, pools, package), later offsets the methods of both sides. class_search lists superclasses and subclasses.'
 ]
 
-{ #category : 'private' }
-MCPToolGetClass >> errorResultForError: anError className: className [
-
-	^ anError
-		  mcpCommandErrorDo: [ :commandError | self errorResultText: commandError messageText details: commandError structuredDetails ]
-		  otherwise: [ :toolError |
-				  self errorResultText: (self failureMessageForClassName: className error: toolError) details: {
-						  (#errorClass -> toolError class name).
-						  (#message -> toolError messageText).
-						  (#class -> className) } asDictionary ]
-]
-
 { #category : 'executing' }
 MCPToolGetClass >> executeWithRequest: request [
 	"An error names the class as the name argument gives it, the same name before and after it is checked."
 
 	^ self executeBatchedRequest: request do: [ :targetRequest |
-			  self
-				  executeRequest: targetRequest
-				  do: [ self getClassWith: targetRequest ]
-				  onError: [ :error | self errorResultForError: error className: ((targetRequest stringArgumentNamed: 'name') ifNil: [ '' ]) ] ]
+			  self executeRequest: targetRequest do: [ self getClassWith: targetRequest ] onError: [ :error |
+					  | className |
+					  className := (targetRequest stringArgumentNamed: 'name') ifNil: [ '' ].
+					  self errorResultFor: error unableTo: 'get class ' , className details: { (#class -> className) } ] ]
 ]
 
 { #category : 'private - source' }
@@ -164,19 +152,6 @@ MCPToolGetClass >> extensionSummaryOn: aStream of: aClass methodCount: methodCou
 		nextPutAll: (methodCount = 1
 				 ifTrue: [ 'it.' ]
 				 ifFalse: [ 'them.' ])
-]
-
-{ #category : 'private' }
-MCPToolGetClass >> failureMessageForClassName: className error: anError [
-
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Unable to get class ';
-				  nextPutAll: className;
-				  nextPutAll: ' (';
-				  nextPutAll: anError class name;
-				  nextPutAll: '): ';
-				  nextPutAll: anError messageText ]
 ]
 
 { #category : 'private - execution' }

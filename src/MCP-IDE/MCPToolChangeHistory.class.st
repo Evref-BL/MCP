@@ -70,13 +70,10 @@ MCPToolChangeHistory >> directoryPathSchemaProperty [
 MCPToolChangeHistory >> executeWithRequest: request [
 	"Every history tool answers the data it reads, under a sentence that says what it found."
 
-	^ self
-		  executeRequest: request
-		  do: [
-				  | data |
-				  data := self dataFor: request.
-				  self successResultText: (self successSummaryForData: data) data: data ]
-		  onError: [ :error | self errorResultFor: error ]
+	^ self executeRequest: request do: [
+			  | data |
+			  data := self dataFor: request.
+			  self successResultText: (self successSummaryForData: data) data: data ]
 ]
 
 { #category : 'private - history' }

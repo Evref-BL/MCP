@@ -17,10 +17,26 @@ MCPUserInterfaceToolTest >> morphOfExtent: anExtent [
 ]
 
 { #category : 'private' }
-MCPUserInterfaceToolTest >> readScreenDataFor: aMorph depth: anInteger [
-	"What screen_read answers about aMorph, read anInteger levels deep."
+MCPUserInterfaceToolTest >> readScreenContentFor: aMorph depth: anInteger [
+	"What screen_read answers about aMorph, read anInteger levels deep: its summary and its data."
 
-	^ (MCPToolReadScreen new resultForReadOf: aMorph target: 'world' depth: anInteger) structuredContent at: #data
+	^ (MCPToolReadScreen new resultForReadOf: aMorph target: 'world' depth: anInteger) structuredContent
+]
+
+{ #category : 'private' }
+MCPUserInterfaceToolTest >> readScreenDataFor: aMorph depth: anInteger [
+
+	^ (self readScreenContentFor: aMorph depth: anInteger) at: #data
+]
+
+{ #category : 'tests' }
+MCPUserInterfaceToolTest >> testAMessageNotUnderstoodInAScreenToolSuggestsSelectors [
+	"A slip in a screen tool's own code is answered as in any other tool, with the selectors the mistyped one resembles."
+
+	| error tool |
+	tool := MCPToolReadScreenMistyping new.
+	error := (tool executeWithRequest: (tool requestFromToolCallArguments: Dictionary new)) structuredContent at: #error.
+	self assert: ((error at: #suggestedSelectors) includes: 'addMorph:')
 ]
 
 { #category : 'tests' }
@@ -62,12 +78,13 @@ MCPUserInterfaceToolTest >> testScreenReadNamesAPlainWindow [
 { #category : 'tests' }
 MCPUserInterfaceToolTest >> testScreenReadStopsAtTheRequestedDepth [
 
-	| data parent |
+	| content parent |
 	parent := self morphOfExtent: 100 @ 50.
 	parent addMorph: (self morphOfExtent: 10 @ 10).
-	data := self readScreenDataFor: parent depth: 0.
-	self deny: ((data at: #tree) includesKey: #children).
-	self assert: (data at: #nodes) equals: 1
+	content := self readScreenContentFor: parent depth: 0.
+	self deny: (((content at: #data) at: #tree) includesKey: #children).
+	self assert: ((content at: #data) at: #nodes) equals: 1.
+	self assert: (content at: #summary) equals: 'Read world, 1 node.'
 ]
 
 { #category : 'tests' }

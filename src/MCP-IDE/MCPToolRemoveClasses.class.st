@@ -77,18 +77,6 @@ MCPToolRemoveClasses >> description [
 	^ 'Remove classes in one change. Warnings, such as remaining references, stop it unless force is true.'
 ]
 
-{ #category : 'private' }
-MCPToolRemoveClasses >> errorResultForError: anError classNames: classNames [
-
-	^ anError
-		  mcpCommandErrorDo: [ :commandError | self errorResultText: commandError messageText details: commandError structuredDetails ]
-		  otherwise: [ :toolError |
-				  self errorResultText: (self failureMessageForClassNames: classNames error: toolError) details: {
-						  (#errorClass -> toolError class name).
-						  (#message -> toolError messageText).
-						  (#classes -> classNames asArray) } asDictionary ]
-]
-
 { #category : 'executing' }
 MCPToolRemoveClasses >> executeWithRequest: request [
 	"The names are checked, then the classes removed. An error echoes the names each once, even one the check raises: the only check that raises no command error fails when there is no name at all."
@@ -98,20 +86,13 @@ MCPToolRemoveClasses >> executeWithRequest: request [
 		  do: [
 				  self checkArguments: request.
 				  self removeClassesWith: request ]
-		  onError: [ :error | self errorResultForError: error classNames: (self classNamesFrom: request) ]
-]
-
-{ #category : 'private' }
-MCPToolRemoveClasses >> failureMessageForClassNames: classNames error: anError [
-
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Unable to remove classes: ';
-				  nextPutAll: (', ' join: classNames);
-				  nextPutAll: ' (';
-				  nextPutAll: anError class name;
-				  nextPutAll: '): ';
-				  nextPutAll: anError messageText ]
+		  onError: [ :error |
+				  | classNames |
+				  classNames := self classNamesFrom: request.
+				  self
+					  errorResultFor: error
+					  unableTo: 'remove classes: ' , (', ' join: classNames)
+					  details: { (#classes -> classNames asArray) } ]
 ]
 
 { #category : 'private - results' }
@@ -148,7 +129,7 @@ MCPToolRemoveClasses >> sentenceForMethodNames: someMethodNames removedWithClass
 			  stream nextPutAll: (aCount = 1
 					   ifTrue: [ ' removed with it' ]
 					   ifFalse: [ ' removed with them' ]).
-			  (someMethodNames size between: 2 and: 10) ifTrue: [ stream << ': ' << (MCPScopeQuery listPhraseFor: someMethodNames) ].
+			  (someMethodNames size between: 2 and: 10) ifTrue: [ stream << ': ' << (MCPCommandError joinedNames: someMethodNames) ].
 			  stream nextPut: $. ]
 ]
 
@@ -176,7 +157,7 @@ MCPToolRemoveClasses >> successSummaryForClassNames: classNames removal: aRemova
 			  aRemoval reparentedSubclassNamesBySuperclassName keysAndValuesDo: [ :superclassName :subclassNames |
 					  stream
 						  space;
-						  nextPutAll: (MCPScopeQuery listPhraseFor: subclassNames);
+						  nextPutAll: (MCPCommandError joinedNames: subclassNames);
 						  nextPutAll: (subclassNames size = 1
 								   ifTrue: [ ' now inherits from ' ]
 								   ifFalse: [ ' now inherit from ' ]);

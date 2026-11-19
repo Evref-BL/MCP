@@ -21,6 +21,18 @@ MCPToolMutation >> actionErrorCodePrefixFor: action [
 	^ action first asUppercase asString , action allButFirst
 ]
 
+{ #category : 'private - errors' }
+MCPToolMutation >> addAction: action to: details [
+	"compile, create and update are actions of their own; any other action is a kind of update."
+
+	(#( 'compile' 'create' 'update' ) includes: action)
+		ifTrue: [ details at: #action put: action ]
+		ifFalse: [
+				details
+					at: #action put: 'update';
+					at: #updateAction put: action ]
+]
+
 { #category : 'private - refactoring' }
 MCPToolMutation >> addRefactoringScopeContextFromSpec: scopeSpec toRequestedContext: requestedContext [
 	"Each scope entry under the key the schema gives it."
@@ -115,11 +127,7 @@ MCPToolMutation >> errorResultForCommandError: anError action: action requestedC
 	details := anError structuredDetails copy.
 	requestedContext ifNotNil: [
 		requestedContext keysAndValuesDo: [ :key :value | value ifNotNil: [ details at: key ifAbsentPut: [ value ] ] ] ].
-	(#( 'compile' 'create' 'update' ) includes: action)
-		ifTrue: [ details at: #action put: action ]
-		ifFalse: [
-				details at: #action put: 'update'.
-				details at: #updateAction put: action ].
+	self addAction: action to: details.
 	^ self errorResultText: anError messageText details: details
 ]
 
@@ -211,6 +219,13 @@ MCPToolMutation >> failureErrorCodeFor: anError action: action [
 	cause mcpNoticeNode ifNotNil: [ ^ prefix , 'UndeclaredVariable' ].
 	(self readOnlyAssignmentNodesFrom: cause) ifNotEmpty: [ ^ prefix , 'ReadOnlyAssignment' ].
 	^ prefix , cause mcpMutationFailureErrorCodeSuffix
+]
+
+{ #category : 'private - errors' }
+MCPToolMutation >> failureMessage: aPhrase error: anError [
+	"Unable to rename class Foo to Bar: and what caused the failure."
+
+	^ String streamContents: [ :stream | stream << aPhrase << ': ' << (self normalizedCauseMessageForMutationError: anError) ]
 ]
 
 { #category : 'private - schema' }
@@ -462,7 +477,7 @@ MCPToolMutation >> refactoringWarningSummaryFor: aWarning action: action request
 			            impactMessages isEmpty ifFalse: [
 					            stream nextPutAll: ': '.
 					            impactMessages
-						            do: [ :each | stream nextPutAll: (self textWithoutFinalPeriod: each) ]
+						            do: [ :each | stream nextPutAll: (self textWithoutFinalPeriod: each trimRight) ]
 						            separatedBy: [ stream nextPutAll: '; ' ] ] ].
 	^ String streamContents: [ :stream |
 			  stream nextPutAll: sentence.
@@ -519,17 +534,6 @@ MCPToolMutation >> targetDescriptionForRequestedContext: requestedContext [
 					  stream
 						  nextPutAll: ' slot ';
 						  nextPutAll: slotName ] ]
-]
-
-{ #category : 'private - warnings' }
-MCPToolMutation >> textWithoutFinalPeriod: aString [
-	"An impact message as a clause of a longer sentence."
-
-	| trimmed |
-	trimmed := aString trimRight.
-	^ (trimmed endsWith: '.')
-		  ifTrue: [ trimmed allButLast ]
-		  ifFalse: [ trimmed ]
 ]
 
 { #category : 'metadata' }

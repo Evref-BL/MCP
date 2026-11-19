@@ -1,14 +1,14 @@
 "
 Abstract base for MCP tools exposed by the server.
 
-A tool owns its public MCP metadata: name, title, description, icons, annotations, input schema, and output schema. The server uses that metadata when advertising tools and when validating an incoming tool call.
+A tool owns its public MCP metadata: name, title, description, icons, annotations, and input schema. The server uses that metadata when advertising tools and when validating an incoming tool call.
 
 The normal execution flow is:
 1. The MCP server receives a JSON-RPC tool call and dispatches it to the matching MCPTool instance.
 2. MCPToolRequest validates the raw arguments against the tool input schema. This is the transport/schema boundary.
-3. The tool's executeWithRequest: reads the arguments from that MCPToolRequest, usually inside executeRequest:do:onError: or, for batched calls, executeBatchedRequest:do:. argumentOrDefaultNamed: and the typed accessors built on it answer the schema's default.
+3. The tool's executeWithRequest: reads the arguments from that MCPToolRequest, usually inside executeRequest:do: (executeRequest:do:onError: when it answers an error its own way) or, for batched calls, executeBatchedRequest:do:. argumentOrDefaultNamed:, stringArgumentOrDefaultNamed: and the typed accessors built on them answer the schema's default.
 4. The tool does the work itself, or asks an operation object when the work is long, has tests of its own, or several tools use it. An operation takes plain arguments and answers image objects or a report, never the request or the answer's text.
-5. The tool describes what came back with the shared describers (the *Info classes) and writes the summary and the structured output its output schema declares.
+5. The tool describes what came back with the shared describers (the *Info classes) and writes the summary and the structured data it answers.
 6. The server serializes the tool result into the HTTP/JSON-RPC response.
 
 Each argument is declared once, in the input schema. Do not parse the request into an object of its own, and do not pass the request or the tool to an operation.
@@ -500,16 +500,22 @@ MCPTool >> errorDetailsFor: anError [
 
 { #category : 'error handling' }
 MCPTool >> errorResultFor: anError [
-	"A command error already says what went wrong and carries its own details; only an unexpected
-	failure needs the class, the signaler and the stack."
+	"Only an unexpected failure needs the class, the signaler and the stack."
+
+	^ self errorResultFor: anError otherwise: [ :toolError |
+			  | details |
+			  details := self errorDetailsFor: toolError.
+			  toolError mcpAddToolErrorDetailsTo: details.
+			  self errorResultText: (self failureMessageFor: toolError) details: details ]
+]
+
+{ #category : 'error handling' }
+MCPTool >> errorResultFor: anError otherwise: aBlock [
+	"A command error already says what went wrong and carries its own details; aBlock answers any other error."
 
 	^ anError
 		  mcpCommandErrorDo: [ :commandError | self errorResultText: commandError messageText details: commandError structuredDetails ]
-		  otherwise: [ :toolError |
-				  | details |
-				  details := self errorDetailsFor: toolError.
-				  toolError mcpAddToolErrorDetailsTo: details.
-				  self errorResultText: (self failureMessageFor: toolError) details: details ]
+		  otherwise: aBlock
 ]
 
 { #category : 'error handling' }
@@ -623,6 +629,13 @@ MCPTool >> executeBatchedRequest: aRequest do: executionBlock [
 			^ executionBlock value: aRequest ].
 	targets size = 1 ifTrue: [ ^ executionBlock value: (aRequest withArgumentNamed: self batchArgumentName setTo: targets first) ].
 	^ self batchResultForTargets: targets request: aRequest do: executionBlock
+]
+
+{ #category : 'private - execution' }
+MCPTool >> executeRequest: request do: executionBlock [
+	"Run the call inside one exception boundary, where an error answers as errorResultFor: words it."
+
+	^ self executeRequest: request do: executionBlock onError: [ :error | self errorResultFor: error ]
 ]
 
 { #category : 'private - execution' }

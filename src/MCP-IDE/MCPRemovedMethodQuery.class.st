@@ -72,22 +72,10 @@ MCPRemovedMethodQuery >> hintSelecting: aBlock [
 ]
 
 { #category : 'private - printing' }
-MCPRemovedMethodQuery >> names: references on: aStream [
-	"A, A and B, A, B and C, or A, B, C and 4 more."
-
-	| shown |
-	shown := references size > 3
-		         ifTrue: [ (references first: 3) , { ((references size - 3) printString , ' more') } ]
-		         ifFalse: [ references ].
-	shown size = 1 ifTrue: [ ^ aStream << shown first ].
-	aStream << (', ' join: shown allButLast) << ' and ' << shown last
-]
-
-{ #category : 'private - printing' }
 MCPRemovedMethodQuery >> names: references removedInThisSession: inThisSession on: aStream [
 	"A was removed, or A and B were removed, in this session or before the image was last saved."
 
-	self names: references on: aStream.
+	aStream << (MCPCommandError joinedNames: references upTo: 3).
 	aStream << (references size = 1
 		 ifTrue: [ ' was' ]
 		 ifFalse: [ ' were' ]) << ' removed ' << (self whenRemoved: inThisSession)

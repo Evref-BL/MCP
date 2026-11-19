@@ -104,15 +104,6 @@ MCPToolAdoptRepositoryHead >> packageNamesMarkedIn: beforeInfo andNotIn: afterIn
 	^ (beforeInfo modifiedPackageNames reject: [ :each | stillMarked includes: each ]) asArray
 ]
 
-{ #category : 'private - errors' }
-MCPToolAdoptRepositoryHead >> requestedContextFor: request [
-
-	| context |
-	context := (super requestedContextFor: request) copy.
-	(self expectedBranchNameIn: request) ifNotEmpty: [ :branchName | context at: #branch put: branchName ].
-	^ context
-]
-
 { #category : 'private - results' }
 MCPToolAdoptRepositoryHead >> summaryForAdopting: aCommitId in: anInfo moved: didAdopt unmarking: packageNames [
 

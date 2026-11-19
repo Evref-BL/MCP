@@ -78,11 +78,9 @@ MCPToolListMethodVersions >> description [
 MCPToolListMethodVersions >> executeWithRequest: request [
 	"Each selector's versions are listed on their own."
 
-	^ self executeBatchedRequest: request do: [ :targetRequest |
-		  self
-			  executeRequest: targetRequest
-			  do: [ self listVersionsFor: targetRequest ]
-			  onError: [ :error | self errorResultFor: error ] ]
+	^ self
+		  executeBatchedRequest: request
+		  do: [ :targetRequest | self executeRequest: targetRequest do: [ self listVersionsFor: targetRequest ] ]
 ]
 
 { #category : 'private - results' }

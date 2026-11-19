@@ -29,19 +29,6 @@ MCPScopeQuery class >> distinctNamesAmong: someNames [
 ]
 
 { #category : 'phrasing' }
-MCPScopeQuery class >> listPhraseFor: someNames [
-	"A, A and B, A, B and C."
-
-	^ String streamContents: [ :stream |
-			  someNames withIndexDo: [ :each :index |
-					  index > 1 ifTrue: [
-							  stream nextPutAll: (index = someNames size
-									   ifTrue: [ ' and ' ]
-									   ifFalse: [ ', ' ]) ].
-					  stream nextPutAll: each asString ] ]
-]
-
-{ #category : 'phrasing' }
 MCPScopeQuery class >> phraseForNames: someNames one: oneLead several: severalLead many: aCountTemplate [
 	"How a scope names one kind of entry: one by its name, two or three listed, and from four on by their count, which aCountTemplate words with {1}, since a longer list only reads the request back. Nil for no names."
 
@@ -56,7 +43,7 @@ MCPScopeQuery class >> phraseForNames: someNames one: oneLead several: severalLe
 				  ifFalse: [
 						  stream
 							  nextPutAll: severalLead;
-							  nextPutAll: (self listPhraseFor: someNames) ] ]
+							  nextPutAll: (MCPCommandError joinedNames: someNames) ] ]
 ]
 
 { #category : 'private - resolution' }

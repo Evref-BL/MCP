@@ -112,15 +112,13 @@ MCPToolSearch >> errorClassNameForQueryError: anError [
 MCPToolSearch >> errorResultForQueryError: anError request: request [
 	"A command error says what went wrong in its own words. Any other failure is told with what was searched and where."
 
-	^ anError
-		  mcpCommandErrorDo: [ :commandError | self errorResultText: commandError messageText details: commandError structuredDetails ]
-		  otherwise: [ :queryError |
-				  | details |
-				  details := {
-					             (#errorClass -> (self errorClassNameForQueryError: queryError)).
-					             (#message -> queryError messageText) } asDictionary.
-				  queryError mcpAddToolErrorDetailsTo: details.
-				  self errorResultText: (self failureMessageForRequest: request error: queryError) details: details ]
+	^ self errorResultFor: anError otherwise: [ :queryError |
+			  | details |
+			  details := {
+				             (#errorClass -> (self errorClassNameForQueryError: queryError)).
+				             (#message -> queryError messageText) } asDictionary.
+			  queryError mcpAddToolErrorDetailsTo: details.
+			  self errorResultText: (self failureMessageForRequest: request error: queryError) details: details ]
 ]
 
 { #category : 'executing' }

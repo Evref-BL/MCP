@@ -17,6 +17,13 @@ MCPToolRepositoryOperation class >> groupName [
 	^ self repositoriesGroupName
 ]
 
+{ #category : 'private - errors' }
+MCPToolRepositoryOperation >> addAction: action to: details [
+	"Each repository tool's action is its own."
+
+	details at: #action put: action
+]
+
 { #category : 'metadata' }
 MCPToolRepositoryOperation >> additionalKeywords [
 
@@ -69,17 +76,6 @@ MCPToolRepositoryOperation >> dataKeepingNonEmpty: associations [
 	data := Dictionary new.
 	associations do: [ :each | each value ifNotEmpty: [ :value | data at: each key put: value ] ].
 	^ data
-]
-
-{ #category : 'private - errors' }
-MCPToolRepositoryOperation >> errorResultForCommandError: anError action: action requestedContext: requestedContext [
-
-	| details |
-	details := anError structuredDetails copy.
-	requestedContext ifNotNil: [
-		requestedContext keysAndValuesDo: [ :key :value | value ifNotNil: [ details at: key ifAbsentPut: [ value ] ] ] ].
-	details at: #action put: action.
-	^ self errorResultText: anError messageText details: details
 ]
 
 { #category : 'private - execution' }
@@ -221,9 +217,12 @@ MCPToolRepositoryOperation >> repositoryReferenceInputProperties [
 
 { #category : 'private - errors' }
 MCPToolRepositoryOperation >> requestedContextFor: request [
-	"The repository the call names."
+	"The repository the call names, and the branch it expects the repository on when it names one."
 
-	^ (self repositoryReferenceFor: request) requestedContext
+	| context |
+	context := (self repositoryReferenceFor: request) requestedContext.
+	(self expectedBranchNameIn: request) ifNotEmpty: [ :branchName | context at: #branch put: branchName ].
+	^ context
 ]
 
 { #category : 'private - results' }

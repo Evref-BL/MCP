@@ -164,14 +164,6 @@ MCPToolMethodMutation >> classNameAndSideOf: request do: aBlock [
 ]
 
 { #category : 'private' }
-MCPToolMethodMutation >> classReferenceNameFor: className classSide: classSide [
-
-	^ classSide
-		  ifTrue: [ className , ' class' ]
-		  ifFalse: [ className ]
-]
-
-{ #category : 'private' }
 MCPToolMethodMutation >> classSideNoteFor: aSelector of: aClass [
 	"When an instance of aClass, sent aSelector by a method of its own, does not understand it and the class side has a method of its own for it, as new: that the class has it, and how to reach it. The class side also understands all that Class, ClassDescription and Behavior give every class, as name, comment or category. An instance-side method that sends one of those to self lacks an accessor, and self class name would quietly answer the name of the class. So only a method defined on a class side counts, of aClass or of a superclass, and the instance creation methods of Behavior."
 
@@ -373,75 +365,6 @@ MCPToolMethodMutation >> distinctCritiqueData: critiqueData [
 			        distinct anySatisfy: [ :other |
 				        (self critiqueData: each liesStrictlyInside: other) or: [ self critiqueData: each restates: other ] ] ].
 	^ kept asArray sort: [ :left :right | self critiqueData: left precedes: right ]
-]
-
-{ #category : 'private' }
-MCPToolMethodMutation >> failureMessageForArgumentUpdateAction: updateAction classNamed: className classSide: classSide selector: oldSelector newSelector: newSelector error: anError [
-
-	| targetName verb |
-	targetName := self classReferenceNameFor: className classSide: classSide.
-	verb := updateAction = 'addArguments'
-		        ifTrue: [ 'add arguments to' ]
-		        ifFalse: [ 'remove arguments from' ].
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Unable to ';
-				  nextPutAll: verb;
-				  nextPutAll: ' method ';
-				  nextPutAll: targetName;
-				  nextPutAll: '>>';
-				  nextPutAll: oldSelector;
-				  nextPutAll: ' as ';
-				  nextPutAll: newSelector;
-				  nextPutAll: ': ';
-				  nextPutAll: (self normalizedCauseMessageForMutationError: anError) ]
-]
-
-{ #category : 'private' }
-MCPToolMethodMutation >> failureMessageForChangeProtocolClassNamed: className classSide: classSide selector: selector protocol: protocol error: anError [
-
-	| targetName |
-	targetName := self classReferenceNameFor: className classSide: classSide.
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Unable to change protocol for ';
-				  nextPutAll: targetName;
-				  nextPutAll: '>>';
-				  nextPutAll: selector;
-				  nextPutAll: ' to ';
-				  nextPutAll: protocol;
-				  nextPutAll: ': ';
-				  nextPutAll: (self normalizedCauseMessageForMutationError: anError) ]
-]
-
-{ #category : 'private' }
-MCPToolMethodMutation >> failureMessageForCompileClassNamed: className classSide: classSide error: anError [
-
-	| targetName |
-	targetName := self classReferenceNameFor: className classSide: classSide.
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Unable to compile method on ';
-				  nextPutAll: targetName;
-				  nextPutAll: ': ';
-				  nextPutAll: (self normalizedCauseMessageForMutationError: anError) ]
-]
-
-{ #category : 'private' }
-MCPToolMethodMutation >> failureMessageForRenameClassNamed: className classSide: classSide selector: oldSelector newSelector: newSelector error: anError [
-
-	| targetName |
-	targetName := self classReferenceNameFor: className classSide: classSide.
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Unable to rename method ';
-				  nextPutAll: targetName;
-				  nextPutAll: '>>';
-				  nextPutAll: oldSelector;
-				  nextPutAll: ' to ';
-				  nextPutAll: newSelector;
-				  nextPutAll: ': ';
-				  nextPutAll: (self normalizedCauseMessageForMutationError: anError) ]
 ]
 
 { #category : 'private - schema' }

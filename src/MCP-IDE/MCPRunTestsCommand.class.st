@@ -91,15 +91,6 @@ MCPRunTestsCommand >> isTestSelector: aSelector in: aTestClass [
 		  (self testCasesFromSuite: aTestClass suite) anySatisfy: [ :each | each selector == aSelector ] ]
 ]
 
-{ #category : 'private - validation' }
-MCPRunTestsCommand >> listPhraseForFirstFiveOf: someNames [
-	"someNames as a list phrase, the first five then how many more: A, B, C, D, E and 3 more."
-
-	^ MCPScopeQuery listPhraseFor: (someNames size > 5
-			   ifTrue: [ (someNames first: 5) copyWith: (someNames size - 5) printString , ' more' ]
-			   ifFalse: [ someNames ])
-]
-
 { #category : 'private - timeout' }
 MCPRunTestsCommand >> locationOf: aContext in: aTestCase [
 	"Where the test was running when the timeout fell, unless that was the test method."
@@ -444,7 +435,7 @@ MCPRunTestsCommand >> traitMethodAdviceOn: aStream for: aSelection in: someTestC
 		ifFalse: [
 				aStream
 					nextPutAll: 'Only ';
-					nextPutAll: (self listPhraseForFirstFiveOf: names);
+					nextPutAll: (MCPCommandError joinedNames: names upTo: 5);
 					nextPutAll: (names size = 1
 							 ifTrue: [ ' runs that method as a test: name ' ]
 							 ifFalse: [ ' run that method as a test: name it in one of them instead, as ' ]) ].
@@ -468,7 +459,7 @@ MCPRunTestsCommand >> traitTestClassesOn: aStream for: aTrait selection: aSelect
 	names := users collect: [ :each | each name asString ].
 	aStream
 		nextPutAll: ' is a trait, and its tests run in the test classes that use it: ';
-		nextPutAll: (self listPhraseForFirstFiveOf: names);
+		nextPutAll: (MCPCommandError joinedNames: names upTo: 5);
 		nextPutAll: '. '.
 	aSelection hasTestMethod ifTrue: [ ^ self traitMethodAdviceOn: aStream for: aSelection in: users ].
 	names size = 1 ifFalse: [ ^ aStream nextPutAll: 'Name one of them instead.' ].

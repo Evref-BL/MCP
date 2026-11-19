@@ -64,7 +64,7 @@ MCPToolCommitRepository >> mutateWith: request [
 MCPToolCommitRepository >> requestedContextFor: request [
 
 	| context |
-	context := (super requestedContextFor: request) copy.
+	context := super requestedContextFor: request.
 	context at: #message put: (self messageIn: request).
 	^ context
 ]

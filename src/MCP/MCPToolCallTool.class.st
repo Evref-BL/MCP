@@ -53,13 +53,10 @@ MCPToolCallTool >> description [
 MCPToolCallTool >> executeWithRequest: request [
 	"The server dispatches a tool_call itself, so a call that reaches the tool did not come through one."
 
-	^ self
-		  executeRequest: request
-		  do: [
-				  self
-					  errorResultText: 'tool_call requires MCP server call context.'
-					  details: { (#name -> (request stringArgumentNamed: 'name')) } asDictionary ]
-		  onError: [ :error | self errorResultFor: error ]
+	^ self executeRequest: request do: [
+			  self
+				  errorResultText: 'tool_call requires MCP server call context.'
+				  details: { (#name -> (request stringArgumentNamed: 'name')) } asDictionary ]
 ]
 
 { #category : 'metadata' }

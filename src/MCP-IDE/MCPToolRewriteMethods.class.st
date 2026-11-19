@@ -60,18 +60,10 @@ MCPToolRewriteMethods >> description [
 	^ 'Preview or apply Smalltalk AST pattern rewrites within scoped methods. Write the patterns, or name rewrite rule classes whose patterns to apply. Smalltalk AST pattern syntax, not regex.'
 ]
 
-{ #category : 'error handling' }
-MCPToolRewriteMethods >> errorResultForRewriteError: anError [
-
-	^ anError
-		  mcpCommandErrorDo: [ :commandError | self errorResultText: commandError messageText details: commandError structuredDetails ]
-		  otherwise: [ :toolError | self errorResultFor: toolError ]
-]
-
 { #category : 'executing' }
 MCPToolRewriteMethods >> executeWithRequest: request [
 
-	^ self executeRequest: request do: [ self rewriteWith: request ] onError: [ :error | self errorResultForRewriteError: error ]
+	^ self executeRequest: request do: [ self rewriteWith: request ]
 ]
 
 { #category : 'private - results' }
@@ -215,9 +207,7 @@ MCPToolRewriteMethods >> successSummaryForChangeCount: count applied: apply scop
 				  nextPutAll: (apply
 						   ifTrue: [ 'Applied ' ]
 						   ifFalse: [ 'Previewed ' ]);
-				  print: count;
-				  nextPutAll: ' method rewrite change'.
-			  count = 1 ifFalse: [ stream nextPut: $s ].
+				  nextPutAll: (self textForCount: count noun: 'method rewrite change').
 			  scopePhrase ifNotNil: [
 					  stream
 						  nextPutAll: ' in ';

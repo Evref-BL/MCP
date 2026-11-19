@@ -66,10 +66,9 @@ MCPToolUpdateMethod >> changeProtocolOf: request [
 		  failureSummary: [ :error |
 				  self classNameAndSideOf: request do: [ :className :classSide :sideGiven |
 						  self
-							  failureMessageForChangeProtocolClassNamed: className
-							  classSide: classSide
-							  selector: selector
-							  protocol: (request stringArgumentNamed: 'protocol')
+							  failureMessage: ('Unable to change protocol for {1} to {2}' format: {
+										   (self methodReferenceForClassName: className selector: selector isClassSide: classSide).
+										   (request stringArgumentNamed: 'protocol') })
 							  error: error ] ]
 ]
 
@@ -132,23 +131,19 @@ MCPToolUpdateMethod >> contextValueNamed: anArgumentName in: request permutation
 { #category : 'private - errors' }
 MCPToolUpdateMethod >> failureMessageForSelectorChange: action of: request error: anError [
 
+	| template |
+	template := action = 'rename'
+		            ifTrue: [ 'Unable to rename method {1} to {2}' ]
+		            ifFalse: [
+				            action = 'addArguments'
+					            ifTrue: [ 'Unable to add arguments to method {1} as {2}' ]
+					            ifFalse: [ 'Unable to remove arguments from method {1} as {2}' ] ].
 	^ self classNameAndSideOf: request do: [ :className :classSide :sideGiven |
-			  action = 'rename'
-				  ifTrue: [
-						  self
-							  failureMessageForRenameClassNamed: className
-							  classSide: classSide
-							  selector: (request stringArgumentNamed: 'selector')
-							  newSelector: (request stringArgumentNamed: 'newSelector')
-							  error: anError ]
-				  ifFalse: [
-						  self
-							  failureMessageForArgumentUpdateAction: action
-							  classNamed: className
-							  classSide: classSide
-							  selector: (request stringArgumentNamed: 'selector')
-							  newSelector: (request stringArgumentNamed: 'newSelector')
-							  error: anError ] ]
+			  self
+				  failureMessage: (template format: {
+							   (self methodReferenceForClassName: className selector: (request stringArgumentNamed: 'selector') isClassSide: classSide).
+							   (request stringArgumentNamed: 'newSelector') })
+				  error: anError ]
 ]
 
 { #category : 'private - results' }

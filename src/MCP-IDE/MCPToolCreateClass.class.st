@@ -102,21 +102,6 @@ MCPToolCreateClass >> defaultExposure [
 	^ 'static'
 ]
 
-{ #category : 'private - errors' }
-MCPToolCreateClass >> failureMessageForCreateClassNamed: className superclassName: superclassName packageName: packageName error: anError [
-
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Unable to create class ';
-				  nextPutAll: className;
-				  nextPutAll: ' < ';
-				  nextPutAll: superclassName;
-				  nextPutAll: ' in package ';
-				  nextPutAll: packageName;
-				  nextPutAll: ': ';
-				  nextPutAll: (self normalizedCauseMessageForMutationError: anError) ]
-]
-
 { #category : 'private - mutation' }
 MCPToolCreateClass >> mutateWith: request [
 	"The class is made, then given its comment. A failure in either is reported as a failure to create the class. A class that exists is refused with the class_update call that gives it what this call asks for."
@@ -148,9 +133,10 @@ MCPToolCreateClass >> mutateWith: request [
 			  self successResultText: (self createdSummaryFor: createdClass from: request) data: Dictionary new warnings: warningMessages ]
 		  failureSummary: [ :error |
 				  self
-					  failureMessageForCreateClassNamed: className
-					  superclassName: superclassName
-					  packageName: packageName
+					  failureMessage: ('Unable to create class {1} < {2} in package {3}' format: {
+								   className.
+								   superclassName.
+								   packageName })
 					  error: error ]
 ]
 

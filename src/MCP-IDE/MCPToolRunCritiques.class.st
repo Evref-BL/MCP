@@ -489,9 +489,7 @@ MCPToolRunCritiques >> ruleTextOn: stream for: group [
 	stream nextPutAll: ': '.
 	(group at: #fixable ifAbsent: [ false ]) ifFalse: [ ^ stream nextPutAll: title ].
 	stream
-		nextPutAll: ((title endsWith: '.')
-				 ifTrue: [ title allButLast ]
-				 ifFalse: [ title ]);
+		nextPutAll: (self textWithoutFinalPeriod: title);
 		nextPutAll: '. method_rewrite can apply it.'
 ]
 
