@@ -206,7 +206,7 @@ MCPToolCreateClass >> requestedContextFor: request [
 		  (#class -> (request stringArgumentNamed: 'name')).
 		  (#superclass -> (self superclassNameIn: request)).
 		  (#package -> (request stringArgumentNamed: 'package')).
-		  (#tag -> (request stringArgumentNamed: 'tag' default: '')).
+		  (#tag -> (request stringArgumentOrDefaultNamed: 'tag')).
 		  (#comment -> ((self classCommentIn: request) ifNil: [ '' ])).
 		  (#slots -> (request stringCollectionArgumentNamed: 'slots')).
 		  (#classSlots -> (request stringCollectionArgumentNamed: 'classSlots')).
@@ -259,9 +259,9 @@ MCPToolCreateClass >> slotsDefinedBy: aClass alsoIn: aSuperclass [
 
 { #category : 'private - arguments' }
 MCPToolCreateClass >> superclassNameIn: request [
-	"Object when the caller omits it, because that is what a new class subclasses unless it says otherwise. Defaulting here rather than in MCPCreateClassCommand keeps the error details and the failure messages naming the superclass the class actually gets."
+	"The superclass the class gets, its schema default when the caller omits it. Reading it here rather than in MCPCreateClassCommand keeps the error details and the failure messages naming that superclass."
 
-	^ request stringArgumentNamed: 'superclass' default: 'Object'
+	^ request stringArgumentOrDefaultNamed: 'superclass'
 ]
 
 { #category : 'private - specs' }
@@ -276,12 +276,13 @@ MCPToolCreateClass >> toolSpec [
 				    stringOrArraySchemaNamed: 'name'
 				    description: 'Name of the class to create, or several names sharing the other arguments.'
 				    itemDescription: 'Class name.').
-			   (self
-				    schemaPropertyNamed: 'superclass'
-				    type: 'string'
-				    description: 'Superclass name, Object when omitted. Trait creates a trait.').
+			   ((self schemaPropertyNamed: 'superclass' type: 'string' description: 'Superclass name. Trait creates a trait.')
+				    default: 'Object';
+				    yourself).
 			   (self schemaPropertyNamed: 'package' type: 'string' description: 'Package for the class, created if missing.').
-			   (self schemaPropertyNamed: 'tag' type: 'string' description: 'Tag within the package.').
+			   ((self schemaPropertyNamed: 'tag' type: 'string' description: 'Tag within the package.')
+				    default: '';
+				    yourself).
 			   (self stringArraySchemaNamed: 'slots' description: 'Instance variable names.' itemDescription: 'Slot name.').
 			   (self stringArraySchemaNamed: 'classSlots' description: 'Class-side instance variable names.' itemDescription: 'Slot name.').
 			   (self

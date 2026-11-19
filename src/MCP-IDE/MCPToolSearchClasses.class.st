@@ -56,7 +56,7 @@ MCPToolSearchClasses >> defaultPageLimit [
 { #category : 'metadata' }
 MCPToolSearchClasses >> description [
 
-	^ 'Search classes by name, package, tag, or superclass/subclass scope. Use class_get when you already know the class name.'
+	^ 'Search classes by name or tag within a scope: the packages, classes, superclasses, subclasses or hierarchies it names. Use class_get when you already know the class name.'
 ]
 
 { #category : 'private - results' }

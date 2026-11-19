@@ -61,9 +61,8 @@ MCPMethodRewriteRuleSpec >> initializeFromDictionary: aDictionary request: reque
 	name := request stringArgumentNamed: 'name' in: aDictionary default: 'rule-' , index asString.
 	match := request stringArgumentNamed: 'match' in: aDictionary.
 	replacement := request stringArgumentNamed: 'replacement' in: aDictionary.
-	isForMethod := request booleanArgumentNamed: 'isForMethod' in: aDictionary default: false.
-	self validateAtIndex: index.
-	^ self
+	isForMethod := request booleanArgumentNamed: 'isForMethod' in: aDictionary.
+	self validateAtIndex: index
 ]
 
 { #category : 'accessing' }

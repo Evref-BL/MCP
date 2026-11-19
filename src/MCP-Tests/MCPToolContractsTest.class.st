@@ -2377,7 +2377,14 @@ MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable 
 	self assert: ((self inputPropertyNamed: 'confirm' inTool: rewriteMethodsTool) extraProperties at: #default) equals: false.
 	self assert: ((self scopePropertyNamed: 'side' inTool: rewriteMethodsTool) extraProperties at: #default) equals: 'both'.
 	self assert: ((self inputPropertyNamed: 'force' inTool: removeClassesTool) extraProperties at: #default) equals: false.
-	self assert: ((self inputPropertyNamed: 'side' inTool: removeMethodsTool) extraProperties at: #default) equals: 'instance'
+	self assert: ((self inputPropertyNamed: 'side' inTool: removeMethodsTool) extraProperties at: #default) equals: 'instance'.
+	self
+		assert: ((self inputPropertyNamed: 'superclass' inTool: MCPToolCreateClass new) extraProperties at: #default)
+		equals: 'Object'.
+	self assert: ((self inputPropertyNamed: 'tag' inTool: MCPToolCreateClass new) extraProperties at: #default) equals: ''.
+	self
+		assert: ((self inputPropertyNamed: 'queryMode' inTool: MCPToolSearchMethodSource new) extraProperties at: #default)
+		equals: 'substring'
 ]
 
 { #category : 'tests' }

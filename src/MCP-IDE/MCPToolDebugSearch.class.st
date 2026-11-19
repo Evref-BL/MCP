@@ -26,7 +26,7 @@ MCPToolDebugSearch >> additionalKeywords [
 { #category : 'metadata' }
 MCPToolDebugSearch >> description [
 
-	^ 'Answer the debuggers open in the image, each with its exception and the frames nearest the stop, including what those frames hold. Read-only: nothing is attached or kept, so ask again for the current picture.'
+	^ 'Answer the debuggers open in the image, each with its exception and the frames nearest the stop, including what those frames hold. Nothing is attached or kept, so ask again for the current picture.'
 ]
 
 { #category : 'private - reading' }

@@ -202,8 +202,9 @@ MCPToolSearch >> fieldFiltersFromRequest: request [
 
 { #category : 'private - request' }
 MCPToolSearch >> filterModeFromRequest: request [
+	"A search that takes queryMode reads it, with its schema default; one that does not always matches the same way."
 
-	^ request stringArgumentNamed: 'queryMode' default: self defaultFilterMode
+	^ (request stringArgumentOrDefaultNamed: 'queryMode') ifNil: [ self defaultFilterMode ]
 ]
 
 { #category : 'private - schema' }

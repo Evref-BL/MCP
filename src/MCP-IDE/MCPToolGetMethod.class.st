@@ -58,12 +58,12 @@ MCPToolGetMethod >> buildInputSchema [
 
 	^ MCPStructureInputSchema
 		  properties: {
-				  (self schemaPropertyNamed: 'class' type: 'string' description: 'Class for bare selectors.').
+				  (self schemaPropertyNamed: 'class' type: 'string' description: 'The class to look the method up in.').
 				  (self
 					   stringOrArraySchemaNamed: 'selector'
-					   description: 'Class>>selector, Class class>>selector, or a bare selector with class. One or several.'
+					   description: 'The method''s selector, or several of that class.'
 					   itemDescription: 'Method name.').
-				  (self targetSideSchemaPropertyDescribedAs: 'Which side a bare selector is on.').
+				  (self targetSideSchemaPropertyDescribedAs: 'Which side the method is on.').
 				  (self
 					   booleanSchemaPropertyNamed: 'includeVariableDetails'
 					   description: 'Also report, for every variable the method reads or writes, where it is defined and how often it is used.'
@@ -118,7 +118,7 @@ MCPToolGetMethod >> definingClassNameFromBinding: aBinding [
 { #category : 'metadata' }
 MCPToolGetMethod >> description [
 
-	^ 'Get the source of methods named Class>>selector or Class class>>selector, one or several.'
+	^ 'Get the source of a method by its class and selector, or of several methods of that class.'
 ]
 
 { #category : 'private - results' }

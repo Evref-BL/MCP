@@ -171,7 +171,7 @@ MCPTool >> searchScopeSchemaPropertyWith: someProperties [
 MCPTool >> searchScopeSideFromRequest: request [
 	"Which sides to sweep lives in the scope, beside the entities it narrows."
 
-	^ request stringArgumentNamed: 'side' in: (self searchScopeFromRequest: request) default: 'both'
+	^ request argumentOrDefaultNamed: 'side' in: (self searchScopeFromRequest: request)
 ]
 
 { #category : '*MCP-IDE' }

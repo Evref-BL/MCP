@@ -9,6 +9,19 @@ Class {
 }
 
 { #category : 'tests' }
+MCPToolRequestTest >> testANameTwoArgumentsDeclareWithDifferentDefaultsHasNoDefaultInsideThem [
+	"An accessor that reads inside an argument is given the object, not the argument it came from, so it answers no default for a name two arguments declare differently rather than the other argument's."
+
+	| request |
+	request := MCPToolRequest new.
+	request rememberDefaultsIn: (STONJSON fromString: '{"properties": {
+		"render": {"type": "object", "properties": {"mode": {"type": "string", "default": "fast"}, "quality": {"type": "string", "default": "high"}}},
+		"export": {"type": "array", "items": {"type": "object", "properties": {"mode": {"type": "string", "default": "safe"}}}}}}').
+	self assert: (request argumentOrDefaultNamed: 'mode' in: Dictionary new) isNil.
+	self assert: (request argumentOrDefaultNamed: 'quality' in: Dictionary new) equals: 'high'
+]
+
+{ #category : 'tests' }
 MCPToolRequestTest >> testASuppliedArgumentWinsOverItsSchemaDefault [
 
 	| request |
@@ -33,7 +46,16 @@ MCPToolRequestTest >> testAnArgumentLeftOutAnswersTheDefaultItsSchemaDeclares [
 	request := MCPToolGetMethod new requestFromToolCallArguments: {
 			           (#class -> 'Object').
 			           (#selector -> 'yourself') } asDictionary.
-	self deny: (request booleanArgumentNamed: 'includeVariableDetails')
+	self deny: (request booleanArgumentNamed: 'includeVariableDetails').
+	request := MCPToolCreateClass new requestFromToolCallArguments: {
+			           (#name -> 'Example').
+			           (#package -> 'Example-Package').
+			           (#superclass -> ' ') } asDictionary.
+	self assert: (request stringArgumentOrDefaultNamed: 'superclass') equals: 'Object'.
+	request := MCPToolSearchMethodSource new requestFromToolCallArguments: {
+			           (#query -> 'yourself').
+			           (#scope -> { (#classes -> #( 'Object' )) } asDictionary) } asDictionary.
+	self assert: (request argumentOrDefaultNamed: 'side' in: (request argumentNamed: 'scope' ifAbsent: [ nil ])) equals: 'both'
 ]
 
 { #category : 'tests' }

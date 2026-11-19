@@ -108,8 +108,7 @@ MCPToolRewriteMethods >> rewriteRuleClassesSchemaProperty [
 	^ MCPStructureProperties new
 		  name: 'ruleClasses';
 		  type: 'array';
-		  description:
-			  'Rewrite rules to apply, as critique_run names them. Any subclass of ReNodeRewriteRule, Pharo''s own included, and one that builds its replacement instead of writing it as a pattern just as well.';
+		  description: 'Rewrite rules to apply, subclasses of ReNodeRewriteRule.';
 		  items: (MCPStructureProperties new
 				   type: 'string';
 				   description: 'One rule class name.';

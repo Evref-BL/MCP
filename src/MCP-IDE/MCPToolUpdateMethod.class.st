@@ -323,7 +323,7 @@ MCPToolUpdateMethod >> toolSpec [
 				     schemaPropertyNamed: 'arguments'
 				     type: 'array'
 				     description:
-					     'Names of the arguments the new selector takes, in order. Names matching the current ones are kept, new names are added arguments, and current ones left out are removed.')
+					     'Names of the arguments the new selector takes, in order, naming the added ones and renaming the kept ones. They do not choose which current argument each one keeps: permutation does.')
 				    items: (MCPStructureProperties new
 						     type: 'string';
 						     description: 'Argument name.';
@@ -342,7 +342,7 @@ MCPToolUpdateMethod >> toolSpec [
 				     schemaPropertyNamed: 'permutation'
 				     type: 'array'
 				     description:
-					     'Only to reorder arguments, which names cannot express: one entry per new argument, holding the index of the current argument it takes, or 0 for an added one. Inferred from arguments when omitted.')
+					     'Which current argument each new one takes: one entry per new argument, holding the index of the current argument, or 0 for an added one. Omitted, each new argument takes the current one at its position when the arity is unchanged, else the one of the same keyword.')
 				    items: (MCPStructureProperties new
 						     type: 'integer';
 						     description: 'Current argument index, or 0.';
