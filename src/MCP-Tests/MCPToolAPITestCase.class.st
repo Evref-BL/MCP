@@ -15,13 +15,6 @@ MCPToolAPITestCase class >> isAbstract [
 ]
 
 { #category : 'private - calling' }
-MCPToolAPITestCase >> argumentNamed: anArgumentName in: aDictionary default: defaultValue [
-
-	aDictionary ifNil: [ ^ defaultValue ].
-	^ aDictionary at: anArgumentName asSymbol ifAbsent: [ aDictionary at: anArgumentName asString ifAbsent: [ defaultValue ] ]
-]
-
-{ #category : 'private - calling' }
 MCPToolAPITestCase >> aroundToolCall: aBlock [
 
 	^ aBlock value

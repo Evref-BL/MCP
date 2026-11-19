@@ -9,23 +9,6 @@ Class {
 }
 
 { #category : 'fixtures' }
-MCPTestGitRepositoryFixture class >> backupConfig [
-
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: '[remote "backup"]';
-				  lf;
-				  nextPutAll: String tab , 'url = memory://backup';
-				  lf;
-				  nextPutAll: '[branch "main"]';
-				  lf;
-				  nextPutAll: String tab , 'remote = backup';
-				  lf;
-				  nextPutAll: String tab , 'merge = refs/heads/main';
-				  lf ]
-]
-
-{ #category : 'fixtures' }
 MCPTestGitRepositoryFixture class >> richConfig [
 
 	^ String streamContents: [ :stream |

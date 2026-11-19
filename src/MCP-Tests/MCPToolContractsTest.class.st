@@ -2657,7 +2657,7 @@ MCPToolContractsTest >> testRpcToolCallCatchesUnhandledHaltFromTool [
 	result := mcp rpcToolCall: tool name withParams: Dictionary new.
 	text := self firstTextFromToolResult: result.
 	self assert: (result at: #isError).
-	self assert: (text includesSubstring: 'Tool halting-test-tool failed (Halt)').
+	self assert: (text includesSubstring: 'Tool halting_test_tool failed (Halt)').
 	self assert: (text includesSubstring: 'mcp tool halt test')
 ]
 

@@ -34,12 +34,6 @@ MCPTestIceRepository >> actionLog [
 ]
 
 { #category : 'accessing' }
-MCPTestIceRepository >> branch [
-
-	^ MCPTestRepositoryBranch repository: self
-]
-
-{ #category : 'accessing' }
 MCPTestIceRepository >> branchName [
 
 	^ branchName ifNil: [ '' ]
@@ -172,17 +166,6 @@ MCPTestIceRepository >> remoteNames: aCollection [
 MCPTestIceRepository >> remotes [
 
 	^ self remoteNames collect: [ :each | MCPTestRepositoryRemote named: each repository: self ]
-]
-
-{ #category : 'private' }
-MCPTestIceRepository >> signalFailureIfNeeded: failure defaultMessage: aString [
-
-	failure ifNil: [ ^ self ].
-	failure == false ifTrue: [ ^ self ].
-	failure == true ifTrue: [ Error signal: aString ].
-	failure isAssociation ifTrue: [ failure key signal: failure value ].
-	failure isString ifTrue: [ Error signal: failure ].
-	Error signal: failure asString
 ]
 
 { #category : 'accessing' }

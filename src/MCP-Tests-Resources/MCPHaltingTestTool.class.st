@@ -10,7 +10,7 @@ Class {
 
 { #category : 'testing' }
 MCPHaltingTestTool class >> shouldAutoRegister [
-	"A fixture is not a tool anyone asked for, and MCP's default group loads its own tests. It used to call itself abstract to stay out of the catalog, which was a lie: the tests instantiate it."
+	"A fixture is not a tool anyone asked for, and MCP's default group loads its own tests, so every fixture says so itself rather than relying on the package it sits in."
 
 	^ false
 ]
@@ -18,7 +18,7 @@ MCPHaltingTestTool class >> shouldAutoRegister [
 { #category : 'metadata' }
 MCPHaltingTestTool class >> toolName [
 
-	^ 'halting-test-tool'
+	^ 'halting_test_tool'
 ]
 
 { #category : 'metadata' }
