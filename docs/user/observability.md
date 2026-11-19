@@ -66,3 +66,20 @@ Metacello new
 
 mcp useOpenTelemetryObservability
 ```
+
+The exporter is configured the standard way, through the `OTEL_*` environment
+variables the image was started with; see opentelemetry-pharo for the ones it
+reads.
+
+Each tool call is a server span named `tools/call <tool>`, with the attributes
+the OpenTelemetry conventions for MCP define (`mcp.method.name`,
+`gen_ai.tool.name`, `error.type`, ...) and MCP's own under `pharo.mcp.`. A
+request whose `params._meta` carries a W3C `traceparent` (SEP-414) makes the
+span a child of the caller's, so a client that propagates its context sees the
+image's work inside its own trace.
+
+The spans carry no values: argument names but not arguments, sizes but not
+results, and no exception message or stack. An exception is named by its
+nearest class in Pharo's kernel or in MCP, and a name the caller chose is
+exported only when it reads as an identifier. Recording never fails a tool
+call: anything that goes wrong while recording leaves the call unrecorded.

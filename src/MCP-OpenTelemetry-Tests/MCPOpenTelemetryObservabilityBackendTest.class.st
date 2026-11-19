@@ -55,6 +55,13 @@ MCPOpenTelemetryObservabilityBackendTest >> measurements [
 	^ measurements
 ]
 
+{ #category : 'private' }
+MCPOpenTelemetryObservabilityBackendTest >> remoteTraceparent [
+	"A caller's trace context, as SEP-414 carries it in a request's _meta."
+
+	^ '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01'
+]
+
 { #category : 'running' }
 MCPOpenTelemetryObservabilityBackendTest >> setUp [
 
@@ -80,11 +87,17 @@ MCPOpenTelemetryObservabilityBackendTest >> setUp [
 { #category : 'private' }
 MCPOpenTelemetryObservabilityBackendTest >> startToolCall [
 
+	^ self startToolCallWith: Dictionary new
+]
+
+{ #category : 'private' }
+MCPOpenTelemetryObservabilityBackendTest >> startToolCallWith: aContextDictionary [
+
 	^ backend
 		  recordToolCallStart: #method_compile
 		  input: { (#class -> 'Object') } asDictionary
 		  dispatchPath: 'tools/call'
-		  context: Dictionary new
+		  context: aContextDictionary
 ]
 
 { #category : 'private' }
@@ -113,6 +126,99 @@ MCPOpenTelemetryObservabilityBackendTest >> tearDown [
 ]
 
 { #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testAMalformedTraceContextStartsARootSpan [
+
+	| snapshot |
+	backend
+		recordToolCallFinish:
+		(self startToolCallWith: { (#meta -> { ('traceparent' -> 'not a trace context') } asDictionary) } asDictionary)
+		result: self successToolResult
+		error: nil.
+	snapshot := exporter onlySnapshot.
+	self assert: snapshot parentSpanContext isNil
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testAProtocolErrorReportsItsJSONRPCCode [
+
+	| snapshot |
+	backend recordToolCallFinish: self startToolCall result: nil error: JRPCNonExistentHandler new.
+	snapshot := exporter onlySnapshot.
+	self assert: (self attributeNamed: 'error.type' in: snapshot) equals: '-32601'
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testATracedToolsCallRequestParentsTheSpanOnItsCaller [
+
+	| mcp snapshot |
+	mcp := MCP new.
+	mcp observability: backend.
+	mcp server messageProcessor handleJSON: (STONJSON toString: {
+				 ('jsonrpc' -> '2.0').
+				 ('id' -> 1).
+				 ('method' -> 'tools/call').
+				 ('params' -> {
+					  ('name' -> 'class_search').
+					  ('arguments' -> { ('query' -> 'Point') } asDictionary).
+					  ('_meta' -> { ('traceparent' -> self remoteTraceparent) } asDictionary) } asDictionary) } asDictionary).
+	snapshot := exporter onlySnapshot.
+	self assert: snapshot name equals: 'tools/call class_search'.
+	self assert: snapshot parentSpanContext spanIdHex equals: '00f067aa0ba902b7'
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testAnArgumentNameThatIsNotAnIdentifierIsNotExported [
+
+	| snapshot |
+	backend
+		recordToolCallFinish: (backend
+				 recordToolCallStart: 'class_get'
+				 input: {
+						 ('name' -> 'Object').
+						 ('Object subclass: #Secret' -> 1) } asDictionary
+				 dispatchPath: 'direct'
+				 context: Dictionary new)
+		result: self successToolResult
+		error: nil.
+	snapshot := exporter onlySnapshot.
+	self assert: (self attributeNamed: 'pharo.mcp.argument.names' in: snapshot) equals: #( 'name' )
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testAnExceptionIsNamedByItsNearestKernelClassAndNeitherItsMessageNorItsStack [
+
+	| snapshot |
+	backend
+		recordToolCallFinish: self startToolCall
+		result: self errorToolResult
+		error: (ZnHttpUnsuccessful new messageText: 'secret').
+	snapshot := exporter onlySnapshot.
+	self assert: (self attributeNamed: 'pharo.mcp.exception.type' in: snapshot) equals: 'Error'.
+	self assert: snapshot events isEmpty.
+	self deny: (snapshot attributes values anySatisfy: [ :each | each isString and: [ each includesSubstring: 'secret' ] ])
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testArgumentNamesTheToolDoesNotDeclareAreReportedAsUnknown [
+
+	| tool snapshot |
+	tool := MCPToolRegistry default toolNamed: 'class_get' ifAbsent: [ self skip: 'class_get is not registered' ].
+	backend
+		recordToolCallFinish: (backend
+				 recordToolCallStart: 'class_get'
+				 input: {
+						 ('name' -> 'Object').
+						 ('colour' -> 'red') } asDictionary
+				 dispatchPath: 'direct'
+				 context: { (#tool -> tool) } asDictionary)
+		result: self successToolResult
+		error: nil.
+	snapshot := exporter onlySnapshot.
+	self assert: (self attributeNamed: 'pharo.mcp.argument.names' in: snapshot) equals: #( 'colour' 'name' ).
+	self assert: (self attributeNamed: 'pharo.mcp.argument.unknown_names' in: snapshot) equals: #( 'colour' )
+]
+
+{ #category : 'tests' }
 MCPOpenTelemetryObservabilityBackendTest >> testBackendIsNotTheNoopOne [
 
 	self deny: backend isNoop.
@@ -129,30 +235,29 @@ MCPOpenTelemetryObservabilityBackendTest >> testDisabledBackendStartsNoCallAndEx
 ]
 
 { #category : 'tests' }
-MCPOpenTelemetryObservabilityBackendTest >> testFailedToolCallCountsAnErrorMetricCarryingTheErrorDetails [
-
-	| attributes record |
-	record := self startToolCall.
-	backend recordToolCallFinish: record result: self errorToolResult error: nil.
-	self deny: (self measurementNamed: 'mcp.tool.errors') isNil.
-	attributes := (self measurementNamed: 'mcp.tool.errors') attributes.
-	self assert: (attributes at: 'mcp.error.code' ifAbsent: [ nil ]) equals: 'repositoryNotFound'.
-	self assert: (attributes at: 'error.type' ifAbsent: [ nil ]) equals: 'MCPCommandError'
-]
-
-{ #category : 'tests' }
-MCPOpenTelemetryObservabilityBackendTest >> testFailedToolCallMarksTheSpanAsAnError [
+MCPOpenTelemetryObservabilityBackendTest >> testFailedToolCallMarksTheSpanAsAnErrorWithoutItsMessage [
 
 	| record snapshot |
 	record := self startToolCall.
 	backend recordToolCallFinish: record result: self errorToolResult error: nil.
 	snapshot := exporter onlySnapshot.
 	self assert: snapshot status equals: OTSpan error.
-	self assert: (self attributeNamed: 'mcp.status' in: snapshot) equals: 'error'.
-	self assert: (self attributeNamed: 'mcp.error.code' in: snapshot) equals: 'repositoryNotFound'.
-	self assert: (self attributeNamed: 'error.type' in: snapshot) equals: 'MCPCommandError'.
-	self assert: (self attributeNamed: 'mcp.error.kind' in: snapshot) equals: 'domain'.
+	self assert: snapshot statusDescription isEmptyOrNil.
+	self assert: (self attributeNamed: 'error.type' in: snapshot) equals: 'tool_error'.
+	self assert: (self attributeNamed: 'pharo.mcp.error.code' in: snapshot) equals: 'repositoryNotFound'.
+	self assert: (self attributeNamed: 'pharo.mcp.error.kind' in: snapshot) equals: 'domain'.
 	self assert: record eventKinds equals: #( 'error' )
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testFailedToolCallRecordsItsErrorTypeOnTheDurationMetric [
+
+	| record |
+	record := self startToolCall.
+	backend recordToolCallFinish: record result: self errorToolResult error: nil.
+	self
+		assert: ((self measurementNamed: 'mcp.server.operation.duration') attributes at: 'error.type' ifAbsent: [ nil ])
+		equals: 'tool_error'
 ]
 
 { #category : 'tests' }
@@ -163,12 +268,12 @@ MCPOpenTelemetryObservabilityBackendTest >> testOutputBeyondTheBudgetIsFlaggedOn
 	record := self startToolCall.
 	backend recordToolCallFinish: record result: self successToolResult error: nil.
 	snapshot := exporter onlySnapshot.
-	self assert: (self attributeNamed: 'mcp.output_budget.exceeded' in: snapshot).
+	self assert: (self attributeNamed: 'pharo.mcp.output_budget.exceeded' in: snapshot).
 	self assert: record outputBudgetExceeded.
 	self assert: record outputBudgetBytes equals: 1.
 	self assert: (record outputBudgetExplanation includesSubstring: 'exceeds budget 1 bytes').
 	self assert: record eventKinds equals: #( 'output_budget_exceeded' ).
-	self assert: (snapshot events anySatisfy: [ :each | each name = 'mcp.output_budget_exceeded' ])
+	self assert: (snapshot events anySatisfy: [ :each | each name = 'pharo.mcp.output_budget_exceeded' ])
 ]
 
 { #category : 'tests' }
@@ -179,6 +284,13 @@ MCPOpenTelemetryObservabilityBackendTest >> testOutputBudgetExplanationNamesTheB
 	self
 		assert: (backend outputBudgetExplanationForByteCount: 101)
 		equals: 'Output 101 bytes exceeds budget 100 bytes; consider pagination, handles, or summary-first output'
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testRecordingThatFailsLeavesTheCallUnrecorded [
+
+	self assert: (self startToolCallWith: nil) isNil.
+	self assert: exporter snapshots isEmpty
 ]
 
 { #category : 'tests' }
@@ -207,14 +319,31 @@ MCPOpenTelemetryObservabilityBackendTest >> testToolCallExportsASpanDescribingTh
 	record := self startToolCall.
 	backend recordToolCallFinish: record result: self successToolResult error: nil.
 	snapshot := exporter onlySnapshot.
-	self assert: snapshot name equals: 'mcp.tool_call'.
-	self assert: snapshot status equals: OTSpan ok.
-	self assert: (self attributeNamed: 'mcp.call.id' in: snapshot) equals: record id.
-	self assert: (self attributeNamed: 'mcp.tool.name' in: snapshot) equals: 'method_compile'.
-	self assert: (self attributeNamed: 'mcp.dispatch_path' in: snapshot) equals: 'tools/call'.
-	self assert: (self attributeNamed: 'mcp.status' in: snapshot) equals: 'ok'.
-	self deny: (self attributeNamed: 'mcp.output_budget.exceeded' in: snapshot).
-	self assert: (self attributeNamed: 'mcp.input.bytes' in: snapshot) > 0
+	self assert: snapshot name equals: 'tools/call method_compile'.
+	self assert: snapshot kind equals: OTSpan server.
+	self assert: snapshot status equals: OTSpan unset.
+	self assert: (self attributeNamed: 'mcp.method.name' in: snapshot) equals: 'tools/call'.
+	self assert: (self attributeNamed: 'gen_ai.tool.name' in: snapshot) equals: 'method_compile'.
+	self assert: (self attributeNamed: 'gen_ai.operation.name' in: snapshot) equals: 'execute_tool'.
+	self assert: (self attributeNamed: 'pharo.mcp.dispatch_path' in: snapshot) equals: 'tools/call'.
+	self assert: (self attributeNamed: 'pharo.mcp.argument.names' in: snapshot) equals: #( 'class' ).
+	self deny: (self attributeNamed: 'pharo.mcp.output_budget.exceeded' in: snapshot).
+	self assert: (self attributeNamed: 'pharo.mcp.input.bytes' in: snapshot) > 0.
+	self assert: (self attributeNamed: 'error.type' in: snapshot) isNil
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testToolCallIsAChildOfTheTraceContextInTheRequestMeta [
+
+	| snapshot |
+	backend
+		recordToolCallFinish:
+		(self startToolCallWith: { (#meta -> { ('traceparent' -> self remoteTraceparent) } asDictionary) } asDictionary)
+		result: self successToolResult
+		error: nil.
+	snapshot := exporter onlySnapshot.
+	self assert: snapshot spanContext traceIdHex equals: '4bf92f3577b34da6a3ce929d0e0e4736'.
+	self assert: snapshot parentSpanContext spanIdHex equals: '00f067aa0ba902b7'
 ]
 
 { #category : 'tests' }
@@ -223,8 +352,9 @@ MCPOpenTelemetryObservabilityBackendTest >> testToolCallRecordsCallDurationAndSi
 	| record |
 	record := self startToolCall.
 	backend recordToolCallFinish: record result: self successToolResult error: nil.
-	#( 'mcp.tool.calls' 'mcp.tool.duration' 'mcp.tool.input.size' 'mcp.tool.output.size' ) do: [ :name |
+	#( 'mcp.server.operation.duration' 'pharo.mcp.tool.input.size' 'pharo.mcp.tool.output.size' ) do: [ :name |
 		self deny: (self measurementNamed: name) isNil description: 'The backend should have recorded ' , name ].
-	self assert: (self measurementNamed: 'mcp.tool.calls') value equals: 1.
-	self assert: (self measurementNamed: 'mcp.tool.errors') isNil description: 'A successful call must not count as an error.'
+	self
+		assert: ((self measurementNamed: 'mcp.server.operation.duration') attributes at: 'error.type' ifAbsent: [ nil ]) isNil
+		description: 'A successful call must not carry an error type.'
 ]
