@@ -18,9 +18,6 @@ A tool is served because its package is loaded: a concrete subclass that can alr
 Class {
 	#name : 'MCPTool',
 	#superclass : 'Object',
-	#instVars : [
-		'inputSchema'
-	],
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -1186,9 +1183,8 @@ MCPTool >> validateRequest: aToolRequest [
 
 { #category : 'private - results' }
 MCPTool >> valueIn: aDictionary at: aKey [
-	"Entries reach the renderer with symbol keys from the image and string keys from the wire."
 
-	^ aDictionary at: aKey ifAbsent: [ aDictionary at: aKey asString ifAbsent: [ nil ] ]
+	^ aDictionary mcpAt: aKey ifAbsent: [ nil ]
 ]
 
 { #category : 'private - results' }

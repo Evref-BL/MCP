@@ -50,14 +50,11 @@ MCPToolRegistry >> advertiseToolDefaults [
 
 { #category : 'advertising' }
 MCPToolRegistry >> advertiseTools: toolsOrToolClassesOrNames [
-	"Say which tools tools/list should show, as classes, tool instances or names. Anything not in the catalog yet is added, so the order of configuration does not matter for a class. A bare name matching nothing is a typo, and the error says what is known."
+	"Say which tools tools/list should show, as classes, tool instances or names. Anything not in the catalog yet is added, so the order of configuration does not matter for a class. A bare name matching nothing is a typo, and the error says what it may have meant."
 
-	| names unknown |
+	| names |
 	names := toolsOrToolClassesOrNames collect: [ :each | self advertisedNameFor: each ].
-	unknown := names reject: [ :each | self includesToolNamed: each ].
-	unknown ifNotEmpty: [
-			Error signal: (String streamContents: [ :stream |
-					 stream << 'Unknown MCP tool(s): ' << unknown asArray printString << '. Known tools: ' << self toolNames printString ]) ].
+	names do: [ :each | self toolNamed: each ifAbsent: [ self signalMissingToolNamed: each ] ].
 	advertisedToolNames := names asSet
 ]
 
@@ -108,19 +105,7 @@ MCPToolRegistry >> contractForTool: aTool [
 { #category : 'tools' }
 MCPToolRegistry >> contractForToolNamed: aToolName [
 
-	| tool |
-	tool := self toolNamed: aToolName ifAbsent: [ Error signal: 'Unknown MCP tool: ' , aToolName asString ].
-	^ self contractForTool: tool
-]
-
-{ #category : 'discovery' }
-MCPToolRegistry >> defaultEntries [
-	"Grouped, then alphabetical within a group, which is how the catalog reads to someone scanning it."
-
-	^ (self autoRegisteringClasses collect: [ :each | self newEntryFrom: each ]) asSortedCollection: [ :left :right |
-		  left groupName = right groupName
-			  ifTrue: [ left name <= right name ]
-			  ifFalse: [ left groupName <= right groupName ] ]
+	^ self contractForTool: (self toolNamed: aToolName ifAbsent: [ self signalMissingToolNamed: aToolName ])
 ]
 
 { #category : 'tools' }
@@ -160,6 +145,15 @@ MCPToolRegistry >> identityWeightForTool: aTool queryTerm: aTerm [
 MCPToolRegistry >> includesToolNamed: aToolName [
 
 	^ self includesKey: aToolName
+]
+
+{ #category : 'discovery' }
+MCPToolRegistry >> isEntry: aTool before: anotherTool [
+	"Grouped, then alphabetical within a group, which is how the catalog reads to someone scanning it."
+
+	^ aTool groupName = anotherTool groupName
+		  ifTrue: [ aTool name <= anotherTool name ]
+		  ifFalse: [ aTool groupName <= anotherTool groupName ]
 ]
 
 { #category : 'tools' }
@@ -257,6 +251,26 @@ MCPToolRegistry >> searchMetadataForTool: aTool [
 		at: #arguments put: ((schema properties ifNil: [ #(  ) ]) collect: [ :each | each name ] as: Array);
 		at: #requiredArguments put: (schema required ifNil: [ #(  ) ]) asArray.
 	^ metadata
+]
+
+{ #category : 'private - errors' }
+MCPToolRegistry >> signalMissingToolNamed: aToolName [
+	"A name that does not resolve is the caller's mistake, not the server's, so it reads as one."
+
+	| suggestions details |
+	suggestions := MCPSelectorSuggestion namesLike: aToolName among: self toolNames.
+	details := Dictionary new
+		           at: #tool put: aToolName;
+		           yourself.
+	suggestions ifNotEmpty: [ details at: #suggestedTools put: suggestions ].
+	MCPCommandError
+		signalErrorCode: #ToolNotFound
+		message: (String streamContents: [ :stream |
+					 stream << 'No MCP tool named ' << aToolName << '.'.
+					 suggestions
+						 ifEmpty: [ stream << ' Use tool_search to find one.' ]
+						 ifNotEmpty: [ stream << ' Did you mean: ' << (', ' join: suggestions) << '?' ] ])
+		details: details
 ]
 
 { #category : 'tools' }

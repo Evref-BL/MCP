@@ -29,7 +29,7 @@ MCPJSONSchemaValidator >> addTypeViolationAt: path for: aValue against: schema [
 	"A value of the wrong type. Where the schema's type, one name or a list of them, allows an object, the violation names the object's keys, with an example made of the value."
 
 	| type violation |
-	type := self keywordNamed: #type in: schema ifAbsent: [ nil ].
+	type := schema mcpAt: #type ifAbsent: [ nil ].
 	violation := MCPJSONSchemaViolation
 		             path: path
 		             keyword: #type
@@ -85,20 +85,14 @@ MCPJSONSchemaValidator >> exampleObjectOf: aValue against: schema [
 { #category : 'private - schema' }
 MCPJSONSchemaValidator >> hasKeywordNamed: aKey in: aDictionary [
 
-	^ (aDictionary includesKey: aKey) or: [ aDictionary includesKey: aKey asString ]
+	aDictionary mcpAt: aKey ifAbsent: [ ^ false ].
+	^ true
 ]
 
 { #category : 'private - schema' }
 MCPJSONSchemaValidator >> hasObjectKeywordsIn: schema [
 
 	^ #( required properties additionalProperties ) anySatisfy: [ :each | self hasKeywordNamed: each in: schema ]
-]
-
-{ #category : 'private - object validation' }
-MCPJSONSchemaValidator >> includesPropertyNamed: propertyName in: aDictionary [
-
-	^ (aDictionary includesKey: propertyName) or: [
-		  (aDictionary includesKey: propertyName asString) or: [ aDictionary includesKey: propertyName asSymbol ] ]
 ]
 
 { #category : 'initialization' }
@@ -117,24 +111,21 @@ MCPJSONSchemaValidator >> isJSONArray: aValue [
 { #category : 'private - schema' }
 MCPJSONSchemaValidator >> keywordNamed: aKey in: aDictionary ifAbsent: absentBlock [
 
-	^ aDictionary at: aKey ifAbsent: [ aDictionary at: aKey asString ifAbsent: absentBlock ]
+	^ aDictionary mcpAt: aKey ifAbsent: absentBlock
+]
+
+{ #category : 'private - schema' }
+MCPJSONSchemaValidator >> keywordNamed: aKey in: aDictionary ifPresent: presentBlock [
+
+	^ presentBlock value: (aDictionary mcpAt: aKey ifAbsent: [ ^ nil ])
 ]
 
 { #category : 'private - object validation' }
 MCPJSONSchemaValidator >> propertyNamesIn: schema [
 
 	| properties |
-	properties := self keywordNamed: #properties in: schema ifAbsent: [ ^ Set new ].
+	properties := schema mcpAt: #properties ifAbsent: [ ^ Set new ].
 	^ properties keys collect: [ :each | each asString ] as: Set
-]
-
-{ #category : 'private - object validation' }
-MCPJSONSchemaValidator >> propertyValueNamed: propertyName in: aDictionary ifPresent: presentBlock ifAbsent: absentBlock [
-
-	(aDictionary includesKey: propertyName) ifTrue: [ ^ presentBlock value: (aDictionary at: propertyName) ].
-	(aDictionary includesKey: propertyName asString) ifTrue: [ ^ presentBlock value: (aDictionary at: propertyName asString) ].
-	(aDictionary includesKey: propertyName asSymbol) ifTrue: [ ^ presentBlock value: (aDictionary at: propertyName asSymbol) ].
-	^ absentBlock value
 ]
 
 { #category : 'private - combinators' }
@@ -186,7 +177,7 @@ MCPJSONSchemaValidator >> validateAdditionalPropertiesIn: aDictionary againstSch
 	"An unexpected property expects the ones the schema names, so the caller learns what it could have sent."
 
 	| additionalProperties propertyNames |
-	additionalProperties := self keywordNamed: #additionalProperties in: schema ifAbsent: [ true ].
+	additionalProperties := schema mcpAt: #additionalProperties ifAbsent: [ true ].
 	additionalProperties == true ifTrue: [ ^ self ].
 	propertyNames := self propertyNamesIn: schema.
 	aDictionary keysAndValuesDo: [ :key :value |
@@ -230,7 +221,7 @@ MCPJSONSchemaValidator >> validateArray: aCollection againstSchema: schema atPat
 	"Positions in a path count from zero, as in the JSON the caller sent."
 
 	| itemSchema minimumSize |
-	minimumSize := self keywordNamed: #minItems in: schema ifAbsent: [ nil ].
+	minimumSize := schema mcpAt: #minItems ifAbsent: [ nil ].
 	minimumSize ifNotNil: [ :requiredSize |
 			aCollection size < requiredSize ifTrue: [
 					self
@@ -239,7 +230,7 @@ MCPJSONSchemaValidator >> validateArray: aCollection againstSchema: schema atPat
 						message: 'Array has too few items.'
 						expected: requiredSize
 						actual: aCollection size ] ].
-	itemSchema := self keywordNamed: #items in: schema ifAbsent: [ ^ self ].
+	itemSchema := schema mcpAt: #items ifAbsent: [ ^ self ].
 	aCollection withIndexDo: [ :each :index | self validateValue: each againstSchema: itemSchema atPath: (path copyWith: index - 1) ]
 ]
 
@@ -261,20 +252,19 @@ MCPJSONSchemaValidator >> validateConstIn: schema for: aValue atPath: path [
 MCPJSONSchemaValidator >> validateDefinedPropertiesIn: aDictionary againstSchema: schema atPath: path [
 
 	| properties |
-	properties := self keywordNamed: #properties in: schema ifAbsent: [ ^ self ].
+	properties := schema mcpAt: #properties ifAbsent: [ ^ self ].
 	properties keysAndValuesDo: [ :propertyName :propertySchema |
 			self
-				propertyValueNamed: propertyName
+				keywordNamed: propertyName
 				in: aDictionary
-				ifPresent: [ :value | self validateValue: value againstSchema: propertySchema atPath: (path copyWith: propertyName asString) ]
-				ifAbsent: [ ] ]
+				ifPresent: [ :value | self validateValue: value againstSchema: propertySchema atPath: (path copyWith: propertyName asString) ] ]
 ]
 
 { #category : 'private - validating' }
 MCPJSONSchemaValidator >> validateEnumIn: schema for: aValue atPath: path [
 
 	| expectedValues |
-	expectedValues := self keywordNamed: #enum in: schema ifAbsent: [ ^ self ].
+	expectedValues := schema mcpAt: #enum ifAbsent: [ ^ self ].
 	(expectedValues includes: aValue) ifFalse: [
 			self
 				addViolationAt: path
@@ -310,7 +300,7 @@ MCPJSONSchemaValidator >> validateNotIn: schema for: aValue atPath: path [
 { #category : 'private - number validation' }
 MCPJSONSchemaValidator >> validateNumber: aNumber againstSchema: schema atPath: path [
 
-	(self keywordNamed: #minimum in: schema ifAbsent: [ nil ]) ifNotNil: [ :minimum |
+	(schema mcpAt: #minimum ifAbsent: [ nil ]) ifNotNil: [ :minimum |
 			aNumber < minimum ifTrue: [
 					self
 						addViolationAt: path
@@ -318,7 +308,7 @@ MCPJSONSchemaValidator >> validateNumber: aNumber againstSchema: schema atPath: 
 						message: 'Number below schema minimum.'
 						expected: minimum
 						actual: aNumber ] ].
-	(self keywordNamed: #maximum in: schema ifAbsent: [ nil ]) ifNotNil: [ :maximum |
+	(schema mcpAt: #maximum ifAbsent: [ nil ]) ifNotNil: [ :maximum |
 			aNumber > maximum ifTrue: [
 					self
 						addViolationAt: path
@@ -356,9 +346,9 @@ MCPJSONSchemaValidator >> validateOneOfIn: schema for: aValue atPath: path [
 MCPJSONSchemaValidator >> validateRequiredPropertiesIn: aDictionary againstSchema: schema atPath: path [
 
 	| requiredProperties |
-	requiredProperties := self keywordNamed: #required in: schema ifAbsent: [ #(  ) ].
+	requiredProperties := schema mcpAt: #required ifAbsent: [ #(  ) ].
 	requiredProperties do: [ :propertyName |
-			(self includesPropertyNamed: propertyName in: aDictionary) ifFalse: [
+			(self hasKeywordNamed: propertyName in: aDictionary) ifFalse: [
 					self
 						addViolationAt: path
 						keyword: #required
@@ -371,7 +361,7 @@ MCPJSONSchemaValidator >> validateRequiredPropertiesIn: aDictionary againstSchem
 MCPJSONSchemaValidator >> validateString: aString againstSchema: schema atPath: path [
 
 	| minimumLength |
-	minimumLength := self keywordNamed: #minLength in: schema ifAbsent: [ nil ].
+	minimumLength := schema mcpAt: #minLength ifAbsent: [ nil ].
 	minimumLength ifNotNil: [ :requiredLength |
 			aString size < requiredLength ifTrue: [
 					self
@@ -395,7 +385,7 @@ MCPJSONSchemaValidator >> validateValue: aValue againstSchema: aSchemaObject atP
 	self validateIfThenIn: schema for: aValue atPath: path.
 	self validateConstIn: schema for: aValue atPath: path.
 	self validateEnumIn: schema for: aValue atPath: path.
-	type := self keywordNamed: #type in: schema ifAbsent: [ nil ].
+	type := schema mcpAt: #type ifAbsent: [ nil ].
 	type ifNotNil: [
 			(self value: aValue matchesType: type) ifFalse: [
 					self addTypeViolationAt: path for: aValue against: schema.

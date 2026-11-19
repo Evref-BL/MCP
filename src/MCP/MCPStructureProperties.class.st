@@ -17,6 +17,13 @@ Class {
 	#tag : 'Structure'
 }
 
+{ #category : 'private' }
+MCPStructureProperties class >> propertiesAsJRPCJSON: someProperties [
+	"A schema's properties as JSON Schema writes them: one object, each property under its name."
+
+	^ (someProperties collect: [ :each | each name -> each metaDescription ]) asDictionary
+]
+
 { #category : 'accessing' }
 MCPStructureProperties >> additionalProperties: aBoolean [
 
@@ -87,7 +94,7 @@ MCPStructureProperties >> items: aSchema [
 { #category : 'private' }
 MCPStructureProperties >> jsonValueForKey: aKey value: aValue [
 
-	aKey = #properties ifTrue: [ ^ self propertiesAsJRPCJSON: aValue ].
+	aKey = #properties ifTrue: [ ^ self class propertiesAsJRPCJSON: aValue ].
 	^ aValue asJRPCJSON
 ]
 
@@ -142,15 +149,6 @@ MCPStructureProperties >> name: anObject [
 MCPStructureProperties >> properties: aCollection [
 
 	self extraProperties at: #properties put: aCollection
-]
-
-{ #category : 'private' }
-MCPStructureProperties >> propertiesAsJRPCJSON: aCollection [
-
-	| propertiesDictionary |
-	propertiesDictionary := Dictionary new.
-	aCollection do: [ :prop | propertiesDictionary at: prop name put: prop metaDescription ].
-	^ propertiesDictionary
 ]
 
 { #category : 'accessing' }

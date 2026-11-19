@@ -48,12 +48,13 @@ MCPStructureInputSchema >> asJRPCJSON [
 	| dictionary |
 	dictionary := Dictionary new.
 	self type ifNotNil: [ :schemaType | dictionary at: #type put: schemaType asJRPCJSON ].
-	self properties ifNotNil: [ dictionary at: #properties put: self propertiesAsJRPCJSON ].
+	self properties ifNotNil: [ :someProperties |
+		dictionary at: #properties put: (MCPStructureProperties propertiesAsJRPCJSON: someProperties) ].
 	self required ifNotNil: [ :requiredProperties |
 		requiredProperties ifNotEmpty: [ dictionary at: #required put: requiredProperties asJRPCJSON ] ].
 	self additionalProperties ifNotNil: [ :additionalPropertiesValue |
 		additionalPropertiesValue ~~ true ifTrue: [ dictionary at: #additionalProperties put: additionalPropertiesValue asJRPCJSON ] ].
-	self extraProperties keysAndValuesDo: [ :key :value | dictionary at: key put: (self jsonValueForKey: key value: value) ].
+	self extraProperties keysAndValuesDo: [ :key :value | dictionary at: key put: value asJRPCJSON ].
 	^ dictionary
 ]
 
@@ -77,12 +78,6 @@ MCPStructureInputSchema >> initialize [
 	extraProperties := Dictionary new
 ]
 
-{ #category : 'private' }
-MCPStructureInputSchema >> jsonValueForKey: aKey value: aValue [
-
-	^ aValue asJRPCJSON
-]
-
 { #category : 'accessing' }
 MCPStructureInputSchema >> oneOf: aCollection [
 
@@ -99,15 +94,6 @@ MCPStructureInputSchema >> properties [
 MCPStructureInputSchema >> properties: anObject [
 
 	properties := anObject
-]
-
-{ #category : 'private' }
-MCPStructureInputSchema >> propertiesAsJRPCJSON [
-
-	| propertiesDictionary |
-	propertiesDictionary := Dictionary new.
-	self properties do: [ :prop | propertiesDictionary at: prop name put: prop metaDescription ].
-	^ propertiesDictionary
 ]
 
 { #category : 'accessing' }

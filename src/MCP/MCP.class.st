@@ -284,6 +284,29 @@ MCP >> anotherServerListeningOnThisPortDo: aBlock [
 		ifFound: aBlock
 ]
 
+{ #category : 'private - tools' }
+MCP >> answerToolError: error tool: aTool record: aRecord [
+	"A protocol error is the transport's to answer, as JSON-RPC; any other failure is the tool's answer."
+
+	| errorResult |
+	error mcpIsProtocolError ifTrue: [
+			self observability recordToolCallFinish: aRecord result: nil error: error.
+			error pass ].
+	errorResult := aTool errorResultFor: error.
+	self observability recordToolCallFinish: aRecord result: errorResult error: error.
+	^ errorResult asJRPCJSONForResponseFields: self toolResponseFields
+]
+
+{ #category : 'private - tools' }
+MCP >> callToolCall: callTool withParams: arguments [
+
+	| record |
+	record := self recordStartOf: callTool input: arguments dispatchPath: 'direct'.
+	^ [ self dispatchToolCallWith: callTool arguments: arguments observabilityRecord: record ]
+		  on: Exception
+		  do: [ :error | self answerToolError: error tool: callTool record: record ]
+]
+
 { #category : 'configuration' }
 MCP >> changePortTo: aPortNumber [
 	"Move the server to another port. A running one is restarted there, and goes back to the port it had if the new one cannot be bound."
@@ -373,20 +396,23 @@ MCP >> discoveryInstructions [
 ]
 
 { #category : 'private - tools' }
-MCP >> dispatchToolCallWith: callTool arguments: arguments observabilityRecord: observabilityRecord [
+MCP >> dispatchToolCallWith: callTool arguments: arguments observabilityRecord: aRecord [
 
-	| request targetResponse targetTool wrapperResult |
+	| request toolName response |
 	request := callTool requestFromToolCallArguments: arguments.
-	self validateToolCallRequest: request wrapperTool: callTool.
-	targetTool := self targetToolForCallRequest: request.
-	targetResponse := self
-		                  executeTool: targetTool
-		                  named: targetTool name
-		                  withParams: ((request argumentNamed: 'arguments' ifAbsent: [ nil ]) ifNil: [ Dictionary new ])
-		                  dispatchPath: 'via_tool_call'.
-	wrapperResult := self toolCallWrapperResultFor: callTool request: request.
-	self finishToolCallWrapper: observabilityRecord result: wrapperResult.
-	^ targetResponse
+	toolName := request stringArgumentNamed: 'name'.
+	toolName = callTool name ifTrue: [ Error signal: 'tool_call cannot call itself.' ].
+	response := self
+		            executeTool:
+		            (self toolRegistry toolNamed: toolName ifAbsent: [ self toolRegistry signalMissingToolNamed: toolName ])
+		            withParams: ((request argumentNamed: 'arguments' ifAbsent: [ nil ]) ifNil: [ Dictionary new ])
+		            dispatchPath: 'via_tool_call'.
+	self observability
+		recordToolCallFinish: aRecord
+		result: (callTool successResultText: 'Dispatched tool ' , toolName data: { (#tool -> toolName) } asDictionary)
+				asMCPStructureCallToolResult
+		error: nil.
+	^ response
 ]
 
 { #category : 'observability' }
@@ -411,59 +437,16 @@ MCP >> ensureServerIsListening [
 ]
 
 { #category : 'private - tools' }
-MCP >> executeTool: tool named: toolName withParams: arguments [
+MCP >> executeTool: aTool withParams: arguments dispatchPath: dispatchPath [
 
-	^ self
-		  executeTool: tool
-		  named: toolName
-		  withParams: arguments
-		  dispatchPath: 'direct'
-]
-
-{ #category : 'private - tools' }
-MCP >> executeTool: tool named: toolName withParams: arguments dispatchPath: dispatchPath [
-
-	| observabilityRecord request result toolResult |
-	observabilityRecord := nil.
-	tool shouldRecordObservability ifTrue: [
-			observabilityRecord := self observability
-				                       recordToolCallStart: toolName
-				                       input: arguments
-				                       dispatchPath: dispatchPath
-				                       context: (self observabilityContextFor: tool) ].
+	| record result |
+	record := self recordStartOf: aTool input: arguments dispatchPath: dispatchPath.
 	^ [
-		  request := tool requestFromToolCallArguments: arguments.
-		  result := tool executeWithRequest: request.
-		  toolResult := result asMCPStructureCallToolResult.
-		  self observability recordToolCallFinish: observabilityRecord result: toolResult error: nil.
-		  toolResult asJRPCJSONForResponseFields: self toolResponseFields ]
+		  result := (aTool executeWithRequest: (aTool requestFromToolCallArguments: arguments)) asMCPStructureCallToolResult.
+		  self observability recordToolCallFinish: record result: result error: nil.
+		  result asJRPCJSONForResponseFields: self toolResponseFields ]
 		  on: Exception
-		  do: [ :error |
-				  | errorResult |
-				  error mcpIsProtocolError ifTrue: [
-						  self observability recordToolCallFinish: observabilityRecord result: nil error: error.
-						  error pass ].
-				  errorResult := tool errorResultFor: error.
-				  self observability recordToolCallFinish: observabilityRecord result: errorResult error: error.
-				  errorResult asJRPCJSONForResponseFields: self toolResponseFields ]
-]
-
-{ #category : 'private - tools' }
-MCP >> finishToolCallWrapper: observabilityRecord result: wrapperResult [
-
-	self observability recordToolCallFinish: observabilityRecord result: wrapperResult asMCPStructureCallToolResult error: nil
-]
-
-{ #category : 'private - tools' }
-MCP >> handleToolCallWrapperError: error tool: callTool observabilityRecord: observabilityRecord [
-
-	| errorResult |
-	error mcpIsProtocolError ifTrue: [
-			self observability recordToolCallFinish: observabilityRecord result: nil error: error.
-			error pass ].
-	errorResult := callTool errorResultFor: error.
-	self observability recordToolCallFinish: observabilityRecord result: errorResult error: error.
-	^ errorResult asJRPCJSONForResponseFields: self toolResponseFields
+		  do: [ :error | self answerToolError: error tool: aTool record: record ]
 ]
 
 { #category : 'accessing' }
@@ -720,13 +703,15 @@ MCP >> promptRegistry: aPromptRegistry [
 ]
 
 { #category : 'private - tools' }
-MCP >> recordToolCallWrapperStartFor: callTool arguments: arguments [
+MCP >> recordStartOf: aTool input: arguments dispatchPath: dispatchPath [
+	"The record of a call starting, or nil for a tool that keeps out of observability."
 
+	aTool shouldRecordObservability ifFalse: [ ^ nil ].
 	^ self observability
-		  recordToolCallStart: callTool name
+		  recordToolCallStart: aTool name
 		  input: arguments
-		  dispatchPath: 'direct'
-		  context: (self observabilityContextFor: callTool)
+		  dispatchPath: dispatchPath
+		  context: (self observabilityContextFor: aTool)
 ]
 
 { #category : 'private - tools' }
@@ -779,17 +764,6 @@ MCP >> restart [
 
 	self stop.
 	^ self start
-]
-
-{ #category : 'private - tools' }
-MCP >> rpcCallToolCallWithParams: arguments [
-
-	| callTool observabilityRecord |
-	callTool := self toolCallTool.
-	observabilityRecord := self recordToolCallWrapperStartFor: callTool arguments: arguments.
-	^ [ self dispatchToolCallWith: callTool arguments: arguments observabilityRecord: observabilityRecord ]
-		  on: Exception
-		  do: [ :error | self handleToolCallWrapperError: error tool: callTool observabilityRecord: observabilityRecord ]
 ]
 
 { #category : 'rpc' }
@@ -888,8 +862,8 @@ MCP >> rpcToolCall: name withParams: arguments [
 	<jrpc: #'tools/call'>
 	| tool |
 	tool := self toolRegistry toolNamed: name ifAbsent: [ JRPCNonExistentHandler signal: name ].
-	name = MCPToolCallTool toolName ifTrue: [ ^ self rpcCallToolCallWithParams: arguments ].
-	^ self executeTool: tool named: name withParams: arguments
+	name = MCPToolCallTool toolName ifTrue: [ ^ self callToolCall: tool withParams: arguments ].
+	^ self executeTool: tool withParams: arguments dispatchPath: 'direct'
 ]
 
 { #category : 'rpc' }
@@ -926,25 +900,6 @@ MCP >> serverInfrastructureMetadata [
 	^ { (#'io.github.evref-bl/pharo' -> self pharoRuntimeMetadata) } asDictionary
 ]
 
-{ #category : 'private - tools' }
-MCP >> signalMissingToolNamed: aToolName [
-	"A name that does not resolve is the caller's mistake, not the server's, so it reads as one."
-
-	| suggestions details |
-	suggestions := MCPSelectorSuggestion namesLike: aToolName among: self toolRegistry toolNames.
-	details := Dictionary new
-		           at: #tool put: aToolName;
-		           yourself.
-	suggestions ifNotEmpty: [ details at: #suggestedTools put: suggestions ].
-	MCPCommandError
-		signalErrorCode: #ToolNotFound
-		message: (String streamContents: [ :stream |
-					 stream << 'No MCP tool named ' << aToolName << '.' << (suggestions
-						  ifEmpty: [ ' Use tool_search to find one.' ]
-						  ifNotEmpty: [ String streamContents: [ :stream | stream << ' Did you mean: ' << (', ' join: suggestions) << '?' ] ]) ])
-		details: details
-]
-
 { #category : 'accessing' }
 MCP >> sortedTools [
 
@@ -977,28 +932,6 @@ MCP >> supportedPharoLauncherVersions [
 MCP >> supportedPharoMajorVersions [
 
 	^ #( 10 11 12 13 14 15 )
-]
-
-{ #category : 'private - tools' }
-MCP >> targetToolForCallRequest: request [
-
-	| toolName |
-	toolName := request stringArgumentNamed: 'name'.
-	^ self toolRegistry toolNamed: toolName ifAbsent: [ self signalMissingToolNamed: toolName ]
-]
-
-{ #category : 'private - tools' }
-MCP >> toolCallTool [
-
-	^ self toolRegistry toolNamed: MCPToolCallTool toolName ifAbsent: [ Error signal: 'tool_call is not registered.' ]
-]
-
-{ #category : 'private - tools' }
-MCP >> toolCallWrapperResultFor: callTool request: request [
-
-	| toolName |
-	toolName := request stringArgumentNamed: 'name'.
-	^ callTool successResultText: 'Dispatched tool ' , toolName data: { (#tool -> toolName) } asDictionary
 ]
 
 { #category : 'configuration' }
@@ -1079,12 +1012,6 @@ MCP >> useStructuredContentOnlyToolResponses [
 MCP >> validToolResponseFields [
 
 	^ #( content structuredContent both )
-]
-
-{ #category : 'private - tools' }
-MCP >> validateToolCallRequest: request wrapperTool: callTool [
-
-	(request stringArgumentNamed: 'name') = callTool name ifTrue: [ Error signal: 'tool_call cannot call itself.' ]
 ]
 
 { #category : 'private - start' }

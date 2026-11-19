@@ -69,7 +69,7 @@ MCPObservabilityBackend >> errorDetailsFromToolResult: aToolResult [
 	structuredContent := aToolResult structuredContent.
 	structuredContent ifNil: [ ^ Dictionary new ].
 	structuredContent isDictionary ifFalse: [ ^ Dictionary new ].
-	errorDetails := self valueAtKey: #error in: structuredContent ifAbsent: [ nil ].
+	errorDetails := structuredContent mcpAt: #error ifAbsent: [ nil ].
 	errorDetails isDictionary ifFalse: [ ^ Dictionary new ].
 	^ errorDetails
 ]
@@ -222,7 +222,7 @@ MCPObservabilityBackend >> statusText [
 MCPObservabilityBackend >> stringValueAtKey: aKey in: aDictionary [
 
 	| value |
-	value := self valueAtKey: aKey in: aDictionary ifAbsent: [ '' ].
+	value := aDictionary mcpAt: aKey ifAbsent: [ '' ].
 	value ifNil: [ ^ '' ].
 	^ value asString
 ]
@@ -252,13 +252,6 @@ MCPObservabilityBackend >> traceRecords [
 ]
 
 { #category : 'private - errors' }
-MCPObservabilityBackend >> valueAtKey: aKey in: aDictionary ifAbsent: absentBlock [
-
-	(aDictionary includesKey: aKey) ifTrue: [ ^ aDictionary at: aKey ].
-	^ aDictionary at: aKey asString ifAbsent: absentBlock
-]
-
-{ #category : 'private - errors' }
 MCPObservabilityBackend >> violationKeywordFor: aViolation [
 
 	aViolation isDictionary ifTrue: [ ^ self stringValueAtKey: #keyword in: aViolation ].
@@ -275,7 +268,7 @@ MCPObservabilityBackend >> violationKeywordsFor: violations [
 MCPObservabilityBackend >> violationsFromDetails: details [
 
 	| violations |
-	violations := self valueAtKey: #violations in: details ifAbsent: [ #(  ) ].
+	violations := details mcpAt: #violations ifAbsent: [ #(  ) ].
 	violations ifNil: [ ^ #(  ) ].
 	^ violations asArray
 ]

@@ -16,16 +16,9 @@ Class {
 
 { #category : 'event streams' }
 MCPHTTPServer >> acceptedNotificationsFor: aFilter [
-	"The notification methods this server agreed to carry, from the types the client asked for. resourceSubscriptions is absent because no resource here can say it changed, and the revision has the acknowledgement omit what the server does not support."
+	"The notification methods this server agreed to carry, from the types the client asked for."
 
-	| accepted |
-	accepted := Set new.
-	(aFilter at: 'toolsListChanged' ifAbsent: [ false ]) = true ifTrue: [ accepted add: 'notifications/tools/list_changed' ].
-	(aFilter at: 'promptsListChanged' ifAbsent: [ false ]) = true ifTrue: [
-		accepted add: 'notifications/prompts/list_changed' ].
-	(aFilter at: 'resourcesListChanged' ifAbsent: [ false ]) = true ifTrue: [
-		accepted add: 'notifications/resources/list_changed' ].
-	^ accepted
+	^ (self acknowledgedFilterFor: aFilter) keys collect: [ :each | self listChangedMethodByFilterKey at: each ] as: Set
 ]
 
 { #category : 'event streams' }
@@ -34,7 +27,7 @@ MCPHTTPServer >> acknowledgedFilterFor: aFilter [
 
 	| acknowledged |
 	acknowledged := Dictionary new.
-	#( 'toolsListChanged' 'promptsListChanged' 'resourcesListChanged' ) do: [ :each |
+	self listChangedMethodByFilterKey keysDo: [ :each |
 		(aFilter at: each ifAbsent: [ false ]) = true ifTrue: [ acknowledged at: each put: true ] ].
 	^ acknowledged
 ]
@@ -70,7 +63,7 @@ MCPHTTPServer >> answer: request with: response [
 				^ self answerWithoutBody: response statusLine: (ZnStatusLine code: 406) ].
 			(self postHasJSONContentType: request) ifFalse: [ ^ self answerWithoutBody: response statusLine: (ZnStatusLine code: 415) ].
 			^ self answerPost: request with: response ].
-	^ self answerUnsupportedMethodWith: response
+	^ self answerMethodNotAllowedWith: response
 ]
 
 { #category : 'initialization' }
@@ -101,14 +94,14 @@ MCPHTTPServer >> answerOptionsWith: response [
 { #category : 'initialization' }
 MCPHTTPServer >> answerPost: request with: response [
 
-	| payload mismatch body |
-	mismatch := self headerMismatchFor: request.
+	| body mismatch payload |
+	body := self bodyOf: request.
+	mismatch := self headerMismatchFor: request body: body.
 	mismatch ifNotNil: [
 			response
 				statusLine: ZnStatusLine badRequest;
 				entity: (ZnEntity json: mismatch).
 			^ response ].
-	body := self bodyOf: request.
 	(self isSubscriptionsListen: body) ifTrue: [ ^ self answerSubscriptionsListen: body with: response ].
 	payload := self handleJSON: request contents.
 	(payload isString and: [ payload isEmpty ]) ifTrue: [ ^ self answerWithoutBody: response statusLine: ZnStatusLine accepted ].
@@ -133,12 +126,6 @@ MCPHTTPServer >> answerSubscriptionsListen: body with: response [
 			 parameters: { ('notifications' -> (self acknowledgedFilterFor: filter)) } asDictionary).
 	self addEventStream: stream.
 	^ self streamResponse: response for: stream
-]
-
-{ #category : 'initialization' }
-MCPHTTPServer >> answerUnsupportedMethodWith: response [
-
-	^ self answerMethodNotAllowedWith: response
 ]
 
 { #category : 'initialization' }
@@ -251,16 +238,14 @@ MCPHTTPServer >> hasValidOriginFor: request [
 ]
 
 { #category : 'private - modern headers' }
-MCPHTTPServer >> headerMismatchFor: request [
-	"Answer the error body for a modern request whose headers do not agree with it, or nil when there is nothing to refuse. Legacy requests carry none of these headers and are not asked to."
+MCPHTTPServer >> headerMismatchFor: request body: body [
+	"Answer the error body for a modern request whose headers do not agree with its body, or nil when there is nothing to refuse. Legacy requests carry none of these headers and are not asked to."
 
-	| body |
-	body := self bodyOf: request.
 	body isDictionary ifFalse: [ ^ nil ].
 	(MCP isModernRequest: (body at: 'params' ifAbsent: [ nil ])) ifFalse: [ ^ nil ].
 	^ [
-	  self validateModernHeadersFor: request body: body.
-	  nil ]
+		  self validateModernHeadersFor: request body: body.
+		  nil ]
 		  on: MCPHeaderMismatch
 		  do: [ :error | error return: (error asJRPCResponseWithId: (body at: 'id' ifAbsent: [ nil ])) asJRPCJSON ]
 ]
@@ -321,6 +306,17 @@ MCPHTTPServer >> isSubscriptionsListen: body [
 MCPHTTPServer >> lastListenError [
 
 	^ server lastListenError
+]
+
+{ #category : 'event streams' }
+MCPHTTPServer >> listChangedMethodByFilterKey [
+	"The notifications a client may opt in to, by the key it names each with. resourceSubscriptions is absent because no resource here can say it changed, and the revision has the acknowledgement omit what the server does not support."
+
+	^ Dictionary new
+		  at: 'toolsListChanged' put: 'notifications/tools/list_changed';
+		  at: 'promptsListChanged' put: 'notifications/prompts/list_changed';
+		  at: 'resourcesListChanged' put: 'notifications/resources/list_changed';
+		  yourself
 ]
 
 { #category : 'accessing' }

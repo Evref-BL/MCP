@@ -3208,6 +3208,17 @@ MCPToolContractsTest >> testToolCallsResumeNotificationsWithoutAToolOfTheirOwn [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testToolGetOnAnUnknownNameSuggestsCloseNames [
+
+	| error result |
+	result := self callToolNamed: 'tool_get' withArguments: { (#name -> 'method_serch') } asDictionary.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (error at: #errorCode) equals: 'ToolNotFound'.
+	self assert: ((error at: #suggestedTools) includes: 'method_source_search')
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testToolGetTextCarriesOnlyWhatACallNeeds [
 	"A contract is read to build a call. Its annotations, exposure, group and keywords stay in the data for whoever catalogs tools, and the text leaves them out; whether the tool is advertised is said once, in the summary."
 

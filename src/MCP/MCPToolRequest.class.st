@@ -108,7 +108,8 @@ MCPToolRequest >> clampArgumentNamed: anArgumentName maximum: maximumValue in: n
 { #category : 'accessing' }
 MCPToolRequest >> hasArgumentNamed: anArgumentName [
 
-	^ (self arguments includesKey: anArgumentName asSymbol) or: [ self arguments includesKey: anArgumentName asString ]
+	self argumentNamed: anArgumentName ifAbsent: [ ^ false ].
+	^ true
 ]
 
 { #category : 'initialization' }
@@ -129,12 +130,12 @@ MCPToolRequest >> integerArgumentNamed: anArgumentName [
 
 { #category : 'private - validating' }
 MCPToolRequest >> keyForArgumentNamed: anArgumentName in: aDictionary ifAbsent: absentBlock [
+	"The key the dictionary holds the argument under: arguments read from the wire have String keys, and those built in the image often Symbol ones."
 
 	aDictionary ifNil: [ ^ absentBlock value ].
-	(aDictionary includesKey: anArgumentName) ifTrue: [ ^ anArgumentName ].
-	(aDictionary includesKey: anArgumentName asString) ifTrue: [ ^ anArgumentName asString ].
-	(aDictionary includesKey: anArgumentName asSymbol) ifTrue: [ ^ anArgumentName asSymbol ].
-	^ absentBlock value
+	^ {
+		  anArgumentName asString.
+		  anArgumentName asSymbol } detect: [ :each | aDictionary includesKey: each ] ifNone: absentBlock
 ]
 
 { #category : 'testing' }
@@ -309,8 +310,7 @@ MCPToolRequest >> validate [
 { #category : 'private - accessing' }
 MCPToolRequest >> valueNamed: anArgumentName in: aDictionary ifAbsent: absentBlock [
 
-	aDictionary ifNil: [ ^ absentBlock value ].
-	^ aDictionary at: anArgumentName asSymbol ifAbsent: [ aDictionary at: anArgumentName asString ifAbsent: absentBlock ]
+	^ (aDictionary ifNil: [ ^ absentBlock value ]) mcpAt: anArgumentName ifAbsent: absentBlock
 ]
 
 { #category : 'accessing' }

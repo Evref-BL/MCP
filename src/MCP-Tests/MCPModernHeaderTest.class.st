@@ -13,7 +13,10 @@ Class {
 { #category : 'private' }
 MCPModernHeaderTest >> mismatchFor: aBody headers: someAssociations [
 
-	^ MCPHTTPServer new headerMismatchFor: (self requestFor: aBody headers: someAssociations)
+	| server request |
+	server := MCPHTTPServer new.
+	request := self requestFor: aBody headers: someAssociations.
+	^ server headerMismatchFor: request body: (server bodyOf: request)
 ]
 
 { #category : 'private' }

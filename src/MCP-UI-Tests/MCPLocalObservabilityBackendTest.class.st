@@ -167,7 +167,7 @@ MCPLocalObservabilityBackendTest >> testMCPTestToolsDoNotRecordObservability [
 	mcp := MCP new.
 	mcp observabilityEnabled: true.
 
-	result := mcp executeTool: MCPExternalTestTool new named: MCPExternalTestTool toolName withParams: Dictionary new.
+	result := mcp executeTool: MCPExternalTestTool new withParams: Dictionary new dispatchPath: 'direct'.
 
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: mcp observability totalCallCount equals: 0.
