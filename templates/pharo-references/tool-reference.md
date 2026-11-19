@@ -117,9 +117,15 @@ closing it discards every change since its last save, and a mistake costs the
 session rather than the image file. Evaluate `Smalltalk saveSession` when a
 change should survive, or leave it to whoever owns the image lifecycle.
 
-`history_entry_list` shows what changed and `history_entry_revert` undoes it in
-the running image, by the indexes the list prints; the answer shows each
-method's source before and after.
+The change history keeps what a stop or a mistake would cost.
+`method_version_list` lists one method's earlier versions and `method_restore`
+puts one back. `history_lost_change_list` lists what earlier sessions changed
+since the image was last saved, which a crash or a stop without saving lost,
+and `history_lost_change_restore` installs it again. For anything else, of this
+session or an earlier one, `history_entry_list` lists the entries,
+`history_file_list` the history's files, and `history_entry_apply` or
+`history_entry_revert` act on the indexes the list prints; the answer shows
+each method's source before and after.
 
 ## The Escape Hatch
 

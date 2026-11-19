@@ -19,11 +19,14 @@ standalone image without a safer environment-specific recovery surface.
    `localUrlString`; restart the existing MCP instance when possible.
 4. Create a replacement image only after preserving the original. Use
    `pharo-project-load` to restore MCP and the target project.
-5. Recover changes by inspecting Epicea history before applying any of it.
-   History lists every change since the image started, committed or not:
-   check a change against the checkout's `git log` before naming it as lost,
-   as `pharo-image-sync` says. Use it too before repository attachment or
-   Tonel export.
+5. Recover what the stop lost with `history_lost_change_list`, in the image
+   restarted from its last save, before `history_lost_change_restore`
+   installs any of it. For anything else the history holds, or a replacement
+   image, `history_file_list` finds the history's files and
+   `history_entry_list` reads one. A change the image lost may be committed
+   all the same: check it against the checkout's `git log` before naming it
+   as lost, as `pharo-image-sync` says. Do this before repository attachment
+   or Tonel export.
 6. Verify the recovered behavior with focused inspection or tests.
 
 ## Stop And Ask
