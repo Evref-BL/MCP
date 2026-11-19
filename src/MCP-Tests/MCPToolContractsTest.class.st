@@ -792,13 +792,21 @@ MCPToolContractsTest >> testDescriberAndResultClassesUseInfoOrResultSuffixes [
 
 { #category : 'tests' }
 MCPToolContractsTest >> testDiscoveryInstructionsNameOnlyAdvertisedTools [
-	"A host may let a model call only the tools its list holds, so a tool the instructions name must be one tools/list shows, or they send the model where it cannot go."
+	"A host may let a model call only the tools its list holds, so a tool the instructions name must be one tools/list shows, or they send the model where it cannot go. The default server gives the Pharo workflow; a server advertising only the catalog tools leaves it out and still says how to reach the rest."
 
-	| server named |
-	server := self mcpWithoutObservabilityExport.
-	named := (server discoveryInstructions substrings: ' ,.;:()') select: [ :each | each includes: $_ ].
-	self deny: named isEmpty.
-	self assertEmpty: (named reject: [ :each | server advertisedToolNames includes: each ])
+	| catalogOnly |
+	catalogOnly := self mcpWithoutObservabilityExport
+		               advertiseTools: #( 'tool_search' 'tool_get' 'tool_call' );
+		               yourself.
+	self assert: (self mcpWithoutObservabilityExport discoveryInstructions includesSubstring: MCP pharoCodeInstructions).
+	self deny: (catalogOnly discoveryInstructions includesSubstring: MCP pharoCodeInstructions).
+	{
+		self mcpWithoutObservabilityExport.
+		catalogOnly } do: [ :server |
+			| named |
+			named := (server discoveryInstructions substrings: ' ,.;:()') select: [ :each | each includes: $_ ].
+			self deny: named isEmpty.
+			self assertEmpty: (named reject: [ :each | server advertisedToolNames includes: each ]) ]
 ]
 
 { #category : 'tests' }
@@ -3459,8 +3467,8 @@ MCPToolContractsTest >> testToolSearchSendsAToolNotAdvertisedThroughToolCall [
 MCPToolContractsTest >> testToolsDoNotResumeRefactoringWarnings [
 	"A refactoring warning reports a change that breaks something: resuming it at the boundary would apply a mutation that force did not authorize."
 
-	self deny: (MCPToolRemoveClasses new shouldResumeNotification: RBRefactoringWarning new).
-	self assert: (MCPToolEvaluate new shouldResumeNotification: MCPToolNestedNotification new)
+	self deny: RBRefactoringWarning new mcpResumesAtToolBoundary.
+	self assert: MCPToolNestedNotification new mcpResumesAtToolBoundary
 ]
 
 { #category : 'tests' }

@@ -11,3 +11,10 @@ RBRefactoringWarning >> mcpMutationFailureErrorCodeSuffix [
 
 	^ 'RefactoringWarning'
 ]
+
+{ #category : '*MCP-IDE' }
+RBRefactoringWarning >> mcpResumesAtToolBoundary [
+	"I report a change that breaks something. A tool that may proceed anyway handles me itself behind force, so reaching the boundary around the call unresumed is what aborts an unauthorized mutation."
+
+	^ false
+]

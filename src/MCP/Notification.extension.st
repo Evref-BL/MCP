@@ -6,3 +6,10 @@ Notification >> mcpDefaultAction [
 
 	^ self defaultAction
 ]
+
+{ #category : '*MCP' }
+Notification >> mcpResumesAtToolBoundary [
+	"A notification is not a failed call, so the boundary around a tool call resumes it."
+
+	^ true
+]

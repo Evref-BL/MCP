@@ -13,12 +13,6 @@ Object >> mcpCompilationAst [
 ]
 
 { #category : '*MCP' }
-Object >> mcpDiffPackageName [
-
-	^ nil
-]
-
-{ #category : '*MCP' }
 Object >> mcpSignalerContext [
 
 	^ nil

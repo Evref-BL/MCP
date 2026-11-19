@@ -6,8 +6,8 @@ Subclasses keep the command-specific state and implement #execute.
 Class {
 	#name : 'MCPCommand',
 	#superclass : 'Object',
-	#category : 'MCP-Commands',
-	#package : 'MCP',
+	#category : 'MCP-IDE-Commands',
+	#package : 'MCP-IDE',
 	#tag : 'Commands'
 }
 
