@@ -41,8 +41,10 @@ names in place of `load`. The baseline groups are:
   repositories, change history, debugging
 - `UI`: the world-menu windows and the inspector tabs
 - `Telemetry`: the OpenTelemetry backend
-- `default`: `Core`, `IDE` and `UI`
-- `all`: every group, the tests included
+- `Tests`: the tests of `Core` and `IDE`; `UI Tests` and `Telemetry Tests` hold
+  those of `UI` and `Telemetry`
+- `default`: `Core`, `IDE`, `UI` and their tests
+- `all`: every group
 
 An image without a display has no use for `UI` and loads `#( 'Core' 'IDE' )`.
 A project embedding the server and serving tools of its own loads `Core` alone,

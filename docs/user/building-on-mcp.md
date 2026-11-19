@@ -137,8 +137,7 @@ MyProjectToolListWidgets >> executeWithRequest: request
   call against before your code runs. `additionalProperties` defaults to
   false, so a caller that misspells an argument is told so instead of having
   it ignored. Every property takes a description; it is the only place the
-  caller learns what the argument means. Its `default:` is what the tool
-  reads when the caller leaves the argument out.
+  caller learns what the argument means.
 
 ## Being served
 
@@ -461,9 +460,9 @@ them back. Add `MCPToolSearchTools`, `MCPToolGetTool` and `MCPToolCallTool`
 when you want a surface a model can explore, or build up from `MCP new` with
 `addTool:` instead.
 
-A server takes prompts and resources the same way: `addPrompt:` and
-`addResource:` add one to what it discovered, and `onlyPrompts:` and
-`onlyResources:` replace its catalog of them with exactly those.
+An `MCP` instance takes prompts and resources the same way: `mcp addPrompt:`
+and `mcp addResource:` add one to what it discovered, and `mcp onlyPrompts:`
+and `mcp onlyResources:` replace its catalog of them with exactly those.
 
 ## Testing what you serve
 
