@@ -63,10 +63,11 @@ MCPRemoveSlotCommand >> removeClassSideSlotFromBehavior: aBehavior [
 
 { #category : 'private' }
 MCPRemoveSlotCommand >> signalReferenceWarningIfNeededForBehavior: aBehavior [
+	"The warning a slot removal stops at while methods use the slot, as RBRefactoringWarning, which every supported Pharo has and the tool lets force past: Pharo's breaking-change warning is missing from Pharo 10 and is a plain Warning in Pharo 11."
 
 	| hasReferences |
 	hasReferences := aBehavior withAllSubclasses anySatisfy: [ :each | (each whichMethodsAccess: self slotName) isNotEmpty ].
 	hasReferences ifTrue: [
-			RBBreakingChangeChecksFailedWarning signal:
+			RBRefactoringWarning signal:
 				(String streamContents: [ :stream | stream << ' Variable ' << self slotName << ' is still referenced' ]) ]
 ]

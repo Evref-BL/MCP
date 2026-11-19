@@ -436,10 +436,18 @@ MCPToolUpdateClass >> failureMessageForMoveSlotNamed: slotName onClassNamed: cla
 
 { #category : 'private - errors' }
 MCPToolUpdateClass >> failureMessageForRemoveSlotNamed: slotName onClassNamed: className classSide: classSide error: anError [
+	"Before Pharo 12, removing an instance-side slot that methods use fails rather than warns, an RBRefactoringError whatever force says, and the refactoring's text names none of them: they are named as a warning names them."
 
+	| uses |
+	uses := (anError isKindOf: RBRefactoringError)
+		        ifTrue: [ self usesOfSlotNamed: slotName inClassNamed: className classSide: classSide ]
+		        ifFalse: [ #(  ) ].
 	^ String streamContents: [ :stream |
 			  stream << 'Failed to remove ' << (self slotDescriptionForClassSide: classSide) << ' ' << slotName << ' from class '
-			  << className << ': ' << (self normalizedCauseMessageForMutationError: anError) ]
+			  << className << ': '.
+			  uses ifEmpty: [ stream << (self normalizedCauseMessageForMutationError: anError) ] ifNotEmpty: [
+					  uses do: [ :each | stream << each ] separatedBy: [ stream << '; ' ].
+					  stream << '. Change them first.' ] ]
 ]
 
 { #category : 'private - errors' }
@@ -540,6 +548,14 @@ MCPToolUpdateClass >> failureMessageForSetCommentOnClassNamed: className error: 
 				  nextPutAll: className;
 				  nextPutAll: ': ';
 				  nextPutAll: (self normalizedCauseMessageForMutationError: anError) ]
+]
+
+{ #category : 'private - warnings' }
+MCPToolUpdateClass >> impactMessagesForRefactoringWarning: aWarning action: action requestedContext: requestedContext [
+	"A slot removal is stopped because methods still use the slot, which the warning names without their class, or not at all, depending on the Pharo version. They are read in the image instead, each with what it does to the slot."
+
+	action = 'removeSlot' ifTrue: [ (self usesOfSlotIn: requestedContext) ifNotEmpty: [ :messages | ^ messages ] ].
+	^ super impactMessagesForRefactoringWarning: aWarning action: action requestedContext: requestedContext
 ]
 
 { #category : 'private - results' }
@@ -756,4 +772,42 @@ MCPToolUpdateClass >> updateSubjectDescriptionFor: request [
 	"What the summary of several updates calls the class."
 
 	^ 'class ' , (request stringArgumentNamed: 'name')
+]
+
+{ #category : 'private - warnings' }
+MCPToolUpdateClass >> useOfSlot: aSlot by: aMethod [
+	"Class>>selector reads slot, writes slot, or reads and writes it."
+
+	^ String streamContents: [ :stream |
+			  stream << aMethod methodClass name << '>>' << aMethod selector << ' '.
+			  (aMethod readsSlot: aSlot)
+				  ifTrue: [
+						  stream << 'reads'.
+						  (aMethod writesSlot: aSlot) ifTrue: [ stream << ' and writes' ] ]
+				  ifFalse: [ stream << 'writes' ].
+			  stream << ' ' << aSlot name ]
+]
+
+{ #category : 'private - warnings' }
+MCPToolUpdateClass >> usesOfSlotIn: requestedContext [
+	"The methods that use the slot requestedContext names, as usesOfSlotNamed:inClassNamed:classSide: answers them."
+
+	^ self
+		  usesOfSlotNamed: (requestedContext at: #slot)
+		  inClassNamed: (requestedContext at: #class)
+		  classSide: (requestedContext at: #side ifAbsent: [ nil ]) = 'class'
+]
+
+{ #category : 'private - warnings' }
+MCPToolUpdateClass >> usesOfSlotNamed: slotName inClassNamed: className classSide: aBoolean [
+	"One line per method that reads or writes the slot slotName the class defines on that side, in the class and the subclasses that inherit it: the class first, then its subclasses by name, each one's methods by selector. Empty when the class defines no such slot itself."
+
+	| behavior slot |
+	behavior := [ MCPImageLookup behaviorNamed: className classSide: aBoolean ]
+		            on: Error
+		            do: [ ^ #(  ) ].
+	slot := behavior slots detect: [ :each | each name = slotName asSymbol ] ifNone: [ ^ #(  ) ].
+	^ { behavior } , (behavior allSubclasses sorted: [ :a :b | a name <= b name ]) flatCollect: [ :each |
+			  ((each methods select: [ :method | (method readsSlot: slot) or: [ method writesSlot: slot ] ]) sorted: [ :a :b |
+				   a selector <= b selector ]) collect: [ :method | self useOfSlot: slot by: method ] ]
 ]
