@@ -19,6 +19,64 @@ MCPRepositorySpecTest >> newRepositoryNamed: aRepositoryName location: aFileRefe
 	^ repository
 ]
 
+{ #category : 'private' }
+MCPRepositorySpecTest >> refusalFor: aReference [
+	"What resolving aReference refuses with, nil when it resolves."
+
+	^ [
+		  aReference repository.
+		  nil ]
+		  on: MCPCommandError
+		  do: [ :error | error messageText ]
+]
+
+{ #category : 'tests' }
+MCPRepositorySpecTest >> testAMissingRepositoryAmongManySuggestsTheClosestNames [
+	"Past a few registered repositories, the refusal names those closest to the name asked for, or how many there are when none is close."
+
+	| repositories |
+	repositories := (1 to: 6) collect: [ :index |
+			                self
+				                newRepositoryNamed: 'Repo' , index printString
+				                location: FileLocator imageDirectory / ('repo' , index printString)
+				                packageNames: #(  ) ].
+	self withRepositories: repositories do: [
+			self
+				assert: (self refusalFor: (MCPRepositoryReferenceSpec name: 'Repo7' location: nil))
+				equals: 'No repository named Repo7 is registered. Did you mean: Repo1, Repo2, Repo3, Repo4, Repo5?'.
+			self
+				assert: (self refusalFor: (MCPRepositoryReferenceSpec name: 'Zzqxw' location: nil))
+				equals: 'No repository named Zzqxw is registered. 6 repositories are registered: repository_search lists them.' ]
+]
+
+{ #category : 'tests' }
+MCPRepositorySpecTest >> testAMissingRepositoryNamesTheRegisteredOnes [
+	"A name no registered repository has is refused saying what is registered: none, the few there are, or the same name at another location."
+
+	| alpha beta |
+	alpha := self newRepositoryNamed: 'Alpha' location: FileLocator imageDirectory / 'alpha' packageNames: #(  ).
+	beta := self newRepositoryNamed: 'Beta' location: FileLocator imageDirectory / 'beta' packageNames: #(  ).
+	self withRepositories: #(  ) do: [
+			self
+				assert: (self refusalFor: (MCPRepositoryReferenceSpec name: 'ZooKeeping' location: nil))
+				equals: 'No repository named ZooKeeping is registered. The image has none: repository_attach registers an existing checkout.' ].
+	self
+		withRepositories: {
+				alpha.
+				beta }
+		do: [
+				self
+					assert: (self refusalFor: (MCPRepositoryReferenceSpec name: 'Gamma' location: nil))
+					equals: 'No repository named Gamma is registered. Registered: Alpha, Beta.'.
+				self
+					assert: (self refusalFor: (MCPRepositoryReferenceSpec name: 'Alpha' location: '/nowhere'))
+					equals: ('No repository named Alpha is registered at /nowhere. Alpha is registered at {1}.' format:
+							 { alpha location mcpRepositoryLocationString }).
+				self
+					assert: (self refusalFor: (MCPRepositoryReferenceSpec name: nil location: '/nowhere'))
+					equals: 'No repository is registered at /nowhere. Registered: Alpha, Beta.' ]
+]
+
 { #category : 'tests' }
 MCPRepositorySpecTest >> testAdoptHeadNamesThePackagesItUnmarks [
 	"Adopting clears the marks, so the answer names those the info before held and the repository no longer does."
@@ -56,6 +114,28 @@ MCPRepositorySpecTest >> testAdoptHeadReadsItsRequest [
 	self assert: (tool repositoryReferenceFor: request) name equals: 'MCP Repo'.
 	self assert: (tool expectedBranchNameIn: request) equals: 'main'.
 	self assert: ((tool requestedContextFor: request checked: true) at: #branch) equals: 'main'
+]
+
+{ #category : 'tests' }
+MCPRepositorySpecTest >> testAnAmbiguousRepositoryNamesEachMatchWithItsLocation [
+	"Two registrations under one name are told apart by location, which the refusal names; a reference naming nothing says which arguments name one."
+
+	| first second |
+	first := self newRepositoryNamed: 'Alpha' location: FileLocator imageDirectory / 'alpha-1' packageNames: #(  ).
+	second := self newRepositoryNamed: 'Alpha' location: FileLocator imageDirectory / 'alpha-2' packageNames: #(  ).
+	self
+		withRepositories: {
+				second.
+				first }
+		do: [
+				self
+					assert: (self refusalFor: (MCPRepositoryReferenceSpec name: 'Alpha' location: nil))
+					equals: ('More than one registered repository matches: Alpha at {1}, Alpha at {2}. Pass location to choose one.' format: {
+								 first location mcpRepositoryLocationString.
+								 second location mcpRepositoryLocationString }).
+				self
+					assert: (self refusalFor: (MCPRepositoryReferenceSpec name: nil location: nil))
+					equals: 'Repository tools require repository, location, or both.' ]
 ]
 
 { #category : 'tests' }
@@ -210,7 +290,7 @@ MCPRepositorySpecTest >> testRepositoryReferenceResolvesByNameAndLocation [
 	self withRepositories: { repository } do: [
 			reference := MCPRepositoryReferenceSpec name: 'MCP Reference Repository' location: FileLocator imageDirectory pathString.
 			self assert: reference repository identicalTo: repository.
-			self assert: (reference requestedContext at: #name) equals: 'MCP Reference Repository'.
+			self assert: (reference requestedContext at: #repository) equals: 'MCP Reference Repository'.
 			self assert: (reference requestedContext at: #location) equals: FileLocator imageDirectory pathString ]
 ]
 
