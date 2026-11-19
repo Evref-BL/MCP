@@ -70,8 +70,8 @@ MCPRepositorySpecTest >> testAMissingRepositoryNamesTheRegisteredOnes [
 					equals: 'No repository named Gamma is registered. Registered: Alpha, Beta.'.
 				self
 					assert: (self refusalFor: (MCPRepositoryReferenceSpec name: 'Alpha' location: '/nowhere'))
-					equals: ('No repository named Alpha is registered at /nowhere. Alpha is registered at {1}.' format:
-							 { alpha location mcpRepositoryLocationString }).
+					equals:
+					('No repository named Alpha is registered at /nowhere. Alpha is registered at {1}.' format: { alpha location pathString }).
 				self
 					assert: (self refusalFor: (MCPRepositoryReferenceSpec name: nil location: '/nowhere'))
 					equals: 'No repository is registered at /nowhere. Registered: Alpha, Beta.' ]
@@ -83,7 +83,7 @@ MCPRepositorySpecTest >> testAdoptHeadNamesThePackagesItUnmarks [
 
 	| afterInfo beforeInfo data repository tool unmarked |
 	tool := MCPToolAdoptRepositoryHead new.
-	repository := MCPTestIceRepository named: 'MCP Adopt Head Repository' location: 'memory://adopt-head'.
+	repository := MCPTestIceRepository named: 'MCP Adopt Head Repository' location: FileSystem memory / 'adopt-head'.
 	repository modifiedPackageNames: #( 'MCP' ).
 	beforeInfo := MCPRepositoryInfo fromRepository: repository.
 	repository modifiedPackageNames: #(  ).
@@ -131,11 +131,11 @@ MCPRepositorySpecTest >> testAnAmbiguousRepositoryNamesEachMatchWithItsLocation 
 				self
 					assert: (self refusalFor: (MCPRepositoryReferenceSpec name: 'Alpha' location: nil))
 					equals: ('More than one registered repository matches: Alpha at {1}, Alpha at {2}. Pass location to choose one.' format: {
-								 first location mcpRepositoryLocationString.
-								 second location mcpRepositoryLocationString }).
+								 first location pathString.
+								 second location pathString }).
 				self
 					assert: (self refusalFor: (MCPRepositoryReferenceSpec name: nil location: nil))
-					equals: 'Repository tools require repository, location, or both.' ]
+					equals: 'Repository tools require repository.' ]
 ]
 
 { #category : 'tests' }
@@ -268,21 +268,6 @@ MCPRepositorySpecTest >> testReloadDataNamesThePackages [
 ]
 
 { #category : 'tests' }
-MCPRepositorySpecTest >> testRepositoryPackageInfoReturnsDictionary [
-
-	| packageData repository |
-	repository := self
-		              newRepositoryNamed: 'MCP Package Info Repository'
-		              location: FileLocator imageDirectory
-		              packageNames: #( 'MCP' ).
-	packageData := (MCPRepositoryPackageInfo fromPackage: repository workingCopy packages first) asDictionary.
-	self assert: (packageData at: #name) equals: 'MCP'.
-	self assert: (packageData includesKey: #directoryName).
-	self assert: (packageData includesKey: #isLoaded).
-	self assert: (packageData includesKey: #isModified)
-]
-
-{ #category : 'tests' }
 MCPRepositorySpecTest >> testRepositoryReferenceResolvesByNameAndLocation [
 
 	| repository reference |
@@ -324,7 +309,7 @@ MCPRepositorySpecTest >> testVerifyIdentitySuccessAnswersNoData [
 	"A mismatch is an error, so a success carries no data and its summary names the fields that held."
 
 	| repository result tool |
-	repository := MCPTestIceRepository named: 'MCP VerifyIdentity Repository' location: 'memory://verifyIdentity'.
+	repository := MCPTestIceRepository named: 'MCP VerifyIdentity Repository' location: FileSystem memory / 'verifyIdentity'.
 	repository workingCopy packageNames: #( 'MCP-Tests' 'MCP' ).
 	repository modifiedPackageNames: #( 'MCP' ).
 	tool := MCPToolVerifyRepositoryIdentity new.

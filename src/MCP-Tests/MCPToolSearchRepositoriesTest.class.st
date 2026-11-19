@@ -147,7 +147,7 @@ MCPToolSearchRepositoriesTest >> testListsRepositoryPackageMetadata [
 
 	MCPTestGitRepositoryFixture withConfig: MCPTestGitRepositoryFixture richConfig do: [ :repositoryDirectory |
 			| entry repository result |
-			repository := MCPTestIceRepository named: 'MCP Rich Repository' location: repositoryDirectory pathString.
+			repository := MCPTestIceRepository named: 'MCP Rich Repository' location: repositoryDirectory.
 			repository workingCopy packageNames: #( 'MCP' ).
 			repository headDescription: 'rich head'.
 			repository headCommitId: 'abc123'.

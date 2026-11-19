@@ -161,16 +161,6 @@ MCPCreateRepositoryCommand >> firstFilesIn: aLocation ignoringGit: ignoresGit [
 	^ files asArray
 ]
 
-{ #category : 'private - location' }
-MCPCreateRepositoryCommand >> gitDirectoryReferenceFor: gitDirPath relativeTo: aLocation [
-
-	| reference |
-	reference := gitDirPath asFileReference.
-	^ reference isAbsolute
-		  ifTrue: [ reference ]
-		  ifFalse: [ aLocation / gitDirPath ]
-]
-
 { #category : 'private - creating' }
 MCPCreateRepositoryCommand >> initializeGitAt: aLocation [
 	"git init, as Iceberg's creator runs it."
@@ -198,17 +188,11 @@ MCPCreateRepositoryCommand >> isGitCheckoutRoot: aLocation [
 { #category : 'private - location' }
 MCPCreateRepositoryCommand >> isLinkedGitWorktreeRoot: aLocation [
 
-	| contents gitDirectoryPath gitFile |
-	aLocation isDirectory ifFalse: [ ^ false ].
-	gitFile := aLocation / '.git'.
-	(gitFile exists and: [ gitFile isFile ]) ifFalse: [ ^ false ].
-	contents := [ gitFile contents trimBoth ]
-		            on: Error
-		            do: [ :ignored | ^ false ].
-	(contents beginsWith: 'gitdir:') ifFalse: [ ^ false ].
-	gitDirectoryPath := (contents allButFirst: 'gitdir:' size) trimBoth.
-	gitDirectoryPath isEmpty ifTrue: [ ^ false ].
-	^ (self gitDirectoryReferenceFor: gitDirectoryPath relativeTo: aLocation) exists
+	^ aLocation isDirectory and: [
+			  (aLocation / '.git') isFile and: [
+					  (MCPGitRepositoryMetadata gitDirectoryOfGitFile: aLocation / '.git' in: aLocation)
+						  ifNil: [ false ]
+						  ifNotNil: [ :directory | directory exists ] ] ]
 ]
 
 { #category : 'accessing' }
@@ -241,8 +225,7 @@ MCPCreateRepositoryCommand >> matchingRegisteredRepositories [
 
 	| locationPath |
 	locationPath := location asFileReference pathString.
-	^ IceRepository repositories select: [ :each |
-		  each name asString = name or: [ (self repositoryLocationStringFor: each) = locationPath ] ]
+	^ IceRepository repositories select: [ :each | each name asString = name or: [ each mcpLocationString = locationPath ] ]
 ]
 
 { #category : 'private - signaling' }
@@ -379,7 +362,7 @@ MCPCreateRepositoryCommand >> signalLocationRegisteredFor: aRepository among: ma
 	self
 		signalAlreadyRegistered: (String streamContents: [ :stream |
 					 stream << self refusalPrefix << 'repository ' << aRepository name << ' is already registered at '
-					 << (self repositoryLocationStringFor: aRepository) << '. Use it, or choose another location.' ])
+					 << aRepository mcpLocationString << '. Use it, or choose another location.' ])
 		among: matches
 ]
 
@@ -387,7 +370,7 @@ MCPCreateRepositoryCommand >> signalLocationRegisteredFor: aRepository among: ma
 MCPCreateRepositoryCommand >> signalNameRegisteredFor: aRepository among: matches [
 
 	| registeredLocation |
-	registeredLocation := self repositoryLocationStringFor: aRepository.
+	registeredLocation := aRepository mcpLocationString.
 	self
 		signalAlreadyRegistered: (String streamContents: [ :stream |
 					 stream << self refusalPrefix << 'a repository of that name is already registered, '.

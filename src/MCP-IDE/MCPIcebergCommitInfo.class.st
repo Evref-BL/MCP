@@ -1,7 +1,5 @@
 "
-Compatibility accessor for Iceberg commit-like objects.
-
-Iceberg has exposed commit metadata through slightly different protocols across backends and versions. This class keeps those commit protocol details in one place so repository operations, tools and MCPRepositoryInfo can use explicit MCP-side messages.
+A commit's id for the repository tools, and whether a commit is Iceberg's no-commit, both safe for nil: the id is empty for no commit at all, as a repository with no commits answers, and for none given.
 "
 Class {
 	#name : 'MCPIcebergCommitInfo',

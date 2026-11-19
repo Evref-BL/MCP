@@ -62,12 +62,6 @@ MCPRepositoryInfo >> asDictionary [
 ]
 
 { #category : 'converting' }
-MCPRepositoryInfo >> asQueryDictionary [
-
-	^ self asDictionary
-]
-
-{ #category : 'converting' }
 MCPRepositoryInfo >> asSearchDictionary [
 	"A search says a repository exists, where it is and what is dirty in it. Which packages it holds is
 	what package_search answers. A repository registered with no location has none to name."
@@ -83,12 +77,6 @@ MCPRepositoryInfo >> asSearchDictionary [
 	self packageNames ifNotEmpty: [ :names | data at: #packageCount put: names size ].
 	self modifiedPackageNames ifNotEmpty: [ :names | data at: #modifiedPackages put: names ].
 	^ data
-]
-
-{ #category : 'private' }
-MCPRepositoryInfo >> booleanFrom: aBlock default: defaultBoolean [
-
-	^ aBlock value ifNil: [ defaultBoolean ]
 ]
 
 { #category : 'accessing' }
@@ -123,23 +111,25 @@ MCPRepositoryInfo >> headDescription [
 
 { #category : 'initialization' }
 MCPRepositoryInfo >> initializeFromRepository: aRepository [
+	"The remotes and the upstream come from one reading of the repository's git files."
 
-	| upstreamInfo |
-	name := self stringFrom: [ aRepository name ] default: ''.
+	| metadata upstreamInfo |
+	name := (aRepository name ifNil: [ '' ]) asString.
 	className := aRepository class name asString.
-	location := self repositoryLocationFor: aRepository.
-	subdirectory := self repositorySubdirectoryFor: aRepository.
+	location := aRepository mcpLocationString.
+	subdirectory := (aRepository subdirectory ifNil: [ '' ]) asString.
 	branchName := self repositoryBranchNameFor: aRepository.
 	headDescription := self repositoryHeadDescriptionFor: aRepository.
 	headClassName := self repositoryHeadClassNameFor: aRepository.
 	headCommitId := self repositoryHeadCommitIdFor: aRepository.
 	isDetachedHead := self repositoryIsDetachedHeadFor: aRepository.
-	isMissing := self booleanFrom: [ aRepository isMissing ] default: false.
-	isModified := self booleanFrom: [ aRepository isModified ] default: false.
-	packageNames := self repositoryPackageNamesFor: aRepository.
-	modifiedPackageNames := self repositoryModifiedPackageNamesFor: aRepository.
-	remotes := self repositoryRemotesFor: aRepository.
-	upstreamInfo := self repositoryUpstreamInfoFor: aRepository.
+	isMissing := aRepository isMissing ifNil: [ false ].
+	isModified := aRepository isModified ifNil: [ false ].
+	packageNames := self sortedStringsFrom: aRepository workingCopy packageNames.
+	modifiedPackageNames := self sortedStringsFrom: (aRepository modifiedPackages collect: [ :each | each name ]).
+	metadata := MCPGitRepositoryMetadata forRepository: aRepository.
+	remotes := metadata remoteDictionaries.
+	upstreamInfo := metadata upstreamInfoForBranchNamed: self branchName.
 	upstreamRemoteName := upstreamInfo at: #remoteName.
 	upstreamBranchName := upstreamInfo at: #branch.
 	upstreamRemoteUrl := upstreamInfo at: #remoteUrl
@@ -150,9 +140,7 @@ MCPRepositoryInfo >> initializeStaleRepository: aRepository [
 
 	name := self stringFromFileBoundary: [ aRepository name ] default: ''.
 	className := aRepository class name asString.
-	location := self
-		            stringFromFileBoundary: [ aRepository location ifNotNil: [ :repositoryLocation | repositoryLocation pathString ] ]
-		            default: ''.
+	location := self stringFromFileBoundary: [ aRepository mcpLocationString ] default: ''.
 	subdirectory := self stringFromFileBoundary: [ aRepository subdirectory ] default: ''.
 	branchName := ''.
 	headDescription := ''.
@@ -212,12 +200,6 @@ MCPRepositoryInfo >> packageNames [
 ]
 
 { #category : 'accessing' }
-MCPRepositoryInfo >> remoteNames [
-
-	^ ((self remotes collect: [ :each | each at: #name ifAbsent: [ '' ] ]) reject: [ :each | each isEmpty ]) asArray
-]
-
-{ #category : 'accessing' }
 MCPRepositoryInfo >> remotes [
 
 	^ remotes ifNil: [ #(  ) ]
@@ -230,7 +212,7 @@ MCPRepositoryInfo >> repositoryBranchNameFor: aRepository [
 	^ [
 		  aRepository head isDetached
 			  ifTrue: [ '' ]
-			  ifFalse: [ self stringValue: aRepository branchName default: '' ] ]
+			  ifFalse: [ (aRepository branchName ifNil: [ '' ]) asString ] ]
 		  on: NotFound
 		  do: [ :ignored | '' ]
 ]
@@ -239,7 +221,7 @@ MCPRepositoryInfo >> repositoryBranchNameFor: aRepository [
 MCPRepositoryInfo >> repositoryHeadClassNameFor: aRepository [
 
 	aRepository location ifNil: [ ^ '' ].
-	^ [ self stringFrom: [ aRepository head class name ] default: '' ]
+	^ [ aRepository head class name asString ]
 		  on: NotFound
 		  do: [ :ignored | '' ]
 ]
@@ -257,7 +239,7 @@ MCPRepositoryInfo >> repositoryHeadCommitIdFor: aRepository [
 MCPRepositoryInfo >> repositoryHeadDescriptionFor: aRepository [
 
 	aRepository location ifNil: [ ^ '' ].
-	^ [ self stringFrom: [ aRepository headDescription ] default: '' ]
+	^ [ (aRepository headDescription ifNil: [ '' ]) asString ]
 		  on: NotFound
 		  do: [ :ignored | '' ]
 ]
@@ -266,80 +248,25 @@ MCPRepositoryInfo >> repositoryHeadDescriptionFor: aRepository [
 MCPRepositoryInfo >> repositoryIsDetachedHeadFor: aRepository [
 
 	aRepository location ifNil: [ ^ false ].
-	^ [ self booleanFrom: [ aRepository head isDetached ] default: false ]
+	^ [ aRepository head isDetached ifNil: [ false ] ]
 		  on: NotFound
 		  do: [ :ignored | false ]
 ]
 
 { #category : 'private' }
-MCPRepositoryInfo >> repositoryLocationFor: aRepository [
+MCPRepositoryInfo >> sortedStringsFrom: someValues [
 
-	^ self
-		  stringFrom: [ aRepository location ifNotNil: [ :repositoryLocation | repositoryLocation mcpRepositoryLocationString ] ]
-		  default: ''
-]
-
-{ #category : 'private' }
-MCPRepositoryInfo >> repositoryModifiedPackageNamesFor: aRepository [
-
-	^ self sortedStringsFrom: [ aRepository modifiedPackages collect: [ :each | each name ] ]
-]
-
-{ #category : 'private' }
-MCPRepositoryInfo >> repositoryPackageNamesFor: aRepository [
-
-	^ self sortedStringsFrom: [ aRepository workingCopy packageNames ]
-]
-
-{ #category : 'private' }
-MCPRepositoryInfo >> repositoryRemotesFor: aRepository [
-
-	^ (MCPGitRepositoryMetadata forRepository: aRepository) remoteDictionaries
-]
-
-{ #category : 'private' }
-MCPRepositoryInfo >> repositorySubdirectoryFor: aRepository [
-
-	^ self stringFrom: [ aRepository subdirectory ] default: ''
-]
-
-{ #category : 'private' }
-MCPRepositoryInfo >> repositoryUpstreamInfoFor: aRepository [
-
-	^ (MCPGitRepositoryMetadata forRepository: aRepository) upstreamInfoForBranchNamed: self branchName
-]
-
-{ #category : 'private' }
-MCPRepositoryInfo >> sortedStringsFrom: aBlock [
-
-	| values |
-	values := aBlock value ifNil: [ #(  ) ].
-	^ (Array streamContents: [ :stream |
-			   values do: [ :each |
-					   | string |
-					   string := self stringValue: each default: ''.
-					   string isEmpty ifFalse: [ stream nextPut: string ] ] ]) sort
-]
-
-{ #category : 'private' }
-MCPRepositoryInfo >> stringFrom: aBlock default: defaultString [
-
-	^ self stringValue: aBlock value default: defaultString
+	^ (((someValues ifNil: [ #(  ) ]) collect: [ :each | (each ifNil: [ '' ]) asString ] as: Array) reject: [ :each | each isEmpty ])
+		  sort
 ]
 
 { #category : 'private' }
 MCPRepositoryInfo >> stringFromFileBoundary: aBlock default: defaultString [
+	"A stale repository's handle may fail on the file system as it is read."
 
-	^ [ self stringValue: aBlock value default: defaultString ]
+	^ [ (aBlock value ifNil: [ defaultString ]) asString ]
 		  on: FileException
 		  do: [ :ignored | defaultString ]
-]
-
-{ #category : 'private' }
-MCPRepositoryInfo >> stringValue: aValue default: defaultString [
-
-	aValue ifNil: [ ^ defaultString ].
-	^ aValue asString
 ]
 
 { #category : 'accessing' }

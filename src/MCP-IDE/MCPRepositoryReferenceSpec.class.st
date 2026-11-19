@@ -1,7 +1,7 @@
 "
 Repository reference read by the repository tools.
 
-A repository can be identified by image name, location path, or both. The repository tools use this spec to resolve a registered Iceberg repository before reading or changing it.
+A repository is identified by its name, and narrowed by its location when several registrations share that name. The repository tools use this spec to resolve a registered Iceberg repository before reading or changing it.
 "
 Class {
 	#name : 'MCPRepositoryReferenceSpec',
@@ -29,15 +29,6 @@ MCPRepositoryReferenceSpec class >> name: aName location: aLocation [
 		  yourself
 ]
 
-{ #category : 'converting' }
-MCPRepositoryReferenceSpec >> asDictionary [
-	"The reference as the call wrote it, under the names of its arguments."
-
-	^ {
-		  (#repository -> self name).
-		  (#location -> self location) } asDictionary
-]
-
 { #category : 'testing' }
 MCPRepositoryReferenceSpec >> hasLocation [
 
@@ -54,8 +45,7 @@ MCPRepositoryReferenceSpec >> hasName [
 MCPRepositoryReferenceSpec >> initializeName: aName location: aLocation [
 
 	name := aName.
-	location := aLocation.
-	^ self
+	location := aLocation
 ]
 
 { #category : 'testing' }
@@ -73,8 +63,8 @@ MCPRepositoryReferenceSpec >> location [
 { #category : 'private - resolving' }
 MCPRepositoryReferenceSpec >> matchesRepository: aRepository [
 
-	self hasName ifTrue: [ (self repositoryNameFor: aRepository) = self name ifFalse: [ ^ false ] ].
-	self hasLocation ifTrue: [ (self repositoryLocationFor: aRepository) = self location ifFalse: [ ^ false ] ].
+	self hasName ifTrue: [ (self nameOf: aRepository) = self name ifFalse: [ ^ false ] ].
+	self hasLocation ifTrue: [ aRepository mcpLocationString = self location ifFalse: [ ^ false ] ].
 	^ true
 ]
 
@@ -85,13 +75,19 @@ MCPRepositoryReferenceSpec >> name [
 ]
 
 { #category : 'private - resolving' }
+MCPRepositoryReferenceSpec >> nameOf: aRepository [
+
+	^ (aRepository name ifNil: [ '' ]) asString
+]
+
+{ #category : 'private - resolving' }
 MCPRepositoryReferenceSpec >> notFoundTextAmong: registeredRepositories [
 	"What a call that named no registered repository is told: what it named, then the repositories of that name elsewhere, the registered ones when they are few, or the names closest to the one it gave."
 
 	| names sameName |
-	names := (registeredRepositories collect: [ :each | self repositoryNameFor: each ] as: Array) sort.
+	names := (registeredRepositories collect: [ :each | self nameOf: each ] as: Array) sort.
 	sameName := self hasName
-		            ifTrue: [ registeredRepositories select: [ :each | (self repositoryNameFor: each) = self name ] ]
+		            ifTrue: [ registeredRepositories select: [ :each | (self nameOf: each) = self name ] ]
 		            ifFalse: [ #(  ) ].
 	^ String streamContents: [ :stream |
 			  stream << 'No repository '.
@@ -102,7 +98,7 @@ MCPRepositoryReferenceSpec >> notFoundTextAmong: registeredRepositories [
 			  sameName
 				  ifNotEmpty: [
 						  stream << ' ' << self name << ' is registered at '.
-						  sameName do: [ :each | stream << (self repositoryLocationFor: each) ] separatedBy: [ stream << ', ' ].
+						  sameName do: [ :each | stream << each mcpLocationString ] separatedBy: [ stream << ', ' ].
 						  stream << '.' ]
 				  ifEmpty: [ self printRegisteredNames: names on: stream ] ]
 ]
@@ -139,24 +135,13 @@ MCPRepositoryReferenceSpec >> repository [
 	^ matches anyOne
 ]
 
-{ #category : 'private - resolving' }
-MCPRepositoryReferenceSpec >> repositoryLocationFor: aRepository [
-
-	^ self
-		  stringFrom: [ aRepository location ifNotNil: [ :repositoryLocation | repositoryLocation mcpRepositoryLocationString ] ]
-		  default: ''
-]
-
-{ #category : 'private - resolving' }
-MCPRepositoryReferenceSpec >> repositoryNameFor: aRepository [
-
-	^ self stringFrom: [ aRepository name ] default: ''
-]
-
 { #category : 'converting' }
 MCPRepositoryReferenceSpec >> requestedContext [
+	"The reference as the call wrote it, under the names of its arguments."
 
-	^ self asDictionary
+	^ {
+		  (#repository -> self name).
+		  (#location -> self location) } asDictionary
 ]
 
 { #category : 'private - signaling' }
@@ -171,8 +156,8 @@ MCPRepositoryReferenceSpec >> signalAmbiguousRepository: repositories [
 		signalErrorCode: #RepositoryReferenceAmbiguous
 		message: (String streamContents: [ :stream |
 					 stream << 'More than one registered repository matches: '.
-					 (repositories asArray sort: [ :a :b | (self repositoryLocationFor: a) <= (self repositoryLocationFor: b) ])
-						 do: [ :each | stream << (self repositoryNameFor: each) << ' at ' << (self repositoryLocationFor: each) ]
+					 (repositories asArray sort: [ :a :b | a mcpLocationString <= b mcpLocationString ])
+						 do: [ :each | stream << (self nameOf: each) << ' at ' << each mcpLocationString ]
 						 separatedBy: [ stream << ', ' ].
 					 stream << '. Pass location to choose one.' ])
 		details: details
@@ -183,7 +168,7 @@ MCPRepositoryReferenceSpec >> signalMissingRepositoryReference [
 
 	MCPCommandError
 		signalErrorCode: #RepositoryReferenceRequired
-		message: 'Repository tools require repository, location, or both.'
+		message: 'Repository tools require repository.'
 		details: self requestedContext
 ]
 
@@ -194,19 +179,6 @@ MCPRepositoryReferenceSpec >> signalRepositoryNotFound [
 	| details registered |
 	registered := IceRepository repositories asArray.
 	details := self requestedContext copy.
-	details at: #registeredRepositories put: (registered collect: [ :each | self repositoryNameFor: each ] as: Array) sort.
+	details at: #registeredRepositories put: (registered collect: [ :each | self nameOf: each ] as: Array) sort.
 	MCPCommandError signalErrorCode: #RepositoryNotFound message: (self notFoundTextAmong: registered) details: details
-]
-
-{ #category : 'private - resolving' }
-MCPRepositoryReferenceSpec >> stringFrom: aBlock default: defaultString [
-
-	^ self stringValue: aBlock value default: defaultString
-]
-
-{ #category : 'private - resolving' }
-MCPRepositoryReferenceSpec >> stringValue: aValue default: defaultString [
-
-	aValue ifNil: [ ^ defaultString ].
-	^ aValue asString
 ]
