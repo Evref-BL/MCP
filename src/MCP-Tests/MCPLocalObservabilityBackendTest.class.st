@@ -4,9 +4,32 @@ Tests for the in-memory MCP observability state and its integration at the MCP t
 Class {
 	#name : 'MCPLocalObservabilityBackendTest',
 	#superclass : 'MCPTestCase',
-	#category : 'MCP-UI-Tests',
-	#package : 'MCP-UI-Tests'
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
 }
+
+{ #category : 'private' }
+MCPLocalObservabilityBackendTest >> start: aToolName input: anObject on: aBackend [
+
+	^ aBackend
+		  recordToolCallStart: aToolName
+		  input: anObject
+		  dispatchPath: 'direct'
+		  context: Dictionary new
+]
+
+{ #category : 'private' }
+MCPLocalObservabilityBackendTest >> statsOfThreeCallsLasting: milliseconds [
+
+	| start stats |
+	stats := MCPToolCallStats forToolNamed: 'slow-tool'.
+	start := DateAndTime now.
+	1 to: 3 do: [ :index |
+			stats recordCall: ((MCPToolCallRecord id: index toolName: 'slow-tool' startedAt: start)
+					 finishAt: start durationMilliseconds: milliseconds status: 'ok';
+					 yourself) ].
+	^ stats
+]
 
 { #category : 'tests' }
 MCPLocalObservabilityBackendTest >> testDefaultExportDirectoryIsImageLocal [
@@ -22,7 +45,7 @@ MCPLocalObservabilityBackendTest >> testEnabledByDefaultRecords [
 
 	| record state |
 	state := MCPLocalObservabilityBackend new.
-	record := state recordToolCallStart: 'method_search'.
+	record := self start: 'method_search' input: nil on: state.
 	self assert: state enabled.
 	self assert: record isNotNil.
 	self assert: state totalCallCount equals: 0.
@@ -55,12 +78,11 @@ MCPLocalObservabilityBackendTest >> testInputSnapshotRedactsSensitiveKeys [
 
 	| input record state |
 	state := MCPLocalObservabilityBackend new.
-	state enable.
 	input := {
 		         (#offset -> 10).
 		         (#apiToken -> 'secret-token').
 		         (#nested -> { (#password -> 'secret-password') } asDictionary) } asDictionary.
-	record := state recordToolCallStart: 'method_search' input: input.
+	record := self start: 'method_search' input: input on: state.
 	state recordToolCallFinish: record result: nil error: Error new.
 
 	self assert: (record inputSnapshot at: #offset) equals: 10.
@@ -70,14 +92,13 @@ MCPLocalObservabilityBackendTest >> testInputSnapshotRedactsSensitiveKeys [
 ]
 
 { #category : 'tests' }
-MCPLocalObservabilityBackendTest >> testLargeOutputExceedingBudgetBecomesTraceAndGuidance [
+MCPLocalObservabilityBackendTest >> testLargeOutputExceedingBudgetBecomesATrace [
 
 	| budgetBytes exceedsBudget largeText record result state stats |
 	state := MCPLocalObservabilityBackend new.
 	state outputBudgetBytes: 80.
-	state enable.
 	largeText := String new: 200 withAll: $x.
-	record := state recordToolCallStart: 'method_source_search'.
+	record := self start: 'method_source_search' input: nil on: state.
 	result := MCPStructureCallToolResult content: #(  ) structuredContent: {
 			          (#summary -> 'Large output').
 			          (#items -> { largeText }) } asDictionary.
@@ -93,9 +114,7 @@ MCPLocalObservabilityBackendTest >> testLargeOutputExceedingBudgetBecomesTraceAn
 	self assert: state traceRecords asArray equals: { record }.
 	self assert: record outputSnapshot isNotNil.
 	self assert: stats outputBudgetExceededCount equals: 1.
-	self assert: stats maxOutputBytes equals: record outputByteCount.
-	self assert: (state statusText includesSubstring: 'Output budget:').
-	self assert: (state outputBudgetGuidance includesSubstring: 'pagination')
+	self assert: stats maxOutputBytes equals: record outputByteCount
 ]
 
 { #category : 'tests' }
@@ -144,7 +163,7 @@ MCPLocalObservabilityBackendTest >> testMCPRecordsToolCallsWhenObservabilityIsEn
 		directory exists ifTrue: [ directory deleteAll ].
 		mcp := MCP new.
 		mcp observabilityExportDirectory: directory.
-		result := mcp rpcToolCall: 'class_search' withParams: Dictionary new.
+		result := mcp rpcToolCall: 'class_search' withParams: { (#scope -> { (#classes -> #( 'MCP' )) } asDictionary) } asDictionary.
 		stats := mcp observabilityMetrics first.
 		record := mcp observability recentCallRecords first.
 
@@ -188,7 +207,7 @@ MCPLocalObservabilityBackendTest >> testMetricsFileIsWrittenAtMostOncePerInterva
 		calls := [ :count |
 			         count timesRepeat: [
 					         state
-						         recordToolCallFinish: (state recordToolCallStart: 'class_search')
+						         recordToolCallFinish: (self start: 'class_search' input: nil on: state)
 						         result: (MCPStructureCallToolResult content: #(  ))
 						         error: nil ] ].
 		calls value: 1.
@@ -203,24 +222,22 @@ MCPLocalObservabilityBackendTest >> testMetricsFileIsWrittenAtMostOncePerInterva
 ]
 
 { #category : 'tests' }
+MCPLocalObservabilityBackendTest >> testNoopBackendRecordsNothing [
+
+	self deny: MCPNoopObservabilityBackend new enabled.
+	self assert: (self start: 'x' input: nil on: MCPNoopObservabilityBackend new) isNil
+]
+
+{ #category : 'tests' }
 MCPLocalObservabilityBackendTest >> testOutlierExplanationUsesPriorAverage [
+	"An outlier is several times the prior average and long enough to matter: 200 ms is four times 50 ms, yet too short."
 
-	| state stats start record explanation |
+	| state |
 	state := MCPLocalObservabilityBackend new.
-	state minimumOutlierMilliseconds: 1.
-	state outlierFactor: 2.
-	stats := MCPToolCallStats forToolNamed: 'slow-tool'.
-	start := DateAndTime now.
-	1 to: 3 do: [ :index |
-			record := MCPToolCallRecord id: index toolName: 'slow-tool' startedAt: start.
-			record finishAt: start durationMilliseconds: 10 status: 'ok'.
-			stats recordCall: record ].
-
-	explanation := state outlierExplanationForDurationMilliseconds: 25 stats: stats.
-
-	self assert: (explanation beginsWith: '25 ms is').
-	self deny: (explanation beginsWith: 'Outlier:').
-	self assert: (state outlierExplanationForDurationMilliseconds: 15 stats: stats) isEmpty
+	self assert:
+		((state outlierExplanationForDurationMilliseconds: 400 stats: (self statsOfThreeCallsLasting: 100)) beginsWith: '400 ms is').
+	self assert: (state outlierExplanationForDurationMilliseconds: 280 stats: (self statsOfThreeCallsLasting: 100)) isEmpty.
+	self assert: (state outlierExplanationForDurationMilliseconds: 200 stats: (self statsOfThreeCallsLasting: 50)) isEmpty
 ]
 
 { #category : 'tests' }
@@ -228,8 +245,7 @@ MCPLocalObservabilityBackendTest >> testRecordsErrorCall [
 
 	| recentCall record state stats |
 	state := MCPLocalObservabilityBackend new.
-	state enable.
-	record := state recordToolCallStart: 'method_compile'.
+	record := self start: 'method_compile' input: nil on: state.
 	state recordToolCallFinish: record result: nil error: Error new.
 	stats := state metrics first.
 	recentCall := state recentCallRecords first.
@@ -251,8 +267,7 @@ MCPLocalObservabilityBackendTest >> testRecordsOutputBudgetMetadata [
 
 	| record result state stats recordData statsData |
 	state := MCPLocalObservabilityBackend new.
-	state enable.
-	record := state recordToolCallStart: 'method_search'.
+	record := self start: 'method_search' input: nil on: state.
 	result := MCPStructureCallToolResult content: #(  ) structuredContent: { (#summary -> 'Small output') } asDictionary.
 	state recordToolCallFinish: record result: result error: nil.
 	stats := state metrics first.
@@ -261,7 +276,7 @@ MCPLocalObservabilityBackendTest >> testRecordsOutputBudgetMetadata [
 
 	self assert: record outputByteCount > 0.
 	self assert: record inputByteCount equals: 0.
-	self assert: record approximateOutputTokenCount equals: (state approximateOutputTokensForBytes: record outputByteCount).
+	self assert: record approximateOutputTokenCount equals: record outputByteCount + 3 // 4.
 	self deny: record outputBudgetExceeded.
 	self assert: record outputBudgetExplanation isEmpty.
 	self assert: record outputSnapshot isNil.
@@ -279,13 +294,12 @@ MCPLocalObservabilityBackendTest >> testRecordsSchemaViolationErrorDetails [
 
 	| error record state stats |
 	state := MCPLocalObservabilityBackend new.
-	state enable.
 	error := MCPInvalidToolInput new
 		         toolName: 'class_search';
 		         violations: { (MCPInvalidToolInput missingRequiredArgumentViolationNamed: 'name') };
 		         messageText: 'Tool input does not match the input schema.';
 		         yourself.
-	record := state recordToolCallStart: 'class_search'.
+	record := self start: 'class_search' input: nil on: state.
 	state recordToolCallFinish: record result: nil error: error.
 	stats := state metrics first.
 
@@ -302,13 +316,12 @@ MCPLocalObservabilityBackendTest >> testRecordsStructuredToolErrorDetails [
 
 	| details record result state stats |
 	state := MCPLocalObservabilityBackend new.
-	state enable.
 	details := {
 		           (#errorClass -> 'MCPCommandError').
 		           (#errorCode -> 'MethodNotFound').
 		           (#causeClass -> 'KeyNotFound').
 		           (#message -> 'No method found.') } asDictionary.
-	record := state recordToolCallStart: 'method_get'.
+	record := self start: 'method_get' input: nil on: state.
 	result := MCPToolGetMethod new errorResultText: 'No method found.' details: details.
 	state recordToolCallFinish: record result: result error: nil.
 	stats := state metrics first.
@@ -327,8 +340,7 @@ MCPLocalObservabilityBackendTest >> testRecordsSuccessfulCallMetricsAndLogs [
 
 	| state record result stats |
 	state := MCPLocalObservabilityBackend new.
-	state enable.
-	record := state recordToolCallStart: 'method_search'.
+	record := self start: 'method_search' input: nil on: state.
 	result := MCPStructureCallToolResult content: #(  ) structuredContent: { (#summary -> 'Listed methods') } asDictionary.
 	state recordToolCallFinish: record result: result error: nil.
 	stats := state metrics first.
@@ -340,8 +352,7 @@ MCPLocalObservabilityBackendTest >> testRecordsSuccessfulCallMetricsAndLogs [
 	self assert: state recentCallRecords size equals: 1.
 	self assert: (state logs count: [ :each | each includesSubstring: 'tool method_search #' ]) equals: 1.
 	self assert: (state logs anySatisfy: [ :each | each includesSubstring: 'OK tool method_search #' ]).
-	self deny: (state logs anySatisfy: [ :each | each includesSubstring: 'ok tool method_search #' ]).
-	self assert: (state statusText beginsWith: 'Observability enabled. Calls: 1')
+	self deny: (state logs anySatisfy: [ :each | each includesSubstring: 'ok tool method_search #' ])
 ]
 
 { #category : 'tests' }
@@ -353,11 +364,11 @@ MCPLocalObservabilityBackendTest >> testSessionLifecycleWritesResourceMarkers [
 		directory exists ifTrue: [ directory deleteAll ].
 		state := MCPLocalObservabilityBackend new.
 		state exportDirectory: directory.
-		state recordSessionStartFor: nil.
+		state recordSessionStart.
 		resource := STONJSON fromString: state resourceFileReference contents.
 		self assert: (resource includesKey: 'sessionStartedAt').
 		self deny: (resource includesKey: 'sessionEndedAt').
-		state recordSessionEndFor: nil.
+		state recordSessionEnd.
 		resource := STONJSON fromString: state resourceFileReference contents.
 		self assert: (resource includesKey: 'sessionStartedAt').
 		self assert: (resource includesKey: 'sessionEndedAt') ] ensure: [ directory exists ifTrue: [ directory deleteAll ] ]
@@ -373,7 +384,7 @@ MCPLocalObservabilityBackendTest >> testTraceExportSkipsNonTraceRecords [
 		state := MCPLocalObservabilityBackend new.
 		state exportDirectory: directory.
 		state outputBudgetBytes: 10000.
-		record := state recordToolCallStart: 'package_search'.
+		record := self start: 'package_search' input: nil on: state.
 		result := MCPStructureCallToolResult content: #(  ) structuredContent: { (#summary -> 'Small output') } asDictionary.
 		state recordToolCallFinish: record result: result error: nil.
 		self assert: directory exists.
@@ -395,9 +406,8 @@ MCPLocalObservabilityBackendTest >> testTraceExportWritesOverBudgetRecordAsJSONL
 				(#'mcp.port' -> 9013) } asDictionary.
 		state outputBudgetBytes: 80.
 		state exportDirectory: directory.
-		input := {
-			         (#apiToken -> 'secret-token') } asDictionary.
-		record := state recordToolCallStart: 'method_source_search' input: input.
+		input := { (#apiToken -> 'secret-token') } asDictionary.
+		record := self start: 'method_source_search' input: input on: state.
 		result := MCPStructureCallToolResult content: #(  ) structuredContent: {
 				          (#summary -> 'Large output').
 				          (#items -> { (String new: 200 withAll: $x) }) } asDictionary.
@@ -472,7 +482,7 @@ MCPLocalObservabilityBackendTest >> testTraceSnapshotHasCompactErrorShape [
 	| errorData output record result state |
 	state := MCPLocalObservabilityBackend new.
 	state outputBudgetBytes: 10000.
-	record := state recordToolCallStart: 'evaluate'.
+	record := self start: 'evaluate' input: nil on: state.
 	errorData := {
 		             (#message -> 'failed').
 		             (#stackTrace -> #( 'frame one' 'frame two' )).

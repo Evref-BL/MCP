@@ -403,13 +403,6 @@ MCP >> dispatchToolCallWith: callTool arguments: arguments observabilityRecord: 
 	^ response
 ]
 
-{ #category : 'observability' }
-MCP >> ensureLocalObservabilityBackend [
-
-	self observability isNoop ifTrue: [ observability := self newLocalObservabilityBackend ].
-	^ self observability
-]
-
 { #category : 'private - start' }
 MCP >> ensureServerIsListening [
 	"The listener binds in a process above its caller's priority, so a bind that fails has usually failed by now. A port another MCP in this image listens on stays held however long this one waits for it, so that failure is signalled as soon as it is seen: at once, or after the first wait when the bind had not failed yet."
@@ -539,7 +532,7 @@ MCP >> observabilityEnabled [
 MCP >> observabilityEnabled: aBoolean [
 
 	aBoolean
-		ifTrue: [ self ensureLocalObservabilityBackend enabled: true ]
+		ifTrue: [ self recordingObservability ]
 		ifFalse: [ observability := MCPNoopObservabilityBackend new ]
 ]
 
@@ -552,16 +545,9 @@ MCP >> observabilityExportDirectory [
 { #category : 'observability' }
 MCP >> observabilityExportDirectory: aPath [
 
-	| localObservability |
-	localObservability := self ensureLocalObservabilityBackend.
-	localObservability resourceMetadata: self observabilityResourceMetadata.
-	localObservability exportDirectory: aPath
-]
-
-{ #category : 'observability' }
-MCP >> observabilityExportInstanceDirectory [
-
-	^ self observability exportInstanceDirectory
+	self recordingObservability
+		resourceMetadata: self observabilityResourceMetadata;
+		exportDirectory: aPath
 ]
 
 { #category : 'observability' }
@@ -577,12 +563,6 @@ MCP >> observabilityMetrics [
 ]
 
 { #category : 'observability' }
-MCP >> observabilityRecentCalls [
-
-	^ self observability recentCallRecords
-]
-
-{ #category : 'observability' }
 MCP >> observabilityResourceMetadata [
 
 	| metadata |
@@ -590,12 +570,6 @@ MCP >> observabilityResourceMetadata [
 	metadata at: #'pharo.majorVersion' put: SystemVersion current major.
 	metadata at: #'mcp.port' put: self port.
 	^ metadata
-]
-
-{ #category : 'observability' }
-MCP >> observabilityStatusText [
-
-	^ self observability statusText
 ]
 
 { #category : 'observability' }
@@ -688,6 +662,14 @@ MCP >> recordStartOf: aTool input: arguments dispatchPath: dispatchPath [
 		  input: arguments
 		  dispatchPath: dispatchPath
 		  context: (self observabilityContextFor: aTool)
+]
+
+{ #category : 'observability' }
+MCP >> recordingObservability [
+	"The backend recording this server's calls: the one it has, or a new local one when it had none."
+
+	self observability isNoop ifTrue: [ observability := self newLocalObservabilityBackend ].
+	^ self observability
 ]
 
 { #category : 'private - tools' }
@@ -871,7 +853,7 @@ MCP >> start [
 	server addHandlersFromPragmasIn: self.
 	server start.
 	self ensureServerIsListening.
-	self observability recordSessionStartFor: self
+	self observability recordSessionStart
 ]
 
 { #category : 'start' }

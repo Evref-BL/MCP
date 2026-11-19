@@ -25,7 +25,7 @@ MCPServerLifecycleTest >> stopAndForget: anMCP [
 
 	| directory |
 	anMCP ifNil: [ ^ self ].
-	directory := [ anMCP observabilityExportInstanceDirectory ]
+	directory := [ anMCP observability exportInstanceDirectory ]
 		             on: Error
 		             do: [ :error | nil ].
 	[ anMCP stop ]

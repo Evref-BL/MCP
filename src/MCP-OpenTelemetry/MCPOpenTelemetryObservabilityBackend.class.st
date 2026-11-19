@@ -5,18 +5,15 @@ This class lives in the optional MCP-OpenTelemetry package so MCP core can remai
 "
 Class {
 	#name : 'MCPOpenTelemetryObservabilityBackend',
-	#superclass : 'MCPObservabilityBackend',
+	#superclass : 'MCPRecordingObservabilityBackend',
 	#instVars : [
-		'enabled',
 		'tracer',
 		'meter',
 		'logger',
-		'nextCallId',
 		'inputSizeHistogram',
 		'outputSizeHistogram',
 		'outputBudgetExceededCounter',
 		'recordsById',
-		'outputBudgetBytes',
 		'operationDurationHistogram'
 	],
 	#category : 'MCP-OpenTelemetry',
@@ -31,46 +28,13 @@ MCPOpenTelemetryObservabilityBackend >> argumentNamesIn: inputObject [
 	^ ((inputObject keys collect: [ :each | each asString ] as: Array) select: [ :each | self isReportableName: each ]) sort
 ]
 
-{ #category : 'private - budgets' }
-MCPOpenTelemetryObservabilityBackend >> defaultOutputBudgetBytes [
-
-	^ 32 * 1024
-]
-
-{ #category : 'activation' }
-MCPOpenTelemetryObservabilityBackend >> disable [
-
-	enabled := false
-]
-
 { #category : 'private - logging' }
 MCPOpenTelemetryObservabilityBackend >> emitEventNamed: eventName body: bodyString [
 
-	self enabled ifFalse: [ ^ nil ].
 	self logger logRecordBuilder
 		eventName: eventName;
 		body: bodyString;
 		emit
-]
-
-{ #category : 'activation' }
-MCPOpenTelemetryObservabilityBackend >> enable [
-
-	enabled := true
-]
-
-{ #category : 'accessing' }
-MCPOpenTelemetryObservabilityBackend >> enabled [
-
-	^ enabled ifNil: [ true ]
-]
-
-{ #category : 'accessing' }
-MCPOpenTelemetryObservabilityBackend >> enabled: aBoolean [
-
-	aBoolean
-		ifTrue: [ self enable ]
-		ifFalse: [ self disable ]
 ]
 
 { #category : 'private - spans' }
@@ -115,19 +79,6 @@ MCPOpenTelemetryObservabilityBackend >> finishAttributesFor: aRecord error: anEr
 	^ attributes asArray
 ]
 
-{ #category : 'private - records' }
-MCPOpenTelemetryObservabilityBackend >> finishRecord: aRecord result: aToolResult error: anError at: finishedAt [
-
-	| duration statusString |
-	duration := (finishedAt - aRecord startedAt) asMilliSeconds.
-	statusString := self statusForResult: aToolResult error: anError.
-	aRecord finishAt: finishedAt durationMilliseconds: duration status: statusString.
-	self recordErrorDetailsFor: aRecord result: aToolResult error: anError.
-	self recordOutputBudgetFor: aRecord result: aToolResult error: anError.
-	aRecord inputObject: nil.
-	self updateEventKindsForRecord: aRecord
-]
-
 { #category : 'actions' }
 MCPOpenTelemetryObservabilityBackend >> forceFlush [
 
@@ -140,10 +91,7 @@ MCPOpenTelemetryObservabilityBackend >> forceFlush [
 MCPOpenTelemetryObservabilityBackend >> initialize [
 
 	super initialize.
-	enabled := true.
-	nextCallId := 0.
-	recordsById := Dictionary new.
-	outputBudgetBytes := self defaultOutputBudgetBytes
+	recordsById := Dictionary new
 ]
 
 { #category : 'private - instruments' }
@@ -152,12 +100,6 @@ MCPOpenTelemetryObservabilityBackend >> inputSizeHistogram [
 	inputSizeHistogram ifNotNil: [ ^ inputSizeHistogram ].
 	inputSizeHistogram := self meter histogramNamed: 'pharo.mcp.tool.input.size' unit: 'By' description: 'MCP tool-call input size'.
 	^ inputSizeHistogram
-]
-
-{ #category : 'testing' }
-MCPOpenTelemetryObservabilityBackend >> isNoop [
-
-	^ false
 ]
 
 { #category : 'private - reporting' }
@@ -189,13 +131,6 @@ MCPOpenTelemetryObservabilityBackend >> meter [
 	^ meter
 ]
 
-{ #category : 'private' }
-MCPOpenTelemetryObservabilityBackend >> nextCallId [
-
-	nextCallId := (nextCallId ifNil: [ 0 ]) + 1.
-	^ nextCallId
-]
-
 { #category : 'private - instruments' }
 MCPOpenTelemetryObservabilityBackend >> operationDurationHistogram [
 
@@ -207,18 +142,6 @@ MCPOpenTelemetryObservabilityBackend >> operationDurationHistogram [
 	^ operationDurationHistogram
 ]
 
-{ #category : 'private - budgets' }
-MCPOpenTelemetryObservabilityBackend >> outputBudgetBytes [
-
-	^ outputBudgetBytes ifNil: [ self defaultOutputBudgetBytes ]
-]
-
-{ #category : 'private - budgets' }
-MCPOpenTelemetryObservabilityBackend >> outputBudgetBytes: anInteger [
-
-	outputBudgetBytes := anInteger
-]
-
 { #category : 'private - instruments' }
 MCPOpenTelemetryObservabilityBackend >> outputBudgetExceededCounter [
 
@@ -228,19 +151,6 @@ MCPOpenTelemetryObservabilityBackend >> outputBudgetExceededCounter [
 		                               unit: '1'
 		                               description: 'MCP tool calls exceeding output budget'.
 	^ outputBudgetExceededCounter
-]
-
-{ #category : 'private - budgets' }
-MCPOpenTelemetryObservabilityBackend >> outputBudgetExplanationForByteCount: byteCount [
-
-	byteCount <= self outputBudgetBytes ifTrue: [ ^ '' ].
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Output ';
-				  print: byteCount;
-				  nextPutAll: ' bytes exceeds budget ';
-				  print: self outputBudgetBytes;
-				  nextPutAll: ' bytes; consider pagination, handles, or summary-first output' ]
 ]
 
 { #category : 'private - instruments' }
@@ -293,28 +203,15 @@ MCPOpenTelemetryObservabilityBackend >> recordMetricsForRecord: aRecord errorTyp
 	aRecord outputBudgetExceeded ifTrue: [ self outputBudgetExceededCounter add: 1 attributes: attributes ]
 ]
 
-{ #category : 'private - budgets' }
-MCPOpenTelemetryObservabilityBackend >> recordOutputBudgetFor: aRecord result: aToolResult error: anError [
-
-	| byteCount explanation |
-	byteCount := self sizeInBytesForToolResult: aToolResult error: anError.
-	explanation := self outputBudgetExplanationForByteCount: byteCount.
-	aRecord outputByteCount: byteCount.
-	aRecord approximateOutputTokenCount: byteCount + 3 // 4.
-	aRecord outputBudgetBytes: self outputBudgetBytes.
-	aRecord outputBudgetExceeded: explanation isNotEmpty.
-	aRecord outputBudgetExplanation: explanation
-]
-
 { #category : 'recording' }
-MCPOpenTelemetryObservabilityBackend >> recordSessionEndFor: anMCP [
+MCPOpenTelemetryObservabilityBackend >> recordSessionEnd [
 
 	self emitEventNamed: 'mcp.session.end' body: 'MCP session ended'.
 	self forceFlush
 ]
 
 { #category : 'recording' }
-MCPOpenTelemetryObservabilityBackend >> recordSessionStartFor: anMCP [
+MCPOpenTelemetryObservabilityBackend >> recordSessionStart [
 
 	self emitEventNamed: 'mcp.session.start' body: 'MCP session started'
 ]
@@ -325,17 +222,14 @@ MCPOpenTelemetryObservabilityBackend >> recordToolCallFinish: aRecord result: aT
 	| errorType finishedAt span |
 	^ self withoutFailingTheCall: [
 			  aRecord ifNil: [ ^ nil ].
-			  span := self recordsById removeKey: aRecord id ifAbsent: [ nil ].
-			  self enabled ifFalse: [
-					  span ifNotNil: [ span end: DateAndTime now ].
-					  aRecord inputObject: nil.
-					  ^ aRecord ].
+			  span := recordsById removeKey: aRecord id ifAbsent: [ nil ].
 			  finishedAt := DateAndTime now.
 			  self
 				  finishRecord: aRecord
 				  result: aToolResult
 				  error: anError
 				  at: finishedAt.
+			  aRecord inputObject: nil.
 			  errorType := aRecord status = 'error'
 				               ifTrue: [ self errorTypeFor: anError ]
 				               ifFalse: [ nil ].
@@ -353,26 +247,14 @@ MCPOpenTelemetryObservabilityBackend >> recordToolCallStart: aToolName input: in
 
 	| record span |
 	^ self withoutFailingTheCall: [
-			  self enabled ifFalse: [ ^ nil ].
-			  record := MCPToolCallRecord id: self nextCallId toolName: aToolName asString startedAt: DateAndTime now.
-			  record inputObject: inputObject.
-			  record inputByteCount: (inputObject ifNil: [ 0 ] ifNotNil: [ self sizeInBytesForObject: inputObject ]).
-			  record dispatchPath: dispatchPath asString.
+			  record := self newRecordFor: aToolName input: inputObject dispatchPath: dispatchPath.
 			  span := (self tracer spanBuilderNamed: 'tools/call ' , record toolName)
 				          kind: OTSpan server;
 				          inContext: (self parentContextIn: contextDictionary);
 				          attributes: (self startAttributesFor: record input: inputObject context: contextDictionary);
 				          startSpan.
-			  self recordsById at: record id put: span.
+			  recordsById at: record id put: span.
 			  ^ record ]
-]
-
-{ #category : 'private' }
-MCPOpenTelemetryObservabilityBackend >> recordsById [
-
-	recordsById ifNotNil: [ ^ recordsById ].
-	recordsById := Dictionary new.
-	^ recordsById
 ]
 
 { #category : 'private - reporting' }
@@ -391,27 +273,6 @@ MCPOpenTelemetryObservabilityBackend >> reportableClassNameOf: aClass [
 MCPOpenTelemetryObservabilityBackend >> shutdown [
 
 	self forceFlush
-]
-
-{ #category : 'private' }
-MCPOpenTelemetryObservabilityBackend >> sizeInBytesForObject: anObject [
-
-	| jsonString |
-	anObject ifNil: [ ^ 0 ].
-	jsonString := [ STONJSON toString: anObject ]
-		              on: Error
-		              do: [ :ignored | anObject asString ].
-	^ jsonString utf8Encoded size
-]
-
-{ #category : 'private' }
-MCPOpenTelemetryObservabilityBackend >> sizeInBytesForToolResult: aToolResult error: anError [
-
-	aToolResult ifNotNil: [ ^ self sizeInBytesForObject: aToolResult asJRPCJSON ].
-	anError ifNil: [ ^ 0 ].
-	^ self sizeInBytesForObject: {
-			  (#errorClass -> anError class name asString).
-			  (#message -> (anError messageText ifNil: [ anError asString ])) } asDictionary
 ]
 
 { #category : 'private - spans' }
@@ -435,22 +296,6 @@ MCPOpenTelemetryObservabilityBackend >> startAttributesFor: aRecord input: input
 	^ attributes asArray
 ]
 
-{ #category : 'private' }
-MCPOpenTelemetryObservabilityBackend >> statusForResult: aToolResult error: anError [
-
-	anError ifNotNil: [ ^ 'error' ].
-	aToolResult ifNil: [ ^ 'error' ].
-	^ aToolResult isError
-		  ifTrue: [ 'error' ]
-		  ifFalse: [ 'ok' ]
-]
-
-{ #category : 'displaying' }
-MCPOpenTelemetryObservabilityBackend >> statusText [
-
-	^ 'Observability exported through OpenTelemetry'
-]
-
 { #category : 'accessing' }
 MCPOpenTelemetryObservabilityBackend >> tracer [
 
@@ -469,16 +314,6 @@ MCPOpenTelemetryObservabilityBackend >> unknownArgumentNamesIn: inputObject for:
 		         on: Error
 		         do: [ :error | ^ #(  ) ].
 	^ (self argumentNamesIn: inputObject) reject: [ :each | known includes: each ]
-]
-
-{ #category : 'private' }
-MCPOpenTelemetryObservabilityBackend >> updateEventKindsForRecord: aRecord [
-
-	| kinds |
-	kinds := OrderedCollection new.
-	aRecord status = 'error' ifTrue: [ kinds add: 'error' ].
-	aRecord outputBudgetExceeded ifTrue: [ kinds add: 'output_budget_exceeded' ].
-	aRecord eventKinds: kinds asArray
 ]
 
 { #category : 'private - recording' }

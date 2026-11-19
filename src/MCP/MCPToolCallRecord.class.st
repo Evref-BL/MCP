@@ -28,8 +28,7 @@ Class {
 		'outputBudgetExceeded',
 		'outputBudgetExplanation',
 		'dispatchPath',
-		'inputByteCount',
-		'eventKinds'
+		'inputByteCount'
 	],
 	#category : 'MCP-Observability',
 	#package : 'MCP',
@@ -185,13 +184,10 @@ MCPToolCallRecord >> errorKind: aString [
 { #category : 'accessing' }
 MCPToolCallRecord >> eventKinds [
 
-	^ eventKinds ifNil: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
-MCPToolCallRecord >> eventKinds: aCollection [
-
-	eventKinds := aCollection asArray
+	^ Array streamContents: [ :stream |
+			  self status = 'error' ifTrue: [ stream nextPut: 'error' ].
+			  self outputBudgetExceeded ifTrue: [ stream nextPut: 'output_budget_exceeded' ].
+			  self outlierExplanation ifNotEmpty: [ :ignored | stream nextPut: 'duration_outlier' ] ]
 ]
 
 { #category : 'recording' }
@@ -271,7 +267,7 @@ MCPToolCallRecord >> isRunning [
 { #category : 'testing' }
 MCPToolCallRecord >> isTraceWorthy [
 
-	^ self status = 'error' or: [ self outlierExplanation isNotEmpty or: [ self outputBudgetExceeded ] ]
+	^ self eventKinds isNotEmpty
 ]
 
 { #category : 'accessing' }
@@ -344,16 +340,6 @@ MCPToolCallRecord >> outputSnapshot [
 MCPToolCallRecord >> outputSnapshot: anObject [
 
 	outputSnapshot := anObject
-]
-
-{ #category : 'recording' }
-MCPToolCallRecord >> recordOutputBudget: budgetData [
-
-	self outputByteCount: (budgetData at: #outputBytes).
-	self approximateOutputTokenCount: (budgetData at: #approximateOutputTokens).
-	self outputBudgetBytes: (budgetData at: #outputBudgetBytes).
-	self outputBudgetExceeded: (budgetData at: #outputBudgetExceeded).
-	self outputBudgetExplanation: (budgetData at: #outputBudgetExplanation)
 ]
 
 { #category : 'accessing' }

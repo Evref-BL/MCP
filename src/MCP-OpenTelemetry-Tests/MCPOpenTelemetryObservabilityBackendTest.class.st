@@ -219,22 +219,6 @@ MCPOpenTelemetryObservabilityBackendTest >> testArgumentNamesTheToolDoesNotDecla
 ]
 
 { #category : 'tests' }
-MCPOpenTelemetryObservabilityBackendTest >> testBackendIsNotTheNoopOne [
-
-	self deny: backend isNoop.
-	self assert: backend statusText equals: 'Observability exported through OpenTelemetry'
-]
-
-{ #category : 'tests' }
-MCPOpenTelemetryObservabilityBackendTest >> testDisabledBackendStartsNoCallAndExportsNothing [
-
-	backend disable.
-	self deny: backend enabled.
-	self assert: self startToolCall isNil.
-	self assert: exporter snapshots isEmpty
-]
-
-{ #category : 'tests' }
 MCPOpenTelemetryObservabilityBackendTest >> testFailedToolCallMarksTheSpanAsAnErrorWithoutItsMessage [
 
 	| record snapshot |
@@ -298,8 +282,8 @@ MCPOpenTelemetryObservabilityBackendTest >> testSessionLifecycleGoesThroughTheLo
 	"The session events build a log record and force a flush on all three
 	providers, so this fails if any of that surface moves."
 
-	backend recordSessionStartFor: nil.
-	backend recordSessionEndFor: nil.
+	backend recordSessionStart.
+	backend recordSessionEnd.
 	self assert: exporter snapshots isEmpty description: 'Session events are logs, not spans.'
 ]
 
@@ -357,4 +341,15 @@ MCPOpenTelemetryObservabilityBackendTest >> testToolCallRecordsCallDurationAndSi
 	self
 		assert: ((self measurementNamed: 'mcp.server.operation.duration') attributes at: 'error.type' ifAbsent: [ nil ]) isNil
 		description: 'A successful call must not carry an error type.'
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testUseOpenTelemetryObservabilityInstallsTheBackend [
+
+	| mcp |
+	mcp := MCP new.
+	backend := mcp useOpenTelemetryObservability.
+	self assert: mcp observability identicalTo: backend.
+	self assert: backend class equals: MCPOpenTelemetryObservabilityBackend.
+	self assert: mcp observabilityEnabled
 ]

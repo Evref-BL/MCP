@@ -1,21 +1,13 @@
 "
-Runtime observability state for an MCP server. When enabled, it records local log lines, per-tool timing and output-size metrics, recent completed calls, and compact trace records for errors, timing outliers, or output-budget overruns. MCP server instances enable observability and configure a default export directory; standalone state objects can still be configured explicitly.
+Runtime observability state for an MCP server. It records local log lines, per-tool timing and output-size metrics, recent completed calls, and compact trace records for errors, timing outliers, or output-budget overruns. A server's own exports to the default directory; one made alone exports nowhere until it is given a directory.
 "
 Class {
 	#name : 'MCPLocalObservabilityBackend',
-	#superclass : 'MCPObservabilityBackend',
+	#superclass : 'MCPRecordingObservabilityBackend',
 	#instVars : [
-		'enabled',
 		'logEntries',
 		'statsByTool',
 		'recentCalls',
-		'nextCallId',
-		'maxRecentCalls',
-		'maxLogEntries',
-		'outlierFactor',
-		'minimumOutlierMilliseconds',
-		'outputBudgetBytes',
-		'lastActivityAt',
 		'exportDirectory',
 		'exportInstanceDirectory',
 		'resourceMetadata',
@@ -41,32 +33,6 @@ MCPLocalObservabilityBackend >> addRecentCall: aRecord [
 	[ self recentCalls size > self maxRecentCalls ] whileTrue: [ self recentCalls removeLast ]
 ]
 
-{ #category : 'private - budgets' }
-MCPLocalObservabilityBackend >> approximateOutputBytesForObject: anObject [
-
-	| jsonString |
-	jsonString := [ STONJSON toString: anObject ]
-		              on: Error
-		              do: [ :ignored | anObject asString ].
-	^ jsonString utf8Encoded size
-]
-
-{ #category : 'private - budgets' }
-MCPLocalObservabilityBackend >> approximateOutputBytesForResult: aToolResult error: anError [
-
-	aToolResult ifNotNil: [ ^ self approximateOutputBytesForObject: aToolResult asJRPCJSON ].
-	anError ifNil: [ ^ 0 ].
-	^ self approximateOutputBytesForObject: {
-			  (#errorClass -> anError class name asString).
-			  (#message -> (anError messageText ifNil: [ anError asString ])) } asDictionary
-]
-
-{ #category : 'private - budgets' }
-MCPLocalObservabilityBackend >> approximateOutputTokensForBytes: byteCount [
-
-	^ byteCount + 3 // 4
-]
-
 { #category : 'private - tracing' }
 MCPLocalObservabilityBackend >> captureTraceSnapshotsFor: aRecord result: aToolResult error: anError [
 
@@ -82,10 +48,9 @@ MCPLocalObservabilityBackend >> captureTraceSnapshotsFor: aRecord result: aToolR
 			on: Error
 			do: [ :snapshotError |
 					aRecord inputSnapshot: nil.
-					aRecord outputSnapshot: (self traceSnapshotFor: {
-								 (#errorClass -> snapshotError class name asString).
-								 (#message -> (snapshotError messageText ifNil: [ snapshotError asString ])).
-								 (#during -> 'trace snapshot creation') } asDictionary) ] ] ensure: [ aRecord inputObject: nil ]
+					aRecord outputSnapshot: (self traceSnapshotFor: ((self errorSummaryFor: snapshotError)
+								  at: #during put: 'trace snapshot creation';
+								  yourself)) ] ] ensure: [ aRecord inputObject: nil ]
 ]
 
 { #category : 'clearing' }
@@ -93,8 +58,7 @@ MCPLocalObservabilityBackend >> clear [
 
 	self statsByTool removeAll.
 	self recentCalls removeAll.
-	nextCallId := 0.
-	lastActivityAt := nil.
+	lastCallId := 0.
 	self clearLogs.
 	self recordLog: 'Observability cleared'
 ]
@@ -103,52 +67,6 @@ MCPLocalObservabilityBackend >> clear [
 MCPLocalObservabilityBackend >> clearLogs [
 
 	self logEntries removeAll
-]
-
-{ #category : 'private - defaults' }
-MCPLocalObservabilityBackend >> defaultOutputBudgetBytes [
-	"32 KiB is about 8k tokens with the observability estimate of four bytes per token. It is only the default trace threshold; callers can override it with outputBudgetBytes:."
-
-	^ 32 * 1024
-]
-
-{ #category : 'activation' }
-MCPLocalObservabilityBackend >> disable [
-
-	self enabled ifTrue: [ self recordLog: 'Observability disabled' ].
-	enabled := false
-]
-
-{ #category : 'activation' }
-MCPLocalObservabilityBackend >> enable [
-
-	self enabled ifTrue: [ ^ self ].
-	enabled := true.
-	lastActivityAt := DateAndTime now.
-	self recordLog: 'Observability enabled'
-]
-
-{ #category : 'accessing' }
-MCPLocalObservabilityBackend >> enabled [
-
-	^ enabled ifNil: [ false ]
-]
-
-{ #category : 'accessing' }
-MCPLocalObservabilityBackend >> enabled: aBoolean [
-
-	aBoolean
-		ifTrue: [ self enable ]
-		ifFalse: [ self disable ]
-]
-
-{ #category : 'private - tracing' }
-MCPLocalObservabilityBackend >> eventKindsForRecord: aRecord [
-
-	^ Array streamContents: [ :stream |
-			  aRecord status = 'error' ifTrue: [ stream nextPut: 'error' ].
-			  aRecord outputBudgetExceeded ifTrue: [ stream nextPut: 'output_budget_exceeded' ].
-			  aRecord outlierExplanation ifNotEmpty: [ :ignored | stream nextPut: 'duration_outlier' ] ]
 ]
 
 { #category : 'accessing' }
@@ -256,23 +174,10 @@ MCPLocalObservabilityBackend >> forceFlush [
 MCPLocalObservabilityBackend >> initialize [
 
 	super initialize.
-	enabled := true.
 	statsByTool := Dictionary new.
 	recentCalls := OrderedCollection new.
-	nextCallId := 0.
-	maxRecentCalls := 100.
-	maxLogEntries := 200.
-	outlierFactor := 3.
-	minimumOutlierMilliseconds := 250.
-	outputBudgetBytes := self defaultOutputBudgetBytes.
 	metricsExportIntervalMilliseconds := 5000.
 	metricsExportPending := false
-]
-
-{ #category : 'testing' }
-MCPLocalObservabilityBackend >> isNoop [
-
-	^ false
 ]
 
 { #category : 'private - tracing' }
@@ -371,25 +276,13 @@ MCPLocalObservabilityBackend >> logs [
 { #category : 'accessing' }
 MCPLocalObservabilityBackend >> maxLogEntries [
 
-	^ maxLogEntries ifNil: [ 200 ]
-]
-
-{ #category : 'accessing' }
-MCPLocalObservabilityBackend >> maxLogEntries: anInteger [
-
-	maxLogEntries := anInteger
+	^ 200
 ]
 
 { #category : 'accessing' }
 MCPLocalObservabilityBackend >> maxRecentCalls [
 
-	^ maxRecentCalls ifNil: [ 100 ]
-]
-
-{ #category : 'accessing' }
-MCPLocalObservabilityBackend >> maxRecentCalls: anInteger [
-
-	maxRecentCalls := anInteger
+	^ 100
 ]
 
 { #category : 'accessing' }
@@ -450,13 +343,7 @@ MCPLocalObservabilityBackend >> metricsSnapshotDictionary [
 { #category : 'accessing' }
 MCPLocalObservabilityBackend >> minimumOutlierMilliseconds [
 
-	^ minimumOutlierMilliseconds ifNil: [ 250 ]
-]
-
-{ #category : 'accessing' }
-MCPLocalObservabilityBackend >> minimumOutlierMilliseconds: anInteger [
-
-	minimumOutlierMilliseconds := anInteger
+	^ 250
 ]
 
 { #category : 'private - exporting' }
@@ -467,12 +354,6 @@ MCPLocalObservabilityBackend >> newResourceMetadata [
 		  (#'service.name' -> 'mcp-pharo').
 		  (#'service.instance.id' -> UUID new asString).
 		  (#createdAt -> DateAndTime now asString) } asDictionary
-]
-
-{ #category : 'accessing' }
-MCPLocalObservabilityBackend >> nextCallId [
-
-	^ nextCallId ifNil: [ 0 ]
 ]
 
 { #category : 'private' }
@@ -498,68 +379,7 @@ MCPLocalObservabilityBackend >> outlierExplanationForDurationMilliseconds: durat
 { #category : 'accessing' }
 MCPLocalObservabilityBackend >> outlierFactor [
 
-	^ outlierFactor ifNil: [ 3 ]
-]
-
-{ #category : 'accessing' }
-MCPLocalObservabilityBackend >> outlierFactor: aNumber [
-
-	outlierFactor := aNumber
-]
-
-{ #category : 'accessing' }
-MCPLocalObservabilityBackend >> outputBudgetBytes [
-
-	^ outputBudgetBytes ifNil: [ self defaultOutputBudgetBytes ]
-]
-
-{ #category : 'accessing' }
-MCPLocalObservabilityBackend >> outputBudgetBytes: anInteger [
-
-	outputBudgetBytes := anInteger
-]
-
-{ #category : 'private - budgets' }
-MCPLocalObservabilityBackend >> outputBudgetDataForResult: aToolResult error: anError [
-
-	| byteCount explanation |
-	byteCount := self approximateOutputBytesForResult: aToolResult error: anError.
-	explanation := self outputBudgetExplanationForByteCount: byteCount.
-	^ {
-		  (#outputBytes -> byteCount).
-		  (#approximateOutputTokens -> (self approximateOutputTokensForBytes: byteCount)).
-		  (#outputBudgetBytes -> self outputBudgetBytes).
-		  (#outputBudgetExceeded -> explanation isNotEmpty).
-		  (#outputBudgetExplanation -> explanation) } asDictionary
-]
-
-{ #category : 'private - budgets' }
-MCPLocalObservabilityBackend >> outputBudgetExplanationForByteCount: byteCount [
-
-	byteCount <= self outputBudgetBytes ifTrue: [ ^ '' ].
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Output ';
-				  print: byteCount;
-				  nextPutAll: ' bytes exceeds budget ';
-				  print: self outputBudgetBytes;
-				  nextPutAll: ' bytes; consider pagination, handles, or summary-first output' ]
-]
-
-{ #category : 'displaying' }
-MCPLocalObservabilityBackend >> outputBudgetGuidance [
-
-	| attentionStats displayedCount |
-	attentionStats := self statsNeedingOutputBudgetAttention.
-	attentionStats isEmpty ifTrue: [ ^ '' ].
-	displayedCount := 0.
-	^ String streamContents: [ :stream |
-			  stream nextPutAll: 'Output budget: '.
-			  attentionStats do: [ :stats |
-					  displayedCount < 3 ifTrue: [
-							  displayedCount > 0 ifTrue: [ stream nextPutAll: ' | ' ].
-							  stream nextPutAll: stats outputBudgetGuidance.
-							  displayedCount := displayedCount + 1 ] ] ]
+	^ 3
 ]
 
 { #category : 'accessing' }
@@ -571,27 +391,18 @@ MCPLocalObservabilityBackend >> recentCallRecords [
 { #category : 'accessing' }
 MCPLocalObservabilityBackend >> recentCalls [
 
-	^ recentCalls ifNil: [ recentCalls := OrderedCollection new ]
+	^ recentCalls
 ]
 
 { #category : 'logging' }
 MCPLocalObservabilityBackend >> recordLog: aString [
 
-	| timestamp |
-	self enabled ifFalse: [ ^ self ].
-	timestamp := DateAndTime now.
 	self logEntry: aString.
-	self exportLogMessage: aString timestamp: timestamp
-]
-
-{ #category : 'private - budgets' }
-MCPLocalObservabilityBackend >> recordOutputBudgetFor: aRecord result: aToolResult error: anError [
-
-	aRecord recordOutputBudget: (self outputBudgetDataForResult: aToolResult error: anError)
+	self exportLogMessage: aString timestamp: DateAndTime now
 ]
 
 { #category : 'recording' }
-MCPLocalObservabilityBackend >> recordSessionEndFor: anMCP [
+MCPLocalObservabilityBackend >> recordSessionEnd [
 
 	self resourceMetadata at: #sessionEndedAt put: DateAndTime now asString.
 	self exportEnabled ifTrue: [ self writeResourceMetadata ].
@@ -599,7 +410,7 @@ MCPLocalObservabilityBackend >> recordSessionEndFor: anMCP [
 ]
 
 { #category : 'recording' }
-MCPLocalObservabilityBackend >> recordSessionStartFor: anMCP [
+MCPLocalObservabilityBackend >> recordSessionStart [
 
 	self resourceMetadata at: #sessionStartedAt put: DateAndTime now asString.
 	self resourceMetadata removeKey: #sessionEndedAt ifAbsent: [ nil ].
@@ -609,25 +420,20 @@ MCPLocalObservabilityBackend >> recordSessionStartFor: anMCP [
 { #category : 'recording' }
 MCPLocalObservabilityBackend >> recordToolCallFinish: aRecord result: aToolResult error: anError [
 
-	| explanation finishTimestamp stats statusString duration |
+	| stats |
 	aRecord ifNil: [ ^ self ].
-	self enabled ifFalse: [ ^ self ].
-	finishTimestamp := DateAndTime now.
-	duration := (finishTimestamp - aRecord startedAt) asMilliSeconds.
-	statusString := self statusForResult: aToolResult error: anError.
+	self
+		finishRecord: aRecord
+		result: aToolResult
+		error: anError
+		at: DateAndTime now.
 	stats := self statsForToolNamed: aRecord toolName.
-	explanation := self outlierExplanationForDurationMilliseconds: duration stats: stats.
-	aRecord finishAt: finishTimestamp durationMilliseconds: duration status: statusString.
-	self recordErrorDetailsFor: aRecord result: aToolResult error: anError.
 	aRecord summary: (self summaryForResult: aToolResult).
-	aRecord outlierExplanation: explanation.
-	self recordOutputBudgetFor: aRecord result: aToolResult error: anError.
-	aRecord eventKinds: (self eventKindsForRecord: aRecord).
+	aRecord outlierExplanation: (self outlierExplanationForDurationMilliseconds: aRecord durationMilliseconds stats: stats).
 	self captureTraceSnapshotsFor: aRecord result: aToolResult error: anError.
 	self exportTraceRecord: aRecord.
 	stats recordCall: aRecord.
 	self addRecentCall: aRecord.
-	lastActivityAt := finishTimestamp.
 	self exportMetrics.
 	self recordLog: (self logMessageForRecord: aRecord).
 	^ aRecord
@@ -637,16 +443,7 @@ MCPLocalObservabilityBackend >> recordToolCallFinish: aRecord result: aToolResul
 MCPLocalObservabilityBackend >> recordToolCallStart: aToolName input: inputObject dispatchPath: dispatchPath context: contextDictionary [
 	"A call is logged once, when it ends, with everything known about it then; until then it is in the record this answers."
 
-	| record startTimestamp |
-	self enabled ifFalse: [ ^ nil ].
-	nextCallId := self nextCallId + 1.
-	startTimestamp := DateAndTime now.
-	record := MCPToolCallRecord id: self nextCallId toolName: aToolName asString startedAt: startTimestamp.
-	record inputObject: inputObject.
-	record inputByteCount: (inputObject ifNil: [ 0 ] ifNotNil: [ self approximateOutputBytesForObject: inputObject ]).
-	record dispatchPath: dispatchPath asString.
-	lastActivityAt := startTimestamp.
-	^ record
+	^ self newRecordFor: aToolName input: inputObject dispatchPath: dispatchPath
 ]
 
 { #category : 'accessing' }
@@ -686,58 +483,19 @@ MCPLocalObservabilityBackend >> shouldIncludeTraceAssociation: anAssociation [
 { #category : 'actions' }
 MCPLocalObservabilityBackend >> shutdown [
 
-	self recordSessionEndFor: nil
+	self recordSessionEnd
 ]
 
 { #category : 'accessing' }
 MCPLocalObservabilityBackend >> statsByTool [
 
-	^ statsByTool ifNil: [ statsByTool := Dictionary new ]
+	^ statsByTool
 ]
 
 { #category : 'accessing' }
 MCPLocalObservabilityBackend >> statsForToolNamed: aToolName [
 
 	^ self statsByTool at: aToolName asString ifAbsentPut: [ MCPToolCallStats forToolNamed: aToolName asString ]
-]
-
-{ #category : 'private - budgets' }
-MCPLocalObservabilityBackend >> statsNeedingOutputBudgetAttention [
-
-	^ (self metrics select: [ :each | each outputBudgetExceededCount > 0 ]) asArray sort: [ :left :right |
-			  left outputBudgetExceededCount = right outputBudgetExceededCount
-				  ifTrue: [ left maxOutputBytes >= right maxOutputBytes ]
-				  ifFalse: [ left outputBudgetExceededCount > right outputBudgetExceededCount ] ]
-]
-
-{ #category : 'private' }
-MCPLocalObservabilityBackend >> statusForResult: aToolResult error: anError [
-
-	anError ifNotNil: [ ^ 'error' ].
-	aToolResult ifNil: [ ^ 'error' ].
-	^ aToolResult isError
-		  ifTrue: [ 'error' ]
-		  ifFalse: [ 'ok' ]
-]
-
-{ #category : 'displaying' }
-MCPLocalObservabilityBackend >> statusText [
-
-	| guidance |
-	self enabled ifFalse: [ ^ 'Observability disabled' ].
-	guidance := self outputBudgetGuidance.
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Observability enabled. Calls: ';
-				  print: self totalCallCount;
-				  nextPutAll: ' | Errors: ';
-				  print: self totalErrorCount;
-				  nextPutAll: ' | Output overruns: ';
-				  print: self totalOutputBudgetExceededCount.
-			  guidance isEmpty ifFalse: [
-					  stream
-						  nextPutAll: ' | ';
-						  nextPutAll: guidance ] ]
 ]
 
 { #category : 'private' }
@@ -771,10 +529,7 @@ MCPLocalObservabilityBackend >> totalOutputBudgetExceededCount [
 { #category : 'private - tracing' }
 MCPLocalObservabilityBackend >> traceEventNameForRecord: aRecord [
 
-	aRecord status = 'error' ifTrue: [ ^ 'mcp.tool_call.error' ].
-	aRecord outputBudgetExceeded ifTrue: [ ^ 'mcp.tool_call.output_budget_exceeded' ].
-	aRecord outlierExplanation ifNotEmpty: [ ^ 'mcp.tool_call.duration_outlier' ].
-	^ 'mcp.tool_call.completed'
+	^ 'mcp.tool_call.' , (aRecord eventKinds ifEmpty: [ 'completed' ] ifNotEmpty: [ :kinds | kinds first ])
 ]
 
 { #category : 'accessing' }
@@ -889,9 +644,7 @@ MCPLocalObservabilityBackend >> traceSnapshotForResult: aToolResult error: anErr
 
 	aToolResult ifNotNil: [ ^ self traceSnapshotFor: aToolResult structuredContent ].
 	anError ifNil: [ ^ nil ].
-	^ self traceSnapshotFor: {
-			  (#errorClass -> anError class name asString).
-			  (#message -> (anError messageText ifNil: [ anError asString ])) } asDictionary
+	^ self traceSnapshotFor: (self errorSummaryFor: anError)
 ]
 
 { #category : 'private - tracing' }

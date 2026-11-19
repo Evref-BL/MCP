@@ -14,7 +14,6 @@ Class {
 		'maxMilliseconds',
 		'lastMilliseconds',
 		'firstStartedAt',
-		'lastStartedAt',
 		'lastFinishedAt',
 		'lastOutlierExplanation',
 		'totalOutputBytes',
@@ -85,7 +84,7 @@ MCPToolCallStats >> averageOutputBytes [
 { #category : 'accessing' }
 MCPToolCallStats >> callCount [
 
-	^ callCount ifNil: [ 0 ]
+	^ callCount
 ]
 
 { #category : 'displaying' }
@@ -115,25 +114,25 @@ MCPToolCallStats >> displayMinMilliseconds [
 { #category : 'accessing' }
 MCPToolCallStats >> errorCount [
 
-	^ errorCount ifNil: [ 0 ]
+	^ errorCount
 ]
 
 { #category : 'accessing' }
 MCPToolCallStats >> errorCountsByClass [
 
-	^ errorCountsByClass ifNil: [ errorCountsByClass := Dictionary new ]
+	^ errorCountsByClass
 ]
 
 { #category : 'accessing' }
 MCPToolCallStats >> errorCountsByCode [
 
-	^ errorCountsByCode ifNil: [ errorCountsByCode := Dictionary new ]
+	^ errorCountsByCode
 ]
 
 { #category : 'accessing' }
 MCPToolCallStats >> errorCountsByKind [
 
-	^ errorCountsByKind ifNil: [ errorCountsByKind := Dictionary new ]
+	^ errorCountsByKind
 ]
 
 { #category : 'accessing' }
@@ -208,24 +207,7 @@ MCPToolCallStats >> minMilliseconds [
 { #category : 'accessing' }
 MCPToolCallStats >> outputBudgetExceededCount [
 
-	^ outputBudgetExceededCount ifNil: [ 0 ]
-]
-
-{ #category : 'displaying' }
-MCPToolCallStats >> outputBudgetGuidance [
-
-	self outputBudgetExceededCount = 0 ifTrue: [ ^ '' ].
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: self toolName;
-				  nextPutAll: ' exceeded output budget ';
-				  print: self outputBudgetExceededCount;
-				  nextPutAll: ' time'.
-			  self outputBudgetExceededCount = 1 ifFalse: [ stream nextPut: $s ].
-			  stream
-				  nextPutAll: ' (max ';
-				  print: self maxOutputBytes;
-				  nextPutAll: ' bytes). Prefer pagination, handles, or summary-first output.' ]
+	^ outputBudgetExceededCount
 ]
 
 { #category : 'recording' }
@@ -249,7 +231,6 @@ MCPToolCallStats >> recordCall: aRecord [
 	aRecord outputBudgetExceeded ifTrue: [ outputBudgetExceededCount := self outputBudgetExceededCount + 1 ].
 	firstStartedAt ifNil: [ firstStartedAt := aRecord startedAt ].
 	lastMilliseconds := duration.
-	lastStartedAt := aRecord startedAt.
 	lastFinishedAt := aRecord finishedAt.
 	lastOutlierExplanation := aRecord outlierExplanation
 ]
@@ -272,7 +253,7 @@ MCPToolCallStats >> recordErrorFor: aRecord [
 { #category : 'accessing' }
 MCPToolCallStats >> successCount [
 
-	^ successCount ifNil: [ 0 ]
+	^ successCount
 ]
 
 { #category : 'private' }
@@ -296,11 +277,11 @@ MCPToolCallStats >> toolName: aString [
 { #category : 'accessing' }
 MCPToolCallStats >> totalMilliseconds [
 
-	^ totalMilliseconds ifNil: [ 0 ]
+	^ totalMilliseconds
 ]
 
 { #category : 'accessing' }
 MCPToolCallStats >> totalOutputBytes [
 
-	^ totalOutputBytes ifNil: [ 0 ]
+	^ totalOutputBytes
 ]
