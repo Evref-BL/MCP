@@ -24,29 +24,6 @@ Class {
 }
 
 { #category : 'metadata - groups' }
-MCPTool class >> builtInGroupNames [
-
-	^ {
-		  self classesGroupName.
-		  self debuggingGroupName.
-		  self historyGroupName.
-		  self methodsGroupName.
-		  self packagesGroupName.
-		  self repositoriesGroupName.
-		  self runtimeGroupName.
-		  self testsGroupName.
-		  self toolCatalogGroupName.
-		  self uiGroupName }
-]
-
-{ #category : 'metadata' }
-MCPTool class >> builtInPackageNames [
-	"The packages MCP ships tools in: the catalog that the server dispatches through, and the image tools beside it. A tool defined anywhere else belongs to whoever put it there, including MCP's own test fixtures."
-
-	^ #( 'MCP' 'MCP-IDE' )
-]
-
-{ #category : 'metadata - groups' }
 MCPTool class >> classesGroupName [
 
 	^ 'classes'
@@ -80,15 +57,6 @@ MCPTool class >> historyGroupName [
 MCPTool class >> isAbstract [
 
 	^ self = MCPTool
-]
-
-{ #category : 'metadata' }
-MCPTool class >> isBuiltIn [
-	"A tool MCP ships, as against one another project defines. Its own no longer share a package, so provenance is a list rather than a comparison with this class's own.
-
-	This says whose conventions a tool answers to, which is what the contract tests ask. It says nothing about whether the tool is served: loading the package decides that."
-
-	^ self builtInPackageNames includes: self package name
 ]
 
 { #category : 'metadata - groups' }

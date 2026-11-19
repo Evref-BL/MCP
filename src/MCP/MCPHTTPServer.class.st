@@ -201,12 +201,6 @@ MCPHTTPServer >> decodedHeaderValue: aValue [
 		  do: [ :error | error return: aValue ]
 ]
 
-{ #category : 'post response' }
-MCPHTTPServer >> deferAfterCurrentResponse: aBlock [
-
-	server deferAfterCurrentResponse: aBlock
-]
-
 { #category : 'event streams' }
 MCPHTTPServer >> eventStreams [
 

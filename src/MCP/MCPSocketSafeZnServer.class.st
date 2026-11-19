@@ -19,12 +19,6 @@ Class {
 	#tag : 'Transport'
 }
 
-{ #category : 'post response' }
-MCPSocketSafeZnServer >> deferAfterCurrentResponse: aBlock [
-
-	MCPPostResponseActions defer: aBlock
-]
-
 { #category : 'request handling' }
 MCPSocketSafeZnServer >> executeOneRequestResponseOn: stream [
 

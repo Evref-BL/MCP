@@ -35,6 +35,15 @@ MCPServerLifecycleTest >> stopAndForget: anMCP [
 ]
 
 { #category : 'tests' }
+MCPServerLifecycleTest >> testADeferredActionRunsAtOnceOutsideAResponse [
+
+	| ran |
+	ran := false.
+	MCPPostResponseActions value: nil during: [ MCPPostResponseActions defer: [ ran := true ] ].
+	self assert: ran
+]
+
+{ #category : 'tests' }
 MCPServerLifecycleTest >> testAPortHeldByAnotherServerIsNamedInTheError [
 	"The socket error says the address is in use; it does not say that the image itself is using it. Nor will that server let go of the port while this one waits for it, so the start fails at once."
 
@@ -304,23 +313,13 @@ MCPServerLifecycleTest >> testSocketSafeServerRunsDeferredActionsAfterCurrentRes
 	server := MCPSocketSafeZnServer new.
 	actions := OrderedCollection new.
 	MCPPostResponseActions value: actions during: [
-			server deferAfterCurrentResponse: [ ran := true ].
+			MCPPostResponseActions defer: [ ran := true ].
 			self deny: ran ].
 	server runPostResponseActions: actions.
 	self assert: ran.
 	ran := false.
 	server runPostResponseActions: actions.
 	self deny: ran
-]
-
-{ #category : 'tests' }
-MCPServerLifecycleTest >> testSocketSafeServerRunsPostResponseActionsImmediatelyWithoutActiveQueue [
-
-	| ran server |
-	ran := false.
-	server := MCPSocketSafeZnServer new.
-	MCPPostResponseActions value: nil during: [ server deferAfterCurrentResponse: [ ran := true ] ].
-	self assert: ran
 ]
 
 { #category : 'tests' }

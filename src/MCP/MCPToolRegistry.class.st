@@ -285,12 +285,6 @@ MCPToolRegistry >> singularSearchTermFor: aTerm [
 ]
 
 { #category : 'tools' }
-MCPToolRegistry >> toolClasses [
-
-	^ self entryClasses
-]
-
-{ #category : 'tools' }
 MCPToolRegistry >> toolGroups [
 
 	| groups |

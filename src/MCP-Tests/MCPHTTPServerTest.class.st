@@ -182,8 +182,7 @@ MCPHTTPServerTest >> testHandlesConcurrentPostRequests [
 					[
 						payload := String streamContents: [ :stream |
 								           stream << '{"jsonrpc":"2.0","id":' << index asString
-								           <<
-								           ',"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{},"websiteUrl":null}}' ].
+								           << ',"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{}}}' ].
 						client
 							url: server localUrl;
 							headerAt: 'Accept' put: 'application/json, text/event-stream';

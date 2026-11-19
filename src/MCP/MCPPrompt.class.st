@@ -15,12 +15,6 @@ Class {
 	#tag : 'Prompts'
 }
 
-{ #category : 'querying' }
-MCPPrompt class >> concreteSubclasses [
-
-	^ self allSubclasses reject: [ :each | each isAbstract ]
-]
-
 { #category : 'testing' }
 MCPPrompt class >> isAbstract [
 

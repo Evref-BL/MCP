@@ -13,12 +13,6 @@ Class {
 }
 
 { #category : 'validating' }
-MCPJSONSchemaValidator class >> isValid: aValue against: aSchema [
-
-	^ (self violationsFor: aValue schema: aSchema) isEmpty
-]
-
-{ #category : 'validating' }
 MCPJSONSchemaValidator class >> violationsFor: aValue schema: aSchema [
 
 	^ self new validate: aValue against: aSchema

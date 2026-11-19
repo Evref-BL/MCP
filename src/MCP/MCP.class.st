@@ -449,12 +449,6 @@ MCP >> executeTool: aTool withParams: arguments dispatchPath: dispatchPath [
 		  do: [ :error | self answerToolError: error tool: aTool record: record ]
 ]
 
-{ #category : 'accessing' }
-MCP >> handlersCount [
-
-	^ self server messageProcessor handlersCount
-]
-
 { #category : 'private - completion' }
 MCP >> hasCompletableReferences [
 	"Nothing can be completed without a prompt or a resource template to complete it for."
@@ -623,7 +617,7 @@ MCP >> observabilityTraces [
 ]
 
 { #category : 'start' }
-MCP >> onInitialize: protocolVersion capabilities: capabilities clientInfo: clientInfo websiteUrl: websiteUrl [
+MCP >> onInitialize: protocolVersion [
 	"A client that opens with initialize has no server/discover to call, so this answer carries the instructions too."
 
 	<jrpc: #initialize>

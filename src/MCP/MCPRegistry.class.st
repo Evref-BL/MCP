@@ -98,12 +98,6 @@ MCPRegistry >> entriesFrom: someClasses [
 		  self isEntry: left before: right ]
 ]
 
-{ #category : 'entries' }
-MCPRegistry >> entryClasses [
-
-	^ self entries collect: [ :each | each class ] as: Array
-]
-
 { #category : 'testing' }
 MCPRegistry >> includesKey: aKey [
 

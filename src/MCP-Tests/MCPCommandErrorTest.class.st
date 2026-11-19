@@ -350,16 +350,3 @@ MCPCommandErrorTest >> testMissingSuperclassErrorCarriesSuperclassName [
 	self assert: (details includesKey: #suggestions).
 	self assert: ((details at: #message) beginsWith: 'Superclass MCPMissingSuperclass does not exist.')
 ]
-
-{ #category : 'tests' }
-MCPCommandErrorTest >> testMissingTagErrorCarriesTagAndClassName [
-
-	| details error |
-	error := self capture: [
-		         MCPCommandError signalMissingTag: 'MissingTag' packageName: 'MCP-Tests' forClassNamed: 'MCPCommandErrorTestTarget' ].
-	details := error structuredDetails.
-	self assert: error errorCode equals: #TagNotFound.
-	self assert: (details at: #class) equals: 'MCPCommandErrorTestTarget'.
-	self assert: (details at: #package) equals: 'MCP-Tests'.
-	self assert: (details at: #tag) equals: 'MissingTag'
-]

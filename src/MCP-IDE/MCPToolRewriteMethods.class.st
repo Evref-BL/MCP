@@ -156,7 +156,7 @@ MCPToolRewriteMethods >> rewriteRulesFrom: request [
 	"The patterns the call wrote, then the rule classes it named, numbered in that order."
 
 	| ruleClassNames ruleObjects rules |
-	ruleObjects := request objectCollectionArgumentNamed: 'rules'.
+	ruleObjects := request arrayArgumentNamed: 'rules'.
 	ruleClassNames := request stringCollectionArgumentNamed: 'ruleClasses'.
 	(ruleObjects isEmpty and: [ ruleClassNames isEmpty ]) ifTrue: [
 			MCPCommandError

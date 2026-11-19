@@ -24,7 +24,7 @@ MCPToolsCatalogPresenterTest >> testCatalogListsEveryToolTheImageHas [
 	presenter := MCPToolsCatalogPresenter new.
 
 	self assert: (presenter instVarNamed: #toolsTable) items size equals: presenter allTools size.
-	self assert: presenter allTools size equals: MCPToolRegistry default toolClasses size
+	self assert: presenter allTools size equals: MCPToolRegistry default tools size
 ]
 
 { #category : 'tests' }

@@ -79,15 +79,6 @@ MCPToolRequest >> booleanArgumentNamed: anArgumentName [
 ]
 
 { #category : 'accessing' }
-MCPToolRequest >> booleanArgumentNamed: anArgumentName default: aBoolean [
-
-	| value |
-	value := self argumentNamed: anArgumentName ifAbsent: [ ^ aBoolean ].
-	value ifNil: [ ^ aBoolean ].
-	^ value
-]
-
-{ #category : 'accessing' }
 MCPToolRequest >> booleanArgumentNamed: anArgumentName in: aDictionary default: aBoolean [
 
 	| value |
@@ -157,14 +148,6 @@ MCPToolRequest >> nonNegativeIntegerArgumentNamed: anArgumentName default: anInt
 	Error signal: anArgumentName asString , ' must be a non-negative integer.'
 ]
 
-{ #category : 'accessing' }
-MCPToolRequest >> nonNegativeIntegerArgumentNamed: anArgumentName default: defaultInteger maximum: maximumInteger [
-
-	| value |
-	value := self nonNegativeIntegerArgumentNamed: anArgumentName default: defaultInteger.
-	^ value min: maximumInteger
-]
-
 { #category : 'private - validating' }
 MCPToolRequest >> normalizeArgumentsForInputSchema: anInputSchema [
 
@@ -175,12 +158,6 @@ MCPToolRequest >> normalizeArgumentsForInputSchema: anInputSchema [
 			maximum := property extraProperties at: #maximum ifAbsent: [ nil ].
 			maximum ifNotNil: [ self clampArgumentNamed: property name maximum: maximum in: normalizedArguments ] ].
 	arguments := normalizedArguments
-]
-
-{ #category : 'accessing' }
-MCPToolRequest >> objectCollectionArgumentNamed: anArgumentName [
-
-	^ self arrayArgumentNamed: anArgumentName
 ]
 
 { #category : 'private - validating' }
@@ -219,13 +196,6 @@ MCPToolRequest >> stringArgumentNamed: anArgumentName in: aDictionary default: d
 MCPToolRequest >> stringCollectionArgumentNamed: anArgumentName [
 
 	^ self stringCollectionFrom: (self argumentNamed: anArgumentName ifAbsent: [ ^ #(  ) ])
-]
-
-{ #category : 'accessing' }
-MCPToolRequest >> stringCollectionArgumentNamed: anArgumentName default: defaultCollection [
-
-	(self hasArgumentNamed: anArgumentName) ifFalse: [ ^ defaultCollection ].
-	^ self stringCollectionArgumentNamed: anArgumentName
 ]
 
 { #category : 'accessing' }
@@ -278,12 +248,6 @@ MCPToolRequest >> tool: aTool [
 MCPToolRequest >> uniqueStringCollectionArgumentNamed: anArgumentName [
 
 	^ self uniqueStringCollectionFrom: (self stringCollectionArgumentNamed: anArgumentName)
-]
-
-{ #category : 'accessing' }
-MCPToolRequest >> uniqueStringCollectionArgumentNamed: anArgumentName default: defaultCollection [
-
-	^ self uniqueStringCollectionFrom: (self stringCollectionArgumentNamed: anArgumentName default: defaultCollection)
 ]
 
 { #category : 'private - accessing' }
