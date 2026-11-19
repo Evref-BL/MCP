@@ -1,12 +1,12 @@
 Extension { #name : 'OCCompilationError' }
 
-{ #category : '*MCP-Compatibility-From14' }
+{ #category : '*MCP-IDE-Compatibility-From14' }
 OCCompilationError >> mcpCompilationAst [
 
 	^ self compilationResult ast
 ]
 
-{ #category : '*MCP-Compatibility-From14' }
+{ #category : '*MCP-IDE-Compatibility-From14' }
 OCCompilationError >> mcpNoticeNode [
 
 	^ self mcpCompilationAst variableNodes

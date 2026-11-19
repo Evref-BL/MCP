@@ -29,7 +29,7 @@ MCPGreetingTestResource class >> resourceUri [
 
 { #category : 'testing' }
 MCPGreetingTestResource class >> shouldAutoRegister [
-	"A fixture is not a resource anyone asked for, and MCP's default group loads its own tests, so every fixture says so itself rather than relying on the package it sits in."
+	"A fixture is not a resource anyone asked for, and an image that loads MCP's tests serves MCP too, so every fixture says so itself rather than relying on the package it sits in."
 
 	^ false
 ]

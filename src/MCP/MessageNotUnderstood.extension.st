@@ -2,12 +2,11 @@ Extension { #name : 'MessageNotUnderstood' }
 
 { #category : '*MCP' }
 MessageNotUnderstood >> mcpAddToolErrorDetailsTo: aDictionary [
-	"Say what the message was most likely meant to be, or, sent to nil, the send in the caller's own code it came from; and name the selectors the receiver's class understands that resemble it, the way the debugger would, unless the note says they are beside the point: nil's own selectors are nobody's guess, and a message the other side of the class understands was not mistyped."
+	"Name the selectors the receiver's class understands that resemble the message, the way the debugger would, unless they are beside the point: nil's own are nobody's guess, nor are they when a note says what was meant instead."
 
-	| note suggestions |
-	note := MCPNotUnderstoodNote on: self.
-	note text ifNotNil: [ :text | aDictionary at: #note put: text ].
-	note leavesOutSuggestions ifTrue: [ ^ aDictionary ].
+	| suggestions |
+	self mcpAddNoteTo: aDictionary ifItLeavesOutSuggestions: [ ^ aDictionary ].
+	self receiver ifNil: [ ^ aDictionary ].
 	suggestions := MCPSelectorSuggestion selectorsLike: self message selector understoodBy: self receiver class.
 	suggestions ifNotEmpty: [ aDictionary at: #suggestedSelectors put: suggestions ].
 	^ aDictionary

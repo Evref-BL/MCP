@@ -1,5 +1,5 @@
 "
-A syntax error, signalled as an Error. Before Pharo 12 the parser signals SyntaxErrorNotification, which is a Notification: the handlers MCP writes for the CodeError of later versions do not catch it, and its default action in a headless image is to quit. MCP signals me in its place. I answer what MCP reads of a syntax notice: my message, the position in the source it names, and that I am one.
+A syntax error, signalled as an Error. Before Pharo 12 the parser signals SyntaxErrorNotification, which is a Notification: the handlers MCP writes for the CodeError of later versions do not catch it, and its default action in a headless image is to quit. MCP signals me in its place, with the message and the position in the source it names.
 "
 Class {
 	#name : 'MCPSyntaxError',
@@ -18,24 +18,6 @@ MCPSyntaxError class >> messageText: aString position: anInteger [
 		  messageText: aString;
 		  position: anInteger;
 		  yourself
-]
-
-{ #category : 'accessing' }
-MCPSyntaxError >> mcpErrorPosition [
-
-	^ position
-]
-
-{ #category : 'accessing' }
-MCPSyntaxError >> mcpMutationFailureErrorCodeSuffix [
-
-	^ 'SyntaxError'
-]
-
-{ #category : 'accessing' }
-MCPSyntaxError >> mcpSyntaxNotice [
-
-	^ self
 ]
 
 { #category : 'accessing' }
