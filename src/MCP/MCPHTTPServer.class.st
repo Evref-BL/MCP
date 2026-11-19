@@ -38,18 +38,6 @@ MCPHTTPServer >> addEventStream: anEventStream [
 	eventStreams add: anEventStream
 ]
 
-{ #category : 'accessing' }
-MCPHTTPServer >> allowedOrigins [
-
-	^ server optionAt: #mcpAllowedOrigins ifAbsent: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
-MCPHTTPServer >> allowedOrigins: originStrings [
-
-	server optionAt: #mcpAllowedOrigins put: originStrings asSet
-]
-
 { #category : 'initialization' }
 MCPHTTPServer >> answer: request with: response [
 
@@ -268,7 +256,6 @@ MCPHTTPServer >> initialize [
 MCPHTTPServer >> isAllowedOrigin: originString [
 
 	| host url |
-	(self allowedOrigins includes: originString) ifTrue: [ ^ true ].
 	url := [ ZnUrl fromString: originString ]
 		       on: Error
 		       do: [ ^ false ].

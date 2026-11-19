@@ -131,19 +131,6 @@ MCPHTTPServerTest >> testAcceptsSupportedProtocolVersion [
 ]
 
 { #category : 'tests' }
-MCPHTTPServerTest >> testAllowsExplicitlyConfiguredOrigin [
-
-	| request response server |
-	server := MCPHTTPServer new.
-	server allowedOrigins: #( 'https://tools.example' ).
-	request := ZnRequest method: #GET url: ZnUrl new.
-	request headers at: 'Origin' put: 'https://tools.example'.
-	response := self responseForRequest: request using: server.
-	self assert: response code equals: 405.
-	self assert: (response headers at: #'Access-Control-Allow-Origin') equals: 'https://tools.example'
-]
-
-{ #category : 'tests' }
 MCPHTTPServerTest >> testAllowsLoopbackOriginAndReturnsCORSHeaders [
 
 	| request response |
