@@ -103,12 +103,6 @@ MCPJSONSchemaValidator >> isJSONArray: aValue [
 ]
 
 { #category : 'private - schema' }
-MCPJSONSchemaValidator >> keywordNamed: aKey in: aDictionary ifAbsent: absentBlock [
-
-	^ aDictionary mcpAt: aKey ifAbsent: absentBlock
-]
-
-{ #category : 'private - schema' }
 MCPJSONSchemaValidator >> keywordNamed: aKey in: aDictionary ifPresent: presentBlock [
 
 	^ presentBlock value: (aDictionary mcpAt: aKey ifAbsent: [ ^ nil ])
@@ -122,19 +116,10 @@ MCPJSONSchemaValidator >> propertyNamesIn: schema [
 	^ properties keys collect: [ :each | each asString ] as: Set
 ]
 
-{ #category : 'private - combinators' }
+{ #category : 'private - object validation' }
 MCPJSONSchemaValidator >> schema: schema matchesValue: aValue [
 
 	^ (self class violationsFor: aValue schema: schema) isEmpty
-]
-
-{ #category : 'private - schema' }
-MCPJSONSchemaValidator >> schemaCollectionNamed: aKey in: schema [
-
-	| collection |
-	collection := self keywordNamed: aKey in: schema ifAbsent: [ ^ #(  ) ].
-	collection ifNil: [ ^ #(  ) ].
-	^ collection asArray
 ]
 
 { #category : 'private - schema' }
@@ -187,29 +172,6 @@ MCPJSONSchemaValidator >> validateAdditionalPropertiesIn: aDictionary againstSch
 						ifFalse: [ self validateValue: value againstSchema: additionalProperties atPath: (path copyWith: key asString) ] ] ]
 ]
 
-{ #category : 'private - combinators' }
-MCPJSONSchemaValidator >> validateAllOfIn: schema for: aValue atPath: path [
-
-	(self schemaCollectionNamed: #allOf in: schema) do: [ :eachSchema |
-		self validateValue: aValue againstSchema: eachSchema atPath: path ]
-]
-
-{ #category : 'private - combinators' }
-MCPJSONSchemaValidator >> validateAnyOfIn: schema for: aValue atPath: path [
-
-	| matches schemas |
-	schemas := self schemaCollectionNamed: #anyOf in: schema.
-	schemas ifEmpty: [ ^ self ].
-	matches := schemas count: [ :eachSchema | self schema: eachSchema matchesValue: aValue ].
-	matches = 0 ifTrue: [
-			self
-				addViolationAt: path
-				keyword: #anyOf
-				message: 'Value must match at least one schema branch.'
-				expected: 'at least one matching branch'
-				actual: matches ]
-]
-
 { #category : 'private - array validation' }
 MCPJSONSchemaValidator >> validateArray: aCollection againstSchema: schema atPath: path [
 	"Positions in a path count from zero, as in the JSON the caller sent."
@@ -226,20 +188,6 @@ MCPJSONSchemaValidator >> validateArray: aCollection againstSchema: schema atPat
 						actual: aCollection size ] ].
 	itemSchema := schema mcpAt: #items ifAbsent: [ ^ self ].
 	aCollection withIndexDo: [ :each :index | self validateValue: each againstSchema: itemSchema atPath: (path copyWith: index - 1) ]
-]
-
-{ #category : 'private - validating' }
-MCPJSONSchemaValidator >> validateConstIn: schema for: aValue atPath: path [
-
-	| expectedValue |
-	expectedValue := self keywordNamed: #const in: schema ifAbsent: [ ^ self ].
-	aValue = expectedValue ifFalse: [
-			self
-				addViolationAt: path
-				keyword: #const
-				message: 'Value must equal the schema constant.'
-				expected: expectedValue
-				actual: aValue ]
 ]
 
 { #category : 'private - object validation' }
@@ -266,29 +214,6 @@ MCPJSONSchemaValidator >> validateEnumIn: schema for: aValue atPath: path [
 				message: 'Value must be one of the schema enum values.'
 				expected: expectedValues
 				actual: aValue ]
-]
-
-{ #category : 'private - combinators' }
-MCPJSONSchemaValidator >> validateIfThenIn: schema for: aValue atPath: path [
-
-	| conditionSchema thenSchema |
-	conditionSchema := self keywordNamed: #if in: schema ifAbsent: [ ^ self ].
-	thenSchema := self keywordNamed: #then in: schema ifAbsent: [ ^ self ].
-	(self schema: conditionSchema matchesValue: aValue) ifTrue: [ self validateValue: aValue againstSchema: thenSchema atPath: path ]
-]
-
-{ #category : 'private - combinators' }
-MCPJSONSchemaValidator >> validateNotIn: schema for: aValue atPath: path [
-
-	| prohibitedSchema |
-	prohibitedSchema := self keywordNamed: #not in: schema ifAbsent: [ ^ self ].
-	(self schema: prohibitedSchema matchesValue: aValue) ifTrue: [
-			self
-				addViolationAt: path
-				keyword: #not
-				message: 'Value must not match the prohibited schema.'
-				expected: 'a value that does not match the prohibited schema'
-				actual: 'matched prohibited schema' ]
 ]
 
 { #category : 'private - number validation' }
@@ -318,22 +243,6 @@ MCPJSONSchemaValidator >> validateObject: aDictionary againstSchema: schema atPa
 	self validateRequiredPropertiesIn: aDictionary againstSchema: schema atPath: path.
 	self validateDefinedPropertiesIn: aDictionary againstSchema: schema atPath: path.
 	self validateAdditionalPropertiesIn: aDictionary againstSchema: schema atPath: path
-]
-
-{ #category : 'private - combinators' }
-MCPJSONSchemaValidator >> validateOneOfIn: schema for: aValue atPath: path [
-
-	| matches schemas |
-	schemas := self schemaCollectionNamed: #oneOf in: schema.
-	schemas ifEmpty: [ ^ self ].
-	matches := schemas count: [ :eachSchema | self schema: eachSchema matchesValue: aValue ].
-	matches = 1 ifFalse: [
-			self
-				addViolationAt: path
-				keyword: #oneOf
-				message: 'Value must match exactly one schema branch.'
-				expected: 'exactly one matching branch'
-				actual: matches ]
 ]
 
 { #category : 'private - object validation' }
@@ -372,12 +281,6 @@ MCPJSONSchemaValidator >> validateValue: aValue againstSchema: aSchemaObject atP
 	| schema type |
 	schema := self schemaDictionaryFrom: aSchemaObject.
 	schema ifNil: [ ^ self ].
-	self validateAllOfIn: schema for: aValue atPath: path.
-	self validateAnyOfIn: schema for: aValue atPath: path.
-	self validateOneOfIn: schema for: aValue atPath: path.
-	self validateNotIn: schema for: aValue atPath: path.
-	self validateIfThenIn: schema for: aValue atPath: path.
-	self validateConstIn: schema for: aValue atPath: path.
 	self validateEnumIn: schema for: aValue atPath: path.
 	type := schema mcpAt: #type ifAbsent: [ nil ].
 	type ifNotNil: [

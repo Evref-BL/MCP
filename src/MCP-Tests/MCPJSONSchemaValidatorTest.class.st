@@ -315,26 +315,7 @@ MCPJSONSchemaValidatorTest >> testReportsRequiredTypeAndAdditionalPropertiesViol
 ]
 
 { #category : 'tests' }
-MCPJSONSchemaValidatorTest >> testValidatesAllOfAndIfThen [
-
-	| arguments keywords schema |
-	schema := {
-		          (#type -> 'object').
-		          (#allOf -> {
-			           { (#required -> #( 'operation' )) } asDictionary.
-			           {
-				           (#if -> {
-					            (#type -> 'object').
-					            (#properties -> { ('operation' -> { (#const -> 'rename') } asDictionary) } asDictionary).
-					            (#required -> #( 'operation' )) } asDictionary).
-				           (#then -> { (#required -> #( 'newName' )) } asDictionary) } asDictionary }) } asDictionary.
-	arguments := { (#operation -> 'rename') } asDictionary.
-	keywords := self keywordsFrom: (self violationsFor: arguments schema: schema).
-	self assert: keywords equals: #( 'required' )
-]
-
-{ #category : 'tests' }
-MCPJSONSchemaValidatorTest >> testValidatesArrayItemsEnumAndConst [
+MCPJSONSchemaValidatorTest >> testValidatesArrayItemsAndEnum [
 
 	| arguments schema violations |
 	schema := {
@@ -343,18 +324,14 @@ MCPJSONSchemaValidatorTest >> testValidatesArrayItemsEnumAndConst [
 			           ('mode' -> {
 				            (#type -> 'string').
 				            (#enum -> #( 'method' 'class' )) } asDictionary).
-			           ('operation' -> {
-				            (#type -> 'string').
-				            (#const -> 'rename') } asDictionary).
 			           ('names' -> {
 				            (#type -> 'array').
 				            (#items -> (self schemaPropertyType: 'string')) } asDictionary) } asDictionary) } asDictionary.
 	arguments := {
 		             (#mode -> 'variable').
-		             (#operation -> 'move').
 		             (#names -> #( 'first' 2 )) } asDictionary.
 	violations := self violationsFor: arguments schema: schema.
-	self assert: (self keywordsFrom: violations) asBag equals: #( 'enum' 'const' 'type' ) asBag
+	self assert: (self keywordsFrom: violations) asBag equals: #( 'enum' 'type' ) asBag
 ]
 
 { #category : 'tests' }
@@ -400,44 +377,6 @@ MCPJSONSchemaValidatorTest >> testValidatesMinimumAndMaximum [
 	self assert: (self keywordsFrom: violations) equals: #( 'minimum' ).
 	violations := self violationsFor: { (#count -> 101) } asDictionary schema: schema.
 	self assert: (self keywordsFrom: violations) equals: #( 'maximum' )
-]
-
-{ #category : 'tests' }
-MCPJSONSchemaValidatorTest >> testValidatesNot [
-
-	| allowedArguments conflictingArguments directSchema schema violations |
-	directSchema := { (#not -> { (#type -> 'string') } asDictionary) } asDictionary.
-	self assert: (self violationsFor: 3 schema: directSchema) isEmpty.
-	self assert: (self keywordsFrom: (self violationsFor: 'name' schema: directSchema)) equals: #( 'not' ).
-	schema := {
-		          (#type -> 'object').
-		          (#not -> { (#required -> #( 'selector' 'references' )) } asDictionary) } asDictionary.
-	allowedArguments := { (#selector -> 'yourself') } asDictionary.
-	self assert: (self violationsFor: allowedArguments schema: schema) isEmpty.
-	conflictingArguments := {
-		                        (#selector -> 'yourself').
-		                        (#references -> {
-			                         (#mode -> 'method').
-			                         (#target -> 'yourself') } asDictionary) } asDictionary.
-	violations := self violationsFor: conflictingArguments schema: schema.
-	self assert: (self keywordsFrom: violations) equals: #( 'not' ).
-	self assert: violations first path equals: #(  )
-]
-
-{ #category : 'tests' }
-MCPJSONSchemaValidatorTest >> testValidatesOneOfExactlyOneBranch [
-
-	| invalidSchema validSchema |
-	validSchema := { (#oneOf -> {
-		                { (#type -> 'string') } asDictionary.
-		                { (#type -> 'integer') } asDictionary }) } asDictionary.
-	self assert: (self violationsFor: 'name' schema: validSchema) isEmpty.
-	self assert: (self violationsFor: 3 schema: validSchema) isEmpty.
-	self assert: (self keywordsFrom: (self violationsFor: true schema: validSchema)) equals: #( 'oneOf' ).
-	invalidSchema := { (#oneOf -> {
-		                  { (#type -> 'integer') } asDictionary.
-		                  { (#type -> 'number') } asDictionary }) } asDictionary.
-	self assert: (self keywordsFrom: (self violationsFor: 3 schema: invalidSchema)) equals: #( 'oneOf' )
 ]
 
 { #category : 'tests' }
