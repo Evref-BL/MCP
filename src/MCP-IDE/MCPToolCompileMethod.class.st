@@ -275,6 +275,7 @@ MCPToolCompileMethod >> mutateWith: request [
 					              do: [ :className :classSide :sideGiven | MCPImageLookup compileTargetNamed: className classSide: classSide ].
 				  methodSource := request argumentNamed: 'source' ifAbsent: [ nil ].
 				  protocol := request stringArgumentNamed: 'protocol'.
+				  self signalClassDefinitionIn: methodSource of: request.
 				  (MCPTonelMethodSource fromString: methodSource) ifNotNil: [ :tonel |
 						  tonel hasHeader ifTrue: [ behavior := self target: behavior forTonel: tonel of: request ].
 						  protocol ifNil: [ protocol := tonel category ].
@@ -287,6 +288,7 @@ MCPToolCompileMethod >> mutateWith: request [
 							              of: request.
 						  methodSource := self source: methodSource withSelectorLine: header selector.
 						  headerWarnings := { self droppedHeaderWarning } ].
+				  methodSource := self sourceWithoutUnopenedClosingBracket: methodSource.
 				  selector := [ self selectorForMethodSource: methodSource in: behavior ]
 					              on: Exception
 					              do: [ :error |
@@ -444,6 +446,19 @@ MCPToolCompileMethod >> sideNameFor: isClassSide [
 		  ifFalse: [ 'instance' ]
 ]
 
+{ #category : 'private - header' }
+MCPToolCompileMethod >> signalClassDefinitionIn: aSource of: request [
+	"A source whose first token, past the comments and blank lines above it, opens a Tonel class, trait or extension definition is a class definition, which class_create and class_update take: it is refused before anything is compiled."
+
+	| line |
+	aSource isString ifFalse: [ ^ self ].
+	line := [ self headerLineOf: aSource ]
+		        on: Error
+		        do: [ ^ self ].
+	(line matchesRegex: '(Class|Trait|Extension)\s*\{.*') ifFalse: [ ^ self ].
+	MCPCommandError signalMethodSourceClassDefinition: line className: (request stringArgumentNamed: 'class')
+]
+
 { #category : 'private - errors' }
 MCPToolCompileMethod >> signalCompileFailure: anError methodSource: methodSource in: aBehaviorOrNil of: request [
 	"A failure at or after a line that starts another method says that the source holds several, rather than what the compiler made of the second where it meets the first. A failure at temporaries declared after a statement says where they go."
@@ -501,6 +516,17 @@ MCPToolCompileMethod >> source: aSource withSelectorLine: aSelectorLine [
 	end := self firstLineEndIn: aSource.
 	end isZero ifTrue: [ ^ aSelectorLine ].
 	^ aSelectorLine , (aSource asString allButFirst: end - 1)
+]
+
+{ #category : 'private - header' }
+MCPToolCompileMethod >> sourceWithoutUnopenedClosingBracket: aSource [
+	"aSource without a last bracket that closes nothing, as a method copied from a Tonel file keeps the one closing it. Only a source that does not parse as written, and parses without its last bracket, loses it: a method ending with a block keeps its own."
+
+	| trimmed |
+	(aSource isString and: [ aSource trimRight endsWith: ']' ]) ifFalse: [ ^ aSource ].
+	(self methodNodeOf: aSource) ifNotNil: [ ^ aSource ].
+	trimmed := aSource trimRight allButLast trimRight.
+	^ (self methodNodeOf: trimmed) ifNil: [ aSource ] ifNotNil: [ trimmed ]
 ]
 
 { #category : 'private' }

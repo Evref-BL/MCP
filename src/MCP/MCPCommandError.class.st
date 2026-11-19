@@ -330,6 +330,19 @@ MCPCommandError class >> signalGlobalAlreadyExistsNamed: aName [
 ]
 
 { #category : 'signaling' }
+MCPCommandError class >> signalMethodSourceClassDefinition: aLine className: aClassName [
+	"A method_compile source is a class definition as a Tonel file writes it, its first token opening aLine. The class tools make and change a class; nothing is compiled."
+
+	^ self
+		  signalErrorCode: #MethodSourceClassDefinition
+		  message:
+		  'The source is a class definition, as a Tonel file writes it, not a method. class_create makes a class and class_update changes one; compile its methods here.'
+		  details: {
+				  (#definition -> aLine).
+				  (#class -> aClassName) } asDictionary
+]
+
+{ #category : 'signaling' }
 MCPCommandError class >> signalMethodSourceHeader: aHeader message: aMessage className: aClassName side: aSide [
 	"A method_compile source began with a method's reference, aHeader, that the call cannot simply drop. aMessage says what to write instead; nothing is compiled."
 
