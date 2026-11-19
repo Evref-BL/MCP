@@ -21,12 +21,39 @@ Class {
 	#tag : 'Transport'
 }
 
+{ #category : 'accessing' }
+MCPEventStream >> acceptedNotifications: someMethodNames [
+	"The notification methods this stream agreed to carry. A legacy stream agrees to all of them, which nil says."
+
+	acceptedNotifications := someMethodNames
+]
+
+{ #category : 'testing' }
+MCPEventStream >> accepts: aMethodName [
+	"The revision is explicit that a server must not send a notification type the client did not ask for."
+
+	acceptedNotifications ifNil: [ ^ true ].
+	^ acceptedNotifications includes: aMethodName
+]
+
 { #category : 'closing' }
 MCPEventStream >> close [
 	"Wake the writing process so it can notice the stream is done."
 
 	isOpen := false.
 	queue nextPut: nil
+]
+
+{ #category : 'writing' }
+MCPEventStream >> frameFor: aJSONString [
+	"One SSE frame: a data line and the blank line that ends the event."
+
+	^ String streamContents: [ :stream |
+		  stream
+			  nextPutAll: 'data: ';
+			  nextPutAll: aJSONString;
+			  lf;
+			  lf ]
 ]
 
 { #category : 'initialization' }
@@ -44,58 +71,10 @@ MCPEventStream >> isOpen [
 ]
 
 { #category : 'writing' }
-MCPEventStream >> frameFor: aJSONString [
-	"One SSE frame: a data line and the blank line that ends the event."
+MCPEventStream >> keepAliveFrame [
+	"An SSE comment: a line starting with a colon, which a client reads past without an event."
 
-	^ String streamContents: [ :stream |
-		  stream
-			  nextPutAll: 'data: ';
-			  nextPutAll: aJSONString;
-			  lf;
-			  lf ]
-]
-
-{ #category : 'accessing' }
-MCPEventStream >> acceptedNotifications: someMethodNames [
-	"The notification methods this stream agreed to carry. A legacy stream agrees to all of them, which nil says."
-
-	acceptedNotifications := someMethodNames
-]
-
-{ #category : 'testing' }
-MCPEventStream >> accepts: aMethodName [
-	"The revision is explicit that a server must not send a notification type the client did not ask for."
-
-	acceptedNotifications ifNil: [ ^ true ].
-	^ acceptedNotifications includes: aMethodName
-]
-
-{ #category : 'accessing' }
-MCPEventStream >> pendingEvents [
-	"What has been queued and not yet written to the socket, without consuming it. For tests and for looking at a stream that is not moving."
-
-	^ queue contents
-]
-
-{ #category : 'accessing' }
-MCPEventStream >> subscriptionId [
-
-	^ subscriptionId
-]
-
-{ #category : 'accessing' }
-MCPEventStream >> subscriptionId: anId [
-	"The id of the subscriptions/listen request that opened this stream. A legacy stream was opened by a GET and has none."
-
-	subscriptionId := anId
-]
-
-{ #category : 'writing' }
-MCPEventStream >> write: aJSONString [
-	"Queue one notification. The writing process picks it up."
-
-	self isOpen ifFalse: [ ^ self ].
-	queue nextPut: aJSONString
+	^ String with: $: with: Character lf
 ]
 
 { #category : 'writing' }
@@ -121,10 +100,38 @@ MCPEventStream >> notificationFor: aMethodName parameters: someParameters [
 	^ STONJSON toString: (MCPLineEndings leaving: message)
 ]
 
+{ #category : 'accessing' }
+MCPEventStream >> pendingEvents [
+	"What has been queued and not yet written to the socket, without consuming it. For tests and for looking at a stream that is not moving."
+
+	^ queue contents
+]
+
 { #category : 'writing' }
 MCPEventStream >> pollInterval [
 
 	^ 200 milliSeconds
+]
+
+{ #category : 'accessing' }
+MCPEventStream >> subscriptionId [
+
+	^ subscriptionId
+]
+
+{ #category : 'accessing' }
+MCPEventStream >> subscriptionId: anId [
+	"The id of the subscriptions/listen request that opened this stream. A legacy stream was opened by a GET and has none."
+
+	subscriptionId := anId
+]
+
+{ #category : 'writing' }
+MCPEventStream >> write: aJSONString [
+	"Queue one notification. The writing process picks it up."
+
+	self isOpen ifFalse: [ ^ self ].
+	queue nextPut: aJSONString
 ]
 
 { #category : 'writing' }
@@ -147,14 +154,15 @@ MCPEventStream >> writeOn: aBinaryStream [
 				event
 					ifNil: [
 							DateAndTime now - silentSince > self keepAliveInterval ifTrue: [
-									aBinaryStream nextPutAll: (String with: $: ; yourself) utf8Encoded.
-									aBinaryStream nextPutAll: (String with: Character lf) utf8Encoded.
+									aBinaryStream nextPutAll: self keepAliveFrame utf8Encoded.
 									aBinaryStream flush.
 									silentSince := DateAndTime now ].
 							self isOpen ifTrue: [ self pollInterval wait ] ]
 					ifNotNil: [
 							aBinaryStream nextPutAll: (self frameFor: event) utf8Encoded.
 							aBinaryStream flush.
-							silentSince := DateAndTime now ] ] ] on: Error do: [ :error | error return ].
+							silentSince := DateAndTime now ] ] ]
+		on: Error
+		do: [ :error | error return ].
 	isOpen := false
 ]
