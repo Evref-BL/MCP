@@ -1,5 +1,6 @@
-# The documentation paths ignored here are covered by ci-docs.yml, which
-# reports the same contexts so a documentation-only pull request can merge.
+# Every push and pull request runs the matrix, so each Pharo context the
+# default branch requires reports once. A change that touches only paths
+# without Pharo code skips the image steps, and the context reports success.
 name: CI
 
 env:
@@ -8,16 +9,8 @@ env:
 on:
   push:
     branches: [ main ]
-    paths-ignore:
-      - '**.md'
-      - docs/**
-      - LICENSE
   pull_request:
     branches: [ main ]
-    paths-ignore:
-      - '**.md'
-      - docs/**
-      - LICENSE
 
 jobs:
   build:
@@ -29,21 +22,37 @@ jobs:
     name: ${{ matrix.smalltalk }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Tell whether Pharo code changed
+        id: changes
+        shell: bash
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+            echo 'pharo=true' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          changed=$(git diff --name-only "$BASE" "$GITHUB_SHA")
+          pharo=$(grep -vE '\.md$|^(docs|bin|node|test|templates)/|^(LICENSE|package\.json|\.github/workflows/(npm|publish-npm)\.yml)$' <<< "$changed" || true)
+          if [ -n "$pharo" ]; then echo 'pharo=true'; else echo 'pharo=false'; fi >> "$GITHUB_OUTPUT"
       - uses: hpi-swa/setup-smalltalkCI@v1
+        if: ${{ steps.changes.outputs.pharo == 'true' }}
         with:
           smalltalk-image: ${{ matrix.smalltalk }}
       - run: smalltalkci -s ${{ matrix.smalltalk }}
+        if: ${{ steps.changes.outputs.pharo == 'true' }}
         shell: bash
         timeout-minutes: 15
       - name: Verify coverage report
-        if: ${{ success() && matrix.smalltalk == 'Pharo64-14' }}
+        if: ${{ success() && steps.changes.outputs.pharo == 'true' && matrix.smalltalk == 'Pharo64-14' }}
         run: test -s ./coverage/lcov.info
         shell: bash
       - name: Coveralls
-        if: ${{ success() && matrix.smalltalk == 'Pharo64-14' }}
+        if: ${{ success() && steps.changes.outputs.pharo == 'true' && matrix.smalltalk == 'Pharo64-14' }}
         uses: coverallsapp/github-action@v2
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           file: ./coverage/lcov.info
           format: lcov
           flag-name: Pharo64-14

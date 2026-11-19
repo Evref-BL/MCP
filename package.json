@@ -4,16 +4,13 @@
   "description": "Pharo MCP agent-host templates",
   "license": "MIT",
   "type": "module",
-  "exports": "./node/index.js",
+  "exports": "./node/installer.js",
   "bin": {
     "pharo-mcp": "bin/pharo-mcp.js"
   },
   "files": [
-    "bin",
     "node",
-    "templates",
-    "LICENSE",
-    "README.md"
+    "templates"
   ],
   "scripts": {
     "test": "node --test"

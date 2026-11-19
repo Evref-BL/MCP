@@ -97,6 +97,9 @@ import { installGuidance } from "@evref-bl/pharo-mcp";
 installGuidance({ host: "codex", cwd: process.cwd() });
 ```
 
+An integration that places those files itself reads them from
+`templateDirectory()`, the package's `templates` directory.
+
 ## Contributing
 
 Live behavior must be verified in an image; source inspection alone is not

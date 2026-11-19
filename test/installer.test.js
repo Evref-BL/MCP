@@ -5,7 +5,7 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
-import { install, installGuidance } from "../node/index.js";
+import { install, installGuidance, templateDirectory } from "../node/installer.js";
 
 function temporaryProject() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "pharo-mcp-"));
@@ -73,6 +73,18 @@ for (const [host, { configuration }] of Object.entries(hosts)) {
     }
   });
 }
+
+// pharo-agent init reads the guide through templateDirectory, keeps what
+// follows "## Read First", and refuses a route that no template provides.
+test("the guide keeps its Read First heading and every path it routes to exists", () => {
+  const guide = fs.readFileSync(path.join(templateDirectory(), "pharo.AGENTS.md"), "utf8");
+  assert.match(guide, /^## Read First$/m);
+  const routes = [...guide.matchAll(/(?:pharo-references|skills)\/[\w./-]+\.md/g)].map(([route]) => route);
+  assert.notEqual(routes.length, 0);
+  for (const route of routes) {
+    assert.ok(fs.existsSync(path.join(templateDirectory(), route.replace(/^skills\//, "pharo-skills/"))), route);
+  }
+});
 
 test("install is idempotent", () => {
   const project = temporaryProject();

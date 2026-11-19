@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { install } from "../node/index.js";
+import { install } from "../node/installer.js";
 
 function usage() {
   return "Usage: pharo-mcp install --host <claude|codex|opencode>";
