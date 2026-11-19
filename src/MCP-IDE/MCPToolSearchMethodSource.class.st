@@ -1,5 +1,5 @@
 "
-Concrete method_source_search tool. It searches methods by source text through MCPToolMethodSearch.
+Searches method source as text, as grep searches files.
 "
 Class {
 	#name : 'MCPToolSearchMethodSource',

@@ -1,5 +1,5 @@
 "
-Concrete history_entry_list tool. It lists granular change-history entries from the current image or a selected .ombu file through MCPToolChangeHistory.
+Lists the changes one log records.
 "
 Class {
 	#name : 'MCPToolListChangeHistoryEntries',

@@ -1,5 +1,5 @@
 "
-Tool that creates one class definition without exposing a combined class-mutation selector.
+Creates the classes a call names, all from the one definition it gives.
 "
 Class {
 	#name : 'MCPToolCreateClass',

@@ -1,5 +1,5 @@
 "
-Concrete repository_head_adopt tool. It aligns the Iceberg working-copy reference with the repository HEAD commit through MCPToolRepositoryOperation.
+Lets the image continue from a commit or fast-forward git made outside it.
 "
 Class {
 	#name : 'MCPToolAdoptRepositoryHead',
@@ -66,7 +66,7 @@ MCPToolAdoptRepositoryHead >> keysStatedInSummary [
 
 { #category : 'private - execution' }
 MCPToolAdoptRepositoryHead >> mutateWith: request [
-	"Make the HEAD commit the working copy's reference, which also clears every loaded package's mark, so the image continues from a commit or fast-forward git made outside it."
+	"Make the HEAD commit the working copy's reference, which also clears every loaded package's mark."
 
 	| afterInfo beforeInfo didAdopt headCommit |
 	^ self

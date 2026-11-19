@@ -1,5 +1,5 @@
 "
-Concrete history_file_list tool. It lists image change-history .ombu files through MCPToolChangeHistory.
+Lists the logs the change history is kept in.
 "
 Class {
 	#name : 'MCPToolListChangeHistoryFiles',
@@ -59,7 +59,7 @@ MCPToolListChangeHistoryFiles >> defaultPageLimit [
 { #category : 'metadata' }
 MCPToolListChangeHistoryFiles >> description [
 
-	^ 'List Pharo image change history .ombu files. Use history_entry_list to inspect entries. Use apply/revert only for recovery previews or changes.'
+	^ 'List Pharo image change history .ombu files. Use history_entry_list to inspect entries.'
 ]
 
 { #category : 'private - files' }

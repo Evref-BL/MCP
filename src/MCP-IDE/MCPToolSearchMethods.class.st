@@ -1,7 +1,5 @@
 "
-Concrete method metadata search tool.
-
-Shared method-search behavior lives in MCPToolMethodSearch.
+Searches methods by their metadata rather than their source.
 "
 Class {
 	#name : 'MCPToolSearchMethods',

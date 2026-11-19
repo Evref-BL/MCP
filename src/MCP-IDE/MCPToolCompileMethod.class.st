@@ -1,7 +1,5 @@
 "
-Tool that compiles one method source into a class.
-
-The compile operation creates the method when its selector is absent and replaces the existing method when the selector is already defined. The method is stored reformatted by its package's formatter, or as written when format is false.
+Compiles each source a call gives into one class, creating a method whose selector the class lacks and replacing one it has.
 "
 Class {
 	#name : 'MCPToolCompileMethod',

@@ -1,5 +1,5 @@
 "
-The MCP server: its Streamable HTTP transport, the JSON-RPC handlers, the tool registry and its schema machinery, and the catalog tools it dispatches through. A project serving tools of its own needs this package alone.
+The MCP server: its Streamable HTTP transport, the JSON-RPC handlers, the tool registry and its schema machinery, and the catalog tools it dispatches through. A project serving tools of its own needs the Core group alone.
 "
 Class {
 	#name : 'ManifestMCP',

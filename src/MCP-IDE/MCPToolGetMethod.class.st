@@ -1,5 +1,5 @@
 "
-Returns structured information for one method, including source and optional variable reference details. It is meant for single-method lookup.
+Reads one method of a class, or several.
 "
 Class {
 	#name : 'MCPToolGetMethod',

@@ -1,5 +1,5 @@
 "
-Lists classes in a chosen scope with optional filtering. It is optimized for class discovery rather than hierarchy inspection.
+Lists the classes of a scope, kept by name and tag. Hierarchy questions go through the scope, which names superclasses, subclasses and whole hierarchies.
 "
 Class {
 	#name : 'MCPToolSearchClasses',

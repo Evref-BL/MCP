@@ -1,5 +1,5 @@
 "
-Concrete method_reference_search tool. It answers where a name is used, working out from the name itself whether that means implementors and senders of a selector, references to a class, or references to a variable.
+It works out from the name itself whether the name means implementors and senders of a selector, references to a class, or references to a variable.
 "
 Class {
 	#name : 'MCPToolSearchMethodReferences',

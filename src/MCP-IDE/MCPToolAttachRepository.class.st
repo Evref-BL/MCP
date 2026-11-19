@@ -1,5 +1,5 @@
 "
-Concrete repository_attach tool. It registers an existing Git checkout and optional package membership through MCPToolRepositoryOperation.
+Registers a checkout that already exists, leaving it as it is.
 "
 Class {
 	#name : 'MCPToolAttachRepository',
@@ -24,7 +24,7 @@ MCPToolAttachRepository >> failureSummaryPrefixFor: request [
 
 { #category : 'private - execution' }
 MCPToolAttachRepository >> mutateWith: request [
-	"Register an existing Git checkout as it is, and give it packages. A package asked for that neither the image nor the checkout holds is likely a name mistyped, so say so."
+	"Register the checkout and give it packages."
 
 	| packageWarnings repository summary |
 	^ self

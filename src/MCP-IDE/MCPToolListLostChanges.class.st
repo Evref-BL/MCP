@@ -1,6 +1,4 @@
 "
-Concrete history_lost_change_list tool. It lists the changes the sessions since the image's last save made and the image lacks, the last change to each element with the source restoring it installs, a page at a time.
-
 The tool is discoverable, not advertised, so the answers about a package or class the image lost changes to name it, with the sentence noticeForPackagesNamed:classesNamed: writes.
 "
 Class {

@@ -779,17 +779,28 @@ MCPToolContractsTest >> testDescriberAndResultClassesUseInfoOrResultSuffixes [
 
 { #category : 'tests' }
 MCPToolContractsTest >> testDiscoveryInstructionsNameOnlyAdvertisedTools [
-	"A host may let a model call only the tools its list holds, so a tool the instructions name must be one tools/list shows, or they send the model where it cannot go. The default server gives the Pharo workflow; a server advertising only the catalog tools leaves it out and still says how to reach the rest."
+	"A host may let a model call only the tools its list holds, so a tool the instructions name must be one tools/list shows, or they send the model where it cannot go. The default server gives the Pharo workflow; a server advertising only the catalog tools leaves it out and still says how to reach the rest; one advertising only the workflow's tools gives it and says nothing of the catalog; a server advertising neither has nothing to say, and neither answer carries instructions."
 
-	| catalogOnly |
+	| catalogOnly withoutCatalog workflowOnly |
 	catalogOnly := self mcpWithoutObservabilityExport
 		               advertiseTools: #( 'tool_search' 'tool_get' 'tool_call' );
 		               yourself.
+	workflowOnly := self mcpWithoutObservabilityExport
+		                advertiseTools: #( 'class_search' 'method_search' 'method_get' 'method_compile' 'test_run' );
+		                yourself.
+	withoutCatalog := self mcpWithoutObservabilityExport
+		                  advertiseTools: #( 'method_get' );
+		                  yourself.
 	self assert: (self mcpWithoutObservabilityExport discoveryInstructions includesSubstring: MCP pharoCodeInstructions).
 	self deny: (catalogOnly discoveryInstructions includesSubstring: MCP pharoCodeInstructions).
+	self assert: (workflowOnly discoveryInstructions includesSubstring: MCP pharoCodeInstructions).
+	self assert: withoutCatalog discoveryInstructions isNil.
+	self deny: (withoutCatalog rpcServerDiscover includesKey: #instructions).
+	self deny: ((withoutCatalog onInitialize: nil) asJRPCJSON includesKey: #instructions).
 	{
 		self mcpWithoutObservabilityExport.
-		catalogOnly } do: [ :server |
+		catalogOnly.
+		workflowOnly } do: [ :server |
 			| named |
 			named := (server discoveryInstructions substrings: ' ,.;:()') select: [ :each | each includes: $_ ].
 			self deny: named isEmpty.

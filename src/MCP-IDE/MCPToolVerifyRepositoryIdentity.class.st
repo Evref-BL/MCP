@@ -1,5 +1,5 @@
 "
-Concrete repository_identity_verify tool. It verifies expected Iceberg repository identity fields through MCPToolRepositoryOperation without writing files.
+A mismatch is an error, so a success names only the fields that held.
 "
 Class {
 	#name : 'MCPToolVerifyRepositoryIdentity',
@@ -113,7 +113,7 @@ MCPToolVerifyRepositoryIdentity >> hasExpectationsIn: request [
 
 { #category : 'private - execution' }
 MCPToolVerifyRepositoryIdentity >> mutateWith: request [
-	"Compare what the call expects with what the image believes of the repository, writing nothing. A mismatch is an error, so a success names only the fields that held."
+	"Compare what the call expects with what the image believes of the repository, writing nothing."
 
 	| checkedFields info |
 	^ self
@@ -184,7 +184,7 @@ MCPToolVerifyRepositoryIdentity >> signalMissingExpectationsFor: request [
 
 	MCPCommandError
 		signalErrorCode: #RepositoryIdentityExpectationRequired
-		message: 'repository_identity_verify requires at least one expected identity field besides name.'
+		message: 'repository_identity_verify requires at least one expected identity field besides repository.'
 		details: ((self requestedContextFor: request) copy
 				 at: #expectedFields put: #( 'location' 'branch' 'subdirectory' 'packages' 'modifiedPackages' 'isModified' );
 				 yourself)

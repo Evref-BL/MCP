@@ -1,7 +1,5 @@
 "
-Concrete debug_watch tool. It records what named variables hold while an expression runs, without stopping it.
-
-This is print debugging without editing the method: Pharo WatchDebugPoints go in, the expression runs, the probes come out, and the values they saw are answered. Nothing is left installed and no debug session is created.
+Print debugging without editing the method: Pharo WatchDebugPoints go in, the expression runs, the probes come out, and the values they saw are answered.
 "
 Class {
 	#name : 'MCPToolDebugWatch',

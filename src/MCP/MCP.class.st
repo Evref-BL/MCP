@@ -1,7 +1,7 @@
 "
-Top-level MCP server application object. MCP owns one MCPToolRegistry, the HTTP server, and observability state. The registry owns registered tool instances and their exposure policy. MCP exposes the core JSON-RPC handlers, including initialization, tool listing, tool calls, ping, and empty resource listings. Tool calls are delegated to the matching MCPTool after request validation.
+Top-level MCP server application object. MCP owns its tool, resource and prompt registries, the HTTP server and observability. Its methods marked <jrpc:> are the protocol handlers, and a tool call goes to the matching MCPTool once its arguments are validated.
 
-The registry is the source of truth for registered tools. The toolsList instance variable caches the advertised surface as a dictionary keyed by tool name.
+The tool registry owns the registered tools and their exposure policy, and is the source of truth for them. The toolsList instance variable caches the advertised surface as a dictionary keyed by tool name.
 
 Two words govern the tool surface. A *registered* tool is in the catalog, callable by name, and findable through tool_search and tool_get. An *advertised* tool is also in tools/list.
 
@@ -372,15 +372,15 @@ MCP >> debugMode: aBoolean [
 
 { #category : 'start' }
 MCP >> discoveryInstructions [
-	"Natural-language guidance a client may put in front of a model: the everyday workflows that loaded packages contribute as class-side methods of MCP marked <discoveryInstructions>, each step named by its tool, then how to reach what tools/list leaves out. The workflows come in selector order, which adding a method does not change, since a client may cache the text. A host may let a model call only what its own list holds, so a tool found that way goes through tool_call, and a workflow naming a tool this server does not advertise is left out."
+	"Natural-language guidance a client may put in front of a model, or nil when this server has none to give: the everyday workflows that loaded packages contribute as class-side methods of MCP marked <discoveryInstructions>, each step named by its tool, then how to reach what tools/list leaves out. The workflows come in selector order, which adding a method does not change, since a client may cache the text. A host may let a model call only what its own list holds, so a tool found that way goes through tool_call, and a sentence naming a tool this server does not advertise is left out."
 
-	| advertised |
+	| advertised sentences |
 	advertised := self advertisedToolNames.
-	^ ' ' join: ((((Pragma allNamed: #discoveryInstructions in: MCP class) collect: #methodSelector) sorted
-			    collect: [ :selector | MCP perform: selector ]
-			    thenSelect: [ :workflow |
-				    ((workflow substrings: ' ,.;:()') select: [ :word | word includes: $_ ]) allSatisfy: [ :name | advertised includes: name ] ])
-			   copyWith: 'tool_search finds more; tool_call runs them.')
+	sentences := (((Pragma allNamed: #discoveryInstructions in: MCP class) collect: #methodSelector) sorted collect: [ :selector |
+		              MCP perform: selector ]) , #( 'tool_search finds more; tool_call runs them.' ) select: [ :sentence |
+		             ((sentence substrings: ' ,.;:()') select: [ :word | word includes: $_ ]) allSatisfy: [ :name |
+			             advertised includes: name ] ].
+	^ sentences ifEmpty: [ nil ] ifNotEmpty: [ ' ' join: sentences ]
 ]
 
 { #category : 'private - tools' }
@@ -674,7 +674,7 @@ MCP >> recordingObservability [
 
 { #category : 'private - tools' }
 MCP >> refreshToolsList [
-	"Refresh the cached tools/list response surface from the registry's current static tools."
+	"Refresh the cached tools/list surface from the registry's advertised tools."
 
 	toolsList := self toolRegistry advertisedToolsDictionary.
 	^ toolsList
@@ -787,12 +787,13 @@ MCP >> rpcServerDiscover [
 	"What a client needs before it can talk: the versions this server implements, what it can do, and who it is. A client may call it first or never, so it answers whatever version was asked for."
 
 	<jrpc: #'server/discover'>
-	^ {
-		  (#supportedVersions -> self class supportedProtocolVersions).
-		  (#capabilities -> self advertisedCapabilities asJRPCJSON).
-		  (#instructions -> self discoveryInstructions).
-		  (#_meta -> { ('io.modelcontextprotocol/serverInfo' -> self serverIdentity asJRPCJSON) } asDictionary) }
-			  asDictionary
+	| answer |
+	answer := {
+		          (#supportedVersions -> self class supportedProtocolVersions).
+		          (#capabilities -> self advertisedCapabilities asJRPCJSON).
+		          (#_meta -> { ('io.modelcontextprotocol/serverInfo' -> self serverIdentity asJRPCJSON) } asDictionary) } asDictionary.
+	self discoveryInstructions ifNotNil: [ :instructions | answer at: #instructions put: instructions ].
+	^ answer
 ]
 
 { #category : 'rpc' }
@@ -827,9 +828,8 @@ MCP >> serverIdentity [
 	^ MCPStructureServerInfo new
 		  name: 'MCP Pharo';
 		  title: 'The MCP server for Pharo';
-		  version: '1.0.0';
-		  description: 'a MCP server for Pharo';
-		  websiteUrl: 'https://badetitou.fr';
+		  version: '3.8.0';
+		  websiteUrl: 'https://github.com/Evref-BL/MCP';
 		  icons: { (MCPStructureIcon pngIconNamed: #pharo) };
 		  yourself
 ]
@@ -912,7 +912,7 @@ MCP >> toolsList [
 
 { #category : 'accessing' }
 MCP >> toolsList: aToolsList [
-	"Replace the cached advertised surface. Intended for tests and controlled presenter setup; normal configuration goes through addTool: and advertiseTools:."
+	"Replace the cached advertised surface, a seam for tests; configuration goes through addTool: and advertiseTools:."
 
 	^ toolsList := aToolsList
 ]

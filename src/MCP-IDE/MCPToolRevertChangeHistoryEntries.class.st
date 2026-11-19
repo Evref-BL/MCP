@@ -1,5 +1,5 @@
 "
-Concrete history_entry_revert tool. It reverts selected Pharo change-history entries through MCPToolChangeHistoryOperation.
+The revert side of the change-history selection, as its spec describes it.
 "
 Class {
 	#name : 'MCPToolRevertChangeHistoryEntries',

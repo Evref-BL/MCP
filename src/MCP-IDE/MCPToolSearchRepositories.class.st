@@ -1,7 +1,5 @@
 "
-Lists Iceberg repositories registered in the image.
-
-The tool is read-only. It filters by repository name, location, subdirectory, package, class and modified state, with pagination.
+Lists the Iceberg repositories registered in the image, keeping those that match every field the call gives.
 "
 Class {
 	#name : 'MCPToolSearchRepositories',
@@ -64,7 +62,7 @@ MCPToolSearchRepositories >> defaultPageLimit [
 { #category : 'metadata' }
 MCPToolSearchRepositories >> description [
 
-	^ 'Search registered repositories by image-side repository, package, class, and modification state.'
+	^ 'Search the registered repositories; the arguments narrow the list.'
 ]
 
 { #category : 'private - results' }

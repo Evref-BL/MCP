@@ -514,10 +514,12 @@ MCPToolUpdateClass >> requestedContextFor: request [
 { #category : 'private - planning' }
 MCPToolUpdateClass >> signalNoUpdateRequestedIn: request [
 
+	| names |
+	names := self atLeastOneInputProperties.
 	^ MCPCommandError
 		  signalErrorCode: #NoClassUpdateRequested
-		  message:
-		  'Class update requires one update field such as newName, superclassName, packageName, tag, classComment, slots, classSlots, traits, sharedVariables, sharedPools, layout, or slotAction.'
+		  message: (String streamContents: [ :stream |
+				   stream << 'class_update needs at least one of ' << (', ' join: names allButLast) << ' or ' << names last << '.' ])
 		  details: (self requestedContextFor: request)
 ]
 
