@@ -152,7 +152,7 @@ MCPToolMutation >> executeActionBlock: actionBlock force: forceRequested action:
 		on: RBRefactoringWarning
 		do: [ :warning |
 				| impactMessages |
-				impactMessages := self impactMessagesForRefactoringWarning: warning.
+				impactMessages := self impactMessagesForRefactoringWarning: warning action: action requestedContext: requestedContext.
 				forceRequested
 					ifTrue: [
 							warningMessages addAll: impactMessages.
@@ -275,6 +275,13 @@ MCPToolMutation >> impactMessagesForRefactoringWarning: aWarning [
 	^ impactMessages asArray
 ]
 
+{ #category : 'private - warnings' }
+MCPToolMutation >> impactMessagesForRefactoringWarning: aWarning action: action requestedContext: requestedContext [
+	"What the change a warning stopped would break, as the warning says it. A tool that knows better for one of its actions says it instead."
+
+	^ self impactMessagesForRefactoringWarning: aWarning
+]
+
 { #category : 'private - schema' }
 MCPToolMutation >> inputProperties [
 
@@ -352,7 +359,7 @@ MCPToolMutation >> normalizedCommandErrorForActionFailure: anError action: actio
 MCPToolMutation >> normalizedCommandErrorForRefactoringWarning: aWarning action: action requestedContext: requestedContext [
 
 	| details impactMessages summary |
-	impactMessages := self impactMessagesForRefactoringWarning: aWarning.
+	impactMessages := self impactMessagesForRefactoringWarning: aWarning action: action requestedContext: requestedContext.
 	summary := self
 		           refactoringWarningSummaryFor: aWarning
 		           action: action

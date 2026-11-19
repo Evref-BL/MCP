@@ -78,6 +78,28 @@ MCPToolClassMutationTest >> createRequestArgumentsWith: associations [
 	^ arguments
 ]
 
+{ #category : 'private - fixtures' }
+MCPToolClassMutationTest >> createSlotUserFixture [
+	"A class whose slot and class-side slot its methods read and write, with a subclass reading the slot it inherits."
+
+	| target subclass |
+	target := self
+		          createClassNamed: 'MCPToolClassMutationTestWarningRemoveSlotTarget'
+		          superclassName: 'Object'
+		          slots: #( usedSlot )
+		          classSlots: #( usedClassSlot ).
+	subclass := self
+		            createClassNamed: 'MCPToolClassMutationTestSlotUserSubclass'
+		            superclassName: 'MCPToolClassMutationTestWarningRemoveSlotTarget'
+		            slots: #(  )
+		            classSlots: #(  ).
+	self ensureMethodSource: 'readsUsed ^ usedSlot' protocol: 'testing' on: target.
+	self ensureMethodSource: 'writesUsed: anObject usedSlot := anObject' protocol: 'testing' on: target.
+	self ensureMethodSource: 'bumpsUsed usedSlot := usedSlot + 1' protocol: 'testing' on: target.
+	self ensureMethodSource: 'subclassReadsUsed ^ usedSlot' protocol: 'testing' on: subclass.
+	self ensureMethodSource: 'readsUsedClassSlot ^ usedClassSlot' protocol: 'testing' on: target classSide
+]
+
 { #category : 'private' }
 MCPToolClassMutationTest >> createdClassNames [
 
@@ -96,11 +118,12 @@ MCPToolClassMutationTest >> createdClassNames [
 	     'MCPToolClassMutationTestAddSlotTarget' 'MCPToolClassMutationTestAddClassSlotTarget'
 	     'MCPToolClassMutationTestRemoveSlotTarget' 'MCPToolClassMutationTestRemoveClassSlotTarget'
 	     'MCPToolClassMutationTestRenameSlotTarget' 'MCPToolClassMutationTestRenameClassSideSlotTarget'
-	     'MCPToolClassMutationTestWarningRemoveSlotTarget' 'MCPToolClassMutationTestPullUpTarget'
-	     'MCPToolClassMutationTestPullUpChildOne' 'MCPToolClassMutationTestPullUpChildTwo' 'MCPToolClassMutationTestPushDownTarget'
-	     'MCPToolClassMutationTestPushDownChildOne' 'MCPToolClassMutationTestPushDownChildTwo'
-	     'MCPToolClassMutationTestWarningPullUpTarget' 'MCPToolClassMutationTestWarningPullUpChildOne'
-	     'MCPToolClassMutationTestWarningPullUpChildTwo' 'TMCPToolClassMutationTestTrait' )
+	     'MCPToolClassMutationTestSlotUserSubclass' 'MCPToolClassMutationTestWarningRemoveSlotTarget'
+	     'MCPToolClassMutationTestPullUpTarget' 'MCPToolClassMutationTestPullUpChildOne' 'MCPToolClassMutationTestPullUpChildTwo'
+	     'MCPToolClassMutationTestPushDownTarget' 'MCPToolClassMutationTestPushDownChildOne'
+	     'MCPToolClassMutationTestPushDownChildTwo' 'MCPToolClassMutationTestWarningPullUpTarget'
+	     'MCPToolClassMutationTestWarningPullUpChildOne' 'MCPToolClassMutationTestWarningPullUpChildTwo'
+	     'TMCPToolClassMutationTestTrait' )
 ]
 
 { #category : 'private' }
@@ -943,6 +966,22 @@ MCPToolClassMutationTest >> testCreateWithoutASuperclassSaysItSubclassesObject [
 ]
 
 { #category : 'tests - update' }
+MCPToolClassMutationTest >> testForceRemovesASlotInUseAndNamesItsUsers [
+	"From Pharo 12 on, force removes a slot its methods use, and the answer's warnings name each of them, as the refusal without force does."
+
+	| result |
+	self createSlotUserFixture.
+	result := self callToolWith: (self updateRequestArgumentsWith: {
+				           (#name -> 'MCPToolClassMutationTestWarningRemoveSlotTarget').
+				           (#slots -> (Dictionary with: 'remove' -> #( 'usedSlot' ))).
+				           (#force -> true) }).
+	self refactoringsRefuseBreakingChanges ifTrue: [ ^ self assert: (result at: #isError) ].
+	self deny: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
+	self assert: (self warningsFrom: result) asArray equals: self usedSlotUses.
+	self assert: ((self classNamed: 'MCPToolClassMutationTestWarningRemoveSlotTarget') slots collect: #name as: Array) equals: #(  )
+]
+
+{ #category : 'tests - update' }
 MCPToolClassMutationTest >> testRefactoringWarningListsEveryImpact [
 	"The text names every impact, each as a clause, and how to get past them, since a client reading text sees nothing of the error's details."
 
@@ -1003,6 +1042,64 @@ MCPToolClassMutationTest >> testRefactoringWarningListsEveryImpact [
 				 impactMessages: #( 'Not all subclasses have it. Pull it up anyway?' ))
 		equals:
 		'Refactoring warning for pullUpSlot on ZooAnimal: Not all subclasses have it. Pull it up anyway? Rerun with force: true to proceed anyway.'
+]
+
+{ #category : 'tests - update' }
+MCPToolClassMutationTest >> testRemovingAClassSideSlotInUseNamesTheClassSideMethods [
+	"A class-side slot is used by class-side methods, which the answer names on that side; the instance side's methods using a slot of the same class are not its users."
+
+	| expected result |
+	self createSlotUserFixture.
+	result := self callToolWith: (self
+			           updateRequestArgumentsForSlotAction: 'remove'
+			           className: 'MCPToolClassMutationTestWarningRemoveSlotTarget'
+			           slotName: 'usedClassSlot'
+			           classSide: true).
+	expected := 'MCPToolClassMutationTestWarningRemoveSlotTarget class>>readsUsedClassSlot reads usedClassSlot'.
+	self assert: (result at: #isError).
+	self refactoringsRefuseBreakingChanges
+		ifTrue: [
+				self
+					assert: (self summaryFrom: result)
+					equals:
+						('Failed to remove class-side slot usedClassSlot from class MCPToolClassMutationTestWarningRemoveSlotTarget: {1}. Change them first.'
+							 format: { expected }) ]
+		ifFalse: [ self assert: ((self errorFrom: result) at: #impactMessages) asArray equals: { expected } ].
+	self
+		assert: ((self classNamed: 'MCPToolClassMutationTestWarningRemoveSlotTarget') classSide slots collect: #name as: Array)
+		equals: #( #usedClassSlot )
+]
+
+{ #category : 'tests - update' }
+MCPToolClassMutationTest >> testRemovingASlotInUseNamesTheMethodsThatUseIt [
+	"A slot its methods still use is not removed without force, and the answer names each of them with what it does to the slot, those of the subclasses that inherit it included. Before Pharo 12 the removal fails, force or not, and says the same."
+
+	| error result |
+	self createSlotUserFixture.
+	result := self callToolWith: (self
+			           updateRequestArgumentsForSlotAction: 'remove'
+			           className: 'MCPToolClassMutationTestWarningRemoveSlotTarget'
+			           slotName: 'usedSlot'
+			           classSide: false).
+	self assert: (result at: #isError).
+	self refactoringsRefuseBreakingChanges
+		ifTrue: [
+				self
+					assert: (self summaryFrom: result)
+					equals:
+						('Failed to remove slot usedSlot from class MCPToolClassMutationTestWarningRemoveSlotTarget: {1}. Change them first.'
+							 format: { ('; ' join: self usedSlotUses) }) ]
+		ifFalse: [
+				error := self errorFrom: result.
+				self assert: (error at: #impactMessages) asArray equals: self usedSlotUses.
+				self
+					assert: (self summaryFrom: result)
+					equals:
+						('Refactoring warning for removeSlot on MCPToolClassMutationTestWarningRemoveSlotTarget slot usedSlot: {1}. Rerun with force: true to proceed anyway.'
+							 format: { ('; ' join: self usedSlotUses) }) ].
+	self
+		assert: ((self classNamed: 'MCPToolClassMutationTestWarningRemoveSlotTarget') slots collect: #name as: Array)
+		equals: #( #usedSlot )
 ]
 
 { #category : 'tests - update' }
@@ -2624,4 +2721,14 @@ MCPToolClassMutationTest >> updateRequestArgumentsWith: associations [
 	arguments at: #action put: 'update'.
 	associations do: [ :each | arguments at: each key put: each value ].
 	^ arguments
+]
+
+{ #category : 'private - fixtures' }
+MCPToolClassMutationTest >> usedSlotUses [
+	"The methods of the fixture createSlotUserFixture makes that use its slot, as an answer names them."
+
+	^ #( 'MCPToolClassMutationTestWarningRemoveSlotTarget>>bumpsUsed reads and writes usedSlot'
+	     'MCPToolClassMutationTestWarningRemoveSlotTarget>>readsUsed reads usedSlot'
+	     'MCPToolClassMutationTestWarningRemoveSlotTarget>>writesUsed: writes usedSlot'
+	     'MCPToolClassMutationTestSlotUserSubclass>>subclassReadsUsed reads usedSlot' )
 ]
