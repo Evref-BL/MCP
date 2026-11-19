@@ -41,25 +41,28 @@ MCPToolSearchMethods >> description [
 { #category : 'private - request' }
 MCPToolSearchMethods >> fieldFilterNames [
 
-	^ #( 'selector' 'protocol' )
+	^ #( 'protocol' )
 ]
 
 { #category : 'private - filtering' }
 MCPToolSearchMethods >> fieldTextsForMethodEntry: anEntry sourceText: sourceText fieldName: fieldName [
 
-	fieldName = 'selector' ifTrue: [ ^ { (anEntry at: #selector) } ].
 	fieldName = 'protocol' ifTrue: [ ^ { (anEntry at: #protocol) } ].
 	^ #(  )
+]
+
+{ #category : 'private - filtering' }
+MCPToolSearchMethods >> filterTextsForMethodEntry: anEntry sourceText: sourceText [
+	"The text query matches: the selector."
+
+	^ { (anEntry at: #selector) }
 ]
 
 { #category : 'private - schema' }
 MCPToolSearchMethods >> metadataFilterInputProperties [
 
 	^ {
-		  (self
-			   schemaPropertyNamed: 'selector'
-			   type: 'string'
-			   description: 'Keep methods whose selector contains this text. Case matters.').
+		  (self schemaPropertyNamed: 'query' type: 'string' description: 'Keep methods whose selector contains this text. Case matters.').
 		  (self
 			   schemaPropertyNamed: 'protocol'
 			   type: 'string'
@@ -71,9 +74,9 @@ MCPToolSearchMethods >> removedMethodHintForRequest: request scopeQuery: scopeQu
 	"The removed methods the search would have listed: the selector and protocol filters keep them as they keep methods, and the scope must hold their class. A search that keeps no selector names no method, and points nowhere."
 
 	| filterMode protocolMatcher selectorMatcher |
-	(request hasArgumentNamed: 'selector') ifFalse: [ ^ nil ].
+	(request hasArgumentNamed: 'query') ifFalse: [ ^ nil ].
 	filterMode := self filterModeFromRequest: request.
-	selectorMatcher := self matcherForPattern: (request stringArgumentNamed: 'selector') mode: filterMode caseSensitive: true.
+	selectorMatcher := self matcherForPattern: (request stringArgumentNamed: 'query') mode: filterMode caseSensitive: true.
 	protocolMatcher := (request stringArgumentNamed: 'protocol')
 		                   ifNil: [ [ :protocol | true ] ]
 		                   ifNotNil: [ :pattern | self matcherForPattern: pattern mode: filterMode caseSensitive: true ].
@@ -98,7 +101,7 @@ MCPToolSearchMethods >> successSummaryForRequest: request scopeQuery: scopeQuery
 				  classesNamed: (scopeQuery classNames collect: [ :each | each copyUpTo: Character space ]) ].
 	^ summary
 	  ,
-	  ' This search names no class, package, selector or protocol: scope.classes keeps the methods of the classes it names, and selector the methods whose selector contains its text.'
+	  ' This search names no class, package, selector or protocol: scope.classes keeps the methods of the classes it names, and query the methods whose selector contains its text.'
 ]
 
 { #category : 'metadata' }

@@ -131,7 +131,7 @@ MCPRemovedMethodHintTest >> testMethodReferenceSearchForSendersSaysTheMethodWasR
 	gone := self selectorNamed: 'Senders'.
 	self removeInThisSession: gone.
 	result := self callToolNamed: 'method_reference_search' withArguments: {
-			          (#name -> gone).
+			          (#query -> gone).
 			          (#kind -> 'senders') } asDictionary.
 	self
 		assert: (self summaryFrom: result)
@@ -144,7 +144,7 @@ MCPRemovedMethodHintTest >> testMethodReferenceSearchSaysNothingImplementsWhatWa
 	| gone result |
 	gone := self selectorNamed: 'References'.
 	self removeInThisSession: gone.
-	result := self callToolNamed: 'method_reference_search' withArguments: { (#name -> gone) } asDictionary.
+	result := self callToolNamed: 'method_reference_search' withArguments: { (#query -> gone) } asDictionary.
 	self assert: (self summaryFrom: result) equals: (String streamContents: [ :stream |
 			 stream << 'No implementors or senders of ' << gone << ' in the image. ' << (self hintFor: gone) ])
 ]
@@ -156,7 +156,7 @@ MCPRemovedMethodHintTest >> testMethodSearchForTheSelectorSaysItWasRemoved [
 	gone := self selectorNamed: 'Search'.
 	self removeInThisSession: gone.
 	result := self callToolNamed: 'method_search' withArguments: {
-			          (#selector -> gone).
+			          (#query -> gone).
 			          (self searchScope: { (#classes -> { self target name }) }) } asDictionary.
 	self
 		assert: (self summaryFrom: result)
@@ -172,7 +172,7 @@ MCPRemovedMethodHintTest >> testMethodSearchForTheSelectorSaysItWasRemovedBefore
 	self removeInThisSession: gone.
 	self restart.
 	result := self callToolNamed: 'method_search' withArguments: {
-			          (#selector -> gone).
+			          (#query -> gone).
 			          (self searchScope: { (#classes -> { self target name }) }) } asDictionary.
 	self assert: (self summaryFrom: result) equals: (String streamContents: [ :stream |
 			 stream << 'No methods match in ' << self target name << '. '
@@ -186,7 +186,7 @@ MCPRemovedMethodHintTest >> testMethodSearchOutsideItsClassSaysNothingOfIt [
 	gone := self selectorNamed: 'Elsewhere'.
 	self removeInThisSession: gone.
 	result := self callToolNamed: 'method_search' withArguments: {
-			          (#selector -> gone).
+			          (#query -> gone).
 			          (self searchScope: { (#classes -> #( 'Object' )) }) } asDictionary.
 	self assert: (self summaryFrom: result) equals: 'No methods match in Object.'
 ]

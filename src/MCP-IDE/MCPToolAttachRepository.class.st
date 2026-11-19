@@ -18,7 +18,8 @@ MCPToolAttachRepository class >> toolName [
 { #category : 'private - errors' }
 MCPToolAttachRepository >> failureSummaryPrefixFor: request [
 
-	^ String streamContents: [ :stream | stream << 'Failed to attach repository ' << (request stringArgumentNamed: 'name') << ': ' ]
+	^ String streamContents: [ :stream |
+		  stream << 'Failed to attach repository ' << (request stringArgumentNamed: 'repository') << ': ' ]
 ]
 
 { #category : 'private - execution' }
@@ -51,7 +52,7 @@ MCPToolAttachRepository >> repositoryToolSpec [
 		  (#action -> 'attach').
 		  (#referenceInputProperties -> #(  )).
 		  (#inputProperties -> {
-			   (self schemaPropertyNamed: 'name' type: 'string' description: 'Repository name to register in the image.').
+			   (self schemaPropertyNamed: 'repository' type: 'string' description: 'Repository name to register in the image.').
 			   (self schemaPropertyNamed: 'location' type: 'string' description: 'Absolute path of the existing Git checkout to register.').
 			   (self
 				    schemaPropertyNamed: 'subdirectory'
@@ -61,7 +62,7 @@ MCPToolAttachRepository >> repositoryToolSpec [
 				    stringArraySchemaNamed: 'packages'
 				    description: 'Package names to manage initially from the attached checkout.'
 				    itemDescription: 'A package name.') }).
-		  (#requiredProperties -> #( 'name' 'location' )) } asDictionary
+		  (#requiredProperties -> #( 'repository' 'location' )) } asDictionary
 ]
 
 { #category : 'private - errors' }

@@ -70,7 +70,7 @@ MCPToolCommitRepository >> repositoryToolSpec [
 		   'Write the packages of a registered repository to its checkout as repository_export does, then stage and commit every change git sees there with the given message.').
 		  (#action -> 'commit').
 		  (#inputProperties -> { self messageSchemaProperty }).
-		  (#requiredProperties -> #( 'name' 'message' )) } asDictionary
+		  (#requiredProperties -> #( 'repository' 'message' )) } asDictionary
 ]
 
 { #category : 'private - errors' }

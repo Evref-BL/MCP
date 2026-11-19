@@ -62,7 +62,7 @@ MCPToolSearchPackagesTest >> testImageScopeCanPaginateFilteredPackages [
 
 	| data expected packageNames pagination result summary |
 	result := self callToolWith: {
-			          (#name -> 'MCP-').
+			          (#query -> 'MCP-').
 			          (#offset -> 1) } asDictionary.
 	data := self dataFrom: result.
 	pagination := data at: #pagination.

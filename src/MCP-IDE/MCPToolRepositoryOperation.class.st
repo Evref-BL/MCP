@@ -51,7 +51,7 @@ MCPToolRepositoryOperation >> creationFor: request [
 	"The operation that creates or attaches the repository the call describes. Without a location, it goes in Iceberg's own directory of repositories, under its name."
 
 	| name |
-	name := request stringArgumentNamed: 'name'.
+	name := request stringArgumentNamed: 'repository'.
 	^ MCPCreateRepositoryCommand
 		  name: name
 		  location: (request stringArgumentNamed: 'location' default: (IceLibgitRepository repositoriesLocation / name) fullName)
@@ -238,7 +238,7 @@ MCPToolRepositoryOperation >> repositoryReferenceFor: request [
 MCPToolRepositoryOperation >> repositoryReferenceInputProperties [
 
 	^ {
-		  (self schemaPropertyNamed: 'name' type: 'string' description: 'Registered repository name.').
+		  (self schemaPropertyNamed: 'repository' type: 'string' description: 'Registered repository name.').
 		  (self
 			   schemaPropertyNamed: 'location'
 			   type: 'string'
@@ -261,7 +261,7 @@ MCPToolRepositoryOperation >> requestedContextFor: request [
 { #category : 'private - schema' }
 MCPToolRepositoryOperation >> requiredInputProperties [
 
-	^ self repositoryToolSpec at: #requiredProperties ifAbsent: [ #( 'name' ) ]
+	^ self repositoryToolSpec at: #requiredProperties ifAbsent: [ #( 'repository' ) ]
 ]
 
 { #category : 'private - results' }

@@ -160,7 +160,7 @@ MCPToolRequestTest >> testRequestAccessorsProvideDefaultsUniqueCollectionsSymbol
 
 	| nested request |
 	request := MCPToolRequest tool: MCPToolCreateRepository new arguments: {
-			           (#name -> 'Example').
+			           (#repository -> 'Example').
 			           (#location -> FileLocator imageDirectory fullName).
 			           (#packages -> #( ' MCP ' '' 'MCP' 'Other' )) } asDictionary.
 	self assert: (request stringCollectionArgumentNamed: 'packages') equals: #( 'MCP' 'MCP' 'Other' ).

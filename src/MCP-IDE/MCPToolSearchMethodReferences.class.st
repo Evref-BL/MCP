@@ -117,7 +117,7 @@ MCPToolSearchMethodReferences >> extraInputProperties [
 	^ { ((self
 		    schemaPropertyNamed: 'kind'
 		    type: 'string'
-		    description: 'Read name as this kind of thing, instead of deciding from its spelling.')
+		    description: 'Read query as this kind of thing, instead of deciding from its spelling.')
 		   enum: self referenceKinds;
 		   yourself) }
 ]
@@ -209,7 +209,7 @@ MCPToolSearchMethodReferences >> lookupArgumentDescription [
 { #category : 'private - schema' }
 MCPToolSearchMethodReferences >> lookupArgumentName [
 
-	^ 'name'
+	^ 'query'
 ]
 
 { #category : 'private - results' }

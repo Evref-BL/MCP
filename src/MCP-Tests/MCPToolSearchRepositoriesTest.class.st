@@ -115,10 +115,10 @@ MCPToolSearchRepositoriesTest >> testKeepsAStateOnlyWhenTheCallerNamesIt [
 				self
 					assert: (namesFor value: {
 								 (#isModified -> false).
-								 (#name -> 'MCP') } asDictionary)
+								 (#query -> 'MCP') } asDictionary)
 					equals: #( 'MCP Missing Repository' ).
 				self
-					assert: (namesFor value: { (#name -> 'MCP') } asDictionary)
+					assert: (namesFor value: { (#query -> 'MCP') } asDictionary)
 					equals: #( 'MCP Missing Repository' 'MCP Present Repository' ) ]
 ]
 
@@ -268,7 +268,7 @@ MCPToolSearchRepositoriesTest >> testSummaryCountsTheRepositoriesOfTheImage [
 		do: [
 				self assert: (self summaryFrom: (self callToolWith: Dictionary new)) equals: '2 repositories in the image.'.
 				self
-					assert: (self summaryFrom: (self callToolWith: { (#name -> 'Alpha') } asDictionary))
+					assert: (self summaryFrom: (self callToolWith: { (#query -> 'Alpha') } asDictionary))
 					equals: '1 repository matches in the image.'.
 				self
 					assert: (self summaryFrom: (self callToolWith: { (#isMissing -> true) } asDictionary))

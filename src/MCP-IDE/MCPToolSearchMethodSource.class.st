@@ -36,13 +36,13 @@ MCPToolSearchMethodSource >> buildInputSchema [
 		              (self filterSchemaPropertyWithDescription: 'Text to find in method source. Case matters.').
 		              (self
 			               filterModeSchemaPropertyWithDescription:
-			               'Match filter as a substring or as a regular expression. In substring mode, blanks match any blanks, line breaks included.'
+			               'Match query as a substring or as a regular expression. In substring mode, blanks match any blanks, line breaks included.'
 			               values: self supportedFilterModes).
 		              self offsetInputProperty }.
 	^ MCPStructureInputSchema new
 		  type: 'object';
 		  properties: properties;
-		  required: #( 'filter' );
+		  required: #( 'query' );
 		  yourself
 ]
 
@@ -155,8 +155,8 @@ MCPToolSearchMethodSource >> successSummaryForRequest: request scopeQuery: scope
 			  <<
 			  ' is a selector: source writes an argument after each of its keywords, so a method that implements or sends it does not contain that text. '.
 			  (request hasArgumentNamed: 'scope') ifTrue: [ stream << 'With the same scope, ' ].
-			  stream << 'method_reference_search with name ' << selector
-			  << ' finds its implementors and senders, and method_search with selector ' << selector << ' finds its implementors.' ]
+			  stream << 'method_reference_search with query ' << selector
+			  << ' finds its implementors and senders, and method_search with query ' << selector << ' finds its implementors.' ]
 ]
 
 { #category : 'private - schema' }

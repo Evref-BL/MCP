@@ -81,7 +81,7 @@ MCPToolMethodSearch >> fieldTextsForMethodEntry: anEntry sourceText: sourceText 
 MCPToolMethodSearch >> filterArgumentName [
 	"The argument the caller writes the filter pattern in."
 
-	^ 'filter'
+	^ 'query'
 ]
 
 { #category : 'private - filtering' }

@@ -18,7 +18,7 @@ Class {
 { #category : 'instance creation' }
 MCPRepositoryReferenceSpec class >> fromRequest: request [
 
-	^ self name: (request stringArgumentNamed: 'name') location: (request stringArgumentNamed: 'location')
+	^ self name: (request stringArgumentNamed: 'repository') location: (request stringArgumentNamed: 'location')
 ]
 
 { #category : 'instance creation' }

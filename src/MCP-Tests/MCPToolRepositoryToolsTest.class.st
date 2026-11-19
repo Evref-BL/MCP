@@ -21,48 +21,48 @@ MCPToolRepositoryToolsTest >> repositoryToolSpecifications [
 		  {
 			  (#toolClass -> MCPToolVerifyRepositoryIdentity).
 			  (#arguments -> {
-				   (#name -> 'MCP').
+				   (#repository -> 'MCP').
 				   (#branch -> 'main') } asDictionary).
 			  (#action -> 'verifyIdentity') } asDictionary.
 		  {
 			  (#toolClass -> MCPToolListRepositoryChanges).
-			  (#arguments -> { (#name -> 'MCP') } asDictionary).
+			  (#arguments -> { (#repository -> 'MCP') } asDictionary).
 			  (#action -> 'diff') } asDictionary.
 		  {
 			  (#toolClass -> MCPToolCreateRepository).
 			  (#arguments -> {
-				   (#name -> 'MCP Test Repository').
+				   (#repository -> 'MCP Test Repository').
 				   (#location -> '/tmp/mcp-test-repository') } asDictionary).
 			  (#action -> 'create') } asDictionary.
 		  {
 			  (#toolClass -> MCPToolAttachRepository).
 			  (#arguments -> {
-				   (#name -> 'MCP Test Repository').
+				   (#repository -> 'MCP Test Repository').
 				   (#location -> '/tmp/mcp-test-repository') } asDictionary).
 			  (#action -> 'attach') } asDictionary.
 		  {
 			  (#toolClass -> MCPToolUpdateRepository).
 			  (#arguments -> {
-				   (#name -> 'MCP').
+				   (#repository -> 'MCP').
 				   (#addPackages -> #( 'MCP' )) } asDictionary).
 			  (#action -> 'update') } asDictionary.
 		  {
 			  (#toolClass -> MCPToolExportRepository).
-			  (#arguments -> { (#name -> 'MCP') } asDictionary).
+			  (#arguments -> { (#repository -> 'MCP') } asDictionary).
 			  (#action -> 'export') } asDictionary.
 		  {
 			  (#toolClass -> MCPToolCommitRepository).
 			  (#arguments -> {
-				   (#name -> 'MCP').
+				   (#repository -> 'MCP').
 				   (#message -> 'Commit from test') } asDictionary).
 			  (#action -> 'commit') } asDictionary.
 		  {
 			  (#toolClass -> MCPToolAdoptRepositoryHead).
-			  (#arguments -> { (#name -> 'MCP') } asDictionary).
+			  (#arguments -> { (#repository -> 'MCP') } asDictionary).
 			  (#action -> 'adoptHead') } asDictionary.
 		  {
 			  (#toolClass -> MCPToolReloadRepository).
-			  (#arguments -> { (#name -> 'MCP') } asDictionary).
+			  (#arguments -> { (#repository -> 'MCP') } asDictionary).
 			  (#action -> 'reload') } asDictionary }
 ]
 
@@ -113,14 +113,14 @@ MCPToolRepositoryToolsTest >> testRepositoryToolsRequiredInputs [
 
 	| expectations |
 	expectations := {
-		                (MCPToolVerifyRepositoryIdentity -> #( 'name' )).
-		                (MCPToolListRepositoryChanges -> #( 'name' )).
-		                (MCPToolCreateRepository -> #( 'name' )).
-		                (MCPToolAttachRepository -> #( 'name' 'location' )).
-		                (MCPToolUpdateRepository -> #( 'name' )).
-		                (MCPToolExportRepository -> #( 'name' )).
-		                (MCPToolCommitRepository -> #( 'name' 'message' )).
-		                (MCPToolAdoptRepositoryHead -> #( 'name' )) }.
+		                (MCPToolVerifyRepositoryIdentity -> #( 'repository' )).
+		                (MCPToolListRepositoryChanges -> #( 'repository' )).
+		                (MCPToolCreateRepository -> #( 'repository' )).
+		                (MCPToolAttachRepository -> #( 'repository' 'location' )).
+		                (MCPToolUpdateRepository -> #( 'repository' )).
+		                (MCPToolExportRepository -> #( 'repository' )).
+		                (MCPToolCommitRepository -> #( 'repository' 'message' )).
+		                (MCPToolAdoptRepositoryHead -> #( 'repository' )) }.
 	expectations do: [ :association | self assert: association key new inputSchema required asArray equals: association value ]
 ]
 
@@ -130,16 +130,15 @@ MCPToolRepositoryToolsTest >> testRepositoryToolsUseDedicatedInputs [
 	| expectations |
 	expectations := {
 		                (MCPToolVerifyRepositoryIdentity
-		                 -> #( 'name' 'location' 'branch' 'subdirectory' 'packages' 'modifiedPackages'
-		                    'isModified' )).
-		                (MCPToolListRepositoryChanges -> #( 'name' 'location' )).
-		                (MCPToolCreateRepository -> #( 'name' 'location' 'subdirectory' 'packages' )).
-		                (MCPToolAttachRepository -> #( 'name' 'location' 'subdirectory' 'packages' )).
+		                 -> #( 'repository' 'location' 'branch' 'subdirectory' 'packages' 'modifiedPackages' 'isModified' )).
+		                (MCPToolListRepositoryChanges -> #( 'repository' 'location' )).
+		                (MCPToolCreateRepository -> #( 'repository' 'location' 'subdirectory' 'packages' )).
+		                (MCPToolAttachRepository -> #( 'repository' 'location' 'subdirectory' 'packages' )).
 		                (MCPToolUpdateRepository
-		                 -> #( 'name' 'location' 'subdirectory' 'packages' 'addPackages' 'removePackages' )).
-		                (MCPToolExportRepository -> #( 'name' 'location' )).
-		                (MCPToolCommitRepository -> #( 'name' 'location' 'message' )).
-		                (MCPToolAdoptRepositoryHead -> #( 'name' 'location' 'branch' )) }.
+		                 -> #( 'repository' 'location' 'subdirectory' 'packages' 'addPackages' 'removePackages' )).
+		                (MCPToolExportRepository -> #( 'repository' 'location' )).
+		                (MCPToolCommitRepository -> #( 'repository' 'location' 'message' )).
+		                (MCPToolAdoptRepositoryHead -> #( 'repository' 'location' 'branch' )) }.
 	expectations do: [ :association |
 			| propertyNames |
 			propertyNames := self inputPropertyNamesFor: association key new.

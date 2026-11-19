@@ -51,13 +51,13 @@ MCPToolSearchPackages >> entryNameKeys [
 { #category : 'private - request' }
 MCPToolSearchPackages >> fieldFilterNames [
 
-	^ #( 'name' 'project' 'tag' )
+	^ #( 'query' 'project' 'tag' )
 ]
 
 { #category : 'private - filtering' }
 MCPToolSearchPackages >> fieldTextsForPackageEntry: anEntry fieldName: fieldName [
 
-	fieldName = 'name' ifTrue: [ ^ { (anEntry at: #package) } ].
+	fieldName = 'query' ifTrue: [ ^ { (anEntry at: #package) } ].
 	fieldName = 'project' ifTrue: [ ^ anEntry at: #projects ].
 	fieldName = 'tag' ifTrue: [ ^ anEntry at: #tags ].
 	^ #(  )
@@ -85,7 +85,7 @@ MCPToolSearchPackages >> packageEntriesFromPackages: packages projectNames: pack
 MCPToolSearchPackages >> packageFilterInputProperties [
 
 	^ {
-		  (self schemaPropertyNamed: 'name' type: 'string' description: 'Keep packages whose name contains this text, ignoring case.').
+		  (self schemaPropertyNamed: 'query' type: 'string' description: 'Keep packages whose name contains this text, ignoring case.').
 		  (self
 			   schemaPropertyNamed: 'project'
 			   type: 'string'
