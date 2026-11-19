@@ -45,17 +45,17 @@ MCPToolSearchMethods >> fieldFilterNames [
 ]
 
 { #category : 'private - filtering' }
-MCPToolSearchMethods >> fieldTextsForMethodEntry: anEntry sourceText: sourceText fieldName: fieldName [
+MCPToolSearchMethods >> fieldTextsForMethodInfo: anInfo fieldName: fieldName [
 
-	fieldName = 'protocol' ifTrue: [ ^ { (anEntry at: #protocol) } ].
+	fieldName = 'protocol' ifTrue: [ ^ { anInfo protocol } ].
 	^ #(  )
 ]
 
 { #category : 'private - filtering' }
-MCPToolSearchMethods >> filterTextsForMethodEntry: anEntry sourceText: sourceText [
+MCPToolSearchMethods >> filterTextsForMethodInfo: anInfo sourceText: sourceText [
 	"The text query matches: the selector."
 
-	^ { (anEntry at: #selector) }
+	^ { anInfo selector }
 ]
 
 { #category : 'private - schema' }

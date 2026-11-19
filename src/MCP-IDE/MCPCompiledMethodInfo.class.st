@@ -1,20 +1,13 @@
 "
 DTO for compiled method metadata.
 
-It records selector, declaring class, class-side flag, protocol, package, extension status, the trait the method was installed from when there is one, and optionally formatted source text.
+It reads, from the method it keeps, its selector, declaring class, class-side flag, protocol, package, extension status, the trait it was installed from when there is one, and its source text, each when asked.
 "
 Class {
 	#name : 'MCPCompiledMethodInfo',
 	#superclass : 'MCPDataTransferObject',
 	#instVars : [
-		'className',
-		'selector',
-		'protocol',
-		'packageName',
-		'isExtension',
-		'source',
-		'classSide',
-		'traitName'
+		'method'
 	],
 	#category : 'MCP-IDE-DTOs',
 	#package : 'MCP-IDE',
@@ -45,73 +38,61 @@ MCPCompiledMethodInfo >> asDictionary [
 { #category : 'accessing' }
 MCPCompiledMethodInfo >> className [
 
-	^ className
+	^ method methodClass instanceSide name asString
+]
+
+{ #category : 'private' }
+MCPCompiledMethodInfo >> classPackageName [
+
+	^ method methodClass instanceSide package name asString
 ]
 
 { #category : 'accessing' }
 MCPCompiledMethodInfo >> classSide [
 
-	^ classSide
-]
-
-{ #category : 'accessing' }
-MCPCompiledMethodInfo >> classSide: anObject [
-
-	classSide := anObject
+	^ method methodClass isMeta
 ]
 
 { #category : 'initialization' }
 MCPCompiledMethodInfo >> initializeFromMethod: aCompiledMethod [
 
-	| classPackageName methodPackageName |
-	className := aCompiledMethod methodClass instanceSide name asString.
-	classSide := aCompiledMethod methodClass isMeta.
-	selector := aCompiledMethod selector asString.
-	aCompiledMethod isFromTrait ifTrue: [ traitName := aCompiledMethod origin instanceSide name asString ].
-	protocol := aCompiledMethod protocolName ifNil: [ '' ] ifNotNil: [ :aProtocol | aProtocol asString ].
-	methodPackageName := aCompiledMethod package
-		                     ifNil: [ aCompiledMethod methodClass instanceSide package name asString ]
-		                     ifNotNil: [ :aPackage | aPackage name asString ].
-	packageName := methodPackageName.
-	classPackageName := aCompiledMethod methodClass instanceSide package name asString.
-	isExtension := packageName ~= classPackageName.
-	source := aCompiledMethod sourceCode ifNil: [ '' ].
-	^ self
+	method := aCompiledMethod
 ]
 
 { #category : 'accessing' }
 MCPCompiledMethodInfo >> isExtension [
 
-	^ isExtension = true
+	^ self packageName ~= self classPackageName
 ]
 
 { #category : 'accessing' }
 MCPCompiledMethodInfo >> packageName [
 
-	^ packageName
+	^ method package ifNil: [ self classPackageName ] ifNotNil: [ :aPackage | aPackage name asString ]
 ]
 
 { #category : 'accessing' }
 MCPCompiledMethodInfo >> protocol [
 
-	^ protocol
+	^ method protocolName ifNil: [ '' ] ifNotNil: [ :aProtocol | aProtocol asString ]
 ]
 
 { #category : 'accessing' }
 MCPCompiledMethodInfo >> selector [
 
-	^ selector
+	^ method selector asString
 ]
 
 { #category : 'accessing' }
 MCPCompiledMethodInfo >> source [
+	"Read from the method's source when asked, since only a search of source text needs it."
 
-	^ source ifNil: [ '' ]
+	^ method sourceCode ifNil: [ '' ]
 ]
 
 { #category : 'accessing' }
 MCPCompiledMethodInfo >> traitName [
 	"The trait that defines this method, when the class only carries a copy installed from one."
 
-	^ traitName
+	^ method isFromTrait ifTrue: [ method origin instanceSide name asString ]
 ]

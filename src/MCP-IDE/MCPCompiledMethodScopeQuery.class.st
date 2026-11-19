@@ -7,7 +7,8 @@ Class {
 	#name : 'MCPCompiledMethodScopeQuery',
 	#superclass : 'MCPScopeQuery',
 	#instVars : [
-		'side'
+		'side',
+		'collectedMethods'
 	],
 	#category : 'MCP-IDE-Queries',
 	#package : 'MCP-IDE',
@@ -24,30 +25,21 @@ MCPCompiledMethodScopeQuery >> addBehaviorsForBaseClass: aClass to: behaviors [
 { #category : 'private - scope' }
 MCPCompiledMethodScopeQuery >> allBehaviors [
 
-	| behaviors |
-	behaviors := IdentitySet new.
-	Smalltalk globals allBehaviorsDo: [ :eachBehavior |
-		(self matchesSideForBehavior: eachBehavior) ifTrue: [ behaviors add: eachBehavior ] ].
-	^ behaviors asArray
+	^ Array streamContents: [ :stream |
+		  Smalltalk globals allBehaviorsDo: [ :each | (self matchesSideForBehavior: each) ifTrue: [ stream nextPut: each ] ] ]
 ]
 
 { #category : 'private - scope' }
 MCPCompiledMethodScopeQuery >> allMethods [
 
-	^ self methodsForBehaviors: self allBehaviors
+	^ Array streamContents: [ :stream | self allMethodsDo: [ :each | stream nextPut: each ] ]
 ]
 
 { #category : 'private - scope' }
 MCPCompiledMethodScopeQuery >> allMethodsDo: aBlock [
+	"Each method of the image sits in one method dictionary, so a sweep of its behaviors meets each once."
 
-	| seenMethods |
-	seenMethods := IdentitySet new.
-	Smalltalk globals allBehaviorsDo: [ :eachBehavior |
-			(self matchesSideForBehavior: eachBehavior) ifTrue: [
-					eachBehavior methods do: [ :eachMethod |
-							((self isInstalledFromTraitedClass: eachMethod) or: [ seenMethods includes: eachMethod ]) ifFalse: [
-									seenMethods add: eachMethod.
-									aBlock value: eachMethod ] ] ] ]
+	self allBehaviors do: [ :each | self methodsOf: each do: aBlock ]
 ]
 
 { #category : 'converting' }
@@ -63,37 +55,15 @@ MCPCompiledMethodScopeQuery >> asDictionary [
 		  (#side -> self side) } asDictionary
 ]
 
-{ #category : 'private - scope' }
-MCPCompiledMethodScopeQuery >> behaviorScopeSets [
-
-	| sets |
-	sets := OrderedCollection new.
-	self packageNames ifNotEmpty: [ sets add: self behaviorsForPackageNames ].
-	self classNames ifNotEmpty: [ sets add: self behaviorsForClassNames ].
-	self hierarchyClassNames ifNotEmpty: [ sets add: self hierarchyBehaviorsForClassNames ].
-	self subclassClassNames ifNotEmpty: [ sets add: self subclassBehaviorsForClassNames ].
-	self parentClassNames ifNotEmpty: [ sets add: self parentBehaviorsForClassNames ].
-	^ sets asArray
-]
-
 { #category : 'querying' }
 MCPCompiledMethodScopeQuery >> behaviors [
 
 	self validate.
 	self resetWarnings.
 	self usesImplicitImageScope ifTrue: [ ^ self allBehaviors ].
-	^ self unionBehaviors
-]
-
-{ #category : 'private - scope' }
-MCPCompiledMethodScopeQuery >> behaviorsForClassNames [
-
-	| behaviors |
-	behaviors := IdentitySet new.
-	self classNames do: [ :eachName |
-			(self classNamed: eachName inScope: 'scope.classes') ifNotNil: [ :class |
-				self addBehaviorsForBaseClass: class instanceSide to: behaviors ] ].
-	^ behaviors asArray
+	^ (self behaviorsForPackageNames
+		   addAll: self namedBehaviors;
+		   yourself) asArray
 ]
 
 { #category : 'private - scope' }
@@ -105,27 +75,15 @@ MCPCompiledMethodScopeQuery >> behaviorsForPackageNames [
 			(self packageNamed: eachName inScope: 'scope.packages') ifNotNil: [ :package |
 					package definedClasses do: [ :aClass | self addBehaviorsForBaseClass: aClass to: behaviors ].
 					package extensionMethods do: [ :eachMethod |
-						(self matchesSideForMethod: eachMethod) ifTrue: [ behaviors add: eachMethod methodClass ] ] ] ].
-	^ behaviors asArray
+						(self matchesSideForBehavior: eachMethod methodClass) ifTrue: [ behaviors add: eachMethod methodClass ] ] ] ].
+	^ behaviors
 ]
 
-{ #category : 'private - resolution' }
-MCPCompiledMethodScopeQuery >> classNamed: aClassName [
+{ #category : 'querying' }
+MCPCompiledMethodScopeQuery >> collectedMethods [
+	"The methods, collected on the first call and answered again after it, so that the readings of one name that a reference search tries in turn sweep the scope's methods once."
 
-	^ self classNamed: aClassName inScope: 'scope.classes'
-]
-
-{ #category : 'private - source' }
-MCPCompiledMethodScopeQuery >> hierarchyBehaviorsForClassNames [
-
-	| behaviors hierarchyClasses |
-	hierarchyClasses := IdentitySet new.
-	self hierarchyClassNames do: [ :eachName |
-			(self classNamed: eachName inScope: 'scope.hierarchyOf') ifNotNil: [ :class |
-				class instanceSide withAllSuperAndSubclasses do: [ :relatedClass | hierarchyClasses add: relatedClass instanceSide ] ] ].
-	behaviors := IdentitySet new.
-	hierarchyClasses do: [ :eachClass | self addBehaviorsForBaseClass: eachClass to: behaviors ].
-	^ behaviors asArray
+	^ collectedMethods ifNil: [ collectedMethods := self methods ]
 ]
 
 { #category : 'private - scope' }
@@ -144,21 +102,14 @@ MCPCompiledMethodScopeQuery >> includesInstanceSide [
 MCPCompiledMethodScopeQuery >> initialize [
 
 	super initialize.
-	packageNames := #(  ).
-	classNames := #(  ).
-	hierarchyClassNames := #(  ).
-	subclassClassNames := #(  ).
-	parentClassNames := #(  ).
-	side := 'both'.
-	warnings := OrderedCollection new.
-	requiresCompleteScope := false
+	side := 'both'
 ]
 
 { #category : 'private - scope' }
 MCPCompiledMethodScopeQuery >> isInstalledFromTraitedClass: aCompiledMethod [
-	"Whether Pharo installed this method from TraitedClass, as it does on the class side of every class and trait that uses traits. Nobody wrote it there, so a sweep leaves it out. TraitedClass's own methods are not from a trait, so a sweep of TraitedClass still lists them, and an image without TraitedClass leaves nothing out."
+	"Whether Pharo installed this method from TraitedClass, as it does on the class side of every class and trait that uses traits. Nobody wrote it there, so a sweep leaves it out. TraitedClass's own methods are not from a trait, so a sweep of TraitedClass still lists them."
 
-	^ aCompiledMethod isFromTrait and: [ aCompiledMethod origin == (Smalltalk globals at: #TraitedClass ifAbsent: [ nil ]) ]
+	^ aCompiledMethod isFromTrait and: [ aCompiledMethod origin == TraitedClass ]
 ]
 
 { #category : 'private - scope' }
@@ -168,56 +119,24 @@ MCPCompiledMethodScopeQuery >> matchesSideForBehavior: aBehavior [
 	^ self includesInstanceSide
 ]
 
-{ #category : 'private - scope' }
-MCPCompiledMethodScopeQuery >> matchesSideForMethod: aCompiledMethod [
-
-	aCompiledMethod methodClass isMeta ifTrue: [ ^ self includesClassSide ].
-	^ self includesInstanceSide
-]
-
-{ #category : 'private - scope' }
-MCPCompiledMethodScopeQuery >> methodScopeSets [
-
-	| sets |
-	sets := OrderedCollection new.
-	self packageNames ifNotEmpty: [ sets add: self methodsForPackageNames ].
-	self classNames ifNotEmpty: [ sets add: (self methodsForBehaviors: self behaviorsForClassNames) ].
-	self hierarchyClassNames ifNotEmpty: [ sets add: (self methodsForBehaviors: self hierarchyBehaviorsForClassNames) ].
-	self subclassClassNames ifNotEmpty: [ sets add: (self methodsForBehaviors: self subclassBehaviorsForClassNames) ].
-	self parentClassNames ifNotEmpty: [ sets add: (self methodsForBehaviors: self parentBehaviorsForClassNames) ].
-	^ sets asArray
-]
-
 { #category : 'querying' }
 MCPCompiledMethodScopeQuery >> methods [
 
+	| methods |
 	self validate.
 	self resetWarnings.
 	self usesImplicitImageScope ifTrue: [ ^ self allMethods ].
-	^ self unionMethods
+	methods := self methodsForPackageNames.
+	self namedBehaviors do: [ :each | self methodsOf: each do: [ :method | methods add: method ] ].
+	^ methods asArray
 ]
 
 { #category : 'querying' }
 MCPCompiledMethodScopeQuery >> methodsDo: aBlock [
 
-	| seenMethods |
 	self validate.
 	self usesImplicitImageScope ifTrue: [ ^ self allMethodsDo: aBlock ].
-	seenMethods := IdentitySet new.
-	self methods do: [ :eachMethod |
-			(seenMethods includes: eachMethod) ifFalse: [
-					seenMethods add: eachMethod.
-					aBlock value: eachMethod ] ]
-]
-
-{ #category : 'private - scope' }
-MCPCompiledMethodScopeQuery >> methodsForBehaviors: behaviors [
-
-	| methods |
-	methods := IdentitySet new.
-	behaviors do: [ :eachBehavior |
-		eachBehavior methods do: [ :eachMethod | (self isInstalledFromTraitedClass: eachMethod) ifFalse: [ methods add: eachMethod ] ] ].
-	^ methods asArray
+	self methods do: aBlock
 ]
 
 { #category : 'private - scope' }
@@ -228,29 +147,28 @@ MCPCompiledMethodScopeQuery >> methodsForPackageNames [
 	self packageNames do: [ :eachName |
 			(self packageNamed: eachName inScope: 'scope.packages') ifNotNil: [ :package |
 					package definedClasses do: [ :aClass |
-							self includesInstanceSide ifTrue: [ aClass localMethods do: [ :eachMethod | methods add: eachMethod ] ].
-							self includesClassSide ifTrue: [ aClass classSide localMethods do: [ :eachMethod | methods add: eachMethod ] ] ].
-					package extensionMethods do: [ :eachMethod | (self matchesSideForMethod: eachMethod) ifTrue: [ methods add: eachMethod ] ] ] ].
-	^ methods asArray
-]
-
-{ #category : 'private - resolution' }
-MCPCompiledMethodScopeQuery >> packageNamed: aPackageName [
-
-	^ self packageNamed: aPackageName inScope: 'scope.packages'
+							self includesInstanceSide ifTrue: [ methods addAll: aClass localMethods ].
+							self includesClassSide ifTrue: [ methods addAll: aClass classSide localMethods ] ].
+					package extensionMethods do: [ :eachMethod |
+						(self matchesSideForBehavior: eachMethod methodClass) ifTrue: [ methods add: eachMethod ] ] ] ].
+	^ methods
 ]
 
 { #category : 'private - scope' }
-MCPCompiledMethodScopeQuery >> parentBehaviorsForClassNames [
+MCPCompiledMethodScopeQuery >> methodsOf: aBehavior do: aBlock [
+	"What a sweep lists of aBehavior: its methods, but those Pharo installed from TraitedClass."
 
-	| behaviors relatedClasses |
-	relatedClasses := IdentitySet new.
-	self parentClassNames do: [ :eachName |
-			(self classNamed: eachName inScope: 'scope.superclassesOf') ifNotNil: [ :class |
-				class instanceSide allSuperclasses do: [ :relatedClass | relatedClasses add: relatedClass instanceSide ] ] ].
+	aBehavior methodsDo: [ :each | (self isInstalledFromTraitedClass: each) ifFalse: [ aBlock value: each ] ]
+]
+
+{ #category : 'private - scope' }
+MCPCompiledMethodScopeQuery >> namedBehaviors [
+	"The sides the scope reaches of the classes it names."
+
+	| behaviors |
 	behaviors := IdentitySet new.
-	relatedClasses do: [ :eachClass | self addBehaviorsForBaseClass: eachClass to: behaviors ].
-	^ behaviors asArray
+	self namedClasses do: [ :each | self addBehaviorsForBaseClass: each to: behaviors ].
+	^ behaviors
 ]
 
 { #category : 'querying' }
@@ -286,37 +204,6 @@ MCPCompiledMethodScopeQuery >> sidePhrase [
 	side = 'instance' ifTrue: [ ^ ', instance side' ].
 	side = 'class' ifTrue: [ ^ ', class side' ].
 	^ ''
-]
-
-{ #category : 'private - scope' }
-MCPCompiledMethodScopeQuery >> subclassBehaviorsForClassNames [
-
-	| behaviors relatedClasses |
-	relatedClasses := IdentitySet new.
-	self subclassClassNames do: [ :eachName |
-			(self classNamed: eachName inScope: 'scope.subclassesOf') ifNotNil: [ :class |
-				class instanceSide allSubclasses do: [ :relatedClass | relatedClasses add: relatedClass instanceSide ] ] ].
-	behaviors := IdentitySet new.
-	relatedClasses do: [ :eachClass | self addBehaviorsForBaseClass: eachClass to: behaviors ].
-	^ behaviors asArray
-]
-
-{ #category : 'private - scope' }
-MCPCompiledMethodScopeQuery >> unionBehaviors [
-
-	| behaviors |
-	behaviors := IdentitySet new.
-	self behaviorScopeSets do: [ :eachSet | behaviors addAll: eachSet ].
-	^ behaviors asArray
-]
-
-{ #category : 'private - scope' }
-MCPCompiledMethodScopeQuery >> unionMethods [
-
-	| methods |
-	methods := IdentitySet new.
-	self methodScopeSets do: [ :eachSet | methods addAll: eachSet ].
-	^ methods asArray
 ]
 
 { #category : 'validating' }

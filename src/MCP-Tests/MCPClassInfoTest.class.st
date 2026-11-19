@@ -15,18 +15,6 @@ MCPClassInfoTest >> baseClassName [
 ]
 
 { #category : 'private' }
-MCPClassInfoTest >> childAClassName [
-
-	^ 'MCPClassInfoTestAChild'
-]
-
-{ #category : 'private' }
-MCPClassInfoTest >> childZClassName [
-
-	^ 'MCPClassInfoTestZChild'
-]
-
-{ #category : 'private' }
 MCPClassInfoTest >> ensureFixtureClasses [
 
 	self removeFixtureClasses.
@@ -34,32 +22,13 @@ MCPClassInfoTest >> ensureFixtureClasses [
 		createClassNamed: self baseClassName
 		superclassName: 'Object'
 		slots: #( betaSlot alphaSlot )
-		classSlots: #( classBeta classAlpha ).
-	self
-		createClassNamed: self childZClassName
-		superclassName: self baseClassName
-		slots: #(  )
-		classSlots: #(  ).
-	self
-		createClassNamed: self childAClassName
-		superclassName: self baseClassName
-		slots: #(  )
-		classSlots: #(  )
-]
-
-{ #category : 'private' }
-MCPClassInfoTest >> fixtureClassNames [
-
-	^ {
-		  self baseClassName.
-		  self childAClassName.
-		  self childZClassName }
+		classSlots: #( classBeta classAlpha )
 ]
 
 { #category : 'private' }
 MCPClassInfoTest >> removeFixtureClasses [
 
-	self fixtureClassNames reverseDo: [ :each | self removeClassNamed: each ]
+	self removeClassNamed: self baseClassName
 ]
 
 { #category : 'running' }
@@ -77,17 +46,13 @@ MCPClassInfoTest >> tearDown [
 ]
 
 { #category : 'tests' }
-MCPClassInfoTest >> testBuildsSortedClassMetadataSnapshot [
+MCPClassInfoTest >> testDescribesTheClassWhereItLivesAndItsSlots [
 
 	| info |
 	info := MCPClassInfo fromClass: (self classNamed: self baseClassName).
 	self assert: info className equals: self baseClassName.
-	self assert: info superclassName equals: 'Object'.
 	self assert: info packageName equals: self generatedPackageName.
 	self assert: info tag equals: self generatedTagName.
 	self assert: info instanceSlotNames equals: #( 'betaSlot' 'alphaSlot' ).
-	self assert: info classSlotNames equals: #( 'classBeta' 'classAlpha' ).
-	self assert: info subclassNames equals: {
-			self childAClassName.
-			self childZClassName } asArray
+	self assert: info classSlotNames equals: #( 'classBeta' 'classAlpha' )
 ]

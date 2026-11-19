@@ -272,11 +272,13 @@ MCPToolRemoveMethods >> selectorsFromRequest: request [
 ]
 
 { #category : 'private - warnings' }
-MCPToolRemoveMethods >> sendersInImageOf: aSelector [
-	"The methods of the image that send aSelector, as method_reference_search finds senders: what TraitedClass installs is left out, and a method a trait gives its users is the trait's, named once."
+MCPToolRemoveMethods >> sendersInImageOf: someSelectors [
+	"Each of someSelectors with the methods of the image that send it, as method_reference_search finds senders: what TraitedClass installs is left out, and a method a trait gives its users is the trait's, named once. The image's methods are collected once for every selector."
 
-	^ (self matchingSelectorReferencesForSelector: aSelector inMethods: MCPCompiledMethodScopeQuery new methods) reject: [ :each |
-		  each isFromTrait ]
+	| methods |
+	someSelectors ifEmpty: [ ^ Dictionary new ].
+	methods := MCPCompiledMethodScopeQuery new methods reject: [ :each | each isFromTrait ].
+	^ (someSelectors collect: [ :each | each -> (self matchingSelectorReferencesForSelector: each inMethods: methods) ]) asDictionary
 ]
 
 { #category : 'private' }
@@ -325,14 +327,14 @@ MCPToolRemoveMethods >> unimplementedSendWarningFor: aSelector senders: someMeth
 MCPToolRemoveMethods >> warningsForSendsLeftByRemoving: selectorSymbols from: aBehavior [
 	"Read once the methods are gone. For each selector, in the order asked: the methods of the class and its subclasses that still send it to self or super where it is no longer understood, then, when nothing in the image implements it any more, the other methods that still send it."
 
-	| warnings |
+	| warnings senders |
+	senders := self sendersInImageOf: (selectorSymbols reject: [ :each | self imageImplements: each ]).
 	warnings := OrderedCollection new.
 	selectorSymbols do: [ :selector |
 			| brokenSends |
 			brokenSends := self hierarchySendsBrokenByRemoving: selector from: aBehavior.
 			brokenSends ifNotEmpty: [ warnings add: (self hierarchySendWarningFor: selector sends: brokenSends from: aBehavior) ].
-			(self imageImplements: selector) ifFalse: [
-					((self sendersInImageOf: selector) reject: [ :each | brokenSends includesKey: each ]) ifNotEmpty: [ :senders |
-						warnings add: (self unimplementedSendWarningFor: selector senders: senders) ] ] ].
+			((senders at: selector ifAbsent: [ #(  ) ]) reject: [ :each | brokenSends includesKey: each ]) ifNotEmpty: [ :someSenders |
+				warnings add: (self unimplementedSendWarningFor: selector senders: someSenders) ] ].
 	^ warnings asArray
 ]

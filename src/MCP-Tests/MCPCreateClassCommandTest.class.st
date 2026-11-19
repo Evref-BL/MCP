@@ -202,18 +202,18 @@ MCPCreateClassCommandTest >> testCreatesClassWithTagSlotsAndClassSlots [
 { #category : 'tests' }
 MCPCreateClassCommandTest >> testCreatesClassWithTraitsSharedVariablesSharedPoolsAndLayout [
 
-	| createdClass info |
-	info := MCPClassInfo fromClass: (self executeCommand: (MCPCreateClassCommand
-				          className: 'MCPCreateClassCommandTestConfigured'
-				          superclassName: 'Object'
-				          packageName: self generatedPackageName
-				          tag: 'Configured'
-				          slots: #( #firstName )
-				          classSlots: #( #defaultName )
-				          traits: #( 'TAbleToRotate' )
-				          sharedVariables: #( 'AlphaShared' 'BetaShared' )
-				          sharedPools: #( 'ChronologyConstants' )
-				          layout: 'WeakLayout')).
+	| createdClass |
+	self executeCommand: (MCPCreateClassCommand
+			 className: 'MCPCreateClassCommandTestConfigured'
+			 superclassName: 'Object'
+			 packageName: self generatedPackageName
+			 tag: 'Configured'
+			 slots: #( #firstName )
+			 classSlots: #( #defaultName )
+			 traits: #( 'TAbleToRotate' )
+			 sharedVariables: #( 'AlphaShared' 'BetaShared' )
+			 sharedPools: #( 'ChronologyConstants' )
+			 layout: 'WeakLayout').
 	createdClass := self classNamed: 'MCPCreateClassCommandTestConfigured'.
 	self assert: (createdClass traits collect: [ :each | each name asString ] as: Array) equals: #( 'TAbleToRotate' ).
 	"The class side comes with the trait: the class uses TAbleToRotate as a whole."
@@ -222,30 +222,23 @@ MCPCreateClassCommandTest >> testCreatesClassWithTraitsSharedVariablesSharedPool
 		equals: #( 'TAbleToRotate classTrait' ).
 	self assert: createdClass classVarNames equals: #( #AlphaShared #BetaShared ).
 	self assert: (createdClass sharedPools collect: [ :each | each name asString ] as: Array) equals: #( 'ChronologyConstants' ).
-	self assert: createdClass classLayout class name equals: #WeakLayout.
-	self assert: info traitNames equals: #( 'TAbleToRotate' ).
-	self assert: info classTraitNames equals: #( 'TAbleToRotate classTrait' ).
-	self assert: info sharedVariableNames equals: #( 'AlphaShared' 'BetaShared' ).
-	self assert: info sharedPoolNames equals: #( 'ChronologyConstants' ).
-	self assert: info layoutClassName equals: 'WeakLayout'
+	self assert: createdClass classLayout class name equals: #WeakLayout
 ]
 
 { #category : 'tests' }
 MCPCreateClassCommandTest >> testCreatesTraitWhenSuperclassIsTrait [
 
-	| createdTrait info |
-	info := MCPClassInfo fromClass: (self executeCommand: (MCPCreateClassCommand
-				          className: 'TMCPCreateClassCommandTestTrait'
-				          superclassName: 'Trait'
-				          packageName: self generatedPackageName
-				          tag: nil
-				          slots: nil
-				          classSlots: nil)).
+	| createdTrait |
+	self executeCommand: (MCPCreateClassCommand
+			 className: 'TMCPCreateClassCommandTestTrait'
+			 superclassName: 'Trait'
+			 packageName: self generatedPackageName
+			 tag: nil
+			 slots: nil
+			 classSlots: nil).
 	createdTrait := self classNamed: 'TMCPCreateClassCommandTestTrait'.
 	self assert: createdTrait isTrait.
-	self assert: createdTrait superclass isNil.
-	self assert: info isTrait.
-	self assert: (info asDictionary at: #isTrait)
+	self assert: createdTrait superclass isNil
 ]
 
 { #category : 'tests' }

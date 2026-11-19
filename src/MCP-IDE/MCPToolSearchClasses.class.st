@@ -75,10 +75,10 @@ MCPToolSearchClasses >> fieldFilterNames [
 ]
 
 { #category : 'private - filtering' }
-MCPToolSearchClasses >> fieldTextsForClassEntry: anEntry fieldName: fieldName [
+MCPToolSearchClasses >> fieldTextsForClassInfo: anInfo fieldName: fieldName [
 
-	fieldName = 'query' ifTrue: [ ^ { (anEntry at: #class) } ].
-	fieldName = 'tag' ifTrue: [ ^ { (anEntry at: #tag) } ].
+	fieldName = 'query' ifTrue: [ ^ { anInfo className } ].
+	fieldName = 'tag' ifTrue: [ ^ { anInfo tag } ].
 	^ #(  )
 ]
 
@@ -91,21 +91,24 @@ MCPToolSearchClasses >> keyOrder [
 
 { #category : 'private - template' }
 MCPToolSearchClasses >> queryEntriesForRequest: request scopeQuery: scopeQuery [
-	"The classes of the scope whose fields hold the field filters, ignoring case. A scope that reaches them by inheritance gives each its superclass, since the rows come by name and would not otherwise say how they inherit."
+	"The classes of the scope whose fields hold the field filters, ignoring case; a class is described only once it passes them. A scope that reaches them by inheritance gives each its superclass, since the rows come by name and would not otherwise say how they inherit."
 
 	| entries fieldFilters hierarchy |
 	fieldFilters := self fieldFiltersFromRequest: request.
 	hierarchy := scopeQuery asksForAHierarchy.
 	entries := OrderedCollection new.
 	scopeQuery classes do: [ :eachClass |
-			| entry |
-			entry := (MCPClassInfo fromClass: eachClass) asQueryDictionary.
-			(hierarchy and: [ eachClass superclass isNotNil ]) ifTrue: [ entry at: #superclass put: eachClass superclass name asString ].
+			| info |
+			info := MCPClassInfo fromClass: eachClass.
 			(self
 				 fieldFilters: fieldFilters
-				 matchUsing: [ :fieldName | self fieldTextsForClassEntry: entry fieldName: fieldName ]
+				 matchUsing: [ :fieldName | self fieldTextsForClassInfo: info fieldName: fieldName ]
 				 mode: self defaultFilterMode
-				 caseSensitive: false) ifTrue: [ entries add: entry ] ].
+				 caseSensitive: false) ifTrue: [
+					| entry |
+					entry := info asDictionary.
+					(hierarchy and: [ eachClass superclass isNotNil ]) ifTrue: [ entry at: #superclass put: eachClass superclass name asString ].
+					entries add: entry ] ].
 	^ entries asArray
 ]
 

@@ -123,6 +123,35 @@ MCPScopeQuery >> missingNamesInScope: scopeName [
 	^ missingNames at: scopeName ifAbsent: [ #(  ) ]
 ]
 
+{ #category : 'private - resolution' }
+MCPScopeQuery >> namedClasses [
+	"The classes the scope names by class, instance side, with what it reaches from each: its hierarchy, subclasses or superclasses. The names are resolved kind by kind, in the order their warnings are recorded."
+
+	| classes |
+	classes := IdentitySet new.
+	{
+		{
+			self classNames.
+			'scope.classes'.
+			[ :class | { class } ] }.
+		{
+			self hierarchyClassNames.
+			'scope.hierarchyOf'.
+			[ :class | class withAllSuperAndSubclasses ] }.
+		{
+			self subclassClassNames.
+			'scope.subclassesOf'.
+			[ :class | class allSubclasses ] }.
+		{
+			self parentClassNames.
+			'scope.superclassesOf'.
+			[ :class | class allSuperclasses ] } } do: [ :kind |
+			kind first do: [ :eachName |
+					(self classNamed: eachName inScope: kind second) ifNotNil: [ :class |
+						(kind third value: class instanceSide) do: [ :each | classes add: each instanceSide ] ] ] ].
+	^ classes
+]
+
 { #category : 'phrasing' }
 MCPScopeQuery >> namesNothingThatExists [
 	"Whether the scope was given names and none of them exists, so the query looked nowhere."
