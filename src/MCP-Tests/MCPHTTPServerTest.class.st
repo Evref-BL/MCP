@@ -86,7 +86,7 @@ MCPHTTPServerTest >> testAComputingEvaluationLeavesOtherCallsAnswered [
 		{
 			(#evaluation -> 0
 			 ->
-			 '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"evaluate","arguments":{"code":"[ true ] whileTrue","timeoutSeconds":1}}}').
+			 '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"evaluate","arguments":{"code":"[ true ] whileTrue","timeoutSeconds":3}}}').
 			(#listing -> 500 -> '{"jsonrpc":"2.0","id":2,"method":"tools/list"}') } do: [ :call |
 				[
 					| client |
@@ -111,7 +111,7 @@ MCPHTTPServerTest >> testAComputingEvaluationLeavesOtherCallsAnswered [
 		answers next in: [ :evaluation |
 				self assert: evaluation key equals: #evaluation.
 				self assert: evaluation value code equals: 200.
-				self assert: (evaluation value contents includesSubstring: 'Evaluation stopped after 1 s, its time limit.') ] ] ensure: [
+				self assert: (evaluation value contents includesSubstring: 'Evaluation stopped after 3 s, its time limit.') ] ] ensure: [
 		server stop ]
 ]
 
