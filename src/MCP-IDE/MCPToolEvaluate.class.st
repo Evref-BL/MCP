@@ -68,23 +68,17 @@ MCPToolEvaluate >> answerFor: anEvaluation [
 { #category : 'metadata' }
 MCPToolEvaluate >> buildInputSchema [
 
-	^ MCPStructureInputSchema new
-		  type: 'object';
+	^ MCPStructureInputSchema
 		  properties: {
-				  (MCPStructureProperties new
-					   name: 'code';
-					   type: 'string';
-					   description: 'Smalltalk code to run.';
-					   yourself).
+				  (self schemaPropertyNamed: 'code' type: 'string' description: 'Smalltalk code to run.').
 				  ((self
 					    integerSchemaPropertyNamed: 'timeoutSeconds'
 					    description: self timeoutSecondsDescription
 					    default: self defaultTimeoutSeconds)
 					   minimum: 1;
 					   maximum: self maximumTimeoutSeconds;
-					   yourself) };
-		  required: #( 'code' );
-		  yourself
+					   yourself) }
+		  required: #( 'code' )
 ]
 
 { #category : 'private' }

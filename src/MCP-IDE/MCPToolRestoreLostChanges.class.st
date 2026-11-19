@@ -29,25 +29,18 @@ MCPToolRestoreLostChanges >> add: anElementName toUnknownOrHeldIn: aLostChangeQu
 { #category : 'metadata' }
 MCPToolRestoreLostChanges >> buildInputSchema [
 
-	^ MCPStructureInputSchema new
-		  type: 'object';
+	^ MCPStructureInputSchema
 		  properties: {
-				  ((MCPStructureProperties new
-					    name: 'elements';
-					    type: #( 'string' 'array' );
-					    description:
-						    'What to restore, as history_lost_change_list names it: Foo>>bar or Foo class>>bar for a method, Foo for its class definition and comment. Defaults to every lost change.')
-					   items: (MCPStructureProperties new
-							    type: 'string';
-							    yourself);
-					   yourself).
+				  (self
+					   stringOrArraySchemaNamed: 'elements'
+					   description:
+					   'What to restore, as history_lost_change_list names it: Foo>>bar or Foo class>>bar for a method, Foo for its class definition and comment. Defaults to every lost change.'
+					   itemDescription: 'Element name.').
 				  (self
 					   booleanSchemaPropertyNamed: 'force'
 					   description: 'Restore a change even where the image changed the element since its save, discarding that change.'
-					   default: false) };
-		  required: #(  );
-		  additionalProperties: false;
-		  yourself
+					   default: false) }
+		  required: #(  )
 ]
 
 { #category : 'private - execution' }

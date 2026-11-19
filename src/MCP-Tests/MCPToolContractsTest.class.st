@@ -701,19 +701,6 @@ MCPToolContractsTest >> testClassToolSchemaDescriptionsExplainRecategorizationAn
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testClassToolTraitOwnsSharedClassHelpers [
-
-	| classToolClasses sharedSelectors |
-	classToolClasses := {
-		                    MCPToolSearchClasses.
-		                    MCPToolGetClass } , self classMutationToolClasses , { MCPToolRemoveClasses }.
-	sharedSelectors := #( resolvedClassNamed: sortedClassesByName: ).
-	classToolClasses do: [ :toolClass |
-			self assert: (toolClass withAllSuperclasses anySatisfy: [ :each | each traits includes: TMCPClassTool ]).
-			sharedSelectors do: [ :selector | self assert: (toolClass lookupSelector: selector) origin equals: TMCPClassTool ] ]
-]
-
-{ #category : 'tests' }
 MCPToolContractsTest >> testCompileMethodAnswersItsSummaryAsText [
 
 	| text |

@@ -26,25 +26,15 @@ MCPToolRemoveMethods class >> toolName [
 { #category : 'metadata' }
 MCPToolRemoveMethods >> buildInputSchema [
 
-	^ MCPStructureInputSchema new
-		  type: 'object';
+	^ MCPStructureInputSchema
 		  properties: {
-				  (MCPStructureProperties new
-					   name: 'class';
-					   type: 'string';
-					   description: 'The class to remove the methods from.';
-					   yourself).
+				  (self schemaPropertyNamed: 'class' type: 'string' description: 'The class to remove the methods from.').
 				  (self targetSideSchemaPropertyDescribedAs: 'Which side to remove from.').
-				  ((MCPStructureProperties new
-					    name: 'selector';
-					    type: #( 'string' 'array' );
-					    description: 'The selector to remove, or several removed together as one change.')
-					   items: (MCPStructureProperties new
-							    type: 'string';
-							    yourself);
-					   yourself) };
-		  required: #( 'class' 'selector' );
-		  yourself
+				  (self
+					   stringOrArraySchemaNamed: 'selector'
+					   description: 'The selector to remove, or several removed together as one change.'
+					   itemDescription: 'Selector name.') }
+		  required: #( 'class' 'selector' )
 ]
 
 { #category : 'executing' }

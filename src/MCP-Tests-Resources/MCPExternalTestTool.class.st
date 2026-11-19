@@ -30,12 +30,7 @@ MCPExternalTestTool class >> toolName [
 { #category : 'metadata' }
 MCPExternalTestTool >> buildInputSchema [
 
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: #(  );
-		  required: #(  );
-		  additionalProperties: false;
-		  yourself
+	^ MCPStructureInputSchema properties: #(  ) required: #(  )
 ]
 
 { #category : 'metadata' }

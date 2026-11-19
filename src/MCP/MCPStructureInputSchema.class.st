@@ -17,6 +17,17 @@ Class {
 	#tag : 'Structure'
 }
 
+{ #category : 'instance creation' }
+MCPStructureInputSchema class >> properties: someProperties required: someNames [
+	"An object schema, the shape every tool's input takes."
+
+	^ self new
+		  type: 'object';
+		  properties: someProperties;
+		  required: someNames;
+		  yourself
+]
+
 { #category : 'accessing' }
 MCPStructureInputSchema >> additionalProperties [
 

@@ -60,19 +60,6 @@ MCPToolCommitRepository >> mutateWith: request [
 					  warnings: warnings , (self warningsForCommit: commit of: repository) ]
 ]
 
-{ #category : 'private - specs' }
-MCPToolCommitRepository >> repositoryToolSpec [
-
-	^ {
-		  (#title -> 'Commit Repository').
-		  (#description
-		   ->
-		   'Write the packages of a registered repository to its checkout as repository_export does, then stage and commit every change git sees there with the given message.').
-		  (#action -> 'commit').
-		  (#inputProperties -> { self messageSchemaProperty }).
-		  (#requiredProperties -> #( 'repository' 'message' )) } asDictionary
-]
-
 { #category : 'private - errors' }
 MCPToolCommitRepository >> requestedContextFor: request [
 
@@ -92,6 +79,19 @@ MCPToolCommitRepository >> summaryForCommit: aCommit of: aRepository [
 				  ifEmpty: [ stream << ' on detached HEAD: ' ]
 				  ifNotEmpty: [ :branch | stream << ' on branch ' << branch << ': ' ].
 			  stream << (self shortCommitId: aCommit commitId) << ' ' << aCommit subject ]
+]
+
+{ #category : 'private - specs' }
+MCPToolCommitRepository >> toolSpec [
+
+	^ {
+		  (#title -> 'Commit Repository').
+		  (#description
+		   ->
+		   'Write the packages of a registered repository to its checkout as repository_export does, then stage and commit every change git sees there with the given message.').
+		  (#action -> 'commit').
+		  (#inputProperties -> { self messageSchemaProperty }).
+		  (#requiredProperties -> #( 'repository' 'message' )) } asDictionary
 ]
 
 { #category : 'private - results' }

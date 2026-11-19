@@ -17,12 +17,6 @@ MCPToolDebug class >> groupName [
 	^ self debuggingGroupName
 ]
 
-{ #category : 'testing' }
-MCPToolDebug class >> isAbstract [
-
-	^ self = MCPToolDebug
-]
-
 { #category : 'metadata' }
 MCPToolDebug >> additionalKeywords [
 
@@ -32,12 +26,7 @@ MCPToolDebug >> additionalKeywords [
 { #category : 'metadata' }
 MCPToolDebug >> buildInputSchema [
 
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: self inputProperties;
-		  required: self requiredInputProperties;
-		  additionalProperties: false;
-		  yourself
+	^ MCPStructureInputSchema properties: self inputProperties required: self requiredInputProperties
 ]
 
 { #category : 'private - errors' }
@@ -63,7 +52,7 @@ MCPToolDebug >> executeWithRequest: request [
 { #category : 'private - schema' }
 MCPToolDebug >> inputProperties [
 
-	^ #(  )
+	self subclassResponsibility
 ]
 
 { #category : 'private - results' }

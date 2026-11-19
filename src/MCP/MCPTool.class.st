@@ -55,8 +55,9 @@ MCPTool class >> historyGroupName [
 
 { #category : 'testing' }
 MCPTool class >> isAbstract [
+	"A class that answers MCPTool's own toolName names no tool: it is a base for tools. A subclass of a tool inherits its name, and shouldAutoRegister says whether it is served."
 
-	^ self = MCPTool
+	^ (self class whichClassIncludesSelector: #toolName) == MCPTool class
 ]
 
 { #category : 'metadata - groups' }
@@ -150,6 +151,19 @@ MCPTool >> additionalKeywords [
 MCPTool >> annotations [
 
 	^ MCPStructureToolAnnotations mayModify
+]
+
+{ #category : 'private - schema' }
+MCPTool >> arraySchemaNamed: aName itemType: anItemType description: aDescription itemDescription: anItemDescription [
+
+	| itemsProperty |
+	itemsProperty := MCPStructureProperties new
+		                 type: anItemType;
+		                 yourself.
+	(self shouldAdvertiseItemDescription: anItemDescription) ifTrue: [ itemsProperty description: anItemDescription ].
+	^ (self schemaPropertyNamed: aName type: 'array' description: aDescription)
+		  items: itemsProperty;
+		  yourself
 ]
 
 { #category : 'accessing' }
@@ -961,7 +975,7 @@ MCPTool >> searchMetadata [
 ]
 
 { #category : 'private - schema' }
-MCPTool >> shouldAdvertiseStringArrayItemDescription: anItemDescription [
+MCPTool >> shouldAdvertiseItemDescription: anItemDescription [
 
 	| itemDescriptionString |
 	itemDescriptionString := anItemDescription ifNil: [ ^ false ] ifNotNil: [ :value | value asString trimBoth ].
@@ -1015,14 +1029,11 @@ MCPTool >> sourceLineTextOn: stream for: error [
 { #category : 'private - schema' }
 MCPTool >> stringArraySchemaNamed: aName description: aDescription itemDescription: anItemDescription [
 
-	| itemsProperty |
-	itemsProperty := MCPStructureProperties new
-		                 type: 'string';
-		                 yourself.
-	(self shouldAdvertiseStringArrayItemDescription: anItemDescription) ifTrue: [ itemsProperty description: anItemDescription ].
-	^ (self schemaPropertyNamed: aName type: 'array' description: aDescription)
-		  items: itemsProperty;
-		  yourself
+	^ self
+		  arraySchemaNamed: aName
+		  itemType: 'string'
+		  description: aDescription
+		  itemDescription: anItemDescription
 ]
 
 { #category : 'private - schema' }
@@ -1038,6 +1049,14 @@ MCPTool >> stringEnumSchemaPropertyNamed: propertyName description: propertyDesc
 
 	^ (self stringEnumSchemaPropertyNamed: propertyName description: propertyDescription values: enumValues)
 		  default: defaultValue;
+		  yourself
+]
+
+{ #category : 'private - schema' }
+MCPTool >> stringOrArraySchemaNamed: aName description: aDescription itemDescription: anItemDescription [
+
+	^ (self stringArraySchemaNamed: aName description: aDescription itemDescription: anItemDescription)
+		  type: #( 'string' 'array' );
 		  yourself
 ]
 

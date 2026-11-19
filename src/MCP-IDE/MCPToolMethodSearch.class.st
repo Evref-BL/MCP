@@ -18,12 +18,6 @@ MCPToolMethodSearch class >> groupName [
 	^ self methodsGroupName
 ]
 
-{ #category : 'testing' }
-MCPToolMethodSearch class >> isAbstract [
-
-	^ self = MCPToolMethodSearch
-]
-
 { #category : 'private - methods' }
 MCPToolMethodSearch >> addMatchContextTo: entry sourceText: sourceText matchStartFinder: aFinder [
 	"What a hit carries beyond the method it names. A tool that matches text says where it matched, with the finder its matchStartFinderForPattern:mode: built."
@@ -132,12 +126,6 @@ MCPToolMethodSearch >> methodEntriesFromMethods: compiledMethods [
 
 	^ self sortedMethodEntries:
 		  (compiledMethods collect: [ :eachMethod | (MCPCompiledMethodInfo fromMethod: eachMethod) asDictionary ] as: OrderedCollection)
-]
-
-{ #category : 'private - schema' }
-MCPToolMethodSearch >> methodQueryScopeInputProperties [
-
-	^ { self methodSearchScopeSchemaProperty }
 ]
 
 { #category : 'private - filtering' }

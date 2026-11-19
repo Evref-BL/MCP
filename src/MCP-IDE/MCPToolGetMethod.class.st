@@ -56,35 +56,19 @@ MCPToolGetMethod >> bindingClassNameFor: aBinding [
 { #category : 'metadata' }
 MCPToolGetMethod >> buildInputSchema [
 
-	| includeVariableDetailsProperty selectorProperty |
-	includeVariableDetailsProperty := MCPStructureProperties new
-		                                  name: 'includeVariableDetails';
-		                                  type: 'boolean';
-		                                  description:
-			                                  'Also report, for every variable the method reads or writes, where it is defined and how often it is used.';
-		                                  default: false;
-		                                  yourself.
-	selectorProperty := MCPStructureProperties new
-		                    name: 'selector';
-		                    type: #( 'string' 'array' );
-		                    description: 'Class>>selector, Class class>>selector, or a bare selector with class. One or several.';
-		                    items: (MCPStructureProperties new
-				                     type: 'string';
-				                     yourself);
-		                    yourself.
-	^ MCPStructureInputSchema new
-		  type: 'object';
+	^ MCPStructureInputSchema
 		  properties: {
-				  (MCPStructureProperties new
-					   name: 'class';
-					   type: 'string';
-					   description: 'Class for bare selectors.';
-					   yourself).
-				  selectorProperty.
+				  (self schemaPropertyNamed: 'class' type: 'string' description: 'Class for bare selectors.').
+				  (self
+					   stringOrArraySchemaNamed: 'selector'
+					   description: 'Class>>selector, Class class>>selector, or a bare selector with class. One or several.'
+					   itemDescription: 'Method name.').
 				  (self targetSideSchemaPropertyDescribedAs: 'Which side a bare selector is on.').
-				  includeVariableDetailsProperty };
-		  required: #( 'selector' );
-		  yourself
+				  (self
+					   booleanSchemaPropertyNamed: 'includeVariableDetails'
+					   description: 'Also report, for every variable the method reads or writes, where it is defined and how often it is used.'
+					   default: false) }
+		  required: #( 'selector' )
 ]
 
 { #category : 'private - errors' }

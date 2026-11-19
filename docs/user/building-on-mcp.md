@@ -98,16 +98,14 @@ MyProjectToolListWidgets >> annotations
 
 MyProjectToolListWidgets >> buildInputSchema
 
-	^ MCPStructureInputSchema new
-		  type: 'object';
+	^ MCPStructureInputSchema
 		  properties: { ((self
 				    schemaPropertyNamed: 'prefix'
 				    type: 'string'
 				    description: 'Only answer widgets whose name starts with this. Defaults to all of them.')
 				   default: '';
-				   yourself) };
-		  required: #(  );
-		  yourself
+				   yourself) }
+		  required: #(  )
 
 MyProjectToolListWidgets >> executeWithRequest: request
 
@@ -233,11 +231,7 @@ again, now that the list can be long:
 ```smalltalk
 MyProjectToolListWidgets >> buildInputSchema
 
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: { self offsetInputProperty };
-		  required: #(  );
-		  yourself
+	^ MCPStructureInputSchema properties: { self offsetInputProperty } required: #(  )
 
 MyProjectToolListWidgets >> defaultPageLimit
 

@@ -4,8 +4,6 @@ Answers a class or trait as its Tonel file, a page at a time: offset 0 is the co
 Class {
 	#name : 'MCPToolGetClass',
 	#superclass : 'MCPTool',
-	#traits : 'TMCPClassTool',
-	#classTraits : 'TMCPClassTool classTrait',
 	#category : 'MCP-IDE-Tools',
 	#package : 'MCP-IDE',
 	#tag : 'Tools'
@@ -50,28 +48,11 @@ MCPToolGetClass >> batchSummaryVerb [
 { #category : 'metadata' }
 MCPToolGetClass >> buildInputSchema [
 
-	| nameProperty |
-	nameProperty := MCPStructureProperties new
-		                name: 'name';
-		                type: #( 'string' 'array' );
-		                description: 'Class name, or several class names.';
-		                items: (MCPStructureProperties new
-				                 type: 'string';
-				                 yourself);
-		                yourself.
-	^ MCPStructureInputSchema new
-		  type: 'object';
+	^ MCPStructureInputSchema
 		  properties: {
-				  nameProperty.
-				  self offsetInputProperty };
-		  required: #( 'name' );
-		  yourself
-]
-
-{ #category : 'private - request' }
-MCPToolGetClass >> classNameFromRequest: request [
-
-	^ request stringArgumentNamed: 'name'
+				  (self stringOrArraySchemaNamed: 'name' description: 'Class name, or several class names.' itemDescription: 'Class name.').
+				  self offsetInputProperty }
+		  required: #( 'name' )
 ]
 
 { #category : 'metadata' }
@@ -203,7 +184,7 @@ MCPToolGetClass >> getClassWith: request [
 	"The class's Tonel file, a page at a time: offset 0 is its comment and definition, and offset n starts at its nth method. The answer names the class found, not the name asked for: Foo class reads as Foo. Every page says what the image lost of the class since its last save."
 
 	| data offset summary targetClass |
-	targetClass := self resolvedClassNamed: (self classNameFromRequest: request).
+	targetClass := MCPImageLookup classNamed: (request stringArgumentNamed: 'name').
 	offset := request integerArgumentNamed: 'offset'.
 	data := offset = 0
 		        ifTrue: [ self definitionDictionaryForClass: targetClass ]

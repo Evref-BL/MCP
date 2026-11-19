@@ -70,9 +70,12 @@ MCPToolRunCritiques >> allRuleClasses [
 { #category : 'metadata' }
 MCPToolRunCritiques >> buildInputSchema [
 
-	^ self queryInputSchemaWithProperties: { self methodSearchScopeSchemaProperty } , {
-			  self ruleClassesSchemaProperty.
-			  self offsetInputProperty }
+	^ MCPStructureInputSchema
+		  properties: {
+				  self methodSearchScopeSchemaProperty.
+				  self ruleClassesSchemaProperty.
+				  self offsetInputProperty }
+		  required: #(  )
 ]
 
 { #category : 'private - running' }

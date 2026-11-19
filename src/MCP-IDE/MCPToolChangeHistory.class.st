@@ -17,12 +17,6 @@ MCPToolChangeHistory class >> groupName [
 	^ self historyGroupName
 ]
 
-{ #category : 'testing' }
-MCPToolChangeHistory class >> isAbstract [
-
-	^ self = MCPToolChangeHistory
-]
-
 { #category : 'metadata' }
 MCPToolChangeHistory >> additionalKeywords [
 
@@ -63,6 +57,15 @@ MCPToolChangeHistory >> dataFor: request [
 	^ self subclassResponsibility
 ]
 
+{ #category : 'private - schema' }
+MCPToolChangeHistory >> directoryPathSchemaProperty [
+
+	^ self
+		  schemaPropertyNamed: 'directoryPath'
+		  type: 'string'
+		  description: 'Directory holding the .ombu files. Defaults to this image''s own history directory.'
+]
+
 { #category : 'executing' }
 MCPToolChangeHistory >> executeWithRequest: request [
 	"Every history tool answers the data it reads, under a sentence that says what it found."
@@ -86,31 +89,12 @@ MCPToolChangeHistory >> historyDirectoryForCurrentFile: aFileReference [
 ]
 
 { #category : 'private - schema' }
-MCPToolChangeHistory >> historyLocationInputProperties [
-	"Which .ombu file the entries come from. One definition, shared by every change-history tool."
+MCPToolChangeHistory >> historyFileSchemaProperty [
 
-	^ {
-		  (self
-			   schemaPropertyNamed: 'directoryPath'
-			   type: 'string'
-			   description: 'Directory holding the .ombu files. Defaults to this image''s own history directory.').
-		  (self
-			   schemaPropertyNamed: 'historyFile'
-			   type: 'string'
-			   description: 'One .ombu file in that directory, named as history_file_list prints it. Defaults to the session in progress.') }
-]
-
-{ #category : 'private - schema' }
-MCPToolChangeHistory >> integerArraySchemaNamed: aName description: aDescription itemDescription: anItemDescription [
-
-	| itemsProperty |
-	itemsProperty := MCPStructureProperties new
-		                 type: 'integer';
-		                 description: anItemDescription;
-		                 yourself.
-	^ (self schemaPropertyNamed: aName type: 'array' description: aDescription)
-		  items: itemsProperty;
-		  yourself
+	^ self
+		  schemaPropertyNamed: 'historyFile'
+		  type: 'string'
+		  description: 'One .ombu file in that directory, named as history_file_list prints it. Defaults to the session in progress.'
 ]
 
 { #category : 'private - results' }
@@ -155,7 +139,7 @@ MCPToolChangeHistory >> logAndFileNameFor: request [
 { #category : 'private - history' }
 MCPToolChangeHistory >> logAndFileNameFromDirectoryPath: directoryPath fileName: fileName [
 
-	| currentFile directory file |
+	| currentFile directory |
 	fileName ifNil: [
 			directoryPath ifNotNil: [ self refuseDirectoryPathWithoutFile: directoryPath ].
 			^ self currentLogAndFileName ].
@@ -164,20 +148,8 @@ MCPToolChangeHistory >> logAndFileNameFromDirectoryPath: directoryPath fileName:
 	directory := directoryPath
 		             ifNil: [ self historyDirectoryForCurrentFile: currentFile ]
 		             ifNotNil: [ directoryPath asFileReference ].
-	directory exists ifFalse: [
-			MCPCommandError
-				signalErrorCode: #ChangeHistoryDirectoryNotFound
-				message:
-				(String streamContents: [ :stream | stream << 'Change history directory ' << directory fullName << ' does not exist.' ])
-				details: { (#directoryPath -> directory fullName) } asDictionary ].
-	directory isDirectory ifFalse: [
-			MCPCommandError
-				signalErrorCode: #ChangeHistoryPathNotDirectory
-				message:
-				(String streamContents: [ :stream | stream << 'Change history path ' << directory fullName << ' is not a directory.' ])
-				details: { (#directoryPath -> directory fullName) } asDictionary ].
-	file := directory / fileName.
-	^ self logAndFileNameFromFileReference: file
+	self refuseUnusableDirectory: directory named: directory fullName.
+	^ self logAndFileNameFromFileReference: directory / fileName
 ]
 
 { #category : 'private - history' }
@@ -246,6 +218,15 @@ MCPToolChangeHistory >> refuseDirectoryPathWithoutFile: directoryPath [
 ]
 
 { #category : 'private - history' }
+MCPToolChangeHistory >> refuseFileNamed: aPathString [
+
+	MCPCommandError
+		signalErrorCode: #ChangeHistoryPathNotDirectory
+		message: (String streamContents: [ :stream | stream << 'Change history path ' << aPathString << ' is not a directory.' ])
+		details: { (#directoryPath -> aPathString) } asDictionary
+]
+
+{ #category : 'private - history' }
 MCPToolChangeHistory >> refuseRelativeDirectoryPath: directoryPath [
 	"The image would resolve a relative directory against its own working directory, which is not the caller's."
 
@@ -257,6 +238,18 @@ MCPToolChangeHistory >> refuseRelativeDirectoryPath: directoryPath [
 					 << ' is not an absolute path, and the image would resolve it against its own working directory, '
 					 << FileSystem workingDirectory fullName << '. Give the full path.' ])
 		details: { (#directoryPath -> directoryPath) } asDictionary
+]
+
+{ #category : 'private - history' }
+MCPToolChangeHistory >> refuseUnusableDirectory: aDirectory named: aPathString [
+	"Refuse a path where no directory is, naming it as aPathString, the way the call's answer reports it."
+
+	aDirectory exists ifFalse: [
+			MCPCommandError
+				signalErrorCode: #ChangeHistoryDirectoryNotFound
+				message: (String streamContents: [ :stream | stream << 'Change history directory ' << aPathString << ' does not exist.' ])
+				details: { (#directoryPath -> aPathString) } asDictionary ].
+	aDirectory isDirectory ifFalse: [ self refuseFileNamed: aPathString ]
 ]
 
 { #category : 'private - history' }

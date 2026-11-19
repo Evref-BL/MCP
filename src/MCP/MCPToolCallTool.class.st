@@ -26,19 +26,15 @@ MCPToolCallTool class >> toolName [
 { #category : 'metadata' }
 MCPToolCallTool >> buildInputSchema [
 
-	| argumentsProperty nameProperty |
-	nameProperty := self schemaPropertyNamed: 'name' type: 'string' description: 'Tool name to invoke.'.
-	nameProperty minLength: 1.
-	argumentsProperty := self schemaPropertyNamed: 'arguments' type: 'object' description: 'Arguments passed to the selected tool.'.
-	argumentsProperty additionalProperties: true.
-	^ MCPStructureInputSchema new
-		  type: 'object';
+	^ MCPStructureInputSchema
 		  properties: {
-				  nameProperty.
-				  argumentsProperty };
-		  required: #( 'name' );
-		  additionalProperties: false;
-		  yourself
+				  ((self schemaPropertyNamed: 'name' type: 'string' description: 'Tool name to invoke.')
+					   minLength: 1;
+					   yourself).
+				  ((self schemaPropertyNamed: 'arguments' type: 'object' description: 'Arguments passed to the selected tool.')
+					   additionalProperties: true;
+					   yourself) }
+		  required: #( 'name' )
 ]
 
 { #category : 'metadata' }

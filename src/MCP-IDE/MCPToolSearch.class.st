@@ -9,12 +9,6 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'testing' }
-MCPToolSearch class >> isAbstract [
-
-	^ self = MCPToolSearch
-]
-
 { #category : 'metadata' }
 MCPToolSearch >> annotations [
 
@@ -356,16 +350,6 @@ MCPToolSearch >> queryEntriesForRequest: request scopeQuery: scopeQuery [
 	"Every entry the search finds in scopeQuery, before it is paged. A tool reads the rest of its arguments from request here, checking them before it looks."
 
 	^ self subclassResponsibility
-]
-
-{ #category : 'private - schema' }
-MCPToolSearch >> queryInputSchemaWithProperties: inputProperties [
-
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: inputProperties;
-		  required: #(  );
-		  yourself
 ]
 
 { #category : 'private - pagination' }

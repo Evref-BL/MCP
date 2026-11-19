@@ -33,13 +33,13 @@ MCPToolSearchRepositories >> additionalKeywords [
 { #category : 'metadata' }
 MCPToolSearchRepositories >> buildInputSchema [
 
-	| properties |
-	properties := self repositoryFieldFilterInputProperties , {
-		              (self
-			               booleanSchemaPropertyNamed: 'isModified'
-			               description: 'Keep only repositories the image holds changes for, or only those it does not.').
-		              self offsetInputProperty }.
-	^ self queryInputSchemaWithProperties: properties
+	^ MCPStructureInputSchema
+		  properties: self repositoryFieldFilterInputProperties , {
+				  (self
+					   booleanSchemaPropertyNamed: 'isModified'
+					   description: 'Keep only repositories the image holds changes for, or only those it does not.').
+				  self offsetInputProperty }
+		  required: #(  )
 ]
 
 { #category : 'private - filtering' }

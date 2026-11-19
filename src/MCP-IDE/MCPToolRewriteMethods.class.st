@@ -27,12 +27,7 @@ MCPToolRewriteMethods class >> toolName [
 { #category : 'metadata' }
 MCPToolRewriteMethods >> buildInputSchema [
 
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: self rewriteInputProperties;
-		  required: #( 'scope' );
-		  additionalProperties: false;
-		  yourself
+	^ MCPStructureInputSchema properties: self rewriteInputProperties required: #( 'scope' )
 ]
 
 { #category : 'private - results' }

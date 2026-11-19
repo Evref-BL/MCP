@@ -56,17 +56,15 @@ MCPToolReadScreen >> boundsTextFor: aMorph [
 { #category : 'metadata' }
 MCPToolReadScreen >> buildInputSchema [
 
-	^ MCPStructureInputSchema new
-		  type: 'object';
+	^ MCPStructureInputSchema
 		  properties: {
 				  self windowSchemaProperty.
 				  ((self schemaPropertyNamed: 'depth' type: 'integer' description: 'How deep to walk what the target contains.')
 					   default: self defaultDepth;
 					   minimum: 0;
 					   maximum: self maximumDepth;
-					   yourself) };
-		  required: #(  );
-		  yourself
+					   yourself) }
+		  required: #(  )
 ]
 
 { #category : 'private - reading' }

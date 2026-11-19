@@ -60,13 +60,10 @@ MCPToolSearchTools >> argumentsTextOn: aStream for: aSearchEntry [
 { #category : 'metadata' }
 MCPToolSearchTools >> buildInputSchema [
 
-	^ MCPStructureInputSchema new
-		  type: 'object';
+	^ MCPStructureInputSchema
 		  properties:
-			  { (self schemaPropertyNamed: 'query' type: 'string' description: 'Search words; tools matching more of them rank first.') };
-		  required: #(  );
-		  additionalProperties: false;
-		  yourself
+		  { (self schemaPropertyNamed: 'query' type: 'string' description: 'Search words; tools matching more of them rank first.') }
+		  required: #(  )
 ]
 
 { #category : 'private - results' }

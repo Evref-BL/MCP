@@ -43,14 +43,9 @@ MCPToolGetTool >> annotations [
 { #category : 'metadata' }
 MCPToolGetTool >> buildInputSchema [
 
-	| nameProperty |
-	nameProperty := self schemaPropertyNamed: 'name' type: 'string' description: 'Tool name.'.
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: { nameProperty };
-		  required: #( 'name' );
-		  additionalProperties: false;
-		  yourself
+	^ MCPStructureInputSchema
+		  properties: { (self schemaPropertyNamed: 'name' type: 'string' description: 'Tool name.') }
+		  required: #( 'name' )
 ]
 
 { #category : 'private - results' }

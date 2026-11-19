@@ -19,12 +19,6 @@ MCPToolMethodMutation class >> groupName [
 	^ self methodsGroupName
 ]
 
-{ #category : 'testing' }
-MCPToolMethodMutation class >> isAbstract [
-
-	^ self = MCPToolMethodMutation
-]
-
 { #category : 'private' }
 MCPToolMethodMutation >> addChainedSendNoteAt: anInterval flaggedBy: aRuleClassName in: aString to: data [
 	"A send that nothing implements, whose keywords split into two selectors that are methods somewhere, as sorted:collect: into sorted: and collect:, was most likely meant as two sends: Smalltalk reads the keywords of one send as one selector, so sending the second to what the first answers takes parentheses. The rule's title alone reads as sorted: not being implemented."
@@ -117,12 +111,6 @@ MCPToolMethodMutation >> allowedNonErrorCritiqueRuleClasses [
 		  ReTempVarOverridesInstVarRule.
 		  ReUnaryAccessingMethodWithoutReturnRule.
 		  ReUseIsEmptyNotSizeRule } , self notOptimizedIfRuleClasses
-]
-
-{ #category : 'private - specs' }
-MCPToolMethodMutation >> atLeastOneInputProperties [
-
-	^ self methodToolSpec at: #atLeastOneProperties ifAbsent: [ #(  ) ]
 ]
 
 { #category : 'private' }
@@ -373,12 +361,6 @@ MCPToolMethodMutation >> critiquesOfMethod: aCompiledMethod [
 		  each isCritique and: [ manifestRules excludes: each rule on: aCompiledMethod ] ]
 ]
 
-{ #category : 'metadata' }
-MCPToolMethodMutation >> description [
-
-	^ self methodToolSpec at: #description
-]
-
 { #category : 'private' }
 MCPToolMethodMutation >> distinctCritiqueData: critiqueData [
 	"Each problem once, in the order of the method: of equal hits the first is kept, and a hit lying strictly inside another of the same rule and title, or restating another, says nothing that one does not."
@@ -475,12 +457,6 @@ MCPToolMethodMutation >> howToProceedForBlockedCompile [
 	^ 'Correct the source and compile it again.'
 ]
 
-{ #category : 'private - schema' }
-MCPToolMethodMutation >> inputProperties [
-
-	^ self methodToolSpec at: #inputProperties
-]
-
 { #category : 'private' }
 MCPToolMethodMutation >> instanceSideNoteFor: aSend of: aClass in: aBehavior [
 	"When aClass itself does not understand aSend and its instances do, as a constructor compiled on the instance side and sent to the class: that its instances have it, and what to do, as MCPNotUnderstoodNote says when the send is made. Sent to self, the method of aBehavior is on the class side, which the note says first."
@@ -501,24 +477,6 @@ MCPToolMethodMutation >> isSelfOrSuper: aNode [
 	"Whether aNode, parsed without a class to resolve its names in, is self or super."
 
 	^ aNode isVariable and: [ #( 'self' 'super' ) includes: aNode name asString ]
-]
-
-{ #category : 'private - specs' }
-MCPToolMethodMutation >> methodToolSpec [
-
-	self subclassResponsibility
-]
-
-{ #category : 'private - actions' }
-MCPToolMethodMutation >> mutationAction [
-
-	^ self methodToolSpec at: #action
-]
-
-{ #category : 'private - errors' }
-MCPToolMethodMutation >> mutationActionFor: request checked: aBoolean [
-
-	^ self mutationAction
 ]
 
 { #category : 'private' }
@@ -550,12 +508,6 @@ MCPToolMethodMutation >> reformattedMethodForBehavior: aBehavior selector: aSele
 	compiledMethod := aBehavior >> aSelector.
 	aBehavior compile: (compiledMethod ast formattedCodeIn: aBehavior) classified: compiledMethod protocol.
 	^ aBehavior >> aSelector
-]
-
-{ #category : 'private - schema' }
-MCPToolMethodMutation >> requiredInputProperties [
-
-	^ self methodToolSpec at: #requiredProperties ifAbsent: [ #( 'class' ) ]
 ]
 
 { #category : 'private' }
@@ -633,10 +585,4 @@ MCPToolMethodMutation >> sourceIntervalForCritique: aCritique [
 	sourceAnchor ifNil: [ ^ nil ].
 	sourceAnchor providesInterval ifFalse: [ ^ nil ].
 	^ sourceAnchor interval
-]
-
-{ #category : 'metadata' }
-MCPToolMethodMutation >> title [
-
-	^ self methodToolSpec at: #title
 ]

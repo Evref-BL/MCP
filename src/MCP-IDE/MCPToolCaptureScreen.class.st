@@ -40,11 +40,7 @@ MCPToolCaptureScreen >> annotations [
 { #category : 'metadata' }
 MCPToolCaptureScreen >> buildInputSchema [
 
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: { self windowSchemaProperty };
-		  required: #(  );
-		  yourself
+	^ MCPStructureInputSchema properties: { self windowSchemaProperty } required: #(  )
 ]
 
 { #category : 'metadata' }

@@ -41,8 +41,24 @@ MCPToolCreateRepository >> mutateWith: request [
 		  self successResultText: summary data: (self dataForPackagesOf: repository) warnings: warnings , packageWarnings ]
 ]
 
+{ #category : 'private - errors' }
+MCPToolCreateRepository >> requestedContextFor: request [
+
+	^ (self creationFor: request) requestedDetails
+]
+
+{ #category : 'private - results' }
+MCPToolCreateRepository >> summaryForCreating: aRepository in: aLocationState [
+
+	^ String streamContents: [ :stream |
+			  stream << 'Created repository ' << aRepository name << (aLocationState = #emptyCheckout
+				   ifTrue: [ ' in the empty Git repository at ' ]
+				   ifFalse: [ ' at ' ]) << aRepository location fullName << ', ' << (self sourcesPhraseFor: aRepository)
+			  << '; repository_export writes its packages there.' ]
+]
+
 { #category : 'private - specs' }
-MCPToolCreateRepository >> repositoryToolSpec [
+MCPToolCreateRepository >> toolSpec [
 
 	^ {
 		  (#title -> 'Create Repository').
@@ -67,20 +83,4 @@ MCPToolCreateRepository >> repositoryToolSpec [
 				    description: 'Packages of the image the repository holds.'
 				    itemDescription: 'A package name.') }).
 		  (#requiredProperties -> #( 'repository' )) } asDictionary
-]
-
-{ #category : 'private - errors' }
-MCPToolCreateRepository >> requestedContextFor: request [
-
-	^ (self creationFor: request) requestedDetails
-]
-
-{ #category : 'private - results' }
-MCPToolCreateRepository >> summaryForCreating: aRepository in: aLocationState [
-
-	^ String streamContents: [ :stream |
-			  stream << 'Created repository ' << aRepository name << (aLocationState = #emptyCheckout
-				   ifTrue: [ ' in the empty Git repository at ' ]
-				   ifFalse: [ ' at ' ]) << aRepository location fullName << ', ' << (self sourcesPhraseFor: aRepository)
-			  << '; repository_export writes its packages there.' ]
 ]

@@ -24,23 +24,22 @@ MCPToolListChangeHistoryEntries >> annotations [
 { #category : 'metadata' }
 MCPToolListChangeHistoryEntries >> buildInputSchema [
 
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: self historyLocationInputProperties , {
-					  (self
-						   schemaPropertyNamed: 'class'
-						   type: 'string'
-						   description:
-							   'List only the entries that change this class, named exactly: its definition, its comment, and its methods on either side.').
-					  self offsetInputProperty.
-					  (self booleanSchemaPropertyNamed: 'newestFirst' description: 'List the most recent entries first.' default: false).
-					  (self
-						   booleanSchemaPropertyNamed: 'codeChangesOnly'
-						   description: 'Leave out everything that is not a class or method change.'
-						   default: false) };
-		  required: #(  );
-		  additionalProperties: false;
-		  yourself
+	^ MCPStructureInputSchema
+		  properties: {
+				  self directoryPathSchemaProperty.
+				  self historyFileSchemaProperty.
+				  (self
+					   schemaPropertyNamed: 'class'
+					   type: 'string'
+					   description:
+					   'List only the entries that change this class, named exactly: its definition, its comment, and its methods on either side.').
+				  self offsetInputProperty.
+				  (self booleanSchemaPropertyNamed: 'newestFirst' description: 'List the most recent entries first.' default: false).
+				  (self
+					   booleanSchemaPropertyNamed: 'codeChangesOnly'
+					   description: 'Leave out everything that is not a class or method change.'
+					   default: false) }
+		  required: #(  )
 ]
 
 { #category : 'private - entries' }

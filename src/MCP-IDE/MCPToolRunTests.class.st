@@ -45,10 +45,7 @@ MCPToolRunTests >> additionalKeywords [
 { #category : 'metadata' }
 MCPToolRunTests >> buildInputSchema [
 
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: self testSelectionInputProperties , { self timeoutSecondsProperty };
-		  yourself
+	^ MCPStructureInputSchema properties: self testSelectionInputProperties , { self timeoutSecondsProperty } required: #(  )
 ]
 
 { #category : 'private - arguments' }

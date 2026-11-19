@@ -24,12 +24,7 @@ MCPNotifyingTestTool class >> toolName [
 { #category : 'metadata' }
 MCPNotifyingTestTool >> buildInputSchema [
 
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: #(  );
-		  required: #(  );
-		  additionalProperties: false;
-		  yourself
+	^ MCPStructureInputSchema properties: #(  ) required: #(  )
 ]
 
 { #category : 'metadata' }

@@ -78,12 +78,7 @@ MCPToolListLostChanges >> annotations [
 { #category : 'metadata' }
 MCPToolListLostChanges >> buildInputSchema [
 
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: { self offsetInputProperty };
-		  required: #(  );
-		  additionalProperties: false;
-		  yourself
+	^ MCPStructureInputSchema properties: { self offsetInputProperty } required: #(  )
 ]
 
 { #category : 'private - execution' }

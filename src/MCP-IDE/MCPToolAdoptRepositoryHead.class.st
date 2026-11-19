@@ -104,16 +104,6 @@ MCPToolAdoptRepositoryHead >> packageNamesMarkedIn: beforeInfo andNotIn: afterIn
 	^ (beforeInfo modifiedPackageNames reject: [ :each | stillMarked includes: each ]) asArray
 ]
 
-{ #category : 'private - specs' }
-MCPToolAdoptRepositoryHead >> repositoryToolSpec [
-
-	^ {
-		  (#title -> 'Adopt Repository Head').
-		  (#description -> 'Align the image working-copy reference with the repository HEAD commit.').
-		  (#action -> 'adoptHead').
-		  (#inputProperties -> { self branchNameSchemaProperty }) } asDictionary
-]
-
 { #category : 'private - errors' }
 MCPToolAdoptRepositoryHead >> requestedContextFor: request [
 
@@ -136,4 +126,15 @@ MCPToolAdoptRepositoryHead >> summaryForAdopting: aCommitId in: anInfo moved: di
 			  packageNames
 				  ifEmpty: [ stream << '.' ]
 				  ifNotEmpty: [ :names | stream << ', and no longer marks ' << (', ' join: names) << ' as modified.' ] ]
+]
+
+{ #category : 'private - specs' }
+MCPToolAdoptRepositoryHead >> toolSpec [
+
+	^ {
+		  (#title -> 'Adopt Repository Head').
+		  (#description -> 'Align the image working-copy reference with the repository HEAD commit.').
+		  (#action -> 'adoptHead').
+		  (#inputProperties -> { self branchNameSchemaProperty }).
+		  (#requiredProperties -> #( 'repository' )) } asDictionary
 ]

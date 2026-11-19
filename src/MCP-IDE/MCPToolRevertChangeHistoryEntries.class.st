@@ -27,9 +27,3 @@ MCPToolRevertChangeHistoryEntries >> changeHistoryToolSpec [
 		  (#pastTense -> 'Reverted').
 		  (#unchangedReason -> 'already reverted in the image') } asDictionary
 ]
-
-{ #category : 'private - actions' }
-MCPToolRevertChangeHistoryEntries >> reverts [
-
-	^ true
-]

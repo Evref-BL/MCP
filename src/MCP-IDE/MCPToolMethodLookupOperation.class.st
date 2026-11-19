@@ -9,23 +9,13 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'testing' }
-MCPToolMethodLookupOperation class >> isAbstract [
-
-	^ self = MCPToolMethodLookupOperation
-]
-
 { #category : 'metadata' }
 MCPToolMethodLookupOperation >> buildInputSchema [
 
-	| properties |
-	properties := self methodQueryScopeInputProperties , { self lookupArgumentSchemaProperty } , self extraInputProperties
-	              , { self offsetInputProperty }.
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: properties;
-		  required: { self lookupArgumentName };
-		  yourself
+	^ MCPStructureInputSchema
+		  properties: self methodQueryScopeInputProperties , { self lookupArgumentSchemaProperty } , self extraInputProperties
+			  , { self offsetInputProperty }
+		  required: { self lookupArgumentName }
 ]
 
 { #category : 'private - schema' }

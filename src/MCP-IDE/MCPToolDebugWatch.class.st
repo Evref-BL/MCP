@@ -64,29 +64,16 @@ MCPToolDebugWatch >> description [
 { #category : 'metadata' }
 MCPToolDebugWatch >> inputProperties [
 
-	| methodProperty variableProperty |
-	methodProperty := MCPStructureProperties new
-		                  name: 'method';
-		                  type: #( 'string' 'array' );
-		                  description: 'A method to probe, as Class>>selector or Class class>>selector. One of them, or several.';
-		                  items: (MCPStructureProperties new
-				                   type: 'string';
-				                   description: 'One method.';
-				                   yourself);
-		                  yourself.
-	variableProperty := MCPStructureProperties new
-		                    name: 'variable';
-		                    type: #( 'string' 'array' );
-		                    description:
-			                    'A variable to record on every assignment to it. One of them, or several. Left out, the receiver is recorded when each method is entered.';
-		                    items: (MCPStructureProperties new
-				                     type: 'string';
-				                     description: 'One variable.';
-				                     yourself);
-		                    yourself.
 	^ {
-		  methodProperty.
-		  variableProperty.
+		  (self
+			   stringOrArraySchemaNamed: 'method'
+			   description: 'A method to probe, as Class>>selector or Class class>>selector. One of them, or several.'
+			   itemDescription: 'One method.').
+		  (self
+			   stringOrArraySchemaNamed: 'variable'
+			   description:
+			   'A variable to record on every assignment to it. One of them, or several. Left out, the receiver is recorded when each method is entered.'
+			   itemDescription: 'One variable.').
 		  (self schemaPropertyNamed: 'run' type: 'string' description: 'Smalltalk to evaluate while the probes are installed.') }
 ]
 

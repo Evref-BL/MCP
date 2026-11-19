@@ -1,7 +1,7 @@
 "
 Shared base class for mutating MCP tools.
 
-It runs each target of a call through one checked flow: checkArguments: refuses what the schema cannot, then mutateWith: makes the change and answers the result. An error raised before the check echoes the arguments as the caller wrote them; one raised after reports them as the tool read them, through requestedContextFor:. mutationActionFor:checked: names the action an error reports.
+A concrete tool gives its metadata and its contract in toolSpec. It runs each target of a call through one checked flow: checkArguments: refuses what the schema cannot, then mutateWith: makes the change and answers the result. An error raised before the check echoes the arguments as the caller wrote them; one raised after reports them as the tool read them, through requestedContextFor:. mutationActionFor:checked: names the action an error reports.
 
 It also centralizes refactoring warning handling and structured mutation failure reporting.
 "
@@ -12,12 +12,6 @@ Class {
 	#package : 'MCP-IDE',
 	#tag : 'Tools'
 }
-
-{ #category : 'testing' }
-MCPToolMutation class >> isAbstract [
-
-	^ self = MCPToolMutation
-]
 
 { #category : 'private - errors' }
 MCPToolMutation >> actionErrorCodePrefixFor: action [
@@ -66,18 +60,13 @@ MCPToolMutation >> addSupplementalSelectorFromMethodNode: methodNode to: details
 MCPToolMutation >> atLeastOneInputProperties [
 	"Properties of which a request must carry at least one. Empty means no such constraint."
 
-	^ #(  )
+	^ self toolSpec at: #atLeastOneProperties ifAbsent: [ #(  ) ]
 ]
 
 { #category : 'metadata' }
 MCPToolMutation >> buildInputSchema [
 
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: self inputProperties;
-		  required: self requiredInputProperties;
-		  additionalProperties: false;
-		  yourself
+	^ MCPStructureInputSchema properties: self inputProperties required: self requiredInputProperties
 ]
 
 { #category : 'private - execution' }
@@ -91,6 +80,12 @@ MCPToolMutation >> checkArguments: request [
 MCPToolMutation >> classesRefactoringEnvironmentForClassNames: classNames baseEnvironment: baseEnvironment [
 
 	^ baseEnvironment forClasses: (self resolvedRefactoringScopeClassesFrom: classNames inScope: 'scope.classes')
+]
+
+{ #category : 'metadata' }
+MCPToolMutation >> description [
+
+	^ self toolSpec at: #description
 ]
 
 { #category : 'private - errors' }
@@ -280,7 +275,7 @@ MCPToolMutation >> impactMessagesForRefactoringWarning: aWarning action: action 
 { #category : 'private - schema' }
 MCPToolMutation >> inputProperties [
 
-	self subclassResponsibility
+	^ self toolSpec at: #inputProperties
 ]
 
 { #category : 'private' }
@@ -301,7 +296,7 @@ MCPToolMutation >> mutateWith: request [
 MCPToolMutation >> mutationActionFor: request checked: aBoolean [
 	"The action an error names."
 
-	self subclassResponsibility
+	^ self toolSpec at: #action
 ]
 
 { #category : 'private - mutation failures' }
@@ -493,7 +488,7 @@ MCPToolMutation >> requestedContextFor: request checked: aBoolean [
 { #category : 'private - schema' }
 MCPToolMutation >> requiredInputProperties [
 
-	self subclassResponsibility
+	^ self toolSpec at: #requiredProperties
 ]
 
 { #category : 'private - request' }
@@ -535,6 +530,19 @@ MCPToolMutation >> textWithoutFinalPeriod: aString [
 	^ (trimmed endsWith: '.')
 		  ifTrue: [ trimmed allButLast ]
 		  ifFalse: [ trimmed ]
+]
+
+{ #category : 'metadata' }
+MCPToolMutation >> title [
+
+	^ self toolSpec at: #title
+]
+
+{ #category : 'private - specs' }
+MCPToolMutation >> toolSpec [
+	"The tool's metadata and contract, by key: title, description, the action an error names, inputProperties, requiredProperties, and atLeastOneProperties when a call must carry one of them."
+
+	self subclassResponsibility
 ]
 
 { #category : 'private - errors' }

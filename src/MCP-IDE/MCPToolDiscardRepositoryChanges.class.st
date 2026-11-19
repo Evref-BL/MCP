@@ -49,11 +49,12 @@ MCPToolDiscardRepositoryChanges >> mutateWith: request [
 ]
 
 { #category : 'private - specs' }
-MCPToolDiscardRepositoryChanges >> repositoryToolSpec [
+MCPToolDiscardRepositoryChanges >> toolSpec [
 
 	^ {
 		  (#title -> 'Discard Repository Changes').
 		  (#description
 		   -> 'Discard all current changes in one registered Iceberg repository working copy. Use only when abandoning local changes.').
-		  (#action -> 'discard') } asDictionary
+		  (#action -> 'discard').
+		  (#requiredProperties -> #( 'repository' )) } asDictionary
 ]

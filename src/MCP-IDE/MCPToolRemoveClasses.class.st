@@ -4,8 +4,6 @@ Removes classes from the image in one batch. It surfaces safe-removal warnings b
 Class {
 	#name : 'MCPToolRemoveClasses',
 	#superclass : 'MCPTool',
-	#traits : 'TMCPClassTool',
-	#classTraits : 'TMCPClassTool classTrait',
 	#category : 'MCP-IDE-Tools',
 	#package : 'MCP-IDE',
 	#tag : 'Tools'
@@ -26,25 +24,17 @@ MCPToolRemoveClasses class >> toolName [
 { #category : 'metadata' }
 MCPToolRemoveClasses >> buildInputSchema [
 
-	^ MCPStructureInputSchema new
-		  type: 'object';
+	^ MCPStructureInputSchema
 		  properties: {
-				  ((MCPStructureProperties new
-					    name: 'name';
-					    type: #( 'string' 'array' );
-					    description: 'Class name, or several removed together so references between them do not block it.')
-					   items: (MCPStructureProperties new
-							    type: 'string';
-							    yourself);
-					   yourself).
-				  (MCPStructureProperties new
-					   name: 'force';
-					   type: 'boolean';
-					   description: 'Remove despite warnings, which are reported either way.';
-					   default: false;
-					   yourself) };
-		  required: #( 'name' );
-		  yourself
+				  (self
+					   stringOrArraySchemaNamed: 'name'
+					   description: 'Class name, or several removed together so references between them do not block it.'
+					   itemDescription: 'Class name.').
+				  (self
+					   booleanSchemaPropertyNamed: 'force'
+					   description: 'Remove despite warnings, which are reported either way.'
+					   default: false) }
+		  required: #( 'name' )
 ]
 
 { #category : 'private - arguments' }

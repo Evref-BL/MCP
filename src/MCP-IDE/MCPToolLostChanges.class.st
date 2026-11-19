@@ -17,12 +17,6 @@ MCPToolLostChanges class >> groupName [
 	^ self historyGroupName
 ]
 
-{ #category : 'testing' }
-MCPToolLostChanges class >> isAbstract [
-
-	^ self = MCPToolLostChanges
-]
-
 { #category : 'metadata' }
 MCPToolLostChanges >> additionalKeywords [
 	"The words an agent reaches for after a crash or an image stopped unsaved."

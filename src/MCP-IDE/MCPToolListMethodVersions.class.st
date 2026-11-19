@@ -57,21 +57,15 @@ MCPToolListMethodVersions >> batchSummaryVerb [
 { #category : 'metadata' }
 MCPToolListMethodVersions >> buildInputSchema [
 
-	^ MCPStructureInputSchema new
-		  type: 'object';
+	^ MCPStructureInputSchema
 		  properties: {
 				  (self schemaPropertyNamed: 'class' type: 'string' description: 'The class the method is in, or was in.').
 				  (self targetSideSchemaPropertyDescribedAs: 'Which side the method is on.').
-				  ((self
-					    schemaPropertyNamed: 'selector'
-					    type: #( 'string' 'array' )
-					    description: 'The method''s selector, or several of that class.')
-					   items: (MCPStructureProperties new
-							    type: 'string';
-							    yourself);
-					   yourself) };
-		  required: #( 'class' 'selector' );
-		  yourself
+				  (self
+					   stringOrArraySchemaNamed: 'selector'
+					   description: 'The method''s selector, or several of that class.'
+					   itemDescription: 'Selector name.') }
+		  required: #( 'class' 'selector' )
 ]
 
 { #category : 'metadata' }

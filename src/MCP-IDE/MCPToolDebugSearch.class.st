@@ -84,12 +84,6 @@ MCPToolDebugSearch >> openDebuggersMatching: aQuery [
 	^ entries asArray
 ]
 
-{ #category : 'metadata' }
-MCPToolDebugSearch >> requiredInputProperties [
-
-	^ #(  )
-]
-
 { #category : 'executing' }
 MCPToolDebugSearch >> resultFor: request [
 

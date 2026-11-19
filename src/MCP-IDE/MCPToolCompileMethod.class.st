@@ -223,40 +223,6 @@ MCPToolCompileMethod >> methodNodeOf: aString [
 	^ RBParser parseMethod: aString onError: [ :message :position | ^ nil ]
 ]
 
-{ #category : 'private - specs' }
-MCPToolCompileMethod >> methodToolSpec [
-
-	^ {
-		  (#title -> 'Compile Method').
-		  (#description -> 'Add or replace methods in a class from their full source, selector line included.').
-		  (#action -> 'compile').
-		  (#inputProperties -> {
-			   (MCPStructureProperties new
-				    name: 'class';
-				    type: 'string';
-				    description: 'The class to compile into.';
-				    yourself).
-			   (self targetSideSchemaPropertyDescribedAs: 'Which side to compile into.').
-			   (MCPStructureProperties new
-				    name: 'source';
-				    type: #( 'string' 'array' );
-				    description: 'Full method source, selector line included, or several for the same class.';
-				    items: (MCPStructureProperties new
-						     type: 'string';
-						     yourself);
-				    yourself).
-			   (MCPStructureProperties new
-				    name: 'protocol';
-				    type: 'string';
-				    description:
-					    'Protocol for the method; a replaced method keeps its own when omitted. Extension methods take *Package-Name.';
-				    yourself).
-			   self forceSchemaProperty.
-			   (self formatSchemaPropertyDescribedAs:
-				    'Reformat each method with its package''s formatter. False keeps the source as written, only trimming the whitespace it begins and ends with.') }).
-		  (#requiredProperties -> #( 'class' 'source' )) } asDictionary
-]
-
 { #category : 'executing' }
 MCPToolCompileMethod >> mutateWith: request [
 	"Compile the source into the class the call names, on the side it names or, when it names none, the side a header names. A method written as a Tonel file writes it compiles without its header and brackets, its category line giving the protocol when the call names none. The method is reformatted unless format is false, which keeps it as written. The answer says whether the method was created or replaced, and what its critiques find in it as stored."
@@ -642,4 +608,29 @@ MCPToolCompileMethod >> tokensIn: aString [
 	| scanner |
 	scanner := RBScanner on: aString readStream.
 	^ Array streamContents: [ :stream | [ scanner atEnd ] whileFalse: [ stream nextPut: scanner next ] ]
+]
+
+{ #category : 'private - specs' }
+MCPToolCompileMethod >> toolSpec [
+
+	^ {
+		  (#title -> 'Compile Method').
+		  (#description -> 'Add or replace methods in a class from their full source, selector line included.').
+		  (#action -> 'compile').
+		  (#inputProperties -> {
+			   (self schemaPropertyNamed: 'class' type: 'string' description: 'The class to compile into.').
+			   (self targetSideSchemaPropertyDescribedAs: 'Which side to compile into.').
+			   (self
+				    stringOrArraySchemaNamed: 'source'
+				    description: 'Full method source, selector line included, or several for the same class.'
+				    itemDescription: nil).
+			   (self
+				    schemaPropertyNamed: 'protocol'
+				    type: 'string'
+				    description:
+				    'Protocol for the method; a replaced method keeps its own when omitted. Extension methods take *Package-Name.').
+			   self forceSchemaProperty.
+			   (self formatSchemaPropertyDescribedAs:
+				    'Reformat each method with its package''s formatter. False keeps the source as written, only trimming the whitespace it begins and ends with.') }).
+		  (#requiredProperties -> #( 'class' 'source' )) } asDictionary
 ]

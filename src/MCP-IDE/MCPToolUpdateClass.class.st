@@ -91,35 +91,6 @@ MCPToolUpdateClass >> checkArguments: request [
 	MCPImageLookup wholeClassName: (request stringArgumentNamed: 'name') for: 'class_update'
 ]
 
-{ #category : 'private - specs' }
-MCPToolUpdateClass >> classToolSpec [
-
-	^ {
-		  (#title -> 'Update Class').
-		  (#description
-		   ->
-		   'Change one class definition in one call. Its name, superclass, package, tag, comment and layout are replaced by value, its slots are patched. The changes asked for are applied in dependency order, stopping at the first that fails.').
-		  (#inputProperties -> {
-			   self classNameSchemaProperty.
-			   self renameNewClassNameSchemaProperty.
-			   self superclassNameSchemaProperty.
-			   self packageNameSchemaProperty.
-			   self tagSchemaProperty.
-			   self commentSchemaProperty.
-			   (self slotDeltaSchemaPropertyNamed: 'slots' describedAs: 'Patch over the instance-side slots.').
-			   (self slotDeltaSchemaPropertyNamed: 'classSlots' describedAs: 'Patch over the class-side slots.').
-			   self traitsSchemaProperty.
-			   self sharedVariablesSchemaProperty.
-			   self sharedPoolsSchemaProperty.
-			   self layoutSchemaProperty.
-			   self forceSchemaProperty }).
-		  (#requiredProperties -> #( 'name' )).
-		  (#atLeastOneProperties
-		   ->
-		   #( 'newName' 'superclass' 'package' 'tag' 'comment' 'slots' 'classSlots' 'traits' 'sharedVariables' 'sharedPools'
-		      'layout' )) } asDictionary
-]
-
 { #category : 'private - errors' }
 MCPToolUpdateClass >> contextValueOf: propertyName in: request [
 	"What an error reports for a property the call supplied, as the update reads it: a slot patch reports the parts the caller asked for, and a blank tag or layout reads as empty."
@@ -626,12 +597,6 @@ MCPToolUpdateClass >> mutateWith: request [
 	^ self applyUpdates: plans of: request
 ]
 
-{ #category : 'private - errors' }
-MCPToolUpdateClass >> mutationActionFor: request checked: aBoolean [
-
-	^ 'update'
-]
-
 { #category : 'private - planning' }
 MCPToolUpdateClass >> planForAction: action in: request [
 
@@ -686,6 +651,38 @@ MCPToolUpdateClass >> slotDeltaIn: request side: aBoolean [
 	^ MCPSlotDelta fromRequest: request named: (aBoolean
 			   ifTrue: [ 'classSlots' ]
 			   ifFalse: [ 'slots' ])
+]
+
+{ #category : 'private - schema' }
+MCPToolUpdateClass >> slotDeltaSchemaPropertyNamed: aName describedAs: aDescription [
+	"Slots are patched, not replaced: naming one slot to add needs nothing else, where a replacement list has to be complete and a stale one silently drops a slot the caller did not know about."
+
+	^ (MCPStructureProperties new
+		   name: aName;
+		   type: 'object';
+		   description: aDescription;
+		   yourself)
+		  properties: {
+				  (self stringArraySchemaNamed: 'add' description: 'Slots to add.' itemDescription: 'Slot name.').
+				  (self stringArraySchemaNamed: 'remove' description: 'Slots to remove.' itemDescription: 'Slot name.').
+				  (MCPStructureProperties new
+					   name: 'rename';
+					   type: 'object';
+					   description: 'Slots to rename, as current name to new name. Values are migrated and references updated.';
+					   yourself).
+				  (self
+					   stringArraySchemaNamed: 'pullUp'
+					   description: 'Slots to move up into this class from the subclasses that define them.'
+					   itemDescription: 'Slot name.').
+				  (self
+					   stringArraySchemaNamed: 'pushDown'
+					   description: 'Slots to move down to every direct subclass.'
+					   itemDescription: 'Slot name.').
+				  (self
+					   stringArraySchemaNamed: 'replace'
+					   description: 'The complete slot list, replacing what the class has. Prefer add and remove.'
+					   itemDescription: 'Slot name.') };
+		  yourself
 ]
 
 { #category : 'private - results' }
@@ -744,6 +741,51 @@ MCPToolUpdateClass >> suppliedPropertiesIn: request [
 	"The properties that ask for a change, which the schema requires at least one of, in the order it lists them."
 
 	^ self atLeastOneInputProperties select: [ :each | request hasArgumentNamed: each ]
+]
+
+{ #category : 'private - specs' }
+MCPToolUpdateClass >> toolSpec [
+
+	^ {
+		  (#title -> 'Update Class').
+		  (#description
+		   ->
+		   'Change one class definition in one call. Its name, superclass, package, tag, comment and layout are replaced by value, its slots are patched. The changes asked for are applied in dependency order, stopping at the first that fails.').
+		  (#action -> 'update').
+		  (#inputProperties -> {
+			   (self schemaPropertyNamed: 'name' type: 'string' description: 'Name of the class to change.').
+			   (self
+				    schemaPropertyNamed: 'newName'
+				    type: 'string'
+				    description: 'Rename the class to this name, updating every reference to it.').
+			   (self schemaPropertyNamed: 'superclass' type: 'string' description: 'Reparent the class under this superclass.').
+			   (self
+				    schemaPropertyNamed: 'package'
+				    type: 'string'
+				    description: 'Move the class to this package. Give tag alone to retag it inside the package it is already in.').
+			   (self schemaPropertyNamed: 'tag' type: 'string' description: 'Move the class to this tag inside its package.').
+			   (self schemaPropertyNamed: 'comment' type: 'string' description: 'Class comment; empty clears.').
+			   (self slotDeltaSchemaPropertyNamed: 'slots' describedAs: 'Patch over the instance-side slots.').
+			   (self slotDeltaSchemaPropertyNamed: 'classSlots' describedAs: 'Patch over the class-side slots.').
+			   (self
+				    stringArraySchemaNamed: 'traits'
+				    description: 'Traits the class uses, class side included; empty array clears.'
+				    itemDescription: 'Trait name.').
+			   (self
+				    stringArraySchemaNamed: 'sharedVariables'
+				    description: 'Class variables; empty array clears.'
+				    itemDescription: 'Variable name.').
+			   (self
+				    stringArraySchemaNamed: 'sharedPools'
+				    description: 'Shared pools the class reads variables from; empty array clears.'
+				    itemDescription: 'Pool name.').
+			   self layoutSchemaProperty.
+			   self forceSchemaProperty }).
+		  (#requiredProperties -> #( 'name' )).
+		  (#atLeastOneProperties
+		   ->
+		   #( 'newName' 'superclass' 'package' 'tag' 'comment' 'slots' 'classSlots' 'traits' 'sharedVariables' 'sharedPools'
+		      'layout' )) } asDictionary
 ]
 
 { #category : 'private - updating' }

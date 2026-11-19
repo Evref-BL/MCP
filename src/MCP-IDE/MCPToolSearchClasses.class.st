@@ -4,8 +4,6 @@ Lists classes in a chosen scope with optional filtering. It is optimized for cla
 Class {
 	#name : 'MCPToolSearchClasses',
 	#superclass : 'MCPToolSearch',
-	#traits : 'TMCPClassTool',
-	#classTraits : 'TMCPClassTool classTrait',
 	#category : 'MCP-IDE-Tools',
 	#package : 'MCP-IDE',
 	#tag : 'Tools'
@@ -26,9 +24,9 @@ MCPToolSearchClasses class >> toolName [
 { #category : 'metadata' }
 MCPToolSearchClasses >> buildInputSchema [
 
-	| properties |
-	properties := self classQueryScopeInputProperties , self classFilterInputProperties , { self offsetInputProperty }.
-	^ self queryInputSchemaWithProperties: properties
+	^ MCPStructureInputSchema
+		  properties: self classQueryScopeInputProperties , self classFilterInputProperties , { self offsetInputProperty }
+		  required: #(  )
 ]
 
 { #category : 'private - schema' }
