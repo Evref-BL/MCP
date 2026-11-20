@@ -40,7 +40,8 @@ MCPToolDebugSearchTest >> searchWith: someArguments [
 ]
 
 { #category : 'tests' }
-MCPToolDebugSearchTest >> testAnswersAMatchingOpenDebuggerWithItsExceptionAndStack [
+MCPToolDebugSearchTest >> testAnswersAMatchingDebuggerWithItsExceptionAndStackUntilItIsClosed [
+	"A closed debugger stays in the image while something holds it, here the test itself, elsewhere until it is collected."
 
 	| debugger entry |
 	debugger := self debuggerNamed: 'MCP searchable debugger'.
@@ -51,7 +52,8 @@ MCPToolDebugSearchTest >> testAnswersAMatchingOpenDebuggerWithItsExceptionAndSta
 		self deny: (entry at: #stack) isEmpty.
 		self deny: (self entryNamed: 'MCP searchable debugger' searchedWith: { (#query -> 'searchable') } asDictionary) isNil.
 		self assert: (self entryNamed: 'MCP searchable debugger' searchedWith: { (#query -> 'other') } asDictionary) isNil ] ensure: [
-		debugger close ]
+		debugger close ].
+	self assert: (self entryNamed: 'MCP searchable debugger' searchedWith: Dictionary new) isNil
 ]
 
 { #category : 'tests' }
