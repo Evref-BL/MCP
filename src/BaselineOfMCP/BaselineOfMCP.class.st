@@ -76,7 +76,7 @@ BaselineOfMCP >> defineDependencies: spec [
 		baseline: 'OpenTelemetry' with: [
 			spec
 				repository: 'github://Gabriel-Darbord/opentelemetry-pharo:v1.2.0/src';
-				loads: #( 'traces' 'metrics' 'logs' ) ]
+				loads: #( 'traces' 'metrics' 'logs' 'autoconfigure' ) ]
 ]
 
 { #category : 'baselines' }
