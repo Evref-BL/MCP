@@ -221,7 +221,7 @@ MCPToolMethodMutationTest >> inferenceOutcomeSelectors [
 
 	^ {
 		  ('probeMerge:' , 'and:') asSymbol.
-		  ('probeCombine:with:' , 'extra:') asSymbol.
+		  ('probeCombine:and:' , 'extra:') asSymbol.
 		  'probeCombine:' asSymbol }
 ]
 
@@ -256,8 +256,7 @@ MCPToolMethodMutationTest >> instanceRenameArguments [
 		  (#class -> MCPToolMethodMutationTestTarget name).
 		  (#side -> 'instance').
 		  (#selector -> self instanceSelector asString).
-		  (#newSelector -> self renamedInstanceSelector asString).
-		  (#permutation -> #( 2 1 )) } asDictionary
+		  (#newSelector -> self renamedInstanceSelector asString) } asDictionary
 ]
 
 { #category : 'private' }
@@ -809,7 +808,8 @@ MCPToolMethodMutationTestTarget class >> tonelProbe: anObject [
 ]
 
 { #category : 'tests' }
-MCPToolMethodMutationTest >> testAddArgumentWithoutPermutationMatchesArgumentsByName [
+MCPToolMethodMutationTest >> testAddArgumentsGivesANewKeywordAnArgumentNoKeywordTook [
+	"Each argument goes with its keyword. A keyword the selector lacks takes the first argument no keyword took, and once none is left it is an added one."
 
 	| result widened |
 	widened := self inferenceOutcomeSelectors second.
@@ -818,9 +818,8 @@ MCPToolMethodMutationTest >> testAddArgumentWithoutPermutationMatchesArgumentsBy
 			          (#selector -> self inferenceSelector asString).
 			          (#newSelector -> widened asString).
 			          (#arguments -> #( 'first' 'second' 'extra' )).
-			          (#argumentValueExpressions -> #( '''z''' )).
 			          self fixturePackageScope } asDictionary.
-	self deny: (result at: #isError ifAbsent: [ false ]).
+	self deny: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
 	self assert: (MCPToolMethodMutationTestTarget includesSelector: widened).
 	self assert: (MCPToolMethodMutationTestTarget new perform: widened withArguments: #( 'a' 'b' 'c' )) equals: 'a-b'
 ]
@@ -834,8 +833,7 @@ MCPToolMethodMutationTest >> testAddArgumentsUpdatesClassSideSenders [
 			          (#side -> 'class').
 			          (#selector -> 'buildValue:').
 			          (#newSelector -> 'buildValue:prefix:').
-			          (#arguments -> #( 'aString' 'prefix' )).
-			          (#argumentValueExpressions -> #( 'nil' )) } asDictionary.
+			          (#arguments -> #( 'aString' 'prefix' )) } asDictionary.
 	self dataFrom: result.
 	senderSource := (MCPToolMethodMutationTestSender >> #callClassTarget) sourceCode.
 	self assert: (MCPToolMethodMutationTestTarget classSide includesSelector: #buildValue:prefix:).
@@ -853,31 +851,13 @@ MCPToolMethodMutationTest >> testAddArgumentsUpdatesSendersAndReportsAction [
 			          (#selector -> 'combine:with:').
 			          (#newSelector -> 'combine:with:separator:').
 			          (#arguments -> #( 'first' 'second' 'separator' )).
-			          (#argumentValueExpressions -> (Array with: (String streamContents: [ :stream |
-						             stream
-							             nextPut: $';
-							             nextPut: $|;
-							             nextPut: $' ]))).
 			          self fixturePackageScope } asDictionary.
 	self dataFrom: result.
 	targetSource := (MCPToolMethodMutationTestTarget >> #combine:with:separator:) sourceCode.
 	senderSource := (MCPToolMethodMutationTestSender >> #callInstanceTarget) sourceCode.
 	self assert: (targetSource includesSubstring: 'separator: separator').
-	self assert: (senderSource includesSubstring: 'separator: ''|''').
+	self assert: (senderSource includesSubstring: 'separator: nil').
 	self assert: MCPToolMethodMutationTestSender new callInstanceTarget equals: 'first-second'
-]
-
-{ #category : 'tests' }
-MCPToolMethodMutationTest >> testAddingArgumentsAsksForTheirNames [
-	"A new selector with more keywords needs a name for each argument it adds, and the refusal names the argument that gives them."
-
-	| error |
-	error := self errorFrom: (self callToolNamed: 'method_update' withArguments: {
-				          (#class -> MCPToolMethodMutationTestTarget name).
-				          (#selector -> self instanceSelector asString).
-				          (#newSelector -> 'combine:with:separator:') } asDictionary).
-	self assert: (error at: #errorCode) equals: 'ArgumentNamesRequiredForAddedArguments'.
-	self assert: (error at: #message) equals: 'arguments is required when newSelector adds method arguments.'
 ]
 
 { #category : 'tests' }
@@ -900,7 +880,7 @@ headerProbe
 
 { #category : 'tests' }
 MCPToolMethodMutationTest >> testArgumentListsWithoutANewSelectorAreRefused [
-	"The argument lists say what the arguments of a new selector are, so without one they have nothing to describe."
+	"Argument names say what the arguments of a new selector are called, so without one they have nothing to describe."
 
 	| error |
 	error := self errorFrom: (self callToolNamed: 'method_update' withArguments: {
@@ -909,7 +889,49 @@ MCPToolMethodMutationTest >> testArgumentListsWithoutANewSelectorAreRefused [
 				          (#protocol -> 'accessing').
 				          (#arguments -> #( 'first' 'second' )) } asDictionary).
 	self assert: (error at: #errorCode) equals: 'ArgumentMetadataRequiresMethodSelectorUpdate'.
-	self assert: (error at: #message) equals: 'arguments and argumentValueExpressions are only valid with newSelector.'
+	self assert: (error at: #message) equals: 'arguments is only valid with newSelector.'
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testArgumentNamesAreOneUsableNamePerArgument [
+	"A new selector with more keywords needs a name for each argument it adds. Names given with any new selector are one per argument, each one an argument can take and none twice, and a refusal changes nothing."
+
+	{
+		{
+			#(  ).
+			'combine:with:separator:'.
+			'ArgumentNamesRequiredForAddedArguments'.
+			'arguments is required when newSelector adds method arguments.' }.
+		{
+			#( 'only' ).
+			self renamedInstanceSelector asString.
+			'InvalidMethodArgumentNames'.
+			'arguments must contain one name for each target selector argument.' }.
+		{
+			#( '1abc' 'second' ).
+			self renamedInstanceSelector asString.
+			'InvalidMethodArgumentNames'.
+			'arguments must be distinct argument names, which ''1abc'' is not.' }.
+		{
+			#( 'self' 'second' ).
+			self renamedInstanceSelector asString.
+			'InvalidMethodArgumentNames'.
+			'arguments must be distinct argument names, which ''self'' is not.' }.
+		{
+			#( 'first' 'first' ).
+			self renamedInstanceSelector asString.
+			'InvalidMethodArgumentNames'.
+			'arguments must be distinct argument names, which ''first'' is not.' } } do: [ :each |
+			| arguments error |
+			arguments := {
+				             (#class -> MCPToolMethodMutationTestTarget name).
+				             (#selector -> self instanceSelector asString).
+				             (#newSelector -> each second) } asDictionary.
+			each first ifNotEmpty: [ :names | arguments at: #arguments put: names ].
+			error := self errorFrom: (self callToolNamed: 'method_update' withArguments: arguments).
+			self assert: (error at: #errorCode) equals: each third.
+			self assert: (error at: #message) equals: each fourth.
+			self assert: (MCPToolMethodMutationTestTarget includesSelector: self instanceSelector) ]
 ]
 
 { #category : 'tests' }
@@ -2719,8 +2741,7 @@ MCPToolMethodMutationTest >> testMethodToolSchemasDeclareExpectedInputs [
 	self assert: createPropertyNames asArray equals: #( 'class' 'side' 'source' 'protocol' 'force' 'format' ).
 	self
 		assert: updatePropertyNames asArray
-		equals: #( 'class' 'side' 'force' 'format' 'selector' 'protocol' 'newSelector' 'arguments' 'argumentValueExpressions'
-			   'permutation' 'scope' ).
+		equals: #( 'class' 'side' 'force' 'format' 'selector' 'protocol' 'newSelector' 'arguments' 'scope' ).
 	self assert: MCPToolCompileMethod new inputSchema required asSet equals: #( 'class' 'source' ) asSet.
 	self assert: MCPToolUpdateMethod new inputSchema required asSet equals: #( 'class' 'selector' ) asSet.
 	self assert: MCPToolUpdateMethod new atLeastOneInputProperties asSet equals: #( 'protocol' 'newSelector' ) asSet.
@@ -2799,27 +2820,6 @@ MCPToolMethodMutationTest >> testReformatsWithTheFormatterOfTheMethodPackage [
 ]
 
 { #category : 'tests' }
-MCPToolMethodMutationTest >> testRemoveArgumentWithoutPermutationKeepsTheNamedArguments [
-
-	| narrowed result |
-	narrowed := self inferenceOutcomeSelectors third.
-	self
-		ensureMethodSource: 'probeCombine: first with: second
-	^ first'
-		protocol: 'tests'
-		on: MCPToolMethodMutationTestTarget.
-	result := self callToolNamed: 'method_update' withArguments: {
-			          (#class -> MCPToolMethodMutationTestTarget name).
-			          (#selector -> self inferenceSelector asString).
-			          (#newSelector -> narrowed asString).
-			          (#arguments -> #( 'first' )).
-			          self fixturePackageScope } asDictionary.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (MCPToolMethodMutationTestTarget includesSelector: narrowed).
-	self assert: (MCPToolMethodMutationTestTarget new perform: narrowed with: 'a') equals: 'a'
-]
-
-{ #category : 'tests' }
 MCPToolMethodMutationTest >> testRemoveArgumentsFailsWhenRemovedArgumentIsReferenced [
 
 	| error newSelector oldSelector result |
@@ -2851,32 +2851,74 @@ MCPToolMethodMutationTest >> testRemoveArgumentsFailsWhenRemovedArgumentIsRefere
 
 { #category : 'tests' }
 MCPToolMethodMutationTest >> testRemoveArgumentsUpdatesSendersAndReportsAction [
+	"Several arguments go in one call, and the keywords kept take their arguments with them when they change order. Each removal renames the implementors of the selector the one before it left, so while another method of the scope has that selector, the call is refused and changes nothing."
 
-	| newSelector oldSelector result senderSource |
-	oldSelector := ('keep:' , 'unused:') asSymbol.
-	newSelector := #keep:.
+	| arguments error newSelector oldSelector passedThrough result senderSource |
+	oldSelector := ('keep:' , 'unused:also:then:') asSymbol.
+	newSelector := ('then:' , 'keep:') asSymbol.
+	passedThrough := ('keep:' , 'then:') asSymbol.
 	[
-		self ensureMethodSource: 'keep: first unused: ignored ^ first' protocol: 'tests' on: MCPToolMethodMutationTestTarget.
 		self
-			ensureMethodSource: 'callRemoveArgumentTarget ^ MCPToolMethodMutationTestTarget new keep: ''value'' unused: ''ignored'''
+			ensureMethodSource: 'keep: first unused: ignored also: other then: second ^ first , second'
+			protocol: 'tests'
+			on: MCPToolMethodMutationTestTarget.
+		self
+			ensureMethodSource:
+			'callRemoveArgumentTarget ^ MCPToolMethodMutationTestTarget new keep: ''value'' unused: ''ignored'' also: ''other'' then: ''next'''
 			protocol: 'tests'
 			on: MCPToolMethodMutationTestSender.
-		result := self callToolNamed: 'method_update' withArguments: {
-				          (#class -> MCPToolMethodMutationTestTarget name).
-				          (#side -> 'instance').
-				          (#selector -> oldSelector asString).
-				          (#newSelector -> newSelector asString).
-				          self fixturePackageScope } asDictionary.
+		self ensureMethodSource: 'keep: first then: second ^ second' protocol: 'tests' on: MCPToolMethodMutationTestSender.
+		arguments := {
+			             (#class -> MCPToolMethodMutationTestTarget name).
+			             (#side -> 'instance').
+			             (#selector -> oldSelector asString).
+			             (#newSelector -> newSelector asString).
+			             self fixturePackageScope } asDictionary.
+		error := self errorFrom: (self callToolNamed: 'method_update' withArguments: arguments).
+		self assert: (error at: #errorCode) equals: 'IntermediateSelectorInUse'.
+		self
+			assert: (error at: #message)
+			equals:
+				('Removing these arguments passes through {1}, which is already in use in scope and would change too: remove one argument per call, reorder the keywords in a call of their own, or narrow scope.'
+					 format: { passedThrough }).
+		self assert: (MCPToolMethodMutationTestTarget includesSelector: oldSelector).
+		self assert: (MCPToolMethodMutationTestSender includesSelector: passedThrough).
+		self removeSelector: passedThrough from: MCPToolMethodMutationTestSender.
+		result := self callToolNamed: 'method_update' withArguments: arguments.
 		self dataFrom: result.
 		senderSource := (MCPToolMethodMutationTestSender >> #callRemoveArgumentTarget) sourceCode.
-		self deny: (result at: #isError ifAbsent: [ false ]).
 		self deny: (MCPToolMethodMutationTestTarget includesSelector: oldSelector).
 		self assert: (MCPToolMethodMutationTestTarget includesSelector: newSelector).
-		self deny: (senderSource includesSubstring: 'unused:').
-		self assert: MCPToolMethodMutationTestSender new callRemoveArgumentTarget equals: 'value' ] ensure: [
-			self removeSelector: oldSelector from: MCPToolMethodMutationTestTarget.
-			self removeSelector: newSelector from: MCPToolMethodMutationTestTarget.
+		self assert: (senderSource includesSubstring: 'then: ''next'' keep: ''value''').
+		self assert: MCPToolMethodMutationTestSender new callRemoveArgumentTarget equals: 'valuenext' ] ensure: [
+			{
+				oldSelector.
+				newSelector.
+				('keep:' , 'unused:then:') asSymbol.
+				passedThrough } do: [ :each | self removeSelector: each from: MCPToolMethodMutationTestTarget ].
+			self removeSelector: passedThrough from: MCPToolMethodMutationTestSender.
 			self removeSelector: #callRemoveArgumentTarget from: MCPToolMethodMutationTestSender ]
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testRemovingArgumentsRenamesTheKeptOnes [
+
+	| narrowed result |
+	narrowed := self inferenceOutcomeSelectors third.
+	self
+		ensureMethodSource: 'probeCombine: first with: second
+	^ first'
+		protocol: 'tests'
+		on: MCPToolMethodMutationTestTarget.
+	result := self callToolNamed: 'method_update' withArguments: {
+			          (#class -> MCPToolMethodMutationTestTarget name).
+			          (#selector -> self inferenceSelector asString).
+			          (#newSelector -> narrowed asString).
+			          (#arguments -> #( 'only' )).
+			          self fixturePackageScope } asDictionary.
+	self deny: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
+	self assert: (MCPToolMethodMutationTestTarget >> narrowed) ast argumentNames asArray equals: #( 'only' ).
+	self assert: (MCPToolMethodMutationTestTarget new perform: narrowed with: 'a') equals: 'a'
 ]
 
 { #category : 'tests' }
@@ -2944,33 +2986,6 @@ MCPToolMethodMutationTest >> testRenameCanLimitRefactoringToNamedPackages [
 ]
 
 { #category : 'tests' }
-MCPToolMethodMutationTest >> testRenameKeepsRenamedMethodCallable [
-
-	| newSelector oldSelector result target |
-	oldSelector := ('uglyRename:' , 'with:') asSymbol.
-	newSelector := ('with:' , 'uglyRename:') asSymbol.
-	[
-		self
-			ensureMethodSource: 'uglyRename: first with: second ^ first , ''-'' , second'
-			protocol: 'tests'
-			on: MCPToolMethodMutationTestTarget.
-		result := self callToolNamed: 'method_update' withArguments: {
-				          (#class -> MCPToolMethodMutationTestTarget name).
-				          (#side -> 'instance').
-				          (#selector -> oldSelector asString).
-				          (#newSelector -> newSelector asString).
-				          (#permutation -> #( 2 1 )).
-				          self fixturePackageScope } asDictionary.
-		target := MCPToolMethodMutationTestTarget new.
-		self deny: (result at: #isError ifAbsent: [ false ]).
-		self deny: (MCPToolMethodMutationTestTarget includesSelector: oldSelector).
-		self assert: (MCPToolMethodMutationTestTarget includesSelector: newSelector).
-		self assert: (target perform: newSelector with: 'right' with: 'left') equals: 'left-right' ] ensure: [
-			self removeSelector: oldSelector from: MCPToolMethodMutationTestTarget.
-			self removeSelector: newSelector from: MCPToolMethodMutationTestTarget ]
-]
-
-{ #category : 'tests' }
 MCPToolMethodMutationTest >> testRenameRefusesAScopeEntryThatNamesNoClassUnderItsKey [
 	"A refactoring scope must be complete, so an entry that names no class refuses the rename before anything changes."
 
@@ -3004,10 +3019,7 @@ MCPToolMethodMutationTest >> testRenameReturnsStructuredErrorWhenMethodIsMissing
 	self assert: (error at: #side) equals: 'instance'.
 	self assert: (error at: #selector) equals: self instanceSelector asString.
 	self assert: (error at: #newSelector) equals: self renamedInstanceSelector asString.
-	self assert: (error at: #permutation) equals: #( 2 1 ).
-	self
-		assert: error keys asSet
-		equals: #( action updateAction errorClass errorCode message class side selector newSelector permutation ) asSet
+	self assert: error keys asSet equals: #( action updateAction errorClass errorCode message class side selector newSelector ) asSet
 ]
 
 { #category : 'tests' }
@@ -3053,11 +3065,34 @@ MCPToolMethodMutationTest >> testRenameScopeOffersOnlyWhatTheRefactoringReads [
 ]
 
 { #category : 'tests' }
+MCPToolMethodMutationTest >> testRenameToOtherKeywordsKeepsArgumentsInPlace [
+	"Keywords the selector lacks take its arguments in order, and argument names rename them."
+
+	| renamed result |
+	renamed := self inferenceOutcomeSelectors first.
+	result := self callToolNamed: 'method_update' withArguments: {
+			          (#class -> MCPToolMethodMutationTestTarget name).
+			          (#selector -> self inferenceSelector asString).
+			          (#newSelector -> renamed asString).
+			          (#arguments -> #( 'left' 'right' )).
+			          self fixturePackageScope } asDictionary.
+	self deny: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
+	self assert: (MCPToolMethodMutationTestTarget >> renamed) ast argumentNames asArray equals: #( 'left' 'right' ).
+	self assert: (MCPToolMethodMutationTestTarget new perform: renamed with: 'a' with: 'b') equals: 'a-b'
+]
+
+{ #category : 'tests' }
 MCPToolMethodMutationTest >> testRenameUpdatesSendersAndPermutesArguments [
+	"The same keywords in another order take their arguments with them, and names given in the new order rename them, even into each other's names."
 
 	| senderSource |
-	self callToolNamed: 'method_update' withArguments: self instanceRenameArguments.
+	self callToolNamed: 'method_update' withArguments: (self instanceRenameArguments
+			 at: #arguments put: #( 'first' 'second' );
+			 yourself).
 	self assert: MCPToolMethodMutationTestSender new callInstanceTarget equals: 'first-second'.
+	self
+		assert: (MCPToolMethodMutationTestTarget >> self renamedInstanceSelector) ast argumentNames asArray
+		equals: #( 'first' 'second' ).
 	senderSource := (MCPToolMethodMutationTestSender >> #callInstanceTarget) sourceCode.
 	self assert: (senderSource includesSubstring: 'with: ''second'' combine: ''first''')
 ]
@@ -3093,18 +3128,17 @@ MCPToolMethodMutationTest >> testRenameWithFormatFalseKeepsTheMethodAsWritten [
 ]
 
 { #category : 'tests' }
-MCPToolMethodMutationTest >> testRenameWithoutPermutationKeepsArgumentsInPlace [
+MCPToolMethodMutationTest >> testRenamesClassSideMethodAndUpdatesSenders [
 
-	| renamed result |
-	renamed := self inferenceOutcomeSelectors first.
-	result := self callToolNamed: 'method_update' withArguments: {
-			          (#class -> MCPToolMethodMutationTestTarget name).
-			          (#selector -> self inferenceSelector asString).
-			          (#newSelector -> renamed asString).
-			          self fixturePackageScope } asDictionary.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (MCPToolMethodMutationTestTarget includesSelector: renamed).
-	self assert: (MCPToolMethodMutationTestTarget new perform: renamed with: 'a' with: 'b') equals: 'a-b'
+	| data result |
+	result := self callToolNamed: 'method_update' withArguments: (self classRenameArguments
+			           add: self fixturePackageScope;
+			           yourself).
+	data := self dataFrom: result.
+	self deny: (MCPToolMethodMutationTestTarget classSide includesSelector: self classSelector).
+	self assert: (MCPToolMethodMutationTestTarget classSide includesSelector: self renamedClassSelector).
+	self assert: MCPToolMethodMutationTestSender new callClassTarget equals: 'Class-value'.
+	self assertSuccessDataHasMethodShape: data
 ]
 
 { #category : 'tests' }
@@ -3122,20 +3156,6 @@ MCPToolMethodMutationTest >> testRenamesClassSideMethodOfAClassWrittenWithItsSid
 	self assert: (MCPToolMethodMutationTestTarget classSide includesSelector: self renamedClassSelector).
 	self assert: ((self summaryFrom: result) includesSubstring: 'MCPToolMethodMutationTestTarget class>>').
 	self deny: ((self summaryFrom: result) includesSubstring: 'class class')
-]
-
-{ #category : 'tests' }
-MCPToolMethodMutationTest >> testRenamesClassSideMethodWithDefaultPermutation [
-
-	| data result |
-	result := self callToolNamed: 'method_update' withArguments: (self classRenameArguments
-			           add: self fixturePackageScope;
-			           yourself).
-	data := self dataFrom: result.
-	self deny: (MCPToolMethodMutationTestTarget classSide includesSelector: self classSelector).
-	self assert: (MCPToolMethodMutationTestTarget classSide includesSelector: self renamedClassSelector).
-	self assert: MCPToolMethodMutationTestSender new callClassTarget equals: 'Class-value'.
-	self assertSuccessDataHasMethodShape: data
 ]
 
 { #category : 'tests' }

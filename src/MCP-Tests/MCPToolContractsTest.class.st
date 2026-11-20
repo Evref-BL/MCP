@@ -1573,8 +1573,8 @@ MCPToolContractsTest >> testStringArrayItemDescriptionsStayUseful [
 		                   description: 'Packages to search.'
 		                   itemDescription: 'Package name.'.
 	self deny: ((compactProperty asJRPCJSON at: #items) includesKey: #description).
-	usefulProperty := self inputPropertyNamed: 'argumentValueExpressions' inTool: MCPToolUpdateMethod new.
-	self assert: ((usefulProperty asJRPCJSON at: #items) at: #description) equals: 'Smalltalk expression.'
+	usefulProperty := self inputPropertyNamed: 'addPackages' inTool: MCPToolUpdateRepository new.
+	self assert: ((usefulProperty asJRPCJSON at: #items) at: #description) equals: 'A package name to add.'
 ]
 
 { #category : 'tests' }
