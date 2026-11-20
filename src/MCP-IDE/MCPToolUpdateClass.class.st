@@ -1,7 +1,7 @@
 "
 Tool that changes one class definition: any of its name, superclass, package, tag, comment, slots, traits, shared variables, shared pools and layout, in one call.
 
-Every change asked for is planned as an MCPClassUpdatePlanInfo before the first is made. The plans are then applied in dependency order, stopping at the first that fails.
+Every change asked for is planned as an MCPClassUpdateSpec before the first is made. The plans are then applied in dependency order, stopping at the first that fails.
 "
 Class {
 	#name : 'MCPToolUpdateClass',
@@ -635,7 +635,7 @@ MCPToolUpdateClass >> mutationActionFor: request checked: aBoolean [
 { #category : 'private - planning' }
 MCPToolUpdateClass >> planForAction: action in: request [
 
-	^ MCPClassUpdatePlanInfo updateAction: action requestedContext: (action = 'move'
+	^ MCPClassUpdateSpec updateAction: action requestedContext: (action = 'move'
 			   ifTrue: [ self moveContextFor: request ]
 			   ifFalse: [ self requestedContextFor: request ])
 ]
@@ -718,7 +718,7 @@ MCPToolUpdateClass >> slotPlansIn: request side: classSide [
 			                      at: #slot put: slotName;
 			                      yourself.
 		           newSlotName ifNotNil: [ context at: #newSlot put: newSlotName ].
-		           (MCPClassUpdatePlanInfo updateAction: action requestedContext: context)
+		           (MCPClassUpdateSpec updateAction: action requestedContext: context)
 			           slotName: slotName;
 			           newSlotName: newSlotName;
 			           classSide: classSide;

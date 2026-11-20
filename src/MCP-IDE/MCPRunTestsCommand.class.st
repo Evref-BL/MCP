@@ -47,12 +47,6 @@ MCPRunTestsCommand >> addTestCasesFrom: aTestOrSuite to: testCases [
 	aTestOrSuite mcpAddTestCasesTo: testCases using: self
 ]
 
-{ #category : 'private' }
-MCPRunTestsCommand >> aggregateDataForResults: resultEntries timedOut: timedOut unrunTests: unrunTests [
-
-	^ MCPRunTestsResult results: resultEntries timedOut: timedOut unrunTests: unrunTests
-]
-
 { #category : 'private - timeout' }
 MCPRunTestsCommand >> deadlineForTimeoutMilliseconds: milliseconds [
 
@@ -211,8 +205,8 @@ MCPRunTestsCommand >> resolve: aSelection [
 MCPRunTestsCommand >> runEachSelectionUntil: deadline [
 	"Runs the selections in order until the deadline. The first test it stops ends the run, and what is left of its selection and of the later ones is listed to run next."
 
-	| resultEntries seenTestCaseNames |
-	resultEntries := OrderedCollection new.
+	| allOutcomes seenTestCaseNames |
+	allOutcomes := OrderedCollection new.
 	seenTestCaseNames := Set new.
 	selections withIndexDo: [ :selection :index |
 			| notRun notRunCount outcomes stopped testCases uniqueTestCases |
@@ -220,7 +214,7 @@ MCPRunTestsCommand >> runEachSelectionUntil: deadline [
 					notRun := OrderedCollection new.
 					notRunCount := self addNotRunStartingAt: index seenTestCaseNames: seenTestCaseNames to: notRun.
 					^ self
-						  timedOutResultFor: resultEntries
+						  timedOutResultFor: allOutcomes
 						  interruption: nil
 						  notRun: notRun
 						  notRunCount: notRunCount ].
@@ -228,7 +222,7 @@ MCPRunTestsCommand >> runEachSelectionUntil: deadline [
 			uniqueTestCases := self uniqueTestCasesFrom: testCases seenTestCaseNames: seenTestCaseNames.
 			outcomes := OrderedCollection new.
 			stopped := self runTestCases: uniqueTestCases until: deadline into: outcomes.
-			resultEntries add: (MCPTestRunInfo outcomes: outcomes).
+			allOutcomes addAll: outcomes.
 			stopped ifNotNil: [
 					notRun := OrderedCollection withAll: (self
 							           notRunSelectionsFor: selection
@@ -238,11 +232,11 @@ MCPRunTestsCommand >> runEachSelectionUntil: deadline [
 					notRunCount := uniqueTestCases size - outcomes size
 					               + (self addNotRunStartingAt: index + 1 seenTestCaseNames: seenTestCaseNames to: notRun).
 					^ self
-						  timedOutResultFor: resultEntries
+						  timedOutResultFor: allOutcomes
 						  interruption: (stopped isInterrupted ifTrue: [ stopped ])
 						  notRun: notRun
 						  notRunCount: notRunCount ] ].
-	^ self aggregateDataForResults: resultEntries timedOut: false unrunTests: #(  )
+	^ MCPRunTestsResult outcomes: allOutcomes timedOut: false unrunTests: #(  )
 ]
 
 { #category : 'private' }
@@ -409,11 +403,11 @@ MCPRunTestsCommand >> textForMethod: aSelectionText notATestOf: aClassName [
 ]
 
 { #category : 'private' }
-MCPRunTestsCommand >> timedOutResultFor: resultEntries interruption: anOutcomeOrNil notRun: someSelections notRunCount: aCount [
+MCPRunTestsCommand >> timedOutResultFor: someOutcomes interruption: anOutcomeOrNil notRun: someSelections notRunCount: aCount [
 	"After a timeout. One that leaves no test unrun is not reported."
 
-	aCount isZero ifTrue: [ ^ self aggregateDataForResults: resultEntries timedOut: false unrunTests: #(  ) ].
-	^ (self aggregateDataForResults: resultEntries timedOut: true unrunTests: someSelections)
+	aCount isZero ifTrue: [ ^ MCPRunTestsResult outcomes: someOutcomes timedOut: false unrunTests: #(  ) ].
+	^ (MCPRunTestsResult outcomes: someOutcomes timedOut: true unrunTests: someSelections)
 		  interruption: anOutcomeOrNil;
 		  notRunCount: aCount;
 		  timeoutMilliseconds: timeoutMilliseconds;

@@ -70,6 +70,13 @@ MCPTestStaleRepository >> location [
 ]
 
 { #category : 'accessing' }
+MCPTestStaleRepository >> mcpLocationString [
+	"What MCP's IceRepository extension answers, for this double that is no IceRepository."
+
+	^ location pathString
+]
+
+{ #category : 'accessing' }
 MCPTestStaleRepository >> name [
 
 	^ name

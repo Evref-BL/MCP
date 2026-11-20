@@ -24,27 +24,9 @@ MCPReplaceClassTraitsCommand class >> className: aClassName traitNames: someTrai
 { #category : 'executing' }
 MCPReplaceClassTraitsCommand >> execute [
 
-	| targetClass |
-	targetClass := self targetClass.
-	targetClass setTraitComposition: self resolvedTraits.
-	^ targetClass
-]
-
-{ #category : 'private' }
-MCPReplaceClassTraitsCommand >> resolvedTraits [
-
-	^ self traitNames
-		  collect: [ :each |
-				  MCPImageLookup traitNamed: each details: {
-						  (#class -> self className).
-						  (#traits -> self traitNames) } ]
-		  as: Array
-]
-
-{ #category : 'private' }
-MCPReplaceClassTraitsCommand >> targetClass [
-
-	^ MCPImageLookup classNamed: self className
+	^ self currentClass
+		  setTraitComposition: (self resolvedTraitsNamed: self traitNames);
+		  yourself
 ]
 
 { #category : 'accessing' }

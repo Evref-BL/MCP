@@ -3,7 +3,7 @@ Structured metadata for one entry in image change history.
 "
 Class {
 	#name : 'MCPChangeHistoryEntryInfo',
-	#superclass : 'MCPDataTransferObject',
+	#superclass : 'Object',
 	#instVars : [
 		'index',
 		'eventClassName',
@@ -38,7 +38,7 @@ MCPChangeHistoryEntryInfo class >> fromEntry: anEntry index: anInteger log: aLog
 MCPChangeHistoryEntryInfo class >> fromEvent: anEvent [
 
 	^ self new
-		  initializeFromEvent: anEvent;
+		  initializeEventFieldsFrom: anEvent;
 		  yourself
 ]
 
@@ -74,8 +74,7 @@ MCPChangeHistoryEntryInfo >> addCodeChangeInfoFrom: aCodeChange [
 { #category : 'adding' }
 MCPChangeHistoryEntryInfo >> addMethodChangeInfoFrom: aMethodChange [
 
-	self addCodeChangeInfoFrom: aMethodChange.
-	self addBehaviorNameFrom: aMethodChange.
+	self addBehaviorChangeInfoFrom: aMethodChange.
 	selector := self stringFrom: aMethodChange methodAffectedSelector.
 	protocol := self stringFrom: aMethodChange methodAffectedProtocol
 ]
@@ -90,15 +89,9 @@ MCPChangeHistoryEntryInfo >> addOutcomeTo: data [
 ]
 
 { #category : 'adding' }
-MCPChangeHistoryEntryInfo >> addPackageChangeInfoFrom: aPackageChange [
+MCPChangeHistoryEntryInfo >> addPackageNameFrom: aPackageOrTagChange [
 
-	packageName := self stringFrom: aPackageChange packageName
-]
-
-{ #category : 'adding' }
-MCPChangeHistoryEntryInfo >> addPackageTagChangeInfoFrom: aPackageTagChange [
-
-	packageName := self stringFrom: aPackageTagChange packageName
+	packageName := self stringFrom: aPackageOrTagChange packageName
 ]
 
 { #category : 'adding' }
@@ -177,12 +170,6 @@ MCPChangeHistoryEntryInfo >> initializeFromEntry: anEntry index: anInteger log: 
 ]
 
 { #category : 'initialization' }
-MCPChangeHistoryEntryInfo >> initializeFromEvent: anEvent [
-
-	self initializeEventFieldsFrom: anEvent
-]
-
-{ #category : 'initialization' }
 MCPChangeHistoryEntryInfo >> initializeFromPreviewedChange: aCodeChange index: anInteger [
 
 	index := anInteger.
@@ -217,12 +204,6 @@ MCPChangeHistoryEntryInfo >> instanceSideBehaviorName [
 MCPChangeHistoryEntryInfo >> isCodeChange [
 
 	^ isCodeChange
-]
-
-{ #category : 'testing' }
-MCPChangeHistoryEntryInfo >> isMethodChangeForSelector: aSelector inBehaviorNamed: aBehaviorName [
-
-	^ selector = aSelector asString and: [ behaviorName = aBehaviorName ]
 ]
 
 { #category : 'private - converting' }

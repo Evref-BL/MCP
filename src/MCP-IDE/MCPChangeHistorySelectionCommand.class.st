@@ -32,11 +32,14 @@ MCPChangeHistorySelectionCommand class >> revert: revertBoolean log: aLog indexe
 
 { #category : 'private - selection' }
 MCPChangeHistorySelectionCommand >> addEntriesAt: someIndexes to: pairs fromLog: aLog [
+	"The log reads every entry each time it is asked for them, so it is asked once."
 
+	| entries |
+	entries := aLog entries.
 	someIndexes do: [ :index |
 			pairs add: {
 					index.
-					(self entryAtIndex: index inLog: aLog) } ].
+					(self entryAtIndex: index among: entries) } ].
 	^ pairs
 ]
 
@@ -48,17 +51,17 @@ MCPChangeHistorySelectionCommand >> change: aChange overrides: anotherChange [
 ]
 
 { #category : 'private - entries' }
-MCPChangeHistorySelectionCommand >> entryAtIndex: anIndex inLog: aLog [
+MCPChangeHistorySelectionCommand >> entryAtIndex: anIndex among: someEntries [
 
-	(anIndex between: 1 and: aLog entries size) ifFalse: [
+	(anIndex between: 1 and: someEntries size) ifFalse: [
 			MCPCommandError
 				signalErrorCode: #ChangeHistoryEntryNotFound
 				message:
 				(String streamContents: [ :stream | stream << 'Change history entry index ' << anIndex asString << ' does not exist.' ])
 				details: {
 						(#index -> anIndex).
-						(#entryCount -> aLog entries size) } asDictionary ].
-	^ aLog entries at: anIndex
+						(#entryCount -> someEntries size) } asDictionary ].
+	^ someEntries at: anIndex
 ]
 
 { #category : 'executing' }

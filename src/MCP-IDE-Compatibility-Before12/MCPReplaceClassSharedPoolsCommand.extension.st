@@ -8,5 +8,5 @@ MCPReplaceClassSharedPoolsCommand >> replaceSharedPoolsOn: aClass [
 		  oldClass: aClass;
 		  make: [ :builder |
 			  builder fillFor: aClass.
-			  builder sharedPools: (' ' join: (self resolvedSharedPools collect: [ :pool | pool name ])) ]
+			  builder sharedPools: (' ' join: ((self resolvedSharedPoolsNamed: self sharedPoolNames) collect: [ :pool | pool name ])) ]
 ]

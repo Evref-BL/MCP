@@ -5,7 +5,7 @@ It records the affected method identity and, when requested, the before and afte
 "
 Class {
 	#name : 'MCPMethodRewriteChangeInfo',
-	#superclass : 'MCPDataTransferObject',
+	#superclass : 'Object',
 	#instVars : [
 		'className',
 		'classSide',
@@ -68,9 +68,7 @@ MCPMethodRewriteChangeInfo >> initializeFromChange: aChange includeSources: aBoo
 	behavior := aChange changeClass.
 	selector := aChange selector asString.
 	classSide := behavior isMeta.
-	className := classSide
-		             ifTrue: [ behavior instanceSide name asString ]
-		             ifFalse: [ behavior name asString ].
+	className := behavior instanceSide name asString.
 	compiledMethod := behavior compiledMethodAt: aChange selector ifAbsent: [ nil ].
 	compiledMethod
 		ifNil: [
@@ -83,8 +81,7 @@ MCPMethodRewriteChangeInfo >> initializeFromChange: aChange includeSources: aBoo
 				protocol := methodInfo protocol.
 				oldSource := compiledMethod sourceCode ifNil: [ '' ] ].
 	newSource := aChange source ifNil: [ '' ].
-	includeSources := aBoolean.
-	^ self
+	includeSources := aBoolean
 ]
 
 { #category : 'accessing' }

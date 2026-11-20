@@ -657,6 +657,23 @@ MCPToolMethodMutationTest >> testAMethodEndingWithABlockKeepsItsBracket [
 ]
 
 { #category : 'tests' }
+MCPToolMethodMutationTest >> testARefusedStatementOrBlockIsASyntaxError [
+	"Pharo refuses a statement after a return, except 12 and 13, which compile it with a warning, and a block of sixteen arguments. Where the compiler's notice says what it refused and where, the answer is a syntax error there, not a failure to read the notice; from Pharo 14 on, what is refused while compiling comes without one."
+
+	| error result |
+	[
+		#( 'refusedProbe ^ 1. 2' 'refusedProbe ^ [ :a1 :a2 :a3 :a4 :a5 :a6 :a7 :a8 :a9 :a10 :a11 :a12 :a13 :a14 :a15 :a16 | a1 ]' ) do: [
+				:each |
+				result := self compileProbe: each.
+				(self resultIndicatesError: result) ifTrue: [
+						error := self errorFrom: result.
+						(error at: #causeClass) = 'OCCompilationError' ifFalse: [
+								self assert: (error at: #errorCode) equals: 'CompileSyntaxError'.
+								self assert: (error includesKey: #position) ] ] ] ] ensure: [
+		self removeSelector: #refusedProbe from: MCPToolMethodMutationTestTarget ]
+]
+
+{ #category : 'tests' }
 MCPToolMethodMutationTest >> testASourceEndingWithTheTonelClosingBracketCompilesWithoutIt [
 	"A method copied out of a Tonel file keeps the bracket that closes it there, with or without the header and the bracket that opens it. The bracket closes nothing in the source, which compiles without it and says nothing of it. A second stray bracket is still refused."
 

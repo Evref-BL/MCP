@@ -471,7 +471,7 @@ MCPToolRunTestsTest >> testAStatementIsSaidOnlyForAGroupOfOneTest [
 
 	| issue outcomes result |
 	outcomes := self outcomesFor: { (#classes -> #( 'MCPToolRunTestsSomeFailTarget' )) }.
-	result := MCPRunTestsResult results: #(  ) timedOut: false unrunTests: #(  ).
+	result := MCPRunTestsResult outcomes: #(  ) timedOut: false unrunTests: #(  ).
 	issue := Dictionary new
 		         at: #kind put: 'failure';
 		         at: #errorClass put: #TestFailure;

@@ -10,6 +10,8 @@ A pattern that matches more than its rule is about says so in a pattern block on
 Class {
 	#name : 'MCPMethodStyleRule',
 	#superclass : 'ReNodeRewriteRule',
+	#traits : 'TMCPAgentRule',
+	#classTraits : 'TMCPAgentRule classTrait',
 	#category : 'MCP-IDE-Critiques',
 	#package : 'MCP-IDE',
 	#tag : 'Critiques'
@@ -32,12 +34,6 @@ MCPMethodStyleRule class >> classKnownFor: aNode [
 	aNode isSuperVariable ifTrue: [ ^ aNode methodNode methodClass superclass ].
 	(self isClassReference: aNode) ifTrue: [ ^ aNode binding value class ].
 	^ nil
-]
-
-{ #category : 'accessing' }
-MCPMethodStyleRule class >> group [
-
-	^ #'Design Flaws'
 ]
 
 { #category : 'testing' }
@@ -91,28 +87,8 @@ MCPMethodStyleRule class >> ruleName [
 	^ 'MCP method style rule'
 ]
 
-{ #category : 'accessing' }
-MCPMethodStyleRule class >> severity [
-
-	^ #warning
-]
-
-{ #category : 'accessing' }
-MCPMethodStyleRule class >> uniqueIdentifierName [
-
-	^ self name asString
-]
-
 { #category : 'running' }
-MCPMethodStyleRule >> check: aNode forCritiquesDo: aCriticBlock [
-	"MCP's rules answer an agent only, so the browser and Iceberg, which critique outside MCPAgentCritiquing, never show them."
+MCPMethodStyleRule >> agentCheck: aNode forCritiquesDo: aCriticBlock [
 
-	MCPAgentCritiquing value ifFalse: [ ^ self ].
 	super check: aNode forCritiquesDo: aCriticBlock
-]
-
-{ #category : 'accessing' }
-MCPMethodStyleRule >> name [
-
-	^ self class ruleName
 ]

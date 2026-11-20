@@ -28,6 +28,13 @@ MCPGitRepositoryMetadata class >> fromLocationString: aString [
 	^ self new initializeWithLocationString: aString
 ]
 
+{ #category : 'accessing' }
+MCPGitRepositoryMetadata class >> gitDirectoryOfGitFile: aGitFile in: aRepositoryDirectory [
+	"The git directory a linked worktree's .git file names, nil when it names none."
+
+	^ self new gitDirectoryFromGitFile: aGitFile repositoryDirectory: aRepositoryDirectory
+]
+
 { #category : 'private - parsing' }
 MCPGitRepositoryMetadata >> branchNameFromMerge: mergeReference [
 
@@ -141,8 +148,7 @@ MCPGitRepositoryMetadata >> gitdirPathFrom: fileContents [
 { #category : 'initialization' }
 MCPGitRepositoryMetadata >> initializeForRepository: aRepository [
 
-	^ self initializeWithLocationString:
-		  (aRepository location ifNotNil: [ :repositoryLocation | repositoryLocation mcpRepositoryLocationString ])
+	self initializeWithLocationString: aRepository mcpLocationString
 ]
 
 { #category : 'initialization' }
@@ -150,8 +156,7 @@ MCPGitRepositoryMetadata >> initializeWithLocationString: aString [
 
 	location := aString ifNil: [ '' ].
 	gitDirectory := self gitDirectoryForLocation: location.
-	configEntries := self configEntriesFromGitDirectory: gitDirectory.
-	^ self
+	configEntries := self configEntriesFromGitDirectory: gitDirectory
 ]
 
 { #category : 'private - parsing' }

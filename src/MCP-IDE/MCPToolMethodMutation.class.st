@@ -111,14 +111,12 @@ MCPToolMethodMutation >> allowedNonErrorCritiqueRuleClasses [
 		  ReEquivalentSuperclassMethodsRule.
 		  ReExcessiveArgumentsRule.
 		  ReIsNilAndConditionalRule.
-		  ReIsNotNilAndConditionalRule.
+		  self isNotNilAndConditionalRuleClass.
 		  ReMissingSuperSendsRule.
-		  ReNotOptimizedIfRule.
-		  ReNotOptimizedIfNilRule.
 		  ReReturnInEnsureRule.
 		  ReTempVarOverridesInstVarRule.
 		  ReUnaryAccessingMethodWithoutReturnRule.
-		  ReUseIsEmptyNotSizeRule }
+		  ReUseIsEmptyNotSizeRule } , self notOptimizedIfRuleClasses
 ]
 
 { #category : 'private - specs' }
@@ -133,7 +131,7 @@ MCPToolMethodMutation >> behaviorChangingRewriteRuleClasses [
 
 	^ {
 		  ReIsNilAndConditionalRule.
-		  ReIsNotNilAndConditionalRule }
+		  self isNotNilAndConditionalRuleClass }
 ]
 
 { #category : 'private' }

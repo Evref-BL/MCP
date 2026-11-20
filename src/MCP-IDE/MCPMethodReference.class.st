@@ -85,13 +85,21 @@ MCPMethodReference >> classSide [
 	^ classSide
 ]
 
+{ #category : 'accessing' }
+MCPMethodReference >> compiledMethod [
+	"The method named, which must exist."
+
+	| behavior |
+	behavior := MCPImageLookup behaviorNamed: className classSide: classSide.
+	^ behavior compiledMethodAt: selector asSymbol ifAbsent: [ MCPCommandError signalMissingMethod: selector in: behavior ]
+]
+
 { #category : 'initialization' }
 MCPMethodReference >> initializeClassName: aClassName classSide: aBoolean selector: aSelector [
 
 	className := aClassName.
 	classSide := aBoolean.
-	selector := aSelector.
-	^ self
+	selector := aSelector
 ]
 
 { #category : 'printing' }

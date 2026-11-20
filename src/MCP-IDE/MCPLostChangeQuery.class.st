@@ -62,7 +62,7 @@ MCPLostChangeQuery >> elementNameOf: anEvent ifPresent: aBlock [
 	anEvent isCodeChange ifFalse: [ ^ self ].
 	anEvent isEpMethodChange ifTrue: [
 			^ aBlock value:
-				  (String streamContents: [ :stream | stream << anEvent behaviorAffectedName << '>>' << anEvent methodAffectedSelector ]) ].
+				  (MCPLostMethodChange elementForBehaviorNamed: anEvent behaviorAffectedName selector: anEvent methodAffectedSelector) ].
 	(anEvent isEpBehaviorChange and: [ anEvent isEpProtocolChange not ]) ifTrue: [
 		aBlock value: anEvent behaviorAffectedName asString ]
 ]
@@ -187,9 +187,9 @@ MCPLostChangeQuery >> recordDefinitionChange: aChange from: aClassDefinition to:
 MCPLostChangeQuery >> recordMethodChange: aChange from: aMethodDefinition to: anotherMethodDefinition [
 	"aMethodDefinition is the method before aChange, anotherMethodDefinition after it, nil where it does not exist. Only the first change to the method says what it was at the save."
 
-	| element |
-	element := String streamContents: [ :stream | stream << aChange behaviorAffectedName << '>>' << aChange methodAffectedSelector ].
-	(methodChanges at: element ifAbsentPut: [
+	(methodChanges
+		 at: (MCPLostMethodChange elementForBehaviorNamed: aChange behaviorAffectedName selector: aChange methodAffectedSelector)
+		 ifAbsentPut: [
 			 MCPLostMethodChange
 				 behaviorName: aChange behaviorAffectedName
 				 selector: aChange methodAffectedSelector
@@ -294,13 +294,6 @@ MCPLostChangeQuery >> supersedeMembersOf: aClassName [
 
 	methodChanges select: [ :each | each isOfClassNamed: aClassName ] thenDo: [ :each | each supersede ].
 	commentChanges at: aClassName ifPresent: [ :each | each supersede ]
-]
-
-{ #category : 'visiting' }
-MCPLostChangeQuery >> visitBehaviorCategoryChange: aChange [
-	"Before Pharo 12, a class moved to another category."
-
-	self recordRepackaging: aChange
 ]
 
 { #category : 'visiting' }

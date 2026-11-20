@@ -11,9 +11,9 @@ Class {
 	#instVars : [
 		'issues'
 	],
-	#category : 'MCP-IDE-DTOs',
+	#category : 'MCP-IDE-Results',
 	#package : 'MCP-IDE',
-	#tag : 'DTOs'
+	#tag : 'Results'
 }
 
 { #category : 'private - removed classes' }
@@ -59,9 +59,7 @@ MCPStructuredTestResult class >> frameworkPackageNames [
 
 	| names |
 	names := Set with: TestCase package name asString.
-	self environment
-		at: #BaselineOfPharoBootstrap
-		ifPresent: [ :baseline | baseline kernelPackageNames do: [ :each | names add: each asString ] ].
+	BaselineOfPharoBootstrap kernelPackageNames do: [ :each | names add: each asString ].
 	^ names
 ]
 

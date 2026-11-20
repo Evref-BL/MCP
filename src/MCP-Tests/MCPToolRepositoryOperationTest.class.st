@@ -186,7 +186,7 @@ MCPToolRepositoryOperationTest >> newTestRepositoryNamed: aRepositoryName [
 	location := FileLocator temp asFileReference / ('mcp-test-repository-metadata-' , UUID new asString).
 	location ensureCreateDirectory.
 	MCPTestGitRepositoryFixture writeConfig: MCPTestGitRepositoryFixture standardConfig in: location.
-	repository := MCPTestIceRepository named: aRepositoryName location: location pathString.
+	repository := MCPTestIceRepository named: aRepositoryName location: location.
 	repository remoteNames: #( 'origin' ).
 	^ repository
 ]
@@ -2457,7 +2457,7 @@ MCPToolRepositoryOperationTest >> testVerifyIdentityPassesWhenExpectedIdentityMa
 			result := self callToolWith: {
 					          (#action -> 'verifyIdentity').
 					          (#repository -> repository name).
-					          (#location -> repository location).
+					          (#location -> repository location pathString).
 					          (#branch -> 'main').
 					          (#subdirectory -> '').
 					          (#packages -> #( 'MCP' 'MCP-Tests' )).
@@ -2549,7 +2549,7 @@ MCPToolRepositoryOperationTest >> testVerifyIdentityReportsWrongLocationAsIdenti
 			self assert: (errorDetails at: #errorCode) equals: 'RepositoryIdentityMismatch'.
 			locationMismatch := (errorDetails at: #mismatches) detect: [ :each | (each at: #field) = 'location' ].
 			self assert: (locationMismatch at: #expected) equals: 'memory://different-location'.
-			self assert: (locationMismatch at: #actual) equals: repository location ]
+			self assert: (locationMismatch at: #actual) equals: repository location pathString ]
 ]
 
 { #category : 'tests' }

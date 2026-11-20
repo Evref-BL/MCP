@@ -39,24 +39,19 @@ MCPToolMutation >> addRefactoringScopeContextFromSpec: scopeSpec toRequestedCont
 { #category : 'private - errors' }
 MCPToolMutation >> addSupplementalDetailsForMutationError: anError to: details [
 
-	| cause methodNode position undeclaredVariableNode variableName |
+	| cause |
 	cause := self mutationFailureCauseFor: anError.
-	methodNode := self methodNodeFromError: cause.
-	methodNode ifNotNil: [ self addSupplementalSelectorFromMethodNode: methodNode to: details ].
+	cause mcpMethodNode ifNotNil: [ :methodNode | self addSupplementalSelectorFromMethodNode: methodNode to: details ].
 	anError mcpCompilationAst ifNotNil: [ :ast | self addSupplementalSelectorFromMethodNode: ast to: details ].
 	anError == cause ifFalse: [
-			methodNode := self methodNodeFromError: anError.
-			methodNode ifNotNil: [ self addSupplementalSelectorFromMethodNode: methodNode to: details ] ].
-	position := self positionFromError: cause.
-	position ifNotNil: [ details at: #position put: position ].
-	undeclaredVariableNode := self undeclaredVariableNodeFrom: cause.
-	undeclaredVariableNode ifNotNil: [
-			variableName := self undeclaredVariableNameFor: cause.
-			variableName ifNotNil: [ details at: #variableName put: variableName ].
-			(self startPositionFromNode: undeclaredVariableNode) ifNotNil: [ :start | details at: #position put: start ] ].
+		anError mcpMethodNode ifNotNil: [ :methodNode | self addSupplementalSelectorFromMethodNode: methodNode to: details ] ].
+	cause mcpErrorPosition ifNotNil: [ :position | details at: #position put: position ].
+	cause mcpNoticeNode ifNotNil: [ :node |
+			details at: #variableName put: node name asString.
+			node start ifNotNil: [ :start | details at: #position put: start ] ].
 	(self readOnlyAssignmentNodesFrom: cause) ifNotEmpty: [ :nodes |
 			details at: #variableName put: nodes first variable name asString.
-			details at: #position put: (self startPositionFromNode: nodes first) ]
+			details at: #position put: nodes first start ]
 ]
 
 { #category : 'private - errors' }
@@ -218,7 +213,7 @@ MCPToolMutation >> failureErrorCodeFor: anError action: action [
 	| cause prefix |
 	cause := self mutationFailureCauseFor: anError.
 	prefix := self actionErrorCodePrefixFor: action.
-	(self undeclaredVariableNodeFrom: cause) ifNotNil: [ ^ prefix , 'UndeclaredVariable' ].
+	cause mcpNoticeNode ifNotNil: [ ^ prefix , 'UndeclaredVariable' ].
 	(self readOnlyAssignmentNodesFrom: cause) ifNotEmpty: [ ^ prefix , 'ReadOnlyAssignment' ].
 	^ prefix , cause mcpMutationFailureErrorCodeSuffix
 ]
@@ -254,7 +249,7 @@ MCPToolMutation >> impactMessageForRefactoringCondition: aCondition [
 
 	| message |
 	message := String streamContents: [ :stream | aCondition violationMessageOn: stream ].
-	^ MCPRefactoringText withoutNegation: (MCPRefactoringText singleLine: message)
+	^ MCPRefactoringText conditionText: message
 ]
 
 { #category : 'private - warnings' }
@@ -295,12 +290,6 @@ MCPToolMutation >> isPackageNamed: aName inTheProjectOf: anotherName [
 	^ aName isNotNil and: [ anotherName isNotNil and: [ (aName asString copyUpTo: $-) = (anotherName asString copyUpTo: $-) ] ]
 ]
 
-{ #category : 'private - errors' }
-MCPToolMutation >> methodNodeFromError: anError [
-
-	^ anError mcpMethodNode
-]
-
 { #category : 'private - execution' }
 MCPToolMutation >> mutateWith: request [
 	"Make the change the checked arguments ask for, and answer the tool result."
@@ -318,9 +307,7 @@ MCPToolMutation >> mutationActionFor: request checked: aBoolean [
 { #category : 'private - mutation failures' }
 MCPToolMutation >> mutationFailureCauseFor: anError [
 
-	^ anError mcpSyntaxNotice
-		  ifNil: [ anError ]
-		  ifNotNil: [ :syntaxNotice | anError mcpMutationFailureCauseForSyntaxNotice: syntaxNotice ]
+	^ anError mcpSyntaxNotice ifNil: [ anError ]
 ]
 
 { #category : 'private - errors' }
@@ -328,7 +315,7 @@ MCPToolMutation >> normalizedCauseMessageForMutationError: anError [
 
 	| cause descriptionText message |
 	cause := self mutationFailureCauseFor: anError.
-	(self undeclaredVariableNodeFrom: cause) ifNotNil: [ ^ self undeclaredVariableCauseMessageFor: cause ].
+	(self undeclaredVariableNameFor: cause) ifNotNil: [ :name | ^ 'Undeclared variable: ' , name ].
 	(self readOnlyAssignmentCauseMessageFor: cause) ifNotNil: [ :readOnlyMessage | ^ readOnlyMessage ].
 	message := cause messageText.
 	message ifNil: [ message := '' ].
@@ -374,12 +361,6 @@ MCPToolMutation >> normalizedCommandErrorForRefactoringWarning: aWarning action:
 		  details: details;
 		  messageText: summary;
 		  yourself
-]
-
-{ #category : 'private - errors' }
-MCPToolMutation >> positionFromError: anError [
-
-	^ anError mcpErrorPosition
 ]
 
 { #category : 'private - errors' }
@@ -522,12 +503,6 @@ MCPToolMutation >> resolvedRefactoringScopeClassesFrom: classNames inScope: aSco
 	^ classNames collect: [ :eachName | MCPImageLookup classNamed: eachName inScope: aScopeKey ]
 ]
 
-{ #category : 'private - errors' }
-MCPToolMutation >> startPositionFromNode: aNode [
-
-	^ aNode start
-]
-
 { #category : 'private - warnings' }
 MCPToolMutation >> targetDescriptionForRequestedContext: requestedContext [
 
@@ -563,35 +538,9 @@ MCPToolMutation >> textWithoutFinalPeriod: aString [
 ]
 
 { #category : 'private - errors' }
-MCPToolMutation >> undeclaredVariableCauseMessageFor: anError [
-
-	| variableName |
-	variableName := self undeclaredVariableNameFor: anError.
-	^ variableName ifNil: [ 'Undeclared variable' ] ifNotNil: [ 'Undeclared variable: ' , variableName ]
-]
-
-{ #category : 'private - errors' }
 MCPToolMutation >> undeclaredVariableNameFor: anError [
 
-	| node notice |
-	node := self undeclaredVariableNodeFrom: anError.
-	(self variableNameFromNode: node) ifNotNil: [ :variableName | ^ variableName ].
-	notice := self undeclaredVariableNoticeFrom: anError.
-	notice ifNil: [ ^ nil ].
-	node := self undeclaredVariableNodeFrom: notice.
-	^ self variableNameFromNode: node
-]
-
-{ #category : 'private - errors' }
-MCPToolMutation >> undeclaredVariableNodeFrom: anError [
-
-	^ anError mcpNoticeNode
-]
-
-{ #category : 'private - mutation failures' }
-MCPToolMutation >> undeclaredVariableNoticeFrom: anError [
-
-	^ (self undeclaredVariableNodeFrom: anError) ifNotNil: [ anError ]
+	^ anError mcpNoticeNode ifNotNil: [ :node | node name asString ]
 ]
 
 { #category : 'private - refactoring' }
@@ -624,11 +573,4 @@ MCPToolMutation >> validateRequest: request [
 
 	super validateRequest: request.
 	self validateAtLeastOneInputPropertyIn: request
-]
-
-{ #category : 'private - errors' }
-MCPToolMutation >> variableNameFromNode: aNode [
-
-	aNode ifNil: [ ^ nil ].
-	^ aNode name asString
 ]

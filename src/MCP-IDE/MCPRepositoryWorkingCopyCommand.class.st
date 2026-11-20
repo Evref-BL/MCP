@@ -19,13 +19,6 @@ MCPRepositoryWorkingCopyCommand class >> isAbstract [
 	^ self = MCPRepositoryWorkingCopyCommand
 ]
 
-{ #category : 'private - diff' }
-MCPRepositoryWorkingCopyCommand >> addModifiedPathsFromNode: aNode to: paths [
-
-	(aNode hasChanges and: [ aNode path segments isNotEmpty ]) ifTrue: [ paths add: aNode path pathString ].
-	aNode children do: [ :each | self addModifiedPathsFromNode: each to: paths ]
-]
-
 { #category : 'files' }
 MCPRepositoryWorkingCopyCommand >> alsoUncommittedFrom: uncommittedPaths written: written deleted: deleted [
 	"What git sees besides what export wrote or deleted, in full: every uncommitted path but those export names and those under a directory it names."

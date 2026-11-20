@@ -21,21 +21,9 @@ Exception >> mcpFailedPreconditions [
 ]
 
 { #category : '*MCP-IDE' }
-Exception >> mcpMutationFailureCauseForSyntaxNotice: aSyntaxNotice [
-
-	^ aSyntaxNotice
-]
-
-{ #category : '*MCP-IDE' }
 Exception >> mcpMutationFailureErrorCodeSuffix [
 
 	^ 'ExecutionError'
-]
-
-{ #category : '*MCP-IDE' }
-Exception >> mcpNoticeNode [
-
-	^ nil
 ]
 
 { #category : '*MCP-IDE' }

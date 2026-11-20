@@ -1825,6 +1825,30 @@ MCPToolClassMutationTest >> testUpdateRefusesASlotListWithThePatchItTakes [
 ]
 
 { #category : 'tests - update' }
+MCPToolClassMutationTest >> testUpdateRefusesASlotTheClassInherits [
+	"A slot is removed or renamed in the class that defines it. Named on a subclass, the refusal says so, as a refactoring error, which every supported Pharo has."
+
+	| error |
+	self createSlotUserFixture.
+	{
+		((self
+			  updateRequestArgumentsForSlotAction: 'remove'
+			  className: 'MCPToolClassMutationTestSlotUserSubclass'
+			  slotName: 'usedClassSlot'
+			  classSide: true)
+		 -> 'The variable usedClassSlot is not directly defined in the class MCPToolClassMutationTestSlotUserSubclass').
+		((self
+			  updateRequestArgumentsForSlotRenameInClassNamed: 'MCPToolClassMutationTestSlotUserSubclass'
+			  slotName: 'usedSlot'
+			  newSlotName: 'renamedSlot'
+			  classSide: false) -> 'The variable usedSlot is not directly defined in the class MCPToolClassMutationTestSlotUserSubclass') }
+		do: [ :each |
+				error := self errorFrom: (self callToolWith: each key).
+				self assert: (error at: #causeClass) equals: 'RBRefactoringError'.
+				self assert: ((error at: #message) endsWith: each value) ]
+]
+
+{ #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateRemoveSlotStopsOnRefactoringWarningByDefault [
 
 	| error result structured target |

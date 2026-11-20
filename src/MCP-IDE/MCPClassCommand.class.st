@@ -46,7 +46,26 @@ MCPClassCommand >> resolvedLayoutClassNamed: layoutName [
 ]
 
 { #category : 'private - resolving' }
-MCPClassCommand >> resolvedSharedPoolNamed: aSharedPoolName [
+MCPClassCommand >> resolvedSharedPoolsNamed: someSharedPoolNames [
 
-	^ MCPImageLookup classNamed: aSharedPoolName role: #sharedPool details: { (#class -> self className) }
+	^ someSharedPoolNames
+		  collect: [ :each | MCPImageLookup classNamed: each role: #sharedPool details: { (#class -> self className) } ]
+		  as: Array
+]
+
+{ #category : 'private - resolving' }
+MCPClassCommand >> resolvedSuperclassNamed: aSuperclassName [
+
+	^ MCPImageLookup classNamed: aSuperclassName role: #superclass details: { (#class -> self className) }
+]
+
+{ #category : 'private - resolving' }
+MCPClassCommand >> resolvedTraitsNamed: someTraitNames [
+
+	^ someTraitNames
+		  collect: [ :each |
+				  MCPImageLookup traitNamed: each details: {
+						  (#class -> self className).
+						  (#traits -> someTraitNames) } ]
+		  as: Array
 ]

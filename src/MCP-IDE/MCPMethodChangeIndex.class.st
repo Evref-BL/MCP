@@ -30,7 +30,7 @@ MCPMethodChangeIndex >> add: anEntry of: aLog [
 	change := anEntry content.
 	change isEpMethodChange ifFalse: [ ^ self ].
 	(numbersByMethod
-		 at: (self keyForBehaviorNamed: change behaviorAffectedName selector: change methodAffectedSelector)
+		 at: (MCPLostMethodChange elementForBehaviorNamed: change behaviorAffectedName selector: change methodAffectedSelector)
 		 ifAbsentPut: [ OrderedCollection new ]) add: number.
 	change mcpIsMethodRemoval ifTrue: [
 			removalsByNumber at: number put: {
@@ -71,6 +71,16 @@ MCPMethodChangeIndex >> entryNumbered: aNumber do: aBlock [
 	log entryFor: (OmReference globalName: globalName localName: aNumber printString) ifPresent: aBlock ifAbsent: [ ]
 ]
 
+{ #category : 'private' }
+MCPMethodChangeIndex >> forgetEntriesRead [
+	"As before reading any entry."
+
+	count := 0.
+	numbersByMethod := Dictionary new.
+	removalsByNumber := Dictionary new.
+	priorOfFirstEntry := OmNullReference uniqueInstance
+]
+
 { #category : 'accessing' }
 MCPMethodChangeIndex >> globalName [
 	"The name of the file the index reads, the one its entries' references carry."
@@ -90,17 +100,7 @@ MCPMethodChangeIndex >> hasChangeToBehaviorNamed: aBehaviorName selector: aSelec
 MCPMethodChangeIndex >> initialize [
 
 	super initialize.
-	count := 0.
-	numbersByMethod := Dictionary new.
-	removalsByNumber := Dictionary new.
-	priorOfFirstEntry := OmNullReference uniqueInstance
-]
-
-{ #category : 'private - reading' }
-MCPMethodChangeIndex >> keyForBehaviorNamed: aBehaviorName selector: aSelector [
-	"Foo>>bar or Foo class>>bar, the behavior named as Epicea names it."
-
-	^ String streamContents: [ :stream | stream << aBehaviorName << '>>' << aSelector ]
+	self forgetEntriesRead
 ]
 
 { #category : 'private - reading' }
@@ -113,7 +113,7 @@ MCPMethodChangeIndex >> numberOf: anEntry in: aLog [
 MCPMethodChangeIndex >> numbersOfChangesToBehaviorNamed: aBehaviorName selector: aSelector [
 	"The numbers of the entries that changed the method, oldest first."
 
-	^ numbersByMethod at: (self keyForBehaviorNamed: aBehaviorName selector: aSelector) ifAbsent: [ #(  ) ]
+	^ numbersByMethod at: (MCPLostMethodChange elementForBehaviorNamed: aBehaviorName selector: aSelector) ifAbsent: [ #(  ) ]
 ]
 
 { #category : 'accessing' }
@@ -142,10 +142,7 @@ MCPMethodChangeIndex >> resetFor: aLog [
 	"Start over on the file aLog writes now."
 
 	globalName := aLog store globalName.
-	count := 0.
-	numbersByMethod := Dictionary new.
-	removalsByNumber := Dictionary new.
-	priorOfFirstEntry := OmNullReference uniqueInstance
+	self forgetEntriesRead
 ]
 
 { #category : 'updating' }

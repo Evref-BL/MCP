@@ -24,7 +24,7 @@ MCPReplaceClassSharedVariablesCommand class >> className: aClassName sharedVaria
 { #category : 'executing' }
 MCPReplaceClassSharedVariablesCommand >> execute [
 
-	^ self replaceSharedVariablesOn: self targetClass
+	^ self replaceSharedVariablesOn: self currentClass
 ]
 
 { #category : 'accessing' }
@@ -37,16 +37,4 @@ MCPReplaceClassSharedVariablesCommand >> sharedVariableNames [
 MCPReplaceClassSharedVariablesCommand >> sharedVariableNames: someNames [
 
 	sharedVariableNames := someNames ifNil: [ #(  ) ] ifNotNil: [ someNames asArray ]
-]
-
-{ #category : 'accessing' }
-MCPReplaceClassSharedVariablesCommand >> sharedVariables [
-
-	^ self sharedVariableNames
-]
-
-{ #category : 'private' }
-MCPReplaceClassSharedVariablesCommand >> targetClass [
-
-	^ MCPImageLookup classNamed: self className
 ]

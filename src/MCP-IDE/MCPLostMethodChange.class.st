@@ -24,19 +24,19 @@ MCPLostMethodChange class >> behaviorName: aBehaviorName selector: aSelector sav
 		  yourself
 ]
 
+{ #category : 'accessing' }
+MCPLostMethodChange class >> elementForBehaviorNamed: aBehaviorName selector: aSelector [
+	"Foo>>bar or Foo class>>bar, the behavior named as Epicea names it: the key under which a method's changes are found again."
+
+	^ String streamContents: [ :stream | stream << aBehaviorName << '>>' << aSelector ]
+]
+
 { #category : 'converting' }
 MCPLostMethodChange >> addTargetTo: aDictionary [
 
 	targetState ifNotNil: [
 			aDictionary at: #protocol put: targetState protocol asString.
 			aDictionary at: #source put: targetState sourceCode ]
-]
-
-{ #category : 'accessing' }
-MCPLostMethodChange >> affectedClassName [
-	"Epicea's name for the behavior, without the side it gives."
-
-	^ behaviorName copyUpTo: Character space
 ]
 
 { #category : 'accessing' }
@@ -49,7 +49,7 @@ MCPLostMethodChange >> changeDescription [
 { #category : 'accessing' }
 MCPLostMethodChange >> element [
 
-	^ String streamContents: [ :stream | stream << behaviorName << '>>' << selector ]
+	^ self class elementForBehaviorNamed: behaviorName selector: selector
 ]
 
 { #category : 'private - image' }
@@ -99,7 +99,7 @@ MCPLostMethodChange >> imageVersionIfPresent: presentBlock ifAbsent: absentBlock
 { #category : 'testing' }
 MCPLostMethodChange >> isClassSide [
 
-	^ behaviorName includes: Character space
+	^ MCPImageLookup namesClassSide: behaviorName
 ]
 
 { #category : 'testing' }
@@ -131,6 +131,7 @@ MCPLostMethodChange >> restorePhase [
 MCPLostMethodChange >> setBehaviorName: aBehaviorName selector: aSelector [
 
 	behaviorName := aBehaviorName asString.
+	affectedClassName := MCPImageLookup baseNameOf: behaviorName.
 	selector := aSelector asSymbol.
 	sourceMatches := IdentityDictionary new
 ]

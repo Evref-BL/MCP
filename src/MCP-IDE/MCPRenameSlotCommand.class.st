@@ -1,5 +1,5 @@
 "
-Renames a slot on a class. Instance-side renames use the refactoring engine. Class-side renames use a metaclass-aware path that snapshots affected class objects, restores their values into the renamed slot, rewrites class-side references, and renames local accessors.
+Renames a slot on either side of a class: it snapshots the values of the affected objects, restores them into the renamed slot, rewrites the references and renames local accessors.
 "
 Class {
 	#name : 'MCPRenameSlotCommand',
@@ -35,14 +35,18 @@ MCPRenameSlotCommand >> accessorMessageRewriter [
 	^ rewriter
 ]
 
-{ #category : 'executing' }
-MCPRenameSlotCommand >> execute [
+{ #category : 'private' }
+MCPRenameSlotCommand >> applyToBehavior: aBehavior [
 	"The same rename on either side: a class-side slot is an instance variable of the metaclass."
 
-	self renameSlotInBehavior: (self classSide
-			 ifTrue: [ self currentClass classSide ]
-			 ifFalse: [ self currentClass ]).
-	^ Smalltalk globals at: self className asSymbol
+	| preservedValues |
+	self validateSlotRenameInBehavior: aBehavior.
+	preservedValues := self slotValuesForBehavior: aBehavior.
+	aBehavior addInstVarNamed: self newSlotName.
+	self restoreSlotValues: preservedValues.
+	self rewriteReferencesInBehavior: aBehavior.
+	self renameAccessorsInBehavior: aBehavior.
+	aBehavior removeInstVarNamed: self slotName
 ]
 
 { #category : 'private' }
@@ -55,7 +59,7 @@ MCPRenameSlotCommand >> getterSourceForNewSlot [
 MCPRenameSlotCommand >> hierarchyDefinesSlotNamed: aSlotName inBehavior: aBehavior [
 
 	(aBehavior hasSlotNamed: aSlotName asSymbol) ifTrue: [ ^ true ].
-	^ aBehavior allSubclasses anySatisfy: [ :each | self slotNamed: aSlotName isDefinedIn: each ]
+	^ aBehavior allSubclasses anySatisfy: [ :each | self definesSlotNamed: aSlotName in: each ]
 ]
 
 { #category : 'accessing' }
@@ -68,24 +72,6 @@ MCPRenameSlotCommand >> newSlotName [
 MCPRenameSlotCommand >> newSlotName: aNewSlotName [
 
 	newSlotName := aNewSlotName
-]
-
-{ #category : 'private' }
-MCPRenameSlotCommand >> normalizedBehaviorNameFor: aBehavior [
-
-	^ (aBehavior isMeta
-		   ifTrue: [ aBehavior instanceSide name ]
-		   ifFalse: [ aBehavior name ]) asString
-]
-
-{ #category : 'private' }
-MCPRenameSlotCommand >> refactoringForBehavior: aBehavior [
-
-	^ RBRenameInstanceVariableRefactoring
-		  rename: self slotName
-		  to: self newSlotName
-		  in: aBehavior
-		  renameAccessors: true
 ]
 
 { #category : 'private' }
@@ -126,19 +112,6 @@ MCPRenameSlotCommand >> renameAccessorsInBehavior: aBehavior [
 		to: (self newSlotName , ':') asSymbol
 		source: self setterSourceForNewSlot
 		inBehavior: aBehavior
-]
-
-{ #category : 'private' }
-MCPRenameSlotCommand >> renameSlotInBehavior: aBehavior [
-
-	| preservedValues |
-	self validateSlotRenameInBehavior: aBehavior.
-	preservedValues := self slotValuesForBehavior: aBehavior.
-	aBehavior addInstVarNamed: self newSlotName.
-	self restoreSlotValues: preservedValues.
-	self rewriteReferencesInBehavior: aBehavior.
-	self renameAccessorsInBehavior: aBehavior.
-	aBehavior removeInstVarNamed: self slotName
 ]
 
 { #category : 'private' }
@@ -184,16 +157,10 @@ MCPRenameSlotCommand >> setterSourceForNewSlot [
 ]
 
 { #category : 'private' }
-MCPRenameSlotCommand >> slotNamed: aSlotName isDefinedIn: aBehavior [
-
-	^ aBehavior slots anySatisfy: [ :each | each name = aSlotName asSymbol ]
-]
-
-{ #category : 'private' }
 MCPRenameSlotCommand >> slotValuesForBehavior: aBehavior [
 
 	| values |
-	(self slotNamed: self slotName isDefinedIn: aBehavior) ifFalse: [ ^ #(  ) ].
+	(self definesSlotNamed: self slotName in: aBehavior) ifFalse: [ ^ #(  ) ].
 	values := OrderedCollection new.
 	aBehavior withAllSubclasses do: [ :eachBehavior |
 		eachBehavior allInstances do: [ :eachObject | values add: eachObject -> (eachObject instVarNamed: self slotName asString) ] ].
@@ -203,14 +170,10 @@ MCPRenameSlotCommand >> slotValuesForBehavior: aBehavior [
 { #category : 'private' }
 MCPRenameSlotCommand >> validateSlotRenameInBehavior: aBehavior [
 
-	(self slotNamed: self slotName isDefinedIn: aBehavior) ifFalse: [
-			RBApplicabilityChecksFailedError signal: (String streamContents: [ :stream |
-						 stream << 'The variable ' << self slotName << ' is not directly defined in the class '
-						 << (self normalizedBehaviorNameFor: aBehavior) ]) ].
+	self validateSlotIsDefinedIn: aBehavior.
 	(self hierarchyDefinesSlotNamed: self newSlotName inBehavior: aBehavior) ifTrue: [
-			RBApplicabilityChecksFailedError signal: (String streamContents: [ :stream |
-						 stream << self newSlotName << ' is already defined in the class ' << (self normalizedBehaviorNameFor: aBehavior)
-						 << ' or its hierarchy.' ]) ]
+			RBRefactoringError signal: (String streamContents: [ :stream |
+					 stream << self newSlotName << ' is already defined in the class ' << self className << ' or its hierarchy.' ]) ]
 ]
 
 { #category : 'private' }

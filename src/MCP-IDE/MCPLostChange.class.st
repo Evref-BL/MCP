@@ -15,12 +15,23 @@ Class {
 		'knowsSavedState',
 		'isSuperseded',
 		'packageName',
-		'isChangedInSessionInProgress'
+		'isChangedInSessionInProgress',
+		'affectedClassName'
 	],
 	#category : 'MCP-IDE-Queries',
 	#package : 'MCP-IDE',
 	#tag : 'Queries'
 }
+
+{ #category : 'instance creation' }
+MCPLostChange class >> className: aClassName saved: aState [
+	"The change to the definition or the comment of aClassName, which was aState at the save, nil when there was none."
+
+	^ self new
+		  setClassName: aClassName;
+		  savedState: aState;
+		  yourself
+]
 
 { #category : 'testing' }
 MCPLostChange class >> isAbstract [
@@ -46,7 +57,7 @@ MCPLostChange >> addTargetTo: aDictionary [
 MCPLostChange >> affectedClassName [
 	"The class the element is or belongs to, by its instance-side name."
 
-	^ self subclassResponsibility
+	^ affectedClassName
 ]
 
 { #category : 'converting' }
@@ -98,9 +109,9 @@ MCPLostChange >> conflictReason [
 
 { #category : 'accessing' }
 MCPLostChange >> element [
-	"How the element is named, as restoring takes it: Foo>>bar, Foo class>>bar, or Foo."
+	"How the element is named, as restoring takes it: Foo>>bar, Foo class>>bar, or Foo for a class's definition and its comment alike."
 
-	^ self subclassResponsibility
+	^ affectedClassName
 ]
 
 { #category : 'private - image' }
@@ -225,6 +236,12 @@ MCPLostChange >> savedStateIsUnknown [
 	"The first change read records the element after it and not before, as a move to another package does: no conflict can be told."
 
 	knowsSavedState := false
+]
+
+{ #category : 'initialization' }
+MCPLostChange >> setClassName: aClassName [
+
+	affectedClassName := aClassName asString
 ]
 
 { #category : 'restoring' }

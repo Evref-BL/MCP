@@ -63,10 +63,8 @@ MCPToolRepositoryOperation >> creationFor: request [
 MCPToolRepositoryOperation >> dataForPackagesOf: aRepository [
 	"The packages the repository registers, by name."
 
-	| packages |
-	packages := aRepository workingCopy packages asArray sort: [ :left :right | left name asString <= right name asString ].
 	^ self dataKeepingNonEmpty:
-		  { (#packages -> (packages collect: [ :each | (MCPRepositoryPackageInfo fromPackage: each) name ] as: Array)) }
+		  { (#packages -> (aRepository workingCopy packages collect: [ :each | each name asString ] as: Array) sort) }
 ]
 
 { #category : 'private - results' }

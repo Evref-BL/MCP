@@ -10,16 +10,17 @@ Class {
 }
 
 { #category : 'cleaning' }
-MCPRefactoringText class >> singleLine: aString [
-	"aString on one line: each line break, written or as Pharo's <n>, becomes a space, and runs of spaces become one."
+MCPRefactoringText class >> conditionText: aString [
+	"What a condition, negated or not, found, on one line."
 
-	| text |
-	text := aString ifNil: [ '' ] ifNotNil: [ aString asString ].
-	text := text copyReplaceAll: '<n>' with: ' '.
-	text := text copyReplaceAll: String cr with: ' '.
-	text := text copyReplaceAll: String lf with: ' '.
-	[ text includesSubstring: '  ' ] whileTrue: [ text := text copyReplaceAll: '  ' with: ' ' ].
-	^ text trimBoth
+	^ self withoutNegation: (self singleLine: aString)
+]
+
+{ #category : 'cleaning' }
+MCPRefactoringText class >> singleLine: aString [
+	"aString on one line: each line break, written or as Pharo's <n>, and each run of spaces and tabs becomes one space."
+
+	^ ' ' join: ((aString ifNil: [ '' ]) asString copyReplaceAll: '<n>' with: ' ') substrings
 ]
 
 { #category : 'cleaning' }

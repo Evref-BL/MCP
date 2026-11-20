@@ -4,7 +4,7 @@ One change a class_update call asks for, planned before any change is made: its 
 MCPToolUpdateClass orders the plans by action and applies them in that order.
 "
 Class {
-	#name : 'MCPClassUpdatePlanInfo',
+	#name : 'MCPClassUpdateSpec',
 	#superclass : 'Object',
 	#instVars : [
 		'requestedContext',
@@ -13,13 +13,13 @@ Class {
 		'newSlotName',
 		'classSide'
 	],
-	#category : 'MCP-IDE-DTOs',
+	#category : 'MCP-IDE-Specs',
 	#package : 'MCP-IDE',
-	#tag : 'DTOs'
+	#tag : 'Specs'
 }
 
 { #category : 'instance creation' }
-MCPClassUpdatePlanInfo class >> updateAction: anUpdateAction requestedContext: aDictionary [
+MCPClassUpdateSpec class >> updateAction: anUpdateAction requestedContext: aDictionary [
 
 	^ self new
 		  updateAction: anUpdateAction;
@@ -28,61 +28,61 @@ MCPClassUpdatePlanInfo class >> updateAction: anUpdateAction requestedContext: a
 ]
 
 { #category : 'accessing' }
-MCPClassUpdatePlanInfo >> classSide [
+MCPClassUpdateSpec >> classSide [
 
 	^ classSide ifNil: [ false ]
 ]
 
 { #category : 'accessing' }
-MCPClassUpdatePlanInfo >> classSide: aBoolean [
+MCPClassUpdateSpec >> classSide: aBoolean [
 
 	classSide := aBoolean
 ]
 
 { #category : 'accessing' }
-MCPClassUpdatePlanInfo >> newSlotName [
+MCPClassUpdateSpec >> newSlotName [
 
 	^ newSlotName
 ]
 
 { #category : 'accessing' }
-MCPClassUpdatePlanInfo >> newSlotName: aString [
+MCPClassUpdateSpec >> newSlotName: aString [
 
 	newSlotName := aString
 ]
 
 { #category : 'accessing' }
-MCPClassUpdatePlanInfo >> requestedContext [
+MCPClassUpdateSpec >> requestedContext [
 
 	^ requestedContext ifNil: [ Dictionary new ]
 ]
 
 { #category : 'accessing' }
-MCPClassUpdatePlanInfo >> requestedContext: aDictionary [
+MCPClassUpdateSpec >> requestedContext: aDictionary [
 
 	requestedContext := aDictionary ifNil: [ Dictionary new ]
 ]
 
 { #category : 'accessing' }
-MCPClassUpdatePlanInfo >> slotName [
+MCPClassUpdateSpec >> slotName [
 
 	^ slotName
 ]
 
 { #category : 'accessing' }
-MCPClassUpdatePlanInfo >> slotName: aString [
+MCPClassUpdateSpec >> slotName: aString [
 
 	slotName := aString
 ]
 
 { #category : 'accessing' }
-MCPClassUpdatePlanInfo >> updateAction [
+MCPClassUpdateSpec >> updateAction [
 
 	^ updateAction
 ]
 
 { #category : 'accessing' }
-MCPClassUpdatePlanInfo >> updateAction: anObject [
+MCPClassUpdateSpec >> updateAction: anObject [
 
 	updateAction := anObject
 ]

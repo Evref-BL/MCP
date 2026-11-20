@@ -49,7 +49,7 @@ MCPReplaceClassDefinitionCommand >> classSlots [
 { #category : 'executing' }
 MCPReplaceClassDefinitionCommand >> execute [
 
-	^ self replaceDefinitionOn: self targetClass
+	^ self replaceDefinitionOn: self currentClass
 ]
 
 { #category : 'accessing' }
@@ -92,10 +92,4 @@ MCPReplaceClassDefinitionCommand >> slotNames: someNames [
 MCPReplaceClassDefinitionCommand >> slots [
 
 	^ self slotNames collect: #asSymbol as: Array
-]
-
-{ #category : 'private' }
-MCPReplaceClassDefinitionCommand >> targetClass [
-
-	^ MCPImageLookup classNamed: self className
 ]

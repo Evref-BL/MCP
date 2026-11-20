@@ -114,7 +114,7 @@ MCPToolSearchRepositories >> queryEntriesForRequest: request scopeQuery: scopeQu
 	IceRepository repositories do: [ :eachRepository |
 			| repositoryInfo |
 			repositoryInfo := MCPRepositoryInfo fromRepository: eachRepository.
-			(self repositoryEntry: repositoryInfo asQueryDictionary matches: request fieldFilters: fieldFilters) ifTrue: [
+			(self repositoryEntry: repositoryInfo asDictionary matches: request fieldFilters: fieldFilters) ifTrue: [
 				entries add: repositoryInfo asSearchDictionary ] ].
 	^ entries asArray sort: [ :left :right | (left at: #name) <= (right at: #name) ]
 ]

@@ -5,7 +5,7 @@ It reads, from the class it keeps, the class name, its package and tag, and its 
 "
 Class {
 	#name : 'MCPClassInfo',
-	#superclass : 'MCPDataTransferObject',
+	#superclass : 'Object',
 	#instVars : [
 		'describedClass'
 	],

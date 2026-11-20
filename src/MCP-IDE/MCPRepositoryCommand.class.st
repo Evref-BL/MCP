@@ -115,7 +115,7 @@ MCPRepositoryCommand >> gitCommandStringFor: arguments in: aRepository outputFil
 	^ String streamContents: [ :stream |
 			  stream
 				  nextPutAll: 'git -C ';
-				  nextPutAll: (self shellQuote: (self repositoryLocationStringFor: aRepository)).
+				  nextPutAll: (self shellQuote: aRepository mcpLocationString).
 			  arguments do: [ :argument |
 					  stream
 						  space;
@@ -207,12 +207,6 @@ MCPRepositoryCommand >> repositoryHasGitWorkTree: aRepository [
 	| result |
 	result := self runGitArguments: #( 'rev-parse' '--is-inside-work-tree' ) in: aRepository.
 	^ (result at: #status) = 0 and: [ (result at: #output) trimBoth = 'true' ]
-]
-
-{ #category : 'private - git' }
-MCPRepositoryCommand >> repositoryLocationStringFor: aRepository [
-
-	^ aRepository location ifNil: [ '' ] ifNotNil: [ :repositoryLocation | repositoryLocation mcpRepositoryLocationString ]
 ]
 
 { #category : 'private - export' }
@@ -336,7 +330,7 @@ MCPRepositoryCommand >> sourceRepositoryClassForWriter: aWriterClass [
 	writer nothing here reads back answers nil."
 
 	aWriterClass id = #tonel ifTrue: [ ^ TonelRepository ].
-	aWriterClass id = #filetree ifTrue: [ ^ Smalltalk globals at: #MCFileTreeRepository ifAbsent: [ nil ] ].
+	aWriterClass id = #filetree ifTrue: [ ^ MCFileTreeRepository ].
 	^ nil
 ]
 

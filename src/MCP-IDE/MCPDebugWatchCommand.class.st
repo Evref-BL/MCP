@@ -108,7 +108,7 @@ MCPDebugWatchCommand >> locatedTargets [
 	located := OrderedCollection new.
 	methodReferences do: [ :reference |
 			| method label |
-			method := self methodForReference: reference.
+			method := reference compiledMethod.
 			label := reference printString.
 			self watchesVariables
 				ifTrue: [
@@ -134,16 +134,6 @@ MCPDebugWatchCommand >> locatedTargets [
 												(#interval -> entryNode sourceInterval).
 												(#isAssignment -> entryNode isAssignment) } asDictionary ] ] ] ].
 	^ located
-]
-
-{ #category : 'private - probes' }
-MCPDebugWatchCommand >> methodForReference: aReference [
-
-	| behavior |
-	behavior := MCPImageLookup behaviorNamed: aReference className classSide: aReference classSide.
-	^ behavior
-		  compiledMethodAt: aReference selector asSymbol
-		  ifAbsent: [ MCPCommandError signalMissingMethod: aReference selector in: behavior ]
 ]
 
 { #category : 'private - probes' }

@@ -6,6 +6,8 @@ MessageNotUnderstood should model an actual exceptional send failure, not be use
 Class {
 	#name : 'MCPMessageNotUnderstoodHandlerRule',
 	#superclass : 'ReAbstractRule',
+	#traits : 'TMCPAgentRule',
+	#classTraits : 'TMCPAgentRule classTrait',
 	#category : 'MCP-IDE-Critiques',
 	#package : 'MCP-IDE',
 	#tag : 'Critiques'
@@ -24,12 +26,6 @@ MCPMessageNotUnderstoodHandlerRule class >> forbiddenExceptionName [
 ]
 
 { #category : 'accessing' }
-MCPMessageNotUnderstoodHandlerRule class >> group [
-
-	^ #'Design Flaws'
-]
-
-{ #category : 'accessing' }
 MCPMessageNotUnderstoodHandlerRule class >> rationale [
 
 	^ 'Avoid handling MessageNotUnderstood as ordinary control flow. Prefer explicit collaborator contracts, typed boundary adapters, or MCP compatibility messages; reserve MNU handling for true exception/debugger behavior.'
@@ -41,22 +37,9 @@ MCPMessageNotUnderstoodHandlerRule class >> ruleName [
 	^ 'Avoid MessageNotUnderstood handlers'
 ]
 
-{ #category : 'accessing' }
-MCPMessageNotUnderstoodHandlerRule class >> severity [
-
-	^ #warning
-]
-
-{ #category : 'accessing' }
-MCPMessageNotUnderstoodHandlerRule class >> uniqueIdentifierName [
-
-	^ 'MCPMessageNotUnderstoodHandlerRule'
-]
-
 { #category : 'running' }
-MCPMessageNotUnderstoodHandlerRule >> check: aMethod forCritiquesDo: aCriticBlock [
+MCPMessageNotUnderstoodHandlerRule >> agentCheck: aMethod forCritiquesDo: aCriticBlock [
 
-	MCPAgentCritiquing value ifFalse: [ ^ self ].
 	aMethod sendNodes do: [ :sendNode |
 			(self isMessageNotUnderstoodHandlerSend: sendNode) ifTrue: [
 					aCriticBlock cull: (self
@@ -72,10 +55,4 @@ MCPMessageNotUnderstoodHandlerRule >> isMessageNotUnderstoodHandlerSend: sendNod
 	sendNode selector = #on:do: ifFalse: [ ^ false ].
 	exceptionNode := sendNode arguments first.
 	^ exceptionNode isVariable and: [ exceptionNode name = self class forbiddenExceptionName ]
-]
-
-{ #category : 'accessing' }
-MCPMessageNotUnderstoodHandlerRule >> name [
-
-	^ self class ruleName
 ]

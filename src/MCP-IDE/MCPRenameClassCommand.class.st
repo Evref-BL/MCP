@@ -5,8 +5,7 @@ Class {
 	#name : 'MCPRenameClassCommand',
 	#superclass : 'MCPClassCommand',
 	#instVars : [
-		'newClassName',
-		'model'
+		'newClassName'
 	],
 	#category : 'MCP-IDE-Commands',
 	#package : 'MCP-IDE',
@@ -25,21 +24,9 @@ MCPRenameClassCommand class >> className: aClassName newClassName: aNewClassName
 { #category : 'executing' }
 MCPRenameClassCommand >> execute [
 
-	MCPImageLookup classNamed: self className.
-	self refactoring execute.
+	self currentClass.
+	(ReRenameClassRefactoring rename: self className to: self newClassName) execute.
 	^ Smalltalk globals at: self newClassName asSymbol
-]
-
-{ #category : 'accessing' }
-MCPRenameClassCommand >> model [
-
-	^ model
-]
-
-{ #category : 'accessing' }
-MCPRenameClassCommand >> model: aModel [
-
-	model := aModel
 ]
 
 { #category : 'accessing' }
@@ -52,12 +39,4 @@ MCPRenameClassCommand >> newClassName [
 MCPRenameClassCommand >> newClassName: aString [
 
 	newClassName := aString
-]
-
-{ #category : 'private' }
-MCPRenameClassCommand >> refactoring [
-
-	^ self model
-		  ifNil: [ ReRenameClassRefactoring rename: self className to: self newClassName ]
-		  ifNotNil: [ ReRenameClassRefactoring model: self model rename: self className to: self newClassName ]
 ]
