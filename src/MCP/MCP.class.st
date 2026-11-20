@@ -361,9 +361,15 @@ MCP >> debugMode: aBoolean [
 
 { #category : 'start' }
 MCP >> discoveryInstructions [
-	"Natural-language guidance a client may put in front of a model: the everyday workflow, each step named by its tool, then how to reach what tools/list leaves out. A host may let a model call only what its own list holds, so a tool found that way goes through tool_call."
+	"Natural-language guidance a client may put in front of a model: the everyday workflows that loaded packages contribute as class-side methods of MCP marked <discoveryInstructions>, each step named by its tool, then how to reach what tools/list leaves out. The workflows come in selector order, which adding a method does not change, since a client may cache the text. A host may let a model call only what its own list holds, so a tool found that way goes through tool_call, and a workflow naming a tool this server does not advertise is left out."
 
-	^ 'Pharo code lives in the running image: find it with class_search or method_search, read with method_get, write with method_compile, check with test_run. tool_search finds more; tool_call runs them.'
+	| advertised |
+	advertised := self advertisedToolNames.
+	^ ' ' join: ((((Pragma allNamed: #discoveryInstructions in: MCP class) collect: #methodSelector) sorted
+			    collect: [ :selector | MCP perform: selector ]
+			    thenSelect: [ :workflow |
+				    ((workflow substrings: ' ,.;:()') select: [ :word | word includes: $_ ]) allSatisfy: [ :name | advertised includes: name ] ])
+			   copyWith: 'tool_search finds more; tool_call runs them.')
 ]
 
 { #category : 'private - tools' }

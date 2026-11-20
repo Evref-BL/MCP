@@ -350,39 +350,6 @@ MCPTool >> buildInputSchema [
 	self subclassResponsibility
 ]
 
-{ #category : 'private - source' }
-MCPTool >> codeQuoteFor: anInterval in: aString [
-	"The code an interval flags, as flaggedCodeFor:in: reads it, cut to its first 60 characters and ... when longer."
-
-	| code |
-	code := self flaggedCodeFor: anInterval in: aString.
-	code size > 60 ifFalse: [ ^ code ].
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: (code first: 60);
-				  nextPutAll: '...' ]
-]
-
-{ #category : 'private - source' }
-MCPTool >> compactedCode: aString [
-	"aString on one line: each run of blanks and line breaks between its tokens reads as one space, and there is none at either end. A string, symbol or character literal is kept as written, blanks included: 'hello   world' is another string than 'hello world', and the blank after a $ is the character it names. A comment is compacted as the code around it is."
-
-	| code |
-	code := aString readStream.
-	^ String streamContents: [ :stream |
-			  code skipSeparators.
-			  [ code atEnd ] whileFalse: [
-					  | character |
-					  character := code next.
-					  stream nextPut: character.
-					  (character = $$ and: [ code atEnd not ]) ifTrue: [ stream nextPut: code next ].
-					  character = $' ifTrue: [ self copyLiteralFrom: code to: stream ].
-					  character = $" ifTrue: [ self copyCommentFrom: code to: stream ].
-					  (code atEnd not and: [ code peek isSeparator ]) ifTrue: [
-							  code skipSeparators.
-							  code atEnd ifFalse: [ stream space ] ] ] ]
-]
-
 { #category : 'private - results' }
 MCPTool >> contentTextForStructuredContent: structuredContent [
 	"Answer the text block a caller reads: what happened, then the payload as lines. A tool overrides the rendering of its own data when its shape reads better another way."
@@ -401,33 +368,6 @@ MCPTool >> contract [
 	data at: #inputSchema put: self inputSchema asJRPCJSON.
 	self defaultPageLimit ifNotNil: [ :pageSize | data at: #pageSize put: pageSize ].
 	^ data
-]
-
-{ #category : 'private - source' }
-MCPTool >> copyCommentFrom: code to: aStream [
-	"Copy the rest of a comment from code, up to and with the quote that closes it, each run of blanks and line breaks in it as one space. A comment's blanks change nothing in the program, and a line break in it would break the line a quote is."
-
-	[ code atEnd ] whileFalse: [
-			| character |
-			character := code next.
-			character isSeparator
-				ifTrue: [
-						code skipSeparators.
-						aStream space ]
-				ifFalse: [
-						aStream nextPut: character.
-						character = $" ifTrue: [ ^ self ] ] ]
-]
-
-{ #category : 'private - source' }
-MCPTool >> copyLiteralFrom: code to: aStream [
-	"Copy the rest of a string or symbol literal from code, as written, up to and with the quote that closes it."
-
-	[ code atEnd ] whileFalse: [
-			| character |
-			character := code next.
-			aStream nextPut: character.
-			character = $' ifTrue: [ ^ self ] ]
 ]
 
 { #category : 'private - results' }
@@ -728,7 +668,7 @@ MCPTool >> executeRequest: request do: executionBlock onError: errorBlock [
 				  [ executionBlock value ]
 					  on: Notification
 					  do: [ :notification |
-							  (self shouldResumeNotification: notification)
+							  notification mcpResumesAtToolBoundary
 								  ifTrue: [ self resumeNotification: notification ]
 								  ifFalse: [ notification pass ] ] ]
 				  on: Exception
@@ -757,14 +697,6 @@ MCPTool >> failureMessageFor: anError [
 					  stream
 						  nextPutAll: ': ';
 						  nextPutAll: message ] ]
-]
-
-{ #category : 'private - source' }
-MCPTool >> flaggedCodeFor: anInterval in: aString [
-	"The code an interval flags, from its first character to its last, as compactedCode: reads it. The formatter spreads a long expression over several lines, so the line the code starts on can hold only the receiver of what is flagged."
-
-	(anInterval first between: 1 and: aString size) ifFalse: [ ^ '' ].
-	^ self compactedCode: (aString copyFrom: anInterval first to: (anInterval last min: aString size))
 ]
 
 { #category : 'error handling' }
@@ -928,20 +860,6 @@ MCPTool >> keywords [
 	^ (normalizedKeywords collect: [ :each | each asLowercase ] as: Set) asArray
 ]
 
-{ #category : 'private - source' }
-MCPTool >> lineNumberAt: aPosition in: aString [
-	"The line of aString that holds aPosition, counting from 1. CR, LF and CRLF each end a line, so a source reads the same lines whichever it uses."
-
-	| line |
-	line := 1.
-	1 to: (aPosition - 1 min: aString size) do: [ :index |
-			| character |
-			character := aString at: index.
-			(character = Character cr or: [ character = Character lf and: [ index = 1 or: [ (aString at: index - 1) ~= Character cr ] ] ])
-				ifTrue: [ line := line + 1 ] ].
-	^ line
-]
-
 { #category : 'metadata' }
 MCPTool >> metadata [
 
@@ -973,23 +891,6 @@ MCPTool >> methodReferenceTextFor: aDictionary [
 			  stream << ((self valueIn: aDictionary at: #side) = 'class'
 				   ifTrue: [ behaviorName asString , ' class' ]
 				   ifFalse: [ behaviorName asString ]) << '>>' << selector asString ]
-]
-
-{ #category : 'private - schema' }
-MCPTool >> methodSearchScopeSchemaProperties [
-	"What a scope selects when the entities are methods: the classes to look in, and which of their sides. side lives here rather than beside scope, so one object answers what this operates on."
-
-	^ self searchScopeSchemaProperties , { (self
-		   stringEnumSchemaPropertyNamed: 'side'
-		   description: 'Which sides of the selected classes to sweep.'
-		   values: #( 'instance' 'class' 'both' )
-		   default: 'both') }
-]
-
-{ #category : 'private - schema' }
-MCPTool >> methodSearchScopeSchemaProperty [
-
-	^ self searchScopeSchemaPropertyWith: self methodSearchScopeSchemaProperties
 ]
 
 { #category : 'private - results' }
@@ -1124,64 +1025,6 @@ MCPTool >> searchMetadata [
 		  (#description -> self description) } asDictionary
 ]
 
-{ #category : 'private - request' }
-MCPTool >> searchScopeFromRequest: request [
-
-	^ request argumentNamed: 'scope' ifAbsent: [ Dictionary new ]
-]
-
-{ #category : 'private - schema' }
-MCPTool >> searchScopeSchemaProperties [
-	"One definition of what a scope selects. A class has no side, so side belongs to the method variant rather than here. Several of these together select everything any of them names."
-
-	^ {
-		  (self stringArraySchemaNamed: 'classes' description: 'These classes.' itemDescription: 'Class name.').
-		  (self stringArraySchemaNamed: 'packages' description: 'Every class in these packages.' itemDescription: 'Package name.').
-		  (self
-			   stringArraySchemaNamed: 'superclassesOf'
-			   description: 'Ancestors of these classes, excluding them.'
-			   itemDescription: 'Class name.').
-		  (self
-			   stringArraySchemaNamed: 'subclassesOf'
-			   description: 'Descendants of these classes, excluding them.'
-			   itemDescription: 'Class name.').
-		  (self
-			   stringArraySchemaNamed: 'hierarchyOf'
-			   description: 'These classes with their ancestors and descendants.'
-			   itemDescription: 'Class name.') }
-]
-
-{ #category : 'private - schema' }
-MCPTool >> searchScopeSchemaProperty [
-
-	^ self searchScopeSchemaPropertyWith: self searchScopeSchemaProperties
-]
-
-{ #category : 'private - schema' }
-MCPTool >> searchScopeSchemaPropertyWith: someProperties [
-
-	^ MCPStructureProperties new
-		  name: 'scope';
-		  type: 'object';
-		  description: 'Where to search; entries add up. Omitted, the whole image.';
-		  properties: someProperties;
-		  additionalProperties: false;
-		  yourself
-]
-
-{ #category : 'private - request' }
-MCPTool >> searchScopeSideFromRequest: request [
-	"Which sides to sweep lives in the scope, beside the entities it narrows."
-
-	^ request stringArgumentNamed: 'side' in: (self searchScopeFromRequest: request) default: 'both'
-]
-
-{ #category : 'private - request' }
-MCPTool >> searchScopeStringCollectionNamed: aName fromRequest: request [
-
-	^ request stringCollectionArgumentNamed: aName in: (self searchScopeFromRequest: request)
-]
-
 { #category : 'private - schema' }
 MCPTool >> shouldAdvertiseStringArrayItemDescription: anItemDescription [
 
@@ -1197,13 +1040,6 @@ MCPTool >> shouldAdvertiseStringArrayItemDescription: anItemDescription [
 MCPTool >> shouldRecordObservability [
 
 	^ true
-]
-
-{ #category : 'testing' }
-MCPTool >> shouldResumeNotification: aNotification [
-	"A notification is not a failed call, so the boundary resumes it. A refactoring warning is the exception: it reports a change that breaks something, and a tool that may proceed anyway handles it itself behind force, so letting it reach the boundary unresumed is what aborts an unauthorized mutation."
-
-	^ (aNotification isKindOf: RBRefactoringWarning) not
 ]
 
 { #category : 'private - results' }
@@ -1313,17 +1149,6 @@ MCPTool >> summaryAndWarningsOn: stream for: structuredContent [
 			nextPut: Character lf;
 			nextPutAll: 'Warning: ';
 			nextPutAll: each ]
-]
-
-{ #category : 'private - schema' }
-MCPTool >> targetSideSchemaPropertyDescribedAs: aDescription [
-	"Which side the thing this tool was given is on. A single target is on one side, so there is no 'both' here; scope.side is where a sweep says which sides to cover."
-
-	^ self
-		  stringEnumSchemaPropertyNamed: 'side'
-		  description: aDescription
-		  values: #( 'instance' 'class' )
-		  default: 'instance'
 ]
 
 { #category : 'private - results' }

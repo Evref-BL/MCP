@@ -153,7 +153,7 @@ MCPEvaluateCommand >> evaluateWithinCallBoundary [
 		[ self evaluate ]
 			on: Notification
 			do: [ :notification |
-					(boundary shouldResumeNotification: notification)
+					notification mcpResumesAtToolBoundary
 						ifTrue: [ boundary resumeNotification: notification ]
 						ifFalse: [ notification pass ] ] ]
 		on: Exception
