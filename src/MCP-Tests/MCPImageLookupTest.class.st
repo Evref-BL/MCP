@@ -147,7 +147,7 @@ MCPImageLookupTest >> testAMisspeltNameSuggestsNamesOfItsKind [
 	self assert: error errorCode equals: #TraitNotFound.
 	self assert:
 		(error messageText beginsWith: 'Trait TMCPToolMethodSearchFixtur does not exist. Did you mean: TMCPToolMethodSearchFixture').
-	self assert: (suggestions allSatisfy: [ :each | (Smalltalk globals classNamed: each) isTrait ])
+	self assert: (suggestions allSatisfy: [ :each | (self class environment classNamed: each) isTrait ])
 ]
 
 { #category : 'tests' }

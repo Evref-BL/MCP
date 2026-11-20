@@ -55,7 +55,7 @@ MCPToolCreateClass >> classUpdateArgumentsFor: aClass from: request [
 	arguments at: 'name' put: aClass name asString.
 	(self newSuperclassNameOf: aClass in: request) ifNotNil: [ :name |
 			arguments at: 'superclass' put: name.
-			newSuperclass := Smalltalk globals classNamed: name ].
+			newSuperclass := self class environment classNamed: name ].
 	(request stringArgumentNamed: 'package') ifNotNil: [ :name |
 		name = (aClass package ifNotNil: [ :package | package name asString ]) ifFalse: [ arguments at: 'package' put: name ] ].
 	(request stringArgumentNamed: 'tag') ifNotNil: [ :name |
@@ -175,7 +175,7 @@ MCPToolCreateClass >> refuseExisting: aClass from: request [
 	(superclassName isNotNil and: [ aClass isTrait ~= (superclassName = 'Trait') ]) ifTrue: [
 		^ MCPCommandError signalClassAlreadyExistsNamed: aClass name asString askedForATrait: superclassName = 'Trait' ].
 	(self newSuperclassNameOf: aClass in: request) ifNotNil: [ :name |
-			(Smalltalk globals classNamed: name) ifNotNil: [ :superclass |
+			(self class environment classNamed: name) ifNotNil: [ :superclass |
 					(self slotsDefinedBy: aClass alsoIn: superclass) ifNotEmpty: [ :defined |
 						^ MCPCommandError signalClassAlreadyExistsNamed: aClass name asString superclass: name definedSlots: defined ] ] ].
 	^ MCPCommandError

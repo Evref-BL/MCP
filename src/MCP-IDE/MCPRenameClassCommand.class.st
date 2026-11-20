@@ -26,7 +26,7 @@ MCPRenameClassCommand >> execute [
 
 	self currentClass.
 	(ReRenameClassRefactoring rename: self className to: self newClassName) execute.
-	^ Smalltalk globals at: self newClassName asSymbol
+	^ self class environment at: self newClassName asSymbol
 ]
 
 { #category : 'accessing' }

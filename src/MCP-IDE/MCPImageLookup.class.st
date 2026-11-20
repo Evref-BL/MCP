@@ -1,5 +1,5 @@
 "
-Reads every class name an MCP tool takes, through the image's own `Smalltalk globals classNamed:`, and says every miss with `MCPCommandError`'s one builder.
+Reads every class name an MCP tool takes, through the environment its own class is bound in (`self class environment classNamed:`), and says every miss with `MCPCommandError`'s one builder.
 
 A name is read in one order: a list written as one string is refused; a trailing ` class` or ` classTrait` is split off as the side; the class or trait is looked up by its base name alone, and the lookup applies the side itself. A name that names no class is a global variable that is not one (`NotAClass`) or is missing, with the code of the role the name had (Class, Superclass, Trait, Shared pool, Layout class, Critique rule, Rewrite rule) and suggestions drawn from that role's kind.
 
@@ -48,13 +48,13 @@ MCPImageLookup class >> behaviorNamed: aName classSide: aBoolean [
 MCPImageLookup class >> candidatesForRole: aRole [
 	"The behaviours a name given in aRole could have meant, so that a misspelt trait suggests traits and a misspelt pool suggests pools. Pharo counts a trait among its classes, and a trait is no superclass."
 
-	aRole = #superclass ifTrue: [ ^ Smalltalk globals allClasses reject: [ :each | each isTrait ] ].
-	aRole = #trait ifTrue: [ ^ Smalltalk globals allTraits ].
+	aRole = #superclass ifTrue: [ ^ self class environment allClasses reject: [ :each | each isTrait ] ].
+	aRole = #trait ifTrue: [ ^ self class environment allTraits ].
 	aRole = #sharedPool ifTrue: [ ^ SharedPool allSubclasses ].
 	aRole = #layoutClass ifTrue: [ ^ AbstractLayout allSubclasses ].
 	aRole = #critiqueRule ifTrue: [ ^ ReRuleManager visibleRuleClasses ].
 	aRole = #rewriteRule ifTrue: [ ^ ReNodeRewriteRule allSubclasses ].
-	^ Smalltalk globals allClassesAndTraits
+	^ self class environment allClassesAndTraits
 ]
 
 { #category : 'reading names' }
@@ -85,9 +85,9 @@ MCPImageLookup class >> classNamed: aName ifList: listBlock ifNotAClass: notACla
 	| baseName behavior |
 	(self isListInOneName: aName) ifTrue: [ ^ listBlock value ].
 	baseName := self baseNameOf: aName.
-	behavior := (baseName anySatisfy: [ :each | each isSeparator ]) ifFalse: [ Smalltalk globals classNamed: baseName ].
+	behavior := (baseName anySatisfy: [ :each | each isSeparator ]) ifFalse: [ self class environment classNamed: baseName ].
 	behavior ifNotNil: [ ^ behavior instanceSide ].
-	(Smalltalk globals includesKey: baseName asSymbol) ifTrue: [ ^ notAClassBlock value: baseName ].
+	(self class environment includesKey: baseName asSymbol) ifTrue: [ ^ notAClassBlock value: baseName ].
 	^ absentBlock value: baseName
 ]
 
@@ -236,8 +236,8 @@ MCPImageLookup class >> newClassName: aName ifClassExists: aBlock [
 
 	(self isListInOneName: aName) ifTrue: [ MCPCommandError signalClassNameIsAList: aName scope: nil details: #(  ) ].
 	self wholeClassName: aName for: 'class_create'.
-	(Smalltalk globals classNamed: aName) ifNotNil: [ :existingClass | ^ aBlock value: existingClass ].
-	(Smalltalk globals includesKey: aName asSymbol) ifTrue: [ MCPCommandError signalGlobalAlreadyExistsNamed: aName ].
+	(self class environment classNamed: aName) ifNotNil: [ :existingClass | ^ aBlock value: existingClass ].
+	(self class environment includesKey: aName asSymbol) ifTrue: [ MCPCommandError signalGlobalAlreadyExistsNamed: aName ].
 	^ aName
 ]
 

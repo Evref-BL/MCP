@@ -592,7 +592,7 @@ MCPToolClassMutationTest >> testCreateRefusalOfAClassOfAnotherProjectWritesNoUpd
 	"A class of another project, as Pharo's Stack in Collections-Stack, is not the caller's to change: the class_update call written from a class_create of the caller's own Stack would move Pharo's into the caller's package, reparent it and give it the caller's slots and comment, breaking whatever uses it. The refusal names the package the class is in and asks for another name, and writes no call."
 
 	| error stack |
-	stack := Smalltalk globals at: #Stack.
+	stack := self class environment at: #Stack.
 	error := self errorFrom: (self callToolNamed: 'class_create' withArguments: {
 				          (#name -> 'Stack').
 				          (#superclass -> 'Object').
@@ -832,7 +832,7 @@ MCPToolClassMutationTest >> testCreateRefusesAListWrittenAsOneName [
 				equals:
 				('["Title" "Text"] is a list written as one string, not {1}. Pass several names as an array of strings.' format:
 					 { each second }).
-			self deny: (Smalltalk globals includesKey: #MCPToolClassMutationTestGenerated).
+			self deny: (self class environment includesKey: #MCPToolClassMutationTestGenerated).
 			self deny: (self packageOrganizer hasPackage: self generatedPackageName) ]
 ]
 
@@ -920,7 +920,7 @@ MCPToolClassMutationTest >> testCreateThatFailsLeavesNoPackageItMade [
 		             (#package -> self generatedPackageName).
 		             (#traits -> #( 'DefinitelyMissingTrait' )) } asDictionary.
 	self assert: ((self callToolNamed: 'class_create' withArguments: arguments) at: #isError).
-	self deny: (Smalltalk globals includesKey: #MCPToolClassMutationTestGenerated).
+	self deny: (self class environment includesKey: #MCPToolClassMutationTestGenerated).
 	self deny: (self packageOrganizer hasPackage: self generatedPackageName).
 	self withoutEpiceaDuring: [ self packageOrganizer ensurePackage: self generatedPackageName ].
 	self assert: ((self callToolNamed: 'class_create' withArguments: arguments) at: #isError).
@@ -2139,8 +2139,8 @@ MCPToolClassMutationTest >> testUpdateRenamesTheClassItsSubclassesAndItsReferenc
 	result := [ self callToolNamed: 'class_update' withArguments: self updateRequestArgumentsForRename ] ensure: [
 		          self removeSelector: #namesTheNewName from: referenceClass ].
 	self deny: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
-	self assert: (Smalltalk globals includesKey: self renamedClassName asSymbol).
-	self deny: (Smalltalk globals includesKey: self originalClassName asSymbol).
+	self assert: (self class environment includesKey: self renamedClassName asSymbol).
+	self deny: (self class environment includesKey: self originalClassName asSymbol).
 	self assert: (self classNamed: self subclassName) superclass name asString equals: self renamedClassName.
 	reference := referenceClass new.
 	self assert: reference referencedClass name asString equals: self renamedClassName.

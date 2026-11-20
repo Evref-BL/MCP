@@ -277,7 +277,7 @@ MCPToolContractsTest >> selfSentNotImplementedCritiquesForMCPMethods [
 { #category : 'private' }
 MCPToolContractsTest >> signalHaltForMCPMessageProcessorTest [
 
-	(Smalltalk globals at: #Halt) signal: 'mcp processor halt test'
+	(self class environment at: #Halt) signal: 'mcp processor halt test'
 ]
 
 { #category : 'private' }

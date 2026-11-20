@@ -167,7 +167,7 @@ MCPToolMethodLookupTest >> testClassReferenceFindsAMethodThatNamesTheClassByAnAl
 	aliasName := 'MCPToolMethodSearchReferenceTargetAlias'.
 	writerName := 'MCPToolMethodSearchAliasWriter'.
 	[
-		Smalltalk globals at: aliasName asSymbol put: (self classNamed: 'MCPToolMethodSearchReferenceTarget').
+		self class environment at: aliasName asSymbol put: (self classNamed: 'MCPToolMethodSearchReferenceTarget').
 		writer := self
 			          createClassNamed: writerName
 			          superclassName: 'Object'
@@ -193,7 +193,7 @@ MCPToolMethodLookupTest >> testClassReferenceFindsAMethodThatNamesTheClassByAnAl
 				self entryForReference: 'MCPToolMethodSearchReferenceFixture>>referenceExtensionTarget' in: methods.
 				self entryForReference: 'MCPToolMethodSearchReferenceFixture class>>referenceExtensionTarget' in: methods ] ] ensure: [
 			self removeClassNamed: writerName.
-			Smalltalk globals removeKey: aliasName asSymbol ifAbsent: [ ] ]
+			self class environment removeKey: aliasName asSymbol ifAbsent: [ ] ]
 ]
 
 { #category : 'tests' }

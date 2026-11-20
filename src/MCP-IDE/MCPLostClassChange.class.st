@@ -121,5 +121,5 @@ MCPLostClassChange >> restorePhase [
 { #category : 'testing' }
 MCPLostClassChange >> superclassIsInImage [
 
-	^ Smalltalk globals includesKey: targetState superclassName asSymbol
+	^ self class environment includesKey: targetState superclassName asSymbol
 ]

@@ -1393,7 +1393,7 @@ MCPToolMethodMutationTest >> testCompileIntoAMissingClassSaysToCreateIt [
 	self assert: (error at: #suggestions) equals: #(  ).
 	self deny: (error includesKey: #scope).
 	self assert: (self textFrom: result) equals: 'Class Zzqxw does not exist. Create it with class_create, then compile into it.'.
-	self deny: (Smalltalk globals includesKey: #Zzqxw)
+	self deny: (self class environment includesKey: #Zzqxw)
 ]
 
 { #category : 'tests' }
@@ -2893,10 +2893,10 @@ MCPToolMethodMutationTest >> testRenameCanLimitRefactoringToNamedClasses [
 						            (fixtures at: #targetAClassName).
 						            (fixtures at: #senderAClassName) }) } asDictionary) } asDictionary.
 			data := self dataFrom: result.
-			targetAClass := Smalltalk globals at: (fixtures at: #targetAClassName) asSymbol.
-			targetBClass := Smalltalk globals at: (fixtures at: #targetBClassName) asSymbol.
-			senderAClass := Smalltalk globals at: (fixtures at: #senderAClassName) asSymbol.
-			senderBClass := Smalltalk globals at: (fixtures at: #senderBClassName) asSymbol.
+			targetAClass := self class environment at: (fixtures at: #targetAClassName) asSymbol.
+			targetBClass := self class environment at: (fixtures at: #targetBClassName) asSymbol.
+			senderAClass := self class environment at: (fixtures at: #senderAClassName) asSymbol.
+			senderBClass := self class environment at: (fixtures at: #senderBClassName) asSymbol.
 			self deny: (result at: #isError ifAbsent: [ false ]).
 			self deny: (targetAClass includesSelector: #scopeSharedTarget).
 			self assert: (targetAClass includesSelector: #scopedSharedTarget).
@@ -2924,10 +2924,10 @@ MCPToolMethodMutationTest >> testRenameCanLimitRefactoringToNamedPackages [
 					          (#newSelector -> 'scopedSharedTarget').
 					          (#scope -> { (#packages -> { (fixtures at: #packageAName) }) } asDictionary) } asDictionary.
 			data := self dataFrom: result.
-			targetAClass := Smalltalk globals at: (fixtures at: #targetAClassName) asSymbol.
-			targetBClass := Smalltalk globals at: (fixtures at: #targetBClassName) asSymbol.
-			senderAClass := Smalltalk globals at: (fixtures at: #senderAClassName) asSymbol.
-			senderBClass := Smalltalk globals at: (fixtures at: #senderBClassName) asSymbol.
+			targetAClass := self class environment at: (fixtures at: #targetAClassName) asSymbol.
+			targetBClass := self class environment at: (fixtures at: #targetBClassName) asSymbol.
+			senderAClass := self class environment at: (fixtures at: #senderAClassName) asSymbol.
+			senderBClass := self class environment at: (fixtures at: #senderBClassName) asSymbol.
 			self deny: (result at: #isError ifAbsent: [ false ]).
 			self deny: (targetAClass includesSelector: #scopeSharedTarget).
 			self assert: (targetAClass includesSelector: #scopedSharedTarget).
@@ -3317,16 +3317,22 @@ MCPToolMethodMutationTest >> withRenameScopeFixturesDo: aBlock [
 		self createRenameScopeFixtureClassNamed: targetBClassName packageName: packageBName.
 		self createRenameScopeFixtureClassNamed: senderAClassName packageName: packageAName.
 		self createRenameScopeFixtureClassNamed: senderBClassName packageName: packageBName.
-		self ensureMethodSource: 'scopeSharedTarget ^ ''A''' protocol: 'tests' on: (Smalltalk globals at: targetAClassName asSymbol).
-		self ensureMethodSource: 'scopeSharedTarget ^ ''B''' protocol: 'tests' on: (Smalltalk globals at: targetBClassName asSymbol).
+		self
+			ensureMethodSource: 'scopeSharedTarget ^ ''A'''
+			protocol: 'tests'
+			on: (self class environment at: targetAClassName asSymbol).
+		self
+			ensureMethodSource: 'scopeSharedTarget ^ ''B'''
+			protocol: 'tests'
+			on: (self class environment at: targetBClassName asSymbol).
 		self
 			ensureMethodSource: 'callScopedTarget ^ MCPToolMethodMutationScopeTargetA new scopeSharedTarget'
 			protocol: 'tests'
-			on: (Smalltalk globals at: senderAClassName asSymbol).
+			on: (self class environment at: senderAClassName asSymbol).
 		self
 			ensureMethodSource: 'callScopedTarget ^ MCPToolMethodMutationScopeTargetB new scopeSharedTarget'
 			protocol: 'tests'
-			on: (Smalltalk globals at: senderBClassName asSymbol).
+			on: (self class environment at: senderBClassName asSymbol).
 		fixtures := {
 			            (#packageAName -> packageAName).
 			            (#packageBName -> packageBName).

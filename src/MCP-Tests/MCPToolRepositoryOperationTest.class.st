@@ -630,7 +630,7 @@ MCPToolRepositoryOperationTest >> testCheckoutBranchLoadsTargetBranchSnapshot [
 					baseBranch := repository branchName.
 					self shellCommand: (String streamContents: [ :stream |
 							 stream << 'git -C ' << (self shellQuote: location pathString) << ' checkout -b ' << (self shellQuote: featureBranch) ]).
-					(Smalltalk at: className asSymbol) compile: 'staleBranchOnlyValue ^ 42' classified: 'tests'.
+					(self class environment at: className asSymbol) compile: 'staleBranchOnlyValue ^ 42' classified: 'tests'.
 					self callToolNamed: 'repository_export' withArguments: { (#repository -> repositoryName) } asDictionary.
 					self commitAllIn: location message: 'Add branch-only method'.
 					self removeRegisteredRepositoriesNamed: repositoryName.
@@ -638,12 +638,12 @@ MCPToolRepositoryOperationTest >> testCheckoutBranchLoadsTargetBranchSnapshot [
 							(#repository -> repositoryName).
 							(#location -> location pathString).
 							(#packages -> { packageName }) } asDictionary.
-					self assert: ((Smalltalk at: className asSymbol) includesSelector: extraSelector).
+					self assert: ((self class environment at: className asSymbol) includesSelector: extraSelector).
 					self shellCommand: (String streamContents: [ :stream |
 							 stream << 'git -C ' << (self shellQuote: location pathString) << ' checkout ' << (self shellQuote: baseBranch) ]).
 					checkoutResult := self callToolNamed: 'repository_reload' withArguments: { (#repository -> repositoryName) } asDictionary.
 					self deny: (self resultIndicatesError: checkoutResult) description: (self summaryFrom: checkoutResult).
-					self deny: ((Smalltalk at: className asSymbol) includesSelector: extraSelector) ] ]
+					self deny: ((self class environment at: className asSymbol) includesSelector: extraSelector) ] ]
 ]
 
 { #category : 'tests' }
@@ -1489,7 +1489,7 @@ MCPToolRepositoryOperationTest >> testExportAndReloadUseTheFormatTheCheckoutDecl
 							(#packages -> { packageName }) } asDictionary.
 					repository := IceRepository repositories detect: [ :each | each name asString = repositoryName ].
 					repository workingCopy repositoryProperties fileFormatId: #filetree.
-					(Smalltalk at: className asSymbol) compile: 'filetreeOnlyValue ^ 42' classified: 'tests'.
+					(self class environment at: className asSymbol) compile: 'filetreeOnlyValue ^ 42' classified: 'tests'.
 					result := self callToolNamed: 'repository_export' withArguments: { (#repository -> repositoryName) } asDictionary.
 					data := self dataFrom: result.
 					packageDirectory := location / (packageName , '.package').
@@ -1503,11 +1503,11 @@ MCPToolRepositoryOperationTest >> testExportAndReloadUseTheFormatTheCheckoutDecl
 						deny: (location / '.filetree') exists
 						description: 'Exporting must not leave a filetree marker at the root of the checkout.'.
 					self commitAllIn: location message: 'Export filetree source'.
-					(Smalltalk at: className asSymbol) removeSelector: #filetreeOnlyValue.
+					(self class environment at: className asSymbol) removeSelector: #filetreeOnlyValue.
 					result := self callToolNamed: 'repository_reload' withArguments: { (#repository -> repositoryName) } asDictionary.
 					self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
 					self
-						assert: ((Smalltalk at: className asSymbol) includesSelector: #filetreeOnlyValue)
+						assert: ((self class environment at: className asSymbol) includesSelector: #filetreeOnlyValue)
 						description: 'Reloading a filetree checkout must restore what its files hold.'.
 					self
 						deny: (location / '.filetree') exists

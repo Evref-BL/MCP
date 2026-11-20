@@ -395,14 +395,14 @@ MCPToolMethodSearchTest >> testTraitedClassStillListsItsOwnMethods [
 	"TraitedClass's own methods are its own, not copies, so a sweep of TraitedClass lists them."
 
 	| data |
-	(Smalltalk globals includesKey: #TraitedClass) ifFalse: [ ^ self skip: 'This Pharo has no TraitedClass.' ].
+	(self class environment includesKey: #TraitedClass) ifFalse: [ ^ self skip: 'This Pharo has no TraitedClass.' ].
 	data := self dataFrom: (self callToolWith: {
 				         (self searchScope: { (#classes -> #( 'TraitedClass' )) } side: 'instance').
 				         (#query -> 'allTraits') } asDictionary).
 	self assert: ((self referencesOf: (data at: #methods)) includes: 'TraitedClass>>allTraits').
 	data := self dataFrom:
 		        (self callToolWith: { (self searchScope: { (#classes -> #( 'TraitedClass' )) } side: 'instance') } asDictionary).
-	self assert: ((data at: #pagination) at: #totalCount) equals: (Smalltalk globals at: #TraitedClass) localMethods size
+	self assert: ((data at: #pagination) at: #totalCount) equals: (self class environment at: #TraitedClass) localMethods size
 ]
 
 { #category : 'private - calling' }

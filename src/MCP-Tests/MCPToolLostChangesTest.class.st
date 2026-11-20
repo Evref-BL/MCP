@@ -192,7 +192,7 @@ MCPToolLostChangesTest >> testAClassRemovedTakesItsMethodsWithIt [
 	self assert: (changes collect: [ :each | each at: #element ]) equals: { self savedClassName }.
 	self assert: (changes first at: #change) equals: 'class removed'.
 	self restore: #(  ).
-	self deny: (Smalltalk globals includesKey: self savedClassName asSymbol)
+	self deny: (self class environment includesKey: self savedClassName asSymbol)
 ]
 
 { #category : 'tests' }

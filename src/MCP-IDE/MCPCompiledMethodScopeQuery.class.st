@@ -26,7 +26,7 @@ MCPCompiledMethodScopeQuery >> addBehaviorsForBaseClass: aClass to: behaviors [
 MCPCompiledMethodScopeQuery >> allBehaviors [
 
 	^ Array streamContents: [ :stream |
-		  Smalltalk globals allBehaviorsDo: [ :each | (self matchesSideForBehavior: each) ifTrue: [ stream nextPut: each ] ] ]
+		  self class environment allBehaviorsDo: [ :each | (self matchesSideForBehavior: each) ifTrue: [ stream nextPut: each ] ] ]
 ]
 
 { #category : 'private - scope' }

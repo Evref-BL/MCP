@@ -56,7 +56,7 @@ MCPTestCase >> capture: aBlock [
 { #category : 'private - classes' }
 MCPTestCase >> classNamed: aClassName [
 
-	^ Smalltalk globals at: aClassName asSymbol
+	^ self class environment at: aClassName asSymbol
 ]
 
 { #category : 'private - compatibility' }
@@ -232,7 +232,7 @@ MCPTestCase >> refactoringsRefuseBreakingChanges [
 MCPTestCase >> removeClassNamed: aClassName [
 	"Removing the class may leave a generated package empty, which then goes too. Looking for an absent package costs a sweep of all of them, so nothing is looked for when there was no class to remove."
 
-	Smalltalk globals at: aClassName asSymbol ifPresent: [ :class |
+	self class environment at: aClassName asSymbol ifPresent: [ :class |
 			self withoutEpiceaDuring: [ class removeFromSystem ].
 			self removeGeneratedPackagesIfEmpty ]
 ]

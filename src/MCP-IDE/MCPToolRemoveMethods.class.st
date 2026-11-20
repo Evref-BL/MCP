@@ -130,7 +130,7 @@ MCPToolRemoveMethods >> hierarchySendsBrokenByRemoving: aSelector from: aBehavio
 MCPToolRemoveMethods >> imageImplements: aSelector [
 	"Whether a class or trait of the image still has a method for aSelector; the search stops at the first it finds."
 
-	Smalltalk globals allBehaviorsDo: [ :each | (each includesSelector: aSelector) ifTrue: [ ^ true ] ].
+	self class environment allBehaviorsDo: [ :each | (each includesSelector: aSelector) ifTrue: [ ^ true ] ].
 	^ false
 ]
 
