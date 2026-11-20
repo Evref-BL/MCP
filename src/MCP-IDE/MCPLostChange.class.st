@@ -117,7 +117,7 @@ MCPLostChange >> element [
 { #category : 'private - image' }
 MCPLostChange >> imageClassIfPresent: presentBlock ifAbsent: absentBlock [
 
-	^ Smalltalk globals at: self affectedClassName asSymbol ifPresent: presentBlock ifAbsent: absentBlock
+	^ self class environment at: self affectedClassName asSymbol ifPresent: presentBlock ifAbsent: absentBlock
 ]
 
 { #category : 'testing' }

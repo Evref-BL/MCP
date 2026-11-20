@@ -88,7 +88,7 @@ MCPNotUnderstoodNote class >> instanceSideAdviceFor: aMethod of: aClass [
 			  (self instanceCreationsSentToSelfBy: aMethod of: aClass)
 				  ifEmpty: [
 						  stream nextPutAll: 'Send it to an instance'.
-						  Smalltalk globals class == aClass ifTrue: [ stream nextPutAll: ', such as Smalltalk globals' ] ]
+						  self class environment class == aClass ifTrue: [ stream nextPutAll: ', such as Smalltalk globals' ] ]
 				  ifNotEmpty: [ :creations |
 						  stream << 'It sends ' << creations first selector << ' to self, which instances of ' << aClass name
 						  << ' do not understand: compile it with method_compile and side class to send it to ' << aClass name ].

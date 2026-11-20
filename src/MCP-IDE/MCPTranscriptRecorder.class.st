@@ -80,7 +80,8 @@ MCPTranscriptRecorder >> endEntry [
 MCPTranscriptRecorder >> finish [
 
 	finished := true.
-	(Smalltalk globals at: #Transcript) == self ifTrue: [ Smalltalk globals at: #Transcript put: replaced mcpTranscriptToRestore ]
+	(self class environment at: #Transcript) == self ifTrue: [
+		self class environment at: #Transcript put: replaced mcpTranscriptToRestore ]
 ]
 
 { #category : 'streaming' }
@@ -161,8 +162,8 @@ MCPTranscriptRecorder >> record: aString [
 { #category : 'recording' }
 MCPTranscriptRecorder >> recordDuring: aBlock [
 
-	replaced := Smalltalk globals at: #Transcript.
-	Smalltalk globals at: #Transcript put: self.
+	replaced := self class environment at: #Transcript.
+	self class environment at: #Transcript put: self.
 	^ aBlock ensure: [ self finish ]
 ]
 

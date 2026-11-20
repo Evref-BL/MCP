@@ -41,7 +41,7 @@ MCPRemovedMethodQuery class >> onVersionQuery: aMethodVersionQuery [
 MCPRemovedMethodQuery >> behaviorNamed: aBehaviorName stillLacking: aSelector [
 	"The behavior a method was removed from, when it still exists and still lacks that method."
 
-	^ (Smalltalk globals classNamed: aBehaviorName) ifNotNil: [ :behavior |
+	^ (self class environment classNamed: aBehaviorName) ifNotNil: [ :behavior |
 		  (behavior includesSelector: aSelector) ifFalse: [ behavior ] ]
 ]
 

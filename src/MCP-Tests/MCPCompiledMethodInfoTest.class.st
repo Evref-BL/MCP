@@ -43,7 +43,7 @@ MCPCompiledMethodInfoTest >> extensionSelector [
 { #category : 'private' }
 MCPCompiledMethodInfoTest >> hasTargetClass [
 
-	^ Smalltalk globals includesKey: self targetClassName asSymbol
+	^ self class environment includesKey: self targetClassName asSymbol
 ]
 
 { #category : 'private' }

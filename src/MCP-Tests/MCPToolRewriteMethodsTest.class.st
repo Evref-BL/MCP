@@ -518,7 +518,19 @@ MCPToolRewriteMethodsTest >> testRuleClassesRewriteToWhatTheyRecommend [
 		{
 			MCPDetectIfFoundRule.
 			'probe: aCollection (aCollection detect: [ :each | each odd ] ifNone: [ nil ]) ifNotNil: [ :found | found printString ]'.
-			'ifFound: [ :found | found printString ]' } } do: [ :sample |
+			'ifFound: [ :found | found printString ]' }.
+		{
+			MCPSmalltalkGlobalsRule.
+			'probe: aName ^ Smalltalk globals at: aName'.
+			'^ self class environment at: aName' }.
+		{
+			MCPSmalltalkGlobalsRule.
+			'probe: aName ^ Smalltalk at: aName ifAbsent: [ nil ]'.
+			'^ self class environment at: aName ifAbsent: [ nil ]' }.
+		{
+			MCPSmalltalkGlobalsRule.
+			'probe: aName ^ Smalltalk at: aName; includesKey: aName'.
+			'^ self class environment' } } do: [ :sample |
 			| changes |
 			self ensureMethodSource: sample second protocol: 'tests' on: self targetClass.
 			changes := (self dataFrom: (self callToolWith: {

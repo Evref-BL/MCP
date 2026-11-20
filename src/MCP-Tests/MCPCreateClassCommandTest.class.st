@@ -91,7 +91,7 @@ MCPCreateClassCommandTest >> testAClassSideNameIsRefused [
 		'MCPCreateClassCommandTestGenerated class is the class side of MCPCreateClassCommandTestGenerated, which class_create makes with the class. Name MCPCreateClassCommandTestGenerated, and give class-side slots in classSlots.'.
 	self assert: (error details at: #class) equals: 'MCPCreateClassCommandTestGenerated'.
 	self assert: (error details at: #name) equals: 'MCPCreateClassCommandTestGenerated class'.
-	self deny: (Smalltalk globals includesKey: #MCPCreateClassCommandTestGenerated)
+	self deny: (self class environment includesKey: #MCPCreateClassCommandTestGenerated)
 ]
 
 { #category : 'tests' }
@@ -104,7 +104,7 @@ MCPCreateClassCommandTest >> testAGlobalThatIsNotAClassIsRefusedAsSuperclassBefo
 	self assert: error messageText equals: 'Transcript is a global variable, not a class.'.
 	self assert: (error details at: #superclass) equals: 'Transcript'.
 	self assert: (error details at: #class) equals: 'MCPCreateClassCommandTestGenerated'.
-	self deny: (Smalltalk globals includesKey: #MCPCreateClassCommandTestGenerated)
+	self deny: (self class environment includesKey: #MCPCreateClassCommandTestGenerated)
 ]
 
 { #category : 'tests' }
@@ -166,7 +166,7 @@ MCPCreateClassCommandTest >> testClassesOfTheWrongKindAreRefusedSayingWhatTheRol
 		         configuredBy: [ :command | command traits: #( 'Object' ) ].
 	self assert: error errorCode equals: #InvalidTrait.
 	self assert: error messageText equals: 'Object is not a trait.'.
-	self deny: (Smalltalk globals includesKey: #MCPCreateClassCommandTestGenerated)
+	self deny: (self class environment includesKey: #MCPCreateClassCommandTestGenerated)
 ]
 
 { #category : 'tests' }
@@ -277,5 +277,5 @@ MCPCreateClassCommandTest >> testMisspeltNamesSuggestNamesOfTheirRole [
 		         configuredBy: [ :command | command traits: #( 'TAbleToRotat' ) ].
 	self assert: error errorCode equals: #TraitNotFound.
 	self assert: ((error details at: #suggestions) includes: 'TAbleToRotate').
-	self assert: ((error details at: #suggestions) allSatisfy: [ :each | (Smalltalk globals classNamed: each) isTrait ])
+	self assert: ((error details at: #suggestions) allSatisfy: [ :each | (self class environment classNamed: each) isTrait ])
 ]

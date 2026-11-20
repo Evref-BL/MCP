@@ -53,7 +53,7 @@ MCPClassReferenceQuery >> bindings [
 	| bindings wanted |
 	wanted := classes asIdentitySet.
 	bindings := IdentitySet new.
-	Smalltalk globals associationsDo: [ :each | (wanted includes: each value) ifTrue: [ bindings add: each ] ].
+	self class environment associationsDo: [ :each | (wanted includes: each value) ifTrue: [ bindings add: each ] ].
 	^ bindings
 ]
 

@@ -155,7 +155,7 @@ MCPRemoveClassesCommand >> methodsThatMayRefer [
 			  wanted := (MCPClassReferenceQuery forClasses: self resolvedClasses) bindings.
 			  self resolvedClasses do: [ :each | wanted add: each name ].
 			  methodsThatMayRefer := OrderedCollection new.
-			  Smalltalk globals allBehaviorsDo: [ :behavior |
+			  self class environment allBehaviorsDo: [ :behavior |
 					  (removed includes: behavior instanceSide) ifFalse: [
 						  behavior methodsDo: [ :method | (self method: method holdsAnyOf: wanted) ifTrue: [ methodsThatMayRefer add: method ] ] ] ].
 			  methodsThatMayRefer ]

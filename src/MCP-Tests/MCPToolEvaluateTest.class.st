@@ -142,7 +142,7 @@ MCPToolEvaluateTest >> testEvaluateAnswersBeforeASlowUnwindEnds [
 	| actions milliseconds text transcript |
 	self timeLimit: 30 seconds.
 	MCPEvaluateTestProbe reset.
-	transcript := Smalltalk globals at: #Transcript.
+	transcript := self class environment at: #Transcript.
 	actions := OrderedCollection new.
 	[
 		milliseconds := Time millisecondsToRun: [
@@ -150,7 +150,7 @@ MCPToolEvaluateTest >> testEvaluateAnswersBeforeASlowUnwindEnds [
 					                        stoppedTextUnwindingBrieflyOf:
 					                        '[ [ true ] whileTrue ] ensure: [ MCPEvaluateTestProbe holdUntilReleased ]'
 					                        deferringInto: actions ].
-		self assert: (Smalltalk globals at: #Transcript) identicalTo: transcript ] ensure: [
+		self assert: (self class environment at: #Transcript) identicalTo: transcript ] ensure: [
 			actions do: #value.
 			MCPEvaluateTestProbe release.
 			MCPEvaluateTestProbe holder ifNotNil: [ :holder | self waitUntilEnded: holder ] ].
@@ -267,7 +267,7 @@ MCPToolEvaluateTest >> testEvaluateEndingOnTheTranscriptAnswersWhatItWrote [
 	self assert: contentText equals: (String lf join: #( 'Transcript:' 'Balance: 120' 'Largest Deposit: 100' )).
 	self deny: (contentText includesSubstring: 'MCPTranscriptRecorder').
 	self assert: (data at: #resultPrintString) equals: 'Transcript'.
-	self assert: (data at: #resultClassName) equals: (Smalltalk globals at: #Transcript) class name asString.
+	self assert: (data at: #resultClassName) equals: (self class environment at: #Transcript) class name asString.
 	self assert: (data at: #answeredTranscript).
 	truncatedText := MCPToolEvaluate new resultTextFor: (Dictionary new
 			                  at: #resultPrintString put: 'Transcript';
@@ -491,12 +491,12 @@ MCPToolEvaluateTest >> testEvaluateOmitsTruncationFieldsForSmallResults [
 MCPToolEvaluateTest >> testEvaluatePutsTheTranscriptBackAfterAFailure [
 
 	| previous result |
-	previous := Smalltalk globals at: #Transcript.
+	previous := self class environment at: #Transcript.
 	result := self
 		          callToolNamed: 'evaluate'
 		          withArguments: { (#code -> 'Transcript show: ''before''. Error signal: ''boom''') } asDictionary.
 	self assert: (result at: #isError).
-	self assert: (Smalltalk globals at: #Transcript) identicalTo: previous.
+	self assert: (self class environment at: #Transcript) identicalTo: previous.
 	self assert: ((self errorFrom: result) at: #transcript) equals: 'before'
 ]
 
@@ -800,9 +800,9 @@ MCPToolEvaluateTest >> testEvaluateStoppedAnswersItsTranscript [
 
 	| previous result |
 	self timeLimit: 30 seconds.
-	previous := Smalltalk globals at: #Transcript.
+	previous := self class environment at: #Transcript.
 	result := self evaluateBriefly: 'Transcript show: ''started''. [ true ] whileTrue'.
-	self assert: (Smalltalk globals at: #Transcript) identicalTo: previous.
+	self assert: (self class environment at: #Transcript) identicalTo: previous.
 	self
 		assert: ((self stoppedTextOf: result) lines last: 3)
 		equals: #( 'A fork has no time limit, and at this priority it holds up no evaluation.'
@@ -937,11 +937,11 @@ MCPToolEvaluateTest >> testEvaluateStopsAWaitAndRunsItsEnsureBlocks [
 	| result transcript |
 	self timeLimit: 30 seconds.
 	MCPEvaluateTestProbe reset.
-	transcript := Smalltalk globals at: #Transcript.
+	transcript := self class environment at: #Transcript.
 	result := self evaluateBriefly: '[ (Delay forSeconds: 60) wait ] ensure: [ MCPEvaluateTestProbe noteEnsureRan ]'.
 	self deny: ((self stoppedTextOf: result) includesSubstring: 'still running').
 	self assert: MCPEvaluateTestProbe ensureRan.
-	self assert: (Smalltalk globals at: #Transcript) identicalTo: transcript
+	self assert: (self class environment at: #Transcript) identicalTo: transcript
 ]
 
 { #category : 'tests' }

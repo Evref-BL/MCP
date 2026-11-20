@@ -24,7 +24,7 @@ MCPClassScopeQuery >> classes [
 
 	self resetWarnings.
 	^ self sortedClassesByName: (self usesImplicitImageScope
-			   ifTrue: [ Smalltalk globals allClasses ]
+			   ifTrue: [ self class environment allClasses ]
 			   ifFalse: [
 					   self classesForPackageNames
 						   addAll: self namedClasses;

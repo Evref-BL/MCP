@@ -1127,7 +1127,11 @@ MCPToolMethodMutationTest >> testCollectionStyleCritiquesProvideAutomaticChanges
 		           {
 			           #detectIfFoundProbe:.
 			           'detectIfFoundProbe: collection (collection detect: [ :each | each odd ] ifNone: [ nil ]) ifNotNil: [ :found | found printString ]'.
-			           MCPDetectIfFoundRule } }.
+			           MCPDetectIfFoundRule }.
+		           {
+			           #smalltalkGlobalsProbe.
+			           'smalltalkGlobalsProbe ^ Smalltalk globals at: #Object'.
+			           MCPSmalltalkGlobalsRule } }.
 	samples do: [ :sample |
 			| change critique method ruleClass selector source |
 			selector := sample first.
@@ -1389,7 +1393,7 @@ MCPToolMethodMutationTest >> testCompileIntoAMissingClassSaysToCreateIt [
 	self assert: (error at: #suggestions) equals: #(  ).
 	self deny: (error includesKey: #scope).
 	self assert: (self textFrom: result) equals: 'Class Zzqxw does not exist. Create it with class_create, then compile into it.'.
-	self deny: (Smalltalk globals includesKey: #Zzqxw)
+	self deny: (self class environment includesKey: #Zzqxw)
 ]
 
 { #category : 'tests' }
@@ -2012,6 +2016,21 @@ MCPToolMethodMutationTest >> testCompileReturnsSelectSizeCountCritique [
 			protocol: 'tests'
 			returnsSingleCritiqueRuleClass: 'MCPSelectSizeCountRule'
 			titledLike: MCPSelectSizeCountRule ruleName ] ensure: [ self removeSelector: selector from: MCPToolGetMethodTestTarget ]
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileReturnsSmalltalkGlobalsCritique [
+
+	| selector |
+	selector := #smalltalkGlobalsProbe.
+	self removeSelector: selector from: MCPToolGetMethodTestTarget.
+	[
+		self
+			assertCompileForClass: MCPToolGetMethodTestTarget
+			methodSource: 'smalltalkGlobalsProbe ^ Smalltalk globals at: #Object'
+			protocol: 'tests'
+			returnsSingleCritiqueRuleClass: 'MCPSmalltalkGlobalsRule'
+			titledLike: MCPSmalltalkGlobalsRule ruleName ] ensure: [ self removeSelector: selector from: MCPToolGetMethodTestTarget ]
 ]
 
 { #category : 'tests' }
@@ -2874,10 +2893,10 @@ MCPToolMethodMutationTest >> testRenameCanLimitRefactoringToNamedClasses [
 						            (fixtures at: #targetAClassName).
 						            (fixtures at: #senderAClassName) }) } asDictionary) } asDictionary.
 			data := self dataFrom: result.
-			targetAClass := Smalltalk globals at: (fixtures at: #targetAClassName) asSymbol.
-			targetBClass := Smalltalk globals at: (fixtures at: #targetBClassName) asSymbol.
-			senderAClass := Smalltalk globals at: (fixtures at: #senderAClassName) asSymbol.
-			senderBClass := Smalltalk globals at: (fixtures at: #senderBClassName) asSymbol.
+			targetAClass := self classNamed: (fixtures at: #targetAClassName).
+			targetBClass := self classNamed: (fixtures at: #targetBClassName).
+			senderAClass := self classNamed: (fixtures at: #senderAClassName).
+			senderBClass := self classNamed: (fixtures at: #senderBClassName).
 			self deny: (result at: #isError ifAbsent: [ false ]).
 			self deny: (targetAClass includesSelector: #scopeSharedTarget).
 			self assert: (targetAClass includesSelector: #scopedSharedTarget).
@@ -2905,10 +2924,10 @@ MCPToolMethodMutationTest >> testRenameCanLimitRefactoringToNamedPackages [
 					          (#newSelector -> 'scopedSharedTarget').
 					          (#scope -> { (#packages -> { (fixtures at: #packageAName) }) } asDictionary) } asDictionary.
 			data := self dataFrom: result.
-			targetAClass := Smalltalk globals at: (fixtures at: #targetAClassName) asSymbol.
-			targetBClass := Smalltalk globals at: (fixtures at: #targetBClassName) asSymbol.
-			senderAClass := Smalltalk globals at: (fixtures at: #senderAClassName) asSymbol.
-			senderBClass := Smalltalk globals at: (fixtures at: #senderBClassName) asSymbol.
+			targetAClass := self classNamed: (fixtures at: #targetAClassName).
+			targetBClass := self classNamed: (fixtures at: #targetBClassName).
+			senderAClass := self classNamed: (fixtures at: #senderAClassName).
+			senderBClass := self classNamed: (fixtures at: #senderBClassName).
 			self deny: (result at: #isError ifAbsent: [ false ]).
 			self deny: (targetAClass includesSelector: #scopeSharedTarget).
 			self assert: (targetAClass includesSelector: #scopedSharedTarget).
@@ -3298,16 +3317,16 @@ MCPToolMethodMutationTest >> withRenameScopeFixturesDo: aBlock [
 		self createRenameScopeFixtureClassNamed: targetBClassName packageName: packageBName.
 		self createRenameScopeFixtureClassNamed: senderAClassName packageName: packageAName.
 		self createRenameScopeFixtureClassNamed: senderBClassName packageName: packageBName.
-		self ensureMethodSource: 'scopeSharedTarget ^ ''A''' protocol: 'tests' on: (Smalltalk globals at: targetAClassName asSymbol).
-		self ensureMethodSource: 'scopeSharedTarget ^ ''B''' protocol: 'tests' on: (Smalltalk globals at: targetBClassName asSymbol).
+		self ensureMethodSource: 'scopeSharedTarget ^ ''A''' protocol: 'tests' on: (self classNamed: targetAClassName).
+		self ensureMethodSource: 'scopeSharedTarget ^ ''B''' protocol: 'tests' on: (self classNamed: targetBClassName).
 		self
 			ensureMethodSource: 'callScopedTarget ^ MCPToolMethodMutationScopeTargetA new scopeSharedTarget'
 			protocol: 'tests'
-			on: (Smalltalk globals at: senderAClassName asSymbol).
+			on: (self classNamed: senderAClassName).
 		self
 			ensureMethodSource: 'callScopedTarget ^ MCPToolMethodMutationScopeTargetB new scopeSharedTarget'
 			protocol: 'tests'
-			on: (Smalltalk globals at: senderBClassName asSymbol).
+			on: (self classNamed: senderBClassName).
 		fixtures := {
 			            (#packageAName -> packageAName).
 			            (#packageBName -> packageBName).

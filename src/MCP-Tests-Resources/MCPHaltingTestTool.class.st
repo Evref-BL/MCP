@@ -36,7 +36,7 @@ MCPHaltingTestTool >> description [
 { #category : 'executing' }
 MCPHaltingTestTool >> executeWithRequest: aRequest [
 
-	(Smalltalk globals at: #Halt) signal: 'mcp tool halt test'
+	(self class environment at: #Halt) signal: 'mcp tool halt test'
 ]
 
 { #category : 'metadata' }

@@ -630,7 +630,7 @@ MCPToolRepositoryOperationTest >> testCheckoutBranchLoadsTargetBranchSnapshot [
 					baseBranch := repository branchName.
 					self shellCommand: (String streamContents: [ :stream |
 							 stream << 'git -C ' << (self shellQuote: location pathString) << ' checkout -b ' << (self shellQuote: featureBranch) ]).
-					(Smalltalk at: className asSymbol) compile: 'staleBranchOnlyValue ^ 42' classified: 'tests'.
+					(self classNamed: className) compile: 'staleBranchOnlyValue ^ 42' classified: 'tests'.
 					self callToolNamed: 'repository_export' withArguments: { (#repository -> repositoryName) } asDictionary.
 					self commitAllIn: location message: 'Add branch-only method'.
 					self removeRegisteredRepositoriesNamed: repositoryName.
@@ -638,12 +638,12 @@ MCPToolRepositoryOperationTest >> testCheckoutBranchLoadsTargetBranchSnapshot [
 							(#repository -> repositoryName).
 							(#location -> location pathString).
 							(#packages -> { packageName }) } asDictionary.
-					self assert: ((Smalltalk at: className asSymbol) includesSelector: extraSelector).
+					self assert: ((self classNamed: className) includesSelector: extraSelector).
 					self shellCommand: (String streamContents: [ :stream |
 							 stream << 'git -C ' << (self shellQuote: location pathString) << ' checkout ' << (self shellQuote: baseBranch) ]).
 					checkoutResult := self callToolNamed: 'repository_reload' withArguments: { (#repository -> repositoryName) } asDictionary.
 					self deny: (self resultIndicatesError: checkoutResult) description: (self summaryFrom: checkoutResult).
-					self deny: ((Smalltalk at: className asSymbol) includesSelector: extraSelector) ] ]
+					self deny: ((self classNamed: className) includesSelector: extraSelector) ] ]
 ]
 
 { #category : 'tests' }
@@ -1277,7 +1277,7 @@ MCPToolRepositoryOperationTest >> testDiffLeavesOutAPackageMarkedOverNothing [
 							(#packages -> { packageName }) } asDictionary.
 					self callToolNamed: 'repository_export' withArguments: { (#repository -> repositoryName) } asDictionary.
 					repository := IceRepository repositories detect: [ :each | each name asString = repositoryName ].
-					class := self class environment at: className asSymbol.
+					class := self classNamed: className.
 					class compile: 'probe ^ 1' classified: 'probing'.
 					class removeSelector: #probe.
 					self assert: (repository modifiedPackages collect: [ :each | each name ] as: Array) equals: { packageName }.
@@ -1302,7 +1302,7 @@ MCPToolRepositoryOperationTest >> testDiffListsAPackageWhoseImageDiffersFromItsF
 							(#location -> location pathString).
 							(#packages -> { packageName }) } asDictionary.
 					self callToolNamed: 'repository_export' withArguments: { (#repository -> repositoryName) } asDictionary.
-					(self class environment at: className asSymbol) compile: 'probe ^ 1' classified: 'probing'.
+					(self classNamed: className) compile: 'probe ^ 1' classified: 'probing'.
 					result := self callToolNamed: 'repository_change_list' withArguments: { (#repository -> repositoryName) } asDictionary.
 					data := self dataFrom: result.
 					self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
@@ -1489,7 +1489,7 @@ MCPToolRepositoryOperationTest >> testExportAndReloadUseTheFormatTheCheckoutDecl
 							(#packages -> { packageName }) } asDictionary.
 					repository := IceRepository repositories detect: [ :each | each name asString = repositoryName ].
 					repository workingCopy repositoryProperties fileFormatId: #filetree.
-					(Smalltalk at: className asSymbol) compile: 'filetreeOnlyValue ^ 42' classified: 'tests'.
+					(self classNamed: className) compile: 'filetreeOnlyValue ^ 42' classified: 'tests'.
 					result := self callToolNamed: 'repository_export' withArguments: { (#repository -> repositoryName) } asDictionary.
 					data := self dataFrom: result.
 					packageDirectory := location / (packageName , '.package').
@@ -1503,11 +1503,11 @@ MCPToolRepositoryOperationTest >> testExportAndReloadUseTheFormatTheCheckoutDecl
 						deny: (location / '.filetree') exists
 						description: 'Exporting must not leave a filetree marker at the root of the checkout.'.
 					self commitAllIn: location message: 'Export filetree source'.
-					(Smalltalk at: className asSymbol) removeSelector: #filetreeOnlyValue.
+					(self classNamed: className) removeSelector: #filetreeOnlyValue.
 					result := self callToolNamed: 'repository_reload' withArguments: { (#repository -> repositoryName) } asDictionary.
 					self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
 					self
-						assert: ((Smalltalk at: className asSymbol) includesSelector: #filetreeOnlyValue)
+						assert: ((self classNamed: className) includesSelector: #filetreeOnlyValue)
 						description: 'Reloading a filetree checkout must restore what its files hold.'.
 					self
 						deny: (location / '.filetree') exists
@@ -1532,7 +1532,7 @@ MCPToolRepositoryOperationTest >> testExportDoesNotNameAMarkedButUnchangedPackag
 						packages: { packageName }.
 					self exportRepositoryNamed: repositoryName.
 					self commitRepositoryNamed: repositoryName message: 'Write the package'.
-					class := self class environment at: className asSymbol.
+					class := self classNamed: className.
 					class compile: 'probe ^ 1' classified: 'probing'.
 					class removeSelector: #probe.
 					repository := IceRepository repositories detect: [ :each | each name asString = repositoryName ].
@@ -1582,7 +1582,7 @@ MCPToolRepositoryOperationTest >> testExportKeepsAnOrderOnlyRewriteOutOfWritten 
 	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestExportOrderOnly'.
 	self withExportPackageNamed: packageName className: className do: [
 			self withCleanRepositoryNamed: repositoryName location: location do: [
-					class := self class environment at: className asSymbol.
+					class := self classNamed: className.
 					class compile: 'alpha ^ 1' classified: 'probing'.
 					class compile: 'beta ^ 2' classified: 'probing'.
 					self
@@ -1923,7 +1923,7 @@ MCPToolRepositoryOperationTest >> testOrderOnlyRestoreWritesTheOldFileWhole [
 	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestExportOrderOnlyShorter'.
 	self withExportPackageNamed: packageName className: className do: [
 			self withCleanRepositoryNamed: repositoryName location: location do: [
-					class := self class environment at: className asSymbol.
+					class := self classNamed: className.
 					class compile: 'alpha ^ 1' classified: 'probing'.
 					class compile: 'beta ^ 2' classified: 'probing'.
 					self
