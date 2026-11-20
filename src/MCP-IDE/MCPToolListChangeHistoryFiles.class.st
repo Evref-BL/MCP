@@ -40,7 +40,7 @@ MCPToolListChangeHistoryFiles >> dataFor: request [
 	page := MCPPaginationResult
 		        fromEntries: (self historyFilesIn: directory current: currentFile)
 		        limit: self defaultPageLimit
-		        offset: (request integerArgumentNamed: 'offset').
+		        offset: (request integerArgumentOrDefaultNamed: 'offset').
 	data := Dictionary new.
 	data at: #files put: (page entries
 			 collect: [ :each |

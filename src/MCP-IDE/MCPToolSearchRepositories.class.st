@@ -127,7 +127,7 @@ MCPToolSearchRepositories >> queryResultDataForPage: page [
 MCPToolSearchRepositories >> repositoryEntry: anEntry matches: request fieldFilters: fieldFilters [
 	"A modified state is kept only when the caller names it, true or false."
 
-	((request hasArgumentNamed: 'isModified') and: [ (anEntry at: #isModified) ~= (request booleanArgumentNamed: 'isModified') ])
+	((request hasArgumentNamed: 'isModified') and: [ (anEntry at: #isModified) ~= (request booleanArgumentOrDefaultNamed: 'isModified') ])
 		ifTrue: [ ^ false ].
 	^ self
 		  fieldFilters: fieldFilters

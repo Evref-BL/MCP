@@ -28,12 +28,12 @@ MCPToolRequestTest >> testASuppliedArgumentWinsOverItsSchemaDefault [
 	request := MCPToolEvaluate new requestFromToolCallArguments: {
 			           (#code -> '3 + 4').
 			           (#timeoutSeconds -> 7) } asDictionary.
-	self assert: (request integerArgumentNamed: 'timeoutSeconds') equals: 7.
+	self assert: (request integerArgumentOrDefaultNamed: 'timeoutSeconds') equals: 7.
 	request := MCPToolGetMethod new requestFromToolCallArguments: {
 			           (#class -> 'Object').
 			           (#selector -> 'yourself').
 			           (#includeVariableDetails -> true) } asDictionary.
-	self assert: (request booleanArgumentNamed: 'includeVariableDetails')
+	self assert: (request booleanArgumentOrDefaultNamed: 'includeVariableDetails')
 ]
 
 { #category : 'tests' }
@@ -41,12 +41,12 @@ MCPToolRequestTest >> testAnArgumentLeftOutAnswersTheDefaultItsSchemaDeclares [
 
 	| request |
 	request := MCPToolEvaluate new requestFromToolCallArguments: { (#code -> '3 + 4') } asDictionary.
-	self assert: (request integerArgumentNamed: 'timeoutSeconds') equals: MCPToolEvaluate new defaultTimeoutSeconds.
+	self assert: (request integerArgumentOrDefaultNamed: 'timeoutSeconds') equals: MCPToolEvaluate new defaultTimeoutSeconds.
 	self deny: (request hasArgumentNamed: 'timeoutSeconds').
 	request := MCPToolGetMethod new requestFromToolCallArguments: {
 			           (#class -> 'Object').
 			           (#selector -> 'yourself') } asDictionary.
-	self deny: (request booleanArgumentNamed: 'includeVariableDetails').
+	self deny: (request booleanArgumentOrDefaultNamed: 'includeVariableDetails').
 	request := MCPToolCreateClass new requestFromToolCallArguments: {
 			           (#name -> 'Example').
 			           (#package -> 'Example-Package').
@@ -210,5 +210,5 @@ MCPToolRequestTest >> testValidRequestProvidesTypedAccessors [
 	self assert: (request nonNegativeIntegerArgumentNamed: 'offset' default: 100) equals: 3.
 	self assert: (request stringCollectionArgumentNamed: 'packages' in: scope) equals: #( 'MCP' ).
 	self assert: (request stringArgumentNamed: 'missing') isNil.
-	self assert: (request booleanArgumentNamed: 'missing') equals: false
+	self assert: (request booleanArgumentOrDefaultNamed: 'missing') equals: false
 ]

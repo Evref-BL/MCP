@@ -68,7 +68,7 @@ MCPToolRestoreLostChanges >> changesToRestoreFor: request from: aLostChangeQuery
 				          among: lostChanges
 				          of: aLostChangeQuery
 				          into: data ].
-	(request booleanArgumentNamed: 'force') ifTrue: [ ^ chosen ].
+	(request booleanArgumentOrDefaultNamed: 'force') ifTrue: [ ^ chosen ].
 	chosen
 		select: [ :each | each isChangedSinceSave ]
 		thenDo: [ :each | (data at: #notRestored) add: (self rowFor: each because: self forceableConflictReason) ].

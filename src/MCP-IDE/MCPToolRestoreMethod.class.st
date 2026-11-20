@@ -73,7 +73,7 @@ MCPToolRestoreMethod >> buildInputSchema [
 { #category : 'private - errors' }
 MCPToolRestoreMethod >> checkVersionNamesOneMethodIn: request [
 
-	(request integerArgumentNamed: 'version') ifNotNil: [ :number |
+	(request argumentNamed: 'version' ifAbsent: [ nil ]) ifNotNil: [ :number |
 			(request stringCollectionArgumentNamed: 'selector') size > 1 ifTrue: [
 					MCPCommandError
 						signalErrorCode: #VersionOfSeveralMethods
@@ -185,7 +185,7 @@ MCPToolRestoreMethod >> restoreWith: request [
 	selector := (request stringArgumentNamed: 'selector') asSymbol.
 	versions := MCPMethodVersionQuery inCurrentSession versionsOf: behavior selector: selector.
 	versions ifEmpty: [ self signalNoVersionOf: selector in: behavior ].
-	^ (request integerArgumentNamed: 'version')
+	^ (request argumentNamed: 'version' ifAbsent: [ nil ])
 		  ifNil: [ self undoChange: versions last of: selector in: behavior ]
 		  ifNotNil: [ :number |
 				  self

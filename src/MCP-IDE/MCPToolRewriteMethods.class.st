@@ -174,7 +174,7 @@ MCPToolRewriteMethods >> rewriteWith: request [
 
 	| apply changeData changes rewrite rules scopeQuery skippedTraitMethods |
 	rules := self rewriteRulesFrom: request.
-	apply := request booleanArgumentNamed: 'confirm'.
+	apply := request booleanArgumentOrDefaultNamed: 'confirm'.
 	scopeQuery := self methodScopeQueryFromRequest: request.
 	scopeQuery requireCompleteScope.
 	apply ifTrue: [ self validateExplicitApplyScope: scopeQuery rules: rules ].

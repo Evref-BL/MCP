@@ -54,7 +54,7 @@ MCPToolSearch >> countTextForRequest: request page: page [
 
 	^ self
 		  countTextForPage: page
-		  offset: (request integerArgumentNamed: 'offset')
+		  offset: (request integerArgumentOrDefaultNamed: 'offset')
 		  noun: self searchedNoun
 		  filtering: (self filtersRequest: request)
 ]
@@ -103,7 +103,7 @@ MCPToolSearch >> executeWithRequest: request [
 				  page := self
 					          queryPageForEntries: (self queryEntriesForRequest: request scopeQuery: scopeQuery)
 					          limit: self defaultPageLimit
-					          offset: (request integerArgumentNamed: 'offset').
+					          offset: (request integerArgumentOrDefaultNamed: 'offset').
 				  self
 					  successResultText: (self successSummaryForRequest: request scopeQuery: scopeQuery page: page)
 					  data: (self queryResultDataForPage: page)

@@ -1098,7 +1098,7 @@ MCPToolEvaluateTest >> testEvaluateTimeoutSecondsIsAnIntegerFromOneToSixHundred 
 	self
 		assert: ((tool requestFromToolCallArguments: {
 					  (#code -> '1').
-					  (#timeoutSeconds -> 3600) } asDictionary) integerArgumentNamed: 'timeoutSeconds')
+					  (#timeoutSeconds -> 3600) } asDictionary) integerArgumentOrDefaultNamed: 'timeoutSeconds')
 		equals: 600
 ]
 

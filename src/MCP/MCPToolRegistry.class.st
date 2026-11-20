@@ -54,20 +54,17 @@ MCPToolRegistry >> advertiseTools: toolsOrToolClassesOrNames [
 
 	| names |
 	names := toolsOrToolClassesOrNames collect: [ :each | self advertisedNameFor: each ].
-	names do: [ :each | self toolNamed: each ifAbsent: [ self signalMissingToolNamed: each ] ].
+	names do: [ :each | self heldToolNameFor: each ].
 	advertisedToolNames := names asSet
 ]
 
 { #category : 'private - advertising' }
 MCPToolRegistry >> advertisedNameFor: aToolOrToolClassOrName [
-	"Answer the tool name this stands for, adding it to the catalog when it is a tool we do not have yet. Symbols answer a String, because a Symbol never equals the String a tool answers for its name."
+	"Answer the tool name this stands for, adding it to the catalog when it is a tool we do not have yet."
 
 	| toolName |
-	aToolOrToolClassOrName isString ifTrue: [ ^ aToolOrToolClassOrName asString ].
-	toolName := aToolOrToolClassOrName isBehavior
-		            ifTrue: [ aToolOrToolClassOrName toolName ]
-		            ifFalse: [ aToolOrToolClassOrName name ].
-	(self includesToolNamed: toolName) ifFalse: [ self addTool: aToolOrToolClassOrName ].
+	toolName := self toolNameFor: aToolOrToolClassOrName.
+	(aToolOrToolClassOrName isString or: [ self includesToolNamed: toolName ]) ifFalse: [ self addTool: aToolOrToolClassOrName ].
 	^ toolName
 ]
 
@@ -124,6 +121,16 @@ MCPToolRegistry >> exposureForTool: aTool [
 	^ (self isToolAdvertised: aTool)
 		  ifTrue: [ 'static' ]
 		  ifFalse: [ 'discoverable' ]
+]
+
+{ #category : 'private - tools' }
+MCPToolRegistry >> heldToolNameFor: aToolOrToolClassOrName [
+	"Answer the name of the tool this stands for, refusing one the catalog does not hold, so that a typo or a tool since renamed is reported rather than configuring nothing."
+
+	| toolName |
+	toolName := self toolNameFor: aToolOrToolClassOrName.
+	(self includesToolNamed: toolName) ifFalse: [ self signalMissingToolNamed: toolName ].
+	^ toolName
 ]
 
 { #category : 'tools' }
@@ -214,9 +221,9 @@ MCPToolRegistry >> registeredClass [
 ]
 
 { #category : 'tools' }
-MCPToolRegistry >> removeToolNamed: aToolName [
+MCPToolRegistry >> removeTool: aToolOrToolClassOrName [
 
-	self removeKey: aToolName
+	self removeKey: (self heldToolNameFor: aToolOrToolClassOrName)
 ]
 
 { #category : 'tools' }
@@ -298,6 +305,16 @@ MCPToolRegistry >> toolGroups [
 	^ groups collect: [ :each | each key -> each value asArray ] as: Array
 ]
 
+{ #category : 'private - tools' }
+MCPToolRegistry >> toolNameFor: aToolOrToolClassOrName [
+	"Symbols answer a String, because a Symbol never equals the String a tool answers for its name."
+
+	aToolOrToolClassOrName isString ifTrue: [ ^ aToolOrToolClassOrName asString ].
+	^ aToolOrToolClassOrName isBehavior
+		  ifTrue: [ aToolOrToolClassOrName toolName ]
+		  ifFalse: [ aToolOrToolClassOrName name ]
+]
+
 { #category : 'tools' }
 MCPToolRegistry >> toolNamed: aToolName ifAbsent: absentBlock [
 
@@ -339,5 +356,5 @@ MCPToolRegistry >> toolsMatchingQuery: queryString [
 MCPToolRegistry >> unadvertiseTool: aToolOrToolClassOrName [
 	"Stop showing one tool in tools/list. It stays in the catalog, so tool_search still finds it and tool_call still runs it."
 
-	self advertiseTools: (self advertisedToolNames copyWithout: (self advertisedNameFor: aToolOrToolClassOrName))
+	self advertiseTools: (self advertisedToolNames copyWithout: (self heldToolNameFor: aToolOrToolClassOrName))
 ]

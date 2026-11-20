@@ -104,7 +104,7 @@ MCPToolReadScreen >> executeWithRequest: request [
 			  self
 				  resultForReadOf: (self targetMorphNamed: window)
 				  target: (window ifNil: [ 'world' ])
-				  depth: (request integerArgumentNamed: 'depth') ]
+				  depth: (request integerArgumentOrDefaultNamed: 'depth') ]
 ]
 
 { #category : 'private - results' }

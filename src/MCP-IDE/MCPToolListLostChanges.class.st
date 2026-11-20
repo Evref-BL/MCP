@@ -78,7 +78,7 @@ MCPToolListLostChanges >> dataFor: request from: aLostChangeQuery [
 	page := MCPPaginationResult
 		        fromEntries: lostChanges
 		        limit: self defaultPageLimit
-		        offset: (request integerArgumentNamed: 'offset').
+		        offset: (request integerArgumentOrDefaultNamed: 'offset').
 	data := Dictionary new.
 	data at: #changes put: (page entries collect: [ :each | each asDictionary ] as: Array).
 	data at: #lostCount put: lostChanges size.

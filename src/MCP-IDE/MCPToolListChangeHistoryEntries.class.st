@@ -61,7 +61,7 @@ MCPToolListChangeHistoryEntries >> dataFor: request [
 	page := MCPPaginationResult
 		        fromEntries: (self entryPairsFrom: log for: request)
 		        limit: self defaultPageLimit
-		        offset: (request integerArgumentNamed: 'offset').
+		        offset: (request integerArgumentOrDefaultNamed: 'offset').
 	data := Dictionary new.
 	logAndFileName second ifNotNil: [ :fileName | data at: #historyFile put: fileName ].
 	data at: #entries put: (page entries
@@ -88,7 +88,7 @@ MCPToolListChangeHistoryEntries >> entryPairsFrom: aLog for: request [
 	"The entries of aLog the request lists, as pairs of their one-based index and the entry, the oldest first unless newestFirst. class keeps the entries that change the class it names."
 
 	| codeChangesOnly isListed pairs |
-	codeChangesOnly := request booleanArgumentNamed: 'codeChangesOnly'.
+	codeChangesOnly := request booleanArgumentOrDefaultNamed: 'codeChangesOnly'.
 	isListed := self changeFilterFor: request.
 	pairs := OrderedCollection new.
 	aLog entries doWithIndex: [ :entry :index |
@@ -96,7 +96,7 @@ MCPToolListChangeHistoryEntries >> entryPairsFrom: aLog for: request [
 					pairs add: {
 							index.
 							entry } ] ].
-	(request booleanArgumentNamed: 'newestFirst') ifTrue: [ ^ pairs reversed asOrderedCollection ].
+	(request booleanArgumentOrDefaultNamed: 'newestFirst') ifTrue: [ ^ pairs reversed asOrderedCollection ].
 	^ pairs
 ]
 

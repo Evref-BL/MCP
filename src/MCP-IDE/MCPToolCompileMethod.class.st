@@ -115,7 +115,7 @@ MCPToolCompileMethod >> compile: methodSource into: aBehavior classified: protoc
 			              ifTrue: [ 'replaced' ]
 			              ifFalse: [ 'created' ].
 		previousProtocolName := changeKind = 'replaced' ifTrue: [ self protocolNameOf: aBehavior >> selector ].
-		self signalTraitOriginBeforeCompiling: selector in: aBehavior unlessForced: (request booleanArgumentNamed: 'force').
+		self signalTraitOriginBeforeCompiling: selector in: aBehavior unlessForced: (request booleanArgumentOrDefaultNamed: 'force').
 		selector := aBehavior mcpCompile: methodSource classified: (protocol ifNil: [ previousProtocolName ]) ]
 		on: self compileFailures
 		do: [ :error |
@@ -125,7 +125,7 @@ MCPToolCompileMethod >> compile: methodSource into: aBehavior classified: protoc
 					in: aBehavior
 					of: request ].
 	^ aBlock
-		  value: ((request booleanArgumentNamed: 'format')
+		  value: ((request booleanArgumentOrDefaultNamed: 'format')
 				   ifTrue: [ self reformattedMethodForBehavior: aBehavior selector: selector ]
 				   ifFalse: [ aBehavior >> selector ])
 		  value: changeKind
@@ -256,7 +256,7 @@ MCPToolCompileMethod >> mutateWith: request [
 	| behavior changeKind compiledMethod headerWarnings previousProtocolName |
 	^ self
 		  executeMutationAction: 'compile'
-		  force: (request booleanArgumentNamed: 'force')
+		  force: (request booleanArgumentOrDefaultNamed: 'force')
 		  requestedContext: (self requestedContextFor: request)
 		  work: [
 				  self targetAndSourceOf: request do: [ :targetBehavior :methodSource :protocol :warnings |

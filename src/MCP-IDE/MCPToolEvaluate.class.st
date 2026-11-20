@@ -159,7 +159,7 @@ MCPToolEvaluate >> executeWithRequest: request [
 		  do: [
 				  self answerFor: (MCPEvaluateCommand
 						   code: (request stringArgumentNamed: 'code')
-						   timeLimit: (request integerArgumentNamed: 'timeoutSeconds')
+						   timeLimit: (request integerArgumentOrDefaultNamed: 'timeoutSeconds')
 						   previewLimit: self resultPreviewCharacterLimit) execute ]
 		  onError: [ :error | self errorResultText: error mcpMessageText details: (self errorDetailsFor: error) ]
 ]

@@ -166,7 +166,7 @@ MCPToolGetMethod >> executeWithRequest: request [
 									  in: className
 									  classSide: classSide
 									  sideGiven: isSideGiven
-									  includeVariableDetails: (targetRequest booleanArgumentNamed: 'includeVariableDetails') ] ]
+									  includeVariableDetails: (targetRequest booleanArgumentOrDefaultNamed: 'includeVariableDetails') ] ]
 				  onError: [ :error |
 						  self
 							  errorResultForError: error

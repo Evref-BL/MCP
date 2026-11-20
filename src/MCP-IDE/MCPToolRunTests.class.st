@@ -376,7 +376,7 @@ MCPToolRunTests >> testSelectorIn: aSelectorText [
 { #category : 'private - arguments' }
 MCPToolRunTests >> timeoutMillisecondsFrom: request [
 
-	^ (request integerArgumentNamed: 'timeoutSeconds') * 1000
+	^ (request integerArgumentOrDefaultNamed: 'timeoutSeconds') * 1000
 ]
 
 { #category : 'private - schema' }

@@ -34,7 +34,7 @@ MCPToolRequest >> argumentNamed: anArgumentName ifAbsent: absentBlock [
 
 { #category : 'accessing' }
 MCPToolRequest >> argumentOrDefaultNamed: anArgumentName [
-	"The argument, or the default its schema declares when the caller left it out. The accessors built on it or on another OrDefault accessor answer that default too; every other accessor answers only what the caller supplied, so that code can tell an argument left out from one given, as an inferred side or a patch must."
+	"The argument, or the default its schema declares when the caller left it out, as every accessor named OrDefault answers. The others answer what the caller sent, the default they are given, or an empty Array for a list left out; hasArgumentNamed: tells an argument left out from one given, as an inferred side or a patch must."
 
 	^ self valueNamed: anArgumentName in: self arguments ifAbsent: [ defaults at: anArgumentName asString ifAbsent: [ nil ] ]
 ]
@@ -80,14 +80,14 @@ MCPToolRequest >> asDictionary [
 ]
 
 { #category : 'accessing' }
-MCPToolRequest >> booleanArgumentNamed: anArgumentName [
+MCPToolRequest >> booleanArgumentOrDefaultNamed: anArgumentName [
 	"The argument, else its schema default, else false."
 
 	^ (self argumentOrDefaultNamed: anArgumentName) ifNil: [ false ]
 ]
 
 { #category : 'accessing' }
-MCPToolRequest >> booleanArgumentNamed: anArgumentName in: aDictionary [
+MCPToolRequest >> booleanArgumentOrDefaultNamed: anArgumentName in: aDictionary [
 	"The argument inside aDictionary, else its schema default, else false."
 
 	^ (self argumentOrDefaultNamed: anArgumentName in: aDictionary) ifNil: [ false ]
@@ -120,7 +120,7 @@ MCPToolRequest >> initialize [
 ]
 
 { #category : 'accessing' }
-MCPToolRequest >> integerArgumentNamed: anArgumentName [
+MCPToolRequest >> integerArgumentOrDefaultNamed: anArgumentName [
 	"The argument, else its schema default. The schema has already checked its type and range, and clamped it to its maximum."
 
 	^ self argumentOrDefaultNamed: anArgumentName
@@ -213,6 +213,7 @@ MCPToolRequest >> stringArgumentOrDefaultNamed: anArgumentName [
 
 { #category : 'accessing' }
 MCPToolRequest >> stringCollectionArgumentNamed: anArgumentName [
+	"An argument left out answers an empty Array, as an empty list does, so this cannot tell absent from empty; hasArgumentNamed: can."
 
 	^ self stringCollectionFrom: (self argumentNamed: anArgumentName ifAbsent: [ ^ #(  ) ])
 ]

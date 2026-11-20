@@ -70,14 +70,15 @@ MCPToolUpdateMethod >> changeProtocolOf: request [
 
 { #category : 'private - updating' }
 MCPToolUpdateMethod >> changeSelector: action of: request [
-	"A rename, or arguments added or removed: the method is looked up, its selector changed across the scope's model, senders included, and the answer names the method before and after. The refactoring keeps the method's text but for its selector line, and the method is then reformatted unless format is false. The senders are left as the refactoring writes them."
+	"A rename, or arguments added or removed: the method is looked up, its selector changed across the scope's model, senders included, and the answer names the method before and after. The refactoring keeps the method's text but for its selector line, and the method is then reformatted unless format is false. The senders are left as the refactoring writes them. Every argument is read before the change, which may rename a selector this method sends."
 
-	| behavior newSelector oldMethodReference selector |
+	| behavior format newSelector oldMethodReference selector |
 	selector := (request stringArgumentNamed: 'selector') asSymbol.
 	newSelector := (request stringArgumentNamed: 'newSelector') asSymbol.
+	format := request booleanArgumentOrDefaultNamed: 'format'.
 	^ self
 		  executeMutationAction: action
-		  force: (request booleanArgumentNamed: 'force')
+		  force: (request booleanArgumentOrDefaultNamed: 'force')
 		  requestedContext: (self requestedContextFor: request action: action)
 		  work: [
 				  behavior := self updateTargetBehaviorFor: request.
@@ -90,7 +91,7 @@ MCPToolUpdateMethod >> changeSelector: action of: request [
 					   environment:
 					   (self refactoringEnvironmentForScopeSpec: (self refactoringScopeSpecFromRequest: request) anchoredAtBehavior: behavior))
 					  execute.
-				  (request booleanArgumentNamed: 'format') ifTrue: [ self reformattedMethodForBehavior: behavior selector: newSelector ] ]
+				  format ifTrue: [ self reformattedMethodForBehavior: behavior selector: newSelector ] ]
 		  successResult: [ :warningMessages |
 				  self
 					  successResultText: ((self selectorChangeSummaryFormatFor: action) format: {
@@ -363,7 +364,7 @@ MCPToolUpdateMethod >> updateActionsFor: request [
 	(request hasArgumentNamed: 'protocol') ifTrue: [ actions add: 'changeProtocol' ].
 	(self selectorUpdateActionFor: request)
 		ifNil: [
-		((request hasArgumentNamed: 'format') and: [ request booleanArgumentNamed: 'format' ]) ifTrue: [ actions add: 'format' ] ]
+		((request hasArgumentNamed: 'format') and: [ request booleanArgumentOrDefaultNamed: 'format' ]) ifTrue: [ actions add: 'format' ] ]
 		ifNotNil: [ :action | actions add: action ].
 	^ actions asArray
 ]
