@@ -64,6 +64,18 @@ The exporter is configured the standard way, through the `OTEL_*` environment
 variables the image was started with; see opentelemetry-pharo for the ones it
 reads.
 
+Enabling it sets the image's OpenTelemetry resource, for every provider in
+the image and those made later, to what describes the server: `service.name`
+`pharo-mcp`, `service.version` (the version the server reports), the SDK's
+`telemetry.sdk.*`, `os.type`, and `process.runtime.name` with the Pharo version
+and its build (`process.runtime.version`) and the VM's
+(`process.runtime.description`). `OTEL_RESOURCE_ATTRIBUTES` can add attributes
+but not replace these, and `OTEL_SERVICE_NAME` is not read. The host name, the
+process and its command line, which the SDK would otherwise detect and which
+name the user and the image, are not sent. An attribute Pharo cannot tell is
+left out, and the calls are recorded anyway. A configuration file named by
+`OTEL_CONFIG_FILE` that sets a resource is used as it is.
+
 Each tool call is a server span named `tools/call <tool>`, with the attributes
 the OpenTelemetry conventions for MCP define (`mcp.method.name`,
 `gen_ai.tool.name`, `error.type`, ...) and MCP's own under `pharo.mcp.`. A
