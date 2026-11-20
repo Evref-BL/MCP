@@ -49,10 +49,15 @@ BaselineOfMCP >> defineCompatibilityPackages: spec [
 					group: 'Core' with: #( 'MCP-Compatibility-From13' );
 					package: 'MCP-IDE-Compatibility-From13' with: [ spec requires: #( 'MCP-IDE' ) ];
 					group: 'IDE' with: #( 'MCP-IDE-Compatibility-From13' ) ].
-	major >= 14 ifTrue: [
-			spec
-				package: 'MCP-IDE-Compatibility-From14' with: [ spec requires: #( 'MCP-IDE' ) ];
-				group: 'IDE' with: #( 'MCP-IDE-Compatibility-From14' ) ]
+	major < 14
+		ifTrue: [
+				spec
+					package: 'MCP-IDE-Compatibility-Before14' with: [ spec requires: #( 'MCP-IDE' ) ];
+					group: 'IDE' with: #( 'MCP-IDE-Compatibility-Before14' ) ]
+		ifFalse: [
+				spec
+					package: 'MCP-IDE-Compatibility-From14' with: [ spec requires: #( 'MCP-IDE' ) ];
+					group: 'IDE' with: #( 'MCP-IDE-Compatibility-From14' ) ]
 ]
 
 { #category : 'baselines' }

@@ -881,7 +881,7 @@ MCPToolMethodMutationTest >> testAddArgumentsUpdatesSendersAndReportsAction [
 
 { #category : 'tests' }
 MCPToolMethodMutationTest >> testAddedArgumentsMayTakeTheNamesKeptOnesGiveUp [
-	"Two added arguments may take the names two kept ones give up, though the refactoring first gives both the same placeholder name. A compiler that refuses shadowing temporaries refuses that inside the refactoring, before anything changes."
+	"Two added arguments may take the names two kept ones give up, though the refactoring first gives both the same placeholder name."
 
 	| result widened |
 	widened := self inferenceOutcomeSelectors fourth.
@@ -891,9 +891,6 @@ MCPToolMethodMutationTest >> testAddedArgumentsMayTakeTheNamesKeptOnesGiveUp [
 			          (#newSelector -> widened asString).
 			          (#arguments -> #( 'left' 'right' 'first' 'second' )).
 			          self fixturePackageScope } asDictionary.
-	self compilerRefusesShadowingTemporaries ifTrue: [
-			self assert: (result at: #isError).
-			^ self assert: (MCPToolMethodMutationTestTarget includesSelector: self inferenceSelector) ].
 	self deny: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
 	self assert: (MCPToolMethodMutationTestTarget >> widened) ast argumentNames asArray equals: #( 'left' 'right' 'first' 'second' ).
 	self assert: (MCPToolMethodMutationTestTarget new perform: widened withArguments: #( 'a' 'b' nil nil )) equals: 'a-b'
@@ -1015,9 +1012,6 @@ MCPToolMethodMutationTest >> testArgumentNamesMayKeepANameThatShadowsAVariable [
 	"A name the method's argument already has hides the same variable before and after the change, so keeping it changes nothing the method means."
 
 	| result |
-	self compilerRefusesShadowingTemporaries ifTrue: [
-			^ self skip:
-				  'This Pharo''s compiler refuses an argument that shadows a variable, so its refactoring will not change such a method.' ].
 	[
 		self ensureMethodSource: 'keptShadowProbe: name ^ name' protocol: 'reading' on: MCPToolGetMethodTestTarget classSide.
 		result := self callToolNamed: 'method_update' withArguments: {
@@ -3296,9 +3290,6 @@ MCPToolMethodMutationTest >> testRenamedArgumentsTakeTheBlockVariablesThatHideTh
 	"A block argument or temporary that hides a renamed argument is renamed with it, so the block still reads its own variable."
 
 	| renamed result |
-	self compilerRefusesShadowingTemporaries ifTrue: [
-			^ self skip:
-				  'This Pharo''s compiler refuses a block variable that hides an argument, so its refactoring will not change such a method.' ].
 	renamed := self inferenceOutcomeSelectors first.
 	self
 		ensureMethodSource: 'probeCombine: first with: second

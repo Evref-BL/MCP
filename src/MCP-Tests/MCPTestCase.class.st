@@ -223,7 +223,7 @@ MCPTestCase >> newRepositoryNamed: aRepositoryName location: aFileReference pack
 
 { #category : 'private - compatibility' }
 MCPTestCase >> refactoringsRefuseBreakingChanges [
-	"Before Pharo 12, a refactoring that would break code fails a precondition, which forcing does not get past, and moving a slot stops on the methods that use it while it is between classes. From 12 on, the refactoring raises a warning that forcing gets past."
+	"Before Pharo 12, a refactoring that would break code fails a precondition, which forcing does not get past. From 12 on, the refactoring raises a warning that forcing gets past."
 
 	^ self class environment includesKey: #RBRefactoringFailure
 ]

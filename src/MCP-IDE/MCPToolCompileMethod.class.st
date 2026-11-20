@@ -117,7 +117,7 @@ MCPToolCompileMethod >> compile: methodSource into: aBehavior classified: protoc
 		previousProtocolName := changeKind = 'replaced' ifTrue: [ self protocolNameOf: aBehavior >> selector ].
 		self signalTraitOriginBeforeCompiling: selector in: aBehavior unlessForced: (request booleanArgumentNamed: 'force').
 		selector := aBehavior mcpCompile: methodSource classified: (protocol ifNil: [ previousProtocolName ]) ]
-		on: Exception
+		on: self compileFailures
 		do: [ :error |
 				self
 					signalCompileFailure: error

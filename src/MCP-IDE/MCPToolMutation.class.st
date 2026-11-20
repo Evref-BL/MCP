@@ -163,23 +163,32 @@ MCPToolMutation >> executeActionBlock: actionBlock force: forceRequested action:
 
 { #category : 'private - execution' }
 MCPToolMutation >> executeMutationAction: action force: forceRequested requestedContext: requestedContext work: actionBlock successResult: successBlock failureSummary: failureSummaryBlock [
+	"Pharo and its refactorings notify partway through a change, and a notification is no failure: it is resumed as at the boundary of the call, before the handler here would answer it as one with part of the change made. A warning so resumed is one the change went past, as a load goes past what it cannot load, so the answer says what it warned of, whether the change then succeeds or not."
 
-	| executionOutcome |
-	^ [
-		  executionOutcome := self
-			                      executeActionBlock: actionBlock
-			                      force: forceRequested
-			                      action: action
-			                      requestedContext: requestedContext.
-		  (executionOutcome includesKey: #stoppedResult) ifTrue: [ ^ executionOutcome at: #stoppedResult ].
-		  successBlock value: (executionOutcome at: #warnings) ]
-		  on: Exception
-		  do: [ :error |
-				  self
-					  errorResultForActionFailure: error
-					  action: action
-					  requestedContext: requestedContext
-					  summary: (failureSummaryBlock value: error) ]
+	| resumedWarnings result |
+	resumedWarnings := OrderedCollection new.
+	result := [
+		          self resumingNotificationsDuring: [
+				          | executionOutcome |
+				          executionOutcome := [
+					                              self
+						                              executeActionBlock: actionBlock
+						                              force: forceRequested
+						                              action: action
+						                              requestedContext: requestedContext ]
+					                              on: Warning
+					                              do: [ :warning |
+							                              resumedWarnings addIfNotPresent: (MCPRefactoringText singleLine: warning messageText).
+							                              warning pass ].
+				          executionOutcome at: #stoppedResult ifAbsent: [ successBlock value: (executionOutcome at: #warnings) ] ] ]
+		          on: Exception
+		          do: [ :error |
+				          self
+					          errorResultForActionFailure: error
+					          action: action
+					          requestedContext: requestedContext
+					          summary: (failureSummaryBlock value: error) ].
+	^ self result: result addingWarnings: resumedWarnings
 ]
 
 { #category : 'executing' }
@@ -507,6 +516,20 @@ MCPToolMutation >> resolvedRefactoringScopeClassesFrom: classNames inScope: aSco
 	"A refactoring scope must be complete: an entry that names no class refuses the call, under its key as the schema spells it."
 
 	^ classNames collect: [ :eachName | MCPImageLookup classNamed: eachName inScope: aScopeKey ]
+]
+
+{ #category : 'private - warnings' }
+MCPToolMutation >> result: aResult addingWarnings: someWarnings [
+	"aResult, saying after its own warnings what someWarnings say."
+
+	| structuredContent |
+	someWarnings ifEmpty: [ ^ aResult ].
+	structuredContent := aResult structuredContent copy.
+	structuredContent at: #warnings put: (structuredContent at: #warnings ifAbsent: [ #(  ) ]) , someWarnings asArray.
+	^ aResult
+		  content: { (self textContent: (self contentTextForStructuredContent: structuredContent)) };
+		  structuredContent: structuredContent;
+		  yourself
 ]
 
 { #category : 'private - warnings' }
