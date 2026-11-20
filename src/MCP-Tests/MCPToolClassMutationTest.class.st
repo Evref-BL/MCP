@@ -1977,6 +1977,39 @@ MCPToolClassMutationTest >> testUpdateRenameSlotReformatsWithTheFormatterOfTheCl
 ]
 
 { #category : 'tests - update' }
+MCPToolClassMutationTest >> testUpdateRenameSlotThatCannotFinishChangesNothing [
+	"Renaming an accessor onto a method the class has, or a sender with a temporary or an argument of the new name, would be refused only after the new slot was added and the senders before it rewritten."
+
+	| refuses target |
+	target := self
+		          createClassNamed: 'MCPToolClassMutationTestRenameSlotTarget'
+		          superclassName: 'Object'
+		          slots: #( oldSlot )
+		          classSlots: #(  ).
+	#( 'oldSlot ^ oldSlot' 'oldSlot: anObject oldSlot := anObject' 'slotProbe ^ self oldSlot' ) do: [ :each |
+		self ensureMethodSource: each protocol: 'accessing' on: target ].
+	refuses := [ :text |
+		           | result sources |
+		           sources := target methods collect: [ :each | each selector -> each sourceCode ] as: Dictionary.
+		           result := self callToolNamed: 'class_update' withArguments: (self
+				                      updateRequestArgumentsForSlotRenameInClassNamed: target name
+				                      slotName: 'oldSlot'
+				                      newSlotName: 'renamedSlot'
+				                      classSide: false).
+		           self assert: (self resultIndicatesError: result).
+		           self assert: ((self textFrom: result) endsWith: text) description: [ self textFrom: result ].
+		           target := self classNamed: target name.
+		           self assert: (target slots collect: #name as: Array) equals: #( #oldSlot ).
+		           self assert: (target methods collect: [ :each | each selector -> each sourceCode ] as: Dictionary) equals: sources ].
+	self ensureMethodSource: 'renamedSlot ^ 42' protocol: 'accessing' on: target.
+	refuses value:
+		': Cannot rename accessor oldSlot to renamedSlot because MCPToolClassMutationTestRenameSlotTarget already defines renamedSlot.'.
+	self removeSelector: #renamedSlot from: target.
+	self ensureMethodSource: 'shadows: renamedSlot ^ oldSlot = renamedSlot' protocol: 'accessing' on: target.
+	refuses value: ': MCPToolClassMutationTestRenameSlotTarget>>shadows: already has a temporary or an argument named renamedSlot.'
+]
+
+{ #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateRenamesClassSideSlotAndPreservesValue [
 
 	| result target |

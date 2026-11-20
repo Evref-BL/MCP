@@ -37,14 +37,15 @@ MCPRenameSlotCommand >> accessorMessageRewriter [
 
 { #category : 'private' }
 MCPRenameSlotCommand >> applyToBehavior: aBehavior [
-	"The same rename on either side: a class-side slot is an instance variable of the metaclass."
+	"The same rename on either side: a class-side slot is an instance variable of the metaclass. The methods that refer to the slot are rewritten before anything changes, since rewriting one can be refused, and compiled once the new slot is there."
 
-	| preservedValues |
+	| preservedValues rewrittenReferences |
 	self validateSlotRenameInBehavior: aBehavior.
+	rewrittenReferences := self rewrittenReferencesInBehavior: aBehavior.
 	preservedValues := self slotValuesForBehavior: aBehavior.
 	aBehavior addInstVarNamed: self newSlotName.
 	self restoreSlotValues: preservedValues.
-	self rewriteReferencesInBehavior: aBehavior.
+	rewrittenReferences do: [ :each | each value ].
 	self renameAccessorsInBehavior: aBehavior.
 	aBehavior removeInstVarNamed: self slotName
 ]
@@ -86,32 +87,18 @@ MCPRenameSlotCommand >> referenceSelectorsInBehavior: aBehavior [
 ]
 
 { #category : 'private' }
-MCPRenameSlotCommand >> renameAccessor: oldSelector to: newSelector source: sourceString inBehavior: aBehavior [
+MCPRenameSlotCommand >> renameAccessor: oldSelector source: sourceString inBehavior: aBehavior [
 
-	| protocol |
 	(aBehavior includesLocalSelector: oldSelector) ifFalse: [ ^ self ].
-	protocol := (aBehavior >> oldSelector) protocol.
-	(aBehavior includesLocalSelector: newSelector) ifTrue: [
-			RBRefactoringError signal: (String streamContents: [ :stream |
-						 stream << 'Cannot rename accessor ' << oldSelector asString << ' to ' << newSelector asString
-						 << ' because the target selector already exists.' ]) ].
-	aBehavior compile: sourceString withInternalLineEndings classified: protocol.
+	aBehavior compile: sourceString withInternalLineEndings classified: (aBehavior >> oldSelector) protocol.
 	aBehavior removeSelector: oldSelector
 ]
 
 { #category : 'private' }
 MCPRenameSlotCommand >> renameAccessorsInBehavior: aBehavior [
 
-	self
-		renameAccessor: self slotName asSymbol
-		to: self newSlotName asSymbol
-		source: self getterSourceForNewSlot
-		inBehavior: aBehavior.
-	self
-		renameAccessor: (self slotName , ':') asSymbol
-		to: (self newSlotName , ':') asSymbol
-		source: self setterSourceForNewSlot
-		inBehavior: aBehavior
+	self renameAccessor: self slotName asSymbol source: self getterSourceForNewSlot inBehavior: aBehavior.
+	self renameAccessor: (self slotName , ':') asSymbol source: self setterSourceForNewSlot inBehavior: aBehavior
 ]
 
 { #category : 'private' }
@@ -121,13 +108,14 @@ MCPRenameSlotCommand >> restoreSlotValues: someAssociations [
 ]
 
 { #category : 'private' }
-MCPRenameSlotCommand >> rewriteReferencesForSelector: aSelector inBehavior: aBehavior [
+MCPRenameSlotCommand >> rewriteOfSelector: aSelector inBehavior: aBehavior [
+	"A block compiling the method rewritten for the new name, or nil when nothing in it changes."
 
-	| accessorRewriter changed parseTree protocol source variableRewriter |
+	| accessorRewriter changed parseTree source variableRewriter |
 	parseTree := aBehavior parseTreeForSelector: aSelector.
-	parseTree ifNil: [ ^ self ].
+	parseTree ifNil: [ ^ nil ].
 	changed := false.
-	variableRewriter := self variableReferenceRewriterForSelector: aSelector.
+	variableRewriter := self variableReferenceRewriterForSelector: aSelector inBehavior: aBehavior.
 	(variableRewriter executeTree: parseTree) ifTrue: [
 			parseTree := variableRewriter tree.
 			changed := true ].
@@ -135,18 +123,19 @@ MCPRenameSlotCommand >> rewriteReferencesForSelector: aSelector inBehavior: aBeh
 	(accessorRewriter executeTree: parseTree) ifTrue: [
 			parseTree := accessorRewriter tree.
 			changed := true ].
-	changed ifFalse: [ ^ self ].
-	protocol := (aBehavior >> aSelector) protocol.
+	changed ifFalse: [ ^ nil ].
 	source := (parseTree formattedCodeIn: aBehavior) withInternalLineEndings.
-	aBehavior compile: source classified: protocol
+	^ [ aBehavior compile: source classified: (aBehavior >> aSelector) protocol ]
 ]
 
 { #category : 'private' }
-MCPRenameSlotCommand >> rewriteReferencesInBehavior: aBehavior [
+MCPRenameSlotCommand >> rewrittenReferencesInBehavior: aBehavior [
+	"A block for each method that refers to the slot or its accessors, compiling it rewritten for the new name."
 
-	aBehavior withAllSubclasses do: [ :eachBehavior |
-			(self referenceSelectorsInBehavior: eachBehavior) do: [ :eachSelector |
-				self rewriteReferencesForSelector: eachSelector inBehavior: eachBehavior ] ]
+	^ aBehavior withAllSubclasses flatCollect: [ :eachBehavior |
+			  (self referenceSelectorsInBehavior: eachBehavior)
+				  collect: [ :eachSelector | self rewriteOfSelector: eachSelector inBehavior: eachBehavior ]
+				  thenReject: [ :each | each isNil ] ]
 ]
 
 { #category : 'private' }
@@ -168,19 +157,35 @@ MCPRenameSlotCommand >> slotValuesForBehavior: aBehavior [
 ]
 
 { #category : 'private' }
+MCPRenameSlotCommand >> validateAccessorRenamesInBehavior: aBehavior [
+	"Checked before anything changes: a refusal met while renaming the accessors would come after the new slot was added and the senders rewritten."
+
+	{
+		(self slotName -> self newSlotName).
+		(self slotName , ':' -> (self newSlotName , ':')) } do: [ :each |
+			((aBehavior includesLocalSelector: each key asSymbol) and: [ aBehavior includesLocalSelector: each value asSymbol ]) ifTrue: [
+					RBRefactoringError signal: ('Cannot rename accessor {1} to {2} because {3} already defines {2}.' format: {
+								 each key.
+								 each value.
+								 aBehavior name }) ] ]
+]
+
+{ #category : 'private' }
 MCPRenameSlotCommand >> validateSlotRenameInBehavior: aBehavior [
 
 	self validateSlotIsDefinedIn: aBehavior.
 	(self hierarchyDefinesSlotNamed: self newSlotName inBehavior: aBehavior) ifTrue: [
 			RBRefactoringError signal: (String streamContents: [ :stream |
-					 stream << self newSlotName << ' is already defined in the class ' << self className << ' or its hierarchy.' ]) ]
+					 stream << self newSlotName << ' is already defined in the class ' << self className << ' or its hierarchy.' ]) ].
+	self validateAccessorRenamesInBehavior: aBehavior
 ]
 
 { #category : 'private' }
-MCPRenameSlotCommand >> variableReferenceRewriterForSelector: aSelector [
+MCPRenameSlotCommand >> variableReferenceRewriterForSelector: aSelector inBehavior: aBehavior [
 
 	^ RBParseTreeRewriter rename: self slotName to: self newSlotName handler: [
-			  RBRefactoringError signal: (String streamContents: [ :stream |
-					   stream << self newSlotName << ' is already defined as a method or block temporary variable while rewriting '
-					   << aSelector asString ]) ]
+			  RBRefactoringError signal: ('{1}>>{2} already has a temporary or an argument named {3}.' format: {
+						   aBehavior name.
+						   aSelector.
+						   self newSlotName }) ]
 ]
