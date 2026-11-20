@@ -2,12 +2,10 @@ Extension { #name : 'MCPReparentClassCommand' }
 
 { #category : '*MCP-IDE-Compatibility-From12' }
 MCPReparentClassCommand >> builderForReparenting: aClass toSuperclass: aSuperclass [
+	"fillFor: gives the builder copies of the class's slots: the new class numbers its slots after its superclass's, and the class whose instances Pharo migrates must keep its own numbers."
 
-	| builder |
-	builder := ShiftClassBuilder new.
-	builder fillInstanceSideFromClass: aClass.
-	builder fillClassSideFromEnvironment: aClass environment.
-	builder name: aClass name.
-	builder superclass: aSuperclass.
-	^ builder
+	^ ShiftClassBuilder new
+		  fillFor: aClass;
+		  superclass: aSuperclass;
+		  yourself
 ]

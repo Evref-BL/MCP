@@ -2192,18 +2192,20 @@ MCPToolClassMutationTest >> testUpdateReparentThatPharoAbandonsSaysWhy [
 
 { #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateReparentsClassAndPreservesExistingState [
+	"An instance made before the call keeps what its slots hold, under a superclass that has slots of its own."
 
-	| result target |
+	| instance result target |
 	self
 		createClassNamed: self reparentSuperclassName
 		superclassName: 'Object'
-		slots: #(  )
+		slots: #( betaSlot )
 		classSlots: #(  ).
-	self
-		createClassNamed: self reparentTargetClassName
-		superclassName: 'Object'
-		slots: #( alphaSlot )
-		classSlots: #(  ).
+	instance := (self
+		             createClassNamed: self reparentTargetClassName
+		             superclassName: 'Object'
+		             slots: #( alphaSlot )
+		             classSlots: #(  )) new.
+	instance instVarNamed: 'alphaSlot' put: 7.
 	self ensureMethodSource: 'probeMethod ^ 41' protocol: 'testing' on: (self classNamed: self reparentTargetClassName).
 	self withoutEpiceaDuring: [ (self classNamed: self reparentTargetClassName) comment: 'reparent comment' ].
 	result := self callToolNamed: 'class_update' withArguments: self updateRequestArgumentsForReparent.
@@ -2212,7 +2214,9 @@ MCPToolClassMutationTest >> testUpdateReparentsClassAndPreservesExistingState [
 	self assert: target superclass name asString equals: self reparentSuperclassName.
 	self assert: target new probeMethod equals: 41.
 	self assert: target mcpComment equals: 'reparent comment'.
-	self assert: (target slots collect: #name as: Array) equals: #( #alphaSlot )
+	self assert: (target slots collect: #name as: Array) equals: #( #alphaSlot ).
+	self assert: instance class equals: target.
+	self assert: (instance instVarNamed: 'alphaSlot') equals: 7
 ]
 
 { #category : 'tests - update' }
