@@ -22,16 +22,6 @@ MCPRewriteMethodsCommand class >> rules: someRuleSpecs scopeQuery: aScopeQuery [
 	^ self new initializeRules: someRuleSpecs scopeQuery: aScopeQuery
 ]
 
-{ #category : 'executing' }
-MCPRewriteMethodsCommand >> applyChanges: changes [
-
-	| changeManager |
-	changeManager := self refactoringChangeManager.
-	^ [ changes do: [ :change | changeManager performChange: change ] ]
-		  on: Deprecation
-		  do: [ :deprecation | deprecation resume ]
-]
-
 { #category : 'private - rewriting' }
 MCPRewriteMethodsCommand >> classNameForChange: aChange [
 
@@ -61,12 +51,6 @@ MCPRewriteMethodsCommand >> parseTreeRewriter [
 	rewriter := RBParseTreeRewriter new.
 	rules do: [ :each | each addToRewriter: rewriter ].
 	^ rewriter
-]
-
-{ #category : 'private - rewriting' }
-MCPRewriteMethodsCommand >> refactoringChangeManager [
-
-	^ ReChangeManager instance
 ]
 
 { #category : 'private - rewriting' }
