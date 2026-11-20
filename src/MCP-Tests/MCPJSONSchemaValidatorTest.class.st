@@ -104,9 +104,6 @@ MCPJSONSchemaValidatorTest >> representativeArgumentsByToolClass [
 		arguments at: toolClass put: representativeArguments ].
 	arguments
 		at: MCPToolSearchMethodSource put: { (#query -> 'method') } asDictionary;
-		at: MCPToolSearchEquivalentMethods put: {
-				(#class -> 'Object').
-				(#selector -> 'class') } asDictionary;
 		at: MCPToolRunCritiques put: {
 				(#scope -> { (#classes -> { 'MCPToolRunCritiquesTest' }) } asDictionary).
 				(#ruleClasses -> { ReAssignmentInBlockRule name }) } asDictionary;
@@ -125,9 +122,6 @@ MCPJSONSchemaValidatorTest >> representativeArgumentsByToolClass [
 				(#repository -> 'MCP Test Repository').
 				(#location -> '/tmp/mcp-test-repository') } asDictionary;
 		at: MCPToolUpdateRepository put: { (#repository -> 'MCP') } asDictionary;
-		at: MCPToolRunTestCoverage put: {
-				(#classes -> { 'MCPToolContractsTest' }).
-				(#coverage -> { (#scope -> { (#classes -> #( 'MCPToolContractsTest' )) } asDictionary) } asDictionary) } asDictionary;
 		at: MCPToolApplyChangeHistoryEntries put: { (#indexes -> #( 1 )) } asDictionary;
 		at: MCPToolRevertChangeHistoryEntries put: { (#indexes -> #( 1 )) } asDictionary;
 		at: MCPToolListMethodVersions put: {
@@ -264,7 +258,7 @@ MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasAdvertiseGroupedSearchS
 		                        :each | each name ].
 	methodScopeProperties := ((methodProperties detect: [ :each | each name = 'scope' ]) extraProperties at: #properties) collect: [
 		                         :each | each name ].
-	self assert: (classProperties collect: [ :each | each name ] as: Set) equals: #( 'scope' 'query' 'package' 'tag' 'offset' ) asSet.
+	self assert: (classProperties collect: [ :each | each name ] as: Set) equals: #( 'scope' 'query' 'tag' 'offset' ) asSet.
 	self assert: (methodProperties collect: [ :each | each name ] as: Set) equals: #( 'scope' 'query' 'protocol' 'offset' ) asSet.
 	self assert: classScopeProperties asSet equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' 'hierarchyOf' ) asSet.
 	self assert: methodScopeProperties asSet equals: classScopeProperties asSet , #( 'side' ) asSet
@@ -281,9 +275,6 @@ MCPJSONSchemaValidatorTest >> testCurrentToolRequestValidationRejectsOperationSp
 		raise: MCPInvalidToolInput.
 	self
 		should: [ MCPToolCommitRepository new requestFromToolCallArguments: { (#name -> 'MCP') } asDictionary ]
-		raise: MCPInvalidToolInput.
-	self
-		should: [ MCPToolRunTestCoverage new requestFromToolCallArguments: { (#classes -> { 'MCPToolContractsTest' }) } asDictionary ]
 		raise: MCPInvalidToolInput.
 	self
 		should: [

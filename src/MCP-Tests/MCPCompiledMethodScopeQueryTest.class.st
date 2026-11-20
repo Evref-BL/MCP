@@ -210,7 +210,7 @@ MCPCompiledMethodScopeQueryTest >> testScopePhraseLeavesOutWhatTheQueryCouldNotR
 
 { #category : 'tests' }
 MCPCompiledMethodScopeQueryTest >> testScopePhraseNamesWhereTheQueryLooks [
-	"Names are listed up to three and counted from four on, in the order projects, packages, classes, hierarchies, subclasses, superclasses."
+	"Names are listed up to three and counted from four on, in the order packages, classes, hierarchies, subclasses, superclasses."
 
 	self assert: MCPCompiledMethodScopeQuery new scopePhrase equals: 'the image'.
 	self
@@ -237,12 +237,6 @@ MCPCompiledMethodScopeQueryTest >> testScopePhraseNamesWhereTheQueryLooks [
 				 hierarchyClassNames: #( 'A' 'B' 'C' 'D' );
 				 yourself) scopePhrase
 		equals: '6 packages and the hierarchies of 4 classes'.
-	self
-		assert: (MCPPackageScopeQuery new
-				 projectNames: #( 'X' );
-				 packageNames: #( 'P' 'P' );
-				 yourself) scopePhrase
-		equals: 'project X and package P'.
 	self assert: MCPPackageScopeQuery new scopePhrase equals: 'the image'
 ]
 

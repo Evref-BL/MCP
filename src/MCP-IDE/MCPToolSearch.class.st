@@ -334,29 +334,6 @@ MCPToolSearch >> normalizeFilterString: aValue caseSensitive: aBoolean [
 		  ifFalse: [ normalized asLowercase ]
 ]
 
-{ #category : 'private - schema' }
-MCPToolSearch >> packageQueryScopeInputProperties [
-
-	^ {
-		  self packageScopeProjectNamesProperty.
-		  self packageScopePackageNamesProperty }
-]
-
-{ #category : 'private - schema' }
-MCPToolSearch >> packageScopePackageNamesProperty [
-
-	^ self stringArraySchemaNamed: 'packages' description: 'These packages, named exactly.' itemDescription: 'Package name.'
-]
-
-{ #category : 'private - schema' }
-MCPToolSearch >> packageScopeProjectNamesProperty [
-
-	^ self
-		  stringArraySchemaNamed: 'projects'
-		  description: 'Projects whose packages are included.'
-		  itemDescription: 'Project name.'
-]
-
 { #category : 'private - filtering' }
 MCPToolSearch >> pcre2RegexLibraryAvailable [
 	"PCRE2 is an optional dependency: answer whether there is an engine to compile a pattern with."

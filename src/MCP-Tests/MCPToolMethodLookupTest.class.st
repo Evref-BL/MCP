@@ -120,37 +120,20 @@ MCPToolMethodLookupTest >> testKindNarrowsWhatIsLookedFor [
 { #category : 'tests' }
 MCPToolMethodLookupTest >> testLookupSchemasRequireDedicatedArguments [
 
-	| commonProperties expectations |
-	commonProperties := #( 'scope' 'offset' ).
-	expectations := {
-		                (MCPToolSearchMethodReferences -> #( 'query' 'kind' )).
-		                (MCPToolSearchEquivalentMethods -> #( 'class' 'selector' 'side' )) }.
-	expectations do: [ :expectation |
-			| propertyNames schema |
-			schema := expectation key new inputSchema.
-			propertyNames := schema properties collect: [ :each | each name ].
-			self assert: propertyNames asSet equals: (commonProperties , expectation value) asSet ]
+	self
+		assert: (MCPToolSearchMethodReferences new inputSchema properties collect: [ :each | each name ] as: Set)
+		equals: #( 'scope' 'offset' 'query' 'kind' ) asSet
 ]
 
 { #category : 'tests' }
 MCPToolMethodLookupTest >> testLookupToolsArePublicStaticReadTools [
 
-	| discoverableNames staticNames |
-	staticNames := #( 'method_source_search' 'method_reference_search' ).
-	discoverableNames := #( 'method_equivalent_search' ).
-	staticNames do: [ :each |
+	#( 'method_source_search' 'method_reference_search' ) do: [ :each |
 			| tool |
 			self assert: (self toolRegistry toolNames includes: each).
 			self assert: (self toolRegistry advertisedToolNames includes: each).
 			tool := self toolRegistry toolNamed: each ifAbsent: [ self fail: 'Missing tool ' , each ].
 			self assert: tool defaultExposure equals: 'static'.
-			self assert: tool annotations readOnlyHint ].
-	discoverableNames do: [ :each |
-			| tool |
-			self assert: (self toolRegistry toolNames includes: each).
-			self deny: (self toolRegistry advertisedToolNames includes: each).
-			tool := self toolRegistry toolNamed: each ifAbsent: [ self fail: 'Missing tool ' , each ].
-			self assert: tool defaultExposure equals: 'discoverable'.
 			self assert: tool annotations readOnlyHint ]
 ]
 
@@ -239,34 +222,6 @@ MCPToolMethodLookupTest >> testSearchClassReferencesReturnsClassBindingReference
 ]
 
 { #category : 'tests' }
-MCPToolMethodLookupTest >> testSearchEquivalentMethodsReturnsEquivalentAstMatches [
-
-	| data methodSource subclassName |
-	subclassName := 'MCPToolEquivalentSearchFixture'.
-	methodSource := String streamContents: [ :stream |
-			                stream
-				                nextPutAll: 'sharedTarget';
-				                cr;
-				                cr;
-				                tab;
-				                nextPutAll: '^ ''instance-target''' ].
-	self removeClassNamed: subclassName.
-	self
-		createClassNamed: subclassName
-		superclassName: 'MCPToolMethodSearchReferenceFixture'
-		slots: #(  )
-		classSlots: #(  ).
-	[
-		self ensureMethodSource: methodSource protocol: 'testing' on: (self classNamed: subclassName).
-		data := self toolNamed: 'method_equivalent_search' dataFromArguments: {
-				        (self searchScope: { (#classes -> { subclassName }) }).
-				        (#class -> 'MCPToolMethodSearchReferenceFixture').
-				        (#selector -> 'sharedTarget') } asDictionary.
-		self assert: (data at: #methods) size equals: 1.
-		self entryForReference: subclassName , '>>sharedTarget' in: (data at: #methods) ] ensure: [ self removeClassNamed: subclassName ]
-]
-
-{ #category : 'tests' }
 MCPToolMethodLookupTest >> testSearchMethodImplementorsReturnsExactSelectorMatches [
 
 	| data |
@@ -311,21 +266,16 @@ MCPToolMethodLookupTest >> testSelectorNameAnswersImplementorsAndSendersLabelled
 ]
 
 { #category : 'tests' }
-MCPToolMethodLookupTest >> testSourceAndEquivalentSearchSchemasUseDedicatedInputs [
+MCPToolMethodLookupTest >> testSourceSearchSchemaUsesDedicatedInputs [
 
-	| equivalentPropertyNames equivalentRequired equivalentSchema queryModeProperty sourcePropertyNames sourceRequired sourceSchema |
+	| queryModeProperty sourceSchema |
 	sourceSchema := MCPToolSearchMethodSource new inputSchema.
-	sourceRequired := sourceSchema required asArray.
-	sourcePropertyNames := sourceSchema properties collect: [ :each | each name ].
 	queryModeProperty := sourceSchema properties detect: [ :each | each name = 'queryMode' ].
-	self assert: sourceRequired equals: #( 'query' ).
-	self assert: sourcePropertyNames asSet equals: #( 'scope' 'query' 'queryMode' 'offset' ) asSet.
-	self assert: (queryModeProperty extraProperties at: #enum) asArray equals: #( 'substring' 'regex' ).
-	equivalentSchema := MCPToolSearchEquivalentMethods new inputSchema.
-	equivalentRequired := equivalentSchema required asArray.
-	equivalentPropertyNames := equivalentSchema properties collect: [ :each | each name ].
-	self assert: equivalentRequired equals: #( 'class' 'selector' ).
-	self assert: equivalentPropertyNames asSet equals: #( 'scope' 'selector' 'side' 'class' 'offset' ) asSet
+	self assert: sourceSchema required asArray equals: #( 'query' ).
+	self
+		assert: (sourceSchema properties collect: [ :each | each name ] as: Set)
+		equals: #( 'scope' 'query' 'queryMode' 'offset' ) asSet.
+	self assert: (queryModeProperty extraProperties at: #enum) asArray equals: #( 'substring' 'regex' )
 ]
 
 { #category : 'tests' }

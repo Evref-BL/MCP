@@ -15,13 +15,6 @@ MCPToolAPITestCase class >> isAbstract [
 ]
 
 { #category : 'private - calling' }
-MCPToolAPITestCase >> argumentNamed: anArgumentName in: aDictionary default: defaultValue [
-
-	aDictionary ifNil: [ ^ defaultValue ].
-	^ aDictionary at: anArgumentName asSymbol ifAbsent: [ aDictionary at: anArgumentName asString ifAbsent: [ defaultValue ] ]
-]
-
-{ #category : 'private - calling' }
 MCPToolAPITestCase >> aroundToolCall: aBlock [
 
 	^ aBlock value
@@ -99,13 +92,17 @@ MCPToolAPITestCase >> expectedUndeclaredVariableNoticeClassNames [
 ]
 
 { #category : 'private - fixtures' }
-MCPToolAPITestCase >> packageSearchFixtureEntriesLoadedInImage: aBoolean [
+MCPToolAPITestCase >> packageSearchFixtureEntries [
+	"What package_search's project filter keeps of the fixture project's packages."
 
 	| tool |
 	tool := MCPToolSearchPackages new.
 	^ tool
-		  queryEntriesForRequest: (MCPToolRequest tool: tool arguments: Dictionary new)
-		  scopeQuery: (self packageSearchFixtureScopeQueryLoadedInImage: aBoolean)
+		  queryEntriesForRequest:
+		  (MCPToolRequest tool: tool arguments: { (#project -> self packageSearchFixtureProjectName) } asDictionary)
+		  scopeQuery: (MCPPackageScopeQueryTestDouble new
+				   projectRegistrations: { (self packageSearchFixtureRegistrationLoadedInImage: true) };
+				   yourself)
 ]
 
 { #category : 'private - fixtures' }
@@ -127,15 +124,6 @@ MCPToolAPITestCase >> packageSearchFixtureRegistrationLoadedInImage: aBoolean [
 		  projectName: self packageSearchFixtureProjectName
 		  packageNames: self packageSearchFixturePackageNames
 		  loadedInImage: aBoolean
-]
-
-{ #category : 'private - fixtures' }
-MCPToolAPITestCase >> packageSearchFixtureScopeQueryLoadedInImage: aBoolean [
-
-	^ MCPPackageScopeQueryTestDouble new
-		  projectNames: { self packageSearchFixtureProjectName };
-		  projectRegistrations: { (self packageSearchFixtureRegistrationLoadedInImage: aBoolean) };
-		  yourself
 ]
 
 { #category : 'private - results' }

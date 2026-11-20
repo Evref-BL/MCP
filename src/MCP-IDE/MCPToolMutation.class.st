@@ -463,7 +463,7 @@ MCPToolMutation >> refactoringModelForScopeSpec: scopeSpec anchoredAtBehavior: a
 
 { #category : 'private - request' }
 MCPToolMutation >> refactoringScopeSpecFromRequest: request [
-	"The same scope object every other sweeping tool takes, rather than this tool's own flat spelling of one."
+	"The scope object the sweeping tools take, with the entries a refactoring environment reads: packages, classes and hierarchies."
 
 	| classNames hierarchyClassNames packageNames |
 	packageNames := self searchScopeStringCollectionNamed: 'packages' fromRequest: request.

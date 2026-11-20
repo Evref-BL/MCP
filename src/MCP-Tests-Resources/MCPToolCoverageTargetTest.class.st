@@ -1,11 +1,11 @@
 "
-SUnit tests for MCPToolCoverageTarget used to exercise MCP coverage reporting.
+Fixture test class that the test_run tests run among other selections.
 "
 Class {
 	#name : 'MCPToolCoverageTargetTest',
 	#superclass : 'TestCase',
-	#category : 'MCP-Tests',
-	#package : 'MCP-Tests'
+	#category : 'MCP-Tests-Resources',
+	#package : 'MCP-Tests-Resources'
 }
 
 { #category : 'tests' }

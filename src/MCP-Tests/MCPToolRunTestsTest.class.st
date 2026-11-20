@@ -1,5 +1,5 @@
 "
-Tests what test_run and test_coverage_run run and say: which selections they refuse before anything runs, how each test is counted once, where an issue came from, and what a timeout leaves to run.
+Tests what test_run runs and says: which selections it refuses before anything runs, how each test is counted once, where an issue came from, and what a timeout leaves to run.
 
 The fixtures it runs are named by string, so that these tests add no reference to them: some of the tests count the test classes that refer to a class.
 "
@@ -134,21 +134,6 @@ MCPToolRunTestsTest >> testAClassWithoutTestsSaysSo [
 	self
 		assert: (self summaryFrom: (self runTests: { (#classes -> #( 'MCPToolRunTestsEmptyTarget' )) }))
 		equals: 'Ran 0 tests (0 passed). MCPToolRunTestsEmptyTarget has no tests.'
-]
-
-{ #category : 'tests - arguments' }
-MCPToolRunTestsTest >> testACoverageScopeEntryThatNamesNoClassIsSaid [
-	"The coverage scope answers partial results, as a search scope does, so an entry that names nothing is skipped with a warning, not dropped without a word. Pharo 10 has no coverage to collect and refuses the call."
-
-	| result |
-	result := self callToolNamed: 'test_coverage_run' withArguments: {
-			          (#classes -> #( 'MCPToolCoverageTargetTest' )).
-			          (#coverage -> { (#scope -> { (#classes -> #( 'Zzqxw' 'MCPToolCoverageTarget' )) } asDictionary) } asDictionary) }
-			          asDictionary.
-	self coverageIsAvailable ifFalse: [ ^ self assert: (self resultIndicatesError: result) ].
-	self deny: (self resultIndicatesError: result).
-	self assert: (self warningsFrom: result) asArray equals: #( 'Class Zzqxw does not exist, so scope.classes skipped it.' ).
-	self assert: (((self dataFrom: result) at: #coverage) at: #methodCount) > 0
 ]
 
 { #category : 'tests - answers' }
@@ -793,41 +778,6 @@ MCPToolRunTestsTest >> testClassesMadeAgainThatATestStillHoldsShareOneSentence [
 					'Ran 1 test (1 passed). MCPToolRunTestsRemovedTargetTest>>#testBoth refers to MCPToolRunTestsRemovedOtherTarget and MCPToolRunTestsRemovedTarget, removed classes, so it ran the obsolete copies of those classes. MCPToolRunTestsRemovedOtherTarget and MCPToolRunTestsRemovedTarget exist again, but MCPToolRunTestsRemovedTargetTest>>#testBoth still refers to their removed copies: compile that method again with method_compile, unchanged, and it will refer to the current MCPToolRunTestsRemovedOtherTarget and MCPToolRunTestsRemovedTarget.' ]
 ]
 
-{ #category : 'tests - answers' }
-MCPToolRunTestsTest >> testCoverageAfterATimeoutIsCoverageSoFar [
-	"Coverage measured over the tests that ran before a timeout is not the coverage of the call's tests."
-
-	| data tool |
-	tool := MCPToolRunTestCoverage new.
-	data := Dictionary new
-		        at: #runCount put: 2;
-		        at: #passedCount put: 2;
-		        at: #coverage put: { (#percentage -> 50) } asDictionary;
-		        yourself.
-	self assert: (tool successSummaryForData: data) equals: 'Ran 2 tests (2 passed). Coverage: 50.00%.'.
-	data
-		at: #timedOut put: true;
-		at: #timeoutMilliseconds put: 2000;
-		at: #notRunCount put: 3.
-	self
-		assert: (tool successSummaryForData: data)
-		equals:
-		'Ran 2 tests (2 passed). Timed out after 2 seconds. 3 tests not run, listed below as test_coverage_run arguments. Coverage so far: 50.00%.'
-]
-
-{ #category : 'tests - answers' }
-MCPToolRunTestsTest >> testCoverageLeavesOutTheRunnersOwnLookups [
-	"A selection's class is looked up before the coverage collector is installed, so the runner's lookups never count as executed: MCPToolCoverageTargetTest's tests reach no method of MCPImageLookup. Pharo 10 has no coverage to collect and refuses the call."
-
-	| result |
-	result := self callToolNamed: 'test_coverage_run' withArguments: {
-			          (#classes -> #( 'MCPToolCoverageTargetTest' )).
-			          (#coverage -> { (#scope -> { (#classes -> #( 'MCPImageLookup' )) } asDictionary) } asDictionary) } asDictionary.
-	self coverageIsAvailable ifFalse: [ ^ self assert: (self resultIndicatesError: result) ].
-	self deny: (self resultIndicatesError: result).
-	self assert: (((self dataFrom: result) at: #coverage) at: #coveredMethodCount) equals: 0
-]
-
 { #category : 'tests - outcomes' }
 MCPToolRunTestsTest >> testDurationsReadInWholeSecondsOrMilliseconds [
 
@@ -910,17 +860,6 @@ MCPToolRunTestsTest >> testTestsThatReferToTheSameRemovedClassesInAnyOrderShareO
 					assert: (self summaryFrom: (self runTests: { (#classes -> #( 'MCPToolRunTestsRemovedTargetTest' )) }))
 					equals:
 					'Ran 2 tests (2 passed). MCPToolRunTestsRemovedTargetTest>>#testOtherFirst and MCPToolRunTestsRemovedTargetTest>>#testTargetFirst refer to MCPToolRunTestsRemovedOtherTarget and MCPToolRunTestsRemovedTarget, removed classes, so they ran the obsolete copies of those classes. Create MCPToolRunTestsRemovedOtherTarget and MCPToolRunTestsRemovedTarget again with class_create, or change the tests.' ]
-]
-
-{ #category : 'tests - arguments' }
-MCPToolRunTestsTest >> testTheCoverageToolRefusesInItsOwnName [
-
-	self
-		assert: (self summaryFrom: (self callToolNamed: 'test_coverage_run' withArguments: {
-						  (#methods -> #( 'NotAMethodReference' )).
-						  (#coverage -> { (#scope -> { (#classes -> #( 'MCPToolRunTestsRaiser' )) } asDictionary) } asDictionary) } asDictionary))
-		equals:
-		'Invalid arguments for test_coverage_run. methods: NotAMethodReference is not a method reference; write it as Class>>#selector.'
 ]
 
 { #category : 'tests - answers' }

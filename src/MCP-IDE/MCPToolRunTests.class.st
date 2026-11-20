@@ -1,13 +1,9 @@
 "
 Run test packages, classes, or methods and return compact aggregate results.
-
-MCPToolRunTestCoverage reuses the same selection and execution pipeline with coverage collection enabled.
 "
 Class {
 	#name : 'MCPToolRunTests',
 	#superclass : 'MCPTool',
-	#traits : 'TMCPMethodTool',
-	#classTraits : 'TMCPMethodTool classTrait',
 	#category : 'MCP-IDE-Tools',
 	#package : 'MCP-IDE',
 	#tag : 'Tools'
@@ -95,43 +91,9 @@ MCPToolRunTests >> classesDefinedAgainSentenceFor: someEntries [
 				  nextPut: $. ]
 ]
 
-{ #category : 'private - coverage schema' }
-MCPToolRunTests >> coverageOptionsObjectSchema [
-
-	| methodLimitProperty property |
-	methodLimitProperty := self
-		                       integerSchemaPropertyNamed: 'methodLimit'
-		                       description: 'Most method entries to list per coverage list, so a wide scope does not fill the answer.'
-		                       default: self defaultCoverageMethodLimit.
-	methodLimitProperty minimum: 0.
-	property := self
-		            schemaPropertyNamed: 'coverage'
-		            type: 'object'
-		            description:
-		            'Which methods to measure coverage of. Its scope is required: coverage is reported for the methods that scope selects, not for whatever the tests happen to reach.'.
-	property
-		properties: self methodQueryScopeInputProperties , {
-					(self
-						 booleanSchemaPropertyNamed: 'includeCoveredMethods'
-						 description: 'Also list the methods that were executed, not only those that were not.'
-						 default: false).
-					methodLimitProperty };
-		additionalProperties: false.
-	^ property
-]
-
-{ #category : 'private - coverage' }
-MCPToolRunTests >> coveragePercentageTextFor: coverageData [
-
-	| percentage |
-	percentage := coverageData at: #percentage ifAbsent: [ nil ].
-	percentage ifNil: [ ^ 'n/a' ].
-	^ percentage printShowingDecimalPlaces: 2
-]
-
 { #category : 'private - results' }
 MCPToolRunTests >> dataTextOn: stream for: data [
-	"Each issue is read as a line naming the tests it hit, why and where, failures first, then errors, then skips; what a timeout left to run and coverage follow as records."
+	"Each issue is read as a line naming the tests it hit, why and where, failures first, then errors, then skips; what a timeout left to run follows as a record."
 
 	| rest |
 	#( #failures 'failed' #errors 'error' #skipped 'skipped' ) pairsDo: [ :key :label |
@@ -142,12 +104,6 @@ MCPToolRunTests >> dataTextOn: stream for: data [
 			rest removeKey: key ifAbsent: [ nil ].
 			rest removeKey: key asString ifAbsent: [ nil ] ].
 	super dataTextOn: stream for: rest
-]
-
-{ #category : 'defaults' }
-MCPToolRunTests >> defaultCoverageMethodLimit [
-
-	^ 50
 ]
 
 { #category : 'metadata' }
@@ -385,10 +341,8 @@ MCPToolRunTests >> runTestsWith: request [
 
 { #category : 'private' }
 MCPToolRunTests >> successSummaryForData: data [
-	"Ran <N test(s)> (<P> passed).[ <F failure(s)>, <E error(s)>.][ <S> skipped.][ <removed class sentences>][ <selection sentences>][ <timeout sentence>][ Coverage[ so far]: <p>%.] The opening stays on every answer that runs, a timeout's included, since graders read it."
+	"Ran <N test(s)> (<P> passed).[ <F failure(s)>, <E error(s)>.][ <S> skipped.][ <removed class sentences>][ <selection sentences>][ <timeout sentence>] The opening stays on every answer that runs, a timeout's included, since graders read it."
 
-	| timedOut |
-	timedOut := (self valueIn: data at: #timedOut) = true.
 	^ String streamContents: [ :stream |
 			  stream
 				  nextPutAll: 'Ran ';
@@ -408,16 +362,9 @@ MCPToolRunTests >> successSummaryForData: data [
 			  ((self valueIn: data at: #withoutTests) ifNil: [ #(  ) ]) do: [ :entry |
 					  stream space.
 					  self withoutTestsSentenceOn: stream for: entry ].
-			  timedOut ifTrue: [
+			  (self valueIn: data at: #timedOut) = true ifTrue: [
 					  stream space.
-					  self timeoutSentenceOn: stream for: data ].
-			  (self valueIn: data at: #coverage) ifNotNil: [ :coverageData |
-					  stream
-						  nextPutAll: (timedOut
-								   ifTrue: [ ' Coverage so far: ' ]
-								   ifFalse: [ ' Coverage: ' ]);
-						  nextPutAll: (self coveragePercentageTextFor: coverageData);
-						  nextPutAll: '%.' ] ]
+					  self timeoutSentenceOn: stream for: data ] ]
 ]
 
 { #category : 'private - errors' }
@@ -480,7 +427,6 @@ MCPToolRunTests >> timeoutMillisecondsFrom: request [
 
 { #category : 'private - schema' }
 MCPToolRunTests >> timeoutSecondsProperty [
-	"test_run and test_coverage_run give up alike, so they say it alike."
 
 	| property |
 	property := self

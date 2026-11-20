@@ -222,7 +222,7 @@ MCPToolUpdateMethod >> methodToolSpec [
 						     description: 'Current argument index, or 0.';
 						     yourself);
 				    yourself).
-			   self methodSearchScopeSchemaProperty }).
+			   self sendersScopeSchemaProperty }).
 		  (#requiredProperties -> #( 'class' 'selector' )).
 		  (#atLeastOneProperties -> #( 'protocol' 'newSelector' )) } asDictionary
 ]
@@ -342,6 +342,16 @@ MCPToolUpdateMethod >> selectorUpdateActionFor: request [
 	newArgumentCount > oldArgumentCount ifTrue: [ ^ 'addArguments' ].
 	newArgumentCount < oldArgumentCount ifTrue: [ ^ 'removeArguments' ].
 	^ 'rename'
+]
+
+{ #category : 'private - specs' }
+MCPToolUpdateMethod >> sendersScopeSchemaProperty [
+	"Where a selector change updates senders. The refactoring reads packages, classes and hierarchies only, so the scope offers no other entry."
+
+	^ (self searchScopeSchemaPropertyWith:
+			   (self searchScopeSchemaProperties select: [ :each | #( 'classes' 'packages' 'hierarchyOf' ) includes: each name ]))
+		  description: 'Where to update senders; entries add up. Omitted, the whole image.';
+		  yourself
 ]
 
 { #category : 'private - arguments' }

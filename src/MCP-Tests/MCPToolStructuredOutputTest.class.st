@@ -30,27 +30,6 @@ MCPToolStructuredOutputTest >> testCountedNounsReadAsEnglish [
 ]
 
 { #category : 'tests' }
-MCPToolStructuredOutputTest >> testCoverageDropsFlagsThatAreNotSet [
-
-	| contentText |
-	contentText := MCPToolRunTestCoverage new contentTextForStructuredContent: (Dictionary new
-		               at: #summary put: 'Ran 4 tests (4 passed). Coverage: 78.95%.';
-		               at: #data put: (Dictionary new
-				                at: #coverage put: (Dictionary new
-						                 at: #percentage put: 78.94736842105263;
-						                 at: #methodCount put: 6;
-						                 at: #coveredMethodsTruncated put: false;
-						                 at: #uncoveredMethodsTruncated put: true;
-						                 yourself);
-				                yourself);
-		               yourself).
-	self assert: (contentText includesSubstring: 'methodCount: 6').
-	self assert: (contentText includesSubstring: 'uncoveredMethodsTruncated: true').
-	self deny: (contentText includesSubstring: 'percentage').
-	self deny: (contentText lines anySatisfy: [ :each | each trimBoth beginsWith: 'coveredMethodsTruncated' ])
-]
-
-{ #category : 'tests' }
 MCPToolStructuredOutputTest >> testDebugResultDoesNotRepeatItsWarnings [
 
 	| contentText |
@@ -594,8 +573,8 @@ MCPToolStructuredOutputTest >> testRecordsLeadWithTheirName [
 	self assert: (lines anySatisfy: [ :each | each beginsWith: '  MCPToolGetClass package=MCP-IDE' ]).
 	self assert: (lines anySatisfy: [ :each | each beginsWith: '  MCPToolHierarchyTestMid package=MCP-Tests-Resources' ]).
 	self deny: (lines anySatisfy: [ :each | each includesSubstring: 'class=' ]).
-	lines := (((self callToolNamed: 'package_search' withArguments: { (#packages -> #( 'MCP-Tests-Resources' )) } asDictionary) at:
-		           #content) first at: #text) lines.
+	lines := (((self callToolNamed: 'package_search' withArguments: { (#query -> 'MCP-Tests-Resources') } asDictionary) at: #content)
+		          first at: #text) lines.
 	self assert: (lines includes: '  MCP-Tests-Resources').
 	self deny: (lines anySatisfy: [ :each | each includesSubstring: 'package=' ]).
 	lines := (MCPToolListChangeHistoryFiles new contentTextForStructuredContent: (Dictionary new
@@ -653,20 +632,6 @@ MCPToolStructuredOutputTest >> testRunTestClassReturnsStructuredIssues [
 ]
 
 { #category : 'tests' }
-MCPToolStructuredOutputTest >> testRunTestCoverageLetsNotificationsUseTheirDefaultAction [
-
-	| data result |
-	result := self callToolNamed: 'test_coverage_run' withArguments: {
-			          (#classes -> { MCPToolNotificationTargetTest name }).
-			          (#coverage -> { (#scope -> { (#classes -> { MCPToolCoverageTarget name }) } asDictionary) } asDictionary) }
-			          asDictionary.
-	self coverageIsAvailable ifFalse: [ ^ self assert: (self resultIndicatesError: result) ].
-	data := self dataFrom: result.
-	self assert: (data at: #runCount) equals: 1.
-	self assert: (data at: #passedCount) equals: 1
-]
-
-{ #category : 'tests' }
 MCPToolStructuredOutputTest >> testRunTestMethodReturnsStructuredIssues [
 
 	| data failure failureReference result |
@@ -684,74 +649,6 @@ MCPToolStructuredOutputTest >> testRunTestMethodReturnsStructuredIssues [
 	self deny: (data includesKey: #results).
 	self deny: (data includesKey: #skipped).
 	self deny: (data includesKey: #errors)
-]
-
-{ #category : 'tests' }
-MCPToolStructuredOutputTest >> testRunTestsCoverageCanIncludeCoveredMethodsAndCapLists [
-
-	| coverage coveredSelectors data result |
-	result := self callToolNamed: 'test_coverage_run' withArguments: {
-			          (#classes -> #( 'MCPToolCoverageTargetTest' )).
-			          (#coverage -> {
-				           (#scope -> { (#classes -> #( 'MCPToolCoverageTarget' )) } asDictionary).
-				           (#includeCoveredMethods -> true).
-				           (#methodLimit -> 1) } asDictionary) } asDictionary.
-	self coverageIsAvailable ifFalse: [ ^ self assert: (self resultIndicatesError: result) ].
-	data := self dataFrom: result.
-	coverage := data at: #coverage.
-	coveredSelectors := (coverage at: #coveredMethods) collect: [ :each | each at: #selector ].
-	self deny: (self resultIndicatesError: result).
-	self assert: (data at: #runCount) equals: 2.
-	self assert: (data at: #passedCount) equals: 2.
-	self assert: (coverage at: #coveredMethodCount) equals: 2.
-	self assert: (coverage at: #coveredMethods) size equals: 1.
-	self assert: (coverage at: #coveredMethodsTruncated).
-	self assert: coveredSelectors size equals: 1
-]
-
-{ #category : 'tests' }
-MCPToolStructuredOutputTest >> testRunTestsCoverageRequiresExplicitScope [
-
-	| error result |
-	result := self callToolNamed: 'test_coverage_run' withArguments: {
-			          (#classes -> #( 'MCPToolCoverageTargetTest' )).
-			          (#coverage -> Dictionary new) } asDictionary.
-	error := self errorFrom: result.
-	self assert: (result at: #isError).
-	self assert: (self resultIndicatesError: result).
-	self assert: (error at: #errorCode) equals: 'CoverageScopeRequired'.
-	self assert: ((error at: #message) includesSubstring: 'explicit method scope')
-]
-
-{ #category : 'tests' }
-MCPToolStructuredOutputTest >> testRunTestsCoverageReturnsStructuredCoverage [
-
-	| coverage data partialSelectors result uncoveredSelectors |
-	result := self callToolNamed: 'test_coverage_run' withArguments: {
-			          (#classes -> #( 'MCPToolCoverageTargetTest' )).
-			          (#coverage -> {
-				           (#scope -> { (#classes -> #( 'MCPToolCoverageTarget' )) } asDictionary).
-				           (#methodLimit -> 10) } asDictionary) } asDictionary.
-	self coverageIsAvailable ifFalse: [ ^ self assert: (self resultIndicatesError: result) ].
-	data := self dataFrom: result.
-	coverage := data at: #coverage.
-	uncoveredSelectors := (coverage at: #uncoveredMethods) collect: [ :each | each at: #selector ].
-	partialSelectors := (coverage at: #partiallyCoveredMethods) collect: [ :each | each at: #selector ].
-	self deny: (self resultIndicatesError: result).
-	self assert: ((self summaryFrom: result) includesSubstring: 'Coverage:').
-	self assert: (data at: #runCount) equals: 2.
-	self assert: (data at: #passedCount) equals: 2.
-	self deny: (data includesKey: #results).
-	self assert: (coverage at: #methodCount) equals: 3.
-	self assert: (coverage at: #coveredMethodCount) equals: 2.
-	self assert: (coverage at: #fullyCoveredMethodCount) equals: 1.
-	self assert: (coverage at: #uncoveredMethodCount) equals: 1.
-	self assert: (coverage at: #partiallyCoveredMethodCount) equals: 1.
-	self assert: (coverage at: #coveredNodeCount) equals: 3.
-	self assert: (coverage at: #nodeCount) equals: 5.
-	self assert: ((coverage at: #percentage) between: 59 and: 61).
-	self assert: (uncoveredSelectors includes: 'uncoveredMethod').
-	self assert: (partialSelectors includes: 'partiallyCoveredMethod:')
 ]
 
 { #category : 'tests' }
@@ -959,45 +856,14 @@ MCPToolStructuredOutputTest >> testSearchFailureNamesTheScope [
 ]
 
 { #category : 'tests' }
-MCPToolStructuredOutputTest >> testSearchPackagesDefaultsToImageScopeWhenScopePropertiesAreOmitted [
-
-	| data packageNames packages result |
-	result := self callToolNamed: 'package_search' withArguments: { (#packages -> #( 'MCP-Tests-Resources' )) } asDictionary.
-	data := self dataFrom: result.
-	packages := data at: #packages.
-	packageNames := packages collect: [ :each | each at: #package ].
-	self deny: (self resultIndicatesError: result).
-	self assert: packages size equals: 1.
-	self assert: packageNames equals: #( 'MCP-Tests-Resources' )
-]
-
-{ #category : 'tests' }
 MCPToolStructuredOutputTest >> testSearchPackagesReturnsStructuredArrayData [
 
-	| data packageNames packages result |
-	result := self
-		          callToolNamed: 'package_search'
-		          withArguments: { (#packages -> self packageSearchFixturePackageNames) } asDictionary.
-	data := self dataFrom: result.
-	packages := data at: #packages.
-	packageNames := packages collect: [ :each | each at: #package ].
+	| packages result |
+	result := self callToolNamed: 'package_search' withArguments: { (#query -> 'MCP-Tests-R') } asDictionary.
+	packages := (self dataFrom: result) at: #packages.
 	self deny: (self resultIndicatesError: result).
-	self assert: packages size equals: self packageSearchFixturePackageNames size.
 	self assert: (packages allSatisfy: [ :each | (each includesKey: #package) and: [ each includesKey: #projects ] ]).
-	self assert: packageNames equals: self packageSearchFixturePackageNames
-]
-
-{ #category : 'tests' }
-MCPToolStructuredOutputTest >> testSearchPackagesReturnsStructuredError [
-
-	| result structured error |
-	result := self callToolNamed: 'package_search' withArguments: { (#projects -> #( 'DefinitelyMissingProject' )) } asDictionary.
-	structured := self structuredContentFrom: result.
-	error := self errorFrom: result.
-	self assert: (result at: #isError).
-	self assert: (error at: #project) equals: 'DefinitelyMissingProject'.
-	self assert: (error at: #scope) equals: 'projects'.
-	self assert: ((error at: #message) includesSubstring: 'Project DefinitelyMissingProject does not exist.')
+	self assert: ((packages collect: [ :each | each at: #package ]) includesAll: self packageSearchFixturePackageNames)
 ]
 
 { #category : 'tests' }
@@ -1065,9 +931,6 @@ MCPToolStructuredOutputTest >> testSearchSummaryNamesTheScopeItSearched [
 				 summaryOfTool: 'class_search'
 				 with: { (self searchScope: { (#classes -> #( 'MCPToolHierarchyTestBase' 'MCPToolHierarchyTestMid' )) }) })
 		equals: '2 classes in MCPToolHierarchyTestBase and MCPToolHierarchyTestMid.'.
-	self
-		assert: (self summaryOfTool: 'package_search' with: { (#packages -> #( 'MCP-Tests-Resources' )) })
-		equals: '1 package in package MCP-Tests-Resources.'.
 	self
 		assert:
 		(self summaryOfTool: 'class_search' with: { (self searchScope: { (#subclassesOf -> #( 'MCPToolHierarchyTestBase' )) }) })

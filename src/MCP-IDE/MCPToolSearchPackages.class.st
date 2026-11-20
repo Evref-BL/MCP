@@ -1,5 +1,5 @@
 "
-Lists packages in the image or a project with optional filtering. It is the general package discovery tool.
+Lists the packages in the image, filtered by name, project or tag. It is the general package discovery tool.
 "
 Class {
 	#name : 'MCPToolSearchPackages',
@@ -24,9 +24,7 @@ MCPToolSearchPackages class >> toolName [
 { #category : 'metadata' }
 MCPToolSearchPackages >> buildInputSchema [
 
-	| properties |
-	properties := self packageQueryScopeInputProperties , self packageFilterInputProperties , { self offsetInputProperty }.
-	^ self queryInputSchemaWithProperties: properties
+	^ self queryInputSchemaWithProperties: self packageFilterInputProperties , { self offsetInputProperty }
 ]
 
 { #category : 'metadata' }
@@ -96,15 +94,6 @@ MCPToolSearchPackages >> packageFilterInputProperties [
 			   description: 'Keep packages carrying a tag that contains this text, ignoring case.') }
 ]
 
-{ #category : 'private - request' }
-MCPToolSearchPackages >> packageScopeQueryFromRequest: request [
-
-	^ MCPPackageScopeQuery new
-		  projectNames: (request stringCollectionArgumentNamed: 'projects');
-		  packageNames: (request stringCollectionArgumentNamed: 'packages');
-		  yourself
-]
-
 { #category : 'private - template' }
 MCPToolSearchPackages >> queryEntriesForRequest: request scopeQuery: scopeQuery [
 
@@ -122,7 +111,7 @@ MCPToolSearchPackages >> queryResultDataForPage: page [
 { #category : 'private - template' }
 MCPToolSearchPackages >> scopeQueryFromRequest: request [
 
-	^ self packageScopeQueryFromRequest: request
+	^ MCPPackageScopeQuery new
 ]
 
 { #category : 'private - template' }
@@ -133,11 +122,11 @@ MCPToolSearchPackages >> searchedNoun [
 
 { #category : 'private - results' }
 MCPToolSearchPackages >> successSummaryForRequest: request scopeQuery: scopeQuery page: page [
-	"A package the page lists or the scope names says what the image lost of it since its last save: what the image holds of a package is not all the work done on it."
+	"A package the page lists says what the image lost of it since its last save: what the image holds of a package is not all the work done on it."
 
 	^ MCPToolListLostChanges
 		  summary: (super successSummaryForRequest: request scopeQuery: scopeQuery page: page)
-		  notingLostChangesToPackagesNamed: (page entries collect: [ :each | each at: #package ]) , scopeQuery packageNames
+		  notingLostChangesToPackagesNamed: (page entries collect: [ :each | each at: #package ])
 		  classesNamed: #(  )
 ]
 

@@ -47,13 +47,6 @@ MCPTestCase >> compilerReportsReadOnlyAssignmentsAsSyntaxErrors [
 	^ self class environment includesKey: #OCStoreIntoReadOnlyVariableError
 ]
 
-{ #category : 'private - compatibility' }
-MCPTestCase >> coverageIsAvailable [
-	"Pharo 11 brought CoverageCollector. Before it, MCP has no coverage to report."
-
-	^ self class environment includesKey: #CoverageCollector
-]
-
 { #category : 'private - classes' }
 MCPTestCase >> createClassNamed: aClassName superclassName: aSuperclassName slots: someSlots classSlots: someClassSlots [
 

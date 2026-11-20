@@ -18,16 +18,6 @@ MCPToolRepositoryOperationTest >> attachRepositoryNamed: aRepositoryName locatio
 			  (#packages -> packageNames) } asDictionary
 ]
 
-{ #category : 'private - calling' }
-MCPToolRepositoryOperationTest >> callToolNamed: aToolName with: someArguments [
-
-	| request result tool |
-	tool := MCPToolRegistry default toolNamed: aToolName ifAbsent: [ Error signal: 'Unknown MCP tool: ' , aToolName ].
-	request := tool requestFromToolCallArguments: someArguments.
-	result := tool executeWithRequest: request.
-	^ result asJRPCJSON
-]
-
 { #category : 'private' }
 MCPToolRepositoryOperationTest >> callToolWith: someArguments [
 
@@ -218,12 +208,6 @@ MCPToolRepositoryOperationTest >> refusedCreateNamed: aRepositoryName location: 
 			          (#location -> aLocationString) } asDictionary.
 	self assert: (self resultIndicatesError: result) description: 'create should have refused'.
 	^ result
-]
-
-{ #category : 'private - assertions' }
-MCPToolRepositoryOperationTest >> remoteNamed: remoteName in: remoteDictionaries [
-
-	^ remoteDictionaries detect: [ :each | (each at: #name) = remoteName ] ifNone: [ self fail: 'Missing remote ' , remoteName ]
 ]
 
 { #category : 'private' }

@@ -1,7 +1,5 @@
 "
-Small production-like target used by MCP test_run coverage tests.
-
-Its methods are intentionally simple and stable so coverage assertions can distinguish fully covered, uncovered, and partially covered methods.
+A plain class, not a test class, for the test_run tests: one names its method to see it refused, and MCPToolCoverageTargetTest tests it.
 "
 Class {
 	#name : 'MCPToolCoverageTarget',
@@ -22,10 +20,4 @@ MCPToolCoverageTarget >> partiallyCoveredMethod: anInteger [
 	anInteger > 0
 		ifTrue: [ ^ 1 ]
 		ifFalse: [ ^ 0 ]
-]
-
-{ #category : 'examples' }
-MCPToolCoverageTarget >> uncoveredMethod [
-
-	^ 2
 ]
