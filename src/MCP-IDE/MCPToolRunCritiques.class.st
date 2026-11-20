@@ -99,7 +99,7 @@ MCPToolRunCritiques >> countTextForRequest: request page: page [
 	"7 critique hits, First 20 critique hits, Critique hits 21 to 40, No critique hits from offset 40. Collection stops one hit past the page, so no total is ever counted, and none is stated: a page says which hits it holds."
 
 	| offset returned |
-	offset := request integerArgumentNamed: 'offset'.
+	offset := request integerArgumentOrDefaultNamed: 'offset'.
 	returned := page returnedCount.
 	^ String streamContents: [ :stream |
 			  returned = 0
@@ -336,7 +336,7 @@ MCPToolRunCritiques >> queryEntriesForRequest: request scopeQuery: scopeQuery [
 			          runsOn: entity
 			          namedByCaller: namedByCaller
 			          manifestRules: manifestRules ].
-	maximum := (request integerArgumentNamed: 'offset') + self defaultPageLimit + 1.
+	maximum := (request integerArgumentOrDefaultNamed: 'offset') + self defaultPageLimit + 1.
 	entries := OrderedCollection new.
 	MCPAgentCritiquing value: true during: [
 			ruleClasses do: [ :eachRuleClass |

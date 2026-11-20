@@ -50,7 +50,7 @@ MCPToolSearchMethodReferences >> countTextForRequest: request page: page [
 			  self
 				  pagePrefixOn: stream
 				  page: page
-				  offset: (request integerArgumentNamed: 'offset')
+				  offset: (request integerArgumentOrDefaultNamed: 'offset')
 				  nouns: (self kindNounsTextForCounts: counts).
 			  stream nextPutAll: (self hitCountTextForCounts: counts name: name) ]
 ]

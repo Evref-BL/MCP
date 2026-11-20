@@ -166,7 +166,7 @@ MCPToolUpdateClass >> executeMoveSlotWithPlan: plan request: request [
 		           classSide: plan classSide.
 	^ self
 		  apply: plan
-		  force: (request booleanArgumentNamed: 'force')
+		  force: (request booleanArgumentOrDefaultNamed: 'force')
 		  work: [ command execute ]
 		  summary: [ :updatedClass | self moveSlotSummaryFor: plan ofClassNamed: className ]
 		  failureSummary: [ :error |
@@ -210,7 +210,7 @@ MCPToolUpdateClass >> executeRemoveSlotWithPlan: plan request: request [
 	className := request stringArgumentNamed: 'name'.
 	^ self
 		  apply: plan
-		  force: (request booleanArgumentNamed: 'force')
+		  force: (request booleanArgumentOrDefaultNamed: 'force')
 		  work: [ (MCPRemoveSlotCommand className: className slotName: plan slotName classSide: plan classSide) execute ]
 		  summary: [ :updatedClass |
 				  String streamContents: [ :stream |
@@ -359,7 +359,7 @@ MCPToolUpdateClass >> executeSetCommentWithPlan: plan request: request [
 	className := request stringArgumentNamed: 'name'.
 	^ self
 		  apply: plan
-		  force: (request booleanArgumentNamed: 'force')
+		  force: (request booleanArgumentOrDefaultNamed: 'force')
 		  work: [ (MCPChangeClassCommentCommand className: className classComment: (self classCommentIn: request)) execute ]
 		  summary: [ :updatedClass | String streamContents: [ :stream | stream << 'Set comment for class ' << className << '.' ] ]
 		  failureSummary: [ :error | self failureMessage: 'Unable to set comment for class ' , className error: error ]

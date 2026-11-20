@@ -160,7 +160,7 @@ MCPToolGetClass >> getClassWith: request [
 
 	| data offset summary targetClass |
 	targetClass := MCPImageLookup classNamed: (request stringArgumentNamed: 'name').
-	offset := request integerArgumentNamed: 'offset'.
+	offset := request integerArgumentOrDefaultNamed: 'offset'.
 	data := offset = 0
 		        ifTrue: [ self definitionDictionaryForClass: targetClass ]
 		        ifFalse: [ self methodsDictionaryForClass: targetClass from: offset ].

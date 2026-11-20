@@ -167,24 +167,26 @@ checked, and a number above its `maximum` is brought down to it. Read them
 with the typed accessors rather than by hand, so a missing or oddly typed
 value fails in one place.
 
-Declare each argument's default once, in the schema, and read the argument
-with an accessor that answers that default when the caller leaves it out:
+Declare each argument's default once, in the schema. An accessor whose name
+says `OrDefault` answers that default when the caller leaves the argument out:
 
 ```smalltalk
 request argumentOrDefaultNamed: 'mode'.
 request stringArgumentOrDefaultNamed: 'label'.
-request booleanArgumentNamed: 'force'.
-request integerArgumentNamed: 'offset'.
+request booleanArgumentOrDefaultNamed: 'force'.
+request integerArgumentOrDefaultNamed: 'offset'.
 ```
 
-The other accessors answer only what the caller supplied, for code that must
-tell an argument left out from one given:
+The others answer only what the caller supplied:
 
 ```smalltalk
 request stringArgumentNamed: 'name'.
 request stringCollectionArgumentNamed: 'packages'.
 request hasArgumentNamed: 'prefix'.
 ```
+
+`stringCollectionArgumentNamed:` answers an empty array for a list left out as
+for an empty one; `hasArgumentNamed:` tells them apart.
 
 A default known only when the tool runs, such as a path computed from the
 image, cannot be in the schema. Pass it where the argument is read:
@@ -244,7 +246,7 @@ MyProjectToolListWidgets >> executeWithRequest: request
 	page := MCPPaginationResult
 		        fromEntries: MyProject widgetNames asArray sorted
 		        limit: self defaultPageLimit
-		        offset: (request integerArgumentNamed: 'offset').
+		        offset: (request integerArgumentOrDefaultNamed: 'offset').
 	^ self
 		  successResultText: page returnedCount asString , ' widget(s).'
 		  data: (page asDictionaryWithEntriesKey: #widgets)

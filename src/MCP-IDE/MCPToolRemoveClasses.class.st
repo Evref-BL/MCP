@@ -107,7 +107,7 @@ MCPToolRemoveClasses >> removeClassesWith: request [
 
 	| classNames removal |
 	classNames := self classNamesFrom: request.
-	removal := MCPRemoveClassesCommand classNames: classNames force: (request booleanArgumentNamed: 'force').
+	removal := MCPRemoveClassesCommand classNames: classNames force: (request booleanArgumentOrDefaultNamed: 'force').
 	removal execute.
 	^ self
 		  successResultText: (self successSummaryForClassNames: classNames removal: removal)

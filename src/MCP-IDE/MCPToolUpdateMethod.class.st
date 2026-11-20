@@ -77,7 +77,7 @@ MCPToolUpdateMethod >> changeSelector: action of: request [
 	newSelector := (request stringArgumentNamed: 'newSelector') asSymbol.
 	^ self
 		  executeMutationAction: action
-		  force: (request booleanArgumentNamed: 'force')
+		  force: (request booleanArgumentOrDefaultNamed: 'force')
 		  requestedContext: (self requestedContextFor: request action: action)
 		  work: [
 				  behavior := self updateTargetBehaviorFor: request.
@@ -90,7 +90,7 @@ MCPToolUpdateMethod >> changeSelector: action of: request [
 					   environment:
 					   (self refactoringEnvironmentForScopeSpec: (self refactoringScopeSpecFromRequest: request) anchoredAtBehavior: behavior))
 					  execute.
-				  (request booleanArgumentNamed: 'format') ifTrue: [ self reformattedMethodForBehavior: behavior selector: newSelector ] ]
+				  (request booleanArgumentOrDefaultNamed: 'format') ifTrue: [ self reformattedMethodForBehavior: behavior selector: newSelector ] ]
 		  successResult: [ :warningMessages |
 				  self
 					  successResultText: ((self selectorChangeSummaryFormatFor: action) format: {
@@ -363,7 +363,7 @@ MCPToolUpdateMethod >> updateActionsFor: request [
 	(request hasArgumentNamed: 'protocol') ifTrue: [ actions add: 'changeProtocol' ].
 	(self selectorUpdateActionFor: request)
 		ifNil: [
-		((request hasArgumentNamed: 'format') and: [ request booleanArgumentNamed: 'format' ]) ifTrue: [ actions add: 'format' ] ]
+		((request hasArgumentNamed: 'format') and: [ request booleanArgumentOrDefaultNamed: 'format' ]) ifTrue: [ actions add: 'format' ] ]
 		ifNotNil: [ :action | actions add: action ].
 	^ actions asArray
 ]

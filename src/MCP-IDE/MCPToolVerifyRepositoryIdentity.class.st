@@ -82,7 +82,7 @@ MCPToolVerifyRepositoryIdentity >> compare: anInfo with: request checkedFields: 
 				mismatches: mismatches ].
 	(request hasArgumentNamed: 'isModified') ifTrue: [
 			self
-				addMismatchIfExpected: (request booleanArgumentNamed: 'isModified')
+				addMismatchIfExpected: (request booleanArgumentOrDefaultNamed: 'isModified')
 				actual: anInfo isModified
 				field: 'isModified'
 				checkedFields: checkedFields
@@ -163,7 +163,7 @@ MCPToolVerifyRepositoryIdentity >> requestedContextFor: request [
 		context at: #packages put: (request uniqueStringCollectionArgumentNamed: 'packages') ].
 	(request hasArgumentNamed: 'modifiedPackages') ifTrue: [
 		context at: #modifiedPackages put: (request uniqueStringCollectionArgumentNamed: 'modifiedPackages') ].
-	(request hasArgumentNamed: 'isModified') ifTrue: [ context at: #isModified put: (request booleanArgumentNamed: 'isModified') ].
+	(request hasArgumentNamed: 'isModified') ifTrue: [ context at: #isModified put: (request booleanArgumentOrDefaultNamed: 'isModified') ].
 	^ context
 ]
 
