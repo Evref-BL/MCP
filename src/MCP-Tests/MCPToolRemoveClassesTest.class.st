@@ -60,7 +60,7 @@ MCPToolRemoveClassesTest >> ensureClassNamed: aClassName superclassName: aSuperc
 	| symbol superclass |
 	symbol := aClassName asSymbol.
 	(self class environment includesKey: symbol) ifTrue: [ ^ self ].
-	superclass := self class environment at: aSuperclassName asSymbol.
+	superclass := self classNamed: aSuperclassName.
 	self withoutEpiceaDuring: [
 			self packageOrganizer ensurePackage: aPackageName.
 			(superclass << symbol)
