@@ -85,7 +85,7 @@ MCPRepositoryInfo >> branchName [
 	^ branchName
 ]
 
-{ #category : 'accessing' }
+{ #category : 'introspection' }
 MCPRepositoryInfo >> className [
 
 	^ className

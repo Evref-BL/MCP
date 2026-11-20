@@ -20,7 +20,7 @@ MCPClassCommand class >> isAbstract [
 	^ self == MCPClassCommand
 ]
 
-{ #category : 'accessing' }
+{ #category : 'introspection' }
 MCPClassCommand >> className [
 
 	^ className

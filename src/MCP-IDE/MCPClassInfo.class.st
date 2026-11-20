@@ -32,7 +32,7 @@ MCPClassInfo >> asDictionary [
 		  (#classSlots -> self classSlotNames) } asDictionary
 ]
 
-{ #category : 'accessing' }
+{ #category : 'introspection' }
 MCPClassInfo >> className [
 
 	^ describedClass name asString

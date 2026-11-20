@@ -73,7 +73,7 @@ MCPMethodReference class >> separatorIndexIn: aString [
 	^ index min: hashIndex
 ]
 
-{ #category : 'accessing' }
+{ #category : 'introspection' }
 MCPMethodReference >> className [
 
 	^ className

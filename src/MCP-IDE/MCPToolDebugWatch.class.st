@@ -59,7 +59,7 @@ MCPToolDebugWatch >> description [
 	^ 'Record what variables hold while an expression runs, without stopping it. Probes are removed before the call answers, so nothing is left installed and no debug session is created.'
 ]
 
-{ #category : 'metadata' }
+{ #category : 'private - schema' }
 MCPToolDebugWatch >> inputProperties [
 
 	^ {
@@ -95,7 +95,7 @@ MCPToolDebugWatch >> methodReferencesIn: request [
 	^ references
 ]
 
-{ #category : 'metadata' }
+{ #category : 'private - schema' }
 MCPToolDebugWatch >> requiredInputProperties [
 
 	^ #( 'method' 'run' )

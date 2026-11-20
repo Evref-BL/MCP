@@ -13,7 +13,7 @@ Class {
 	#tag : 'Critiques'
 }
 
-{ #category : 'testing' }
+{ #category : 'testing - interest' }
 MCPRespondsToUsageRule class >> checksMethod [
 
 	^ true

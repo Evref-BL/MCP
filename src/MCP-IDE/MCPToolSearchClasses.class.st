@@ -46,7 +46,7 @@ MCPToolSearchClasses >> defaultExposure [
 	^ 'static'
 ]
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolSearchClasses >> defaultPageLimit [
 	"A class entry is one short line, so a page can hold more of them."
 

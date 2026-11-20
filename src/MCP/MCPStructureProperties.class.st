@@ -17,7 +17,7 @@ Class {
 	#tag : 'Structure'
 }
 
-{ #category : 'private' }
+{ #category : 'converting' }
 MCPStructureProperties class >> propertiesAsJRPCJSON: someProperties [
 	"A schema's properties as JSON Schema writes them: one object, each property under its name."
 

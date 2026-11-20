@@ -253,7 +253,7 @@ MCPToolRegistry >> searchMetadataForTool: aTool [
 	^ metadata
 ]
 
-{ #category : 'private - errors' }
+{ #category : 'tools' }
 MCPToolRegistry >> signalMissingToolNamed: aToolName [
 	"A name that does not resolve is the caller's mistake, not the server's, so it reads as one."
 

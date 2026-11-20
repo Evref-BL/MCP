@@ -59,7 +59,7 @@ MCPToolDebugSearch >> exceptionTextFor: anException [
 		  do: [ :error | anException class name ]
 ]
 
-{ #category : 'metadata' }
+{ #category : 'private - schema' }
 MCPToolDebugSearch >> inputProperties [
 
 	^ { (self

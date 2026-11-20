@@ -105,7 +105,7 @@ MCPCompiledMethodScopeQuery >> initialize [
 	side := 'both'
 ]
 
-{ #category : 'private - scope' }
+{ #category : 'querying' }
 MCPCompiledMethodScopeQuery >> isInstalledFromTraitedClass: aCompiledMethod [
 	"Whether Pharo installed this method from TraitedClass, as it does on the class side of every class and trait that uses traits. Nobody wrote it there, so a sweep leaves it out. TraitedClass's own methods are not from a trait, so a sweep of TraitedClass still lists them."
 

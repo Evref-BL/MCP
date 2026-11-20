@@ -41,7 +41,7 @@ MCPRunTestsCommand >> addNotRunStartingAt: startIndex seenTestCaseNames: seenTes
 	^ count
 ]
 
-{ #category : 'private' }
+{ #category : 'executing' }
 MCPRunTestsCommand >> addTestCasesFrom: aTestOrSuite to: testCases [
 
 	aTestOrSuite mcpAddTestCasesTo: testCases using: self

@@ -223,7 +223,7 @@ MCPToolRequest >> stringCollectionArgumentNamed: anArgumentName in: aDictionary 
 	^ self stringCollectionFrom: (self valueNamed: anArgumentName in: aDictionary ifAbsent: [ ^ #(  ) ])
 ]
 
-{ #category : 'private - accessing' }
+{ #category : 'accessing' }
 MCPToolRequest >> stringCollectionFrom: aValue [
 
 	| values |
@@ -291,7 +291,7 @@ MCPToolRequest >> validate [
 	self tool validateRequest: self
 ]
 
-{ #category : 'private - accessing' }
+{ #category : 'accessing' }
 MCPToolRequest >> valueNamed: anArgumentName in: aDictionary ifAbsent: absentBlock [
 
 	^ (aDictionary ifNil: [ ^ absentBlock value ]) mcpAt: anArgumentName ifAbsent: absentBlock

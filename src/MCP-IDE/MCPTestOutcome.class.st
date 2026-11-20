@@ -137,7 +137,7 @@ MCPTestOutcome >> asDictionary [
 	^ data
 ]
 
-{ #category : 'accessing' }
+{ #category : 'introspection' }
 MCPTestOutcome >> className [
 
 	^ className

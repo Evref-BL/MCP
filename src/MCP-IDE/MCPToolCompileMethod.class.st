@@ -82,7 +82,7 @@ MCPToolCompileMethod >> changeSummaryVerbFor: changeKindString [
 	^ 'Changed'
 ]
 
-{ #category : 'executing' }
+{ #category : 'private - execution' }
 MCPToolCompileMethod >> checkArguments: request [
 	"A side that says the other one than the class name is refused."
 
@@ -249,7 +249,7 @@ MCPToolCompileMethod >> methodNodeOf: aString [
 	^ RBParser parseMethod: aString onError: [ :message :position | ^ nil ]
 ]
 
-{ #category : 'executing' }
+{ #category : 'private - execution' }
 MCPToolCompileMethod >> mutateWith: request [
 	"Compile the source into the class the call names, and answer whether the method was created or replaced, and what its critiques find in it as stored."
 

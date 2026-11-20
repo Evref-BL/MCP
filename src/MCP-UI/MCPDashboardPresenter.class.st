@@ -26,7 +26,7 @@ Class {
 	#package : 'MCP-UI'
 }
 
-{ #category : 'defaults' }
+{ #category : 'accessing' }
 MCPDashboardPresenter class >> defaultPreferredExtent [
 
 	^ 1080 @ 760
@@ -237,7 +237,7 @@ MCPDashboardPresenter >> listTool: aTool [
 	self refreshView
 ]
 
-{ #category : 'updating' }
+{ #category : 'initialization' }
 MCPDashboardPresenter >> modelChanged [
 
 	self refreshView
@@ -334,7 +334,7 @@ MCPDashboardPresenter >> toolsLayout [
 		  yourself
 ]
 
-{ #category : 'accessing' }
+{ #category : 'tool table' }
 MCPDashboardPresenter >> toolsTable [
 
 	^ toolsTable

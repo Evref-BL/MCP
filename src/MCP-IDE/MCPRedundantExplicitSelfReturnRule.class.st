@@ -11,7 +11,7 @@ Class {
 	#tag : 'Critiques'
 }
 
-{ #category : 'testing' }
+{ #category : 'testing - interest' }
 MCPRedundantExplicitSelfReturnRule class >> checksMethod [
 
 	^ true

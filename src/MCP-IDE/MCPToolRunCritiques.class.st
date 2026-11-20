@@ -189,7 +189,7 @@ MCPToolRunCritiques >> defaultExposure [
 	^ 'static'
 ]
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolRunCritiques >> defaultPageLimit [
 	"A rule carries its hits, so a page holds fewer than a flat list would."
 
@@ -202,7 +202,7 @@ MCPToolRunCritiques >> description [
 	^ 'Run Renraku critique rules over a scoped part of the Pharo image and return paginated hits grouped by rule. A rule method_rewrite can apply says so.'
 ]
 
-{ #category : 'private - template' }
+{ #category : 'private - results' }
 MCPToolRunCritiques >> filtersRequest: request [
 	"Rules choose what is run, not which hits are kept."
 
@@ -455,7 +455,7 @@ MCPToolRunCritiques >> scopeQueryFromRequest: request [
 	^ self methodScopeQueryFromRequest: request
 ]
 
-{ #category : 'private - template' }
+{ #category : 'private - results' }
 MCPToolRunCritiques >> searchActivityText [
 
 	^ 'run critiques'

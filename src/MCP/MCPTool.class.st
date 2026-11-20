@@ -480,7 +480,7 @@ MCPTool >> entryTextOn: stream for: entry indent: indent omitting: omittedKeys [
 						indent: indent , '  ' ] ]
 ]
 
-{ #category : 'private - results' }
+{ #category : 'error handling' }
 MCPTool >> errorDetailsFor: anError [
 
 	| context descriptionText details errorClassName message stackTrace |
@@ -559,7 +559,7 @@ MCPTool >> errorStackTraceForContext: aContext [
 										   nextPutAll: text ] ] ] ]) asArray
 ]
 
-{ #category : 'private - results' }
+{ #category : 'error handling' }
 MCPTool >> errorStackTraceLimit [
 
 	^ 20
@@ -956,7 +956,7 @@ MCPTool >> requestFromToolCallArguments: toolCallArguments [
 	^ MCPToolRequest tool: self arguments: toolCallArguments
 ]
 
-{ #category : 'private - execution' }
+{ #category : 'error handling' }
 MCPTool >> resumeNotification: aNotification [
 	"Resume with the value the image itself would have produced. The default action may signal notifications of its own, and a handler is suspended while its block runs, so those would otherwise escape this boundary and fail the call: Deprecation>>defaultAction logs, and logging signals DeprecationPerformedNotification.
 
@@ -1085,7 +1085,7 @@ MCPTool >> structuredContent: structuredContent withoutWarnings: warningStrings 
 	^ copy
 ]
 
-{ #category : 'private - results' }
+{ #category : 'results' }
 MCPTool >> successResultText: aSummary data: aDictionary [
 
 	^ self successResultText: aSummary data: aDictionary warnings: #(  )

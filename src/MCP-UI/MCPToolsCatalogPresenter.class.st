@@ -17,7 +17,7 @@ Class {
 	#package : 'MCP-UI'
 }
 
-{ #category : 'defaults' }
+{ #category : 'accessing' }
 MCPToolsCatalogPresenter class >> defaultPreferredExtent [
 
 	^ 1000 @ 700
@@ -155,7 +155,7 @@ MCPToolsCatalogPresenter >> toolsMatchingFilter: someTools [
 	^ someTools select: [ :tool | (self searchTextFor: tool) includesSubstring: query ]
 ]
 
-{ #category : 'accessing' }
+{ #category : 'tool table' }
 MCPToolsCatalogPresenter >> toolsTable [
 
 	^ toolsTable

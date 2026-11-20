@@ -33,7 +33,7 @@ MCPToolCreateClass >> batchSummaryVerb [
 	^ 'Created'
 ]
 
-{ #category : 'private - arguments' }
+{ #category : 'private - execution' }
 MCPToolCreateClass >> checkArguments: request [
 	"An entry that is a list written as one string is refused before anything changes, in the arguments whose names the class builder takes as they are: the schema checks only that each entry is a string, and the builder would call the list an invalid slot name, or make a class variable of it. Traits and pools are class names, which MCPImageLookup refuses the same way, and MCPCreateClassCommand refuses a name no new class can take."
 
@@ -102,7 +102,7 @@ MCPToolCreateClass >> defaultExposure [
 	^ 'static'
 ]
 
-{ #category : 'private - mutation' }
+{ #category : 'private - execution' }
 MCPToolCreateClass >> mutateWith: request [
 	"The class is made, then given its comment. A failure in either is reported as a failure to create the class. A class that exists is refused with the class_update call that gives it what this call asks for."
 

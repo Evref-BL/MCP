@@ -35,7 +35,7 @@ MCPTestSelectionSpec class >> packageName: aPackageName [
 	^ self new initializePackageName: aPackageName className: nil testMethodName: nil
 ]
 
-{ #category : 'accessing' }
+{ #category : 'introspection' }
 MCPTestSelectionSpec >> className [
 
 	^ className
