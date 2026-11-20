@@ -252,6 +252,7 @@ MCPToolUpdateClass >> executeRenameSlotWithPlan: plan request: request [
 
 { #category : 'private - execution' }
 MCPToolUpdateClass >> executeRenameWithPlan: plan request: request [
+	"A rename notifies on its way, of a new name the image already refers to for one, and the handler around a change would take that for a failure after the class has its new name and before its references do. So its notifications are resumed as at the boundary of the call."
 
 	| className newClassName |
 	className := request stringArgumentNamed: 'name'.
@@ -259,7 +260,7 @@ MCPToolUpdateClass >> executeRenameWithPlan: plan request: request [
 	^ self
 		  apply: plan
 		  force: false
-		  work: [ (MCPRenameClassCommand className: className newClassName: newClassName) execute ]
+		  work: [ self resumingNotificationsDuring: [ (MCPRenameClassCommand className: className newClassName: newClassName) execute ] ]
 		  summary: [ :renamedClass |
 		  String streamContents: [ :stream | stream << 'Renamed class ' << className << ' to ' << newClassName << '.' ] ]
 		  failureSummary: [ :error |
