@@ -362,6 +362,17 @@ MCPOpenTelemetryObservabilityBackendTest >> testProvidersMadeLaterDescribeTheSer
 ]
 
 { #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testReconfiguringHandsNoShutDownProcessorToTheNextProvider [
+
+	| saved |
+	saved := OTSimpleSpanProcessor new exporter: exporter.
+	OTSpanProcessor current: saved.
+	MCPOpenTelemetryObservabilityBackend configureProvidersWith: (self settingsAskingForTraces: true).
+	self deny: (OTTracerProvider current spanProcessors includes: saved).
+	self deny: OTSpanProcessor currentIfSet identicalTo: saved
+]
+
+{ #category : 'tests' }
 MCPOpenTelemetryObservabilityBackendTest >> testRecordingThatFailsLeavesTheCallUnrecorded [
 
 	self assert: (self startToolCallWith: nil) isNil.

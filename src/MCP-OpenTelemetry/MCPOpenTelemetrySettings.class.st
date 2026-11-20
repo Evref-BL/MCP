@@ -20,7 +20,7 @@ MCPOpenTelemetrySettings class >> current [
 	"The settings of this image's process."
 
 	^ self new
-		  environment: OSPlatform current environment;
+		  environment: OSEnvironment current;
 		  windows: OSPlatform current isWindows;
 		  home: FileLocator home asFileReference;
 		  yourself

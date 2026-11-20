@@ -23,13 +23,14 @@ Class {
 
 { #category : 'configuring' }
 MCPOpenTelemetryObservabilityBackend class >> configureProvidersWith: aSettings [
-	"Rebuilds the image's OpenTelemetry from the settings as they are now, and answers whether they ask for traces. Providers and exporters an image was saved with would otherwise keep sending where an earlier session's settings said, after those settings changed or were removed."
+	"Rebuilds the image's OpenTelemetry from the settings as they are now, and answers whether they ask for traces. Providers, processors and exporters an image was saved with would otherwise keep sending where an earlier session's settings said, after those settings changed or were removed; and a processor a reset shut down would be handed to the next provider."
 
 	{
 		OTTracerProvider.
+		OTSpanProcessor.
+		OTSpanExporter.
 		OTMeterProvider.
-		OTLoggerProvider.
-		OTSpanExporter } do: [ :each |
+		OTLoggerProvider } do: [ :each |
 			[ each reset ]
 				on: Error
 				do: [ :error | error return: nil ] ].
