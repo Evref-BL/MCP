@@ -6,13 +6,12 @@ Each row shows a compact tool identity cell with icon, title, and tool name, plu
 Class {
 	#name : 'MCPToolsCatalogPresenter',
 	#superclass : 'SpPresenter',
-	#traits : 'TMCPToolRowIcon + TMCPToolTable',
-	#classTraits : 'TMCPToolRowIcon classTrait + TMCPToolTable classTrait',
+	#traits : 'TMCPToolTable',
+	#classTraits : 'TMCPToolTable classTrait',
 	#instVars : [
 		'filterInput',
 		'countLabel',
-		'toolsTable',
-		'rowIcons'
+		'toolsTable'
 	],
 	#category : 'MCP-UI',
 	#package : 'MCP-UI'
@@ -44,9 +43,9 @@ MCPToolsCatalogPresenter class >> open [
 
 { #category : 'updating' }
 MCPToolsCatalogPresenter >> allTools [
-	"Every tool class the image has, not the surface one server advertises, which is what makes this the image's catalog rather than a server's."
+	"Every tool the image has, not the surface one server advertises, which is what makes this the image's catalog rather than a server's."
 
-	^ (MCPTool toolGroups flatCollect: [ :group | group value ] as: Array) collect: [ :toolClass | toolClass new ]
+	^ MCPToolRegistry default tools
 ]
 
 { #category : 'initialization' }
@@ -75,12 +74,6 @@ MCPToolsCatalogPresenter >> defaultLayout [
 		  yourself
 ]
 
-{ #category : 'updating' }
-MCPToolsCatalogPresenter >> descriptionFor: aTool [
-
-	^ aTool description ifNil: [ 'No description available.' ]
-]
-
 { #category : 'layout' }
 MCPToolsCatalogPresenter >> filterLayout [
 
@@ -95,7 +88,6 @@ MCPToolsCatalogPresenter >> filterLayout [
 { #category : 'initialization' }
 MCPToolsCatalogPresenter >> initializePresenters [
 
-	rowIcons := Dictionary new.
 	filterInput := self newTextInput.
 	countLabel := self newLabel.
 	toolsTable := self newTable.
@@ -112,16 +104,12 @@ MCPToolsCatalogPresenter >> initializeToolsTable [
 
 	toolsTable
 		addColumn: self rowIconColumn;
-		addColumn: ((SpStringTableColumn title: 'Tool' evaluated: #name)
-				 beSortable;
-				 yourself);
+		addColumn: self toolNameColumn;
 		addColumn: ((SpStringTableColumn title: 'Group' evaluated: [ :tool | tool class groupName ])
 				 beSortable;
 				 yourself);
-		addColumn: ((SpStringTableColumn title: 'Title' evaluated: [ :tool | tool title ifNil: [ '' ] ])
-				 beSortable;
-				 yourself);
-		addColumn: (SpStringTableColumn title: 'Description' evaluated: [ :tool | self descriptionFor: tool ]);
+		addColumn: self toolTitleColumn;
+		addColumn: self toolDescriptionColumn;
 		beResizable.
 	self connectToolsTable
 ]
@@ -144,12 +132,6 @@ MCPToolsCatalogPresenter >> refreshView [
 	countLabel label: (self countLabelFor: shown size of: all size)
 ]
 
-{ #category : 'private' }
-MCPToolsCatalogPresenter >> rowIconCache [
-
-	^ rowIcons
-]
-
 { #category : 'updating' }
 MCPToolsCatalogPresenter >> searchTextFor: aTool [
 
@@ -159,9 +141,9 @@ MCPToolsCatalogPresenter >> searchTextFor: aTool [
 				  space;
 				  << aTool class groupName asLowercase;
 				  space;
-				  << (aTool title ifNil: [ '' ]) asLowercase;
+				  << aTool title asLowercase;
 				  space;
-				  << (self descriptionFor: aTool) asLowercase ]
+				  << aTool description asLowercase ]
 ]
 
 { #category : 'updating' }

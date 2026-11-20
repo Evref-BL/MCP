@@ -20,11 +20,7 @@ MCPToolsCatalogPresenterTest >> testAnUnfilteredCountNamesTheWholeCatalog [
 { #category : 'tests' }
 MCPToolsCatalogPresenterTest >> testCatalogListsEveryToolTheImageHas [
 
-	| presenter |
-	presenter := MCPToolsCatalogPresenter new.
-
-	self assert: (presenter instVarNamed: #toolsTable) items size equals: presenter allTools size.
-	self assert: presenter allTools size equals: MCPToolRegistry default toolClasses size
+	self assert: (MCPToolsCatalogPresenter new instVarNamed: #toolsTable) items size equals: MCPToolRegistry default tools size
 ]
 
 { #category : 'tests' }
@@ -73,6 +69,6 @@ MCPToolsCatalogPresenterTest >> testRowIconsAreScaledToFitARow [
 	presenter := MCPToolsCatalogPresenter new.
 	tool := presenter allTools first.
 
-	self assert: (MCPTool toolIconFormOf: tool class) extent equals: 32 @ 32.
+	self assert: (tool class toolIconSpec formUsing: MCPStructureIcon) extent equals: 32 @ 32.
 	self assert: (presenter rowIconFor: tool) extent equals: presenter rowIconSize @ presenter rowIconSize
 ]

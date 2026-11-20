@@ -200,7 +200,7 @@ MCPServersPresenterTest >> testThePortFieldAnswersNilForWhatIsNotAPort [
 	| presenter |
 	presenter := MCPServersPresenter new.
 
-	#( 'abc' '70000' '-1' '' ) do: [ :each |
+	#( 'abc' '70000' '-1' '' '4000x' '1e3' ) do: [ :each |
 			presenter portInput text: each.
 			self assert: presenter requestedPort isNil ].
 	presenter portInput text: '0'.

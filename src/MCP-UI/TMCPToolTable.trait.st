@@ -1,10 +1,15 @@
 "
-A table of tools, for the presenters that list them: double-clicking a row browses the tool's class, right-clicking one offers to browse, inspect or copy it, and hovering one shows its description.
+A table of tools, for the presenters that list them: each row starts with the tool's icon, double-clicking a row browses the tool's class, right-clicking one offers to browse, inspect or copy it, and hovering one shows its description.
 
 Its columns start as wide as what they hold, up to a cap, and the last one, where a table of tools puts the description, takes what is left. Spec reads a column's width when it builds the table, so fitting sets where the columns start and resizing them afterwards is kept.
+
+The icon a client is served is 32 square, which a table row clips, so it is scaled once per tool class. The scaled icons are the presenter's, so they go when it goes.
 "
 Trait {
 	#name : 'TMCPToolTable',
+	#instVars : [
+		'rowIcons'
+	],
 	#category : 'MCP-UI',
 	#package : 'MCP-UI'
 }
@@ -57,6 +62,50 @@ TMCPToolTable >> fittedWidthOf: aColumn for: someTools [
 TMCPToolTable >> inspectSelectedTool [
 
 	self toolsTable selectedItem ifNotNil: [ :tool | tool inspect ]
+]
+
+{ #category : 'tool table' }
+TMCPToolTable >> rowIconColumn [
+
+	^ (SpImageTableColumn evaluated: [ :tool | self rowIconFor: tool ])
+		  width: self rowIconSize + 8;
+		  yourself
+]
+
+{ #category : 'tool table' }
+TMCPToolTable >> rowIconFor: aTool [
+
+	^ (rowIcons ifNil: [ rowIcons := Dictionary new ])
+		  at: aTool class
+		  ifAbsentPut: [ (aTool class toolIconSpec formUsing: MCPStructureIcon) scaledIntoFormOfSize: self rowIconSize ]
+]
+
+{ #category : 'tool table' }
+TMCPToolTable >> rowIconSize [
+
+	^ 16
+]
+
+{ #category : 'tool table' }
+TMCPToolTable >> toolDescriptionColumn [
+
+	^ SpStringTableColumn title: 'Description' evaluated: #description
+]
+
+{ #category : 'tool table' }
+TMCPToolTable >> toolNameColumn [
+
+	^ (SpStringTableColumn title: 'Tool' evaluated: #name)
+		  beSortable;
+		  yourself
+]
+
+{ #category : 'tool table' }
+TMCPToolTable >> toolTitleColumn [
+
+	^ (SpStringTableColumn title: 'Title' evaluated: #title)
+		  beSortable;
+		  yourself
 ]
 
 { #category : 'tool table' }

@@ -181,11 +181,7 @@ MCPProtocolEraTest >> testDiscoverAndInitializeAgreeOnWhoTheServerIs [
 	| mcp discovered initialized |
 	mcp := self mcpWithoutObservabilityExport.
 	discovered := (mcp rpcServerDiscover at: #_meta) at: 'io.modelcontextprotocol/serverInfo'.
-	initialized := (mcp
-		               onInitialize: nil
-		               capabilities: nil
-		               clientInfo: nil
-		               websiteUrl: nil) serverInfo asJRPCJSON.
+	initialized := (mcp onInitialize: nil) serverInfo asJRPCJSON.
 	self assert: discovered equals: initialized
 ]
 
@@ -230,11 +226,7 @@ MCPProtocolEraTest >> testInitializeCarriesTheInstructionsDiscoverAnswers [
 
 	| mcp initialized |
 	mcp := self mcpWithoutObservabilityExport.
-	initialized := (mcp
-		                onInitialize: '2025-06-18'
-		                capabilities: nil
-		                clientInfo: nil
-		                websiteUrl: nil) asJRPCJSON.
+	initialized := (mcp onInitialize: '2025-06-18') asJRPCJSON.
 	self assert: (initialized at: #instructions) equals: (mcp rpcServerDiscover at: #instructions)
 ]
 
@@ -244,7 +236,7 @@ MCPProtocolEraTest >> testInitializeStillNegotiatesTheOldWay [
 
 	| response |
 	response := self handleJSON:
-		            '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"1900-01-01","capabilities":{},"clientInfo":{},"websiteUrl":null}}'.
+		            '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"1900-01-01","capabilities":{},"clientInfo":{}}}'.
 	self assert: (response includesSubstring: '"result"').
 	self assert: (response includesSubstring: MCP latestLegacyProtocolVersion).
 	self deny: (response includesSubstring: MCP modernProtocolVersions first).

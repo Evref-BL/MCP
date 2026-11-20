@@ -1,5 +1,5 @@
 "
-The tests of MCP's Spec presenters, and of the in-memory observability record they display.
+The tests of MCP's Spec presenters.
 "
 Class {
 	#name : 'ManifestMCPUITests',

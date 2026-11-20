@@ -15,12 +15,6 @@ Class {
 	#tag : 'Resources'
 }
 
-{ #category : 'querying' }
-MCPResource class >> concreteSubclasses [
-
-	^ self allSubclasses reject: [ :each | each isAbstract ]
-]
-
 { #category : 'testing' }
 MCPResource class >> isAbstract [
 

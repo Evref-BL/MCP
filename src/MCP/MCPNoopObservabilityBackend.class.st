@@ -1,7 +1,5 @@
 "
-No-op observability backend for MCP.
-
-This is the default backend for MCP core. It deliberately has no external dependencies, including OpenTelemetry.
+No-op observability backend: what a server without observability uses. It records nothing, and answers empty logs, metrics and traces.
 "
 Class {
 	#name : 'MCPNoopObservabilityBackend',
@@ -11,40 +9,6 @@ Class {
 	#tag : 'Observability'
 }
 
-{ #category : 'activation' }
-MCPNoopObservabilityBackend >> disable [
-	"No-op backend stays disabled."
-
-	
-]
-
-{ #category : 'activation' }
-MCPNoopObservabilityBackend >> enable [
-	"No-op backend stays disabled."
-
-	
-]
-
-{ #category : 'accessing' }
-MCPNoopObservabilityBackend >> enabled [
-
-	^ false
-]
-
-{ #category : 'accessing' }
-MCPNoopObservabilityBackend >> enabled: aBoolean [
-	"No-op backend stays disabled."
-
-	
-]
-
-{ #category : 'actions' }
-MCPNoopObservabilityBackend >> forceFlush [
-	"No-op backend has nothing to flush."
-
-	
-]
-
 { #category : 'testing' }
 MCPNoopObservabilityBackend >> isNoop [
 
@@ -52,15 +16,13 @@ MCPNoopObservabilityBackend >> isNoop [
 ]
 
 { #category : 'recording' }
-MCPNoopObservabilityBackend >> recordSessionEndFor: anMCP [
-	"No-op backend has no session state."
+MCPNoopObservabilityBackend >> recordSessionEnd [
 
 	
 ]
 
 { #category : 'recording' }
-MCPNoopObservabilityBackend >> recordSessionStartFor: anMCP [
-	"No-op backend has no session state."
+MCPNoopObservabilityBackend >> recordSessionStart [
 
 	
 ]
@@ -79,13 +41,6 @@ MCPNoopObservabilityBackend >> recordToolCallStart: aToolName input: inputObject
 
 { #category : 'actions' }
 MCPNoopObservabilityBackend >> shutdown [
-	"No-op backend has nothing to shut down."
 
 	
-]
-
-{ #category : 'displaying' }
-MCPNoopObservabilityBackend >> statusText [
-
-	^ 'Observability disabled'
 ]

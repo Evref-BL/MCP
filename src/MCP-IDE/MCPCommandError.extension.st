@@ -400,18 +400,6 @@ MCPCommandError class >> signalMissingMethod: aSelectorString in: aBehavior clos
 ]
 
 { #category : '*MCP-IDE' }
-MCPCommandError class >> signalMissingTag: aTag packageName: aPackageName forClassNamed: aClassName [
-
-	| message |
-	message := String streamContents: [ :stream |
-		           stream << 'Package ' << aPackageName << ' does not have a tag named ' << aTag << '.' ].
-	^ self signalErrorCode: #TagNotFound message: message details: {
-			  (#class -> aClassName).
-			  (#package -> aPackageName).
-			  (#tag -> aTag) } asDictionary
-]
-
-{ #category : '*MCP-IDE' }
 MCPCommandError class >> signalNameIsAList: aString kind: aKind argument: anArgumentName [
 	"aString, an entry of anArgumentName that takes one name per entry, such as a slot name, is several names written as one string. aKind is what the entry should have been, with its article. A class name that is a list answers ClassNameIsAList instead, which keeps the string under name too."
 

@@ -23,12 +23,6 @@ MCPPromptRegistry >> addPrompts: promptsOrPromptClasses [
 	^ self addAll: promptsOrPromptClasses
 ]
 
-{ #category : 'testing' }
-MCPPromptRegistry >> includesPromptNamed: aName [
-
-	^ self includesKey: aName
-]
-
 { #category : 'entries' }
 MCPPromptRegistry >> keyFor: aPrompt [
 
@@ -57,10 +51,4 @@ MCPPromptRegistry >> prompts [
 MCPPromptRegistry >> registeredClass [
 
 	^ MCPPrompt
-]
-
-{ #category : 'prompts' }
-MCPPromptRegistry >> removePromptNamed: aName [
-
-	self removeKey: aName
 ]

@@ -18,36 +18,10 @@ A tool is served because its package is loaded: a concrete subclass that can alr
 Class {
 	#name : 'MCPTool',
 	#superclass : 'Object',
-	#instVars : [
-		'inputSchema'
-	],
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
 }
-
-{ #category : 'metadata - groups' }
-MCPTool class >> builtInGroupNames [
-
-	^ {
-		  self classesGroupName.
-		  self debuggingGroupName.
-		  self historyGroupName.
-		  self methodsGroupName.
-		  self packagesGroupName.
-		  self repositoriesGroupName.
-		  self runtimeGroupName.
-		  self testsGroupName.
-		  self toolCatalogGroupName.
-		  self uiGroupName }
-]
-
-{ #category : 'metadata' }
-MCPTool class >> builtInPackageNames [
-	"The packages MCP ships tools in: the catalog that the server dispatches through, and the image tools beside it. A tool defined anywhere else belongs to whoever put it there, including MCP's own test fixtures."
-
-	^ #( 'MCP' 'MCP-IDE' )
-]
 
 { #category : 'metadata - groups' }
 MCPTool class >> classesGroupName [
@@ -83,15 +57,6 @@ MCPTool class >> historyGroupName [
 MCPTool class >> isAbstract [
 
 	^ self = MCPTool
-]
-
-{ #category : 'metadata' }
-MCPTool class >> isBuiltIn [
-	"A tool MCP ships, as against one another project defines. Its own no longer share a package, so provenance is a list rather than a comparison with this class's own.
-
-	This says whose conventions a tool answers to, which is what the contract tests ask. It says nothing about whether the tool is served: loading the package decides that."
-
-	^ self builtInPackageNames includes: self package name
 ]
 
 { #category : 'metadata - groups' }
@@ -149,18 +114,6 @@ MCPTool class >> testsGroupName [
 MCPTool class >> toolCatalogGroupName [
 
 	^ 'tool-catalog'
-]
-
-{ #category : 'scripts' }
-MCPTool class >> toolGroups [
-
-	^ MCPToolRegistry default toolGroups
-]
-
-{ #category : 'scripts' }
-MCPTool class >> toolIconFormOf: aToolClass [
-
-	^ Form fromBase64String: (aToolClass toolIcons first src copyAfter: $,)
 ]
 
 { #category : 'icons' }
@@ -962,24 +915,6 @@ MCPTool >> pluralNounFor: aNoun [
 	^ aNoun , 's'
 ]
 
-{ #category : 'private - icons' }
-MCPTool >> pngDataUriForForm: aForm [
-
-	^ MCPStructureIcon pngDataUriForForm: aForm
-]
-
-{ #category : 'private - icons' }
-MCPTool >> pngIconNamed: anIconSymbol [
-
-	^ MCPStructureIcon pngIconNamed: anIconSymbol
-]
-
-{ #category : 'private - icons' }
-MCPTool >> pngSizeStringForForm: aForm [
-
-	^ String streamContents: [ :stream | stream << aForm width asString << 'x' << aForm height asString ]
-]
-
 { #category : 'private - results' }
 MCPTool >> redundantKeys [
 	"Answer the keys whose value the record around them already says. A tool declares its own."
@@ -1186,9 +1121,8 @@ MCPTool >> validateRequest: aToolRequest [
 
 { #category : 'private - results' }
 MCPTool >> valueIn: aDictionary at: aKey [
-	"Entries reach the renderer with symbol keys from the image and string keys from the wire."
 
-	^ aDictionary at: aKey ifAbsent: [ aDictionary at: aKey asString ifAbsent: [ nil ] ]
+	^ aDictionary mcpAt: aKey ifAbsent: [ nil ]
 ]
 
 { #category : 'private - results' }

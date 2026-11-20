@@ -145,17 +145,6 @@ MCPToolRequestTest >> testInvalidToolInputSaysEachViolationInWords [
 ]
 
 { #category : 'tests' }
-MCPToolRequestTest >> testNonNegativeIntegerArgumentClampsValuesAboveMaximum [
-
-	| request |
-	request := MCPToolRequest new
-		           tool: MCPToolDebugSearch new;
-		           arguments: { (#stackLimit -> 51) } asDictionary;
-		           yourself.
-	self assert: (request nonNegativeIntegerArgumentNamed: 'stackLimit' default: 5 maximum: 50) equals: 50
-]
-
-{ #category : 'tests' }
 MCPToolRequestTest >> testRequestAccessorsProvideDefaultsUniqueCollectionsSymbolsAndNestedStrings [
 
 	| nested request |
@@ -194,10 +183,10 @@ MCPToolRequestTest >> testValidRequestProvidesTypedAccessors [
 	| request scope |
 	scope := { (#packages -> #( 'MCP' )) } asDictionary.
 	request := MCPToolRequest tool: MCPToolSearchClasses new arguments: {
-		           (#scope -> scope).
-		           (#offset -> 3) } asDictionary.
+			           (#scope -> scope).
+			           (#offset -> 3) } asDictionary.
 	self assert: (request nonNegativeIntegerArgumentNamed: 'offset' default: 100) equals: 3.
 	self assert: (request stringCollectionArgumentNamed: 'packages' in: scope) equals: #( 'MCP' ).
 	self assert: (request stringArgumentNamed: 'missing') isNil.
-	self assert: (request booleanArgumentNamed: 'missing' default: false) equals: false
+	self assert: (request booleanArgumentNamed: 'missing') equals: false
 ]

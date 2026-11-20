@@ -101,7 +101,7 @@ MCPServersPresenter >> createServer [
 
 	| port server |
 	self showMessage: ''.
-	port := self requestedPort ifNil: [ ^ self showMessage: 'Enter a port between 0 and 65535, or 0 for a free one.' ].
+	port := self requestedPort ifNil: [ ^ self showMessage: self invalidPortText ].
 	server := self newServerOnPort: port.
 	[ server start ]
 		on: Error
@@ -151,10 +151,10 @@ MCPServersPresenter >> initializePresenters [
 	portLabel := self newLabel.
 	portInput := self newTextInput.
 	newButton := self newButton.
-	startButton := self newButton.
-	stopButton := self newButton.
+	startButton := self newStartButton.
+	stopButton := self newStopButton.
 	removeButton := self newButton.
-	refreshButton := self newButton.
+	refreshButton := self newRefreshButton.
 	messageLabel := self newLabel.
 
 	portLabel label: 'New server on port:'.
@@ -165,19 +165,10 @@ MCPServersPresenter >> initializePresenters [
 		label: 'New server';
 		icon: (self iconNamed: #add);
 		help: self portHelpText.
-	startButton
-		label: 'Start';
-		icon: (self iconNamed: #go).
-	stopButton
-		label: 'Stop';
-		icon: self serverStopIcon.
 	removeButton
 		label: 'Remove';
 		icon: (self iconNamed: #trash);
 		help: self removeHelpText.
-	refreshButton
-		label: 'Refresh';
-		icon: (self iconNamed: #refreshCircling).
 	self initializeServersTable
 ]
 
@@ -191,7 +182,7 @@ MCPServersPresenter >> initializeServersTable [
 		addColumn: (SpStringTableColumn title: 'Status' evaluated: [ :server | self serverStatusValueFor: server ]);
 		addColumn: (SpStringTableColumn title: 'Port' evaluated: [ :server | server port asString ]);
 		addColumn: (SpStringTableColumn title: 'Endpoint' evaluated: [ :server | server localUrlString ]);
-		addColumn: (SpStringTableColumn title: 'Tools' evaluated: [ :server | server sortedTools size asString ]);
+		addColumn: (SpStringTableColumn title: 'Tools' evaluated: [ :server | server toolsList size asString ]);
 		contextMenu: [ self serversContextMenu ];
 		beResizable
 ]
@@ -287,17 +278,17 @@ MCPServersPresenter >> removeSelectedServer [
 
 { #category : 'private' }
 MCPServersPresenter >> requestedPort [
-	"Answer the port the field asks for, or nil when it is not a port at all. 0 is valid and means a free one."
 
-	^ (portInput text ifNil: [ '' ]) trimBoth asInteger ifNotNil: [ :port | (port between: 0 and: 65535) ifTrue: [ port ] ]
+	^ self portFrom: portInput text
 ]
 
 { #category : 'actions' }
-MCPServersPresenter >> restartSelectedServer [
+MCPServersPresenter >> selectedServerDo: aBlock [
+	"Act on the selected server, say what stopped it, and show where it left the server."
 
 	self showMessage: ''.
 	serversTable selectedItem ifNotNil: [ :server |
-			[ server restart ]
+			[ aBlock value: server ]
 				on: Error
 				do: [ :error | self showMessage: error messageText ] ].
 	self refreshView
@@ -337,7 +328,7 @@ MCPServersPresenter >> serversContextMenu [
 							  item
 								  name: 'Restart';
 								  enabled: [ self canStopSelectedServer ];
-								  action: [ self restartSelectedServer ] ];
+								  action: [ self selectedServerDo: [ :server | server restart ] ] ];
 					  addItem: [ :item |
 							  item
 								  name: 'Remove';
@@ -376,23 +367,13 @@ MCPServersPresenter >> showMessage: aString [
 { #category : 'actions' }
 MCPServersPresenter >> startSelectedServer [
 
-	self showMessage: ''.
-	serversTable selectedItem ifNotNil: [ :server |
-			[ server start ]
-				on: Error
-				do: [ :error | self showMessage: error messageText ] ].
-	self refreshView
+	self selectedServerDo: [ :server | server start ]
 ]
 
 { #category : 'actions' }
 MCPServersPresenter >> stopSelectedServer [
 
-	self showMessage: ''.
-	serversTable selectedItem ifNotNil: [ :server |
-			[ server stop ]
-				on: Error
-				do: [ :error | self showMessage: error messageText ] ].
-	self refreshView
+	self selectedServerDo: [ :server | server stop ]
 ]
 
 { #category : 'updating' }

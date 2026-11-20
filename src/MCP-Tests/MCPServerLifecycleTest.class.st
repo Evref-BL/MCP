@@ -25,13 +25,22 @@ MCPServerLifecycleTest >> stopAndForget: anMCP [
 
 	| directory |
 	anMCP ifNil: [ ^ self ].
-	directory := [ anMCP observabilityExportInstanceDirectory ]
+	directory := [ anMCP observability exportInstanceDirectory ]
 		             on: Error
 		             do: [ :error | nil ].
 	[ anMCP stop ]
 		on: Error
 		do: [ :error | error return ].
 	directory ifNotNil: [ directory asFileReference exists ifTrue: [ directory asFileReference deleteAll ] ]
+]
+
+{ #category : 'tests' }
+MCPServerLifecycleTest >> testADeferredActionRunsAtOnceOutsideAResponse [
+
+	| ran |
+	ran := false.
+	MCPPostResponseActions value: nil during: [ MCPPostResponseActions defer: [ ran := true ] ].
+	self assert: ran
 ]
 
 { #category : 'tests' }
@@ -304,23 +313,13 @@ MCPServerLifecycleTest >> testSocketSafeServerRunsDeferredActionsAfterCurrentRes
 	server := MCPSocketSafeZnServer new.
 	actions := OrderedCollection new.
 	MCPPostResponseActions value: actions during: [
-			server deferAfterCurrentResponse: [ ran := true ].
+			MCPPostResponseActions defer: [ ran := true ].
 			self deny: ran ].
 	server runPostResponseActions: actions.
 	self assert: ran.
 	ran := false.
 	server runPostResponseActions: actions.
 	self deny: ran
-]
-
-{ #category : 'tests' }
-MCPServerLifecycleTest >> testSocketSafeServerRunsPostResponseActionsImmediatelyWithoutActiveQueue [
-
-	| ran server |
-	ran := false.
-	server := MCPSocketSafeZnServer new.
-	MCPPostResponseActions value: nil during: [ server deferAfterCurrentResponse: [ ran := true ] ].
-	self assert: ran
 ]
 
 { #category : 'tests' }

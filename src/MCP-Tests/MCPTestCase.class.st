@@ -15,9 +15,32 @@ MCPTestCase class >> isAbstract [
 ]
 
 { #category : 'support' }
+MCPTestCase >> builtInGroupNames [
+
+	^ {
+		  MCPTool classesGroupName.
+		  MCPTool debuggingGroupName.
+		  MCPTool historyGroupName.
+		  MCPTool methodsGroupName.
+		  MCPTool packagesGroupName.
+		  MCPTool repositoriesGroupName.
+		  MCPTool runtimeGroupName.
+		  MCPTool testsGroupName.
+		  MCPTool toolCatalogGroupName.
+		  MCPTool uiGroupName }
+]
+
+{ #category : 'support' }
+MCPTestCase >> builtInPackageNames [
+	"The packages MCP ships tools in: the catalog that the server dispatches through, and the image tools beside it. A tool defined anywhere else belongs to whoever put it there, including MCP's own test fixtures."
+
+	^ #( 'MCP' 'MCP-IDE' )
+]
+
+{ #category : 'support' }
 MCPTestCase >> builtInToolClasses [
 
-	^ MCPTool concreteSubclasses select: [ :toolClass | toolClass isBuiltIn ]
+	^ MCPTool concreteSubclasses select: [ :toolClass | self isBuiltIn: toolClass ]
 ]
 
 { #category : 'private - classes' }
@@ -139,6 +162,13 @@ MCPTestCase >> generatedPackageName [
 MCPTestCase >> generatedTagName [
 
 	^ 'Internal'
+]
+
+{ #category : 'support' }
+MCPTestCase >> isBuiltIn: aToolClass [
+	"A tool MCP ships, as against one another project defines: whose conventions it answers to, not whether it is served, which loading its package decides."
+
+	^ self builtInPackageNames includes: aToolClass package name
 ]
 
 { #category : 'private - packages' }

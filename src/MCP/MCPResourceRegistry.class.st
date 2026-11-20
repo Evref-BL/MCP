@@ -23,12 +23,6 @@ MCPResourceRegistry >> addResources: resourcesOrResourceClasses [
 	^ self addAll: resourcesOrResourceClasses
 ]
 
-{ #category : 'testing' }
-MCPResourceRegistry >> includesResourceAt: aUri [
-
-	^ self includesKey: aUri
-]
-
 { #category : 'entries' }
 MCPResourceRegistry >> keyFor: aResource [
 
@@ -39,12 +33,6 @@ MCPResourceRegistry >> keyFor: aResource [
 MCPResourceRegistry >> registeredClass [
 
 	^ MCPResource
-]
-
-{ #category : 'resources' }
-MCPResourceRegistry >> removeResourceAt: aUri [
-
-	self removeKey: aUri
 ]
 
 { #category : 'resources' }
@@ -65,12 +53,6 @@ MCPResourceRegistry >> resourceTemplates [
 	"Templates are resources that stand for a family of URIs rather than one, so they list separately."
 
 	^ (self entries select: [ :each | each isResourceTemplate ]) asArray
-]
-
-{ #category : 'resources' }
-MCPResourceRegistry >> resourceUris [
-
-	^ self keys
 ]
 
 { #category : 'resources' }

@@ -1,7 +1,7 @@
 "
 Abstract protocol for MCP observability backends.
 
-Core MCP code talks to this protocol so normal tool execution can report observability facts without depending on a concrete telemetry implementation. The core package provides a no-op implementation; optional packages can provide concrete exporters such as OpenTelemetry.
+Core MCP code talks to this protocol so normal tool execution can report observability facts without depending on a concrete telemetry implementation. A server starts with MCPLocalObservabilityBackend, core's default; one without observability has MCPNoopObservabilityBackend, and optional packages provide exporters such as OpenTelemetry.
 "
 Class {
 	#name : 'MCPObservabilityBackend',
@@ -23,41 +23,21 @@ MCPObservabilityBackend >> clear [
 	^ self
 ]
 
-{ #category : 'activation' }
-MCPObservabilityBackend >> disable [
-
-	self subclassResponsibility
-]
-
-{ #category : 'activation' }
-MCPObservabilityBackend >> enable [
-
-	self subclassResponsibility
-]
-
-{ #category : 'accessing' }
+{ #category : 'testing' }
 MCPObservabilityBackend >> enabled [
 
-	self subclassResponsibility
-]
-
-{ #category : 'accessing' }
-MCPObservabilityBackend >> enabled: aBoolean [
-
-	self subclassResponsibility
+	^ self isNoop not
 ]
 
 { #category : 'private - errors' }
 MCPObservabilityBackend >> errorDetailsForResult: aToolResult error: anError [
 
-	| details resultDetails |
+	| details |
 	details := Dictionary new.
 	anError ifNotNil: [
-			details at: #errorClass put: anError class name asString.
-			details at: #message put: (anError messageText ifNil: [ anError asString ]).
+			details addAll: (self errorSummaryFor: anError).
 			anError mcpAddToolErrorDetailsTo: details ].
-	resultDetails := self errorDetailsFromToolResult: aToolResult.
-	resultDetails keysAndValuesDo: [ :key :value | details at: key asSymbol put: value ].
+	(self errorDetailsFromToolResult: aToolResult) keysAndValuesDo: [ :key :value | details at: key asSymbol put: value ].
 	^ details
 ]
 
@@ -69,7 +49,7 @@ MCPObservabilityBackend >> errorDetailsFromToolResult: aToolResult [
 	structuredContent := aToolResult structuredContent.
 	structuredContent ifNil: [ ^ Dictionary new ].
 	structuredContent isDictionary ifFalse: [ ^ Dictionary new ].
-	errorDetails := self valueAtKey: #error in: structuredContent ifAbsent: [ nil ].
+	errorDetails := structuredContent mcpAt: #error ifAbsent: [ nil ].
 	errorDetails isDictionary ifFalse: [ ^ Dictionary new ].
 	^ errorDetails
 ]
@@ -85,6 +65,14 @@ MCPObservabilityBackend >> errorKindForDetails: details error: anError violation
 	^ 'exception'
 ]
 
+{ #category : 'private - errors' }
+MCPObservabilityBackend >> errorSummaryFor: anError [
+
+	^ {
+		  (#errorClass -> anError class name asString).
+		  (#message -> (anError messageText ifNil: [ anError asString ])) } asDictionary
+]
+
 { #category : 'accessing' }
 MCPObservabilityBackend >> exportDirectory [
 
@@ -97,22 +85,10 @@ MCPObservabilityBackend >> exportDirectory: aPath [
 	^ self
 ]
 
-{ #category : 'testing' }
-MCPObservabilityBackend >> exportEnabled [
-
-	^ false
-]
-
 { #category : 'accessing' }
 MCPObservabilityBackend >> exportInstanceDirectory [
 
 	^ nil
-]
-
-{ #category : 'actions' }
-MCPObservabilityBackend >> forceFlush [
-
-	self subclassResponsibility
 ]
 
 { #category : 'testing' }
@@ -133,12 +109,6 @@ MCPObservabilityBackend >> metrics [
 	^ #(  )
 ]
 
-{ #category : 'accessing' }
-MCPObservabilityBackend >> recentCallRecords [
-
-	^ #(  )
-]
-
 { #category : 'private - errors' }
 MCPObservabilityBackend >> recordErrorDetailsFor: aRecord result: aToolResult error: anError [
 
@@ -155,13 +125,13 @@ MCPObservabilityBackend >> recordErrorDetailsFor: aRecord result: aToolResult er
 ]
 
 { #category : 'recording' }
-MCPObservabilityBackend >> recordSessionEndFor: anMCP [
+MCPObservabilityBackend >> recordSessionEnd [
 
 	self subclassResponsibility
 ]
 
 { #category : 'recording' }
-MCPObservabilityBackend >> recordSessionStartFor: anMCP [
+MCPObservabilityBackend >> recordSessionStart [
 
 	self subclassResponsibility
 ]
@@ -170,22 +140,6 @@ MCPObservabilityBackend >> recordSessionStartFor: anMCP [
 MCPObservabilityBackend >> recordToolCallFinish: aRecord result: aToolResult error: anError [
 
 	self subclassResponsibility
-]
-
-{ #category : 'recording' }
-MCPObservabilityBackend >> recordToolCallStart: aToolName [
-
-	^ self recordToolCallStart: aToolName input: nil
-]
-
-{ #category : 'recording' }
-MCPObservabilityBackend >> recordToolCallStart: aToolName input: inputObject [
-
-	^ self
-		  recordToolCallStart: aToolName
-		  input: inputObject
-		  dispatchPath: 'direct'
-		  context: Dictionary new
 ]
 
 { #category : 'recording' }
@@ -212,50 +166,19 @@ MCPObservabilityBackend >> shutdown [
 	self subclassResponsibility
 ]
 
-{ #category : 'displaying' }
-MCPObservabilityBackend >> statusText [
-
-	self subclassResponsibility
-]
-
 { #category : 'private - errors' }
 MCPObservabilityBackend >> stringValueAtKey: aKey in: aDictionary [
 
 	| value |
-	value := self valueAtKey: aKey in: aDictionary ifAbsent: [ '' ].
+	value := aDictionary mcpAt: aKey ifAbsent: [ '' ].
 	value ifNil: [ ^ '' ].
 	^ value asString
-]
-
-{ #category : 'accessing' }
-MCPObservabilityBackend >> totalCallCount [
-
-	^ 0
-]
-
-{ #category : 'accessing' }
-MCPObservabilityBackend >> totalErrorCount [
-
-	^ 0
-]
-
-{ #category : 'accessing' }
-MCPObservabilityBackend >> totalOutputBudgetExceededCount [
-
-	^ 0
 ]
 
 { #category : 'accessing' }
 MCPObservabilityBackend >> traceRecords [
 
 	^ #(  )
-]
-
-{ #category : 'private - errors' }
-MCPObservabilityBackend >> valueAtKey: aKey in: aDictionary ifAbsent: absentBlock [
-
-	(aDictionary includesKey: aKey) ifTrue: [ ^ aDictionary at: aKey ].
-	^ aDictionary at: aKey asString ifAbsent: absentBlock
 ]
 
 { #category : 'private - errors' }
@@ -275,7 +198,7 @@ MCPObservabilityBackend >> violationKeywordsFor: violations [
 MCPObservabilityBackend >> violationsFromDetails: details [
 
 	| violations |
-	violations := self valueAtKey: #violations in: details ifAbsent: [ #(  ) ].
+	violations := details mcpAt: #violations ifAbsent: [ #(  ) ].
 	violations ifNil: [ ^ #(  ) ].
 	^ violations asArray
 ]

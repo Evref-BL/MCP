@@ -67,7 +67,7 @@ MCPRegistry >> at: aKey ifAbsent: absentBlock [
 { #category : 'discovery' }
 MCPRegistry >> autoRegisteringClasses [
 
-	^ (self registeredClass concreteSubclasses select: [ :each | each shouldAutoRegister ]) asSet
+	^ (self registeredClass allSubclasses select: [ :each | each isAbstract not and: [ each shouldAutoRegister ] ]) asSet
 ]
 
 { #category : 'change notification' }
@@ -75,14 +75,6 @@ MCPRegistry >> changeListener: aBlock [
 	"Called with no arguments whenever what this registry holds changes. The server uses it to tell listening clients their cached list is stale."
 
 	changeListener := aBlock
-]
-
-{ #category : 'discovery' }
-MCPRegistry >> defaultEntries [
-	"Answer the entries a fresh registry starts with, in the order they should be listed."
-
-	^ (self autoRegisteringClasses collect: [ :each | self newEntryFrom: each ]) asSortedCollection: [ :left :right |
-		  (self keyFor: left) <= (self keyFor: right) ]
 ]
 
 { #category : 'entries' }
@@ -98,10 +90,12 @@ MCPRegistry >> entriesByKey [
 	^ entries
 ]
 
-{ #category : 'entries' }
-MCPRegistry >> entryClasses [
+{ #category : 'discovery' }
+MCPRegistry >> entriesFrom: someClasses [
+	"New entries for someClasses, in the order they should be listed."
 
-	^ self entries collect: [ :each | each class ] as: Array
+	^ (someClasses collect: [ :each | self newEntryFrom: each ]) asSortedCollection: [ :left :right |
+		  self isEntry: left before: right ]
 ]
 
 { #category : 'testing' }
@@ -115,6 +109,12 @@ MCPRegistry >> initialize [
 
 	super initialize.
 	self removeAll
+]
+
+{ #category : 'discovery' }
+MCPRegistry >> isEntry: anEntry before: anotherEntry [
+
+	^ (self keyFor: anEntry) <= (self keyFor: anotherEntry)
 ]
 
 { #category : 'entries' }
@@ -161,8 +161,7 @@ MCPRegistry >> rediscoverClassesIfChanged [
 	vanished := discoveredClasses difference: discovered.
 	appeared := discovered difference: discoveredClasses.
 	entries keys select: [ :each | vanished includes: (entries at: each) class ] thenDo: [ :each | entries removeKey: each ].
-	((appeared collect: [ :each | self newEntryFrom: each ]) asSortedCollection: [ :left :right |
-		 (self keyFor: left) <= (self keyFor: right) ]) do: [ :entry |
+	(self entriesFrom: appeared) do: [ :entry |
 			| key |
 			key := self keyFor: entry.
 			(entries includesKey: key) ifFalse: [ entries at: key put: entry ] ].
@@ -201,6 +200,6 @@ MCPRegistry >> reset [
 	discoversClasses := true.
 	discoveredClasses := self autoRegisteringClasses.
 	entries := OrderedDictionary new.
-	self defaultEntries do: [ :each | entries at: (self keyFor: each) put: each ].
+	(self entriesFrom: discoveredClasses) do: [ :each | entries at: (self keyFor: each) put: each ].
 	self noteChanged
 ]

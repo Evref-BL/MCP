@@ -228,7 +228,13 @@ MCPToolIconSpec >> cacheKey [
 ]
 
 { #category : 'rendering' }
-MCPToolIconSpec >> renderUsing: anIconFactory [
+MCPToolIconSpec >> formUsing: anIconFactory [
 
 	self subclassResponsibility
+]
+
+{ #category : 'rendering' }
+MCPToolIconSpec >> renderUsing: anIconFactory [
+
+	^ anIconFactory iconForForm: (self formUsing: anIconFactory)
 ]

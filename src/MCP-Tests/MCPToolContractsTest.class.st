@@ -180,7 +180,7 @@ MCPToolContractsTest >> liveProcessesNamed: aString [
 MCPToolContractsTest >> mcpClassesInPackageTagNamed: aTagName [
 	"A tag says what kind of class this is, not which of MCP's packages it lives in, and since the split they live in two."
 
-	^ ((MCPTool builtInPackageNames flatCollect: [ :each | (self packageOrganizer packageNamed: each asSymbol) definedClasses ])
+	^ ((self builtInPackageNames flatCollect: [ :each | (self packageOrganizer packageNamed: each asSymbol) definedClasses ])
 		   select: [ :each | each packageTagName asString = aTagName ]) asArray
 ]
 
@@ -545,7 +545,7 @@ MCPToolContractsTest >> testBrowseIconToolGroupsKeepRelatedToolsTogether [
 
 	| autoRegisteredToolClasses groupedToolClasses |
 	groupedToolClasses := OrderedCollection new.
-	MCPTool toolGroups do: [ :group |
+	MCPToolRegistry default toolGroups do: [ :group |
 			group value do: [ :toolClass | self assert: toolClass new groupName equals: group key ].
 			groupedToolClasses addAll: group value ].
 	autoRegisteredToolClasses := MCPTool concreteSubclasses select: [ :toolClass | toolClass shouldAutoRegister ].
@@ -557,8 +557,8 @@ MCPToolContractsTest >> testBuiltInToolsProvideCatalogMetadata [
 
 	| validExposures |
 	validExposures := #( 'static' 'discoverable' ).
-	self toolRegistry tools select: [ :tool | tool class isBuiltIn ] thenDo: [ :tool |
-			self assert: (MCPTool builtInGroupNames includes: tool groupName).
+	self toolRegistry tools select: [ :tool | self isBuiltIn: tool class ] thenDo: [ :tool |
+			self assert: (self builtInGroupNames includes: tool groupName).
 			self assert: tool groupName equals: tool class groupName.
 			self assert: (validExposures includes: tool defaultExposure).
 			self assert: (#( true nil ) includes: tool annotations readOnlyHint).
@@ -1685,10 +1685,10 @@ MCPToolContractsTest >> testExternalToolFixtureIsNotBuiltIn [
 	"Two separate facts about the same fixture. It is not built in, so MCP's naming, grouping and icon conventions are not asked of it; and it answers false to discovery, which is its own doing rather than a consequence of the package it sits in."
 
 	self assert: (MCPTool concreteSubclasses includes: MCPExternalTestTool).
-	self deny: MCPExternalTestTool isBuiltIn.
+	self deny: (self isBuiltIn: MCPExternalTestTool).
 	self deny: MCPExternalTestTool shouldAutoRegister.
 	self deny: (self builtInToolClasses includes: MCPExternalTestTool).
-	self deny: (MCPTool builtInGroupNames includes: MCPExternalTestTool groupName)
+	self deny: (self builtInGroupNames includes: MCPExternalTestTool groupName)
 ]
 
 { #category : 'tests' }
@@ -1803,11 +1803,7 @@ MCPToolContractsTest >> testInitializeAdvertisesOnlyWhatTheServerHas [
 	"A capability promises the methods of a domain. Prompts are not advertised because the server holds none, and nothing is advertised that the transport could not honour: the stream carries list_changed, so that is declared, while subscribe is not."
 
 	| capabilities response |
-	response := (self mcpWithoutObservabilityExport
-		             onInitialize: nil
-		             capabilities: nil
-		             clientInfo: nil
-		             websiteUrl: nil) asJRPCJSON.
+	response := (self mcpWithoutObservabilityExport onInitialize: nil) asJRPCJSON.
 	capabilities := response at: #capabilities.
 	self assert: ((capabilities at: #tools) at: #listChanged).
 	self assert: ((capabilities at: #resources) at: #listChanged).
@@ -1820,11 +1816,7 @@ MCPToolContractsTest >> testInitializeAdvertisesPharoServerIcon [
 
 	| expectedIcon icon response serverInfo |
 	expectedIcon := (MCPStructureIcon pngIconNamed: #pharo) asJRPCJSON.
-	response := (self mcpWithoutObservabilityExport
-		             onInitialize: nil
-		             capabilities: nil
-		             clientInfo: nil
-		             websiteUrl: nil) asJRPCJSON.
+	response := (self mcpWithoutObservabilityExport onInitialize: nil) asJRPCJSON.
 	serverInfo := response at: #serverInfo.
 	self assert: (serverInfo includesKey: #icons).
 	self deny: (serverInfo at: #icons) isEmpty.
@@ -1836,11 +1828,7 @@ MCPToolContractsTest >> testInitializeAdvertisesPharoServerIcon [
 MCPToolContractsTest >> testInitializeAdvertisesSupportedPharoVersions [
 
 	| metadata pharo response runtimeVersion serverInfo |
-	response := (self mcpWithoutObservabilityExport
-		             onInitialize: nil
-		             capabilities: nil
-		             clientInfo: nil
-		             websiteUrl: nil) asJRPCJSON.
+	response := (self mcpWithoutObservabilityExport onInitialize: nil) asJRPCJSON.
 	serverInfo := response at: #serverInfo.
 	self deny: (serverInfo includesKey: #_meta).
 	self assert: (response includesKey: #_meta).
@@ -2571,33 +2559,30 @@ MCPToolContractsTest >> testRepositoryCreateAndUpdateRequiredArguments [
 { #category : 'tests' }
 MCPToolContractsTest >> testRequestedToolIconsAreSelected [
 
-	MCPStructureIcon resetCaches.
 	self
-		assert: MCPToolGetClass new icons first asJRPCJSON
-		equals: (MCPStructureIcon compositeBaseIconNamed: #class badgeIconNamed: #inspect) asJRPCJSON.
+		assert: MCPToolGetClass toolIconSpec cacheKey
+		equals: (MCPToolIconSpec baseIconNamed: #class badgeIconNamed: #inspect) cacheKey.
 	self
-		assert: MCPToolSearchMethodSource new icons first asJRPCJSON
-		equals: (MCPStructureIcon compositeBaseIconNamed: #page leftBadgeIconNamed: #workspace rightBadgeIconNamed: #search) asJRPCJSON.
+		assert: MCPToolSearchMethodSource toolIconSpec cacheKey
+		equals: (MCPToolIconSpec baseIconNamed: #page leftBadgeIconNamed: #workspace rightBadgeIconNamed: #search) cacheKey.
 	self
-		assert: MCPToolSearchMethodReferences new icons first asJRPCJSON
-		equals: (MCPStructureIcon compositeBaseIconNamed: #page leftBadgeIconNamed: #references rightBadgeIconNamed: #search) asJRPCJSON.
+		assert: MCPToolSearchMethodReferences toolIconSpec cacheKey
+		equals: (MCPToolIconSpec baseIconNamed: #page leftBadgeIconNamed: #references rightBadgeIconNamed: #search) cacheKey.
 	self
-		assert: MCPToolUpdateMethod new icons first asJRPCJSON
-		equals: (MCPStructureIcon compositeBaseIconNamed: #page badgeIconNamed: #edit) asJRPCJSON.
+		assert: MCPToolUpdateMethod toolIconSpec cacheKey
+		equals: (MCPToolIconSpec baseIconNamed: #page badgeIconNamed: #edit) cacheKey.
 	self
-		assert: MCPToolUpdateClass new icons first asJRPCJSON
-		equals: (MCPStructureIcon compositeBaseIconNamed: #class badgeIconNamed: #edit) asJRPCJSON.
+		assert: MCPToolUpdateClass toolIconSpec cacheKey
+		equals: (MCPToolIconSpec baseIconNamed: #class badgeIconNamed: #edit) cacheKey.
 	self
-		assert: MCPToolListChangeHistoryEntries new icons first asJRPCJSON
-		equals:
-		(MCPStructureIcon compositeBaseIconNamed: #history leftBadgeIconNamed: #changeUpdate rightBadgeIconNamed: #browse) asJRPCJSON.
+		assert: MCPToolListChangeHistoryEntries toolIconSpec cacheKey
+		equals: (MCPToolIconSpec baseIconNamed: #history leftBadgeIconNamed: #changeUpdate rightBadgeIconNamed: #browse) cacheKey.
 	self
-		assert: MCPToolCaptureScreen new icons first asJRPCJSON
-		equals: (MCPStructureIcon compositeBaseIconNamed: #window badgeIconNamed: #smallScreenshot) asJRPCJSON.
+		assert: MCPToolCaptureScreen toolIconSpec cacheKey
+		equals: (MCPToolIconSpec baseIconNamed: #window badgeIconNamed: #smallScreenshot) cacheKey.
 	self
-		assert: MCPToolRunTests new icons first asJRPCJSON
-		equals: (MCPStructureIcon compositeBaseIconNamed: #testRunner badgeIconNamed: #play) asJRPCJSON.
-	self assert: MCPToolEvaluate new icons first asJRPCJSON equals: (MCPStructureIcon pngIconNamed: #go) asJRPCJSON
+		assert: MCPToolRunTests toolIconSpec cacheKey
+		equals: (MCPToolIconSpec baseIconNamed: #testRunner badgeIconNamed: #play) cacheKey
 ]
 
 { #category : 'tests' }
@@ -3115,7 +3100,7 @@ MCPToolContractsTest >> testServerInitializationLeavesIconCacheEmpty [
 
 	MCPStructureIcon resetCaches.
 	self mcpWithoutObservabilityExport.
-	self assert: MCPStructureIcon cachedRenderedIconCount equals: 0
+	self assert: MCPStructureIcon iconCache size equals: 0
 ]
 
 { #category : 'tests' }
@@ -3208,6 +3193,17 @@ MCPToolContractsTest >> testToolCallsResumeNotificationsWithoutAToolOfTheirOwn [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testToolGetOnAnUnknownNameSuggestsCloseNames [
+
+	| error result |
+	result := self callToolNamed: 'tool_get' withArguments: { (#name -> 'method_serch') } asDictionary.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (error at: #errorCode) equals: 'ToolNotFound'.
+	self assert: ((error at: #suggestedTools) includes: 'method_source_search')
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testToolGetTextCarriesOnlyWhatACallNeeds [
 	"A contract is read to build a call. Its annotations, exposure, group and keywords stay in the data for whoever catalogs tools, and the text leaves them out; whether the tool is advertised is said once, in the summary."
 
@@ -3234,7 +3230,7 @@ MCPToolContractsTest >> testToolIconSpecsAreDerivedFromToolNames [
 	"Among MCP's own tools, an icon is read from the name and never picked by hand, so they stay consistent without anyone choosing. A tool from another package cannot be spelled out of MCP's vocabulary, so it is left to declare its own."
 
 	| builtIn |
-	builtIn := MCPTool withAllSubclasses select: [ :each | each isBuiltIn ].
+	builtIn := MCPTool withAllSubclasses select: [ :each | self isBuiltIn: each ].
 	self assert: (builtIn count: [ :each | each class includesSelector: #toolIconSpec ]) equals: 1.
 	self assert: (MCPTool class includesSelector: #toolIconSpec)
 ]
@@ -3248,7 +3244,7 @@ MCPToolContractsTest >> testToolIconsAreSharedByToolClass [
 	secondIcons := MCPToolSearchClasses new icons.
 	self assert: firstIcons identicalTo: secondIcons.
 	self assert: firstIcons first identicalTo: secondIcons first.
-	self assert: MCPStructureIcon cachedRenderedIconCount equals: 1
+	self assert: MCPStructureIcon iconCache size equals: 1
 ]
 
 { #category : 'tests' }
@@ -3284,7 +3280,7 @@ MCPToolContractsTest >> testToolRegistryNamesUseClassSideMetadata [
 
 	| names registry |
 	registry := self toolRegistry.
-	names := registry toolClasses collect: [ :each | each toolName ].
+	names := registry tools collect: [ :each | each class toolName ].
 	self assert: registry toolNames equals: names.
 	self assert: MCPToolSearchClasses toolName equals: 'class_search'.
 	self assert: MCPToolCreateClass toolName equals: 'class_create'.
@@ -3519,7 +3515,7 @@ MCPToolContractsTest >> unimplementedResponsibilitiesForConcreteMCPClasses [
 	"A concrete class leaves a responsibility unimplemented when the method it answers for a selector sends subclassResponsibility. That method is in its lookup chain, so only the selectors of the chains' methods that send it are looked up."
 
 	| behaviors issues selectors |
-	behaviors := ((MCPTool builtInPackageNames flatCollect: [ :name | (self packageOrganizer packageNamed: name) definedClasses ])
+	behaviors := ((self builtInPackageNames flatCollect: [ :name | (self packageOrganizer packageNamed: name) definedClasses ])
 		              reject: [ :each | each isTrait or: [ each isAbstract ] ]) flatCollect: [ :each |
 		             Array with: each with: each class ].
 	selectors := IdentitySet new.

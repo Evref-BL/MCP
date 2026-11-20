@@ -131,19 +131,6 @@ MCPHTTPServerTest >> testAcceptsSupportedProtocolVersion [
 ]
 
 { #category : 'tests' }
-MCPHTTPServerTest >> testAllowsExplicitlyConfiguredOrigin [
-
-	| request response server |
-	server := MCPHTTPServer new.
-	server allowedOrigins: #( 'https://tools.example' ).
-	request := ZnRequest method: #GET url: ZnUrl new.
-	request headers at: 'Origin' put: 'https://tools.example'.
-	response := self responseForRequest: request using: server.
-	self assert: response code equals: 405.
-	self assert: (response headers at: #'Access-Control-Allow-Origin') equals: 'https://tools.example'
-]
-
-{ #category : 'tests' }
 MCPHTTPServerTest >> testAllowsLoopbackOriginAndReturnsCORSHeaders [
 
 	| request response |
@@ -182,8 +169,7 @@ MCPHTTPServerTest >> testHandlesConcurrentPostRequests [
 					[
 						payload := String streamContents: [ :stream |
 								           stream << '{"jsonrpc":"2.0","id":' << index asString
-								           <<
-								           ',"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{},"websiteUrl":null}}' ].
+								           << ',"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{}}}' ].
 						client
 							url: server localUrl;
 							headerAt: 'Accept' put: 'application/json, text/event-stream';

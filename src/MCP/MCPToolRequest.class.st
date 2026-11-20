@@ -79,15 +79,6 @@ MCPToolRequest >> booleanArgumentNamed: anArgumentName [
 ]
 
 { #category : 'accessing' }
-MCPToolRequest >> booleanArgumentNamed: anArgumentName default: aBoolean [
-
-	| value |
-	value := self argumentNamed: anArgumentName ifAbsent: [ ^ aBoolean ].
-	value ifNil: [ ^ aBoolean ].
-	^ value
-]
-
-{ #category : 'accessing' }
 MCPToolRequest >> booleanArgumentNamed: anArgumentName in: aDictionary default: aBoolean [
 
 	| value |
@@ -108,7 +99,8 @@ MCPToolRequest >> clampArgumentNamed: anArgumentName maximum: maximumValue in: n
 { #category : 'accessing' }
 MCPToolRequest >> hasArgumentNamed: anArgumentName [
 
-	^ (self arguments includesKey: anArgumentName asSymbol) or: [ self arguments includesKey: anArgumentName asString ]
+	self argumentNamed: anArgumentName ifAbsent: [ ^ false ].
+	^ true
 ]
 
 { #category : 'initialization' }
@@ -129,12 +121,12 @@ MCPToolRequest >> integerArgumentNamed: anArgumentName [
 
 { #category : 'private - validating' }
 MCPToolRequest >> keyForArgumentNamed: anArgumentName in: aDictionary ifAbsent: absentBlock [
+	"The key the dictionary holds the argument under: arguments read from the wire have String keys, and those built in the image often Symbol ones."
 
 	aDictionary ifNil: [ ^ absentBlock value ].
-	(aDictionary includesKey: anArgumentName) ifTrue: [ ^ anArgumentName ].
-	(aDictionary includesKey: anArgumentName asString) ifTrue: [ ^ anArgumentName asString ].
-	(aDictionary includesKey: anArgumentName asSymbol) ifTrue: [ ^ anArgumentName asSymbol ].
-	^ absentBlock value
+	^ {
+		  anArgumentName asString.
+		  anArgumentName asSymbol } detect: [ :each | aDictionary includesKey: each ] ifNone: absentBlock
 ]
 
 { #category : 'testing' }
@@ -156,14 +148,6 @@ MCPToolRequest >> nonNegativeIntegerArgumentNamed: anArgumentName default: anInt
 	Error signal: anArgumentName asString , ' must be a non-negative integer.'
 ]
 
-{ #category : 'accessing' }
-MCPToolRequest >> nonNegativeIntegerArgumentNamed: anArgumentName default: defaultInteger maximum: maximumInteger [
-
-	| value |
-	value := self nonNegativeIntegerArgumentNamed: anArgumentName default: defaultInteger.
-	^ value min: maximumInteger
-]
-
 { #category : 'private - validating' }
 MCPToolRequest >> normalizeArgumentsForInputSchema: anInputSchema [
 
@@ -174,12 +158,6 @@ MCPToolRequest >> normalizeArgumentsForInputSchema: anInputSchema [
 			maximum := property extraProperties at: #maximum ifAbsent: [ nil ].
 			maximum ifNotNil: [ self clampArgumentNamed: property name maximum: maximum in: normalizedArguments ] ].
 	arguments := normalizedArguments
-]
-
-{ #category : 'accessing' }
-MCPToolRequest >> objectCollectionArgumentNamed: anArgumentName [
-
-	^ self arrayArgumentNamed: anArgumentName
 ]
 
 { #category : 'private - validating' }
@@ -218,13 +196,6 @@ MCPToolRequest >> stringArgumentNamed: anArgumentName in: aDictionary default: d
 MCPToolRequest >> stringCollectionArgumentNamed: anArgumentName [
 
 	^ self stringCollectionFrom: (self argumentNamed: anArgumentName ifAbsent: [ ^ #(  ) ])
-]
-
-{ #category : 'accessing' }
-MCPToolRequest >> stringCollectionArgumentNamed: anArgumentName default: defaultCollection [
-
-	(self hasArgumentNamed: anArgumentName) ifFalse: [ ^ defaultCollection ].
-	^ self stringCollectionArgumentNamed: anArgumentName
 ]
 
 { #category : 'accessing' }
@@ -279,12 +250,6 @@ MCPToolRequest >> uniqueStringCollectionArgumentNamed: anArgumentName [
 	^ self uniqueStringCollectionFrom: (self stringCollectionArgumentNamed: anArgumentName)
 ]
 
-{ #category : 'accessing' }
-MCPToolRequest >> uniqueStringCollectionArgumentNamed: anArgumentName default: defaultCollection [
-
-	^ self uniqueStringCollectionFrom: (self stringCollectionArgumentNamed: anArgumentName default: defaultCollection)
-]
-
 { #category : 'private - accessing' }
 MCPToolRequest >> uniqueStringCollectionFrom: strings [
 
@@ -309,8 +274,7 @@ MCPToolRequest >> validate [
 { #category : 'private - accessing' }
 MCPToolRequest >> valueNamed: anArgumentName in: aDictionary ifAbsent: absentBlock [
 
-	aDictionary ifNil: [ ^ absentBlock value ].
-	^ aDictionary at: anArgumentName asSymbol ifAbsent: [ aDictionary at: anArgumentName asString ifAbsent: absentBlock ]
+	^ (aDictionary ifNil: [ ^ absentBlock value ]) mcpAt: anArgumentName ifAbsent: absentBlock
 ]
 
 { #category : 'accessing' }

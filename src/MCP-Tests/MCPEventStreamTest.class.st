@@ -35,6 +35,27 @@ MCPEventStreamTest >> testAGetWithoutEventStreamAcceptIsStillRefused [
 ]
 
 { #category : 'tests' }
+MCPEventStreamTest >> testASilentStreamKeepsItsConnectionAlive [
+	"The keep-alive is an SSE comment, and the stream goes on writing after it."
+
+	| frame text |
+	frame := String with: $: with: Character lf.
+	text := self text: MCPEventStreamKeepingAliveAtOnce new whileDoing: [ ] untilItIncludes: frame , frame.
+	self assert: (text copyReplaceAll: frame with: '') isEmpty
+]
+
+{ #category : 'tests' }
+MCPEventStreamTest >> testAddingAPromptToACuratedCatalogTellsListeningClients [
+
+	| mcp stream |
+	mcp := self mcpWithoutObservabilityExport.
+	mcp onlyPrompts: #(  ).
+	stream := MCPEventStream new.
+	mcp server addEventStream: stream.
+	self text: stream whileDoing: [ mcp addPrompt: MCPGreetingTestPrompt ] untilItIncludes: 'notifications/prompts/list_changed'
+]
+
+{ #category : 'tests' }
 MCPEventStreamTest >> testAddingAToolTellsListeningClients [
 
 	| mcp stream text |

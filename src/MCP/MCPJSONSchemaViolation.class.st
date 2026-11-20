@@ -206,7 +206,6 @@ MCPJSONSchemaViolation >> printSentenceOn: aStream [
 	keyword = 'enum' ifTrue: [
 			^ aStream << ' must be ' << (self alternatives: (expected collect: [ :each | self jsonFor: each ])) << ', not '
 			  << (self jsonFor: actual) << '.' ].
-	keyword = 'const' ifTrue: [ ^ aStream << ' must be ' << (self jsonFor: expected) << '.' ].
 	keyword = 'minItems' ifTrue: [ ^ aStream << ' needs at least ' << expected printString << ' item(s).' ].
 	keyword = 'minLength' ifTrue: [ ^ aStream << ' needs at least ' << expected printString << ' character(s).' ].
 	keyword = 'minimum' ifTrue: [ ^ aStream << ' must be at least ' << expected printString << ', not ' << actual printString << '.' ].

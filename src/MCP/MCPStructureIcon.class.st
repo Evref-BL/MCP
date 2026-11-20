@@ -21,53 +21,21 @@ Class {
 	#tag : 'Icons'
 }
 
-{ #category : 'cache' }
-MCPStructureIcon class >> cachedRenderedIconCount [
-
-	^ iconCache ifNil: [ 0 ] ifNotNil: [ iconCache size ]
-]
-
-{ #category : 'instance creation' }
-MCPStructureIcon class >> compositeBaseIconNamed: aBaseIconSymbol badgeIconNamed: aBadgeIconSymbol [
-
-	^ self iconForSpec: (MCPToolIconSpec baseIconNamed: aBaseIconSymbol badgeIconNamed: aBadgeIconSymbol)
-]
-
-{ #category : 'instance creation' }
-MCPStructureIcon class >> compositeBaseIconNamed: aBaseIconSymbol leftBadgeIconNamed: aLeftBadgeIconSymbol rightBadgeIconNamed: aRightBadgeIconSymbol [
-
-	^ self iconForSpec: (MCPToolIconSpec
-			   baseIconNamed: aBaseIconSymbol
-			   leftBadgeIconNamed: aLeftBadgeIconSymbol
-			   rightBadgeIconNamed: aRightBadgeIconSymbol)
-]
-
-{ #category : 'instance creation' }
-MCPStructureIcon class >> compositeFormBaseIconNamed: aBaseIconSymbol badgeIconNamed: aBadgeIconSymbol [
-
-	| baseForm badgeForm badgeSize canvas composite |
-	baseForm := self highScaleFormNamed: aBaseIconSymbol.
-	badgeSize := baseForm width // 2 @ (baseForm height // 2).
-	badgeForm := (self highScaleFormNamed: aBadgeIconSymbol) scaledToSize: badgeSize.
-	composite := Form extent: baseForm extent depth: 32.
-	canvas := composite getCanvas.
-	canvas translucentImage: baseForm at: 0 @ 0.
-	canvas translucentImage: badgeForm at: composite extent - badgeForm extent.
-	^ composite
-]
-
 { #category : 'instance creation' }
 MCPStructureIcon class >> compositeFormBaseIconNamed: aBaseIconSymbol leftBadgeIconNamed: aLeftBadgeIconSymbol rightBadgeIconNamed: aRightBadgeIconSymbol [
+	"The left badge, which may be nil, sits at the bottom left and the right one at the bottom right."
 
-	| badgeSize baseForm canvas composite leftBadgeForm rightBadgeForm |
+	| badgeSize baseForm canvas composite rightBadgeForm |
 	baseForm := self highScaleFormNamed: aBaseIconSymbol.
 	badgeSize := baseForm width // 2 @ (baseForm height // 2).
-	leftBadgeForm := (self highScaleFormNamed: aLeftBadgeIconSymbol) scaledToSize: badgeSize.
-	rightBadgeForm := (self highScaleFormNamed: aRightBadgeIconSymbol) scaledToSize: badgeSize.
 	composite := Form extent: baseForm extent depth: 32.
 	canvas := composite getCanvas.
 	canvas translucentImage: baseForm at: 0 @ 0.
-	canvas translucentImage: leftBadgeForm at: 0 @ (composite height - leftBadgeForm height).
+	aLeftBadgeIconSymbol ifNotNil: [
+			| leftBadgeForm |
+			leftBadgeForm := (self highScaleFormNamed: aLeftBadgeIconSymbol) scaledToSize: badgeSize.
+			canvas translucentImage: leftBadgeForm at: 0 @ (composite height - leftBadgeForm height) ].
+	rightBadgeForm := (self highScaleFormNamed: aRightBadgeIconSymbol) scaledToSize: badgeSize.
 	canvas translucentImage: rightBadgeForm at: composite extent - rightBadgeForm extent.
 	^ composite
 ]
@@ -114,9 +82,7 @@ MCPStructureIcon class >> iconsForToolClass: aToolClass [
 { #category : 'instance creation' }
 MCPStructureIcon class >> pngDataUriForForm: aForm [
 
-	| bytes |
-	bytes := ByteArray streamContents: [ :stream | PNGReadWriter putForm: aForm onStream: stream ].
-	^ 'data:image/png;base64,' , bytes base64Encoded
+	^ 'data:image/png;base64,' , (MCPStructureImageContent pngFromForm: aForm) data
 ]
 
 { #category : 'instance creation' }

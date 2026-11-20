@@ -26,7 +26,11 @@ MCPDashboardPresenterTest >> testApplyIsIdleUntilThePortChanges [
 	portInput text: '5000'.
 	self assert: presenter isPortChangePending.
 	portInput text: 'not a port'.
-	self deny: presenter isPortChangePending
+	self deny: presenter isPortChangePending.
+	portInput text: '5000x'.
+	self deny: presenter isPortChangePending.
+	portInput text: '0'.
+	self assert: presenter isPortChangePending
 ]
 
 { #category : 'tests' }
