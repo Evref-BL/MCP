@@ -119,6 +119,26 @@ MCPToolUpdateMethod >> checkArguments: request [
 ]
 
 { #category : 'private - errors' }
+MCPToolUpdateMethod >> descriptionOfVariable: aVariable [
+	"How a refusal names a variable a class sees: the instance variable name of Class, the class variable Shared of Foo, the global Array."
+
+	^ String streamContents: [ :stream |
+			  stream
+				  nextPutAll: 'the ';
+				  nextPutAll: (aVariable isInstanceVariable
+						   ifTrue: [ 'instance variable ' ]
+						   ifFalse: [
+								   aVariable isClassVariable
+									   ifTrue: [ 'class variable ' ]
+									   ifFalse: [ 'global ' ] ]);
+				  nextPutAll: aVariable name.
+			  aVariable definingClass ifNotNil: [ :class |
+					  stream
+						  nextPutAll: ' of ';
+						  nextPutAll: class name ] ]
+]
+
+{ #category : 'private - errors' }
 MCPToolUpdateMethod >> failureMessageForSelectorChange: action of: request error: anError [
 
 	| template |
@@ -381,7 +401,7 @@ MCPToolUpdateMethod >> updateTargetBehaviorFor: request [
 
 { #category : 'private - validating' }
 MCPToolUpdateMethod >> validateArgumentNames: request [
-	"A new selector that adds arguments names each of its arguments. Names given for any other one rename the arguments it keeps, so they are one per argument too. Each must be a name an argument can take, and none twice, since the arguments are renamed only once the selector has changed."
+	"A new selector that adds arguments names each of its arguments. Names given for any other one rename the arguments it keeps, so they are one per argument too. Each must be a name an argument can take, none twice, since the arguments are renamed only once the selector has changed, and none a variable the method sees that is not already one of its arguments."
 
 	| argumentNames |
 	argumentNames := request stringCollectionArgumentNamed: 'arguments'.
@@ -405,7 +425,14 @@ MCPToolUpdateMethod >> validateArgumentNames: request [
 				MCPCommandError
 					signalErrorCode: #InvalidMethodArgumentNames
 					message: ('arguments must be distinct argument names, which {1} is not.' format: { each printString })
-					details: (self requestedContextFor: request) ]
+					details: (self requestedContextFor: request) ].
+	self variableShadowedBy: argumentNames in: request ifFound: [ :name :variable |
+			MCPCommandError
+				signalErrorCode: #InvalidMethodArgumentNames
+				message: ('arguments must be distinct argument names, which {1} is not: it would shadow {2}.' format: {
+							 name printString.
+							 variable })
+				details: (self requestedContextFor: request) ]
 ]
 
 { #category : 'private - validating' }
@@ -418,4 +445,22 @@ MCPToolUpdateMethod >> validateUpdate: request [
 				signalErrorCode: #ArgumentMetadataRequiresMethodSelectorUpdate
 				message: 'arguments is only valid with newSelector.'
 				details: (self requestedContextFor: request) ]
+]
+
+{ #category : 'private - validating' }
+MCPToolUpdateMethod >> variableShadowedBy: argumentNames in: request ifFound: aBlock [
+	"aBlock gets the first of argumentNames that the method already sees as a variable, and that variable described. An argument of that name would hide the variable and change what the method means: some Pharo versions compile it without a word, others refuse it only once the selector has changed. The variables are the ones the compiler will not let an argument shadow: the method's temporaries and block arguments, and what its class sees, inherited instance and class variables and globals included. A name one of the method's arguments already has hides the same variable before and after, and the call renames the arguments together, so arguments may keep or trade their names. A missing class or method, or one a trait installed, is the update's to report."
+
+	| behavior method tree |
+	behavior := self classNameAndSideOf: request do: [ :className :classSide :sideGiven |
+			            (MCPImageLookup isClassName: className) ifFalse: [ ^ self ].
+			            self behaviorNamed: className classSide: classSide ].
+	method := behavior compiledMethodAt: (request stringArgumentNamed: 'selector') asSymbol ifAbsent: [ ^ self ].
+	method isFromTrait ifTrue: [ ^ self ].
+	tree := method ast.
+	(argumentNames copyWithoutAll: tree argumentNames) do: [ :each |
+			(tree allTemporaryVariables includes: each) ifTrue: [ ^ aBlock value: each value: ('the temporary {1}' format: { each }) ].
+			(tree allArgumentVariables includes: each) ifTrue: [ ^ aBlock value: each value: ('the block argument {1}' format: { each }) ].
+			(behavior lookupVar: each asSymbol) ifNotNil: [ :variable |
+				variable allowsShadowing ifFalse: [ ^ aBlock value: each value: (self descriptionOfVariable: variable) ] ] ]
 ]

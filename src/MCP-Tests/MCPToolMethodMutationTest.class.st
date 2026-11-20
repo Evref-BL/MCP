@@ -912,44 +912,104 @@ MCPToolMethodMutationTest >> testArgumentListsWithoutANewSelectorAreRefused [
 
 { #category : 'tests' }
 MCPToolMethodMutationTest >> testArgumentNamesAreOneUsableNamePerArgument [
-	"A new selector with more keywords needs a name for each argument it adds. Names given with any new selector are one per argument, each one an argument can take and none twice, and a refusal changes nothing."
+	"A new selector with more keywords needs a name for each argument it adds. Names given with any new selector are one per argument, each one an argument can take, none twice and none a variable the method already sees, and a refusal changes nothing. The method is on the class side of a class with a class variable, where it also sees name, an instance variable every class inherits from Class."
 
-	{
+	self
+		ensureMethodSource: 'shadowingProbe: first with: second
+	| joined |
+	joined := #( 1 ) collect: [ :each | first ].
+	^ joined , second'
+		protocol: 'reading'
+		on: MCPToolGetMethodTestTarget classSide.
+	[
 		{
-			#(  ).
-			'combine:with:separator:'.
-			'ArgumentNamesRequiredForAddedArguments'.
-			'arguments is required when newSelector adds method arguments.' }.
-		{
-			#( 'only' ).
-			self renamedInstanceSelector asString.
-			'InvalidMethodArgumentNames'.
-			'arguments must contain one name for each target selector argument.' }.
-		{
-			#( '1abc' 'second' ).
-			self renamedInstanceSelector asString.
-			'InvalidMethodArgumentNames'.
-			'arguments must be distinct argument names, which ''1abc'' is not.' }.
-		{
-			#( 'self' 'second' ).
-			self renamedInstanceSelector asString.
-			'InvalidMethodArgumentNames'.
-			'arguments must be distinct argument names, which ''self'' is not.' }.
-		{
-			#( 'first' 'first' ).
-			self renamedInstanceSelector asString.
-			'InvalidMethodArgumentNames'.
-			'arguments must be distinct argument names, which ''first'' is not.' } } do: [ :each |
-			| arguments error |
-			arguments := {
-				             (#class -> MCPToolMethodMutationTestTarget name).
-				             (#selector -> self instanceSelector asString).
-				             (#newSelector -> each second) } asDictionary.
-			each first ifNotEmpty: [ :names | arguments at: #arguments put: names ].
-			error := self errorFrom: (self callToolNamed: 'method_update' withArguments: arguments).
-			self assert: (error at: #errorCode) equals: each third.
-			self assert: (error at: #message) equals: each fourth.
-			self assert: (MCPToolMethodMutationTestTarget includesSelector: self instanceSelector) ]
+			{
+				#(  ).
+				'shadowingProbe:with:separator:'.
+				'ArgumentNamesRequiredForAddedArguments'.
+				'arguments is required when newSelector adds method arguments.' }.
+			{
+				#( 'only' ).
+				'with:shadowingProbe:'.
+				'InvalidMethodArgumentNames'.
+				'arguments must contain one name for each target selector argument.' }.
+			{
+				#( '1abc' 'second' ).
+				'with:shadowingProbe:'.
+				'InvalidMethodArgumentNames'.
+				'arguments must be distinct argument names, which ''1abc'' is not.' }.
+			{
+				#( 'self' 'second' ).
+				'with:shadowingProbe:'.
+				'InvalidMethodArgumentNames'.
+				'arguments must be distinct argument names, which ''self'' is not.' }.
+			{
+				#( 'first' 'first' ).
+				'with:shadowingProbe:'.
+				'InvalidMethodArgumentNames'.
+				'arguments must be distinct argument names, which ''first'' is not.' }.
+			{
+				#( 'joined' 'second' ).
+				'with:shadowingProbe:'.
+				'InvalidMethodArgumentNames'.
+				'arguments must be distinct argument names, which ''joined'' is not: it would shadow the temporary joined.' }.
+			{
+				#( 'first' 'each' ).
+				'with:shadowingProbe:'.
+				'InvalidMethodArgumentNames'.
+				'arguments must be distinct argument names, which ''each'' is not: it would shadow the block argument each.' }.
+			{
+				#( 'name' 'second' ).
+				'with:shadowingProbe:'.
+				'InvalidMethodArgumentNames'.
+				'arguments must be distinct argument names, which ''name'' is not: it would shadow the instance variable name of Class.' }.
+			{
+				#( 'SharedLimit' 'second' ).
+				'with:shadowingProbe:'.
+				'InvalidMethodArgumentNames'.
+				'arguments must be distinct argument names, which ''SharedLimit'' is not: it would shadow the class variable SharedLimit of MCPToolGetMethodTestTarget.' }.
+			{
+				#( 'Object' 'second' ).
+				'with:shadowingProbe:'.
+				'InvalidMethodArgumentNames'.
+				'arguments must be distinct argument names, which ''Object'' is not: it would shadow the global Object.' } } do: [ :each |
+				| arguments error |
+				arguments := {
+					             (#class -> MCPToolGetMethodTestTarget name).
+					             (#side -> 'class').
+					             (#selector -> 'shadowingProbe:with:').
+					             (#newSelector -> each second).
+					             self fixturePackageScope } asDictionary.
+				each first ifNotEmpty: [ :names | arguments at: #arguments put: names ].
+				error := self errorFrom: (self callToolNamed: 'method_update' withArguments: arguments).
+				self assert: (error at: #errorCode) equals: each third.
+				self assert: (error at: #message) equals: each fourth.
+				self assert: (MCPToolGetMethodTestTarget classSide includesSelector: #shadowingProbe:with:) ] ] ensure: [
+			#( #shadowingProbe:with: #with:shadowingProbe: ) do: [ :each |
+				self removeSelector: each from: MCPToolGetMethodTestTarget classSide ] ]
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testArgumentNamesMayKeepANameThatShadowsAVariable [
+	"A name the method's argument already has hides the same variable before and after the change, so keeping it changes nothing the method means."
+
+	| result |
+	self compilerRefusesShadowingTemporaries ifTrue: [
+			^ self skip:
+				  'This Pharo''s compiler refuses an argument that shadows a variable, so its refactoring will not change such a method.' ].
+	[
+		self ensureMethodSource: 'keptShadowProbe: name ^ name' protocol: 'reading' on: MCPToolGetMethodTestTarget classSide.
+		result := self callToolNamed: 'method_update' withArguments: {
+				          (#class -> MCPToolGetMethodTestTarget name).
+				          (#side -> 'class').
+				          (#selector -> 'keptShadowProbe:').
+				          (#newSelector -> 'keptShadowProbe:with:').
+				          (#arguments -> #( 'name' 'second' )).
+				          self fixturePackageScope } asDictionary.
+		self deny: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
+		self assert: (MCPToolGetMethodTestTarget perform: #keptShadowProbe:with: with: 'kept' with: nil) equals: 'kept' ] ensure: [
+		#( #keptShadowProbe: #keptShadowProbe:with: ) do: [ :each |
+			self removeSelector: each from: MCPToolGetMethodTestTarget classSide ] ]
 ]
 
 { #category : 'tests' }
@@ -3382,16 +3442,18 @@ MCPToolMethodMutationTest >> testUpdateChangesProtocolAndSelectorInOneCall [
 
 { #category : 'tests' }
 MCPToolMethodMutationTest >> testUpdatingAMethodInstalledFromATraitStopsAndNamesTheTrait [
-	"Changing the protocol of a copy, or formatting it, recompiles it into the class as a method of its own, which the next export writes to the file of a class that never had it."
+	"Changing the protocol of a copy, formatting it or changing its selector recompiles it into the class as a method of its own, which the next export writes to the file of a class that never had it. Argument names are judged on the trait's method, so a name the copy's class would refuse still gets the answer that says where to go."
 
 	{
-		(#protocol -> 'private').
-		(#format -> true) } do: [ :update |
+		{ (#protocol -> 'private') }.
+		{ (#format -> true) }.
+		{
+			(#newSelector -> 'mcpTraitFixtureValue:').
+			(#arguments -> #( 'Object' )) } } do: [ :update |
 			| error result |
-			result := self callToolNamed: 'method_update' withArguments: {
-					          (#class -> 'MCPToolMethodSearchTraitUser').
-					          (#selector -> 'mcpTraitFixtureValue').
-					          update } asDictionary.
+			result := self callToolNamed: 'method_update' withArguments: ({
+					           (#class -> 'MCPToolMethodSearchTraitUser').
+					           (#selector -> 'mcpTraitFixtureValue') } , update) asDictionary.
 			error := self errorFrom: result.
 			self assert: (self resultIndicatesError: result).
 			self assert: (error at: #errorCode) equals: 'MethodInstalledFromTrait'.
