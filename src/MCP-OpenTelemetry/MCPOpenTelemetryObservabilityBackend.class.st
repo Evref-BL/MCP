@@ -14,11 +14,39 @@ Class {
 		'outputSizeHistogram',
 		'outputBudgetExceededCounter',
 		'recordsById',
-		'operationDurationHistogram'
+		'operationDurationHistogram',
+		'configured'
 	],
 	#category : 'MCP-OpenTelemetry',
 	#package : 'MCP-OpenTelemetry'
 }
+
+{ #category : 'configuring' }
+MCPOpenTelemetryObservabilityBackend class >> configureProvidersWith: aSettings [
+	"Rebuilds the image's OpenTelemetry from the settings as they are now, and answers whether they ask for traces. Providers, processors and exporters an image was saved with would otherwise keep sending where an earlier session's settings said, after those settings changed or were removed; and a processor a reset shut down would be handed to the next provider."
+
+	{
+		OTTracerProvider.
+		OTSpanProcessor.
+		OTSpanExporter.
+		OTMeterProvider.
+		OTLoggerProvider } do: [ :each |
+			[ each reset ]
+				on: Error
+				do: [ :error | error return: nil ] ].
+	[ aSettings apply ]
+		on: Error
+		do: [ :error | error return: nil ].
+	^ [ aSettings isConfigured ]
+		  on: Error
+		  do: [ false ]
+]
+
+{ #category : 'class initialization' }
+MCPOpenTelemetryObservabilityBackend class >> initialize [
+
+	SessionManager default registerToolClassNamed: self name
+]
 
 { #category : 'resource' }
 MCPOpenTelemetryObservabilityBackend class >> pharoVersion [
@@ -31,6 +59,26 @@ MCPOpenTelemetryObservabilityBackend class >> pharoVersion [
 			  version minor.
 			  version patch.
 			  version build }
+]
+
+{ #category : 'configuring' }
+MCPOpenTelemetryObservabilityBackend class >> reconfigure: someServers with: aSettings [
+	"Configures each server that records through OpenTelemetry afresh from aSettings, the providers once for all of them."
+
+	| configured |
+	configured := self configureProvidersWith: aSettings.
+	someServers do: [ :server |
+			| backend |
+			backend := server observability.
+			(backend isKindOf: self) ifTrue: [
+					[
+						backend
+							configureFor: ([ server serverIdentity ]
+									 on: Error
+									 do: [ nil ])
+							configured: configured ]
+						on: Error
+						do: [ :error | error return: nil ] ] ]
 ]
 
 { #category : 'resource' }
@@ -79,12 +127,44 @@ MCPOpenTelemetryObservabilityBackend class >> resourceIsConfigured [
 		  do: [ false ]
 ]
 
+{ #category : 'system startup' }
+MCPOpenTelemetryObservabilityBackend class >> startUp: resuming [
+	"An image starting again may run elsewhere, with other settings or none: every server that records through OpenTelemetry is configured afresh from them, before it answers a call."
+
+	resuming ifFalse: [ ^ self ].
+	[ self reconfigure: MCP allServers with: MCPOpenTelemetrySettings current ]
+		on: Error
+		do: [ :error | error return: nil ]
+]
+
 { #category : 'private - reporting' }
 MCPOpenTelemetryObservabilityBackend >> argumentNamesIn: inputObject [
 	"The names of the arguments a call was given, sorted, without their values."
 
 	inputObject isDictionary ifFalse: [ ^ #(  ) ].
 	^ ((inputObject keys collect: [ :each | each asString ] as: Array) select: [ :each | self isReportableName: each ]) sort
+]
+
+{ #category : 'configuring' }
+MCPOpenTelemetryObservabilityBackend >> configureFor: aServerInfo configured: aBoolean [
+	"Records from now on through the providers as they now are, and only when aBoolean, so the settings ask for traces. Instruments made from earlier providers are dropped; when recording, the providers describe the server."
+
+	configured := aBoolean.
+	tracer := nil.
+	meter := nil.
+	logger := nil.
+	inputSizeHistogram := nil.
+	outputSizeHistogram := nil.
+	outputBudgetExceededCounter := nil.
+	operationDurationHistogram := nil.
+	configured ifTrue: [ self describeServer: aServerInfo ]
+]
+
+{ #category : 'configuring' }
+MCPOpenTelemetryObservabilityBackend >> configureFor: aServerInfo settings: aSettings [
+	"Rebuilds the image's OpenTelemetry from aSettings. When they ask for traces, the providers describe the server; otherwise nothing is recorded."
+
+	self configureFor: aServerInfo configured: (self class configureProvidersWith: aSettings)
 ]
 
 { #category : 'resource' }
@@ -173,7 +253,8 @@ MCPOpenTelemetryObservabilityBackend >> forceFlush [
 MCPOpenTelemetryObservabilityBackend >> initialize [
 
 	super initialize.
-	recordsById := Dictionary new
+	recordsById := Dictionary new.
+	configured := true
 ]
 
 { #category : 'private - instruments' }
@@ -182,6 +263,13 @@ MCPOpenTelemetryObservabilityBackend >> inputSizeHistogram [
 	inputSizeHistogram ifNotNil: [ ^ inputSizeHistogram ].
 	inputSizeHistogram := self meter histogramNamed: 'pharo.mcp.tool.input.size' unit: 'By' description: 'MCP tool-call input size'.
 	^ inputSizeHistogram
+]
+
+{ #category : 'testing' }
+MCPOpenTelemetryObservabilityBackend >> isNoop [
+	"Records nothing when the settings it was configured with ask for no traces."
+
+	^ configured == false
 ]
 
 { #category : 'private - reporting' }
@@ -288,6 +376,7 @@ MCPOpenTelemetryObservabilityBackend >> recordMetricsForRecord: aRecord errorTyp
 { #category : 'recording' }
 MCPOpenTelemetryObservabilityBackend >> recordSessionEnd [
 
+	self isNoop ifTrue: [ ^ self ].
 	self emitEventNamed: 'mcp.session.end' body: 'MCP session ended'.
 	self forceFlush
 ]
@@ -295,6 +384,7 @@ MCPOpenTelemetryObservabilityBackend >> recordSessionEnd [
 { #category : 'recording' }
 MCPOpenTelemetryObservabilityBackend >> recordSessionStart [
 
+	self isNoop ifTrue: [ ^ self ].
 	self emitEventNamed: 'mcp.session.start' body: 'MCP session started'
 ]
 
@@ -328,6 +418,7 @@ MCPOpenTelemetryObservabilityBackend >> recordToolCallFinish: aRecord result: aT
 MCPOpenTelemetryObservabilityBackend >> recordToolCallStart: aToolName input: inputObject dispatchPath: dispatchPath context: contextDictionary [
 
 	| record span |
+	self isNoop ifTrue: [ ^ nil ].
 	^ self withoutFailingTheCall: [
 			  record := self newRecordFor: aToolName input: inputObject dispatchPath: dispatchPath.
 			  span := (self tracer spanBuilderNamed: 'tools/call ' , record toolName)
