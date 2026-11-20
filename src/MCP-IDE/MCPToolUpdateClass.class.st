@@ -158,27 +158,29 @@ MCPToolUpdateClass >> executeBlockForAction: action [
 MCPToolUpdateClass >> executeMoveSlotWithPlan: plan request: request [
 	"Pull a slot up or push it down, as the plan says."
 
-	| className |
+	| className command |
 	className := request stringArgumentNamed: 'name'.
+	command := MCPMoveSlotCommand
+		           className: className
+		           slotName: plan slotName
+		           direction: plan updateAction
+		           classSide: plan classSide.
 	^ self
 		  apply: plan
 		  force: (request booleanArgumentNamed: 'force')
-		  work: [
-				  (MCPMoveSlotCommand
-					   className: className
-					   slotName: plan slotName
-					   direction: plan updateAction
-					   classSide: plan classSide) execute ]
+		  work: [ command execute ]
 		  summary: [ :updatedClass | self moveSlotSummaryFor: plan ofClassNamed: className ]
 		  failureSummary: [ :error |
 				  self
-					  failureMessage: ((plan updateAction = 'pullUpSlot'
-							    ifTrue: [ 'Failed to pull up {1} {2} to class {3}' ]
-							    ifFalse: [ 'Failed to push down {1} {2} from class {3}' ]) format: {
-								   (self slotDescriptionForClassSide: plan classSide).
-								   plan slotName.
-								   className })
-					  error: error ]
+					  failureMessage: (self
+							   failureMessage: ((plan updateAction = 'pullUpSlot'
+									     ifTrue: [ 'Failed to pull up {1} {2} to class {3}' ]
+									     ifFalse: [ 'Failed to push down {1} {2} from class {3}' ]) format: {
+										    (self slotDescriptionForClassSide: plan classSide).
+										    plan slotName.
+										    className })
+							   error: error)
+					  withValuesLostBy: command ]
 ]
 
 { #category : 'private - execution' }
@@ -380,6 +382,19 @@ MCPToolUpdateClass >> executeSetCommentWithPlan: plan request: request [
 		  work: [ (MCPChangeClassCommentCommand className: className classComment: (self classCommentIn: request)) execute ]
 		  summary: [ :updatedClass | String streamContents: [ :stream | stream << 'Set comment for class ' << className << '.' ] ]
 		  failureSummary: [ :error | self failureMessage: 'Unable to set comment for class ' , className error: error ]
+]
+
+{ #category : 'private - errors' }
+MCPToolUpdateClass >> failureMessage: aMessage withValuesLostBy: aMoveSlotCommand [
+	"A move that stops between taking the slot out and putting it where it goes leaves the objects that held a value in it without one."
+
+	| holders |
+	holders := aMoveSlotCommand unrestoredHolders.
+	holders ifEmpty: [ ^ aMessage ].
+	^ String streamContents: [ :stream |
+			  stream << (self textWithoutFinalPeriod: aMessage) << '. The values ' << aMoveSlotCommand slotName << ' held in '.
+			  aMoveSlotCommand classSide ifFalse: [ stream << 'instances of ' ].
+			  stream << (', ' join: (holders collect: [ :each | each class instanceSide name ] as: Set) sorted) << ' are lost.' ]
 ]
 
 { #category : 'private - errors' }

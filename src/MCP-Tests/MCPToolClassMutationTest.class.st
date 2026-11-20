@@ -1671,82 +1671,132 @@ MCPToolClassMutationTest >> testUpdatePullUpSlotStopsOnRefactoringWarningByDefau
 ]
 
 { #category : 'tests - update' }
-MCPToolClassMutationTest >> testUpdatePullsUpInstanceSlotAcrossSubclasses [
+MCPToolClassMutationTest >> testUpdatePullUpStoppedPartwaySaysWhichValuesAreLost [
+	"A subclass that gets the slot from a trait would have it twice once the class has it, which Pharo finds only after taking the slot out of the other subclasses."
 
-	| childOne childTwo instance result target |
+	| instance result target traitUserInstance |
+	target := self
+		          createClassNamed: 'MCPToolClassMutationTestPullUpTarget'
+		          superclassName: 'Object'
+		          slots: #(  )
+		          classSlots: #(  ).
+	instance := (self
+		             createClassNamed: 'MCPToolClassMutationTestPullUpChildOne'
+		             superclassName: target name
+		             slots: #( sharedSlot )
+		             classSlots: #(  )) new.
+	instance instVarNamed: 'sharedSlot' put: 41.
+	traitUserInstance := (self withoutEpiceaDuring: [
+			                      (target << #MCPToolClassMutationTestPullUpTraitUser)
+				                      traits: ((Trait << #MCPToolClassMutationTestPullUpWeighted)
+						                       slots: #( sharedSlot );
+						                       package: self generatedPackageName;
+						                       install);
+				                      package: self generatedPackageName;
+				                      install ]) new.
+	traitUserInstance instVarNamed: 'sharedSlot' put: 43.
+	result := self callToolNamed: 'class_update' withArguments: (self
+			           updateRequestArgumentsForSlotAction: 'pullUp'
+			           className: target name
+			           slotName: 'sharedSlot'
+			           classSide: false).
+	self assert: (self resultIndicatesError: result).
+	self
+		assert:
+		((self textFrom: result) endsWith:
+			 '. The values sharedSlot held in instances of MCPToolClassMutationTestPullUpChildOne are lost.')
+		description: [ self textFrom: result ].
+	self assert: (traitUserInstance instVarNamed: 'sharedSlot') equals: 43
+]
+
+{ #category : 'tests - update' }
+MCPToolClassMutationTest >> testUpdatePullsUpSlotsAcrossSubclasses [
+	"Each instance of a subclass keeps what the slot held, and each subclass what its class-side slot held."
+
+	| childOne childTwo grandchild grandchildInstance instance result target |
 	self
 		createClassNamed: 'MCPToolClassMutationTestPullUpTarget'
 		superclassName: 'Object'
 		slots: #(  )
 		classSlots: #(  ).
-	self
-		createClassNamed: 'MCPToolClassMutationTestPullUpChildOne'
-		superclassName: 'MCPToolClassMutationTestPullUpTarget'
-		slots: #( sharedSlot )
-		classSlots: #(  ).
+	childOne := self
+		            createClassNamed: 'MCPToolClassMutationTestPullUpChildOne'
+		            superclassName: 'MCPToolClassMutationTestPullUpTarget'
+		            slots: #( sharedSlot )
+		            classSlots: #( sharedClassSlot ).
 	self
 		createClassNamed: 'MCPToolClassMutationTestPullUpChildTwo'
 		superclassName: 'MCPToolClassMutationTestPullUpTarget'
 		slots: #( sharedSlot )
-		classSlots: #(  ).
-	self
-		ensureMethodSource: 'slotProbe ^ sharedSlot'
-		protocol: 'testing'
-		on: (self classNamed: 'MCPToolClassMutationTestPullUpChildOne').
-	result := self callToolNamed: 'class_update' withArguments: (self
-			           updateRequestArgumentsForSlotAction: 'pullUp'
-			           className: 'MCPToolClassMutationTestPullUpTarget'
-			           slotName: 'sharedSlot'
-			           classSide: false).
+		classSlots: #( sharedClassSlot ).
+	grandchild := self
+		              createClassNamed: 'MCPToolClassMutationTestPullUpGrandchild'
+		              superclassName: 'MCPToolClassMutationTestPullUpChildOne'
+		              slots: #(  )
+		              classSlots: #(  ).
+	self ensureMethodSource: 'slotProbe ^ sharedSlot' protocol: 'testing' on: childOne.
+	instance := childOne new.
+	instance instVarNamed: 'sharedSlot' put: 41.
+	childOne instVarNamed: 'sharedClassSlot' put: 23.
+	grandchildInstance := grandchild new.
+	grandchildInstance instVarNamed: 'sharedSlot' put: 42.
+	grandchild instVarNamed: 'sharedClassSlot' put: 24.
+	result := self callToolNamed: 'class_update' withArguments: {
+			          (#name -> 'MCPToolClassMutationTestPullUpTarget').
+			          (#slots -> (Dictionary with: 'pullUp' -> #( 'sharedSlot' ))).
+			          (#classSlots -> (Dictionary with: 'pullUp' -> #( 'sharedClassSlot' ))) } asDictionary.
 	self dataFrom: result.
 	target := self classNamed: 'MCPToolClassMutationTestPullUpTarget'.
 	childOne := self classNamed: 'MCPToolClassMutationTestPullUpChildOne'.
 	childTwo := self classNamed: 'MCPToolClassMutationTestPullUpChildTwo'.
-	instance := childOne new.
-	instance instVarNamed: 'sharedSlot' put: 41.
+	grandchild := self classNamed: 'MCPToolClassMutationTestPullUpGrandchild'.
 	self assert: (target slots collect: #name as: Array) equals: #( #sharedSlot ).
+	self assert: (target classSide slots collect: #name as: Array) equals: #( #sharedClassSlot ).
 	self assert: (childOne slots collect: #name as: Array) equals: #(  ).
 	self assert: (childTwo slots collect: #name as: Array) equals: #(  ).
-	self assert: instance slotProbe equals: 41
+	self assert: instance slotProbe equals: 41.
+	self assert: grandchildInstance slotProbe equals: 42.
+	self assert: (childOne instVarNamed: 'sharedClassSlot') equals: 23.
+	self assert: (grandchild instVarNamed: 'sharedClassSlot') equals: 24
 ]
 
 { #category : 'tests - update' }
-MCPToolClassMutationTest >> testUpdatePushesDownClassSlotToDirectSubclasses [
+MCPToolClassMutationTest >> testUpdatePushesDownSlotsToDirectSubclasses [
+	"Each instance of a subclass keeps what the slot held, and each subclass what its class-side slot held."
 
-	| childOne childTwo result target |
+	| childOne childTwo instance result target |
 	self
 		createClassNamed: 'MCPToolClassMutationTestPushDownTarget'
 		superclassName: 'Object'
-		slots: #(  )
+		slots: #( sharedSlot )
 		classSlots: #( sharedClassSlot ).
-	self
-		createClassNamed: 'MCPToolClassMutationTestPushDownChildOne'
-		superclassName: 'MCPToolClassMutationTestPushDownTarget'
-		slots: #(  )
-		classSlots: #(  ).
+	childOne := self
+		            createClassNamed: 'MCPToolClassMutationTestPushDownChildOne'
+		            superclassName: 'MCPToolClassMutationTestPushDownTarget'
+		            slots: #(  )
+		            classSlots: #(  ).
 	self
 		createClassNamed: 'MCPToolClassMutationTestPushDownChildTwo'
 		superclassName: 'MCPToolClassMutationTestPushDownTarget'
 		slots: #(  )
 		classSlots: #(  ).
-	self
-		ensureMethodSource: 'slotProbe ^ sharedClassSlot'
-		protocol: 'testing'
-		on: (self classNamed: 'MCPToolClassMutationTestPushDownChildOne') classSide.
-	result := self callToolNamed: 'class_update' withArguments: (self
-			           updateRequestArgumentsForSlotAction: 'pushDown'
-			           className: 'MCPToolClassMutationTestPushDownTarget'
-			           slotName: 'sharedClassSlot'
-			           classSide: true).
+	self ensureMethodSource: 'slotProbe ^ sharedClassSlot' protocol: 'testing' on: childOne classSide.
+	instance := childOne new.
+	instance instVarNamed: 'sharedSlot' put: 41.
+	childOne instVarNamed: 'sharedClassSlot' put: 23.
+	result := self callToolNamed: 'class_update' withArguments: {
+			          (#name -> 'MCPToolClassMutationTestPushDownTarget').
+			          (#slots -> (Dictionary with: 'pushDown' -> #( 'sharedSlot' ))).
+			          (#classSlots -> (Dictionary with: 'pushDown' -> #( 'sharedClassSlot' ))) } asDictionary.
 	self dataFrom: result.
 	target := self classNamed: 'MCPToolClassMutationTestPushDownTarget'.
 	childOne := self classNamed: 'MCPToolClassMutationTestPushDownChildOne'.
 	childTwo := self classNamed: 'MCPToolClassMutationTestPushDownChildTwo'.
-	childOne instVarNamed: 'sharedClassSlot' put: 23.
 	self assert: (target classSide slots collect: #name as: Array) equals: #(  ).
 	self assert: (childOne classSide slots collect: #name as: Array) equals: #( #sharedClassSlot ).
 	self assert: (childTwo classSide slots collect: #name as: Array) equals: #( #sharedClassSlot ).
-	self assert: childOne slotProbe equals: 23
+	self assert: childOne slotProbe equals: 23.
+	self assert: (instance instVarNamed: 'sharedSlot') equals: 41
 ]
 
 { #category : 'tests - update' }
