@@ -1,14 +1,13 @@
 "
 Moves a slot up or down a class hierarchy and answers the class.
 
-It performs pull-up or push-down refactorings for instance-side or class-side slots. Each instance below the class keeps what the slot held in it.
+It performs pull-up or push-down refactorings for instance-side or class-side slots.
 "
 Class {
 	#name : 'MCPMoveSlotCommand',
 	#superclass : 'MCPClassSlotCommand',
 	#instVars : [
-		'direction',
-		'heldValues'
+		'direction'
 	],
 	#category : 'MCP-IDE-Commands',
 	#package : 'MCP-IDE',
@@ -28,12 +27,9 @@ MCPMoveSlotCommand class >> className: aClassName slotName: aSlotName direction:
 
 { #category : 'private' }
 MCPMoveSlotCommand >> applyToBehavior: aBehavior [
-	"RB moves the slot by two class changes, taking it out before it puts it where it goes, so what it held is gone in between. What the slot holds below aBehavior is put back wherever the slot is once the move is over, or has stopped."
 
 	self validatePullUpInto: aBehavior.
-	heldValues := self valuesHeldBelow: aBehavior.
-	[ (self refactoringForBehavior: aBehavior) execute ] ensure: [
-		heldValues do: [ :each | (self holdsSlot: each key) ifTrue: [ each key writeSlotNamed: self slotName value: each value ] ] ]
+	(self refactoringForBehavior: aBehavior) execute
 ]
 
 { #category : 'accessing' }
@@ -46,12 +42,6 @@ MCPMoveSlotCommand >> direction [
 MCPMoveSlotCommand >> direction: aDirection [
 
 	direction := aDirection
-]
-
-{ #category : 'private' }
-MCPMoveSlotCommand >> holdsSlot: anObject [
-
-	^ anObject class hasSlotNamed: self slotName
 ]
 
 { #category : 'private' }
@@ -82,9 +72,17 @@ MCPMoveSlotCommand >> refactoringForBehavior: aBehavior [
 
 { #category : 'accessing' }
 MCPMoveSlotCommand >> unrestoredHolders [
-	"The objects whose value the move could not put back, because it stopped partway with their class lacking the slot."
+	"The objects below the class that held a value in the slot, if the move stopped partway with their class lacking it. The class's own instances lose the slot to a push-down."
 
-	^ (heldValues ifNil: [ #(  ) ]) collect: [ :each | each key ] thenReject: [ :each | self holdsSlot: each ]
+	| behavior |
+	heldValues ifNil: [ ^ #(  ) ].
+	behavior := self refactoringBehaviorForClass: self currentClass.
+	^ heldValues
+		  select: [ :each |
+				  each value key = self slotName asSymbol and: [
+						  each value value isNotNil and: [
+							  (each key class inheritsFrom: behavior) and: [ (each key class hasSlotNamed: self slotName) not ] ] ] ]
+		  thenCollect: [ :each | each key ]
 ]
 
 { #category : 'private' }
@@ -96,13 +94,4 @@ MCPMoveSlotCommand >> validatePullUpInto: aBehavior [
 		detect: [ :each | each name asString = self slotName ]
 		ifFound: [ :slot | RBRefactoringError signal: (self pullUpRefusalFor: slot in: aBehavior) ]
 		ifNone: [ ]
-]
-
-{ #category : 'private' }
-MCPMoveSlotCommand >> valuesHeldBelow: aBehavior [
-	"Each instance of a subclass of aBehavior with what the slot holds there, unless nil, which a slot holds once added. An instance of aBehavior itself has no such slot in a pull-up, and loses it in a push-down. The instances of a class side are its classes."
-
-	^ ((aBehavior allSubclasses select: [ :each | each hasSlotNamed: self slotName ]) flatCollect: [ :each | each allInstances ])
-		  collect: [ :each | each -> (each readSlotNamed: self slotName) ]
-		  thenSelect: [ :each | each value isNotNil ]
 ]

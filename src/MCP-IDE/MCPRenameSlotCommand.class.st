@@ -1,5 +1,5 @@
 "
-Renames a slot on either side of a class: it snapshots the values of the affected objects, restores them into the renamed slot, rewrites the references and renames local accessors.
+Renames a slot on either side of a class: the objects hold under the new name what the slot held, and it rewrites the references and renames local accessors.
 "
 Class {
 	#name : 'MCPRenameSlotCommand',
@@ -37,14 +37,12 @@ MCPRenameSlotCommand >> accessorMessageRewriter [
 
 { #category : 'private' }
 MCPRenameSlotCommand >> applyToBehavior: aBehavior [
-	"The same rename on either side: a class-side slot is an instance variable of the metaclass. The methods that refer to the slot are rewritten before anything changes, since rewriting one can be refused, and compiled once the new slot is there. The values go into the new slot only once Pharo has installed every class that gets it."
+	"The same rename on either side: a class-side slot is an instance variable of the metaclass. The methods that refer to the slot are rewritten before anything changes, since rewriting one can be refused, and compiled once the new slot is there."
 
-	| preservedValues rewrittenReferences |
+	| rewrittenReferences |
 	self validateSlotRenameInBehavior: aBehavior.
 	rewrittenReferences := self rewrittenReferencesInBehavior: aBehavior.
-	preservedValues := self slotValuesForBehavior: aBehavior.
 	self installing: [ aBehavior addInstVarNamed: self newSlotName ].
-	self restoreSlotValues: preservedValues.
 	rewrittenReferences do: [ :each | each value ].
 	self renameAccessorsInBehavior: aBehavior.
 	aBehavior removeInstVarNamed: self slotName
@@ -102,12 +100,6 @@ MCPRenameSlotCommand >> renameAccessorsInBehavior: aBehavior [
 ]
 
 { #category : 'private' }
-MCPRenameSlotCommand >> restoreSlotValues: someAssociations [
-
-	someAssociations do: [ :each | each key instVarNamed: self newSlotName asString put: each value ]
-]
-
-{ #category : 'private' }
 MCPRenameSlotCommand >> rewriteOfSelector: aSelector inBehavior: aBehavior [
 	"A block compiling the method rewritten for the new name, or nil when nothing in it changes."
 
@@ -146,14 +138,11 @@ MCPRenameSlotCommand >> setterSourceForNewSlot [
 ]
 
 { #category : 'private' }
-MCPRenameSlotCommand >> slotValuesForBehavior: aBehavior [
+MCPRenameSlotCommand >> slotNameAfterChange: aSlotName [
 
-	| values |
-	(self definesSlotNamed: self slotName in: aBehavior) ifFalse: [ ^ #(  ) ].
-	values := OrderedCollection new.
-	aBehavior withAllSubclasses do: [ :eachBehavior |
-		eachBehavior allInstances do: [ :eachObject | values add: eachObject -> (eachObject instVarNamed: self slotName asString) ] ].
-	^ values asArray
+	^ aSlotName = self slotName asSymbol
+		  ifTrue: [ self newSlotName asSymbol ]
+		  ifFalse: [ aSlotName ]
 ]
 
 { #category : 'private' }
