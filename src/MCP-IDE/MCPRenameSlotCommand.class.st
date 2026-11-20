@@ -37,13 +37,13 @@ MCPRenameSlotCommand >> accessorMessageRewriter [
 
 { #category : 'private' }
 MCPRenameSlotCommand >> applyToBehavior: aBehavior [
-	"The same rename on either side: a class-side slot is an instance variable of the metaclass. The methods that refer to the slot are rewritten before anything changes, since rewriting one can be refused, and compiled once the new slot is there."
+	"The same rename on either side: a class-side slot is an instance variable of the metaclass. The methods that refer to the slot are rewritten before anything changes, since rewriting one can be refused, and compiled once the new slot is there. The values go into the new slot only once Pharo has installed every class that gets it."
 
 	| preservedValues rewrittenReferences |
 	self validateSlotRenameInBehavior: aBehavior.
 	rewrittenReferences := self rewrittenReferencesInBehavior: aBehavior.
 	preservedValues := self slotValuesForBehavior: aBehavior.
-	aBehavior addInstVarNamed: self newSlotName.
+	self installing: [ aBehavior addInstVarNamed: self newSlotName ].
 	self restoreSlotValues: preservedValues.
 	rewrittenReferences do: [ :each | each value ].
 	self renameAccessorsInBehavior: aBehavior.

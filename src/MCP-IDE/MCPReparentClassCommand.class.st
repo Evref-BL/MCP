@@ -25,11 +25,12 @@ MCPReparentClassCommand class >> className: aClassName superclassName: aSupercla
 MCPReparentClassCommand >> execute [
 	"A class already under the superclass asked for is not rebuilt."
 
-	| currentClass currentSuperclassName |
+	| currentClass currentSuperclassName superclass |
 	currentClass := self currentClass.
 	currentSuperclassName := currentClass superclass ifNil: [ '' ] ifNotNil: [ :aSuperclass | aSuperclass name asString ].
 	currentSuperclassName = self superclassName ifTrue: [ ^ currentClass ].
-	(self builderForReparenting: currentClass toSuperclass: (self resolvedSuperclassNamed: self superclassName)) install.
+	superclass := self resolvedSuperclassNamed: self superclassName.
+	self installing: [ (self builderForReparenting: currentClass toSuperclass: superclass) install ] under: superclass.
 	^ self currentClass
 ]
 
