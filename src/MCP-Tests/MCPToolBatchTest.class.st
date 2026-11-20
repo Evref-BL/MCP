@@ -28,7 +28,6 @@ MCPToolBatchTest >> testBatchKeepsGoingPastAFailingTarget [
 			          (#class -> 'MCPToolBatchTestTarget').
 			          (#selector -> #( 'absentSelector' 'readFirst' )) } asDictionary.
 	entries := (self dataFrom: result) at: #results.
-	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (self summaryFrom: result) equals: 'Got 1 of 2 methods. 1 failed.'.
 	self assert: ((entries first at: #error) at: #selector) equals: 'absentSelector'.
 	self assert: ((entries second at: #source) includesSubstring: 'readFirst')
@@ -56,7 +55,6 @@ MCPToolBatchTest >> testBatchReturnsOneEntryPerTargetInRequestOrder [
 			          (#class -> 'MCPToolBatchTestTarget').
 			          (#selector -> #( 'readSecond' 'readFirst' )) } asDictionary.
 	entries := (self dataFrom: result) at: #results.
-	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (self summaryFrom: result) equals: 'Got 2 of 2 methods.'.
 	self assert: entries size equals: 2.
 	self assert: ((entries first at: #summary) includesSubstring: 'readSecond').

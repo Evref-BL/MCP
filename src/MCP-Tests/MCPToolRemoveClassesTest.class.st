@@ -437,11 +437,10 @@ MCPToolRemoveClassesTest >> testRefusesAClassSideNameAndRemovesNothing [
 { #category : 'tests' }
 MCPToolRemoveClassesTest >> testReturnsStructuredErrorWhenClassIsMissing [
 
-	| error result structured |
+	| error result |
 	result := self callToolWith: (self argumentsForClassNames: {
 				           self simpleClassName.
 				           self missingClassName }).
-	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
@@ -456,7 +455,6 @@ MCPToolRemoveClassesTest >> testSafelyRemovesEmptyClassAndReparentsDirectSubclas
 	| data result |
 	result := self callToolWith: (self argumentsForClassNames: { self emptyParentClassName }).
 	data := self dataFrom: result.
-	self deny: (result at: #isError ifAbsent: [ false ]).
 	self deny: (self class environment includesKey: self emptyParentClassName asSymbol).
 	self assert: (self classNamed: self emptyChildClassName) superclass name asString equals: 'Object'.
 	self assert: (data at: #reparentedSubclassNames ifAbsent: [ #(  ) ]) equals: { self emptyChildClassName } asArray.

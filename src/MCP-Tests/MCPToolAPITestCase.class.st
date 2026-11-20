@@ -14,12 +14,6 @@ MCPToolAPITestCase class >> isAbstract [
 	^ self = MCPToolAPITestCase or: [ super isAbstract ]
 ]
 
-{ #category : 'private - calling' }
-MCPToolAPITestCase >> aroundToolCall: aBlock [
-
-	^ aBlock value
-]
-
 { #category : 'private - results' }
 MCPToolAPITestCase >> assertResult: aResult refusesArgumentsSaying: aString [
 	"Arguments a tool refuses come back as a tool result for the model to correct, saying what is wrong, without the stack that found it."
@@ -43,7 +37,7 @@ MCPToolAPITestCase >> callDiscoveredToolNamed: aToolName withArguments: someArgu
 { #category : 'private - calling' }
 MCPToolAPITestCase >> callRawToolNamed: aToolName withArguments: someArguments [
 
-	^ self aroundToolCall: [ self mcpWithoutObservabilityExport rpcToolCall: aToolName withParams: someArguments ]
+	^ self mcpWithoutObservabilityExport rpcToolCall: aToolName withParams: someArguments
 ]
 
 { #category : 'private - calling' }
@@ -105,6 +99,12 @@ MCPToolAPITestCase >> expectedSyntaxErrorNoticeClassName [
 MCPToolAPITestCase >> expectedUndeclaredVariableNoticeClassNames [
 
 	^ #( 'OCUndeclaredVariableWarning' 'OCUndeclaredVariableNotice' 'OCCompilationError' )
+]
+
+{ #category : 'private - results' }
+MCPToolAPITestCase >> inputPropertyNamesFor: aTool [
+
+	^ aTool inputSchema properties collect: [ :each | each name ]
 ]
 
 { #category : 'private - fixtures' }

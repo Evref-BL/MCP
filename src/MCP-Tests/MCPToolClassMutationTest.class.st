@@ -1,39 +1,18 @@
 "
-Create tests exercise class creation tool requests. Update tests exercise class update tool requests and verify the structured data the tool builds from the changed class.
+Tests the class_create and class_update tools.
 "
 Class {
 	#name : 'MCPToolClassMutationTest',
-	#superclass : 'MCPToolTestCase',
+	#superclass : 'MCPToolAPITestCase',
 	#category : 'MCP-Tests',
 	#package : 'MCP-Tests'
 }
-
-{ #category : 'private - calling' }
-MCPToolClassMutationTest >> aroundToolCall: aBlock [
-
-	^ self withoutEpiceaDuring: aBlock
-]
 
 { #category : 'private - asserting' }
 MCPToolClassMutationTest >> assertIncludesReferencedSlotWarning: warningMessages [
 
 	self assert:
 		(warningMessages anySatisfy: [ :each | (each includesSubstring: 'referencedSlot') and: [ each includesSubstring: 'referenced' ] ])
-]
-
-{ #category : 'private - calling' }
-MCPToolClassMutationTest >> callToolWith: someArguments [
-
-	| action arguments request result tool toolClass |
-	arguments := someArguments copy.
-	action := arguments removeKey: #action ifAbsent: [ nil ].
-	toolClass := action = 'create'
-		             ifTrue: [ MCPToolCreateClass ]
-		             ifFalse: [ self classToolClassForArguments: arguments ].
-	tool := toolClass new.
-	request := tool requestFromToolCallArguments: arguments.
-	result := tool executeWithRequest: request.
-	^ result asJRPCJSON
 ]
 
 { #category : 'private - calling' }
@@ -45,14 +24,6 @@ MCPToolClassMutationTest >> callUpdateWrittenIn: aMessage [
 				    to: (aMessage indexOfSubCollection: '. class_get shows it.') - 1))
 ]
 
-{ #category : 'private - calling' }
-MCPToolClassMutationTest >> classToolClassForArguments: arguments [
-
-	^ ((arguments includesKey: #superclass) and: [ arguments includesKey: #package ])
-		  ifTrue: [ MCPToolCreateClass ]
-		  ifFalse: [ MCPToolUpdateClass ]
-]
-
 { #category : 'private' }
 MCPToolClassMutationTest >> commentTargetClassName [
 
@@ -62,20 +33,10 @@ MCPToolClassMutationTest >> commentTargetClassName [
 { #category : 'private - create' }
 MCPToolClassMutationTest >> createRequestArgumentsForClassName: aClassName superclassName: aSuperclassName packageName: aPackageName [
 
-	^ self createRequestArgumentsWith: {
-			  (#name -> aClassName).
-			  (#superclass -> aSuperclassName).
-			  (#package -> aPackageName) }
-]
-
-{ #category : 'private - create' }
-MCPToolClassMutationTest >> createRequestArgumentsWith: associations [
-
-	| arguments |
-	arguments := Dictionary new.
-	arguments at: #action put: 'create'.
-	associations do: [ :each | arguments at: each key put: each value ].
-	^ arguments
+	^ {
+		  (#name -> aClassName).
+		  (#superclass -> aSuperclassName).
+		  (#package -> aPackageName) } asDictionary
 ]
 
 { #category : 'private - fixtures' }
@@ -277,7 +238,7 @@ MCPToolClassMutationTest >> testASingleUpdateAnswersNoData [
 		superclassName: 'Object'
 		slots: #(  )
 		classSlots: #(  ).
-	result := self callToolWith: (self updateRequestArgumentsForClassComment: 'updated comment').
+	result := self callToolNamed: 'class_update' withArguments: (self updateRequestArgumentsForClassComment: 'updated comment').
 	self assert: (self dataFrom: result) isEmpty
 ]
 
@@ -309,22 +270,21 @@ MCPToolClassMutationTest >> testClassToolSchemasDeclareExpectedInputs [
 { #category : 'tests - create' }
 MCPToolClassMutationTest >> testCreateAcceptsClassSlots [
 
-	| createdClass data result |
-	result := self callToolWith: (self createRequestArgumentsWith: {
-				           (#name -> 'MCPToolClassMutationTestClassSlots').
-				           (#superclass -> 'Object').
-				           (#package -> self generatedPackageName).
-				           (#classSlots -> #( 'defaultName' )) }).
-	data := self dataFrom: result.
+	| createdClass result |
+	result := self callToolNamed: 'class_create' withArguments: {
+			          (#name -> 'MCPToolClassMutationTestClassSlots').
+			          (#superclass -> 'Object').
+			          (#package -> self generatedPackageName).
+			          (#classSlots -> #( 'defaultName' )) } asDictionary.
+	self dataFrom: result.
 	createdClass := self classNamed: 'MCPToolClassMutationTestClassSlots'.
-	self assert: (createdClass classSide slots collect: #name as: Array) equals: #( #defaultName ).
-	self deny: (result at: #isError ifAbsent: [ false ])
+	self assert: (createdClass classSide slots collect: #name as: Array) equals: #( #defaultName )
 ]
 
 { #category : 'tests - create' }
 MCPToolClassMutationTest >> testCreateAcceptsDefinitionOptions [
 
-	| arguments createdClass data result |
+	| arguments createdClass result |
 	arguments := self
 		             createRequestArgumentsForClassName: 'MCPToolClassMutationTestConfigured'
 		             superclassName: 'Object'
@@ -333,10 +293,9 @@ MCPToolClassMutationTest >> testCreateAcceptsDefinitionOptions [
 	arguments at: #sharedVariables put: #( 'AlphaShared' 'BetaShared' ).
 	arguments at: #sharedPools put: #( 'ChronologyConstants' ).
 	arguments at: #layout put: 'WeakLayout'.
-	result := self callToolWith: arguments.
-	data := self dataFrom: result.
+	result := self callToolNamed: 'class_create' withArguments: arguments.
+	self dataFrom: result.
 	createdClass := self classNamed: 'MCPToolClassMutationTestConfigured'.
-	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (createdClass traits collect: [ :each | each name asString ] as: Array) equals: #( 'TAbleToRotate' ).
 	self assert: createdClass traitCompositionString equals: 'TAbleToRotate'.
 	"Asked for nothing on the class side, the class still uses the trait whole."
@@ -346,26 +305,24 @@ MCPToolClassMutationTest >> testCreateAcceptsDefinitionOptions [
 	self assert: createdClass classSide traitCompositionString equals: 'TAbleToRotate classTrait'.
 	self assert: createdClass classVarNames equals: #( #AlphaShared #BetaShared ).
 	self assert: (createdClass sharedPools collect: [ :each | each name asString ] as: Array) equals: #( 'ChronologyConstants' ).
-	self assert: createdClass classLayout class name equals: #WeakLayout.
-	self deny: (result at: #isError ifAbsent: [ false ])
+	self assert: createdClass classLayout class name equals: #WeakLayout
 ]
 
 { #category : 'tests - create' }
 MCPToolClassMutationTest >> testCreateAcceptsSlotsAndTag [
 
-	| createdClass data result |
-	result := self callToolWith: (self createRequestArgumentsWith: {
-				           (#name -> 'MCPToolClassMutationTestTagged').
-				           (#superclass -> 'Object').
-				           (#package -> self generatedPackageName).
-				           (#tag -> 'Generated').
-				           (#slots -> #( 'firstName' 'lastName' )) }).
-	data := self dataFrom: result.
+	| createdClass result |
+	result := self callToolNamed: 'class_create' withArguments: {
+			          (#name -> 'MCPToolClassMutationTestTagged').
+			          (#superclass -> 'Object').
+			          (#package -> self generatedPackageName).
+			          (#tag -> 'Generated').
+			          (#slots -> #( 'firstName' 'lastName' )) } asDictionary.
+	self dataFrom: result.
 	createdClass := self classNamed: 'MCPToolClassMutationTestTagged'.
 	self assert: (createdClass slots collect: #name as: Array) equals: #( #firstName #lastName ).
 	self assert: createdClass packageTagName asString equals: 'Generated'.
-	self assert: createdClass category asString equals: self generatedPackageName , '-Generated'.
-	self deny: (result at: #isError ifAbsent: [ false ])
+	self assert: createdClass category asString equals: self generatedPackageName , '-Generated'
 ]
 
 { #category : 'tests - create' }
@@ -415,26 +372,25 @@ MCPToolClassMutationTest >> testCreateContextReadsTheDefinition [
 { #category : 'tests - create' }
 MCPToolClassMutationTest >> testCreateCreatesClass [
 
-	| createdClass data result |
-	result := self callToolWith: (self
+	| createdClass result |
+	result := self callToolNamed: 'class_create' withArguments: (self
 			           createRequestArgumentsForClassName: 'MCPToolClassMutationTestGenerated'
 			           superclassName: 'Object'
 			           packageName: self generatedPackageName).
-	data := self dataFrom: result.
+	self dataFrom: result.
 	createdClass := self classNamed: 'MCPToolClassMutationTestGenerated'.
 	self assert: createdClass superclass equals: Object.
 	self assert: createdClass packageName asString equals: self generatedPackageName.
-	self assert: createdClass slots isEmpty.
-	self deny: (result at: #isError ifAbsent: [ false ])
+	self assert: createdClass slots isEmpty
 ]
 
 { #category : 'tests - create' }
 MCPToolClassMutationTest >> testCreateDefaultsTheSuperclassToObject [
 
 	| createdClass result |
-	result := self callToolWith: (self createRequestArgumentsWith: {
-				           (#name -> 'MCPToolClassMutationTestDefaultSuperclass').
-				           (#package -> self generatedPackageName) }).
+	result := self callToolNamed: 'class_create' withArguments: {
+			          (#name -> 'MCPToolClassMutationTestDefaultSuperclass').
+			          (#package -> self generatedPackageName) } asDictionary.
 	createdClass := self classNamed: 'MCPToolClassMutationTestDefaultSuperclass'.
 	self assert: createdClass superclass equals: Object.
 	self deny: (result at: #isError ifAbsent: [ false ])
@@ -444,7 +400,7 @@ MCPToolClassMutationTest >> testCreateDefaultsTheSuperclassToObject [
 MCPToolClassMutationTest >> testCreateEnsuresMissingPackage [
 
 	| createdClass |
-	self callToolWith: (self
+	self callToolNamed: 'class_create' withArguments: (self
 			 createRequestArgumentsForClassName: 'MCPToolClassMutationTestTemporaryPackage'
 			 superclassName: 'Object'
 			 packageName: self generatedPackageName).
@@ -457,10 +413,10 @@ MCPToolClassMutationTest >> testCreateEnsuresMissingPackage [
 MCPToolClassMutationTest >> testCreateNamesATraitATrait [
 
 	| createdTrait result text |
-	result := self callToolWith: (self createRequestArgumentsWith: {
-				           (#name -> 'TMCPToolClassMutationTestTrait').
-				           (#superclass -> 'Trait').
-				           (#package -> self generatedPackageName) }).
+	result := self callToolNamed: 'class_create' withArguments: {
+			          (#name -> 'TMCPToolClassMutationTestTrait').
+			          (#superclass -> 'Trait').
+			          (#package -> self generatedPackageName) } asDictionary.
 	createdTrait := self classNamed: 'TMCPToolClassMutationTestTrait'.
 	text := (result at: #content) first at: #text.
 	self deny: (result at: #isError ifAbsent: [ false ]).
@@ -484,11 +440,11 @@ MCPToolClassMutationTest >> testCreateRefusalNamesTheSlotsTheClassDefinesThatThe
 		slots: #( #radius #colour )
 		classSlots: #(  ).
 	refusal := [ :superclassName |
-		           (self errorFrom: (self callToolWith: (self createRequestArgumentsWith: {
-						              (#name -> self reparentTargetClassName).
-						              (#superclass -> superclassName).
-						              (#package -> self generatedPackageName).
-						              (#slots -> #( 'radius' 'color' )) }))) at: #message ].
+		           (self errorFrom: (self callToolNamed: 'class_create' withArguments: {
+					             (#name -> self reparentTargetClassName).
+					             (#superclass -> superclassName).
+					             (#package -> self generatedPackageName).
+					             (#slots -> #( 'radius' 'color' )) } asDictionary)) at: #message ].
 	self
 		assert: (refusal value: 'Object')
 		equals:
@@ -512,27 +468,27 @@ MCPToolClassMutationTest >> testCreateRefusalNamesWhatTheClassHasThatTheListsThe
 	"Each list class_create takes gives the class whole, and class_update keeps what it is not told to drop: a slot its patch does not remove, a trait, shared variable or shared pool the list it is given holds. So the refusal names, for each list the call gives, what the class has that the list leaves out. A list the call does not give leaves nothing out."
 
 	| message |
-	self callToolWith: (self
+	self callToolNamed: 'class_create' withArguments: (self
 			 createRequestArgumentsForClassName: 'TMCPToolClassMutationTestTrait'
 			 superclassName: 'Trait'
 			 packageName: self generatedPackageName).
-	self callToolWith: (self createRequestArgumentsWith: {
-				 (#name -> 'MCPToolClassMutationTestGenerated').
-				 (#superclass -> 'Object').
-				 (#package -> self generatedPackageName).
-				 (#slots -> #( 'a' 'b' 'c' )).
-				 (#classSlots -> #( 'made' 'kept' )).
-				 (#traits -> #( 'TMCPToolClassMutationTestTrait' )).
-				 (#sharedVariables -> #( 'Registry' 'Kept' )).
-				 (#sharedPools -> #( 'ChronologyConstants' )) }).
-	message := (self errorFrom: (self callToolWith: (self createRequestArgumentsWith: {
-					              (#name -> 'MCPToolClassMutationTestGenerated').
-					              (#superclass -> 'Object').
-					              (#package -> self generatedPackageName).
-					              (#slots -> #( 'a' )).
-					              (#classSlots -> #( 'made' )).
-					              (#traits -> #(  )).
-					              (#sharedVariables -> #( 'Registry' )) }))) at: #message.
+	self callToolNamed: 'class_create' withArguments: {
+			(#name -> 'MCPToolClassMutationTestGenerated').
+			(#superclass -> 'Object').
+			(#package -> self generatedPackageName).
+			(#slots -> #( 'a' 'b' 'c' )).
+			(#classSlots -> #( 'made' 'kept' )).
+			(#traits -> #( 'TMCPToolClassMutationTestTrait' )).
+			(#sharedVariables -> #( 'Registry' 'Kept' )).
+			(#sharedPools -> #( 'ChronologyConstants' )) } asDictionary.
+	message := (self errorFrom: (self callToolNamed: 'class_create' withArguments: {
+				             (#name -> 'MCPToolClassMutationTestGenerated').
+				             (#superclass -> 'Object').
+				             (#package -> self generatedPackageName).
+				             (#slots -> #( 'a' )).
+				             (#classSlots -> #( 'made' )).
+				             (#traits -> #(  )).
+				             (#sharedVariables -> #( 'Registry' )) } asDictionary)) at: #message.
 	self
 		assert: message
 		equals:
@@ -554,11 +510,11 @@ MCPToolClassMutationTest >> testCreateRefusalNamingAnotherSuperclassAddsASlotThe
 		superclassName: self reparentSuperclassName
 		slots: #(  )
 		classSlots: #(  ).
-	message := (self errorFrom: (self callToolWith: (self createRequestArgumentsWith: {
-					              (#name -> self reparentTargetClassName).
-					              (#superclass -> 'Object').
-					              (#package -> self generatedPackageName).
-					              (#slots -> #( 'inherited' )) }))) at: #message.
+	message := (self errorFrom: (self callToolNamed: 'class_create' withArguments: {
+				             (#name -> self reparentTargetClassName).
+				             (#superclass -> 'Object').
+				             (#package -> self generatedPackageName).
+				             (#slots -> #( 'inherited' )) } asDictionary)) at: #message.
 	self
 		assert: message
 		equals:
@@ -584,12 +540,12 @@ MCPToolClassMutationTest >> testCreateRefusalNamingAnotherSuperclassAddsNoSlotTh
 		superclassName: 'Object'
 		slots: #( #own )
 		classSlots: #(  ).
-	message := (self errorFrom: (self callToolWith: (self createRequestArgumentsWith: {
-					              (#name -> self reparentTargetClassName).
-					              (#superclass -> self reparentSuperclassName).
-					              (#package -> self generatedPackageName).
-					              (#slots -> #( 'own' 'inherited' 'added' )).
-					              (#classSlots -> #( 'registry' )) }))) at: #message.
+	message := (self errorFrom: (self callToolNamed: 'class_create' withArguments: {
+				             (#name -> self reparentTargetClassName).
+				             (#superclass -> self reparentSuperclassName).
+				             (#package -> self generatedPackageName).
+				             (#slots -> #( 'own' 'inherited' 'added' )).
+				             (#classSlots -> #( 'registry' )) } asDictionary)) at: #message.
 	self
 		assert: message
 		equals:
@@ -607,12 +563,12 @@ MCPToolClassMutationTest >> testCreateRefusalOfAClassOfAnotherProjectWritesNoUpd
 
 	| error stack |
 	stack := Smalltalk globals at: #Stack.
-	error := self errorFrom: (self callToolWith: (self createRequestArgumentsWith: {
-					           (#name -> 'Stack').
-					           (#superclass -> 'Object').
-					           (#package -> self generatedPackageName).
-					           (#slots -> #( 'items' )).
-					           (#comment -> 'A stack of items.') })).
+	error := self errorFrom: (self callToolNamed: 'class_create' withArguments: {
+				          (#name -> 'Stack').
+				          (#superclass -> 'Object').
+				          (#package -> self generatedPackageName).
+				          (#slots -> #( 'items' )).
+				          (#comment -> 'A stack of items.') } asDictionary).
 	self assert: (error at: #errorCode) equals: 'ClassAlreadyExists'.
 	self
 		assert: (error at: #message)
@@ -629,13 +585,13 @@ MCPToolClassMutationTest >> testCreateRefusalOfAClassThatHasItAllSaysNothingNeed
 	"A class that already has everything the call asks for needs no class_update call: the refusal says so rather than write one that changes nothing."
 
 	| arguments error |
-	arguments := self createRequestArgumentsWith: {
-			             (#name -> 'MCPToolClassMutationTestGenerated').
-			             (#superclass -> 'Object').
-			             (#package -> self generatedPackageName).
-			             (#slots -> #( 'a' )) }.
-	self callToolWith: arguments.
-	error := self errorFrom: (self callToolWith: arguments).
+	arguments := {
+		             (#name -> 'MCPToolClassMutationTestGenerated').
+		             (#superclass -> 'Object').
+		             (#package -> self generatedPackageName).
+		             (#slots -> #( 'a' )) } asDictionary.
+	self callToolNamed: 'class_create' withArguments: arguments.
+	error := self errorFrom: (self callToolNamed: 'class_create' withArguments: arguments).
 	self assert: (error at: #errorCode) equals: 'ClassAlreadyExists'.
 	self
 		assert: (error at: #message)
@@ -648,14 +604,14 @@ MCPToolClassMutationTest >> testCreateRefusalOfATraitWritesTheUpdateWhenTheCallN
 	"A call that names no superclass asks for neither a class nor a trait. On a trait that exists, it is answered with the class_update call that gives the trait what it lacks, as a call that names Trait is. Made, that call gives the trait the slot asked for."
 
 	| message |
-	self callToolWith: (self
+	self callToolNamed: 'class_create' withArguments: (self
 			 createRequestArgumentsForClassName: 'TMCPToolClassMutationTestTrait'
 			 superclassName: 'Trait'
 			 packageName: self generatedPackageName).
-	message := (self errorFrom: (self callToolWith: (self createRequestArgumentsWith: {
-					              (#name -> 'TMCPToolClassMutationTestTrait').
-					              (#package -> self generatedPackageName).
-					              (#slots -> #( 'color' )) }))) at: #message.
+	message := (self errorFrom: (self callToolNamed: 'class_create' withArguments: {
+				             (#name -> 'TMCPToolClassMutationTestTrait').
+				             (#package -> self generatedPackageName).
+				             (#slots -> #( 'color' )) } asDictionary)) at: #message.
 	self
 		assert: message
 		equals:
@@ -671,16 +627,16 @@ MCPToolClassMutationTest >> testCreateRefusalOfAnExistingClassSaysHowToReachClas
 	"class_update is in tools/list, so the refusal gives the call to class_update itself, with the class already named in it, rather than a route through tool_call."
 
 	| text |
-	self callToolWith: (self
+	self callToolNamed: 'class_create' withArguments: (self
 			 createRequestArgumentsForClassName: 'MCPToolClassMutationTestGenerated'
 			 superclassName: 'Object'
 			 packageName: self generatedPackageName).
-	text := self textFrom: (self callToolWith: (self createRequestArgumentsWith: {
-					          (#name -> 'MCPToolClassMutationTestGenerated').
-					          (#package -> self generatedPackageName).
-					          (#slots -> #( 'color' )) })).
-	self assert: (text includesSubstring:
-			 'Change it with class_update {"name":"MCPToolClassMutationTestGenerated","slots":{"add":["color"]}}.').
+	text := self textFrom: (self callToolNamed: 'class_create' withArguments: {
+				         (#name -> 'MCPToolClassMutationTestGenerated').
+				         (#package -> self generatedPackageName).
+				         (#slots -> #( 'color' )) } asDictionary).
+	self assert:
+		(text includesSubstring: 'Change it with class_update {"name":"MCPToolClassMutationTestGenerated","slots":{"add":["color"]}}.').
 	self deny: (text includesSubstring: 'tool_call')
 ]
 
@@ -689,20 +645,20 @@ MCPToolClassMutationTest >> testCreateRefusalOfAnExistingClassWritesTheUpdateTha
 	"An agent that asks class_create for a class that exists wants it to have that definition. The refusal writes the class_update call that gives it what it lacks, and nothing else: the slots it does not have are added, a list class_update replaces keeps what the class has, and what the class already has is left out. The call is written as a client reads text, a comment's lines ended by line feeds. Made, that call gives the class the definition asked for."
 
 	| createdClass error message |
-	self callToolWith: (self createRequestArgumentsWith: {
-				 (#name -> 'MCPToolClassMutationTestGenerated').
-				 (#package -> self generatedPackageName).
-				 (#slots -> #( 'a' )).
-				 (#sharedVariables -> #( 'Registry' )) }).
-	error := self errorFrom: (self callToolWith: (self createRequestArgumentsWith: {
-					           (#name -> 'MCPToolClassMutationTestGenerated').
-					           (#superclass -> 'Object').
-					           (#package -> self generatedPackageName).
-					           (#tag -> 'Model').
-					           (#slots -> #( 'a' 'color' )).
-					           (#classSlots -> #( 'made' )).
-					           (#sharedVariables -> #( 'Registry' 'Other' )).
-					           (#comment -> (String cr join: #( 'A generated class.' 'It has two lines.' ))) })).
+	self callToolNamed: 'class_create' withArguments: {
+			(#name -> 'MCPToolClassMutationTestGenerated').
+			(#package -> self generatedPackageName).
+			(#slots -> #( 'a' )).
+			(#sharedVariables -> #( 'Registry' )) } asDictionary.
+	error := self errorFrom: (self callToolNamed: 'class_create' withArguments: {
+				          (#name -> 'MCPToolClassMutationTestGenerated').
+				          (#superclass -> 'Object').
+				          (#package -> self generatedPackageName).
+				          (#tag -> 'Model').
+				          (#slots -> #( 'a' 'color' )).
+				          (#classSlots -> #( 'made' )).
+				          (#sharedVariables -> #( 'Registry' 'Other' )).
+				          (#comment -> (String cr join: #( 'A generated class.' 'It has two lines.' ))) } asDictionary).
 	message := error at: #message.
 	self assert: (error at: #errorCode) equals: 'ClassAlreadyExists'.
 	self
@@ -723,16 +679,18 @@ MCPToolClassMutationTest >> testCreateRefusalOfTheOtherKindSaysWhichKindExists [
 	"class_update makes no class a trait and no trait a class, so a call that asks for one where the other exists is told which exists, rather than that nothing needs changing."
 
 	| refusalOf |
-	self callToolWith: (self
+	self callToolNamed: 'class_create' withArguments: (self
 			 createRequestArgumentsForClassName: 'MCPToolClassMutationTestGenerated'
 			 superclassName: 'Object'
 			 packageName: self generatedPackageName).
-	self callToolWith: (self
+	self callToolNamed: 'class_create' withArguments: (self
 			 createRequestArgumentsForClassName: 'TMCPToolClassMutationTestTrait'
 			 superclassName: 'Trait'
 			 packageName: self generatedPackageName).
 	refusalOf := [ :className :superclassName |
-		             self errorFrom: (self callToolWith:
+		             self errorFrom: (self
+				              callToolNamed: 'class_create'
+				              withArguments:
 				              (self
 					               createRequestArgumentsForClassName: className
 					               superclassName: superclassName
@@ -763,11 +721,11 @@ MCPToolClassMutationTest >> testCreateRefusalPullsUpASlotASubclassDefines [
 		superclassName: self reparentTargetClassName
 		slots: #( #shared )
 		classSlots: #( #registry ).
-	message := (self errorFrom: (self callToolWith: (self createRequestArgumentsWith: {
-					              (#name -> self reparentTargetClassName).
-					              (#package -> self generatedPackageName).
-					              (#slots -> #( 'shared' 'added' )).
-					              (#classSlots -> #( 'registry' )) }))) at: #message.
+	message := (self errorFrom: (self callToolNamed: 'class_create' withArguments: {
+				             (#name -> self reparentTargetClassName).
+				             (#package -> self generatedPackageName).
+				             (#slots -> #( 'shared' 'added' )).
+				             (#classSlots -> #( 'registry' )) } asDictionary)) at: #message.
 	self
 		assert: message
 		equals:
@@ -797,11 +755,11 @@ MCPToolClassMutationTest >> testCreateRefusalSaysWhichSlotsKeepTheClassFromTheSu
 		slots: #( #own #shared )
 		classSlots: #(  ).
 	refusal := [
-		           (self errorFrom: (self callToolWith: (self createRequestArgumentsWith: {
-						              (#name -> self reparentTargetClassName).
-						              (#superclass -> self reparentSuperclassName).
-						              (#package -> self generatedPackageName).
-						              (#slots -> #( 'own' 'shared' )) }))) at: #message ].
+		           (self errorFrom: (self callToolNamed: 'class_create' withArguments: {
+					             (#name -> self reparentTargetClassName).
+					             (#superclass -> self reparentSuperclassName).
+					             (#package -> self generatedPackageName).
+					             (#slots -> #( 'own' 'shared' )) } asDictionary)) at: #message ].
 	self
 		assert: refusal value
 		equals:
@@ -815,9 +773,9 @@ MCPToolClassMutationTest >> testCreateRefusalSaysWhichSlotsKeepTheClassFromTheSu
 		assert: refusal value
 		equals:
 		'Class MCPToolClassMutationTestReparentTarget already exists. MCPToolClassMutationTestReparentTarget defines the slot shared, which MCPToolClassMutationTestReparentSuperclass already has. MCPToolClassMutationTestReparentChild, a subclass of MCPToolClassMutationTestReparentTarget, defines the slot width, which MCPToolClassMutationTestReparentSuperclass already has. A class cannot define a slot one of its superclasses has, so class_update cannot move MCPToolClassMutationTestReparentTarget under MCPToolClassMutationTestReparentSuperclass until MCPToolClassMutationTestReparentTarget and MCPToolClassMutationTestReparentChild no longer define those slots. class_get shows the slots a class defines.'.
-	self assert: ((self callToolWith: (self updateRequestArgumentsWith: {
-					   (#name -> self reparentTargetClassName).
-					   (#superclass -> self reparentSuperclassName) })) at: #isError).
+	self assert: ((self callToolNamed: 'class_update' withArguments: {
+				  (#name -> self reparentTargetClassName).
+				  (#superclass -> self reparentSuperclassName) } asDictionary) at: #isError).
 	self assert: (self classNamed: self reparentTargetClassName) superclass name equals: #Object
 ]
 
@@ -830,10 +788,10 @@ MCPToolClassMutationTest >> testCreateRefusesAListWrittenAsOneName [
 		#( 'classSlots' 'a slot name' ).
 		#( 'sharedVariables' 'a class variable name' ) } do: [ :each |
 			| error result |
-			result := self callToolWith: (self createRequestArgumentsWith: {
-						           (#name -> 'MCPToolClassMutationTestGenerated').
-						           (#package -> self generatedPackageName).
-						           (each first -> #( '["Title" "Text"]' )) }).
+			result := self callToolNamed: 'class_create' withArguments: {
+					          (#name -> 'MCPToolClassMutationTestGenerated').
+					          (#package -> self generatedPackageName).
+					          (each first -> #( '["Title" "Text"]' )) } asDictionary.
 			error := self errorFrom: result.
 			self assert: (result at: #isError).
 			self assert: (error at: #errorCode) equals: 'NameIsAList'.
@@ -856,8 +814,8 @@ MCPToolClassMutationTest >> testCreateReturnsStructuredErrorWhenClassAlreadyExis
 		             createRequestArgumentsForClassName: 'MCPToolClassMutationTestGenerated'
 		             superclassName: 'Object'
 		             packageName: self generatedPackageName.
-	self callToolWith: arguments.
-	result := self callToolWith: arguments.
+	self callToolNamed: 'class_create' withArguments: arguments.
+	result := self callToolNamed: 'class_create' withArguments: arguments.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (error at: #action) equals: 'create'.
@@ -872,7 +830,7 @@ MCPToolClassMutationTest >> testCreateReturnsStructuredErrorWhenClassAlreadyExis
 MCPToolClassMutationTest >> testCreateReturnsStructuredErrorWhenSuperclassIsMissing [
 
 	| error result |
-	result := self callToolWith: (self
+	result := self callToolNamed: 'class_create' withArguments: (self
 			           createRequestArgumentsForClassName: 'MCPToolClassMutationTestGenerated'
 			           superclassName: 'DefinitelyMissingSuperclass'
 			           packageName: self generatedPackageName).
@@ -894,7 +852,7 @@ MCPToolClassMutationTest >> testCreateReturnsStructuredErrorWhenTraitIsMissing [
 		             packageName: self generatedPackageName.
 	arguments at: #traits put: #( 'DefinitelyMissingTrait' ).
 	arguments at: #layout put: 'WeakLayout'.
-	result := self callToolWith: arguments.
+	result := self callToolNamed: 'class_create' withArguments: arguments.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (error at: #action) equals: 'create'.
@@ -910,18 +868,16 @@ MCPToolClassMutationTest >> testCreateReturnsStructuredErrorWhenTraitIsMissing [
 { #category : 'tests - create' }
 MCPToolClassMutationTest >> testCreateSetsClassComment [
 
-	| arguments createdClass data result |
+	| arguments createdClass result |
 	arguments := self
 		             createRequestArgumentsForClassName: 'MCPToolClassMutationTestCommented'
 		             superclassName: 'Object'
 		             packageName: self generatedPackageName.
 	arguments at: #comment put: 'Created with a comment.'.
-	result := self callToolWith: arguments.
-	data := self dataFrom: result.
+	result := self callToolNamed: 'class_create' withArguments: arguments.
+	self dataFrom: result.
 	createdClass := self classNamed: 'MCPToolClassMutationTestCommented'.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: createdClass comment equals: 'Created with a comment.'.
-	self deny: (result at: #isError ifAbsent: [ false ])
+	self assert: createdClass comment equals: 'Created with a comment.'
 ]
 
 { #category : 'tests - create' }
@@ -929,15 +885,15 @@ MCPToolClassMutationTest >> testCreateThatFailsLeavesNoPackageItMade [
 	"The package is made for the class to land in, so a class that does not build takes it away again. A package that was there stays."
 
 	| arguments |
-	arguments := self createRequestArgumentsWith: {
-			             (#name -> 'MCPToolClassMutationTestGenerated').
-			             (#package -> self generatedPackageName).
-			             (#traits -> #( 'DefinitelyMissingTrait' )) }.
-	self assert: ((self callToolWith: arguments) at: #isError).
+	arguments := {
+		             (#name -> 'MCPToolClassMutationTestGenerated').
+		             (#package -> self generatedPackageName).
+		             (#traits -> #( 'DefinitelyMissingTrait' )) } asDictionary.
+	self assert: ((self callToolNamed: 'class_create' withArguments: arguments) at: #isError).
 	self deny: (Smalltalk globals includesKey: #MCPToolClassMutationTestGenerated).
 	self deny: (self packageOrganizer hasPackage: self generatedPackageName).
 	self withoutEpiceaDuring: [ self packageOrganizer ensurePackage: self generatedPackageName ].
-	self assert: ((self callToolWith: arguments) at: #isError).
+	self assert: ((self callToolNamed: 'class_create' withArguments: arguments) at: #isError).
 	self assert: (self packageOrganizer hasPackage: self generatedPackageName)
 ]
 
@@ -946,12 +902,12 @@ MCPToolClassMutationTest >> testCreateWithoutASuperclassSaysItSubclassesObject [
 	"A class made with no superclass given subclasses Object, which a caller that meant another, as for a test class, would not see in Created class Foo. The answer says so. A class given its superclass is answered as before."
 
 	self
-		assert: (self textFrom: (self callToolWith: (self createRequestArgumentsWith: {
-							   (#name -> 'MCPToolClassMutationTestDefaultSuperclass').
-							   (#package -> self generatedPackageName) })))
+		assert: (self textFrom: (self callToolNamed: 'class_create' withArguments: {
+						  (#name -> 'MCPToolClassMutationTestDefaultSuperclass').
+						  (#package -> self generatedPackageName) } asDictionary))
 		equals: 'Created class MCPToolClassMutationTestDefaultSuperclass, a subclass of Object.'.
 	self
-		assert: (self textFrom: (self callToolWith: (self
+		assert: (self textFrom: (self callToolNamed: 'class_create' withArguments: (self
 						   createRequestArgumentsForClassName: 'MCPToolClassMutationTestGenerated'
 						   superclassName: 'Object'
 						   packageName: self generatedPackageName)))
@@ -964,10 +920,10 @@ MCPToolClassMutationTest >> testForceRemovesASlotInUseAndNamesItsUsers [
 
 	| result |
 	self createSlotUserFixture.
-	result := self callToolWith: (self updateRequestArgumentsWith: {
-				           (#name -> 'MCPToolClassMutationTestWarningRemoveSlotTarget').
-				           (#slots -> (Dictionary with: 'remove' -> #( 'usedSlot' ))).
-				           (#force -> true) }).
+	result := self callToolNamed: 'class_update' withArguments: {
+			          (#name -> 'MCPToolClassMutationTestWarningRemoveSlotTarget').
+			          (#slots -> (Dictionary with: 'remove' -> #( 'usedSlot' ))).
+			          (#force -> true) } asDictionary.
 	self refactoringsRefuseBreakingChanges ifTrue: [ ^ self assert: (result at: #isError) ].
 	self deny: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
 	self assert: (self warningsFrom: result) asArray equals: self usedSlotUses.
@@ -994,7 +950,7 @@ MCPToolClassMutationTest >> testRefactoringWarningListsEveryImpact [
 		superclassName: 'MCPToolClassMutationTestWarningPullUpTarget'
 		slots: #(  )
 		classSlots: #(  ).
-	result := self callToolWith: (self
+	result := self callToolNamed: 'class_update' withArguments: (self
 			           updateRequestArgumentsForSlotAction: 'pullUp'
 			           className: 'MCPToolClassMutationTestWarningPullUpTarget'
 			           slotName: 'sharedSlot'
@@ -1040,7 +996,7 @@ MCPToolClassMutationTest >> testRemovingAClassSideSlotInUseNamesTheClassSideMeth
 
 	| expected result |
 	self createSlotUserFixture.
-	result := self callToolWith: (self
+	result := self callToolNamed: 'class_update' withArguments: (self
 			           updateRequestArgumentsForSlotAction: 'remove'
 			           className: 'MCPToolClassMutationTestWarningRemoveSlotTarget'
 			           slotName: 'usedClassSlot'
@@ -1059,7 +1015,7 @@ MCPToolClassMutationTest >> testRemovingASlotInUseNamesTheMethodsThatUseIt [
 
 	| error result |
 	self createSlotUserFixture.
-	result := self callToolWith: (self
+	result := self callToolNamed: 'class_update' withArguments: (self
 			           updateRequestArgumentsForSlotAction: 'remove'
 			           className: 'MCPToolClassMutationTestWarningRemoveSlotTarget'
 			           slotName: 'usedSlot'
@@ -1090,13 +1046,13 @@ MCPToolClassMutationTest >> testRetagSummaryNamesTheTag [
 	"A class moved to a tag is named with the tag and the package it lies in; one moved to a package's root, with the package alone."
 
 	self
-		assert: (self summaryFrom: (self callToolWith: self updateRequestArgumentsForRecategorization))
+		assert: (self summaryFrom: (self callToolNamed: 'class_update' withArguments: self updateRequestArgumentsForRecategorization))
 		equals: ('Moved class {1} to tag {2} of package {3}.' format: {
 					 self moveTargetClassName.
 					 self destinationTagName.
 					 self originalMovePackageName }).
 	self
-		assert: (self summaryFrom: (self callToolWith: self updateRequestArgumentsForMoveToPackage))
+		assert: (self summaryFrom: (self callToolNamed: 'class_update' withArguments: self updateRequestArgumentsForMoveToPackage))
 		equals: ('Moved class {1} to package {2}.' format: {
 					 self moveTargetClassName.
 					 self destinationPackageName })
@@ -1113,7 +1069,7 @@ MCPToolClassMutationTest >> testSeveralUpdatesSayEachChange [
 		superclassName: 'Object'
 		slots: #( 'kept' )
 		classSlots: #(  ).
-	result := self callToolWith: {
+	result := self callToolNamed: 'class_update' withArguments: {
 			          (#name -> targetName).
 			          (#superclass -> 'ProtoObject').
 			          (#slots -> (Dictionary with: 'add' -> #( 'added' ))).
@@ -1131,43 +1087,39 @@ MCPToolClassMutationTest >> testSeveralUpdatesSayEachChange [
 { #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateAddsClassSideSlot [
 
-	| data result target |
+	| result target |
 	self
 		createClassNamed: 'MCPToolClassMutationTestAddClassSlotTarget'
 		superclassName: 'Object'
 		slots: #(  )
 		classSlots: #(  ).
-	result := self callToolWith: (self
+	result := self callToolNamed: 'class_update' withArguments: (self
 			           updateRequestArgumentsForSlotAction: 'add'
 			           className: 'MCPToolClassMutationTestAddClassSlotTarget'
 			           slotName: 'addedClassSlot'
 			           classSide: true).
-	data := self dataFrom: result.
+	self dataFrom: result.
 	target := self classNamed: 'MCPToolClassMutationTestAddClassSlotTarget'.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (target classSide slots collect: #name as: Array) equals: #( #addedClassSlot ).
-	self deny: (result at: #isError ifAbsent: [ false ])
+	self assert: (target classSide slots collect: #name as: Array) equals: #( #addedClassSlot )
 ]
 
 { #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateAddsInstanceSlot [
 
-	| data result target |
+	| result target |
 	self
 		createClassNamed: 'MCPToolClassMutationTestAddSlotTarget'
 		superclassName: 'Object'
 		slots: #(  )
 		classSlots: #(  ).
-	result := self callToolWith: (self
+	result := self callToolNamed: 'class_update' withArguments: (self
 			           updateRequestArgumentsForSlotAction: 'add'
 			           className: 'MCPToolClassMutationTestAddSlotTarget'
 			           slotName: 'addedSlot'
 			           classSide: false).
-	data := self dataFrom: result.
+	self dataFrom: result.
 	target := self classNamed: 'MCPToolClassMutationTestAddSlotTarget'.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (target slots collect: #name as: Array) equals: #( #addedSlot ).
-	self deny: (result at: #isError ifAbsent: [ false ])
+	self assert: (target slots collect: #name as: Array) equals: #( #addedSlot )
 ]
 
 { #category : 'tests - update' }
@@ -1179,14 +1131,13 @@ MCPToolClassMutationTest >> testUpdateAppliesSeveralChangesInOneCall [
 		superclassName: 'Object'
 		slots: #( 'kept' )
 		classSlots: #(  ).
-	result := self callToolWith: {
+	result := self callToolNamed: 'class_update' withArguments: {
 			          (#name -> 'MCPToolClassMutationTestFusedTarget').
 			          (#superclass -> 'ProtoObject').
 			          (#slots -> (Dictionary with: 'add' -> #( 'added' ))).
 			          (#comment -> 'fused comment') } asDictionary.
 	data := self dataFrom: result.
 	target := self classNamed: 'MCPToolClassMutationTestFusedTarget'.
-	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: target superclass name equals: #ProtoObject.
 	self assert: target instVarNames asArray equals: #( 'kept' 'added' ).
 	self assert: target mcpComment equals: 'fused comment'.
@@ -1196,19 +1147,17 @@ MCPToolClassMutationTest >> testUpdateAppliesSeveralChangesInOneCall [
 { #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateCanClearClassComment [
 
-	| data result target |
+	| result target |
 	self
 		createClassNamed: self commentTargetClassName
 		superclassName: 'Object'
 		slots: #(  )
 		classSlots: #(  ).
 	self withoutEpiceaDuring: [ (self classNamed: self commentTargetClassName) comment: 'original comment' ].
-	result := self callToolWith: (self updateRequestArgumentsForClassComment: '').
-	data := self dataFrom: result.
+	result := self callToolNamed: 'class_update' withArguments: (self updateRequestArgumentsForClassComment: '').
+	self dataFrom: result.
 	target := self classNamed: self commentTargetClassName.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: target mcpComment equals: ''.
-	self deny: (result at: #isError ifAbsent: [ false ])
+	self assert: target mcpComment equals: ''
 ]
 
 { #category : 'tests - update' }
@@ -1270,10 +1219,10 @@ MCPToolClassMutationTest >> testUpdateForcePullUpSlotContinuesPastRefactoringWar
 		ensureMethodSource: 'slotProbe ^ sharedSlot'
 		protocol: 'testing'
 		on: (self classNamed: 'MCPToolClassMutationTestWarningPullUpChildOne').
-	result := self callToolWith: (self updateRequestArgumentsWith: {
-				           (#name -> 'MCPToolClassMutationTestWarningPullUpTarget').
-				           (#slots -> (Dictionary with: 'pullUp' -> #( 'sharedSlot' ))).
-				           (#force -> true) }).
+	result := self callToolNamed: 'class_update' withArguments: {
+			          (#name -> 'MCPToolClassMutationTestWarningPullUpTarget').
+			          (#slots -> (Dictionary with: 'pullUp' -> #( 'sharedSlot' ))).
+			          (#force -> true) } asDictionary.
 	self refactoringsRefuseBreakingChanges ifTrue: [ ^ self assert: (result at: #isError) ].
 	warnings := self warningsFrom: result.
 	target := self classNamed: 'MCPToolClassMutationTestWarningPullUpTarget'.
@@ -1302,10 +1251,10 @@ MCPToolClassMutationTest >> testUpdateForceRemoveSlotContinuesPastRefactoringWar
 		ensureMethodSource: 'slotProbe ^ referencedSlot'
 		protocol: 'testing'
 		on: (self classNamed: 'MCPToolClassMutationTestWarningRemoveSlotTarget').
-	result := self callToolWith: (self updateRequestArgumentsWith: {
-				           (#name -> 'MCPToolClassMutationTestWarningRemoveSlotTarget').
-				           (#slots -> (Dictionary with: 'remove' -> #( 'referencedSlot' ))).
-				           (#force -> true) }).
+	result := self callToolNamed: 'class_update' withArguments: {
+			          (#name -> 'MCPToolClassMutationTestWarningRemoveSlotTarget').
+			          (#slots -> (Dictionary with: 'remove' -> #( 'referencedSlot' ))).
+			          (#force -> true) } asDictionary.
 	self refactoringsRefuseBreakingChanges ifTrue: [ ^ self assert: (result at: #isError) ].
 	warnings := self warningsFrom: result.
 	target := self classNamed: 'MCPToolClassMutationTestWarningRemoveSlotTarget'.
@@ -1361,53 +1310,45 @@ MCPToolClassMutationTest >> testUpdateMapsSlotActionsToUpdateActions [
 { #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateMoveEnsuresMissingDestinationPackage [
 
-	| data result |
+	| result |
 	self removeDestinationPackage.
-	result := self callToolWith: self updateRequestArgumentsForMoveToPackage.
-	data := self dataFrom: result.
-	self deny: (result at: #isError ifAbsent: [ false ]).
+	result := self callToolNamed: 'class_update' withArguments: self updateRequestArgumentsForMoveToPackage.
+	self dataFrom: result.
 	self assert: (self packageOrganizer hasPackage: self destinationPackageName).
-	self assert: self moveTargetClass packageName asString equals: self destinationPackageName.
-	self deny: (result at: #isError ifAbsent: [ false ])
+	self assert: self moveTargetClass packageName asString equals: self destinationPackageName
 ]
 
 { #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateMoveEnsuresMissingDestinationTag [
 
-	| data package result |
+	| package result |
 	self removeDestinationPackage.
 	self withoutEpiceaDuring: [ self packageOrganizer ensurePackage: self destinationPackageName ].
-	result := self callToolWith: self updateRequestArgumentsForMoveToPackageAndTag.
-	data := self dataFrom: result.
+	result := self callToolNamed: 'class_update' withArguments: self updateRequestArgumentsForMoveToPackageAndTag.
+	self dataFrom: result.
 	package := self packageOrganizer packageNamed: self destinationPackageName.
-	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (package hasTag: self destinationTagName).
 	self assert: self moveTargetClass packageName asString equals: self destinationPackageName.
-	self assert: self currentTagOfMoveTargetClass equals: self destinationTagName.
-	self deny: (result at: #isError ifAbsent: [ false ])
+	self assert: self currentTagOfMoveTargetClass equals: self destinationTagName
 ]
 
 { #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateMovesClassToAnotherPackage [
 
-	| data result |
-	result := self callToolWith: self updateRequestArgumentsForMoveToPackage.
-	data := self dataFrom: result.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: self moveTargetClass packageName asString equals: self destinationPackageName.
-	self deny: (result at: #isError ifAbsent: [ false ])
+	| result |
+	result := self callToolNamed: 'class_update' withArguments: self updateRequestArgumentsForMoveToPackage.
+	self dataFrom: result.
+	self assert: self moveTargetClass packageName asString equals: self destinationPackageName
 ]
 
 { #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateMovesClassToExistingTag [
 
-	| data result |
-	result := self callToolWith: self updateRequestArgumentsForMoveToPackageAndTag.
-	data := self dataFrom: result.
-	self deny: (result at: #isError ifAbsent: [ false ]).
+	| result |
+	result := self callToolNamed: 'class_update' withArguments: self updateRequestArgumentsForMoveToPackageAndTag.
+	self dataFrom: result.
 	self assert: self moveTargetClass packageName asString equals: self destinationPackageName.
-	self assert: self currentTagOfMoveTargetClass equals: self destinationTagName.
-	self deny: (result at: #isError ifAbsent: [ false ])
+	self assert: self currentTagOfMoveTargetClass equals: self destinationTagName
 ]
 
 { #category : 'tests - update' }
@@ -1415,8 +1356,7 @@ MCPToolClassMutationTest >> testUpdateOfAGlobalThatIsNotAClassIsRefused [
 	"A tag alone looks the class up for its package. Transcript used to be asked for its package as if it were a class."
 
 	| error result |
-	result := self callToolWith: {
-			          (#action -> 'update').
+	result := self callToolNamed: 'class_update' withArguments: {
 			          (#name -> 'Transcript').
 			          (#tag -> 'X') } asDictionary.
 	error := self errorFrom: result.
@@ -1521,10 +1461,10 @@ MCPToolClassMutationTest >> testUpdatePreservesSharedVariableValueWhenNameIsKept
 		                   superclassName: 'Object'
 		                   packageName: self generatedPackageName.
 	createArguments at: #sharedVariables put: #( 'AlphaShared' ).
-	self callToolWith: createArguments.
+	self callToolNamed: 'class_create' withArguments: createArguments.
 	targetClass := self classNamed: 'MCPToolClassMutationTestSharedVariablePreservationTarget'.
 	targetClass writeClassVariableNamed: #AlphaShared value: 123.
-	result := self callToolWith: (self
+	result := self callToolNamed: 'class_update' withArguments: (self
 			           updateRequestArgumentsForSharedVariablesInClassNamed: 'MCPToolClassMutationTestSharedVariablePreservationTarget'
 			           sharedVariables: #( 'AlphaShared' 'BetaShared' )).
 	targetClass := self classNamed: 'MCPToolClassMutationTestSharedVariablePreservationTarget'.
@@ -1549,7 +1489,7 @@ MCPToolClassMutationTest >> testUpdatePullUpSlotNamedOnItsHolderSaysWhichClassTo
 		superclassName: 'MCPToolClassMutationTestPullUpParent'
 		slots: #( weight )
 		classSlots: #(  ).
-	result := self callToolWith: (self
+	result := self callToolNamed: 'class_update' withArguments: (self
 			           updateRequestArgumentsForSlotAction: 'pullUp'
 			           className: 'MCPToolClassMutationTestPullUpChild'
 			           slotName: 'weight'
@@ -1580,7 +1520,7 @@ MCPToolClassMutationTest >> testUpdatePullUpSlotRefusesASlotATraitSupplies [
 				package: self generatedPackageName;
 				tag: self generatedTagName;
 				install ].
-	result := self callToolWith: (self
+	result := self callToolNamed: 'class_update' withArguments: (self
 			           updateRequestArgumentsForSlotAction: 'pullUp'
 			           className: 'MCPToolClassMutationTestPullUpTraitUser'
 			           slotName: 'weight'
@@ -1595,13 +1535,12 @@ MCPToolClassMutationTest >> testUpdatePullUpSlotRefusesASlotATraitSupplies [
 { #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdatePullUpSlotReturnsStructuredCommandErrorForRefactoringFailure [
 
-	| error result structured |
-	result := self callToolWith: (self
+	| error result |
+	result := self callToolNamed: 'class_update' withArguments: (self
 			           updateRequestArgumentsForSlotAction: 'pullUp'
 			           className: 'MCPToolMethodMutationTestTarget'
 			           slotName: 'missingSlot'
 			           classSide: false).
-	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (error at: #action) equals: 'update'.
@@ -1618,7 +1557,7 @@ MCPToolClassMutationTest >> testUpdatePullUpSlotReturnsStructuredCommandErrorFor
 { #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdatePullUpSlotStopsOnRefactoringWarningByDefault [
 
-	| childOne childTwo error result structured target |
+	| childOne childTwo error result target |
 	self
 		createClassNamed: 'MCPToolClassMutationTestWarningPullUpTarget'
 		superclassName: 'Object'
@@ -1634,12 +1573,11 @@ MCPToolClassMutationTest >> testUpdatePullUpSlotStopsOnRefactoringWarningByDefau
 		superclassName: 'MCPToolClassMutationTestWarningPullUpTarget'
 		slots: #(  )
 		classSlots: #(  ).
-	result := self callToolWith: (self
+	result := self callToolNamed: 'class_update' withArguments: (self
 			           updateRequestArgumentsForSlotAction: 'pullUp'
 			           className: 'MCPToolClassMutationTestWarningPullUpTarget'
 			           slotName: 'sharedSlot'
 			           classSide: false).
-	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	target := self classNamed: 'MCPToolClassMutationTestWarningPullUpTarget'.
 	childOne := self classNamed: 'MCPToolClassMutationTestWarningPullUpChildOne'.
@@ -1665,7 +1603,7 @@ MCPToolClassMutationTest >> testUpdatePullUpSlotStopsOnRefactoringWarningByDefau
 { #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdatePullsUpInstanceSlotAcrossSubclasses [
 
-	| childOne childTwo data instance result target |
+	| childOne childTwo instance result target |
 	self
 		createClassNamed: 'MCPToolClassMutationTestPullUpTarget'
 		superclassName: 'Object'
@@ -1685,30 +1623,28 @@ MCPToolClassMutationTest >> testUpdatePullsUpInstanceSlotAcrossSubclasses [
 		ensureMethodSource: 'slotProbe ^ sharedSlot'
 		protocol: 'testing'
 		on: (self classNamed: 'MCPToolClassMutationTestPullUpChildOne').
-	result := self callToolWith: (self
+	result := self callToolNamed: 'class_update' withArguments: (self
 			           updateRequestArgumentsForSlotAction: 'pullUp'
 			           className: 'MCPToolClassMutationTestPullUpTarget'
 			           slotName: 'sharedSlot'
 			           classSide: false).
 	self refactoringsRefuseBreakingChanges ifTrue: [ ^ self assert: (result at: #isError) ].
-	data := self dataFrom: result.
+	self dataFrom: result.
 	target := self classNamed: 'MCPToolClassMutationTestPullUpTarget'.
 	childOne := self classNamed: 'MCPToolClassMutationTestPullUpChildOne'.
 	childTwo := self classNamed: 'MCPToolClassMutationTestPullUpChildTwo'.
 	instance := childOne new.
 	instance instVarNamed: 'sharedSlot' put: 41.
-	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (target slots collect: #name as: Array) equals: #( #sharedSlot ).
 	self assert: (childOne slots collect: #name as: Array) equals: #(  ).
 	self assert: (childTwo slots collect: #name as: Array) equals: #(  ).
-	self assert: instance slotProbe equals: 41.
-	self deny: (result at: #isError ifAbsent: [ false ])
+	self assert: instance slotProbe equals: 41
 ]
 
 { #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdatePushesDownClassSlotToDirectSubclasses [
 
-	| childOne childTwo data result target |
+	| childOne childTwo result target |
 	self
 		createClassNamed: 'MCPToolClassMutationTestPushDownTarget'
 		superclassName: 'Object'
@@ -1728,23 +1664,21 @@ MCPToolClassMutationTest >> testUpdatePushesDownClassSlotToDirectSubclasses [
 		ensureMethodSource: 'slotProbe ^ sharedClassSlot'
 		protocol: 'testing'
 		on: (self classNamed: 'MCPToolClassMutationTestPushDownChildOne') classSide.
-	result := self callToolWith: (self
+	result := self callToolNamed: 'class_update' withArguments: (self
 			           updateRequestArgumentsForSlotAction: 'pushDown'
 			           className: 'MCPToolClassMutationTestPushDownTarget'
 			           slotName: 'sharedClassSlot'
 			           classSide: true).
 	self refactoringsRefuseBreakingChanges ifTrue: [ ^ self assert: (result at: #isError) ].
-	data := self dataFrom: result.
+	self dataFrom: result.
 	target := self classNamed: 'MCPToolClassMutationTestPushDownTarget'.
 	childOne := self classNamed: 'MCPToolClassMutationTestPushDownChildOne'.
 	childTwo := self classNamed: 'MCPToolClassMutationTestPushDownChildTwo'.
 	childOne instVarNamed: 'sharedClassSlot' put: 23.
-	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (target classSide slots collect: #name as: Array) equals: #(  ).
 	self assert: (childOne classSide slots collect: #name as: Array) equals: #( #sharedClassSlot ).
 	self assert: (childTwo classSide slots collect: #name as: Array) equals: #( #sharedClassSlot ).
-	self assert: childOne slotProbe equals: 23.
-	self deny: (result at: #isError ifAbsent: [ false ])
+	self assert: childOne slotProbe equals: 23
 ]
 
 { #category : 'tests - update' }
@@ -1776,15 +1710,13 @@ MCPToolClassMutationTest >> testUpdateReadsASlotPatch [
 { #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateRecategorizesWithinCurrentPackageWhenPackageNameIsOmitted [
 
-	| data package result |
-	result := self callToolWith: self updateRequestArgumentsForRecategorization.
-	data := self dataFrom: result.
+	| package result |
+	result := self callToolNamed: 'class_update' withArguments: self updateRequestArgumentsForRecategorization.
+	self dataFrom: result.
 	package := self packageOrganizer packageNamed: self originalMovePackageName.
-	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (package hasTag: self destinationTagName).
 	self assert: self moveTargetClass packageName asString equals: self originalMovePackageName.
-	self assert: self currentTagOfMoveTargetClass equals: self destinationTagName.
-	self deny: (result at: #isError ifAbsent: [ false ])
+	self assert: self currentTagOfMoveTargetClass equals: self destinationTagName
 ]
 
 { #category : 'tests - update' }
@@ -1797,8 +1729,7 @@ MCPToolClassMutationTest >> testUpdateRefusesAClassSideName [
 		superclassName: 'Object'
 		slots: #(  )
 		classSlots: #(  ).
-	result := self callToolWith: {
-			          (#action -> 'update').
+	result := self callToolNamed: 'class_update' withArguments: {
 			          (#name -> 'MCPToolClassMutationTestAddSlotTarget class').
 			          (#slots -> { (#add -> #( 'made' )) } asDictionary) } asDictionary.
 	error := self errorFrom: result.
@@ -1846,7 +1777,7 @@ MCPToolClassMutationTest >> testUpdateRefusesASlotTheClassInherits [
 			  newSlotName: 'renamedSlot'
 			  classSide: false) -> 'The variable usedSlot is not directly defined in the class MCPToolClassMutationTestSlotUserSubclass') }
 		do: [ :each |
-				error := self errorFrom: (self callToolWith: each key).
+				error := self errorFrom: (self callToolNamed: 'class_update' withArguments: each key).
 				self assert: (error at: #causeClass) equals: 'RBRefactoringError'.
 				self assert: ((error at: #message) endsWith: each value) ]
 ]
@@ -1854,7 +1785,7 @@ MCPToolClassMutationTest >> testUpdateRefusesASlotTheClassInherits [
 { #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateRemoveSlotStopsOnRefactoringWarningByDefault [
 
-	| error result structured target |
+	| error result target |
 	self
 		createClassNamed: 'MCPToolClassMutationTestWarningRemoveSlotTarget'
 		superclassName: 'Object'
@@ -1864,12 +1795,11 @@ MCPToolClassMutationTest >> testUpdateRemoveSlotStopsOnRefactoringWarningByDefau
 		ensureMethodSource: 'slotProbe ^ referencedSlot'
 		protocol: 'testing'
 		on: (self classNamed: 'MCPToolClassMutationTestWarningRemoveSlotTarget').
-	result := self callToolWith: (self
+	result := self callToolNamed: 'class_update' withArguments: (self
 			           updateRequestArgumentsForSlotAction: 'remove'
 			           className: 'MCPToolClassMutationTestWarningRemoveSlotTarget'
 			           slotName: 'referencedSlot'
 			           classSide: false).
-	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	target := self classNamed: 'MCPToolClassMutationTestWarningRemoveSlotTarget'.
 	self assert: (result at: #isError).
@@ -1893,103 +1823,97 @@ MCPToolClassMutationTest >> testUpdateRemoveSlotStopsOnRefactoringWarningByDefau
 { #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateRemovesClassSideSlot [
 
-	| data result target |
+	| result target |
 	self
 		createClassNamed: 'MCPToolClassMutationTestRemoveClassSlotTarget'
 		superclassName: 'Object'
 		slots: #(  )
 		classSlots: #( removableClassSlot ).
-	result := self callToolWith: (self
+	result := self callToolNamed: 'class_update' withArguments: (self
 			           updateRequestArgumentsForSlotAction: 'remove'
 			           className: 'MCPToolClassMutationTestRemoveClassSlotTarget'
 			           slotName: 'removableClassSlot'
 			           classSide: true).
-	data := self dataFrom: result.
+	self dataFrom: result.
 	target := self classNamed: 'MCPToolClassMutationTestRemoveClassSlotTarget'.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (target classSide slots collect: #name as: Array) equals: #(  ).
-	self deny: (result at: #isError ifAbsent: [ false ])
+	self assert: (target classSide slots collect: #name as: Array) equals: #(  )
 ]
 
 { #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateRemovesInstanceSlot [
 
-	| data result target |
+	| result target |
 	self
 		createClassNamed: 'MCPToolClassMutationTestRemoveSlotTarget'
 		superclassName: 'Object'
 		slots: #( removableSlot )
 		classSlots: #(  ).
-	result := self callToolWith: (self
+	result := self callToolNamed: 'class_update' withArguments: (self
 			           updateRequestArgumentsForSlotAction: 'remove'
 			           className: 'MCPToolClassMutationTestRemoveSlotTarget'
 			           slotName: 'removableSlot'
 			           classSide: false).
-	data := self dataFrom: result.
+	self dataFrom: result.
 	target := self classNamed: 'MCPToolClassMutationTestRemoveSlotTarget'.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (target slots collect: #name as: Array) equals: #(  ).
-	self deny: (result at: #isError ifAbsent: [ false ])
+	self assert: (target slots collect: #name as: Array) equals: #(  )
 ]
 
 { #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateRemovesSharedPoolsWithEmptyArray [
 
-	| createArguments data result targetClass |
+	| createArguments result targetClass |
 	createArguments := self
 		                   createRequestArgumentsForClassName: 'MCPToolClassMutationTestSharedPoolRemovalTarget'
 		                   superclassName: 'Object'
 		                   packageName: self generatedPackageName.
 	createArguments at: #sharedPools put: #( 'ChronologyConstants' ).
-	self callToolWith: createArguments.
-	result := self callToolWith:
+	self callToolNamed: 'class_create' withArguments: createArguments.
+	result := self
+		          callToolNamed: 'class_update'
+		          withArguments:
 		          (self
 			           updateRequestArgumentsForSharedPoolsInClassNamed: 'MCPToolClassMutationTestSharedPoolRemovalTarget'
 			           sharedPools: #(  )).
-	data := self dataFrom: result.
+	self dataFrom: result.
 	targetClass := self classNamed: 'MCPToolClassMutationTestSharedPoolRemovalTarget'.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: targetClass sharedPools isEmpty.
-	self deny: (result at: #isError ifAbsent: [ false ])
+	self assert: targetClass sharedPools isEmpty
 ]
 
 { #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateRemovesSharedVariablesWithEmptyArray [
 
-	| createArguments data result targetClass |
+	| createArguments result targetClass |
 	createArguments := self
 		                   createRequestArgumentsForClassName: 'MCPToolClassMutationTestSharedVariableRemovalTarget'
 		                   superclassName: 'Object'
 		                   packageName: self generatedPackageName.
 	createArguments at: #sharedVariables put: #( 'AlphaShared' ).
-	self callToolWith: createArguments.
-	result := self callToolWith: (self
+	self callToolNamed: 'class_create' withArguments: createArguments.
+	result := self callToolNamed: 'class_update' withArguments: (self
 			           updateRequestArgumentsForSharedVariablesInClassNamed: 'MCPToolClassMutationTestSharedVariableRemovalTarget'
 			           sharedVariables: #(  )).
-	data := self dataFrom: result.
+	self dataFrom: result.
 	targetClass := self classNamed: 'MCPToolClassMutationTestSharedVariableRemovalTarget'.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: targetClass classVarNames isEmpty.
-	self deny: (result at: #isError ifAbsent: [ false ])
+	self assert: targetClass classVarNames isEmpty
 ]
 
 { #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateRemovesTraitsWithEmptyArray [
 
-	| createArguments data result targetClass |
+	| createArguments result targetClass |
 	createArguments := self
 		                   createRequestArgumentsForClassName: 'MCPToolClassMutationTestTraitRemovalTarget'
 		                   superclassName: 'Object'
 		                   packageName: self generatedPackageName.
 	createArguments at: #traits put: #( 'TAbleToRotate' ).
-	self callToolWith: createArguments.
-	result := self callToolWith:
+	self callToolNamed: 'class_create' withArguments: createArguments.
+	result := self
+		          callToolNamed: 'class_update'
+		          withArguments:
 		          (self updateRequestArgumentsForTraitsInClassNamed: 'MCPToolClassMutationTestTraitRemovalTarget' traits: #(  )).
-	data := self dataFrom: result.
+	self dataFrom: result.
 	targetClass := self classNamed: 'MCPToolClassMutationTestTraitRemovalTarget'.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: targetClass traits isEmpty.
-	self deny: (result at: #isError ifAbsent: [ false ])
+	self assert: targetClass traits isEmpty
 ]
 
 { #category : 'tests - update' }
@@ -2007,7 +1931,7 @@ MCPToolClassMutationTest >> testUpdateRenameSlotReformatsWithTheFormatterOfTheCl
 			ensureMethodSource: 'slotProbe ^ 1 between: oldSlot and: 2000000'
 			protocol: 'testing'
 			on: (self classNamed: 'MCPToolClassMutationTestRenameSlotFormatterTarget').
-		result := self callToolWith: (self
+		result := self callToolNamed: 'class_update' withArguments: (self
 				           updateRequestArgumentsForSlotRenameInClassNamed: 'MCPToolClassMutationTestRenameSlotFormatterTarget'
 				           slotName: 'oldSlot'
 				           newSlotName: 'renamedSlot'
@@ -2025,7 +1949,7 @@ MCPToolClassMutationTest >> testUpdateRenameSlotReformatsWithTheFormatterOfTheCl
 { #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateRenamesClassSideSlotAndPreservesValue [
 
-	| data result target |
+	| result target |
 	self
 		createClassNamed: 'MCPToolClassMutationTestRenameClassSideSlotTarget'
 		superclassName: 'Object'
@@ -2036,14 +1960,13 @@ MCPToolClassMutationTest >> testUpdateRenamesClassSideSlotAndPreservesValue [
 	self ensureMethodSource: 'oldClassSlot: anObject oldClassSlot := anObject' protocol: 'accessing' on: target classSide.
 	self ensureMethodSource: 'slotProbe ^ self oldClassSlot' protocol: 'testing' on: target classSide.
 	target oldClassSlot: 73.
-	result := self callToolWith: (self
+	result := self callToolNamed: 'class_update' withArguments: (self
 			           updateRequestArgumentsForSlotRenameInClassNamed: 'MCPToolClassMutationTestRenameClassSideSlotTarget'
 			           slotName: 'oldClassSlot'
 			           newSlotName: 'renamedClassSlot'
 			           classSide: true).
-	data := self dataFrom: result.
+	self dataFrom: result.
 	target := self classNamed: 'MCPToolClassMutationTestRenameClassSideSlotTarget'.
-	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (target classSide slots collect: #name as: Array) equals: #( #renamedClassSlot ).
 	self deny: (target classSide includesSelector: #oldClassSlot).
 	self deny: (target classSide includesSelector: #oldClassSlot:).
@@ -2051,14 +1974,13 @@ MCPToolClassMutationTest >> testUpdateRenamesClassSideSlotAndPreservesValue [
 	self assert: (target classSide includesSelector: #renamedClassSlot:).
 	self assert: target renamedClassSlot equals: 73.
 	target renamedClassSlot: 91.
-	self assert: target slotProbe equals: 91.
-	self deny: (result at: #isError ifAbsent: [ false ])
+	self assert: target slotProbe equals: 91
 ]
 
 { #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateRenamesInstanceSlotAndUpdatesReferences [
 
-	| data instance result target |
+	| instance result target |
 	self
 		createClassNamed: 'MCPToolClassMutationTestRenameSlotTarget'
 		superclassName: 'Object'
@@ -2076,24 +1998,22 @@ MCPToolClassMutationTest >> testUpdateRenamesInstanceSlotAndUpdatesReferences [
 		ensureMethodSource: 'slotProbe ^ self oldSlot'
 		protocol: 'testing'
 		on: (self classNamed: 'MCPToolClassMutationTestRenameSlotTarget').
-	result := self callToolWith: (self
+	result := self callToolNamed: 'class_update' withArguments: (self
 			           updateRequestArgumentsForSlotRenameInClassNamed: 'MCPToolClassMutationTestRenameSlotTarget'
 			           slotName: 'oldSlot'
 			           newSlotName: 'renamedSlot'
 			           classSide: false).
-	data := self dataFrom: result.
+	self dataFrom: result.
 	target := self classNamed: 'MCPToolClassMutationTestRenameSlotTarget'.
 	instance := target new.
 	instance renamedSlot: 37.
-	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (target slots collect: #name as: Array) equals: #( #renamedSlot ).
 	self deny: (target includesSelector: #oldSlot).
 	self deny: (target includesSelector: #oldSlot:).
 	self assert: (target includesSelector: #renamedSlot).
 	self assert: (target includesSelector: #renamedSlot:).
 	self assert: instance renamedSlot equals: 37.
-	self assert: instance slotProbe equals: 37.
-	self deny: (result at: #isError ifAbsent: [ false ])
+	self assert: instance slotProbe equals: 37
 ]
 
 { #category : 'tests' }
@@ -2101,7 +2021,7 @@ MCPToolClassMutationTest >> testUpdateRenamesTheClassItsSubclassesAndItsReferenc
 	"A rename is a refactoring that takes a second, so one rename is read every way."
 
 	| reference result |
-	result := self callToolWith: self updateRequestArgumentsForRename.
+	result := self callToolNamed: 'class_update' withArguments: self updateRequestArgumentsForRename.
 	self deny: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
 	self assert: (Smalltalk globals includesKey: self renamedClassName asSymbol).
 	self deny: (Smalltalk globals includesKey: self originalClassName asSymbol).
@@ -2114,7 +2034,7 @@ MCPToolClassMutationTest >> testUpdateRenamesTheClassItsSubclassesAndItsReferenc
 { #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateReparentsClassAndPreservesExistingState [
 
-	| data result target |
+	| result target |
 	self
 		createClassNamed: self reparentSuperclassName
 		superclassName: 'Object'
@@ -2127,79 +2047,73 @@ MCPToolClassMutationTest >> testUpdateReparentsClassAndPreservesExistingState [
 		classSlots: #(  ).
 	self ensureMethodSource: 'probeMethod ^ 41' protocol: 'testing' on: (self classNamed: self reparentTargetClassName).
 	self withoutEpiceaDuring: [ (self classNamed: self reparentTargetClassName) comment: 'reparent comment' ].
-	result := self callToolWith: self updateRequestArgumentsForReparent.
-	data := self dataFrom: result.
+	result := self callToolNamed: 'class_update' withArguments: self updateRequestArgumentsForReparent.
+	self dataFrom: result.
 	target := self classNamed: self reparentTargetClassName.
-	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: target superclass name asString equals: self reparentSuperclassName.
 	self assert: target new probeMethod equals: 41.
 	self assert: target mcpComment equals: 'reparent comment'.
-	self assert: (target slots collect: #name as: Array) equals: #( #alphaSlot ).
-	self deny: (result at: #isError ifAbsent: [ false ])
+	self assert: (target slots collect: #name as: Array) equals: #( #alphaSlot )
 ]
 
 { #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateReplacesLayout [
 
-	| data result targetClass |
+	| result targetClass |
 	self
 		createClassNamed: 'MCPToolClassMutationTestLayoutTarget'
 		superclassName: 'Object'
 		slots: #(  )
 		classSlots: #(  ).
-	result := self callToolWith:
+	result := self
+		          callToolNamed: 'class_update'
+		          withArguments:
 		          (self updateRequestArgumentsForLayoutInClassNamed: 'MCPToolClassMutationTestLayoutTarget' layout: 'WeakLayout').
-	data := self dataFrom: result.
+	self dataFrom: result.
 	targetClass := self classNamed: 'MCPToolClassMutationTestLayoutTarget'.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: targetClass classLayout class name equals: #WeakLayout.
-	self deny: (result at: #isError ifAbsent: [ false ])
+	self assert: targetClass classLayout class name equals: #WeakLayout
 ]
 
 { #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateReplacesSharedPools [
 
-	| createArguments data result targetClass |
+	| createArguments result targetClass |
 	createArguments := self
 		                   createRequestArgumentsForClassName: 'MCPToolClassMutationTestSharedPoolTarget'
 		                   superclassName: 'Object'
 		                   packageName: self generatedPackageName.
 	createArguments at: #sharedPools put: #( 'ChronologyConstants' ).
-	self callToolWith: createArguments.
-	result := self callToolWith: (self
+	self callToolNamed: 'class_create' withArguments: createArguments.
+	result := self callToolNamed: 'class_update' withArguments: (self
 			           updateRequestArgumentsForSharedPoolsInClassNamed: 'MCPToolClassMutationTestSharedPoolTarget'
 			           sharedPools: #( 'TextConstants' )).
-	data := self dataFrom: result.
+	self dataFrom: result.
 	targetClass := self classNamed: 'MCPToolClassMutationTestSharedPoolTarget'.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (targetClass sharedPools collect: [ :each | each name asString ] as: Array) equals: #( 'TextConstants' ).
-	self deny: (result at: #isError ifAbsent: [ false ])
+	self assert: (targetClass sharedPools collect: [ :each | each name asString ] as: Array) equals: #( 'TextConstants' )
 ]
 
 { #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateReplacesSharedVariables [
 
-	| createArguments data result targetClass |
+	| createArguments result targetClass |
 	createArguments := self
 		                   createRequestArgumentsForClassName: 'MCPToolClassMutationTestSharedVariableTarget'
 		                   superclassName: 'Object'
 		                   packageName: self generatedPackageName.
 	createArguments at: #sharedVariables put: #( 'AlphaShared' ).
-	self callToolWith: createArguments.
-	result := self callToolWith: (self
+	self callToolNamed: 'class_create' withArguments: createArguments.
+	result := self callToolNamed: 'class_update' withArguments: (self
 			           updateRequestArgumentsForSharedVariablesInClassNamed: 'MCPToolClassMutationTestSharedVariableTarget'
 			           sharedVariables: #( 'BetaShared' )).
-	data := self dataFrom: result.
+	self dataFrom: result.
 	targetClass := self classNamed: 'MCPToolClassMutationTestSharedVariableTarget'.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: targetClass classVarNames equals: #( #BetaShared ).
-	self deny: (result at: #isError ifAbsent: [ false ])
+	self assert: targetClass classVarNames equals: #( #BetaShared )
 ]
 
 { #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateReplacesSlotDefinitionAndPreservesMatchingValues [
 
-	| data instance result target |
+	| instance result target |
 	self
 		createClassNamed: 'MCPToolClassMutationTestDefinitionTarget'
 		superclassName: 'Object'
@@ -2209,13 +2123,12 @@ MCPToolClassMutationTest >> testUpdateReplacesSlotDefinitionAndPreservesMatching
 	instance := target new.
 	instance instVarNamed: 'keptSlot' put: 13.
 	target instVarNamed: 'keptClassSlot' put: 17.
-	result := self callToolWith: (self updateRequestArgumentsWith: {
-				           (#name -> 'MCPToolClassMutationTestDefinitionTarget').
-				           (#slots -> (Dictionary with: 'replace' -> #( 'keptSlot' 'newSlot' ))).
-				           (#classSlots -> (Dictionary with: 'replace' -> #( 'keptClassSlot' 'newClassSlot' ))) }).
-	data := self dataFrom: result.
+	result := self callToolNamed: 'class_update' withArguments: {
+			          (#name -> 'MCPToolClassMutationTestDefinitionTarget').
+			          (#slots -> (Dictionary with: 'replace' -> #( 'keptSlot' 'newSlot' ))).
+			          (#classSlots -> (Dictionary with: 'replace' -> #( 'keptClassSlot' 'newClassSlot' ))) } asDictionary.
+	self dataFrom: result.
 	target := self classNamed: 'MCPToolClassMutationTestDefinitionTarget'.
-	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (target slots collect: #name as: Array) equals: #( #keptSlot #newSlot ).
 	self assert: (target classSide slots collect: #name as: Array) equals: #( #keptClassSlot #newClassSlot ).
 	self assert: (instance instVarNamed: 'keptSlot') equals: 13.
@@ -2225,22 +2138,22 @@ MCPToolClassMutationTest >> testUpdateReplacesSlotDefinitionAndPreservesMatching
 { #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateReplacesTraits [
 
-	| createArguments data result targetClass |
+	| createArguments result targetClass |
 	createArguments := self
 		                   createRequestArgumentsForClassName: 'MCPToolClassMutationTestTraitTarget'
 		                   superclassName: 'Object'
 		                   packageName: self generatedPackageName.
 	createArguments at: #traits put: #( 'TAbleToRotate' ).
-	self callToolWith: createArguments.
-	result := self callToolWith:
+	self callToolNamed: 'class_create' withArguments: createArguments.
+	result := self
+		          callToolNamed: 'class_update'
+		          withArguments:
 		          (self updateRequestArgumentsForTraitsInClassNamed: 'MCPToolClassMutationTestTraitTarget' traits: #( 'TComparable' )).
-	data := self dataFrom: result.
+	self dataFrom: result.
 	targetClass := self classNamed: 'MCPToolClassMutationTestTraitTarget'.
-	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (targetClass traits collect: [ :each | each name asString ] as: Array) equals: #( 'TComparable' ).
 	self assert: targetClass traitCompositionString equals: 'TComparable'.
-	self assert: targetClass classSide traitCompositionString equals: 'TComparable classTrait'.
-	self deny: (result at: #isError ifAbsent: [ false ])
+	self assert: targetClass classSide traitCompositionString equals: 'TComparable classTrait'
 ]
 
 { #category : 'tests - update' }
@@ -2251,8 +2164,10 @@ MCPToolClassMutationTest >> testUpdateReplacingTraitsSuggestsTraitsAndRefusesACl
 		                   createRequestArgumentsForClassName: 'MCPToolClassMutationTestMissingTraitTarget'
 		                   superclassName: 'Object'
 		                   packageName: self generatedPackageName.
-	self callToolWith: createArguments.
-	result := self callToolWith:
+	self callToolNamed: 'class_create' withArguments: createArguments.
+	result := self
+		          callToolNamed: 'class_update'
+		          withArguments:
 		          (self
 			           updateRequestArgumentsForTraitsInClassNamed: 'MCPToolClassMutationTestMissingTraitTarget'
 			           traits: #( 'TAbleToRotat' )).
@@ -2261,12 +2176,14 @@ MCPToolClassMutationTest >> testUpdateReplacingTraitsSuggestsTraitsAndRefusesACl
 	self assert: ((error at: #suggestions) includes: 'TAbleToRotate').
 	self assert: (error at: #traits) equals: #( 'TAbleToRotat' ).
 	self assert: ((error at: #message) beginsWith: 'Trait TAbleToRotat does not exist. Did you mean: ').
-	result := self callToolWith:
+	result := self
+		          callToolNamed: 'class_update'
+		          withArguments:
 		          (self updateRequestArgumentsForTraitsInClassNamed: 'MCPToolClassMutationTestMissingTraitTarget' traits: #( 'Object' )).
 	error := self errorFrom: result.
 	self assert: (error at: #errorCode) equals: 'InvalidTrait'.
 	self assert: (error at: #message) equals: 'Object is not a trait.'.
-	result := self callToolWith: (self
+	result := self callToolNamed: 'class_update' withArguments: (self
 			           updateRequestArgumentsForTraitsInClassNamed: 'MCPToolClassMutationTestMissingTraitTarget'
 			           traits: #( 'TAbleToRotate classTrait' )).
 	self deny: (result at: #isError ifAbsent: [ false ]).
@@ -2278,13 +2195,12 @@ MCPToolClassMutationTest >> testUpdateReplacingTraitsSuggestsTraitsAndRefusesACl
 { #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenAddSlotClassIsMissing [
 
-	| error result structured |
-	result := self callToolWith: (self
+	| error result |
+	result := self callToolNamed: 'class_update' withArguments: (self
 			           updateRequestArgumentsForSlotAction: 'add'
 			           className: 'MCPToolClassMutationTestMissingAddSlot'
 			           slotName: 'addedSlot'
 			           classSide: false).
-	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (error at: #action) equals: 'update'.
@@ -2300,8 +2216,7 @@ MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenAddSlotClassIsMi
 MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenCommentClassIsMissing [
 
 	| error result suggestions |
-	result := self callToolWith: {
-			          (#action -> 'update').
+	result := self callToolNamed: 'class_update' withArguments: {
 			          (#name -> 'MCPToolClassMutationTestMissing').
 			          (#comment -> 'ignored') } asDictionary.
 	error := self errorFrom: result.
@@ -2320,12 +2235,10 @@ MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenCommentClassIsMi
 { #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenMoveClassIsMissing [
 
-	| error result structured |
-	result := self callToolWith: {
-			          (#action -> 'update').
+	| error result |
+	result := self callToolNamed: 'class_update' withArguments: {
 			          (#name -> 'MCPToolClassMutationTestMissing').
 			          (#package -> self destinationPackageName) } asDictionary.
-	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (error at: #action) equals: 'update'.
@@ -2338,13 +2251,12 @@ MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenMoveClassIsMissi
 { #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenPullUpSlotClassIsMissing [
 
-	| error result structured |
-	result := self callToolWith: (self
+	| error result |
+	result := self callToolNamed: 'class_update' withArguments: (self
 			           updateRequestArgumentsForSlotAction: 'pullUp'
 			           className: 'MCPToolClassMutationTestMissingPullUp'
 			           slotName: 'sharedSlot'
 			           classSide: false).
-	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (error at: #action) equals: 'update'.
@@ -2359,13 +2271,12 @@ MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenPullUpSlotClassI
 { #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenRemoveSlotClassIsMissing [
 
-	| error result structured |
-	result := self callToolWith: (self
+	| error result |
+	result := self callToolNamed: 'class_update' withArguments: (self
 			           updateRequestArgumentsForSlotAction: 'remove'
 			           className: 'MCPToolClassMutationTestMissingRemoveSlot'
 			           slotName: 'removableSlot'
 			           classSide: false).
-	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (error at: #action) equals: 'update'.
@@ -2381,8 +2292,7 @@ MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenRemoveSlotClassI
 MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenRenameClassIsMissing [
 
 	| error result suggestions |
-	result := self callToolWith: {
-			          (#action -> 'update').
+	result := self callToolNamed: 'class_update' withArguments: {
 			          (#name -> 'MCPToolClassMutationTestMissing').
 			          (#newName -> self renamedClassName) } asDictionary.
 	error := self errorFrom: result.
@@ -2401,13 +2311,12 @@ MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenRenameClassIsMis
 { #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenRenameSlotClassIsMissing [
 
-	| error result structured |
-	result := self callToolWith: (self
+	| error result |
+	result := self callToolNamed: 'class_update' withArguments: (self
 			           updateRequestArgumentsForSlotRenameInClassNamed: 'MCPToolClassMutationTestMissingRenameSlot'
 			           slotName: 'oldSlot'
 			           newSlotName: 'renamedSlot'
 			           classSide: false).
-	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (error at: #action) equals: 'update'.
@@ -2424,8 +2333,7 @@ MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenRenameSlotClassI
 MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenReparentClassIsMissing [
 
 	| error result |
-	result := self callToolWith: {
-			          (#action -> 'update').
+	result := self callToolNamed: 'class_update' withArguments: {
 			          (#name -> 'MCPToolClassMutationTestMissing').
 			          (#superclass -> self reparentSuperclassName) } asDictionary.
 	error := self errorFrom: result.
@@ -2444,8 +2352,7 @@ MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenReparentSupercla
 		superclassName: 'Object'
 		slots: #(  )
 		classSlots: #(  ).
-	result := self callToolWith: {
-			          (#action -> 'update').
+	result := self callToolNamed: 'class_update' withArguments: {
 			          (#name -> self reparentTargetClassName).
 			          (#superclass -> 'DefinitelyMissingSuperclass') } asDictionary.
 	error := self errorFrom: result.
@@ -2466,7 +2373,9 @@ MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenReplacementLayou
 		superclassName: 'Object'
 		slots: #(  )
 		classSlots: #(  ).
-	result := self callToolWith:
+	result := self
+		          callToolNamed: 'class_update'
+		          withArguments:
 		          (self updateRequestArgumentsForLayoutInClassNamed: 'MCPToolClassMutationTestInvalidLayoutTarget' layout: 'Object').
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
@@ -2487,7 +2396,9 @@ MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenReplacementLayou
 		superclassName: 'Object'
 		slots: #(  )
 		classSlots: #(  ).
-	result := self callToolWith:
+	result := self
+		          callToolNamed: 'class_update'
+		          withArguments:
 		          (self
 			           updateRequestArgumentsForLayoutInClassNamed: 'MCPToolClassMutationTestMissingLayoutTarget'
 			           layout: 'DefinitelyMissingLayout').
@@ -2509,8 +2420,8 @@ MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenReplacementShare
 		                   createRequestArgumentsForClassName: 'MCPToolClassMutationTestMissingSharedPoolTarget'
 		                   superclassName: 'Object'
 		                   packageName: self generatedPackageName.
-	self callToolWith: createArguments.
-	result := self callToolWith: (self
+	self callToolNamed: 'class_create' withArguments: createArguments.
+	result := self callToolNamed: 'class_update' withArguments: (self
 			           updateRequestArgumentsForSharedPoolsInClassNamed: 'MCPToolClassMutationTestMissingSharedPoolTarget'
 			           sharedPools: #( 'DefinitelyMissingSharedPool' )).
 	error := self errorFrom: result.
@@ -2532,8 +2443,8 @@ MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenReplacementTrait
 		                   createRequestArgumentsForClassName: 'MCPToolClassMutationTestMissingTraitTarget'
 		                   superclassName: 'Object'
 		                   packageName: self generatedPackageName.
-	self callToolWith: createArguments.
-	result := self callToolWith: (self
+	self callToolNamed: 'class_create' withArguments: createArguments.
+	result := self callToolNamed: 'class_update' withArguments: (self
 			           updateRequestArgumentsForTraitsInClassNamed: 'MCPToolClassMutationTestMissingTraitTarget'
 			           traits: #( 'DefinitelyMissingTrait' )).
 	error := self errorFrom: result.
@@ -2550,19 +2461,17 @@ MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenReplacementTrait
 { #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateSetsClassComment [
 
-	| data result target |
+	| result target |
 	self
 		createClassNamed: self commentTargetClassName
 		superclassName: 'Object'
 		slots: #(  )
 		classSlots: #(  ).
 	self withoutEpiceaDuring: [ (self classNamed: self commentTargetClassName) comment: 'original comment' ].
-	result := self callToolWith: (self updateRequestArgumentsForClassComment: 'updated comment').
-	data := self dataFrom: result.
+	result := self callToolNamed: 'class_update' withArguments: (self updateRequestArgumentsForClassComment: 'updated comment').
+	self dataFrom: result.
 	target := self classNamed: self commentTargetClassName.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: target mcpComment equals: 'updated comment'.
-	self deny: (result at: #isError ifAbsent: [ false ])
+	self assert: target mcpComment equals: 'updated comment'
 ]
 
 { #category : 'tests - update' }
@@ -2575,8 +2484,7 @@ MCPToolClassMutationTest >> testUpdateStopsAtTheFirstFailedChangeAndSaysWhatLand
 		slots: #(  )
 		classSlots: #(  ).
 	"The layout is replaced first and fails, so the comment after it is never attempted."
-	result := self callToolWith: {
-			          (#action -> 'update').
+	result := self callToolNamed: 'class_update' withArguments: {
 			          (#name -> 'MCPToolClassMutationTestStopTarget').
 			          (#layout -> 'MCPNoSuchLayout').
 			          (#comment -> 'never set') } asDictionary.
@@ -2605,12 +2513,6 @@ MCPToolClassMutationTest >> testUpdateWithNoPatchArgumentsAsksForNoUpdate [
 	self assert: ((self errorFrom: result) at: #errorCode) equals: 'NoClassUpdateRequested'
 ]
 
-{ #category : 'private - calling' }
-MCPToolClassMutationTest >> toolName [
-
-	self shouldNotImplement
-]
-
 { #category : 'private - update' }
 MCPToolClassMutationTest >> updatePlansFor: associations [
 	"The plans class_update makes for these arguments on Object, in the order it would apply them, without applying any."
@@ -2627,7 +2529,6 @@ MCPToolClassMutationTest >> updatePlansFor: associations [
 MCPToolClassMutationTest >> updateRequestArgumentsForClassComment: aClassComment [
 
 	^ {
-		  (#action -> 'update').
 		  (#name -> self commentTargetClassName).
 		  (#comment -> aClassComment) } asDictionary
 ]
@@ -2635,16 +2536,15 @@ MCPToolClassMutationTest >> updateRequestArgumentsForClassComment: aClassComment
 { #category : 'private - update' }
 MCPToolClassMutationTest >> updateRequestArgumentsForLayoutInClassNamed: aClassName layout: aLayoutName [
 
-	^ self updateRequestArgumentsWith: {
-			  (#name -> aClassName).
-			  (#layout -> aLayoutName) }
+	^ {
+		  (#name -> aClassName).
+		  (#layout -> aLayoutName) } asDictionary
 ]
 
 { #category : 'private - update' }
 MCPToolClassMutationTest >> updateRequestArgumentsForMoveToPackage [
 
 	^ {
-		  (#action -> 'update').
 		  (#name -> self moveTargetClassName).
 		  (#package -> self destinationPackageName) } asDictionary
 ]
@@ -2653,7 +2553,6 @@ MCPToolClassMutationTest >> updateRequestArgumentsForMoveToPackage [
 MCPToolClassMutationTest >> updateRequestArgumentsForMoveToPackageAndTag [
 
 	^ {
-		  (#action -> 'update').
 		  (#name -> self moveTargetClassName).
 		  (#package -> self destinationPackageName).
 		  (#tag -> self destinationTagName) } asDictionary
@@ -2663,7 +2562,6 @@ MCPToolClassMutationTest >> updateRequestArgumentsForMoveToPackageAndTag [
 MCPToolClassMutationTest >> updateRequestArgumentsForRecategorization [
 
 	^ {
-		  (#action -> 'update').
 		  (#name -> self moveTargetClassName).
 		  (#tag -> self destinationTagName) } asDictionary
 ]
@@ -2672,7 +2570,6 @@ MCPToolClassMutationTest >> updateRequestArgumentsForRecategorization [
 MCPToolClassMutationTest >> updateRequestArgumentsForRename [
 
 	^ {
-		  (#action -> 'update').
 		  (#name -> self originalClassName).
 		  (#newName -> self renamedClassName) } asDictionary
 ]
@@ -2681,7 +2578,6 @@ MCPToolClassMutationTest >> updateRequestArgumentsForRename [
 MCPToolClassMutationTest >> updateRequestArgumentsForReparent [
 
 	^ {
-		  (#action -> 'update').
 		  (#name -> self reparentTargetClassName).
 		  (#superclass -> self reparentSuperclassName) } asDictionary
 ]
@@ -2689,55 +2585,45 @@ MCPToolClassMutationTest >> updateRequestArgumentsForReparent [
 { #category : 'private - update' }
 MCPToolClassMutationTest >> updateRequestArgumentsForSharedPoolsInClassNamed: aClassName sharedPools: someNames [
 
-	^ self updateRequestArgumentsWith: {
-			  (#name -> aClassName).
-			  (#sharedPools -> someNames) }
+	^ {
+		  (#name -> aClassName).
+		  (#sharedPools -> someNames) } asDictionary
 ]
 
 { #category : 'private - update' }
 MCPToolClassMutationTest >> updateRequestArgumentsForSharedVariablesInClassNamed: aClassName sharedVariables: someNames [
 
-	^ self updateRequestArgumentsWith: {
-			  (#name -> aClassName).
-			  (#sharedVariables -> someNames) }
+	^ {
+		  (#name -> aClassName).
+		  (#sharedVariables -> someNames) } asDictionary
 ]
 
 { #category : 'private - update' }
 MCPToolClassMutationTest >> updateRequestArgumentsForSlotAction: slotAction className: aClassName slotName: aSlotName classSide: aBoolean [
 
-	^ self updateRequestArgumentsWith: {
-			  (#name -> aClassName).
-			  ((aBoolean
-				    ifTrue: [ #classSlots ]
-				    ifFalse: [ #slots ]) -> (Dictionary with: slotAction -> { aSlotName })) }
+	^ {
+		  (#name -> aClassName).
+		  ((aBoolean
+			    ifTrue: [ #classSlots ]
+			    ifFalse: [ #slots ]) -> (Dictionary with: slotAction -> { aSlotName })) } asDictionary
 ]
 
 { #category : 'private - update' }
 MCPToolClassMutationTest >> updateRequestArgumentsForSlotRenameInClassNamed: aClassName slotName: aSlotName newSlotName: aNewSlotName classSide: aBoolean [
 
-	^ self updateRequestArgumentsWith: {
-			  (#name -> aClassName).
-			  ((aBoolean
-				    ifTrue: [ #classSlots ]
-				    ifFalse: [ #slots ]) -> (Dictionary with: 'rename' -> (Dictionary with: aSlotName -> aNewSlotName))) }
+	^ {
+		  (#name -> aClassName).
+		  ((aBoolean
+			    ifTrue: [ #classSlots ]
+			    ifFalse: [ #slots ]) -> (Dictionary with: 'rename' -> (Dictionary with: aSlotName -> aNewSlotName))) } asDictionary
 ]
 
 { #category : 'private - update' }
 MCPToolClassMutationTest >> updateRequestArgumentsForTraitsInClassNamed: aClassName traits: someTraitNames [
 
-	^ self updateRequestArgumentsWith: {
-			  (#name -> aClassName).
-			  (#traits -> someTraitNames) }
-]
-
-{ #category : 'private - update' }
-MCPToolClassMutationTest >> updateRequestArgumentsWith: associations [
-
-	| arguments |
-	arguments := Dictionary new.
-	arguments at: #action put: 'update'.
-	associations do: [ :each | arguments at: each key put: each value ].
-	^ arguments
+	^ {
+		  (#name -> aClassName).
+		  (#traits -> someTraitNames) } asDictionary
 ]
 
 { #category : 'private - fixtures' }

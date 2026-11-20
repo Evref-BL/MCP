@@ -403,14 +403,13 @@ MCPToolRemoveMethodsTest >> testRemovingWarnsOfSendsItsSubclassesStillMake [
 { #category : 'tests' }
 MCPToolRemoveMethodsTest >> testReturnsStructuredErrorWhenAnyMethodIsMissing [
 
-	| error result structured |
+	| error result |
 	result := self callToolWith: {
 			          (#class -> 'MCPToolRemoveMethodsTestTarget').
 			          (#side -> 'instance').
 			          (#selector -> {
 				           self firstInstanceBatchSelectorString.
 				           self missingSelectorString }) } asDictionary.
-	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.

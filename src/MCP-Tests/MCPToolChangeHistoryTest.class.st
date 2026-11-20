@@ -1,9 +1,9 @@
 "
-Tests for the image change history management MCP tool.
+Tests the history_entry_* tools and history_file_list on a change history each test writes.
 "
 Class {
 	#name : 'MCPToolChangeHistoryTest',
-	#superclass : 'MCPToolTestCase',
+	#superclass : 'MCPToolAPITestCase',
 	#instVars : [
 		'originalMonitor',
 		'tempMonitor',
@@ -21,24 +21,6 @@ MCPToolChangeHistoryTest class >> shouldLogWithEpicea [
 	^ true
 ]
 
-{ #category : 'private - calling' }
-MCPToolChangeHistoryTest >> callToolWith: someArguments [
-
-	| action arguments request result tool toolClass |
-	arguments := someArguments copy.
-	action := arguments removeKey: #action ifAbsent: [ nil ].
-	toolClass := Dictionary new
-		             at: 'listFiles' put: MCPToolListChangeHistoryFiles;
-		             at: 'listEntries' put: MCPToolListChangeHistoryEntries;
-		             at: 'applyEntries' put: MCPToolApplyChangeHistoryEntries;
-		             at: 'revertEntries' put: MCPToolRevertChangeHistoryEntries;
-		             at: action ifAbsent: [ Error signal: 'Unknown change history action: ' , action asString ].
-	tool := toolClass new.
-	request := tool requestFromToolCallArguments: arguments.
-	result := tool executeWithRequest: request.
-	^ result asJRPCJSON
-]
-
 { #category : 'private' }
 MCPToolChangeHistoryTest >> defaultHistoryDirectoryPath [
 
@@ -49,7 +31,7 @@ MCPToolChangeHistoryTest >> defaultHistoryDirectoryPath [
 MCPToolChangeHistoryTest >> entriesListedFor: someAssociations [
 	"The entries history_entry_list lists for the arguments someAssociations name."
 
-	^ (self dataFrom: (self callToolWith: (someAssociations copyWith: #action -> 'listEntries') asDictionary)) at: #entries
+	^ (self dataFrom: (self callToolNamed: 'history_entry_list' withArguments: someAssociations asDictionary)) at: #entries
 ]
 
 { #category : 'private' }
@@ -156,9 +138,7 @@ MCPToolChangeHistoryTest >> testADirectoryWithoutAFileIsRefusedWhereTheSessionIs
 	directory := FileLocator temp asFileReference / ('mcp-colleague-history-' , UUID new asString).
 	[
 		directory ensureCreateDirectory.
-		result := self callToolWith: {
-				          (#action -> 'listEntries').
-				          (#directoryPath -> directory fullName) } asDictionary.
+		result := self callToolNamed: 'history_entry_list' withArguments: { (#directoryPath -> directory fullName) } asDictionary.
 		error := self errorFrom: result.
 		self assert: (result at: #isError).
 		self assert: (error at: #errorCode) equals: 'ChangeHistoryFileNotNamed'.
@@ -173,9 +153,9 @@ MCPToolChangeHistoryTest >> testADirectoryWithoutAFileListsTheSessionWhereItIs [
 
 	| result |
 	self useDiskBackedTemporaryLog.
-	result := self callToolWith: {
-			          (#action -> 'listEntries').
-			          (#directoryPath -> self defaultHistoryDirectoryPath) } asDictionary.
+	result := self
+		          callToolNamed: 'history_entry_list'
+		          withArguments: { (#directoryPath -> self defaultHistoryDirectoryPath) } asDictionary.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: ((self dataFrom: result) includesKey: #entries)
 ]
@@ -185,9 +165,9 @@ MCPToolChangeHistoryTest >> testANonCodeEntryChangesNothing [
 	"An entry that is no code change is selected like any other, has nothing to apply, and says so."
 
 	| entry |
-	entry := ((self dataFrom: (self callToolWith: {
-				            (#action -> 'applyEntries').
-				            (#indexes -> { self recordNonCodeEntry }) } asDictionary)) at: #selectedEntries) first.
+	entry := ((self dataFrom:
+		           (self callToolNamed: 'history_entry_apply' withArguments: { (#indexes -> { self recordNonCodeEntry }) } asDictionary))
+		          at: #selectedEntries) first.
 	self assert: (entry at: #eventClass) equals: 'EpSessionStart'.
 	self assert: (entry at: #changesNothing) equals: 'not a code change'
 ]
@@ -197,12 +177,10 @@ MCPToolChangeHistoryTest >> testARelativeDirectoryIsRefusedNamingTheImageDirecto
 	"The image would read history against its own working directory, which is not the caller's."
 
 	{
-		{ (#action -> 'listFiles') }.
-		{
-			(#action -> 'listEntries').
-			(#historyFile -> 'colleague.ombu') } } do: [ :arguments |
+		('history_file_list' -> {  }).
+		('history_entry_list' -> { (#historyFile -> 'colleague.ombu') }) } do: [ :call |
 			| error result |
-			result := self callToolWith: (arguments , { (#directoryPath -> 'history') }) asDictionary.
+			result := self callToolNamed: call key withArguments: (call value , { (#directoryPath -> 'history') }) asDictionary.
 			error := self errorFrom: result.
 			self assert: (result at: #isError).
 			self assert: (error at: #errorCode) equals: 'ChangeHistoryDirectoryNotAbsolute'.
@@ -219,13 +197,11 @@ MCPToolChangeHistoryTest >> testApplyAndRevertPrintWhatTheySelected [
 
 	self withTemporaryRecoveryClassDo: [ :class |
 			| textFor |
-			textFor := [ :action :entryIndex |
-				           self textFrom: (self callToolWith: {
-							            (#action -> action).
-							            (#indexes -> { entryIndex }) } asDictionary) ].
+			textFor := [ :toolName :entryIndex |
+			           self textFrom: (self callToolNamed: toolName withArguments: { (#indexes -> { entryIndex }) } asDictionary) ].
 			{
-				(textFor value: 'revertEntries' value: (self recordMethodAdditionOn: class)).
-				(textFor value: 'applyEntries' value: (self recordRecoverableMethodAdditionOn: class)) } do: [ :text |
+				(textFor value: 'history_entry_revert' value: (self recordMethodAdditionOn: class)).
+				(textFor value: 'history_entry_apply' value: (self recordRecoverableMethodAdditionOn: class)) } do: [ :text |
 					self deny: (text includesSubstring: 'selectionCriteria').
 					self assert: (text includesSubstring: 'selectedEntries:').
 					self assert: (text includesSubstring: 'changes:') ] ]
@@ -239,9 +215,7 @@ MCPToolChangeHistoryTest >> testApplyEntriesAppliesChanges [
 			| data entryIndex result |
 			entryIndex := self recordRecoverableMethodAdditionOn: class.
 			self deny: (class includesSelector: #rescuedValue).
-			result := self callToolWith: {
-					          (#action -> 'applyEntries').
-					          (#indexes -> { entryIndex }) } asDictionary.
+			result := self callToolNamed: 'history_entry_apply' withArguments: { (#indexes -> { entryIndex }) } asDictionary.
 			data := self dataFrom: result.
 			self deny: (result at: #isError ifAbsent: [ false ]).
 			self assert: (data at: #action) equals: 'apply'.
@@ -256,9 +230,7 @@ MCPToolChangeHistoryTest >> testApplyEntriesAppliesChanges [
 MCPToolChangeHistoryTest >> testApplyEntriesRejectsNonPositiveIndex [
 
 	| error result |
-	result := self callToolWith: {
-			          (#action -> 'applyEntries').
-			          (#indexes -> #( 0 )) } asDictionary.
+	result := self callToolNamed: 'history_entry_apply' withArguments: { (#indexes -> #( 0 )) } asDictionary.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (error at: #errorCode) equals: 'ChangeHistoryInvalidSelection'.
@@ -271,10 +243,10 @@ MCPToolChangeHistoryTest >> testApplyEntriesRequiresAnIndex [
 	"indexes is the only way to name an entry, so a call without one, or with an empty list, names nothing to apply."
 
 	| error result |
-	self should: [ self callToolWith: { (#action -> 'applyEntries') } asDictionary ] raise: MCPInvalidToolInput.
-	result := self callToolWith: {
-			          (#action -> 'applyEntries').
-			          (#indexes -> #(  )) } asDictionary.
+	self
+		assertResult: (self callToolNamed: 'history_entry_apply' withArguments: Dictionary new)
+		refusesArgumentsSaying: 'indexes is required.'.
+	result := self callToolNamed: 'history_entry_apply' withArguments: { (#indexes -> #(  )) } asDictionary.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (error at: #errorCode) equals: 'ChangeHistoryInvalidSelection'
@@ -288,11 +260,9 @@ MCPToolChangeHistoryTest >> testApplySaysWhichSelectedEntriesChangeNothing [
 			| additionIndex data modificationIndex reasons |
 			additionIndex := self recordRescuedValue: 'rescuedValue ^ 42' on: class.
 			modificationIndex := self recordRescuedValue: 'rescuedValue ^ 43' on: class.
-			data := self dataFrom: (self callToolWith: {
-						         (#action -> 'applyEntries').
-						         (#indexes -> {
-							          additionIndex.
-							          modificationIndex }) } asDictionary).
+			data := self dataFrom: (self callToolNamed: 'history_entry_apply' withArguments: { (#indexes -> {
+						          additionIndex.
+						          modificationIndex }) } asDictionary).
 			reasons := (data at: #selectedEntries) collect: [ :each | (each at: #index) -> (each at: #changesNothing) ] as: Dictionary.
 			self assert: (data at: #changes) isEmpty.
 			self
@@ -309,14 +279,50 @@ MCPToolChangeHistoryTest >> testApplyingAnOlderVersionShowsTheSourceBeforeAndAft
 			| additionIndex change |
 			additionIndex := self recordRescuedValue: 'rescuedValue ^ 42' on: class.
 			self recordRescuedValue: 'rescuedValue ^ 43' on: class.
-			change := ((self dataFrom: (self callToolWith: {
-						             (#action -> 'applyEntries').
-						             (#indexes -> { additionIndex }) } asDictionary)) at: #changes) first.
+			change := ((self dataFrom:
+				            (self callToolNamed: 'history_entry_apply' withArguments: { (#indexes -> { additionIndex }) } asDictionary)) at:
+				           #changes) first.
 			self assert: (change at: #index) equals: additionIndex.
 			self assert: (change at: #eventClass) equals: 'EpMethodModification'.
 			self assert: (change at: #sourceBefore) equals: 'rescuedValue ^ 43'.
 			self assert: (change at: #sourceAfter) equals: 'rescuedValue ^ 42'.
 			self assert: (class >> #rescuedValue) sourceCode equals: 'rescuedValue ^ 42' ]
+]
+
+{ #category : 'tests' }
+MCPToolChangeHistoryTest >> testChangeHistoryToolsAreDiscoverableWithExpectedMetadata [
+
+	| metadataByName result toolNames |
+	result := self callToolNamed: 'tool_search' withArguments: { (#query -> 'history') } asDictionary.
+	metadataByName := (((self dataFrom: result) at: #tools) collect: [ :each | (each at: #name) -> each ]) asDictionary.
+	toolNames := metadataByName keys.
+	#( 'history_file_list' 'history_entry_list' 'history_entry_apply' 'history_entry_revert' ) do: [ :toolName |
+			| metadata tool |
+			self assert: (toolNames includes: toolName).
+			tool := self toolRegistry toolNamed: toolName ifAbsent: [ self fail: 'Missing tool ' , toolName ].
+			self assert: tool defaultExposure equals: 'discoverable'.
+			metadata := metadataByName at: toolName.
+			self assert: metadata keys asSet equals: #( name description exposure arguments requiredArguments ) asSet.
+			self assert: (metadata at: #exposure) equals: 'discoverable' ]
+]
+
+{ #category : 'tests' }
+MCPToolChangeHistoryTest >> testChangeHistoryToolsDeclareExpectedInputs [
+
+	| applyProperties entryProperties fileProperties revertProperties selectionProperties |
+	fileProperties := self inputPropertyNamesFor: MCPToolListChangeHistoryFiles new.
+	entryProperties := self inputPropertyNamesFor: MCPToolListChangeHistoryEntries new.
+	applyProperties := self inputPropertyNamesFor: MCPToolApplyChangeHistoryEntries new.
+	revertProperties := self inputPropertyNamesFor: MCPToolRevertChangeHistoryEntries new.
+	selectionProperties := #( 'directoryPath' 'historyFile' 'indexes' ).
+	self assert: fileProperties asArray equals: #( 'directoryPath' 'offset' ).
+	self assert: entryProperties asArray equals: #( 'directoryPath' 'historyFile' 'class' 'offset' 'newestFirst' 'codeChangesOnly' ).
+	self assert: applyProperties asArray equals: selectionProperties.
+	self assert: revertProperties asArray equals: selectionProperties.
+	{
+		MCPToolApplyChangeHistoryEntries.
+		MCPToolRevertChangeHistoryEntries } do: [ :toolClass |
+		self assert: toolClass new inputSchema required asArray equals: #( 'indexes' ) ]
 ]
 
 { #category : 'tests' }
@@ -327,8 +333,7 @@ MCPToolChangeHistoryTest >> testClassSideEntryReadsAsAClassSideMethod [
 			| entry result text |
 			class classSide compile: 'rescuedValue ^ 42' classified: 'testing'.
 			EpMonitor current sessionStore flush.
-			result := self callToolWith: {
-					          (#action -> 'listEntries').
+			result := self callToolNamed: 'history_entry_list' withArguments: {
 					          (#newestFirst -> true).
 					          (#codeChangesOnly -> true) } asDictionary.
 			entry := ((self dataFrom: result) at: #entries) first.
@@ -337,6 +342,23 @@ MCPToolChangeHistoryTest >> testClassSideEntryReadsAsAClassSideMethod [
 			text := (result at: #content) first at: #text.
 			self assert: (text includesSubstring: ('{1} class>>rescuedValue' format: { class name })).
 			self deny: (text includesSubstring: ' class class>>') ]
+]
+
+{ #category : 'tests' }
+MCPToolChangeHistoryTest >> testListChangeHistoryFilesPaginatesFiles [
+
+	| data directory files |
+	directory := FileLocator temp asFileReference / ('mcp-history-files-' , UUID new asString).
+	[
+		directory ensureCreateDirectory.
+		directory / 'a.ombu' writeStreamDo: [ :stream | stream nextPutAll: 'a' ].
+		directory / 'b.ombu' writeStreamDo: [ :stream | stream nextPutAll: 'b' ].
+		data := self dataFrom: (self callToolNamed: 'history_file_list' withArguments: {
+					         (#directoryPath -> directory fullName).
+					         (#offset -> 1) } asDictionary).
+		files := data at: #files.
+		self assert: files size equals: 1.
+		self deny: (data includesKey: #nextOffset) ] ensure: [ directory ensureDeleteAll ]
 ]
 
 { #category : 'tests' }
@@ -392,8 +414,7 @@ MCPToolChangeHistoryTest >> testListEntriesReportsDirectoryPathAsNotFile [
 	| directory error result |
 	self useDiskBackedTemporaryLog.
 	directory := self defaultHistoryDirectoryPath asFileReference.
-	result := self callToolWith: {
-			          (#action -> 'listEntries').
+	result := self callToolNamed: 'history_entry_list' withArguments: {
 			          (#directoryPath -> directory parent fullName).
 			          (#historyFile -> directory basename) } asDictionary.
 	error := self errorFrom: result.
@@ -410,8 +431,7 @@ MCPToolChangeHistoryTest >> testListEntriesReportsUnreadableHistoryFile [
 	        / (String streamContents: [ :stream | stream << 'mcp-unreadable-change-history-' << UUID new asString << '.ombu' ]).
 	[
 		file writeStreamDo: [ :stream | stream nextPutAll: 'not an ombu history file' ].
-		result := self callToolWith: {
-				          (#action -> 'listEntries').
+		result := self callToolNamed: 'history_entry_list' withArguments: {
 				          (#directoryPath -> file parent fullName).
 				          (#historyFile -> file basename) } asDictionary.
 		error := self errorFrom: result.
@@ -427,8 +447,7 @@ MCPToolChangeHistoryTest >> testListEntriesReturnsGranularCodeChangeData [
 	self withTemporaryRecoveryClassDo: [ :class |
 			| data entries firstEntry result |
 			self recordMethodAdditionOn: class.
-			result := self callToolWith: {
-					          (#action -> 'listEntries').
+			result := self callToolNamed: 'history_entry_list' withArguments: {
 					          (#newestFirst -> true).
 					          (#codeChangesOnly -> true) } asDictionary.
 			data := self dataFrom: result.
@@ -451,7 +470,7 @@ MCPToolChangeHistoryTest >> testListEntriesSupportsHistoryFileName [
 	| data entries file files filesResult result |
 	self withTemporaryRecoveryClassDo: [ :class |
 			self recordMethodAdditionOn: class.
-			filesResult := self callToolWith: { (#action -> 'listFiles') } asDictionary.
+			filesResult := self callToolNamed: 'history_file_list' withArguments: {  } asDictionary.
 			data := self dataFrom: filesResult.
 			files := data at: #files.
 			file := files
@@ -460,9 +479,7 @@ MCPToolChangeHistoryTest >> testListEntriesSupportsHistoryFileName [
 				        files
 					        detect: [ :each | each at: #exists ifAbsent: [ true ] ]
 					        ifNone: [ self skip: 'No existing change history file.' ] ].
-			result := self callToolWith: {
-					          (#action -> 'listEntries').
-					          (#historyFile -> (file at: #file)) } asDictionary.
+			result := self callToolNamed: 'history_entry_list' withArguments: { (#historyFile -> (file at: #file)) } asDictionary.
 			data := self dataFrom: result.
 			entries := data at: #entries.
 			self assert: (data at: #historyFile) equals: (file at: #file).
@@ -473,12 +490,10 @@ MCPToolChangeHistoryTest >> testListEntriesSupportsHistoryFileName [
 MCPToolChangeHistoryTest >> testListFilesReportsFilePathAsNotDirectory [
 
 	| data error file filePath result |
-	data := self dataFrom: (self callToolWith: { (#action -> 'listFiles') } asDictionary).
+	data := self dataFrom: (self callToolNamed: 'history_file_list' withArguments: {  } asDictionary).
 	file := (data at: #files) detect: [ :each | each at: #isCurrent ifAbsent: [ false ] ].
 	filePath := (self defaultHistoryDirectoryPath asFileReference / (file at: #file)) fullName.
-	result := self callToolWith: {
-			          (#action -> 'listFiles').
-			          (#directoryPath -> filePath) } asDictionary.
+	result := self callToolNamed: 'history_file_list' withArguments: { (#directoryPath -> filePath) } asDictionary.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (error at: #errorCode) equals: 'ChangeHistoryPathNotDirectory'.
@@ -490,9 +505,7 @@ MCPToolChangeHistoryTest >> testListFilesReportsMissingDirectoryPath [
 
 	| error missingPath result |
 	missingPath := (FileLocator temp asFileReference / ('mcp-missing-change-history-' , UUID new asString)) fullName.
-	result := self callToolWith: {
-			          (#action -> 'listFiles').
-			          (#directoryPath -> missingPath) } asDictionary.
+	result := self callToolNamed: 'history_file_list' withArguments: { (#directoryPath -> missingPath) } asDictionary.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (error at: #errorCode) equals: 'ChangeHistoryDirectoryNotFound'.
@@ -503,15 +516,14 @@ MCPToolChangeHistoryTest >> testListFilesReportsMissingDirectoryPath [
 MCPToolChangeHistoryTest >> testListFilesReturnsCurrentHistoryFile [
 
 	| allowedFileKeys data files result |
-	result := self callToolWith: { (#action -> 'listFiles') } asDictionary.
+	result := self callToolNamed: 'history_file_list' withArguments: {  } asDictionary.
 	data := self dataFrom: result.
 	files := data at: #files.
 	allowedFileKeys := #( file exists fileSize modificationTime isCurrent ) asSet.
-	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: files isNotEmpty.
 	self assert: (files anySatisfy: [ :each | each at: #isCurrent ifAbsent: [ false ] ]).
-	self assert: (files allSatisfy: [ :each |
-			 (each includesKey: #file) and: [ each keys allSatisfy: [ :key | allowedFileKeys includes: key ] ] ])
+	self assert:
+		(files allSatisfy: [ :each | (each includesKey: #file) and: [ each keys allSatisfy: [ :key | allowedFileKeys includes: key ] ] ])
 ]
 
 { #category : 'tests' }
@@ -520,15 +532,33 @@ MCPToolChangeHistoryTest >> testListFilesSupportsDirectoryPath [
 	| data directoryPath files result |
 	self useDiskBackedTemporaryLog.
 	directoryPath := self defaultHistoryDirectoryPath.
-	result := self callToolWith: {
-			          (#action -> 'listFiles').
-			          (#directoryPath -> directoryPath) } asDictionary.
+	result := self callToolNamed: 'history_file_list' withArguments: { (#directoryPath -> directoryPath) } asDictionary.
 	data := self dataFrom: result.
 	files := data at: #files.
-	self deny: (result at: #isError ifAbsent: [ false ]).
 	self deny: (data includesKey: #action).
 	self assert: files isNotEmpty.
 	self assert: (files anySatisfy: [ :each | each at: #isCurrent ifAbsent: [ false ] ])
+]
+
+{ #category : 'tests' }
+MCPToolChangeHistoryTest >> testListSaysWhereTheNextPageStarts [
+	"A page of entries or files names the offset of the next, in the words every other paged answer uses: the text leaves nextOffset to the summary."
+
+	| entries files |
+	entries := MCPToolListChangeHistoryEntries new.
+	self
+		assert: (entries successSummaryForData: {
+					 (#entries -> (1 to: 25) asArray).
+					 (#nextOffset -> 25) } asDictionary)
+		equals: 'Listed 25 change history entries. Next page: offset 25.'.
+	self assert: (entries successSummaryForData: { (#entries -> #( 1 )) } asDictionary) equals: 'Listed 1 change history entry.'.
+	files := MCPToolListChangeHistoryFiles new.
+	self
+		assert: (files successSummaryForData: {
+					 (#files -> (1 to: 25) asArray).
+					 (#nextOffset -> 25) } asDictionary)
+		equals: 'Listed 25 change history files. Next page: offset 25.'.
+	self assert: (files successSummaryForData: { (#files -> #( 1 )) } asDictionary) equals: 'Listed 1 change history file.'
 ]
 
 { #category : 'tests' }
@@ -549,9 +579,7 @@ MCPToolChangeHistoryTest >> testRevertEntriesRevertsChanges [
 			| data entryIndex result |
 			entryIndex := self recordMethodAdditionOn: class.
 			self assert: (class includesSelector: #rescuedValue).
-			result := self callToolWith: {
-					          (#action -> 'revertEntries').
-					          (#indexes -> { entryIndex }) } asDictionary.
+			result := self callToolNamed: 'history_entry_revert' withArguments: { (#indexes -> { entryIndex }) } asDictionary.
 			data := self dataFrom: result.
 			self deny: (result at: #isError ifAbsent: [ false ]).
 			self assert: (data at: #action) equals: 'revert'.
@@ -568,11 +596,9 @@ MCPToolChangeHistoryTest >> testRevertUndoesTheOldestOfTheChangesToOneMethod [
 			| additionIndex change data modificationIndex selectedEntries |
 			additionIndex := self recordRescuedValue: 'rescuedValue ^ 42' on: class.
 			modificationIndex := self recordRescuedValue: 'rescuedValue ^ 43' on: class.
-			data := self dataFrom: (self callToolWith: {
-						         (#action -> 'revertEntries').
-						         (#indexes -> {
-							          additionIndex.
-							          modificationIndex }) } asDictionary).
+			data := self dataFrom: (self callToolNamed: 'history_entry_revert' withArguments: { (#indexes -> {
+						          additionIndex.
+						          modificationIndex }) } asDictionary).
 			change := (data at: #changes) first.
 			selectedEntries := (data at: #selectedEntries) collect: [ :each | (each at: #index) -> each ] as: Dictionary.
 			self assert: (data at: #changes) size equals: 1.
@@ -602,9 +628,7 @@ MCPToolChangeHistoryTest >> testRevertingARemovalShowsTheSourceItRestores [
 			class removeSelector: #rescuedValue.
 			EpMonitor current sessionStore flush.
 			removalIndex := self latestRecoverableMethodEntryIndexFor: class.
-			result := self callToolWith: {
-					          (#action -> 'revertEntries').
-					          (#indexes -> { removalIndex }) } asDictionary.
+			result := self callToolNamed: 'history_entry_revert' withArguments: { (#indexes -> { removalIndex }) } asDictionary.
 			change := ((self dataFrom: result) at: #changes) first.
 			self assert: (change at: #index) equals: removalIndex.
 			self assert: (change at: #eventClass) equals: 'EpMethodAddition'.
@@ -623,9 +647,7 @@ MCPToolChangeHistoryTest >> testSelectionResultDataHasExpectedShape [
 
 	| data entry index |
 	index := self recordNonCodeEntry.
-	data := (self dataFrom: (self callToolWith: {
-				          (#action -> 'applyEntries').
-				          (#indexes -> { index }) } asDictionary)) copy.
+	data := (self dataFrom: (self callToolNamed: 'history_entry_apply' withArguments: { (#indexes -> { index }) } asDictionary)) copy.
 	entry := (data removeKey: #selectedEntries) first.
 	self assert: data equals: {
 			(#action -> 'apply').
@@ -662,12 +684,6 @@ MCPToolChangeHistoryTest >> testTraitClassSideEntryReadsAsAClassSideMethod [
 	self assert: (entry asDictionary at: #behavior) equals: trait name asString.
 	self assert: (entry asDictionary at: #side) equals: 'class'.
 	self assert: (entry changesClassNamed: trait name asString)
-]
-
-{ #category : 'private - calling' }
-MCPToolChangeHistoryTest >> toolName [
-
-	self shouldNotImplement
 ]
 
 { #category : 'private' }

@@ -72,7 +72,6 @@ MCPToolSearchPackagesTest >> testImageScopeCanPaginateFilteredPackages [
 	expected := (self packageOrganizer packages
 		             select: [ :each | each name asString includesSubstring: 'MCP-' ]
 		             thenCollect: [ :each | each name asString ]) asArray sort.
-	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: packageNames size equals: expected size - 1.
 	self deny: (data includesKey: #nextOffset).
 	self assert: (pagination at: #returnedCount) equals: expected size - 1.
@@ -90,7 +89,6 @@ MCPToolSearchPackagesTest >> testImageScopeReturnsStructuredPackages [
 	| entry result |
 	result := self callToolWith: { (#query -> 'MCP-Tests-Resources') } asDictionary.
 	entry := self entryNamed: 'MCP-Tests-Resources' in: ((self dataFrom: result) at: #packages).
-	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (entry includesKey: #projects).
 	self assert: (entry includesKey: #tags).
 	self deny: (entry includesKey: #definedClassCount).

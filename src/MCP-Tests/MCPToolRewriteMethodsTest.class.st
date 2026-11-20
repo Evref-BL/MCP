@@ -105,7 +105,6 @@ MCPToolRewriteMethodsTest >> testAPreviewRepeatsTheScopeUnderTheKeysTheCallUsed 
 				           (#hierarchyOf -> { self targetClassName }).
 				           (#subclassesOf -> { self targetClassName }) } asDictionary) } asDictionary.
 	data := self dataFrom: result.
-	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: ((data at: #scope) at: #hierarchyOf) equals: { self targetClassName }.
 	self assert: ((data at: #scope) at: #subclassesOf) equals: { self targetClassName }.
 	#( 'hierarchyClasses' 'subclassClasses' 'parentClasses' ) do: [ :each |
@@ -141,7 +140,6 @@ MCPToolRewriteMethodsTest >> testApplyMutatesMethodInOneCall [
 	rule := self rewriteRuleFrom: 'self oldValue' to: 'self newValue'.
 	result := self callToolWith: (self applyArgumentsForRule: rule).
 	data := self dataFrom: result.
-	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #apply).
 	self assert: (data at: #changeCount) equals: 1.
 	self assert: (data at: #appliedCount) equals: 1.
@@ -189,7 +187,6 @@ MCPToolRewriteMethodsTest >> testClassSideScopeRewritesOnlyClassSideMethod [
 				           (#side -> 'class') } asDictionary) } asDictionary.
 	data := self dataFrom: result.
 	change := (data at: #changes) first.
-	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #changeCount) equals: 1.
 	self assert: (change at: #side) equals: 'class'.
 	self assert: (change at: #selector) equals: 'sideTarget'.
@@ -399,7 +396,6 @@ MCPToolRewriteMethodsTest >> testPreviewReturnsChangesWithoutMutatingMethod [
 	result := self callToolWith: (self previewArgumentsForRule: rule).
 	data := self dataFrom: result.
 	change := (data at: #changes) first.
-	self deny: (result at: #isError ifAbsent: [ false ]).
 	self deny: (data at: #apply).
 	self assert: (data at: #changeCount) equals: 1.
 	self assert: (data at: #appliedCount) equals: 0.

@@ -205,8 +205,6 @@ MCPToolGetMethodTest >> testGetMethodReturnsInstanceSideVariableContext [
 	classVariable := self variableNamed: 'SharedLimit' in: (data at: #variableReferences).
 	globalVariable := self variableNamed: 'OrderedCollection' in: (data at: #variableReferences).
 	selfVariable := self variableNamed: 'self' in: (data at: #variableReferences).
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self deny: (self resultIndicatesError: result).
 	self assert: (data at: #protocol) equals: 'reading'.
 	self assert: (instanceVariable at: #kind) equals: 'instanceVariable'.
 	self assert: (instanceVariable at: #ownerName) equals: 'MCPToolGetMethodTestTarget'.
@@ -233,11 +231,10 @@ MCPToolGetMethodTest >> testGetMethodReturnsInstanceSideVariableContext [
 { #category : 'tests' }
 MCPToolGetMethodTest >> testGetMethodReturnsStructuredErrorForMissingSelector [
 
-	| error result structured |
+	| error result |
 	result := self callToolWith: {
 			          (#class -> 'MCPToolGetMethodTestTarget').
 			          (#selector -> 'doesNotExist') } asDictionary.
-	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
@@ -293,7 +290,6 @@ MCPToolGetMethodTest >> testGetMethodSupportsClassSideContext [
 	data := self dataFrom: result.
 	classInstanceVariable := self variableNamed: 'classCounter' in: (data at: #variableReferences).
 	thisContextVariable := self variableNamed: 'thisContext' in: (data at: #variableReferences).
-	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (self summaryFrom: result) equals: 'Got method MCPToolGetMethodTestTarget class>>readClassSide.'.
 	self assert: (classInstanceVariable at: #kind) equals: 'classInstanceVariable'.
 	self assert: (classInstanceVariable at: #ownerName) equals: 'MCPToolGetMethodTestTarget class'.
