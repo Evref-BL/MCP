@@ -3,23 +3,10 @@ Tests the history_entry_* tools and history_file_list on a change history each t
 "
 Class {
 	#name : 'MCPToolChangeHistoryTest',
-	#superclass : 'MCPToolAPITestCase',
-	#instVars : [
-		'originalMonitor',
-		'tempMonitor',
-		'memoryDirectory',
-		'originalMonitorWasEnabled'
-	],
+	#superclass : 'MCPChangeHistoryTestCase',
 	#category : 'MCP-Tests',
 	#package : 'MCP-Tests'
 }
-
-{ #category : 'testing' }
-MCPToolChangeHistoryTest class >> shouldLogWithEpicea [
-	"These tests intentionally create recoverable code changes and then exercise the change-history apply/revert machinery."
-
-	^ true
-]
 
 { #category : 'private' }
 MCPToolChangeHistoryTest >> defaultHistoryDirectoryPath [
@@ -93,26 +80,7 @@ MCPToolChangeHistoryTest >> recordRescuedValue: aSource on: aClass [
 MCPToolChangeHistoryTest >> setUp [
 
 	super setUp.
-	originalMonitor := EpMonitor current.
-	originalMonitorWasEnabled := originalMonitor isEnabled.
-	originalMonitor disable.
-	memoryDirectory := (FileSystem memory / ('mcp-history-test-' , UUID new asString36)) ensureCreateDirectory.
-	tempMonitor := EpMonitor newWithLog: (EpLog newWithStore: (OmBlockFileStore named: 'log' inDirectory: memoryDirectory)).
-	EpMonitor current: tempMonitor.
-	tempMonitor enable
-]
-
-{ #category : 'running' }
-MCPToolChangeHistoryTest >> tearDown [
-
-	tempMonitor ifNotNil: [ tempMonitor disable ].
-	originalMonitor ifNotNil: [
-			EpMonitor current: originalMonitor.
-			originalMonitorWasEnabled
-				ifTrue: [ originalMonitor enable ]
-				ifFalse: [ originalMonitor disable ] ].
-	memoryDirectory ifNotNil: [ memoryDirectory ensureDeleteAll ].
-	super tearDown
+	self logTo: (EpLog newWithStore: (OmBlockFileStore named: 'log' inDirectory: (self logDirectoryIn: FileSystem memory)))
 ]
 
 { #category : 'tests' }
@@ -690,13 +658,8 @@ MCPToolChangeHistoryTest >> testTraitClassSideEntryReadsAsAClassSideMethod [
 MCPToolChangeHistoryTest >> useDiskBackedTemporaryLog [
 	"directoryPath is a plain string in the tool's request schema, and the tool resolves it back to a FileReference via #asFileReference, which always resolves against the disk filesystem. Tests that pass an explicit directoryPath therefore need a real (still isolated, still cleaned up) disk directory rather than the FileSystem memory-backed log used elsewhere in this class."
 
-	tempMonitor disable.
-	memoryDirectory ensureDeleteAll.
-	memoryDirectory := FileReference newTempFilePrefix: 'mcp-history-test-' suffix: ''.
-	memoryDirectory ensureCreateDirectory.
-	tempMonitor := EpMonitor newWithLog: (EpLog newWithStore: (OmBlockFileStore named: 'log' inDirectory: memoryDirectory)).
-	EpMonitor current: tempMonitor.
-	tempMonitor enable
+	self logTo:
+		(EpLog newWithStore: (OmBlockFileStore named: 'log' inDirectory: (self logDirectoryIn: FileLocator temp asFileReference)))
 ]
 
 { #category : 'private' }

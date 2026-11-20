@@ -42,11 +42,7 @@ MCPCompiledMethodScopeQueryTest >> testACompleteScopeRefusesAMissingClassUnderIt
 		         hierarchyClassNames: #( 'Zzqxw' );
 		         requireCompleteScope;
 		         yourself.
-	error := [
-		         query methods.
-		         nil ]
-		         on: MCPCommandError
-		         do: [ :signal | signal return: signal ].
+	error := self capture: [ query methods ].
 	self assert: error errorCode equals: #ClassNotFound.
 	self assert: error messageText equals: 'Class Zzqxw, in scope.hierarchyOf, does not exist.'.
 	self assert: (error details at: #scope) equals: 'scope.hierarchyOf'

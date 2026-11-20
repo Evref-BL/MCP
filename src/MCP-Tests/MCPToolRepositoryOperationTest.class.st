@@ -140,17 +140,6 @@ MCPToolRepositoryOperationTest >> isRegistered: aRepositoryName [
 ]
 
 { #category : 'private' }
-MCPToolRepositoryOperationTest >> newRepositoryNamed: aRepositoryName location: aFileReference packageNames: somePackageNames [
-
-	| repository |
-	repository := IceLibgitRepository new.
-	repository name: aRepositoryName.
-	repository location: aFileReference.
-	somePackageNames do: [ :each | repository workingCopy addPackageNamed: each ].
-	^ repository
-]
-
-{ #category : 'private' }
 MCPToolRepositoryOperationTest >> newTestRepositoryNamed: aRepositoryName [
 
 	| location repository |
@@ -1420,12 +1409,9 @@ MCPToolRepositoryOperationTest >> testDiscardNamesThePackagesIcebergStillMarks [
 	| error repository |
 	repository := self newTestRepositoryNamed: 'MCP Discard Marks Remain Test Repository'.
 	repository modifiedPackageNames: #( 'MCP-Test-Dirty' ).
-	self withRegisteredRepository: repository do: [
-			error := [
-				         MCPRepositoryWorkingCopyCommand new assertRepositoryCleanAfterDiscard: repository.
-				         nil ]
-				         on: MCPCommandError
-				         do: [ :caught | caught ] ].
+	self
+		withRegisteredRepository: repository
+		do: [ error := self capture: [ MCPRepositoryWorkingCopyCommand new assertRepositoryCleanAfterDiscard: repository ] ].
 	self assert: error errorCode equals: 'RepositoryDiscardIncomplete'.
 	self assert: error messageText equals: 'Repository changes remain after discard: Iceberg still marks MCP-Test-Dirty as modified.'
 ]
@@ -1441,11 +1427,7 @@ MCPToolRepositoryOperationTest >> testDiscardNamesThePackagesIcebergStillMarksBe
 	self withRegisteredRepository: repository do: [
 			self shellCommand: 'git init --quiet ' , (self shellQuote: location pathString).
 			self write: 'x' to: location / 'notes.txt'.
-			error := [
-				         MCPRepositoryWorkingCopyCommand new assertRepositoryCleanAfterDiscard: repository.
-				         nil ]
-				         on: MCPCommandError
-				         do: [ :caught | caught ] ].
+			error := self capture: [ MCPRepositoryWorkingCopyCommand new assertRepositoryCleanAfterDiscard: repository ] ].
 	self assert: error errorCode equals: 'RepositoryDiscardIncomplete'.
 	self
 		assert: error messageText
@@ -1850,17 +1832,13 @@ MCPToolRepositoryOperationTest >> testExportWarnsOfARegisteredPackageNotInTheIma
 { #category : 'tests' }
 MCPToolRepositoryOperationTest >> testGitCommandFailureSignalsStructuredCommandError [
 
-	| command error |
-	command := MCPCommitRepositoryCommand new.
-	error := [
-		         command
-			         signalGitCommandFailed: {
-					         (#status -> 128).
-					         (#output -> 'fatal: no upstream') } asDictionary
-			         action: 'commit'.
-		         nil ]
-		         on: MCPCommandError
-		         do: [ :caught | caught ].
+	| error |
+	error := self capture: [
+			         MCPCommitRepositoryCommand new
+				         signalGitCommandFailed: {
+						         (#status -> 128).
+						         (#output -> 'fatal: no upstream') } asDictionary
+				         action: 'commit' ].
 	self assert: error errorCode equals: 'commitGitCommandFailed'.
 	self assert: error messageText equals: 'fatal: no upstream'.
 	self assert: (error details at: #exitStatus) equals: 128.

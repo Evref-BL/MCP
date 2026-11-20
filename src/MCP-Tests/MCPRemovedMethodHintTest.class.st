@@ -3,23 +3,10 @@ Tests that a lookup finding no method says so when the change history shows it r
 "
 Class {
 	#name : 'MCPRemovedMethodHintTest',
-	#superclass : 'MCPToolAPITestCase',
-	#instVars : [
-		'originalMonitor',
-		'originalMonitorWasEnabled',
-		'temporaryMonitor',
-		'directory'
-	],
+	#superclass : 'MCPChangeHistoryTestCase',
 	#category : 'MCP-Tests',
 	#package : 'MCP-Tests'
 }
-
-{ #category : 'testing' }
-MCPRemovedMethodHintTest class >> shouldLogWithEpicea [
-	"The removals these tests look up must be in a change history; setUp gives them one of their own."
-
-	^ true
-]
 
 { #category : 'private' }
 MCPRemovedMethodHintTest >> hintFor: aSelector [
@@ -45,15 +32,6 @@ MCPRemovedMethodHintTest >> removeInThisSession: aSelector [
 ]
 
 { #category : 'private' }
-MCPRemovedMethodHintTest >> restart [
-	"Save the image at the session's last entry and start it again: the next session is a new file, which has logged nothing yet and continues from that entry."
-
-	temporaryMonitor sessionStore
-		flush;
-		resetWithNextStoreName
-]
-
-{ #category : 'private' }
 MCPRemovedMethodHintTest >> selectorNamed: aString [
 	"Built rather than written, so that no method refers to it and a reference search finds nothing."
 
@@ -62,35 +40,15 @@ MCPRemovedMethodHintTest >> selectorNamed: aString [
 
 { #category : 'running' }
 MCPRemovedMethodHintTest >> setUp [
-	"The monitor logs to a session store, as the image's does, in a directory of the test's own: on disk, since a session store needs a file system that says it is writable, which a memory one does not."
 
 	super setUp.
-	originalMonitor := EpMonitor current.
-	originalMonitorWasEnabled := originalMonitor isEnabled.
-	originalMonitor disable.
-	directory := (FileLocator temp asFileReference / ('mcp-removed-method-hint-test-' , UUID new asString36)) ensureCreateDirectory.
-	temporaryMonitor := EpMonitor newWithLog: (EpLog newWithStore: (OmSessionStore newWithBaseLocator: directory)).
-	EpMonitor current: temporaryMonitor.
-	temporaryMonitor enable
+	self logToASessionStore
 ]
 
 { #category : 'private' }
 MCPRemovedMethodHintTest >> target [
 
 	^ MCPToolGetMethodTestTarget
-]
-
-{ #category : 'running' }
-MCPRemovedMethodHintTest >> tearDown [
-
-	temporaryMonitor ifNotNil: [ temporaryMonitor disable ].
-	originalMonitor ifNotNil: [
-			EpMonitor current: originalMonitor.
-			originalMonitorWasEnabled
-				ifTrue: [ originalMonitor enable ]
-				ifFalse: [ originalMonitor disable ] ].
-	directory ifNotNil: [ directory ensureDeleteAll ].
-	super tearDown
 ]
 
 { #category : 'tests' }

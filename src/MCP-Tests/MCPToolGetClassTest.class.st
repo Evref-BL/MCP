@@ -73,12 +73,6 @@ MCPToolGetClassTest >> missingClassName [
 ]
 
 { #category : 'private' }
-MCPToolGetClassTest >> removeFixtureClasses [
-
-	self fixtureClassNames reverseDo: [ :each | self removeClassNamed: each ]
-]
-
-{ #category : 'private' }
 MCPToolGetClassTest >> restoreFixtureClasses [
 
 	self removeFixtureClasses.
@@ -137,13 +131,6 @@ MCPToolGetClassTest >> sourceOfPages: someOffsets of: aClassName [
 					  stream nextPutAll: ((self dataFrom: (self callToolWith: {
 									     (#name -> aClassName).
 									     (#offset -> each) } asDictionary)) at: #source ifAbsent: [ '' ]) ] ]
-]
-
-{ #category : 'running' }
-MCPToolGetClassTest >> tearDown [
-
-	self removeFixtureClasses.
-	super tearDown
 ]
 
 { #category : 'tests' }

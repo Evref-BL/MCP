@@ -1,34 +1,31 @@
 "
-Tests for history_lost_change_list and history_lost_change_restore.
+Tests for history_lost_change_list and history_lost_change_restore, and for the notice other answers end with when the image lost changes to the packages or classes they are about, which names history_lost_change_list.
 
 Each test runs with a change history of its own, in a memory directory: the session in progress starts from a save point, and a lost session is a log file of its own whose first entry follows the same save point, written while a monitor on it records what the test changes. The test then takes those changes back out of the image without logging them, as a crash or a stop without saving leaves the image.
 "
 Class {
 	#name : 'MCPToolLostChangesTest',
-	#superclass : 'MCPToolAPITestCase',
+	#superclass : 'MCPChangeHistoryTestCase',
 	#instVars : [
-		'originalMonitor',
-		'originalMonitorWasEnabled',
-		'tempMonitor',
-		'historyDirectory',
 		'savePoint'
 	],
 	#category : 'MCP-Tests',
 	#package : 'MCP-Tests'
 }
 
-{ #category : 'testing' }
-MCPToolLostChangesTest class >> shouldLogWithEpicea [
-	"These tests record changes in a change history of their own and recover them from it."
-
-	^ true
-]
-
 { #category : 'private - classes' }
 MCPToolLostChangesTest >> addedClassName [
 	"A class a lost session added."
 
 	^ 'MCPToolLostChangesTempAdded'
+]
+
+{ #category : 'private - asserting' }
+MCPToolLostChangesTest >> assertNoticeAboutSavedClass [
+
+	self assert:
+		((self summaryOf: 'class_get' with: { (#name -> self savedClassName) }) endsWith:
+			 (self noticeOfOneChangeTo: self savedClassName))
 ]
 
 { #category : 'private - classes' }
@@ -43,19 +40,31 @@ MCPToolLostChangesTest >> createLoggedClassNamed: aClassName [
 	^ builder install
 ]
 
+{ #category : 'private - asserting' }
+MCPToolLostChangesTest >> denyNoticeAboutSavedClass [
+
+	self summariesAboutSavedClass do: [ :each | self deny: (each includesSubstring: 'history_lost_change_list') description: each ]
+]
+
+{ #category : 'private - classes' }
+MCPToolLostChangesTest >> fixtureClassNames [
+
+	^ {
+		  self savedClassName.
+		  self addedClassName }
+]
+
 { #category : 'private - history' }
 MCPToolLostChangesTest >> inSessionLoggedTo: aLog do: aBlock [
 
-	| monitor |
-	tempMonitor disable.
-	monitor := EpMonitor newWithLog: aLog.
-	EpMonitor current: monitor.
-	monitor enable.
+	| session |
+	session := EpMonitor current.
+	self logTo: aLog.
 	[ aBlock value ] ensure: [
-			monitor disable.
+			EpMonitor current disable.
 			aLog store flush.
-			EpMonitor current: tempMonitor.
-			tempMonitor enable ]
+			EpMonitor current: session.
+			session enable ]
 ]
 
 { #category : 'private - history' }
@@ -82,9 +91,20 @@ MCPToolLostChangesTest >> logNamed: aName startingAt: aReference [
 	"A session's log, whose first entry follows aReference: the save the session started from."
 
 	| log |
-	log := EpLog newWithStore: (OmBlockFileStore named: aName inDirectory: historyDirectory).
+	log := EpLog newWithStore: (OmBlockFileStore named: aName inDirectory: logDirectory).
 	log addEntryWith: EpSessionStart new tags: [ :tags | tags at: EpLog priorReferenceKey put: aReference ].
 	^ log
+]
+
+{ #category : 'private - history' }
+MCPToolLostChangesTest >> loseAMethod [
+	"The saved class, to which a session stopped without saving added a method the image lacks."
+
+	| class |
+	class := self savedClass.
+	self inSessionNamed: 'lost' do: [ class compile: 'rescuedValue ^ 42' classified: 'accessing' ].
+	self removeSelector: #rescuedValue from: class.
+	^ class
 ]
 
 { #category : 'private - history' }
@@ -95,6 +115,14 @@ MCPToolLostChangesTest >> methodDefinitionOf: aSelector returning: anInteger [
 		  sourceCode: (String streamContents: [ :stream | stream << aSelector << ' ^ ' << anInteger printString ]);
 		  protocol: #accessing;
 		  yourself
+]
+
+{ #category : 'private - asserting' }
+MCPToolLostChangesTest >> noticeOfOneChangeTo: aName [
+	"The sentence an answer ends with when the image lost one change to aName, after the space that separates it."
+
+	^ String streamContents: [ :stream |
+		  stream << ' Since its last save, the image lost 1 change to ' << aName << ': history_lost_change_list lists it.' ]
 ]
 
 { #category : 'private - calling' }
@@ -126,30 +154,28 @@ MCPToolLostChangesTest >> savedClassName [
 
 { #category : 'running' }
 MCPToolLostChangesTest >> setUp [
-	"The memory file system is one for the whole image, so each test has a directory of its own in it."
 
 	super setUp.
-	originalMonitor := EpMonitor current.
-	originalMonitorWasEnabled := originalMonitor isEnabled.
-	originalMonitor disable.
-	historyDirectory := (FileSystem memory / ('mcp-lost-changes-test-' , UUID new asString36)) ensureCreateDirectory.
+	self logDirectoryIn: FileSystem memory.
 	savePoint := OmReference globalName: 'saved' localName: '2'.
-	tempMonitor := EpMonitor newWithLog: (self logNamed: 'current' startingAt: savePoint).
-	EpMonitor current: tempMonitor.
-	tempMonitor enable
+	self logTo: (self logNamed: 'current' startingAt: savePoint)
 ]
 
-{ #category : 'running' }
-MCPToolLostChangesTest >> tearDown [
+{ #category : 'private - calling' }
+MCPToolLostChangesTest >> summariesAboutSavedClass [
+	"What package_search, class_search, class_get and method_search answer about the saved class and its package."
 
-	tempMonitor ifNotNil: [ tempMonitor disable ].
-	originalMonitor ifNotNil: [
-			EpMonitor current: originalMonitor.
-			originalMonitorWasEnabled ifTrue: [ originalMonitor enable ] ].
-	historyDirectory ifNotNil: [ historyDirectory ensureDeleteAll ].
-	self removeClassNamed: self addedClassName.
-	self removeClassNamed: self savedClassName.
-	super tearDown
+	^ {
+		  (self summaryOf: 'package_search' with: { (#query -> self generatedPackageName) }).
+		  (self summaryOf: 'class_search' with: { (#query -> self savedClassName) }).
+		  (self summaryOf: 'class_get' with: { (#name -> self savedClassName) }).
+		  (self summaryOf: 'method_search' with: { (self searchScope: { (#packages -> { self generatedPackageName }) }) }) }
+]
+
+{ #category : 'private - calling' }
+MCPToolLostChangesTest >> summaryOf: aToolName with: someArguments [
+
+	^ self summaryFrom: (self callToolNamed: aToolName withArguments: someArguments asDictionary)
 ]
 
 { #category : 'tests' }
@@ -177,7 +203,7 @@ MCPToolLostChangesTest >> testAFileCutShortIsReadUpToWhereItBreaks [
 	class := self savedClass.
 	self inSessionNamed: 'lost' do: [ class compile: 'value ^ 1' classified: 'accessing' ].
 	self withoutEpiceaDuring: [ class compile: 'value ^ 0' classified: 'accessing' ].
-	stream := ZnCharacterWriteStream on: (historyDirectory / 'lost.ombu') binaryWriteStream encoding: #utf8.
+	stream := ZnCharacterWriteStream on: (logDirectory / 'lost.ombu') binaryWriteStream encoding: #utf8.
 	[
 		stream setToEnd.
 		stream nextPutAll: 'OmEntry { #tags : { #prior : OmRef' ] ensure: [ stream close ].
@@ -210,6 +236,33 @@ MCPToolLostChangesTest >> testANameNoLostChangeHasIsNotRestored [
 	self assert: (self resultIndicatesError: result).
 	self assert: (self summaryFrom: result) equals: (String streamContents: [ :stream |
 			 stream << 'Restored no lost change.' << String lf << 'Nowhere>>nothing: No session since the image was last saved changed it.' ])
+]
+
+{ #category : 'tests' }
+MCPToolLostChangesTest >> testClassGetSaysWhatTheClassLostOnEveryPage [
+
+	self loseAMethod.
+	#( 0 1 ) do: [ :offset |
+			self assert: ((self summaryOf: 'class_get' with: {
+						  (#name -> self savedClassName).
+						  (#offset -> offset) }) endsWith: (self noticeOfOneChangeTo: self savedClassName)) ]
+]
+
+{ #category : 'tests' }
+MCPToolLostChangesTest >> testClassSearchSaysWhatThePackageOfItsClassesLost [
+	"A class the lost session added is in no list: the package of the classes listed counts it."
+
+	| class |
+	class := self savedClass.
+	self inSessionNamed: 'lost' do: [
+			self createLoggedClassNamed: self addedClassName.
+			class compile: 'rescuedValue ^ 42' classified: 'accessing' ].
+	self removeClassNamed: self addedClassName.
+	self removeSelector: #rescuedValue from: class.
+	self assert:
+		((self summaryOf: 'class_search' with: { (#query -> self savedClassName) }) endsWith: (String streamContents: [ :stream |
+					  stream << ' Since its last save, the image lost 2 changes to ' << self generatedPackageName
+					  << ': history_lost_change_list lists them.' ]))
 ]
 
 { #category : 'tests' }
@@ -332,6 +385,24 @@ MCPToolLostChangesTest >> testListsWhatASessionStoppedWithoutSavingAdded [
 ]
 
 { #category : 'tests' }
+MCPToolLostChangesTest >> testMethodSearchScopedToPackagesOrClassesSaysWhatTheyLost [
+	"Each package and class the scope names that lost the change is named, and the change counts once. A search its scope does not narrow is about no package or class."
+
+	self loseAMethod.
+	self assert:
+		((self summaryOf: 'method_search' with: { (self searchScope: { (#packages -> { self generatedPackageName }) }) }) endsWith:
+			 (self noticeOfOneChangeTo: self generatedPackageName)).
+	self assert:
+		((self summaryOf: 'method_search' with: { (self searchScope: { (#classes -> { (self savedClassName , ' class') }) }) })
+			 endsWith: (self noticeOfOneChangeTo: self savedClassName)).
+	self assert: ((self summaryOf: 'method_search' with: { (self searchScope: {
+					   (#packages -> { self generatedPackageName }).
+					   (#classes -> { self savedClassName }) }) }) endsWith: (self noticeOfOneChangeTo:
+				  (String streamContents: [ :stream | stream << self generatedPackageName << ' and ' << self savedClassName ]))).
+	self deny: ((self summaryOf: 'method_search' with: { (#query -> 'rescuedValue') }) includesSubstring: 'history_lost_change_list')
+]
+
+{ #category : 'tests' }
 MCPToolLostChangesTest >> testNothingIsLostOnceTheImageIsSaved [
 	"A save without quitting logs a snapshot in the session in progress, the save point from then on: the image saved went on without what earlier sessions lost."
 
@@ -340,8 +411,17 @@ MCPToolLostChangesTest >> testNothingIsLostOnceTheImageIsSaved [
 	self inSessionNamed: 'lost' do: [ class compile: 'rescuedValue ^ 42' classified: 'rescuing' ].
 	self removeSelector: #rescuedValue from: class.
 	self assert: ((self dataFrom: self list) at: #lostCount) equals: 1.
-	tempMonitor sessionSnapshot.
+	EpMonitor current sessionSnapshot.
 	self assert: (self summaryFrom: self list) equals: 'No session ran since the image was last saved, so it lost nothing.'
+]
+
+{ #category : 'tests' }
+MCPToolLostChangesTest >> testPackageSearchSaysWhatThePackageLost [
+	"In every run of the lost-changes eval, the agent's first call was package_search on the package, and nothing in the answer said the work on it was gone."
+
+	self loseAMethod.
+	self assert: ((self summaryOf: 'package_search' with: { (#query -> self generatedPackageName) }) endsWith:
+			 (self noticeOfOneChangeTo: self generatedPackageName))
 ]
 
 { #category : 'tests' }
@@ -399,6 +479,23 @@ MCPToolLostChangesTest >> testRefusesBringingBackWhatTheImageRemovedSince [
 		equals: 'The image removed it since it was saved: restoring brings it back.'.
 	self assert: (self resultIndicatesError: (self restore: #(  ))).
 	self deny: (class includesSelector: #rescuedValue)
+]
+
+{ #category : 'tests' }
+MCPToolLostChangesTest >> testRepositoryChangeListSaysWhatItsPackagesLost [
+	"The image matches the repository's files and git sees no change: what the image lost is on neither side."
+
+	| repository |
+	self loseAMethod.
+	repository := self
+		              newRepositoryNamed: 'MCP Lost Change Notice Repository'
+		              location: FileLocator imageDirectory
+		              packageNames: { self generatedPackageName }.
+	self
+		assert: (MCPToolListRepositoryChanges new summaryForChangesOf: repository imageModifiedPackages: #(  ) modifiedPaths: #(  ))
+		equals:
+			'Repository MCP Lost Change Notice Repository has no uncommitted changes: the image matches its files and git sees none.'
+			, (self noticeOfOneChangeTo: self generatedPackageName)
 ]
 
 { #category : 'tests' }
@@ -498,6 +595,80 @@ MCPToolLostChangesTest >> testSaysWhatTheImageAlreadyHolds [
 		equals:
 		(String streamContents: [ :stream |
 			 stream << 'Nothing to restore: the image already holds ' << self savedClassName << '>>value.' ])
+]
+
+{ #category : 'tests' }
+MCPToolLostChangesTest >> testTheNoticeReadsEarlierSessionsOncePerImageSession [
+	"Once a session is over its file no longer changes, so the first answer reads it and the next ones compare the image with what it read."
+
+	self loseAMethod.
+	self assertNoticeAboutSavedClass.
+	(logDirectory / 'lost.ombu') delete.
+	self assertNoticeAboutSavedClass
+]
+
+{ #category : 'tests' }
+MCPToolLostChangesTest >> testTheNoticeSaysNothingOfAChangeTheImageReplacedSince [
+	"Where the image changed the element since its save, it went on without the lost change: history_lost_change_list lists it as a conflict, and the other answers leave it to that list."
+
+	| class |
+	class := self savedClass.
+	self inSessionNamed: 'lost' do: [ class compile: 'value ^ 1' classified: 'accessing' ].
+	self withoutEpiceaDuring: [ class compile: 'value ^ 0' classified: 'accessing' ].
+	class compile: 'value ^ 2' classified: 'accessing'.
+	self assert:
+		(((self dataFrom: (self callToolNamed: 'history_lost_change_list' withArguments: Dictionary new)) at: #changes) first
+			 includesKey: #conflict).
+	self denyNoticeAboutSavedClass
+]
+
+{ #category : 'tests' }
+MCPToolLostChangesTest >> testTheNoticeSaysNothingOfWhatTheSessionInProgressRemoved [
+	"Removing what a lost session added puts the element back as it was saved, which comparing it with the image cannot tell from losing it. The history of the session in progress tells, whether it changed the element before the answer that read it or after."
+
+	| class |
+	class := self savedClass.
+	self inSessionNamed: 'lost' do: [
+			class compile: 'first ^ 1' classified: 'accessing'.
+			class compile: 'second ^ 2' classified: 'accessing' ].
+	self removeSelector: #first from: class.
+	self removeSelector: #second from: class.
+	class compile: 'first ^ 3' classified: 'accessing'.
+	class removeSelector: #first.
+	self assertNoticeAboutSavedClass.
+	class compile: 'second ^ 4' classified: 'accessing'.
+	class removeSelector: #second.
+	self denyNoticeAboutSavedClass
+]
+
+{ #category : 'tests' }
+MCPToolLostChangesTest >> testTheNoticeSaysNothingOnceRestored [
+
+	self loseAMethod.
+	self assertNoticeAboutSavedClass.
+	self callToolNamed: 'history_lost_change_restore' withArguments: Dictionary new.
+	self denyNoticeAboutSavedClass
+]
+
+{ #category : 'tests' }
+MCPToolLostChangesTest >> testTheNoticeSaysNothingOnceTheImageIsSaved [
+	"A save without quitting logs a snapshot, the save point from then on: the image saved went on without what earlier sessions lost."
+
+	self loseAMethod.
+	self assertNoticeAboutSavedClass.
+	EpMonitor current sessionSnapshot.
+	self denyNoticeAboutSavedClass
+]
+
+{ #category : 'tests' }
+MCPToolLostChangesTest >> testTheNoticeSaysNothingWhenTheImageLostNothing [
+	"No session ran since the save, or the image holds what one changed: the answers read as they would without a history."
+
+	| class |
+	class := self savedClass.
+	self denyNoticeAboutSavedClass.
+	self inSessionNamed: 'held' do: [ class compile: 'heldValue ^ 1' classified: 'accessing' ].
+	self denyNoticeAboutSavedClass
 ]
 
 { #category : 'tests' }

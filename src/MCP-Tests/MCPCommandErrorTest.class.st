@@ -8,16 +8,6 @@ Class {
 	#package : 'MCP-Tests'
 }
 
-{ #category : 'private' }
-MCPCommandErrorTest >> capture: aBlock [
-
-	^ [
-		  aBlock value.
-		  self fail: 'Expected MCPCommandError' ]
-		  on: MCPCommandError
-		  do: [ :error | error ]
-]
-
 { #category : 'tests' }
 MCPCommandErrorTest >> testAClassOfTheWrongKindSaysWhatKindIsNeeded [
 

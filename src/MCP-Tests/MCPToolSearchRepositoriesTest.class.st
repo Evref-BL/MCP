@@ -16,17 +16,6 @@ MCPToolSearchRepositoriesTest >> entryNamed: aRepositoryName in: repositoryEntri
 		  ifNone: [ self fail: 'Missing repository entry ' , aRepositoryName ]
 ]
 
-{ #category : 'private' }
-MCPToolSearchRepositoriesTest >> newRepositoryNamed: aRepositoryName location: aFileReference packageNames: somePackageNames [
-
-	| repository |
-	repository := IceLibgitRepository new.
-	repository name: aRepositoryName.
-	repository location: aFileReference.
-	somePackageNames do: [ :each | repository workingCopy addPackageNamed: each ].
-	^ repository
-]
-
 { #category : 'tests' }
 MCPToolSearchRepositoriesTest >> testCanFilterByClassName [
 
@@ -273,18 +262,4 @@ MCPToolSearchRepositoriesTest >> testSummaryCountsTheRepositoriesOfTheImage [
 MCPToolSearchRepositoriesTest >> toolName [
 
 	^ 'repository_search'
-]
-
-{ #category : 'private' }
-MCPToolSearchRepositoriesTest >> withRepositories: repositories do: aBlock [
-
-	| previousRepositories registry |
-	registry := IceRepository registry.
-	previousRepositories := registry copy.
-	[
-		registry removeAll.
-		registry addAll: repositories.
-		aBlock value ] ensure: [
-			registry removeAll.
-			registry addAll: previousRepositories ]
 ]

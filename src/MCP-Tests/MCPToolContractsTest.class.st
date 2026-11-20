@@ -41,7 +41,7 @@ MCPToolContractsTest >> assertNamesAMissingClassAlike: aCase [
 
 	| answer call result text |
 	result := self callToolNamed: aCase first withArguments: aCase second asDictionary.
-	text := self firstTextFromToolResult: result.
+	text := self textFrom: result.
 	answer := STONJSON toString: result.
 	call := [
 		        '{1} {2}: {3}' format: {
@@ -145,23 +145,11 @@ MCPToolContractsTest >> evaluateBriefly: aString deferringInto: actions [
 					   previewLimit: tool resultPreviewCharacterLimit) execute ]
 ]
 
-{ #category : 'private' }
-MCPToolContractsTest >> firstTextFromToolResult: aResult [
-
-	^ (aResult at: #content) first at: #text
-]
-
 { #category : 'private - evaluate' }
 MCPToolContractsTest >> fullGarbageCollections [
 	"How many full collections the VM has made since it started."
 
 	^ Smalltalk vm parameterAt: 7
-]
-
-{ #category : 'private' }
-MCPToolContractsTest >> handleJSON: aJSONString [
-
-	^ self mcpWithoutObservabilityExport server messageProcessor handleJSON: aJSONString
 ]
 
 { #category : 'private' }
@@ -683,7 +671,7 @@ MCPToolContractsTest >> testClassToolSchemaDescriptionsExplainRecategorizationAn
 MCPToolContractsTest >> testCompileMethodAnswersItsSummaryAsText [
 
 	| text |
-	text := self firstTextFromToolResult: (self callToolNamed: 'method_compile' withArguments: {
+	text := self textFrom: (self callToolNamed: 'method_compile' withArguments: {
 				          (#class -> MCPToolContractsTest name).
 				          (#protocol -> 'tests - fixtures').
 				          (#source -> 'mcpPlainTextContentFixture
@@ -855,7 +843,7 @@ MCPToolContractsTest >> testEvaluateAnswersThePrintStringAsItsWholeText [
 	"The envelope around a one-line answer cost more than the answer."
 
 	self
-		assert: (self firstTextFromToolResult:
+		assert: (self textFrom:
 				 (self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> '3 + 4') } asDictionary))
 		equals: '7'
 ]
@@ -870,7 +858,7 @@ MCPToolContractsTest >> testEvaluateAnswersWhenAFailingCodesEnsureBlockEndsItsPr
 		          withArguments: { (#code -> '[ 1/0 ] ensure: [ Processor activeProcess terminate ]') } asDictionary.
 	self assert: (self resultIndicatesError: result).
 	self
-		assert: (self firstTextFromToolResult: result)
+		assert: (self textFrom: result)
 		equals: 'Evaluation ended the process running it, so it has no value to answer.'
 ]
 
@@ -884,7 +872,7 @@ MCPToolContractsTest >> testEvaluateAnswersWhenTheCodeEndsItsOwnProcess [
 		          withArguments: { (#code -> 'Processor activeProcess terminate') } asDictionary.
 	self assert: (self resultIndicatesError: result).
 	self
-		assert: (self firstTextFromToolResult: result)
+		assert: (self textFrom: result)
 		equals: 'Evaluation ended the process running it, so it has no value to answer.'
 ]
 
@@ -916,7 +904,7 @@ MCPToolContractsTest >> testEvaluateCatchesHaltAsRuntimeFailure [
 	result := self
 		          callDiscoveredToolNamed: 'evaluate'
 		          withArguments: { (#code -> 'Halt signal: ''mcp halt test''') } asDictionary.
-	text := self firstTextFromToolResult: result.
+	text := self textFrom: result.
 	self assert: (result at: #isError).
 	self assert: (text includesSubstring: 'failed during execution').
 	self assert: (text includesSubstring: 'Halt').
@@ -927,7 +915,7 @@ MCPToolContractsTest >> testEvaluateCatchesHaltAsRuntimeFailure [
 MCPToolContractsTest >> testEvaluateFailureTextNamesSuggestionsAndFrames [
 
 	| lines text |
-	text := self firstTextFromToolResult: (self
+	text := self textFrom: (self
 			         callDiscoveredToolNamed: 'evaluate'
 			         withArguments: { (#code -> 'OrderedCollection new adAll: #( 1 2 3 )') } asDictionary).
 	lines := text lines.
@@ -1090,7 +1078,7 @@ MCPToolContractsTest >> testEvaluateQueuesPostResponseActionsOfTheCall [
 			          self
 				          callDiscoveredToolNamed: 'evaluate'
 				          withArguments: { (#code -> 'MCPPostResponseActions value add: [ 1 ]. #queued') } asDictionary ].
-	self assert: (self firstTextFromToolResult: result) equals: '#queued'.
+	self assert: (self textFrom: result) equals: '#queued'.
 	self assert: actions size equals: 1
 ]
 
@@ -1149,7 +1137,7 @@ MCPToolContractsTest >> testEvaluateReturnsCompilationFailureInformation [
 
 	| result text |
 	result := self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> '1 +') } asDictionary.
-	text := self firstTextFromToolResult: result.
+	text := self textFrom: result.
 	self assert: (result at: #isError).
 	self assert: (text includesSubstring: 'failed during compilation').
 	self assert: (text includesSubstring: self expectedSyntaxErrorNoticeClassName).
@@ -1161,7 +1149,7 @@ MCPToolContractsTest >> testEvaluateReturnsRuntimeFailureInformation [
 
 	| result text |
 	result := self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> 'Error signal: ''boom''') } asDictionary.
-	text := self firstTextFromToolResult: result.
+	text := self textFrom: result.
 	self assert: (result at: #isError).
 	self assert: (text includesSubstring: 'failed during execution').
 	self assert: (text includesSubstring: 'boom').
@@ -1173,7 +1161,7 @@ MCPToolContractsTest >> testEvaluateRunsJustBelowTheCallingProcess [
 	"Only a process above the code can take the processor back from code that computes, so the code runs one priority below the call."
 
 	self
-		assert: (self firstTextFromToolResult:
+		assert: (self textFrom:
 				 (self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> 'Processor activePriority') } asDictionary))
 		equals: (Processor activePriority - 1) printString
 ]
@@ -1489,7 +1477,7 @@ MCPToolContractsTest >> testEvaluateStopsAnEndlessRecursionWithinASecondOrTwo [
 		self removeClassNamed: 'StopRecursionFixture' ].
 	self assert: (self resultIndicatesError: result).
 	self
-		assert: (self firstTextFromToolResult: result) lines first
+		assert: (self textFrom: result) lines first
 		equals: 'Evaluation stopped: its stack passed 1000000 frames, which an endless recursion does.'.
 	self assert: milliseconds < 10000
 ]
@@ -1980,8 +1968,8 @@ MCPToolContractsTest >> testMessageNotUnderstoodSaysTwoKeywordMessagesRunTogethe
 		equals:
 		'sorted:collect: is one message. To send collect: to what sorted: answers, put the sorted: send in parentheses: (... sorted: ...) collect: ...'.
 	self assert: ((error at: #suggestedSelectors) includes: 'sorted:').
-	self assert: (self firstTextFromToolResult: result) lines second equals: (error at: #note).
-	self assert: ((self firstTextFromToolResult: result) lines third beginsWith: 'Did you mean: ').
+	self assert: (self textFrom: result) lines second equals: (error at: #note).
+	self assert: ((self textFrom: result) lines third beginsWith: 'Did you mean: ').
 	error := self errorFrom: (self
 			          callDiscoveredToolNamed: 'evaluate'
 			          withArguments: { (#code -> 'Dictionary new at: 1 ifAbsentPut: [ 0 ] put: 3') } asDictionary).
@@ -2019,7 +2007,7 @@ MCPToolContractsTest >> testMessageNotUnderstoodWithNoSelectorAnswersTheFailure 
 	message: (Message selector: nil arguments: #(  ));
 	receiver: 3;
 	signal') } asDictionary.
-	self assert: ((self firstTextFromToolResult: result) beginsWith: 'Evaluation failed during execution (MessageNotUnderstood)').
+	self assert: ((self textFrom: result) beginsWith: 'Evaluation failed during execution (MessageNotUnderstood)').
 	self deny: ((self errorFrom: result) includesKey: #note)
 ]
 
@@ -2101,7 +2089,7 @@ MCPToolContractsTest >> testMessageSentToNilNamesTheMethodThatSentIt [
 	error := self errorFrom: result.
 	self assert: (error at: #note) equals: 'MCPToolRunTestsRaiser>>addToNil sent + to nil.'.
 	self deny: (error includesKey: #suggestedSelectors).
-	self assert: (self firstTextFromToolResult: result) lines second equals: (error at: #note)
+	self assert: (self textFrom: result) lines second equals: (error at: #note)
 ]
 
 { #category : 'tests - evaluate' }
@@ -2501,7 +2489,7 @@ MCPToolContractsTest >> testRpcToolCallCatchesUnhandledHaltFromTool [
 	mcp := self mcpWithoutObservabilityExport.
 	mcp addTool: tool.
 	result := mcp rpcToolCall: tool name withParams: Dictionary new.
-	text := self firstTextFromToolResult: result.
+	text := self textFrom: result.
 	self assert: (result at: #isError).
 	self assert: (text includesSubstring: 'Tool halting_test_tool failed (Halt)').
 	self assert: (text includesSubstring: 'mcp tool halt test')
@@ -2695,7 +2683,7 @@ MCPToolContractsTest >> testSearchToolsAnswerEntriesAsLines [
 	"A search answers rows under the name of the list they belong to, each naming its method the way Pharo does; the pagination block repeats what the summary already says in prose."
 
 	| lines text |
-	text := self firstTextFromToolResult: (self
+	text := self textFrom: (self
 			         callToolNamed: 'method_search'
 			         withArguments: { (#scope -> { (#classes -> { 'MCPSelectorSuggestion' }) } asDictionary) } asDictionary).
 	lines := text lines.
@@ -2712,7 +2700,7 @@ MCPToolContractsTest >> testSearchToolsAnswerPlainTextContent [
 
 	| lines result text |
 	result := self callToolNamed: 'tool_search' withArguments: { (#query -> 'method signature') } asDictionary.
-	text := self firstTextFromToolResult: result.
+	text := self textFrom: result.
 	lines := text lines.
 	self assert: lines first equals: (self summaryFrom: result).
 	self assert: (lines anySatisfy: [ :each | each beginsWith: 'method_update (not in the advertised list) - ' ]).
@@ -3025,7 +3013,7 @@ MCPToolContractsTest >> testToolGetTextCarriesOnlyWhatACallNeeds [
 
 	| contract lines result |
 	result := self callToolNamed: 'tool_get' withArguments: { (#name -> 'repository_create') } asDictionary.
-	lines := (self firstTextFromToolResult: result) lines.
+	lines := (self textFrom: result) lines.
 	self assert: lines first equals: 'Tool repository_create (not in the advertised list).'.
 	self assert: lines second equals: 'tool:'.
 	self assert: (lines includes: '  name: repository_create').
@@ -3036,7 +3024,7 @@ MCPToolContractsTest >> testToolGetTextCarriesOnlyWhatACallNeeds [
 	contract := (self dataFrom: result) at: #tool.
 	self assert: contract keys asSet equals: #( name description group exposure annotations keywords inputSchema ) asSet.
 	result := self callToolNamed: 'tool_get' withArguments: { (#name -> 'class_search') } asDictionary.
-	lines := (self firstTextFromToolResult: result) lines.
+	lines := (self textFrom: result) lines.
 	self assert: lines first equals: 'Tool class_search.'.
 	self assert: (lines includes: '  pageSize: ' , MCPToolSearchClasses new defaultPageLimit printString)
 ]
@@ -3163,7 +3151,7 @@ MCPToolContractsTest >> testToolResponsesCanReturnContentAndStructuredContent [
 	server := MCP new.
 	server useContentAndStructuredContentToolResponses.
 	result := server rpcToolCall: 'tool_search' withParams: { (#query -> 'classes') } asDictionary.
-	text := self firstTextFromToolResult: result.
+	text := self textFrom: result.
 	self assert: (result includesKey: #content).
 	self assert: (result includesKey: #structuredContent).
 	self deny: (self resultIndicatesError: result).
@@ -3188,7 +3176,7 @@ MCPToolContractsTest >> testToolResponsesDefaultToContentOnly [
 
 	| result text |
 	result := MCP new rpcToolCall: 'tool_search' withParams: { (#query -> 'classes') } asDictionary.
-	text := self firstTextFromToolResult: result.
+	text := self textFrom: result.
 	self assert: (result includesKey: #content).
 	self deny: (result includesKey: #structuredContent).
 	self assert: (text includesSubstring: 'class_search - ')
@@ -3221,7 +3209,7 @@ MCPToolContractsTest >> testToolSearchMarksToolsNotAdvertised [
 	server := self mcpWithoutObservabilityExport.
 	server advertiseTools: #( 'tool_search' 'tool_get' 'tool_call' 'repository_search' ).
 	result := server rpcToolCall: 'tool_search' withParams: { (#query -> 'repository') } asDictionary.
-	text := self firstTextFromToolResult: result.
+	text := self textFrom: result.
 	lines := text lines.
 	summary := self summaryFrom: result.
 	self assert: lines first equals: summary.
@@ -3233,7 +3221,7 @@ MCPToolContractsTest >> testToolSearchMarksToolsNotAdvertised [
 		equals: 'discoverable'.
 	server advertiseAllTools.
 	result := server rpcToolCall: 'tool_search' withParams: { (#query -> 'repository') } asDictionary.
-	text := self firstTextFromToolResult: result.
+	text := self textFrom: result.
 	self deny: (text includesSubstring: 'not in the advertised list').
 	self deny: (text includesSubstring: 'not in your list').
 	self deny: (text includesSubstring: 'Arguments:')
@@ -3248,7 +3236,7 @@ MCPToolContractsTest >> testToolSearchNamesTheArgumentsOfAToolNotAdvertised [
 	server addTool: MCPExternalTestTool.
 	server advertiseTools: #( 'tool_search' 'tool_call' ).
 	result := server rpcToolCall: 'tool_search' withParams: { (#query -> 'tool external') } asDictionary.
-	lines := (self firstTextFromToolResult: result) lines.
+	lines := (self textFrom: result) lines.
 	self assert: (lines includes:
 			 'tool_get (not in the advertised list) - Get a tool''s description and input schema by name. Arguments: name (required).').
 	self assert: (lines includes:

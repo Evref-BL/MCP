@@ -55,13 +55,6 @@ MCPToolRunTestsTest >> createTraitNamed: aTraitName [
 			  builder install ]
 ]
 
-{ #category : 'private - fixtures' }
-MCPToolRunTestsTest >> fixtureNamed: aClassName [
-	"A fixture by its name, so that this class adds no reference to it."
-
-	^ Smalltalk globals at: aClassName asSymbol
-]
-
 { #category : 'private - running' }
 MCPToolRunTestsTest >> issueLinesFrom: aResult [
 	"The lines that say an issue, in the order the answer says them."
@@ -95,7 +88,7 @@ MCPToolRunTestsTest >> removeClassesNamed: someClassNames [
 { #category : 'private - fixtures' }
 MCPToolRunTestsTest >> resetCountingFixture [
 
-	(self fixtureNamed: 'MCPToolRunTestsCountingTarget') resetRuns
+	(self classNamed: 'MCPToolRunTestsCountingTarget') resetRuns
 ]
 
 { #category : 'private - running' }
@@ -206,14 +199,14 @@ MCPToolRunTestsTest >> testALocationNamesTheMethodClassWhenItIsInherited [
 	| context |
 	context := Context
 		           sender: nil
-		           receiver: (self fixtureNamed: 'MCPToolRunTestsInheritingTarget') new
+		           receiver: (self classNamed: 'MCPToolRunTestsInheritingTarget') new
 		           method: TestCase >> #setUp
 		           arguments: #(  ).
 	self assert: (MCPStructuredTestResult locationTextOf: context) equals: 'MCPToolRunTestsInheritingTarget(TestCase)>>setUp'.
 	context := Context
 		           sender: nil
-		           receiver: (self fixtureNamed: 'MCPToolRunTestsInheritingTarget')
-		           method: (self fixtureNamed: 'MCPToolRunTestsAbstractTarget') class >> #isAbstract
+		           receiver: (self classNamed: 'MCPToolRunTestsInheritingTarget')
+		           method: (self classNamed: 'MCPToolRunTestsAbstractTarget') class >> #isAbstract
 		           arguments: #(  ).
 	self
 		assert: (MCPStructuredTestResult locationTextOf: context)
@@ -253,7 +246,7 @@ MCPToolRunTestsTest >> testAMethodOfATraitIsNamedInATestClassThatRunsIt [
 	[
 		self
 			createTestClassNamed: 'MCPToolRunTestsTraitExcludingTarget'
-			traits: (self fixtureNamed: 'TMCPToolRunTestsTraitTarget') - { #testFromTheTrait }.
+			traits: (self classNamed: 'TMCPToolRunTestsTraitTarget') - { #testFromTheTrait }.
 		self
 			assert: (self summaryFrom: (self runTests: { (#methods -> #( 'TMCPToolRunTestsTraitTarget>>#testFromTheTrait' )) }))
 			equals:
@@ -373,7 +366,7 @@ MCPToolRunTestsTest >> testANotUnderstoodNoteNamesARemovedClassByItsOwnName [
 MCPToolRunTestsTest >> testAPackageWithoutTestClassesBesideOthersIsOnlyNamed [
 
 	| count |
-	count := (self fixtureNamed: 'MCPToolRunTestsPackageTarget') testSelectors size.
+	count := (self classNamed: 'MCPToolRunTestsPackageTarget') testSelectors size.
 	self
 		assert: (self summaryFrom: (self runTests: { (#packages -> #( 'MCP-Tests-RunResources' 'MCP-Tests-Resources-Extensions' )) }))
 		equals: (String streamContents: [ :stream |
@@ -436,7 +429,7 @@ MCPToolRunTestsTest >> testARefusalRunsNoSelection [
 		          callToolNamed: 'test_run'
 		          withArguments: { (#classes -> #( 'MCPToolRunTestsCountingTarget' 'MCPToolRunTestsUnreferencedTarget' )) } asDictionary.
 	self assert: (self resultIndicatesError: result).
-	self assert: (self fixtureNamed: 'MCPToolRunTestsCountingTarget') runs equals: 0
+	self assert: (self classNamed: 'MCPToolRunTestsCountingTarget') runs equals: 0
 ]
 
 { #category : 'tests - outcomes' }
@@ -522,7 +515,7 @@ MCPToolRunTestsTest >> testATestFromATraitThatStillHoldsTheRemovedCopyNamesTheTr
 					equals:
 					'Ran 1 test (1 passed). MCPToolRunTestsRemovedTargetTest>>#testFromTheTrait refers to MCPToolRunTestsRemovedTarget, a removed class, so it ran the obsolete copy of MCPToolRunTestsRemovedTarget. MCPToolRunTestsRemovedTarget exists again, but TMCPToolRunTestsRemovedTargetTest>>#testFromTheTrait still refers to its removed copy: compile that method again with method_compile, unchanged, and it will refer to the current MCPToolRunTestsRemovedTarget.'.
 				self withoutEpiceaDuring: [
-						(self fixtureNamed: 'TMCPToolRunTestsRemovedTargetTest')
+						(self classNamed: 'TMCPToolRunTestsRemovedTargetTest')
 							compile: 'testFromTheTrait self assert: MCPToolRunTestsRemovedTarget new notNil'
 							classified: 'tests' ].
 				self
@@ -947,8 +940,8 @@ MCPToolRunTestsTest >> testWhatAPackageLeavesIsListedByClass [
 	| broken command notRun package someFail testCases |
 	command := MCPRunTestsCommand new.
 	package := MCPTestSelectionSpec packageName: 'P'.
-	someFail := (self fixtureNamed: 'MCPToolRunTestsSomeFailTarget') buildSuite tests.
-	broken := (self fixtureNamed: 'MCPToolRunTestsBrokenFixtureTarget') buildSuite tests.
+	someFail := (self classNamed: 'MCPToolRunTestsSomeFailTarget') buildSuite tests.
+	broken := (self classNamed: 'MCPToolRunTestsBrokenFixtureTarget') buildSuite tests.
 	testCases := someFail , broken.
 	notRun := [ :uniqueTestCases :startIndex |
 		          (command

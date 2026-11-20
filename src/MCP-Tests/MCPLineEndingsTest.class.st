@@ -20,12 +20,6 @@ MCPLineEndingsTest >> answerTextOf: aToolName arguments: someArgumentsInJSON [
 ]
 
 { #category : 'private' }
-MCPLineEndingsTest >> handleJSON: aJSONString [
-
-	^ self mcpWithoutObservabilityExport server messageProcessor handleJSON: aJSONString
-]
-
-{ #category : 'private' }
 MCPLineEndingsTest >> targetClassName [
 
 	^ 'MCPLineEndingsTestTarget'

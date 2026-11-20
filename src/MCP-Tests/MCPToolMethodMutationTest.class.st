@@ -174,15 +174,14 @@ MCPToolMethodMutationTest >> createRenameScopeFixtureClassNamed: aClassName pack
 MCPToolMethodMutationTest >> dataAnsweredThroughTheProtocolBy: aToolName arguments: someArguments [
 	"The data a client reads from calling the tool with someArguments, the call and its answer written in JSON, so that their line endings are converted at the protocol boundary, as a client's are."
 
-	| answer request |
-	request := STONJSON toString: {
-			           ('jsonrpc' -> '2.0').
-			           ('id' -> 1).
-			           ('method' -> 'tools/call').
-			           ('params' -> {
-				            ('name' -> aToolName).
-				            ('arguments' -> someArguments) } asDictionary) } asDictionary.
-	answer := STONJSON fromString: (self mcpWithoutObservabilityExport server messageProcessor handleJSON: request).
+	| answer |
+	answer := STONJSON fromString: (self handleJSON: (STONJSON toString: {
+					            ('jsonrpc' -> '2.0').
+					            ('id' -> 1).
+					            ('method' -> 'tools/call').
+					            ('params' -> {
+						             ('name' -> aToolName).
+						             ('arguments' -> someArguments) } asDictionary) } asDictionary)).
 	^ ((answer at: 'result') at: 'structuredContent') at: 'data'
 ]
 
@@ -284,7 +283,7 @@ MCPToolMethodMutationTest >> noteOnTheSendIn: aSource compiledInto: aClassName s
 		             MCPToolCompileMethod new unimplementedSendRuleNames includes: (each at: #ruleClass) asSymbol ].
 	self assert: critiques size equals: 1.
 	^ critiques first at: #note ifPresent: [ :note |
-			  self assert: ((self textOf: result) includesSubstring:
+			  self assert: ((self textFrom: result) includesSubstring:
 					   (String streamContents: [ :stream | stream << (critiques first at: #title) << '. ' << note ])).
 			  note ]
 ]
@@ -961,7 +960,7 @@ MCPToolMethodMutationTest >> testBlockedCompileNamesTheCritique [
 	result := self compileProbe: 'deadBlockProbe [ self error: ''never run'' ]'.
 	error := self errorFrom: result.
 	title := (error at: #critiques) first at: #title.
-	lines := (self textOf: result) lines.
+	lines := (self textFrom: result) lines.
 	self assert: (lines first: 4) asArray equals: {
 			'Did not compile MCPToolMethodMutationTestTarget>>deadBlockProbe, because a critique blocks compiling it:'.
 			('line 1: ' , title).
@@ -975,7 +974,7 @@ MCPToolMethodMutationTest >> testBlockedCompileNamesTheCritique [
 	[ 1 ].
 	[ 2 ]'
 			           protocol: 'tests').
-	lines := (self textOf: result) lines.
+	lines := (self textFrom: result) lines.
 	self
 		assert: lines first
 		equals: 'Did not compile MCPToolMethodMutationTestTarget class>>deadBlockProbe, because 2 critiques block compiling it:'.
@@ -1252,7 +1251,7 @@ MCPToolMethodMutationTest >> testCompileCritiqueQuotesACommentOnOneLine [
 			         select: [ :each | (each at: #ruleClass) = ReSentNotImplementedRule name asString ]
 			         thenCollect: [ :each | each at: #code ].
 		self assert: codes asArray equals: #( 'self mcpQuoted: [ "a comment on two lines" 3 ]' ).
-		self assert: ((self textOf: result) lines includes: '    self mcpQuoted: [ "a comment on two lines" 3 ]') ] ensure: [
+		self assert: ((self textFrom: result) lines includes: '    self mcpQuoted: [ "a comment on two lines" 3 ]') ] ensure: [
 		self removeSelector: #commentQuoteProbe from: MCPToolMethodMutationTestTarget ]
 ]
 
@@ -1267,7 +1266,7 @@ MCPToolMethodMutationTest >> testCompileCritiqueQuotesItsCodeAcrossLines [
 		critique := ((self dataFrom: result) at: #critiques) detect: [ :each |
 			            (each at: #ruleClass) = MCPPrintOnStreamRule name asString ].
 		self assert: (critique at: #code) equals: 'stream << self printString'.
-		self assert: ((self textOf: result) lines includes: '    stream << self printString') ] ensure: [
+		self assert: ((self textFrom: result) lines includes: '    stream << self printString') ] ensure: [
 		self removeSelector: #cascadeQuoteProbe from: MCPToolMethodMutationTestTarget ]
 ]
 
@@ -1285,7 +1284,7 @@ MCPToolMethodMutationTest >> testCompileCritiqueQuotesLiteralsAsWritten [
 			         select: [ :each | (each at: #ruleClass) = ReSentNotImplementedRule name asString ]
 			         thenCollect: [ :each | each at: #code ].
 		self assert: codes asArray equals: #( 'self mcpQuoted: $  with: ''a   b''' 'self mcpQuoted: #''c   d'' with: $ ' ).
-		self assert: ((self textOf: result) lines includes: '    self mcpQuoted: #''c   d'' with: $ ') ] ensure: [
+		self assert: ((self textFrom: result) lines includes: '    self mcpQuoted: #''c   d'' with: $ ') ] ensure: [
 		self removeSelector: #literalQuoteProbe from: MCPToolMethodMutationTestTarget ]
 ]
 
@@ -1302,7 +1301,7 @@ MCPToolMethodMutationTest >> testCompileCritiqueQuotesTheStoredCode [
 		self assert: (critique at: #line) equals: 3.
 		self assert: ((storedLines at: 3) includesSubstring: 'True = true').
 		self assert: (critique at: #code) equals: 'True'.
-		self assert: ((self textOf: result) lines includes: '    True') ] ensure: [
+		self assert: ((self textFrom: result) lines includes: '    True') ] ensure: [
 		self removeSelector: #storedCodeProbe from: MCPToolMethodMutationTestTarget ]
 ]
 
@@ -1314,7 +1313,7 @@ MCPToolMethodMutationTest >> testCompileCritiquesReadAsLines [
 	self removeSelector: #critiqueLinesProbe from: MCPToolMethodMutationTestTarget.
 	[
 		result := self compileProbe: 'critiqueLinesProbe ^ ''a'' , self printString , ''b'''.
-		lines := (self textOf: result) lines.
+		lines := (self textFrom: result) lines.
 		self assert: lines first equals: 'Created MCPToolMethodMutationTestTarget>>critiqueLinesProbe.'.
 		self assert: lines second equals: 'critiques (line numbers count the method as stored; method_get shows it):'.
 		self assert: ((lines at: 3) beginsWith: '  line 3: ').
@@ -1322,7 +1321,7 @@ MCPToolMethodMutationTest >> testCompileCritiquesReadAsLines [
 		self removeSelector: #critiqueLinesProbe from: MCPToolMethodMutationTestTarget.
 		result := self compileProbe: 'critiqueLinesProbe ^ 1'.
 		self deny: (self resultIndicatesError: result).
-		self deny: ((self textOf: result) includesSubstring: 'critiques') ] ensure: [
+		self deny: ((self textFrom: result) includesSubstring: 'critiques') ] ensure: [
 		self removeSelector: #critiqueLinesProbe from: MCPToolMethodMutationTestTarget ]
 ]
 
@@ -1525,7 +1524,7 @@ MCPToolMethodMutationTest >> testCompileNamesOnlyTheRulesMethodRewriteCanApply [
 		usesTrue := ((self dataFrom: result) at: #critiques) detect: [ :each | (each at: #ruleClass) = ReUsesTrueRule name asString ].
 		self assert: (concatenation at: #fixable).
 		self deny: (usesTrue includesKey: #fixable).
-		lines := (self textOf: result) lines select: [ :each | each beginsWith: '  line ' ].
+		lines := (self textFrom: result) lines select: [ :each | each beginsWith: '  line ' ].
 		self assert: lines size equals: 2.
 		self assert: (lines anySatisfy: [ :each | each endsWith: ' (method_rewrite ruleClasses: MCPStringConcatenationRule)' ]).
 		self deny: (lines anySatisfy: [ :each | each includesSubstring: 'ReUsesTrueRule' ]).
@@ -1554,7 +1553,7 @@ MCPToolMethodMutationTest >> testCompileOffersNoRewriteThatCanChangeWhatAMethodA
 				critique := ((self dataFrom: result) at: #critiques) detect: [ :each |
 					            (each at: #ruleClass) endsWith: 'NilAndConditionalRule' ].
 				self deny: (critique includesKey: #fixable) description: source.
-				self deny: ((self textOf: result) includesSubstring: 'ruleClasses: ReIs') description: source ].
+				self deny: ((self textFrom: result) includesSubstring: 'ruleClasses: ReIs') description: source ].
 		self assert: (MCPMethodRewriteNamedRuleSpec canApplyRuleClass: ReIsNilAndConditionalRule) ] ensure: [
 		self removeSelector: #nilConditionalProbe: from: MCPToolMethodMutationTestTarget ]
 ]
@@ -1646,7 +1645,7 @@ MCPToolMethodMutationTest >> testCompileReportsEachCritiqueOnce [
 		critiques := (self dataFrom: result) at: #critiques.
 		self assert: critiques size equals: 1.
 		self assert: (critiques first at: #ruleClass) equals: MCPStringConcatenationRule name asString.
-		self assert: ((self textOf: result) lines count: [ :each | each beginsWith: '  line ' ]) equals: 1 ] ensure: [
+		self assert: ((self textFrom: result) lines count: [ :each | each beginsWith: '  line ' ]) equals: 1 ] ensure: [
 		self removeSelector: #concatenationOnceProbe from: MCPToolMethodMutationTestTarget ]
 ]
 
@@ -2126,7 +2125,7 @@ MCPToolMethodMutationTest >> testCompileSaysAChainedKeywordSendIsOneMessage [
 			assert: note
 			equals:
 			'sorted:collect: is one message. To send collect: to what sorted: answers, put the sorted: send in parentheses: (... sorted: ...) collect: ...'.
-		self assert: ((self textOf: result) includesSubstring: 'Messages sent but not implemented. ' , note).
+		self assert: ((self textFrom: result) includesSubstring: 'Messages sent but not implemented. ' , note).
 		self deny: ((critiques detect: [ :each | (each at: #code) includesSubstring: 'mcpProbeSorted:' ]) includesKey: #note) ] ensure: [
 		self removeSelector: #chainedSendProbe from: MCPToolMethodMutationTestTarget ]
 ]
@@ -3126,7 +3125,7 @@ MCPToolMethodMutationTest >> testReplacingAnUnclassifiedMethodDoesNotWarnAgain [
 		self deny: (result at: #isError ifAbsent: [ false ]).
 		self assert: (MCPToolMethodMutationTestTarget >> selector) protocolName asString equals: Protocol unclassified asString.
 		self assert: (self warningsFrom: result) isEmpty.
-		self assert: (self textOf: result) equals: 'Replaced MCPToolMethodMutationTestTarget>>unclassifiedProbe.' ] ensure: [
+		self assert: (self textFrom: result) equals: 'Replaced MCPToolMethodMutationTestTarget>>unclassifiedProbe.' ] ensure: [
 		self removeSelector: selector from: MCPToolMethodMutationTestTarget ]
 ]
 
@@ -3250,18 +3249,6 @@ MCPToolMethodMutationTest >> testUpdatingAMethodInstalledFromATraitStopsAndNames
 	self assert: ((error at: #howToProceed) includesSubstring: 'Update TMCPToolMethodSearchFixture>>mcpTraitFixtureValue instead').
 	self assert: (MCPToolMethodSearchTraitUser >> #mcpTraitFixtureValue) isFromTrait.
 	self assert: (MCPToolMethodSearchTraitUser >> #mcpTraitFixtureValue) protocolName asString equals: 'accessing'
-]
-
-{ #category : 'private - results' }
-MCPToolMethodMutationTest >> textFrom: aResult [
-
-	^ (aResult at: #content) first at: #text
-]
-
-{ #category : 'private' }
-MCPToolMethodMutationTest >> textOf: aResult [
-
-	^ (aResult at: #content) first at: #text
 ]
 
 { #category : 'private' }

@@ -43,11 +43,7 @@ MCPUserInterfaceToolTest >> testAMessageNotUnderstoodInAScreenToolSuggestsSelect
 MCPUserInterfaceToolTest >> testNamingAWindowThatIsNotOpenIsAnError [
 
 	| error |
-	error := nil.
-	[ MCPToolReadScreen new targetMorphNamed: 'no such window' ]
-		on: MCPCommandError
-		do: [ :signal | error := signal ].
-	self assert: error isNotNil.
+	error := self capture: [ MCPToolReadScreen new targetMorphNamed: 'no such window' ].
 	self assert: (error messageText includesSubstring: 'no such window').
 	self deny: ((error structuredDetails at: #open) includes: 'no such window')
 ]

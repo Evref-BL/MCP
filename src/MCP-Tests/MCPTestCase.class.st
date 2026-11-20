@@ -43,6 +43,16 @@ MCPTestCase >> builtInToolClasses [
 	^ MCPTool concreteSubclasses select: [ :toolClass | self isBuiltIn: toolClass ]
 ]
 
+{ #category : 'private - errors' }
+MCPTestCase >> capture: aBlock [
+
+	^ [
+		  aBlock value.
+		  self fail: 'Expected MCPCommandError' ]
+		  on: MCPCommandError
+		  do: [ :error | error ]
+]
+
 { #category : 'private - classes' }
 MCPTestCase >> classNamed: aClassName [
 
@@ -133,6 +143,13 @@ MCPTestCase >> expectedRefactoringFailureCauseClassName [
 ]
 
 { #category : 'private - classes' }
+MCPTestCase >> fixtureClassNames [
+	"The classes a test generates, which tearDown removes, last first, so a subclass goes before its superclass."
+
+	^ #(  )
+]
+
+{ #category : 'private - classes' }
 MCPTestCase >> generatedExtensionPackageName [
 	"For a generated method whose package differs from its class's, which is what makes it an extension."
 
@@ -164,6 +181,12 @@ MCPTestCase >> generatedTagName [
 	^ 'Internal'
 ]
 
+{ #category : 'private - rpc' }
+MCPTestCase >> handleJSON: aJSONString [
+
+	^ self mcpWithoutObservabilityExport server messageProcessor handleJSON: aJSONString
+]
+
 { #category : 'support' }
 MCPTestCase >> isBuiltIn: aToolClass [
 	"A tool MCP ships, as against one another project defines: whose conventions it answers to, not whether it is served, which loading its package decides."
@@ -187,6 +210,17 @@ MCPTestCase >> mcpWithoutObservabilityExport [
 		  yourself
 ]
 
+{ #category : 'private - repositories' }
+MCPTestCase >> newRepositoryNamed: aRepositoryName location: aFileReference packageNames: somePackageNames [
+
+	| repository |
+	repository := IceLibgitRepository new.
+	repository name: aRepositoryName.
+	repository location: aFileReference.
+	somePackageNames do: [ :each | repository workingCopy addPackageNamed: each ].
+	^ repository
+]
+
 { #category : 'private - compatibility' }
 MCPTestCase >> refactoringsRefuseBreakingChanges [
 	"Before Pharo 12, a refactoring that would break code fails a precondition, which forcing does not get past, and moving a slot stops on the methods that use it while it is between classes. From 12 on, the refactoring raises a warning that forcing gets past."
@@ -201,6 +235,12 @@ MCPTestCase >> removeClassNamed: aClassName [
 	Smalltalk globals at: aClassName asSymbol ifPresent: [ :class |
 			self withoutEpiceaDuring: [ class removeFromSystem ].
 			self removeGeneratedPackagesIfEmpty ]
+]
+
+{ #category : 'private - classes' }
+MCPTestCase >> removeFixtureClasses [
+
+	self fixtureClassNames reverseDo: [ :each | self removeClassNamed: each ]
 ]
 
 { #category : 'private - packages' }
@@ -266,6 +306,27 @@ MCPTestCase >> runCase [
 			ifFalse: [ imageMonitor disableDuring: [ super runCase ] ] ] ensure: [
 			EpMonitor current: imageMonitor.
 			directory ensureDeleteAll ]
+]
+
+{ #category : 'running' }
+MCPTestCase >> tearDown [
+
+	self removeFixtureClasses.
+	super tearDown
+]
+
+{ #category : 'private - repositories' }
+MCPTestCase >> withRepositories: repositories do: aBlock [
+
+	| previousRepositories registry |
+	registry := IceRepository registry.
+	previousRepositories := registry copy.
+	[
+		registry removeAll.
+		registry addAll: repositories.
+		aBlock value ] ensure: [
+			registry removeAll.
+			registry addAll: previousRepositories ]
 ]
 
 { #category : 'private - execution' }

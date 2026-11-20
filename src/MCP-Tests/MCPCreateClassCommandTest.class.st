@@ -8,16 +8,6 @@ Class {
 	#package : 'MCP-Tests'
 }
 
-{ #category : 'private - errors' }
-MCPCreateClassCommandTest >> captureCommandError: aBlock [
-
-	^ [
-		  aBlock value.
-		  self fail: 'Expected MCPCommandError' ]
-		  on: MCPCommandError
-		  do: [ :error | error ]
-]
-
 { #category : 'private' }
 MCPCreateClassCommandTest >> commandCreating: aClassName superclass: aSuperclassName [
 	"The command class_create builds for a class given only its superclass."
@@ -55,7 +45,7 @@ MCPCreateClassCommandTest >> errorCreating: aClassName superclass: aSuperclassNa
 	| command |
 	command := self commandCreating: aClassName superclass: aSuperclassName.
 	aBlock value: command.
-	^ self captureCommandError: [ command execute ]
+	^ self capture: [ command execute ]
 ]
 
 { #category : 'private' }

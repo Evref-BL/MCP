@@ -64,12 +64,6 @@ MCPToolRemoveMethodsTest >> firstInstanceBatchSelectorString [
 ]
 
 { #category : 'private' }
-MCPToolRemoveMethodsTest >> firstTextFrom: aResult [
-
-	^ (aResult at: #content) first at: #text
-]
-
-{ #category : 'private' }
 MCPToolRemoveMethodsTest >> instanceBatchArguments [
 
 	^ {
@@ -289,9 +283,9 @@ MCPToolRemoveMethodsTest >> testRemovesClassSideMethodsOfAClassWrittenWithItsSid
 	result := self callToolWith: {
 			          (#class -> 'MCPToolRemoveMethodsTestTarget class').
 			          (#selector -> self classBatchSelectors) } asDictionary.
-	self deny: (result at: #isError ifAbsent: [ false ]) description: [ self firstTextFrom: result ].
-	self assert: ((self firstTextFrom: result) includesSubstring: 'MCPToolRemoveMethodsTestTarget class:').
-	self deny: ((self firstTextFrom: result) includesSubstring: 'class class').
+	self deny: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
+	self assert: ((self textFrom: result) includesSubstring: 'MCPToolRemoveMethodsTestTarget class:').
+	self deny: ((self textFrom: result) includesSubstring: 'class class').
 	self deny: (MCPToolRemoveMethodsTestTarget classSide includesSelector: self firstClassBatchSelector).
 	self deny: (MCPToolRemoveMethodsTestTarget classSide includesSelector: self secondClassBatchSelector)
 ]
@@ -312,7 +306,7 @@ MCPToolRemoveMethodsTest >> testRemovesMethodsEvenWhenExternalSendersExistAndWar
 		equals:
 			{ ('1 method still sends {1}, which nothing in the image implements now: MCPToolRemoveMethodsTestSender>>sendProtectedRemovalTarget.'
 				 format: { self protectedSelectorString }) }.
-	self assert: ((self firstTextFrom: result) includesSubstring: 'Warning: 1 method still sends')
+	self assert: ((self textFrom: result) includesSubstring: 'Warning: 1 method still sends')
 ]
 
 { #category : 'tests' }

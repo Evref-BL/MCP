@@ -54,12 +54,6 @@ MCPToolSearchClassesTest >> missingClassName [
 ]
 
 { #category : 'private' }
-MCPToolSearchClassesTest >> removeFixtureClasses [
-
-	self fixtureClassNames reverseDo: [ :each | self removeClassNamed: each ]
-]
-
-{ #category : 'private' }
 MCPToolSearchClassesTest >> restoreFixtureClasses [
 
 	self removeFixtureClasses.
@@ -85,13 +79,6 @@ MCPToolSearchClassesTest >> setUp [
 
 	super setUp.
 	self restoreFixtureClasses
-]
-
-{ #category : 'running' }
-MCPToolSearchClassesTest >> tearDown [
-
-	self removeFixtureClasses.
-	super tearDown
 ]
 
 { #category : 'tests' }

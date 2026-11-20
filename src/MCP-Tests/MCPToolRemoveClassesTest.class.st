@@ -76,7 +76,6 @@ MCPToolRemoveClassesTest >> ensureMethodSource: aMethodSource onClassNamed: aCla
 
 { #category : 'private' }
 MCPToolRemoveClassesTest >> fixtureClassNames [
-	"Removed in reverse order, so a subclass goes before its superclass."
 
 	^ {
 		  self simpleClassName.
@@ -166,7 +165,7 @@ MCPToolRemoveClassesTest >> referencedClassName [
 { #category : 'private' }
 MCPToolRemoveClassesTest >> removeFixtureClasses [
 
-	self fixtureClassNames reverseDo: [ :each | self removeClassNamed: each ].
+	super removeFixtureClasses.
 	self removePackageNamed: self packageCleanupPackageName
 ]
 
@@ -215,13 +214,6 @@ MCPToolRemoveClassesTest >> simpleChildClassName [
 MCPToolRemoveClassesTest >> simpleClassName [
 
 	^ self fixturePrefix , 'Simple'
-]
-
-{ #category : 'running' }
-MCPToolRemoveClassesTest >> tearDown [
-
-	self removeFixtureClasses.
-	super tearDown
 ]
 
 { #category : 'tests' }
@@ -512,12 +504,6 @@ MCPToolRemoveClassesTest >> testToolRequiresClassNameInSchema [
 	self assert: MCPToolRemoveClasses new name equals: 'class_remove'.
 	self assert: schema required asSet equals: #( 'name' ) asSet.
 	self assert: (propertyNames includes: 'force')
-]
-
-{ #category : 'private' }
-MCPToolRemoveClassesTest >> textFrom: aResult [
-
-	^ (aResult at: #content) first at: #text
 ]
 
 { #category : 'private - calling' }
