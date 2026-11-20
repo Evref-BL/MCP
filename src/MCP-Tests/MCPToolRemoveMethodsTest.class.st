@@ -119,11 +119,6 @@ MCPToolRemoveMethodsTest >> protectedSelectorSymbol [
 { #category : 'private' }
 MCPToolRemoveMethodsTest >> restoreFixtureMethods [
 
-	self removeSelector: self firstInstanceBatchSelector from: MCPToolRemoveMethodsTestTarget.
-	self removeSelector: self secondInstanceBatchSelector from: MCPToolRemoveMethodsTestTarget.
-	self removeSelector: self protectedSelectorSymbol from: MCPToolRemoveMethodsTestTarget.
-	self removeSelector: self firstClassBatchSelector from: MCPToolRemoveMethodsTestTarget classSide.
-	self removeSelector: self secondClassBatchSelector from: MCPToolRemoveMethodsTestTarget classSide.
 	self ensureMethodSource: self firstInstanceBatchMethodSource protocol: 'tests' on: MCPToolRemoveMethodsTestTarget.
 	self ensureMethodSource: self secondInstanceBatchMethodSource protocol: 'tests' on: MCPToolRemoveMethodsTestTarget.
 	self ensureMethodSource: self protectedMethodSource protocol: 'tests' on: MCPToolRemoveMethodsTestTarget.
@@ -204,21 +199,6 @@ MCPToolRemoveMethodsTest >> testAClassWrittenWithItsSideAndSideInstanceRemovesNo
 ]
 
 { #category : 'tests' }
-MCPToolRemoveMethodsTest >> testAMissingClassIsSaidByTheLookup [
-
-	| error result |
-	result := self callToolWith: {
-			          (#class -> 'MCPToolRemoveMethodsTestMissingClass').
-			          (#selector -> self firstInstanceBatchSelectorString) } asDictionary.
-	error := self errorFrom: result.
-	self assert: (result at: #isError).
-	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
-	self assert: (error at: #class) equals: 'MCPToolRemoveMethodsTestMissingClass'.
-	self assert: ((error at: #message) beginsWith: 'Class MCPToolRemoveMethodsTestMissingClass does not exist.').
-	self deny: ((error at: #message) includesSubstring: 'SystemEnvironment')
-]
-
-{ #category : 'tests' }
 MCPToolRemoveMethodsTest >> testAMethodNamedForItsSelfSendIsNotNamedAgain [
 	"Nothing implements the selector any more, but its only sender is already named for sending it to self."
 
@@ -237,6 +217,21 @@ MCPToolRemoveMethodsTest >> testAMethodNamedForItsSelfSendIsNotNamedAgain [
 				 format: {
 						 self firstClassBatchSelectorString.
 						 self secondClassBatchSelectorString }) }
+]
+
+{ #category : 'tests' }
+MCPToolRemoveMethodsTest >> testAMissingClassIsSaidByTheLookup [
+
+	| error result |
+	result := self callToolWith: {
+			          (#class -> 'MCPToolRemoveMethodsTestMissingClass').
+			          (#selector -> self firstInstanceBatchSelectorString) } asDictionary.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
+	self assert: (error at: #class) equals: 'MCPToolRemoveMethodsTestMissingClass'.
+	self assert: ((error at: #message) beginsWith: 'Class MCPToolRemoveMethodsTestMissingClass does not exist.').
+	self deny: ((error at: #message) includesSubstring: 'SystemEnvironment')
 ]
 
 { #category : 'tests' }

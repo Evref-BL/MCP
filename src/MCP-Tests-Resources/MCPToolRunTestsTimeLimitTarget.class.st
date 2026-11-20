@@ -11,7 +11,7 @@ Class {
 { #category : 'accessing' }
 MCPToolRunTestsTimeLimitTarget class >> defaultTimeLimit [
 
-	^ 200 milliSeconds
+	^ 100 milliSeconds
 ]
 
 { #category : 'tests' }

@@ -1,5 +1,5 @@
 "
-An evaluate command that keeps its evaluator without starting it, as if other processes had kept the processor until the time limit, whatever the scheduler does with processes of one priority.
+An evaluate command that keeps its evaluator without starting it, as if other processes had kept the processor until the time limit, whatever the scheduler does with processes of one priority. It looks more often than the command does, so it answers soon after a short limit.
 "
 Class {
 	#name : 'MCPEvaluateCommandNeverStarting',
@@ -21,4 +21,10 @@ MCPEvaluateCommandNeverStarting >> evaluator [
 MCPEvaluateCommandNeverStarting >> start: aProcess [
 
 	evaluator := aProcess
+]
+
+{ #category : 'private' }
+MCPEvaluateCommandNeverStarting >> watchMilliseconds [
+
+	^ 10
 ]

@@ -70,7 +70,7 @@ MCPToolSearchPackages >> packageEntriesFromPackages: packages projectNames: pack
 	packages do: [ :eachPackage |
 			| entry projectNames |
 			projectNames := packageProjectNames at: eachPackage name asString ifAbsent: [ #(  ) ].
-			entry := (MCPPackageInfo fromPackage: eachPackage projectNames: projectNames) asQueryDictionary.
+			entry := (MCPPackageInfo fromPackage: eachPackage projectNames: projectNames) asDictionary.
 			(self
 				 fieldFilters: fieldFilters
 				 matchUsing: [ :fieldName | self fieldTextsForPackageEntry: entry fieldName: fieldName ]

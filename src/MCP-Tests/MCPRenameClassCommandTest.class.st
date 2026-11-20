@@ -9,19 +9,6 @@ Class {
 }
 
 { #category : 'private' }
-MCPRenameClassCommandTest >> ensureOriginalFixtureState [
-
-	| originalSymbol renamedSymbol |
-	originalSymbol := self originalClassName asSymbol.
-	renamedSymbol := self renamedClassName asSymbol.
-	self withoutEpiceaDuring: [
-			((Smalltalk globals includesKey: originalSymbol) and: [ Smalltalk globals includesKey: renamedSymbol ]) ifTrue: [
-				(Smalltalk globals at: renamedSymbol) removeFromSystem ].
-			((Smalltalk globals includesKey: renamedSymbol) and: [ (Smalltalk globals includesKey: originalSymbol) not ]) ifTrue: [
-				(ReRenameClassRefactoring rename: self renamedClassName to: self originalClassName) execute ] ]
-]
-
-{ #category : 'private' }
 MCPRenameClassCommandTest >> originalClassName [
 
 	^ 'MCPToolRenameClassTestOriginal'
@@ -37,13 +24,13 @@ MCPRenameClassCommandTest >> renamedClassName [
 MCPRenameClassCommandTest >> setUp [
 
 	super setUp.
-	self ensureOriginalFixtureState
+	self restoreClassNamed: self originalClassName renamedTo: self renamedClassName
 ]
 
 { #category : 'running' }
 MCPRenameClassCommandTest >> tearDown [
 
-	self ensureOriginalFixtureState.
+	self restoreClassNamed: self originalClassName renamedTo: self renamedClassName.
 	super tearDown
 ]
 

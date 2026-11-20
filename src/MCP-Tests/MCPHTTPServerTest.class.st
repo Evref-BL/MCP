@@ -71,10 +71,11 @@ MCPHTTPServerTest >> testABackgroundForkLeavesCallsAnswered [
 
 { #category : 'tests' }
 MCPHTTPServerTest >> testAComputingEvaluationLeavesOtherCallsAnswered [
-	"An evaluation runs below the process serving its call, so while one computes the server still answers other calls. The clients run at the priority calls are served at, since this test's own process gets no turn while the evaluation computes."
+	"An evaluation runs below the process serving its call, so while one computes the server still answers other calls. The evaluated code computes until the listing has its answer, which the listing asks for once the code computes, so the listing comes first only when it was answered meanwhile; otherwise the evaluation's time limit ends it first. The clients run at the priority calls are served at, since this test's own process gets no turn while the evaluation computes."
 
 	| answers completed server |
 	self timeLimit: 30 seconds.
+	MCPEvaluateTestProbe reset.
 	completed := Semaphore new.
 	answers := SharedQueue new.
 	server := (MCP new
@@ -84,15 +85,17 @@ MCPHTTPServerTest >> testAComputingEvaluationLeavesOtherCallsAnswered [
 		server port: 0.
 		server start.
 		{
-			(#evaluation -> 0
+			(#evaluation -> false
 			 ->
-			 '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"evaluate","arguments":{"code":"[ true ] whileTrue","timeoutSeconds":3}}}').
-			(#listing -> 500 -> '{"jsonrpc":"2.0","id":2,"method":"tools/list"}') } do: [ :call |
+			 '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"evaluate","arguments":{"code":"MCPEvaluateTestProbe computeUntilReleased","timeoutSeconds":3}}}').
+			(#listing -> true -> '{"jsonrpc":"2.0","id":2,"method":"tools/list"}') } do: [ :call |
 				[
-					| client |
+					| client deadline |
 					client := ZnClient new.
 					[
-						(Delay forMilliseconds: call key value) wait.
+						deadline := Time millisecondClockValue + 10000.
+						[ call key value and: [ MCPEvaluateTestProbe holder isNil and: [ Time millisecondClockValue < deadline ] ] ] whileTrue: [
+							(Delay forMilliseconds: 5) wait ].
 						client
 							url: server localUrl;
 							headerAt: 'Accept' put: 'application/json, text/event-stream';
@@ -101,6 +104,7 @@ MCPHTTPServerTest >> testAComputingEvaluationLeavesOtherCallsAnswered [
 							post.
 						answers nextPut: call key key -> client response ] ensure: [
 							client close.
+							MCPEvaluateTestProbe release.
 							completed signal ] ] forkAt: Processor lowIOPriority ].
 		2 timesRepeat: [ self deny: (completed waitTimeoutSeconds: 20) description: 'A call got no answer.' ].
 		self assert: answers size equals: 2.
@@ -111,8 +115,9 @@ MCPHTTPServerTest >> testAComputingEvaluationLeavesOtherCallsAnswered [
 		answers next in: [ :evaluation |
 				self assert: evaluation key equals: #evaluation.
 				self assert: evaluation value code equals: 200.
-				self assert: (evaluation value contents includesSubstring: 'Evaluation stopped after 3 s, its time limit.') ] ] ensure: [
-		server stop ]
+				self assert: (evaluation value contents includesSubstring: '"text":"MCPEvaluateTestProbe"') ] ] ensure: [
+			MCPEvaluateTestProbe release.
+			server stop ]
 ]
 
 { #category : 'tests' }

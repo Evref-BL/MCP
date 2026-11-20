@@ -39,8 +39,11 @@ MCPToolMethodSearch >> additionalKeywords [
 
 { #category : 'private - methods' }
 MCPToolMethodSearch >> classReferenceEntriesForClassNamed: className scopeQuery: scopeQuery [
+	"The class is looked up before the scope's methods are collected, so a missing one is said at once."
 
-	^ self methodEntriesFromMethods: (self matchingClassReferencesForClassNamed: className inMethods: scopeQuery methods)
+	| query |
+	query := MCPClassReferenceQuery forClass: (MCPImageLookup classNamed: className).
+	^ self methodEntriesFromMethods: (query methodsReferringIn: scopeQuery collectedMethods)
 ]
 
 { #category : 'private - methods' }
@@ -72,7 +75,7 @@ MCPToolMethodSearch >> collapsedTraitEntriesIn: entries [
 ]
 
 { #category : 'private - filtering' }
-MCPToolMethodSearch >> fieldTextsForMethodEntry: anEntry sourceText: sourceText fieldName: fieldName [
+MCPToolMethodSearch >> fieldTextsForMethodInfo: anInfo fieldName: fieldName [
 
 	^ #(  )
 ]
@@ -85,7 +88,7 @@ MCPToolMethodSearch >> filterArgumentName [
 ]
 
 { #category : 'private - filtering' }
-MCPToolMethodSearch >> filterTextsForMethodEntry: anEntry sourceText: sourceText [
+MCPToolMethodSearch >> filterTextsForMethodInfo: anInfo sourceText: sourceText [
 
 	^ #(  )
 ]
@@ -101,7 +104,7 @@ MCPToolMethodSearch >> implementorMethodsForSelector: selectorSymbol scopeQuery:
 
 	| methods |
 	scopeQuery packageNames ifNotEmpty: [
-		^ (scopeQuery methods select: [ :eachMethod | eachMethod selector = selectorSymbol ]) asArray ].
+		^ (scopeQuery collectedMethods select: [ :eachMethod | eachMethod selector = selectorSymbol ]) asArray ].
 	methods := OrderedCollection new.
 	scopeQuery behaviors do: [ :eachBehavior |
 			(eachBehavior includesSelector: selectorSymbol) ifTrue: [
@@ -119,27 +122,9 @@ MCPToolMethodSearch >> matchStartFinderForPattern: aPattern mode: aMode [
 ]
 
 { #category : 'private - filtering' }
-MCPToolMethodSearch >> matchesFilterOnMethodEntry: anEntry sourceText: sourceText matcher: aMatcher [
+MCPToolMethodSearch >> matchesFilterOnMethodInfo: anInfo sourceText: sourceText matcher: aMatcher [
 
-	^ (self filterTextsForMethodEntry: anEntry sourceText: sourceText) anySatisfy: [ :each | aMatcher value: each ]
-]
-
-{ #category : 'private - searching' }
-MCPToolMethodSearch >> matchingClassReferencesForClassNamed: aClassName inMethods: compiledMethods [
-
-	^ (MCPClassReferenceQuery forClass: (MCPImageLookup classNamed: aClassName)) methodsReferringIn: compiledMethods
-]
-
-{ #category : 'private - searching' }
-MCPToolMethodSearch >> matchingVariableReferencesNamed: aVariableName scopeQuery: query inMethods: compiledMethods [
-
-	| variables |
-	variables := self variableBindingsNamed: aVariableName inBehaviors: query behaviors.
-	variables ifEmpty: [
-			Error signal:
-				(String streamContents: [ :stream |
-					 stream << 'No variable named ' << aVariableName << ' is accessible in the requested scope.' ]) ].
-	^ (compiledMethods select: [ :eachMethod | MCPClassReferenceQuery method: eachMethod referencesAnyVariable: variables ]) asArray
+	^ (self filterTextsForMethodInfo: anInfo sourceText: sourceText) anySatisfy: [ :each | aMatcher value: each ]
 ]
 
 { #category : 'private - methods' }
@@ -161,9 +146,15 @@ MCPToolMethodSearch >> needsSourceForFiltering [
 	^ false
 ]
 
+{ #category : 'private - searching' }
+MCPToolMethodSearch >> noVariableMessageFor: aVariableName [
+
+	^ String streamContents: [ :stream | stream << 'No variable named ' << aVariableName << ' is accessible in the requested scope.' ]
+]
+
 { #category : 'private - template' }
 MCPToolMethodSearch >> queryEntriesForRequest: request scopeQuery: scopeQuery [
-	"Every method of the scope whose text matches the filter and whose fields hold the field filters. Case matters."
+	"Every method of the scope whose text matches the filter and whose fields hold the field filters. Case matters. A method is described only once it passes them."
 
 	| entries fieldFilters filterMode filterPattern matcher matchStartFinder needsSourceForFiltering |
 	filterPattern := self filterPatternFromRequest: request.
@@ -174,19 +165,17 @@ MCPToolMethodSearch >> queryEntriesForRequest: request scopeQuery: scopeQuery [
 	needsSourceForFiltering := self needsSourceForFiltering.
 	entries := OrderedCollection new.
 	scopeQuery methodsDo: [ :eachMethod |
-			| entry info matchesFilter sourceText |
+			| info sourceText |
 			info := MCPCompiledMethodInfo fromMethod: eachMethod.
-			entry := info asDictionary.
 			sourceText := needsSourceForFiltering ifTrue: [ info source ].
-			matchesFilter := (filterPattern isNil or: [ self matchesFilterOnMethodEntry: entry sourceText: sourceText matcher: matcher ])
-				                 and: [
-						                 self
-							                 fieldFilters: fieldFilters
-							                 matchUsing: [ :fieldName |
-							                 self fieldTextsForMethodEntry: entry sourceText: sourceText fieldName: fieldName ]
-							                 mode: filterMode
-							                 caseSensitive: true ].
-			matchesFilter ifTrue: [
+			((filterPattern isNil or: [ self matchesFilterOnMethodInfo: info sourceText: sourceText matcher: matcher ]) and: [
+					 self
+						 fieldFilters: fieldFilters
+						 matchUsing: [ :fieldName | self fieldTextsForMethodInfo: info fieldName: fieldName ]
+						 mode: filterMode
+						 caseSensitive: true ]) ifTrue: [
+					| entry |
+					entry := info asDictionary.
 					self addMatchContextTo: entry sourceText: sourceText matchStartFinder: matchStartFinder.
 					entries add: entry ] ].
 	^ self sortedMethodEntries: entries
@@ -231,7 +220,7 @@ MCPToolMethodSearch >> searchedNoun [
 MCPToolMethodSearch >> selectorReferenceEntriesForSelector: selectorString scopeQuery: scopeQuery [
 
 	^ self methodEntriesFromMethods:
-		  (self matchingSelectorReferencesForSelector: selectorString asSymbol inMethods: scopeQuery methods)
+		  (self matchingSelectorReferencesForSelector: selectorString asSymbol inMethods: scopeQuery collectedMethods)
 ]
 
 { #category : 'private - methods' }
@@ -270,17 +259,22 @@ MCPToolMethodSearch >> traitNamed: aTraitName stillImplements: anEntry [
 { #category : 'private - searching' }
 MCPToolMethodSearch >> variableBindingsNamed: aVariableName inBehaviors: behaviors [
 
-	| variables |
+	| name variables |
+	name := aVariableName asSymbol.
 	variables := IdentitySet new.
 	behaviors do: [ :eachBehavior |
-			eachBehavior allSlots do: [ :eachSlot | eachSlot name asString = aVariableName ifTrue: [ variables add: eachSlot ] ].
-			(eachBehavior bindingOf: aVariableName) ifNotNil: [ :binding | variables add: binding ] ].
+			eachBehavior allSlots do: [ :eachSlot | eachSlot name = name ifTrue: [ variables add: eachSlot ] ].
+			(eachBehavior bindingOf: name) ifNotNil: [ :binding | variables add: binding ] ].
 	^ variables asArray
 ]
 
 { #category : 'private - methods' }
 MCPToolMethodSearch >> variableReferenceEntriesForVariableNamed: variableName scopeQuery: scopeQuery [
+	"The variables are looked up before the scope's methods are collected, so a name that no variable has sweeps no method."
 
+	| variables |
+	variables := self variableBindingsNamed: variableName inBehaviors: scopeQuery behaviors.
+	variables ifEmpty: [ Error signal: (self noVariableMessageFor: variableName) ].
 	^ self methodEntriesFromMethods:
-		  (self matchingVariableReferencesNamed: variableName scopeQuery: scopeQuery inMethods: scopeQuery methods)
+		  (scopeQuery collectedMethods select: [ :each | MCPClassReferenceQuery method: each referencesAnyVariable: variables ])
 ]

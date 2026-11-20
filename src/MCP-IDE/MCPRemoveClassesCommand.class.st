@@ -13,7 +13,8 @@ Class {
 		'reparentedSubclassNames',
 		'removedPackageNames',
 		'warningMessages',
-		'removedMethodNames'
+		'removedMethodNames',
+		'methodsThatMayRefer'
 	],
 	#category : 'MCP-IDE-Commands',
 	#package : 'MCP-IDE',
@@ -123,6 +124,15 @@ MCPRemoveClassesCommand >> isEmptyClass: aClass [
 	^ aClass classVarNames isEmpty and: [ aClass instVarNames isEmpty and: [ aClass selectors isEmpty ] ]
 ]
 
+{ #category : 'private - facts' }
+MCPRemoveClassesCommand >> method: aCompiledMethod holdsAnyOf: someLiterals [
+	"Whether aCompiledMethod holds one of someLiterals, an identity set, among its literals at any depth, its blocks' included, or in a pragma, as its selector or among its arguments."
+
+	^ (aCompiledMethod hasLiteralSuchThat: [ :each | someLiterals includes: each ]) or: [
+			  aCompiledMethod pragmas anySatisfy: [ :pragma |
+				  (someLiterals includes: pragma selector) or: [ pragma arguments hasLiteralSuchThat: [ :each | someLiterals includes: each ] ] ] ]
+]
+
 { #category : 'private' }
 MCPRemoveClassesCommand >> methodNamesOf: aClass [
 	"The methods aClass defines itself, instance side then class side, each sorted, as Pharo writes them. What a trait gives it is the trait's, and stays."
@@ -133,6 +143,22 @@ MCPRemoveClassesCommand >> methodNamesOf: aClass [
 			  (behavior localMethods
 				   collect: [ :each | String streamContents: [ :stream | stream << behavior name << '>>' << each selector ] ]
 				   as: Array) sort ]
+]
+
+{ #category : 'private - facts' }
+MCPRemoveClassesCommand >> methodsThatMayRefer [
+	"The methods outside the classes asked for, on either side, that hold one of them at any depth of their literals or in a pragma: by its name as a symbol, or as the value of a global, under its own name or another. Every method that Pharo's check or method_reference_search counts as referring to one of the classes is among them. One pass over the image finds them for all the classes."
+
+	^ methodsThatMayRefer ifNil: [
+			  | removed wanted |
+			  removed := self resolvedClasses asIdentitySet.
+			  wanted := (MCPClassReferenceQuery forClasses: self resolvedClasses) bindings.
+			  self resolvedClasses do: [ :each | wanted add: each name ].
+			  methodsThatMayRefer := OrderedCollection new.
+			  Smalltalk globals allBehaviorsDo: [ :behavior |
+					  (removed includes: behavior instanceSide) ifFalse: [
+						  behavior methodsDo: [ :method | (self method: method holdsAnyOf: wanted) ifTrue: [ methodsThatMayRefer add: method ] ] ] ].
+			  methodsThatMayRefer ]
 ]
 
 { #category : 'private - facts' }
@@ -147,15 +173,12 @@ MCPRemoveClassesCommand >> referenceListOf: someMethods [
 
 { #category : 'private - facts' }
 MCPRemoveClassesCommand >> referencesOutsideRemoval [
-	"Class name to the methods that refer to it, outside the classes asked for, on either side, found by the test method_reference_search makes. One scan of the image's methods per class asked for."
+	"Class name to the methods that refer to it, outside the classes asked for, on either side, found by the test method_reference_search makes among the methods that may refer to the classes."
 
-	| methods references |
-	methods := OrderedCollection new.
-	Smalltalk globals allBehaviorsDo: [ :behavior |
-		(self resolvedClasses includes: behavior instanceSide) ifFalse: [ behavior methodsDo: [ :method | methods add: method ] ] ].
+	| references |
 	references := Dictionary new.
 	self resolvedClasses do: [ :each |
-			((MCPClassReferenceQuery forClass: each) methodsReferringIn: methods) ifNotEmpty: [ :referring |
+			((MCPClassReferenceQuery forClass: each) methodsReferringIn: self methodsThatMayRefer) ifNotEmpty: [ :referring |
 				references at: each name asString put: referring ] ].
 	^ references
 ]

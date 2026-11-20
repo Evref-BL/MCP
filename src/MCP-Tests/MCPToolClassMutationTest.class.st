@@ -154,19 +154,6 @@ MCPToolClassMutationTest >> ensureDestinationPackage [
 ]
 
 { #category : 'private' }
-MCPToolClassMutationTest >> ensureOriginalRenameFixtureState [
-
-	| originalSymbol renamedSymbol |
-	originalSymbol := self originalClassName asSymbol.
-	renamedSymbol := self renamedClassName asSymbol.
-	self withoutEpiceaDuring: [
-			((Smalltalk globals includesKey: originalSymbol) and: [ Smalltalk globals includesKey: renamedSymbol ]) ifTrue: [
-				(Smalltalk globals at: renamedSymbol) removeFromSystem ].
-			((Smalltalk globals includesKey: renamedSymbol) and: [ (Smalltalk globals includesKey: originalSymbol) not ]) ifTrue: [
-				(ReRenameClassRefactoring rename: self renamedClassName to: self originalClassName) execute ] ]
-]
-
-{ #category : 'private' }
 MCPToolClassMutationTest >> generatedPackageName [
 
 	^ 'MCP-Tests-ClassMutation'
@@ -260,7 +247,7 @@ MCPToolClassMutationTest >> setUp [
 	self restoreMoveTargetClassLocation.
 	self removeDestinationPackage.
 	self ensureDestinationPackage.
-	self ensureOriginalRenameFixtureState
+	self restoreClassNamed: self originalClassName renamedTo: self renamedClassName
 ]
 
 { #category : 'private' }
@@ -276,7 +263,7 @@ MCPToolClassMutationTest >> tearDown [
 	self removeGeneratedPackage.
 	self restoreMoveTargetClassLocation.
 	self removeDestinationPackage.
-	self ensureOriginalRenameFixtureState.
+	self restoreClassNamed: self originalClassName renamedTo: self renamedClassName.
 	super tearDown
 ]
 

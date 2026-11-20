@@ -275,6 +275,15 @@ MCP >> advertisedToolNames [
 	^ self toolRegistry advertisedToolNames
 ]
 
+{ #category : 'private - start' }
+MCP >> anotherServerListeningOnThisPortDo: aBlock [
+	"A port is most often held by another server in the same image. That server is listening, so it is running and found without the full garbage collection allServers makes."
+
+	self class runningServers
+		detect: [ :each | each ~~ self and: [ each port = self port and: [ each isListening ] ] ]
+		ifFound: aBlock
+]
+
 { #category : 'configuration' }
 MCP >> changePortTo: aPortNumber [
 	"Move the server to another port. A running one is restarted there, and goes back to the port it had if the new one cannot be bound."
@@ -383,8 +392,12 @@ MCP >> ensureLocalObservabilityBackend [
 
 { #category : 'private - start' }
 MCP >> ensureServerIsListening [
+	"The listener binds in a process above its caller's priority, so a bind that fails has usually failed by now. A port another MCP in this image listens on stays held however long this one waits for it, so that failure is signalled as soon as it is seen: at once, or after the first wait when the bind had not failed yet."
 
+	server lastListenError ifNotNil: [
+		self anotherServerListeningOnThisPortDo: [ :holder | Error signal: self notListeningDescription ] ].
 	(self waitUntilListeningForMilliseconds: 1000) ifTrue: [ ^ self ].
+	self anotherServerListeningOnThisPortDo: [ :holder | Error signal: self notListeningDescription ].
 	server stop.
 	server start.
 	(self waitUntilListeningForMilliseconds: 1000) ifTrue: [ ^ self ].
@@ -506,17 +519,13 @@ MCP >> newLocalObservabilityBackend [
 
 { #category : 'private - start' }
 MCP >> notListeningDescription [
-	"A port is most often held by another server in the same image, and the socket error alone does not say so."
+	"The socket error alone does not say that the port is held by another server in the same image."
 
 	^ String streamContents: [ :stream |
 			  stream << 'MCP server is not listening on port ' << self port asString.
 			  server lastListenError ifNotNil: [ :reason | stream << ': ' << reason ].
-			  self class allServers
-				  detect: [ :each | each ~~ self and: [ each port = self port and: [ each isListening ] ] ]
-				  ifFound: [ :holder |
-					  stream << '. Another MCP in this image is listening on that port; MCP startOnPort: ' << self port asString
-					  << ' answers it.' ]
-				  ifNone: [ nil ] ]
+			  self anotherServerListeningOnThisPortDo: [ :holder |
+				  stream << '. Another MCP in this image is listening on that port; MCP startOnPort: ' << self port asString << ' answers it.' ] ]
 ]
 
 { #category : 'private - notifications' }

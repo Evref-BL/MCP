@@ -51,7 +51,7 @@ MCPToolRemoveClassesTest >> emptyParentClassName [
 { #category : 'private' }
 MCPToolRemoveClassesTest >> ensureClassNamed: aClassName superclassName: aSuperclassName [
 
-	^ self ensureClassNamed: aClassName superclassName: aSuperclassName packageName: 'MCP-Tests'
+	^ self ensureClassNamed: aClassName superclassName: aSuperclassName packageName: self generatedPackageName
 ]
 
 { #category : 'private' }
@@ -378,16 +378,25 @@ MCPToolRemoveClassesTest >> testForceRemovesWhatBlocksAndWarnsOfIt [
 
 { #category : 'tests' }
 MCPToolRemoveClassesTest >> testManyMethodsThatGoWithTheClassesAreCounted [
-	"Past ten methods, the answer says how many went, without naming them: the count is what tells a caller it removed more than it meant to."
+	"Past ten methods, the answer says how many went, without naming them: the count is what tells a caller it removed more than it meant to. A package the classes leave empty goes with them."
 
+	| result |
 	1 to: 6 do: [ :index | self ensureMethodSource: ('first{1} ^ 1' format: { index }) onClassNamed: self simpleClassName ].
 	1 to: 5 do: [ :index | self ensureMethodSource: ('second{1} ^ 1' format: { index }) onClassNamed: self packageCleanupClassName ].
+	result := self callToolWith: (self argumentsForClassNames: self batchClassNames).
+	self deny: (result at: #isError ifAbsent: [ false ]).
 	self
-		assert: (self textFrom: (self callToolWith: (self argumentsForClassNames: self batchClassNames)))
+		assert: (self textFrom: result)
 		equals: ('Removed 2 classes: {1}, {2}. Their 11 methods were removed with them. Removed packages: {3}.' format: {
 					 self simpleClassName.
 					 self packageCleanupClassName.
-					 self packageCleanupPackageName })
+					 self packageCleanupPackageName }).
+	self deny: (self class environment includesKey: self simpleClassName asSymbol).
+	self deny: (self class environment includesKey: self packageCleanupClassName asSymbol).
+	self deny: (self packageOrganizer hasPackage: self packageCleanupPackageName).
+	self
+		assert: ((self dataFrom: result) at: #removedPackageNames ifAbsent: [ #(  ) ])
+		equals: { self packageCleanupPackageName } asArray
 ]
 
 { #category : 'tests' }
@@ -439,19 +448,6 @@ MCPToolRemoveClassesTest >> testSafelyRemovesEmptyClassAndReparentsDirectSubclas
 	self assert: (self textFrom: result) equals: ('Removed class {1}. {2} now inherits from Object.' format: {
 				 self emptyParentClassName.
 				 self emptyChildClassName })
-]
-
-{ #category : 'tests' }
-MCPToolRemoveClassesTest >> testSafelyRemovesSimpleClass [
-
-	| data result |
-	result := self callToolWith: (self argumentsForClassNames: self batchClassNames).
-	data := self dataFrom: result.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self deny: (self class environment includesKey: self simpleClassName asSymbol).
-	self deny: (self class environment includesKey: self packageCleanupClassName asSymbol).
-	self deny: (self packageOrganizer hasPackage: self packageCleanupPackageName).
-	self assert: (data at: #removedPackageNames ifAbsent: [ #(  ) ]) equals: { self packageCleanupPackageName } asArray
 ]
 
 { #category : 'tests' }

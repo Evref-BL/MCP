@@ -11,7 +11,7 @@ Class {
 { #category : 'private' }
 MCPRemoveClassesCommandTest >> createClassNamed: aClassName superclassName: aSuperclassName [
 
-	^ self createClassNamed: aClassName superclassName: aSuperclassName packageName: 'MCP-Tests'
+	^ self createClassNamed: aClassName superclassName: aSuperclassName packageName: self generatedPackageName
 ]
 
 { #category : 'private' }

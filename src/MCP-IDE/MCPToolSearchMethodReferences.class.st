@@ -247,12 +247,14 @@ MCPToolSearchMethodReferences >> noHitTextForKinds: kinds name: aName [
 
 { #category : 'private - template' }
 MCPToolSearchMethodReferences >> queryEntriesForRequest: request scopeQuery: scopeQuery [
-	"The name is read as its spelling says, then the other way when that finds nothing. When neither finds anything and a reading failed, the name is unknown, except for a selector: a selector always resolves, so its first reading answers that nothing implements or sends it. A name read as a selector that cannot be one, such as #audit, is still unknown."
+	"The name is read as its spelling says, then the other way when that finds nothing. When neither finds anything and a reading failed, the name is unknown, except for a selector: a selector always resolves, so its first reading answers that nothing implements or sends it. A name that can be neither a selector nor a variable, such as #audit, is unknown before anything is swept: its reading as a variable is what fails."
 
 	| entries fallback kinds name failures |
 	name := self requiredFilterPatternFromRequest: request.
 	kinds := self kindsForName: name fromRequest: request.
 	(self requestedKindFromRequest: request) ifNotNil: [ ^ self entriesForKinds: kinds name: name scopeQuery: scopeQuery ].
+	((kinds includes: 'class') or: [ self isSelectorName: name ]) ifFalse: [
+		^ self signalUnknownName: name failures: { (Error new messageText: (self noVariableMessageFor: name)) } ].
 	failures := OrderedCollection new.
 	entries := self
 		           entriesForKinds: kinds

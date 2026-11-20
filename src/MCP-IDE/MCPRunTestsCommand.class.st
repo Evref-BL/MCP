@@ -82,6 +82,13 @@ MCPRunTestsCommand >> initializeSelections: someSelections timeoutMilliseconds: 
 	timeoutMilliseconds := anInteger
 ]
 
+{ #category : 'private - timeout' }
+MCPRunTestsCommand >> interruptedTearDownTimeLimit [
+	"How long the test a timeout interrupts has for its tearDown, after which SUnit's own watchdog stops a tearDown that hangs."
+
+	^ 1 second
+]
+
 { #category : 'private - validation' }
 MCPRunTestsCommand >> isTestSelector: aSelector in: aTestClass [
 	"Whether a test_run selection that names aSelector in aTestClass runs it as a test: the class answers it, and the class's suite holds a case of it. A class that uses a trait can leave out the trait's test, and a trait's helper is no test anywhere."
@@ -295,9 +302,9 @@ MCPRunTestsCommand >> selections [
 
 { #category : 'private - timeout' }
 MCPRunTestsCommand >> shortenTimeLimitOf: aTestCase [
-	"The test a timeout interrupts gets a second for its tearDown: SUnit's own watchdog then stops a tearDown that hangs, and the call answers about a second late. A deadline that falls outside the test's managed run has no limit to shorten."
+	"The test a timeout interrupts gets a short time for its tearDown, so the call answers about that much late. A deadline that falls outside the test's managed run has no limit to shorten."
 
-	aTestCase executionEnvironment isTest ifTrue: [ aTestCase timeLimit: 1 second ]
+	aTestCase executionEnvironment isTest ifTrue: [ aTestCase timeLimit: self interruptedTearDownTimeLimit ]
 ]
 
 { #category : 'private' }

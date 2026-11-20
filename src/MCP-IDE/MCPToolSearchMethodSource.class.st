@@ -81,7 +81,7 @@ MCPToolSearchMethodSource >> entryLineTextFor: entry omitting: omittedKeys [
 ]
 
 { #category : 'private - filtering' }
-MCPToolSearchMethodSource >> filterTextsForMethodEntry: anEntry sourceText: sourceText [
+MCPToolSearchMethodSource >> filterTextsForMethodInfo: anInfo sourceText: sourceText [
 
 	^ { sourceText }
 ]

@@ -24,22 +24,15 @@ MCPToolContractsTest >> addSelfSentNotImplementedCritiquesFrom: aMethod using: a
 ]
 
 { #category : 'private' }
-MCPToolContractsTest >> addUnimplementedResponsibilitiesFor: aClass behavior: aBehavior side: sideName to: issues [
+MCPToolContractsTest >> addUnimplementedResponsibilitiesOf: aBehavior among: selectors to: issues [
 
-	aBehavior allSelectors do: [ :selector |
-			| method |
-			selector = #subclassResponsibility ifFalse: [
-					method := aBehavior lookupSelector: selector.
-					(method isNotNil and: [ self methodSendsSubclassResponsibility: method ]) ifTrue: [
+	selectors do: [ :selector |
+			(aBehavior lookupSelector: selector) ifNotNil: [ :method |
+					(selector ~= #subclassResponsibility and: [ self methodSendsSubclassResponsibility: method ]) ifTrue: [
 							issues add: (String streamContents: [ :stream |
-										 stream
-											 nextPutAll: aClass name asString;
-											 space;
-											 nextPutAll: sideName;
-											 nextPutAll: ' #';
-											 nextPutAll: selector asString;
-											 nextPutAll: ' inherited from ';
-											 nextPutAll: method methodClass name asString ]) ] ] ]
+										 stream << aBehavior instanceSide name << (aBehavior isMeta
+											  ifTrue: [ ' class #' ]
+											  ifFalse: [ ' instance #' ]) << selector << ' inherited from ' << method methodClass name ]) ] ] ]
 ]
 
 { #category : 'private' }
@@ -119,19 +112,12 @@ MCPToolContractsTest >> evaluate: aString within: seconds [
 
 	| actions result |
 	actions := OrderedCollection new.
-	result := self evaluate: aString within: seconds deferringInto: actions.
+	result := MCPPostResponseActions value: actions during: [
+			          self callDiscoveredToolNamed: 'evaluate' withArguments: {
+					          (#code -> aString).
+					          (#timeoutSeconds -> seconds) } asDictionary ].
 	actions do: [ :each | each value ].
 	^ result
-]
-
-{ #category : 'private - evaluate' }
-MCPToolContractsTest >> evaluate: aString within: seconds deferringInto: actions [
-	"The answer of an evaluation with a time limit, as a call gets it, leaving in actions what the call deferred until after its response."
-
-	^ MCPPostResponseActions value: actions during: [
-			  self callDiscoveredToolNamed: 'evaluate' withArguments: {
-					  (#code -> aString).
-					  (#timeoutSeconds -> seconds) } asDictionary ]
 ]
 
 { #category : 'private - evaluate' }
@@ -147,13 +133,16 @@ MCPToolContractsTest >> evaluateBriefly: aString [
 
 { #category : 'private - evaluate' }
 MCPToolContractsTest >> evaluateBriefly: aString deferringInto: actions [
-	"The answer to an evaluation of aString with the tests' short limit, leaving in actions what the call deferred until after its response."
+	"The answer to an evaluation of aString with the tests' short limit, counted from when its code runs, leaving in actions what the call deferred until after its response."
 
 	| tool |
 	tool := MCPToolEvaluate new.
 	^ MCPPostResponseActions value: actions during: [
 			  tool answerFor:
-				  (MCPEvaluateCommand code: aString timeLimit: self stopLimitSeconds previewLimit: tool resultPreviewCharacterLimit) execute ]
+				  (MCPEvaluateCommandWaitingForTheCode
+					   code: aString
+					   timeLimit: self stopLimitSeconds
+					   previewLimit: tool resultPreviewCharacterLimit) execute ]
 ]
 
 { #category : 'private' }
@@ -193,6 +182,14 @@ MCPToolContractsTest >> mcpClassesInPackageTagNamed: aTagName [
 
 	^ ((MCPTool builtInPackageNames flatCollect: [ :each | (self packageOrganizer packageNamed: each asSymbol) definedClasses ])
 		   select: [ :each | each packageTagName asString = aTagName ]) asArray
+]
+
+{ #category : 'private' }
+MCPToolContractsTest >> mcpMethodsReferringTo: aLiteral [
+	"The methods of MCP's loaded packages that hold aLiteral. A method that sends a selector holds it, unless the virtual machine special-cases that selector, so only these need parsing to find the sends."
+
+	^ self mcpPackageNames flatCollect: [ :name |
+		  (self packageOrganizer packageNamed: name) methods select: [ :each | each refersToLiteral: aLiteral ] ]
 ]
 
 { #category : 'private' }
@@ -382,9 +379,9 @@ MCPToolContractsTest >> signalHaltForMCPMessageProcessorTest [
 
 { #category : 'private - evaluate' }
 MCPToolContractsTest >> stopLimitSeconds [
-	"The time limit of an evaluation a test lets stop: the command takes a fraction of a second, which the tool's schema does not, so these tests wait a fifth of what a whole second would cost."
+	"The time limit of an evaluation a test lets stop, counted from when its code runs: the command takes a fraction of a second, which the tool's schema does not, so these tests wait a tenth of what a whole second would cost."
 
-	^ 0.2
+	^ 0.1
 ]
 
 { #category : 'private - evaluate' }
@@ -402,33 +399,21 @@ MCPToolContractsTest >> stoppedEarlyResultOf: aString bounds: aBlock [
 ]
 
 { #category : 'private - evaluate' }
-MCPToolContractsTest >> stoppedText: aString [
-	"A text that must be the answer to a stop at the tests' limit."
-
-	^ self stoppedText: aString after: self stopLimitSeconds
-]
-
-{ #category : 'private - evaluate' }
-MCPToolContractsTest >> stoppedText: aString after: seconds [
-	"A text that must be the answer to a stop at a limit of seconds."
-
-	self assert: (aString lines first: 2) equals: {
-			('Evaluation stopped after ' , seconds printString , ' s, its time limit.').
-			'What it changed before then stays changed.' }.
-	^ aString
-]
-
-{ #category : 'private - evaluate' }
 MCPToolContractsTest >> stoppedTextOf: aResult [
 	"The text of an evaluation's answer that must be a stop at the tests' limit."
 
+	| text |
 	self assert: aResult isError.
-	^ self stoppedText: aResult content first text
+	text := aResult content first text.
+	self assert: (text lines first: 2) equals: {
+			('Evaluation stopped after ' , self stopLimitSeconds printString , ' s, its time limit.').
+			'What it changed before then stays changed.' }.
+	^ text
 ]
 
 { #category : 'private - evaluate' }
 MCPToolContractsTest >> stoppedTextUnwindingBrieflyOf: aString deferringInto: actions [
-	"The text of an evaluation of aString that must be stopped at the tests' limit, by a command that waits briefly rather than 5 s for the stopped code to unwind, leaving in actions what the call deferred until after its response. A test whose stopped code unwinds slowly waits that bound in full."
+	"The text of an evaluation of aString that must be stopped at the tests' limit, by a command that waits less than the command's bound for the stopped code to unwind, leaving in actions what the call deferred until after its response. A test whose stopped code unwinds slowly waits that shorter bound in full."
 
 	| command tool |
 	tool := MCPToolEvaluate new.
@@ -1031,12 +1016,12 @@ MCPToolContractsTest >> testEvaluateLooksAtTheMemoryOnlyOnceTheCodeHasStarted [
 
 	| command tool unstarted |
 	tool := MCPToolEvaluate new.
-	command := MCPEvaluateCommandStoppingEarly code: '3 + 4' timeLimit: self stopLimitSeconds previewLimit: 100.
+	command := MCPEvaluateCommandStoppingEarly code: '3 + 4' timeLimit: self unstartedLimitSeconds previewLimit: 100.
 	command memoryGrowthLimit: -1024 * 1024 * 1024.
 	unstarted := [ 3 + 4 ] newProcess.
 	self
 		assert: (tool stopSummaryFor: (command watch: unstarted until: Semaphore new started: [ false ]) of: command)
-		equals: 'Evaluation stopped after ' , self stopLimitSeconds printString , ' s, its time limit.'.
+		equals: 'Evaluation stopped after ' , self unstartedLimitSeconds printString , ' s, its time limit.'.
 	self assert: ((tool stopSummaryFor: (command watch: unstarted until: Semaphore new started: [ true ]) of: command) beginsWith:
 			 'Evaluation stopped: the image''s memory grew by more than ').
 	self assert: (command
@@ -1276,7 +1261,7 @@ MCPToolContractsTest >> testEvaluateStopCollectsGarbageAfterTheAnswer [
 	[
 		self assert: actions size equals: 1.
 		self assert: helpers size equals: 1.
-		(Delay forMilliseconds: 100) wait.
+		(Delay forMilliseconds: 20) wait.
 		self deny: helpers first isTerminated ] ensure: [ actions do: #value ].
 	self waitUntilEnded: helpers first.
 	self assert: helpers first isTerminated
@@ -1398,9 +1383,7 @@ A fork has no time limit, and at this priority it holds up no evaluation.' lines
 
 { #category : 'tests - evaluate' }
 MCPToolContractsTest >> testEvaluateStopsAComputingLoopUnderEitherPreemptionRule [
-	"A loop that computes never yields, so only a process above it can take the processor back, whichever way the virtual machine requeues the process it preempts. The process that terminates the loop runs at the loop's priority, so the loop is taken off the run queue first, and has unwound under either rule by the time the answer goes.
-
-	The limit is a second, not the tests' fifth of one: the stop must find the loop running, and a loaded machine does not promise to start it, or to reach it, in 0.2 s."
+	"A loop that computes never yields, so only a process above it can take the processor back, whichever way the virtual machine requeues the process it preempts. The process that terminates the loop runs at the loop's priority, so the loop is taken off the run queue first, and has unwound under either rule by the time the answer goes."
 
 	self timeLimit: 30 seconds.
 	self underEitherPreemptionRuleDo: [ :yields |
@@ -1409,10 +1392,9 @@ MCPToolContractsTest >> testEvaluateStopsAComputingLoopUnderEitherPreemptionRule
 			before := self processesNamed: 'evaluate'.
 			actions := OrderedCollection new.
 			[
-				milliseconds := Time millisecondsToRun: [ result := self evaluate: '[ true ] whileTrue' within: 1 deferringInto: actions ].
+				milliseconds := Time millisecondsToRun: [ result := self evaluateBriefly: '[ true ] whileTrue' deferringInto: actions ].
 				evaluators := (self processesNamed: 'evaluate') copyWithoutAll: before ] ensure: [ actions do: #value ].
-			self assert: (self resultIndicatesError: result).
-			lines := (self stoppedText: (self firstTextFromToolResult: result) after: 1) lines.
+			lines := (self stoppedTextOf: result) lines.
 			self deny: (lines includes: 'Its ensure blocks were still running when this answer was sent.') description: rule.
 			self assert: (lines includes: 'Stopped in:').
 			self assert: (lines includes: 'UndefinedObject>>DoIt').
@@ -1541,7 +1523,7 @@ MCPToolContractsTest >> testEvaluateStopsCodeThatCatchesEveryException [
 
 { #category : 'tests - evaluate' }
 MCPToolContractsTest >> testEvaluateStopsCodeThatKeepsMoreMemoryThanItsBound [
-	"Code that keeps what it allocates without recursing passes no stack bound, so the image's memory backs the stack up. The bound is set low and the code keeps 64 MB, then waits, so the test allocates no GBs. A collection beforehand keeps garbage freed meanwhile from hiding the growth."
+	"Code that keeps what it allocates without recursing passes no stack bound, so the image's memory backs the stack up. The bound is set low and the code keeps 24 MB, then waits, so the test allocates no GBs. A collection beforehand keeps garbage freed meanwhile from hiding the growth."
 
 	| lines milliseconds result |
 	self timeLimit: 30 seconds.
@@ -1549,7 +1531,7 @@ MCPToolContractsTest >> testEvaluateStopsCodeThatKeepsMoreMemoryThanItsBound [
 	milliseconds := Time millisecondsToRun: [
 			                result := self
 				                          stoppedEarlyResultOf:
-				                          '| kept | kept := (1 to: 8) collect: [ :each | ByteArray new: 8 * 1024 * 1024 ]. (Delay forSeconds: 60) wait. kept size'
+				                          '| kept | kept := (1 to: 3) collect: [ :each | ByteArray new: 8 * 1024 * 1024 ]. (Delay forSeconds: 60) wait. kept size'
 				                          bounds: [ :command | command memoryGrowthLimit: 16 * 1024 * 1024 ] ].
 	self assert: result isError.
 	lines := (self textOfEvaluateResult: result) lines.
@@ -1567,16 +1549,16 @@ MCPToolContractsTest >> testEvaluateThatNeverStartedSaysSo [
 	self timeLimit: 30 seconds.
 	holder := [ [ true ] whileTrue ] forkAt: Processor activePriority - 1 named: 'mcp-evaluate-holder-probe'.
 	[
-		command := MCPEvaluateCommandNeverStarting code: '3 + 4' timeLimit: self stopLimitSeconds previewLimit: 100.
+		command := MCPEvaluateCommandNeverStarting code: '3 + 4' timeLimit: self unstartedLimitSeconds previewLimit: 100.
 		result := MCPToolEvaluate new answerFor: command execute ] ensure: [ holder terminate ].
 	error := result structuredContent at: #error.
 	self assert: result isError.
 	self
 		assert: (result structuredContent at: #summary)
-		equals: 'Evaluation did not start within ' , self stopLimitSeconds printString , ' s, its time limit; none of it ran.'.
+		equals: 'Evaluation did not start within ' , self unstartedLimitSeconds printString , ' s, its time limit; none of it ran.'.
 	self assert: ((error at: #heldBy) anySatisfy: [ :each |
 			 each beginsWith: 'a process an evaluation forked, named mcp-evaluate-holder-probe, in ' ]).
-	self assert: (error at: #timeoutSeconds) equals: self stopLimitSeconds.
+	self assert: (error at: #timeoutSeconds) equals: self unstartedLimitSeconds.
 	self assert: command evaluator isTerminated
 ]
 
@@ -2418,10 +2400,9 @@ MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable 
 { #category : 'tests' }
 MCPToolContractsTest >> testProjectMethodsDoNotHandleMessageNotUnderstoodAsControlFlow [
 
-	| methods offendingMethods rule |
+	| offendingMethods rule |
 	rule := MCPMessageNotUnderstoodHandlerRule new.
-	methods := #( 'MCP' 'MCP-Tests' ) flatCollect: [ :packageName | (self packageOrganizer packageNamed: packageName) methods ].
-	offendingMethods := methods select: [ :method |
+	offendingMethods := (self mcpMethodsReferringTo: #on:do:) select: [ :method |
 		                    method sendNodes anySatisfy: [ :sendNode | rule isMessageNotUnderstoodHandlerSend: sendNode ] ].
 	self assert: offendingMethods isEmpty description: ('Methods handling MessageNotUnderstood: {1}' format:
 			 { (offendingMethods collect: [ :method | method printString ] as: Array) printString })
@@ -2430,10 +2411,9 @@ MCPToolContractsTest >> testProjectMethodsDoNotHandleMessageNotUnderstoodAsContr
 { #category : 'tests' }
 MCPToolContractsTest >> testProjectMethodsDoNotSendReflectiveProtocolChecks [
 
-	| forbiddenSelector methods offendingMethods |
+	| forbiddenSelector offendingMethods |
 	forbiddenSelector := MCPRespondsToUsageRule forbiddenSelector.
-	methods := #( 'MCP' 'MCP-Tests' ) flatCollect: [ :packageName | (self packageOrganizer packageNamed: packageName) methods ].
-	offendingMethods := methods select: [ :method |
+	offendingMethods := (self mcpMethodsReferringTo: forbiddenSelector) select: [ :method |
 		                    method sendNodes anySatisfy: [ :sendNode | sendNode selector = forbiddenSelector ] ].
 	self assert: offendingMethods isEmpty description: ('Methods sending {1}: {2}' format: {
 				 forbiddenSelector.
@@ -3528,24 +3508,25 @@ MCPToolContractsTest >> underEitherPreemptionRuleDo: aBlock [
 
 { #category : 'private' }
 MCPToolContractsTest >> unimplementedResponsibilitiesForConcreteMCPClasses [
+	"A concrete class leaves a responsibility unimplemented when the method it answers for a selector sends subclassResponsibility. That method is in its lookup chain, so only the selectors of the chains' methods that send it are looked up."
 
-	| classes issues |
-	classes := (MCPTool builtInPackageNames flatCollect: [ :name | (self packageOrganizer packageNamed: name) definedClasses ])
-		           reject: [ :each | each isTrait ].
+	| behaviors issues selectors |
+	behaviors := ((MCPTool builtInPackageNames flatCollect: [ :name | (self packageOrganizer packageNamed: name) definedClasses ])
+		              reject: [ :each | each isTrait or: [ each isAbstract ] ]) flatCollect: [ :each |
+		             Array with: each with: each class ].
+	selectors := IdentitySet new.
+	(behaviors flatCollect: [ :each | each withAllSuperclasses ]) asIdentitySet do: [ :behavior |
+		behavior methods do: [ :method | (method sendsSelector: #subclassResponsibility) ifTrue: [ selectors add: method selector ] ] ].
 	issues := OrderedCollection new.
-	classes do: [ :class |
-			class isAbstract ifFalse: [
-					self
-						addUnimplementedResponsibilitiesFor: class
-						behavior: class
-						side: 'instance'
-						to: issues.
-					self
-						addUnimplementedResponsibilitiesFor: class
-						behavior: class class
-						side: 'class'
-						to: issues ] ].
+	behaviors do: [ :each | self addUnimplementedResponsibilitiesOf: each among: selectors to: issues ].
 	^ issues asArray sort
+]
+
+{ #category : 'private - evaluate' }
+MCPToolContractsTest >> unstartedLimitSeconds [
+	"The time limit of an evaluation whose code a test never runs: nothing has to be reached first, so it is shorter than the tests' limit for code they let stop."
+
+	^ 0.02
 ]
 
 { #category : 'private - evaluate' }
@@ -3554,5 +3535,5 @@ MCPToolContractsTest >> waitUntilEnded: aProcess [
 
 	| deadline |
 	deadline := Time millisecondClockValue + 5000.
-	[ aProcess isTerminated or: [ Time millisecondClockValue > deadline ] ] whileFalse: [ (Delay forMilliseconds: 50) wait ]
+	[ aProcess isTerminated or: [ Time millisecondClockValue > deadline ] ] whileFalse: [ (Delay forMilliseconds: 5) wait ]
 ]

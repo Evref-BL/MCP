@@ -1,5 +1,5 @@
 "
-What code a test evaluates reaches while its evaluation is stopped: whether an ensure block ran, an ensure block that holds its process until the test releases it, to stand for one that takes long, and a critical section the test can hold.
+What code a test evaluates reaches while its evaluation is stopped: whether an ensure block ran, an ensure block that holds its process until the test releases it, to stand for one that takes long, and a critical section the test can hold. Code may also compute until the test releases it.
 "
 Class {
 	#name : 'MCPEvaluateTestProbe',
@@ -8,11 +8,20 @@ Class {
 		'ensureRan',
 		'holder',
 		'semaphore',
-		'mutex'
+		'mutex',
+		'released'
 	],
 	#category : 'MCP-Tests-Resources',
 	#package : 'MCP-Tests-Resources'
 }
+
+{ #category : 'probing' }
+MCPEvaluateTestProbe class >> computeUntilReleased [
+	"Compute, never waiting, until the test releases the probe, recording the process that computes."
+
+	holder := Processor activeProcess.
+	[ released ] whileFalse
+]
 
 { #category : 'accessing' }
 MCPEvaluateTestProbe class >> ensureRan [
@@ -30,6 +39,7 @@ MCPEvaluateTestProbe class >> holdUntilReleased [
 
 { #category : 'accessing' }
 MCPEvaluateTestProbe class >> holder [
+	"The process that waits or computes until the test releases the probe."
 
 	^ holder
 ]
@@ -50,6 +60,7 @@ MCPEvaluateTestProbe class >> noteEnsureRan [
 { #category : 'probing' }
 MCPEvaluateTestProbe class >> release [
 
+	released := true.
 	semaphore signal
 ]
 
@@ -57,6 +68,7 @@ MCPEvaluateTestProbe class >> release [
 MCPEvaluateTestProbe class >> reset [
 
 	ensureRan := false.
+	released := false.
 	semaphore := Semaphore new.
 	mutex := Semaphore forMutualExclusion.
 	holder := nil

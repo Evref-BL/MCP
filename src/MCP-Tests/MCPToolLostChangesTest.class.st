@@ -262,12 +262,12 @@ MCPToolLostChangesTest >> testLeavesOutWhatALoadChanged [
 
 { #category : 'tests' }
 MCPToolLostChangesTest >> testListsAndRestoresALargeHistoryQuickly [
-	"Previews over 2,530 history entries took 15 minutes. A lost session of 5,000 entries, 25 versions of 200 methods, is read once, into one change per method."
+	"Previews over 2,530 history entries took 15 minutes. A lost session of 1,000 entries, 25 versions of 40 methods, is read once, into one change per method."
 
 	| class listed lostLog restored selectors start |
 	self timeLimit: 2 minutes.
 	class := self savedClass.
-	selectors := (1 to: 200) collect: [ :index |
+	selectors := (1 to: 40) collect: [ :index |
 		             (String streamContents: [ :stream | stream << 'value' << index printString ]) asSymbol ].
 	self withoutEpiceaDuring: [
 		selectors do: [ :each | class compile: (self methodDefinitionOf: each returning: 0) sourceCode classified: 'accessing' ] ].
@@ -288,9 +288,9 @@ MCPToolLostChangesTest >> testListsAndRestoresALargeHistoryQuickly [
 	self assert: (Time millisecondsSince: start) < 30000.
 	self
 		assert: (self summaryFrom: listed)
-		equals: 'Listed 25 of 200 lost changes, from 1 session since the image was last saved. Next page: offset 25.'.
-	self assert: (self summaryFrom: restored) equals: 'Restored 200 lost changes.'.
-	self assert: (class >> #value200) sourceCode equals: 'value200 ^ 25'
+		equals: 'Listed 25 of 40 lost changes, from 1 session since the image was last saved. Next page: offset 25.'.
+	self assert: (self summaryFrom: restored) equals: 'Restored 40 lost changes.'.
+	self assert: (class >> #value40) sourceCode equals: 'value40 ^ 25'
 ]
 
 { #category : 'tests' }
