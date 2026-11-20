@@ -93,8 +93,7 @@ MCPToolRestoreMethod >> compile: aSource protocol: aProtocol of: aSelector in: a
 					signalErrorCode: #RecordedSourceDoesNotCompile
 					message: (String streamContents: [ :stream |
 								 stream << (self methodReferenceForBehavior: aBehavior selector: aSelector)
-								 << ' cannot be compiled from its recorded source: ' << (error messageText ifNil: [ error class name ])
-								 << '. method_version_list shows that source.' ])
+								 << ' cannot be compiled from its recorded source: ' << error mcpMessageText << '. method_version_list shows that source.' ])
 					details: (self detailsFor: aSelector in: aBehavior) ]
 ]
 

@@ -49,7 +49,7 @@ MCPReplaceClassDefinitionCommand >> classSlots [
 { #category : 'executing' }
 MCPReplaceClassDefinitionCommand >> execute [
 
-	^ self replaceDefinitionOn: self currentClass
+	^ self installing: [ self replaceDefinitionOn: self currentClass ]
 ]
 
 { #category : 'accessing' }

@@ -24,7 +24,7 @@ MCPReplaceClassSharedPoolsCommand class >> className: aClassName sharedPoolNames
 { #category : 'executing' }
 MCPReplaceClassSharedPoolsCommand >> execute [
 
-	^ self replaceSharedPoolsOn: self currentClass
+	^ self installing: [ self replaceSharedPoolsOn: self currentClass ]
 ]
 
 { #category : 'accessing' }

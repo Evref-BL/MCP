@@ -188,6 +188,13 @@ MCPImageLookup class >> compileTargetNamed: aName classSide: aBoolean [
 	^ self sideOf: class named: aName classSide: aBoolean
 ]
 
+{ #category : 'resolving' }
+MCPImageLookup class >> holds: aClass [
+	"A class Pharo abandoned installing keeps its name, but the image holds another class, or none, under it."
+
+	^ (aClass environment classNamed: aClass name) == aClass
+]
+
 { #category : 'reading names' }
 MCPImageLookup class >> isClassName: aName [
 	"Whether aName names a class or trait, read as every lookup reads a name: Foo class names Foo, and neither a list nor a global variable that is no class names one."

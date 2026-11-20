@@ -85,7 +85,7 @@ MCPRemoveClassesCommand >> factsFor: anException sayingOfSubclasses: aBlock [
 								         (String streamContents: [ :sentence |
 									          sentence << each name << ' is referred to by ' << (self referenceListOf: methods) << '.' ]) ].
 					         (self subclassesBlockingRemovalOf: each) ifNotEmpty: [ :names | stream nextPut: (aBlock value: each value: names) ] ] ].
-	^ facts ifEmpty: [ { (MCPRefactoringText conditionText: anException messageText) } ]
+	^ facts ifEmpty: [ { (MCPRefactoringText conditionText: anException mcpMessageText) } ]
 ]
 
 { #category : 'accessing' }

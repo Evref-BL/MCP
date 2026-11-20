@@ -37,12 +37,16 @@ BaselineOfMCP >> defineCompatibilityPackages: spec [
 	major < 13
 		ifTrue: [
 				spec
+					package: 'MCP-Compatibility-Before13' with: [ spec requires: #( 'MCP' ) ];
+					group: 'Core' with: #( 'MCP-Compatibility-Before13' );
 					package: 'MCP-IDE-Compatibility-Before13' with: [ spec requires: #( 'MCP-IDE' ) ];
 					group: 'IDE' with: #( 'MCP-IDE-Compatibility-Before13' );
 					package: 'MCP-UI-Compatibility-Before13' with: [ spec requires: #( 'MCP-UI' ) ];
 					group: 'UI' with: #( 'MCP-UI-Compatibility-Before13' ) ]
 		ifFalse: [
 				spec
+					package: 'MCP-Compatibility-From13' with: [ spec requires: #( 'MCP' ) ];
+					group: 'Core' with: #( 'MCP-Compatibility-From13' );
 					package: 'MCP-IDE-Compatibility-From13' with: [ spec requires: #( 'MCP-IDE' ) ];
 					group: 'IDE' with: #( 'MCP-IDE-Compatibility-From13' ) ].
 	major >= 14 ifTrue: [

@@ -70,7 +70,7 @@ MCPObservabilityBackend >> errorSummaryFor: anError [
 
 	^ {
 		  (#errorClass -> anError class name asString).
-		  (#message -> (anError messageText ifNil: [ anError asString ])) } asDictionary
+		  (#message -> anError mcpMessageText) } asDictionary
 ]
 
 { #category : 'accessing' }

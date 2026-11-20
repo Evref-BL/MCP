@@ -81,10 +81,9 @@ MCPToolExportRepository >> mutateWith: request [
 				  self refuseExportWithNothingToWriteFor: repository.
 				  directoriesBefore := steps existingLoadedPackageDirectoryPathsFor: repository.
 				  before := steps snapshotFilesFor: repository.
-				  steps withNonInteractiveAuthorDuring: [
-						  steps exportLoadedPackagesFrom: repository.
-						  unloadedPackageNames := steps unloadedPackageNamesOf: repository.
-						  steps restoreOrderOnlyTonelChurnFor: repository fromSnapshot: before ].
+				  steps exportLoadedPackagesFrom: repository.
+				  unloadedPackageNames := steps unloadedPackageNamesOf: repository.
+				  steps restoreOrderOnlyTonelChurnFor: repository fromSnapshot: before.
 				  files := self
 					           filesExportChangedIn: repository
 					           since: before

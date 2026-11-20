@@ -24,7 +24,7 @@ MCPReplaceClassLayoutCommand class >> className: aClassName layout: aLayoutName 
 { #category : 'executing' }
 MCPReplaceClassLayoutCommand >> execute [
 
-	^ self replaceLayoutOn: self currentClass
+	^ self installing: [ self replaceLayoutOn: self currentClass ]
 ]
 
 { #category : 'accessing' }

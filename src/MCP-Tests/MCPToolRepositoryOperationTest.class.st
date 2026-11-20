@@ -1662,7 +1662,7 @@ MCPToolRepositoryOperationTest >> testExportNamesTheFilesItDeleted [
 
 { #category : 'tests' }
 MCPToolRepositoryOperationTest >> testExportNamesTheFilesItWrote [
-	"Export compares the files it may write before and after writing them. A package directory it creates is named once, as git names an untracked directory, and every path counts from the checkout root."
+	"Export compares the files it may write before and after writing them. A package directory it creates is named once, as git names an untracked directory, and every path counts from the checkout root. The export runs with no author's name, as in a fresh image: Pharo before 13 asks for one when it writes a package, and nobody is there to give it."
 
 	| data location packageName repositoryName result written |
 	repositoryName := 'MCP Repository Command Export Test'.
@@ -1675,7 +1675,10 @@ MCPToolRepositoryOperationTest >> testExportNamesTheFilesItWrote [
 						location: location
 						subdirectory: 'src'
 						packages: { packageName }.
-					result := self exportRepositoryNamed: repositoryName.
+					result := self class environment
+						          at: #Author
+						          ifPresent: [ :author | author useAuthor: nil during: [ self exportRepositoryNamed: repositoryName ] ]
+						          ifAbsent: [ self exportRepositoryNamed: repositoryName ].
 					data := self dataFrom: result.
 					self assert: (self summaryFrom: result) equals: ('Exported repository {1}: wrote {2}, not committed yet.' format: {
 								 repositoryName.

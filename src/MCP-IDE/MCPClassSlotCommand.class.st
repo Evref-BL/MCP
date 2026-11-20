@@ -49,7 +49,7 @@ MCPClassSlotCommand >> definesSlotNamed: aSlotName in: aBehavior [
 { #category : 'executing' }
 MCPClassSlotCommand >> execute [
 
-	self applyToBehavior: (self refactoringBehaviorForClass: self currentClass).
+	self installing: [ self applyToBehavior: (self refactoringBehaviorForClass: self currentClass) ].
 	^ self currentClass
 ]
 

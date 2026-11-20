@@ -61,9 +61,10 @@ MCPDebugWatchCommand >> evaluateExpression [
 		  on: Error
 		  do: [ :error |
 				  String streamContents: [ :stream |
-						  stream << error class name << ': ' << ([ error messageText ]
+						  stream << error class name.
+						  ([ error messageText ]
 							   on: Error
-							   do: [ :ignored | '' ]) asString ] ]
+							   do: [ :ignored | '' ]) asString ifNotEmpty: [ :text | stream << ': ' << text ] ] ]
 ]
 
 { #category : 'executing' }

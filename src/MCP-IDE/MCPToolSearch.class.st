@@ -86,7 +86,7 @@ MCPToolSearch >> errorResultForQueryError: anError request: request [
 			  | details |
 			  details := {
 				             (#errorClass -> (self errorClassNameForQueryError: queryError)).
-				             (#message -> queryError messageText) } asDictionary.
+				             (#message -> queryError mcpMessageText) } asDictionary.
 			  queryError mcpAddToolErrorDetailsTo: details.
 			  self errorResultText: (self failureMessageForRequest: request error: queryError) details: details ]
 ]
@@ -124,7 +124,7 @@ MCPToolSearch >> failureMessageForRequest: request error: anError [
 				  nextPutAll: ' (';
 				  nextPutAll: (self errorClassNameForQueryError: anError) asString;
 				  nextPutAll: '): ';
-				  nextPutAll: (anError messageText ifNil: [ '' ]) asString ]
+				  nextPutAll: anError mcpMessageText ]
 ]
 
 { #category : 'private - results' }

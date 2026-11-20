@@ -207,7 +207,7 @@ MCPToolMutation >> executeWithRequest: request [
 										  errorResultForActionFailure: actionError
 										  action: action
 										  requestedContext: requestedContext
-										  summary: (actionError messageText ifNil: [ actionError asString ] ifNotNil: [ :text | text ]) ] ] ]
+										  summary: actionError mcpMessageText ] ] ]
 ]
 
 { #category : 'private - errors' }

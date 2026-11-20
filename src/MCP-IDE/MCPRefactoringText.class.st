@@ -1,5 +1,5 @@
 "
-Cleans the text a refactoring condition writes about itself, for the rare answer that has to quote it: Pharo's conditions write line breaks as <n>, pad with spaces, and print a negated condition as NOT and the condition's own text.
+Cleans the text a refactoring condition writes about itself, for the rare answer that has to quote it: Pharo's conditions write line breaks as <n>, pad with spaces, print a negated condition as NOT and the condition's own text, and join two conditions' sentences with and.
 "
 Class {
 	#name : 'MCPRefactoringText',
@@ -11,9 +11,9 @@ Class {
 
 { #category : 'cleaning' }
 MCPRefactoringText class >> conditionText: aString [
-	"What a condition, negated or not, found, on one line."
+	"What a condition, negated or not, found, on one line. Pharo joins the texts of two conditions with and, after the first one's full stop."
 
-	^ self withoutNegation: (self singleLine: aString)
+	^ (self withoutNegation: (self singleLine: aString)) copyReplaceAll: '. and ' with: ', and '
 ]
 
 { #category : 'cleaning' }

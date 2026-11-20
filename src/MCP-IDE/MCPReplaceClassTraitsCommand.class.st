@@ -24,9 +24,8 @@ MCPReplaceClassTraitsCommand class >> className: aClassName traitNames: someTrai
 { #category : 'executing' }
 MCPReplaceClassTraitsCommand >> execute [
 
+	self installing: [ self currentClass setTraitComposition: (self resolvedTraitsNamed: self traitNames) ].
 	^ self currentClass
-		  setTraitComposition: (self resolvedTraitsNamed: self traitNames);
-		  yourself
 ]
 
 { #category : 'accessing' }

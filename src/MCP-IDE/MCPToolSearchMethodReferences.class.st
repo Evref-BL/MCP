@@ -365,7 +365,7 @@ MCPToolSearchMethodReferences >> signalUnknownName: aName failures: failures [
 				 stream << 'There is no class, variable or selector named ' << aName << ' in the requested scope.' ])
 		details: {
 				(#name -> aName).
-				(#attempted -> (failures collect: [ :each | each messageText ] as: Array)) } asDictionary
+				(#attempted -> (failures collect: [ :each | each mcpMessageText ] as: Array)) } asDictionary
 ]
 
 { #category : 'private - results' }

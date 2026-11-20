@@ -1115,6 +1115,22 @@ MCPToolClassMutationTest >> testSeveralUpdatesSayEachChange [
 ]
 
 { #category : 'tests - update' }
+MCPToolClassMutationTest >> testUpdateAddingASlotThatPharoAbandonsLeavesTheClassAsItWas [
+	"The new class Pharo abandons is not left among the subclasses of the class's superclass, which lists the class again."
+
+	self withUnmigratableInstanceOf: 'MCPToolClassMutationTestGenerated' under: 'Object' do: [ :instance |
+			| result |
+			result := self callToolNamed: 'class_update' withArguments: (self
+					           updateRequestArgumentsForSlotAction: 'add'
+					           className: 'MCPToolClassMutationTestGenerated'
+					           slotName: 'extra'
+					           classSide: false).
+			self assert: (self resultIndicatesError: result) description: [ self textFrom: result ].
+			self assert: instance class slotNames equals: #( #unreadable ).
+			self assert: (Object subclasses select: [ :each | each name = instance class name ]) equals: { instance class } ]
+]
+
+{ #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateAddsClassSideSlot [
 
 	| result target |
@@ -1712,6 +1728,34 @@ MCPToolClassMutationTest >> testUpdatePushesDownClassSlotToDirectSubclasses [
 ]
 
 { #category : 'tests - update' }
+MCPToolClassMutationTest >> testUpdatePushingDownASlotThatPharoAbandonsInASubclassKeepsTheSubclassListed [
+	"Pharo reshapes the subclasses that get the slot too, and lists the new subclass it abandons in place of the subclass. It has already changed the class by then."
+
+	| target |
+	target := self
+		          createClassNamed: 'MCPToolClassMutationTestPushDownTarget'
+		          superclassName: 'Object'
+		          slots: #( movedSlot )
+		          classSlots: #(  ).
+	self withUnmigratableInstanceOf: 'MCPToolClassMutationTestPushDownChildOne' under: target name do: [ :instance |
+			| result |
+			result := self callToolNamed: 'class_update' withArguments: (self
+					           updateRequestArgumentsForSlotAction: 'pushDown'
+					           className: target name
+					           slotName: 'movedSlot'
+					           classSide: false).
+			self assert: (self resultIndicatesError: result) description: [ self textFrom: result ].
+			self
+				assert: ((self textFrom: result) endsWith:
+						 ': Pharo changed MCPToolClassMutationTestPushDownTarget but abandoned installing the new MCPToolClassMutationTestPushDownChildOne after Error: This slot cannot be read.')
+				description: [ self textFrom: result ].
+			self assert: instance class superclass equals: (self classNamed: target name).
+			self
+				assert: (instance class superclass subclasses select: [ :each | each name = instance class name ])
+				equals: { instance class } ]
+]
+
+{ #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateReadsASlotPatch [
 
 	| delta plan request tool |
@@ -1977,6 +2021,39 @@ MCPToolClassMutationTest >> testUpdateRenameSlotReformatsWithTheFormatterOfTheCl
 ]
 
 { #category : 'tests - update' }
+MCPToolClassMutationTest >> testUpdateRenameSlotThatCannotFinishChangesNothing [
+	"Renaming an accessor onto a method the class has, or a sender with a temporary or an argument of the new name, would be refused only after the new slot was added and the senders before it rewritten."
+
+	| refuses target |
+	target := self
+		          createClassNamed: 'MCPToolClassMutationTestRenameSlotTarget'
+		          superclassName: 'Object'
+		          slots: #( oldSlot )
+		          classSlots: #(  ).
+	#( 'oldSlot ^ oldSlot' 'oldSlot: anObject oldSlot := anObject' 'slotProbe ^ self oldSlot' ) do: [ :each |
+		self ensureMethodSource: each protocol: 'accessing' on: target ].
+	refuses := [ :text |
+		           | result sources |
+		           sources := target methods collect: [ :each | each selector -> each sourceCode ] as: Dictionary.
+		           result := self callToolNamed: 'class_update' withArguments: (self
+				                      updateRequestArgumentsForSlotRenameInClassNamed: target name
+				                      slotName: 'oldSlot'
+				                      newSlotName: 'renamedSlot'
+				                      classSide: false).
+		           self assert: (self resultIndicatesError: result).
+		           self assert: ((self textFrom: result) endsWith: text) description: [ self textFrom: result ].
+		           target := self classNamed: target name.
+		           self assert: (target slots collect: #name as: Array) equals: #( #oldSlot ).
+		           self assert: (target methods collect: [ :each | each selector -> each sourceCode ] as: Dictionary) equals: sources ].
+	self ensureMethodSource: 'renamedSlot ^ 42' protocol: 'accessing' on: target.
+	refuses value:
+		': Cannot rename accessor oldSlot to renamedSlot because MCPToolClassMutationTestRenameSlotTarget already defines renamedSlot.'.
+	self removeSelector: #renamedSlot from: target.
+	self ensureMethodSource: 'shadows: renamedSlot ^ oldSlot = renamedSlot' protocol: 'accessing' on: target.
+	refuses value: ': MCPToolClassMutationTestRenameSlotTarget>>shadows: already has a temporary or an argument named renamedSlot.'
+]
+
+{ #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateRenamesClassSideSlotAndPreservesValue [
 
 	| result target |
@@ -2062,19 +2139,73 @@ MCPToolClassMutationTest >> testUpdateRenamesTheClassItsSubclassesAndItsReferenc
 ]
 
 { #category : 'tests - update' }
-MCPToolClassMutationTest >> testUpdateReparentsClassAndPreservesExistingState [
+MCPToolClassMutationTest >> testUpdateRenamingASlotThatPharoAbandonsInASubclassSaysTheClassChanged [
+	"Pharo installs the class with the new slot before it abandons the subclass, whose instances have no new slot to take the values."
 
-	| result target |
+	| target |
+	target := self
+		          createClassNamed: 'MCPToolClassMutationTestRenameSlotTarget'
+		          superclassName: 'Object'
+		          slots: #( oldSlot )
+		          classSlots: #(  ).
+	self withUnmigratableInstanceOf: 'MCPToolClassMutationTestSlotUserSubclass' under: target name do: [ :instance |
+			| result |
+			result := self callToolNamed: 'class_update' withArguments: (self
+					           updateRequestArgumentsForSlotRenameInClassNamed: target name
+					           slotName: 'oldSlot'
+					           newSlotName: 'renamedSlot'
+					           classSide: false).
+			self assert: (self resultIndicatesError: result) description: [ self textFrom: result ].
+			self
+				assert: ((self textFrom: result) endsWith:
+						 ': Pharo changed MCPToolClassMutationTestRenameSlotTarget but abandoned installing the new MCPToolClassMutationTestSlotUserSubclass after Error: This slot cannot be read.')
+				description: [ self textFrom: result ].
+			self
+				assert: ((self classNamed: target name) subclasses select: [ :each | each name = instance class name ])
+				equals: { instance class } ]
+]
+
+{ #category : 'tests - update' }
+MCPToolClassMutationTest >> testUpdateReparentThatPharoAbandonsSaysWhy [
+	"Pharo migrates the instances inside a block that stops any unwinding through it, then goes on without installing the new class. The class stays where it was."
+
+	self withUnmigratableInstanceOf: self reparentTargetClassName under: 'Object' do: [ :instance |
+			| result superclass |
+			superclass := self
+				              createClassNamed: self reparentSuperclassName
+				              superclassName: 'Object'
+				              slots: #(  )
+				              classSlots: #(  ).
+			result := self callToolNamed: 'class_update' withArguments: {
+					          (#name -> self reparentTargetClassName).
+					          (#superclass -> self reparentSuperclassName) } asDictionary.
+			self assert: (self resultIndicatesError: result) description: [ self textFrom: result ].
+			self
+				assert: ((self textFrom: result) endsWith:
+						 ': Pharo abandoned installing the new MCPToolClassMutationTestReparentTarget after Error: This slot cannot be read.')
+				description: [ self textFrom: result ].
+			self assert: instance class equals: (self classNamed: self reparentTargetClassName).
+			self assert: instance class superclass equals: Object.
+			self assert: (Object subclasses includes: instance class).
+			self assert: superclass subclasses isEmpty ]
+]
+
+{ #category : 'tests - update' }
+MCPToolClassMutationTest >> testUpdateReparentsClassAndPreservesExistingState [
+	"An instance made before the call keeps what its slots hold, under a superclass that has slots of its own."
+
+	| instance result target |
 	self
 		createClassNamed: self reparentSuperclassName
 		superclassName: 'Object'
-		slots: #(  )
+		slots: #( betaSlot )
 		classSlots: #(  ).
-	self
-		createClassNamed: self reparentTargetClassName
-		superclassName: 'Object'
-		slots: #( alphaSlot )
-		classSlots: #(  ).
+	instance := (self
+		             createClassNamed: self reparentTargetClassName
+		             superclassName: 'Object'
+		             slots: #( alphaSlot )
+		             classSlots: #(  )) new.
+	instance instVarNamed: 'alphaSlot' put: 7.
 	self ensureMethodSource: 'probeMethod ^ 41' protocol: 'testing' on: (self classNamed: self reparentTargetClassName).
 	self withoutEpiceaDuring: [ (self classNamed: self reparentTargetClassName) comment: 'reparent comment' ].
 	result := self callToolNamed: 'class_update' withArguments: self updateRequestArgumentsForReparent.
@@ -2083,7 +2214,9 @@ MCPToolClassMutationTest >> testUpdateReparentsClassAndPreservesExistingState [
 	self assert: target superclass name asString equals: self reparentSuperclassName.
 	self assert: target new probeMethod equals: 41.
 	self assert: target mcpComment equals: 'reparent comment'.
-	self assert: (target slots collect: #name as: Array) equals: #( #alphaSlot )
+	self assert: (target slots collect: #name as: Array) equals: #( #alphaSlot ).
+	self assert: instance class equals: target.
+	self assert: (instance instVarNamed: 'alphaSlot') equals: 7
 ]
 
 { #category : 'tests - update' }
@@ -2664,4 +2797,28 @@ MCPToolClassMutationTest >> usedSlotUses [
 	     'MCPToolClassMutationTestWarningRemoveSlotTarget>>readsUsed reads usedSlot'
 	     'MCPToolClassMutationTestWarningRemoveSlotTarget>>writesUsed: writes usedSlot'
 	     'MCPToolClassMutationTestSlotUserSubclass>>subclassReadsUsed reads usedSlot' )
+]
+
+{ #category : 'private' }
+MCPToolClassMutationTest >> withUnmigratableInstanceOf: aClassName under: aSuperclassName do: aBlock [
+	"Pharo cannot migrate an instance whose slot cannot be read when it reshapes the instance's class."
+
+	| slotClass |
+	slotClass := self
+		             createClassNamed: 'MCPToolClassMutationTestUnreadableSlot'
+		             superclassName: 'InstanceVariableSlot'
+		             slots: #(  )
+		             classSlots: #(  ).
+	[
+		self
+			ensureMethodSource: 'read: anObject ^ self error: ''This slot cannot be read.'''
+			protocol: 'meta-object-protocol'
+			on: slotClass.
+		aBlock value: (self
+				 createClassNamed: aClassName
+				 superclassName: aSuperclassName
+				 slots: { (#unreadable => slotClass) }
+				 classSlots: #(  )) new ] ensure: [
+			self removeClassNamed: aClassName.
+			self removeClassNamed: slotClass name ]
 ]

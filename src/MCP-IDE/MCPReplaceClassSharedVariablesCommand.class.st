@@ -24,7 +24,7 @@ MCPReplaceClassSharedVariablesCommand class >> className: aClassName sharedVaria
 { #category : 'executing' }
 MCPReplaceClassSharedVariablesCommand >> execute [
 
-	^ self replaceSharedVariablesOn: self currentClass
+	^ self installing: [ self replaceSharedVariablesOn: self currentClass ]
 ]
 
 { #category : 'accessing' }

@@ -75,6 +75,13 @@ Exception >> mcpIsProtocolError [
 ]
 
 { #category : '*MCP' }
+Exception >> mcpMessageText [
+	"What a failure's text says after its colon: the message text, or for an error signalled without one, its description, which names its class."
+
+	^ (self messageText ifNil: [ '' ]) asString ifEmpty: [ self description ]
+]
+
+{ #category : '*MCP' }
 Exception >> mcpSignalerContext [
 
 	^ self signalerContext
