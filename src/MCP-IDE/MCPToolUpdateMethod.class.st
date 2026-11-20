@@ -1,7 +1,7 @@
 "
-Tool that changes one method's protocol, its selector, or both in one call.
+Tool that changes one method's protocol, its selector, its formatting, or several in one call.
 
-The changes apply in order, protocol first, stopping at the first that fails. A selector change is MCPUpdateMethodCommand's.
+The changes apply in order, protocol first, stopping at the first that fails. A selector change is MCPUpdateMethodCommand's, and formats the method itself.
 "
 Class {
 	#name : 'MCPToolUpdateMethod',
@@ -21,46 +21,42 @@ MCPToolUpdateMethod class >> toolName [
 
 { #category : 'metadata' }
 MCPToolUpdateMethod >> additionalKeywords [
-	"The name no longer carries protocol or selector, which are the words that led to the two tools this replaces."
+	"The name says none of what the tool changes: protocol and selector are the words that led to the two tools it replaces, and format the one that leads to formatting a method."
 
-	^ super additionalKeywords , #( 'protocol' 'selector' 'rename' 'recategorize' 'signature' 'argument' 'extension' )
+	^ super additionalKeywords , #( 'protocol' 'selector' 'rename' 'recategorize' 'signature' 'argument' 'extension' 'format' )
 ]
 
 { #category : 'private - updating' }
 MCPToolUpdateMethod >> applyUpdate: action of: request [
 
-	^ action = 'changeProtocol'
-		  ifTrue: [ self changeProtocolOf: request ]
-		  ifFalse: [ self changeSelector: action of: request ]
+	action = 'changeProtocol' ifTrue: [ ^ self changeProtocolOf: request ].
+	action = 'format' ifTrue: [ ^ self formatOf: request ].
+	^ self changeSelector: action of: request
 ]
 
 { #category : 'private - updating' }
 MCPToolUpdateMethod >> changeProtocolOf: request [
+	"CompiledMethod>>protocol: files the method under the protocol, and an extension method in the package its protocol names, as a refactoring does, without recompiling it: the history holds one change for the move, and none for a move to the protocol it is in, which changes nothing."
 
-	| behavior newCompiledMethod oldProtocol selector |
+	| behavior oldProtocol protocol selector |
 	selector := request stringArgumentNamed: 'selector'.
+	protocol := request stringArgumentNamed: 'protocol'.
 	^ self
 		  executeMutationAction: 'changeProtocol'
 		  force: false
 		  requestedContext: (self requestedContextFor: request action: 'changeProtocol')
 		  work: [
+				  | method |
 				  behavior := self updateTargetBehaviorFor: request.
-				  oldProtocol := self protocolNameForMethod:
-					                 (behavior
-						                  compiledMethodAt: selector asSymbol
-						                  ifAbsent: [ MCPCommandError signalMissingMethod: selector in: behavior ]).
-				  self classNameAndSideOf: request do: [ :className :classSide :sideGiven |
-						  (RBMethodProtocolTransformation
-							   protocol: (request stringArgumentNamed: 'protocol')
-							   inMethod: selector asSymbol
-							   inClass: (self classReferenceNameFor: className classSide: classSide)) execute ].
-				  newCompiledMethod := behavior compiledMethodAt: selector asSymbol ]
+				  method := behavior >> selector asSymbol.
+				  oldProtocol := self protocolNameForMethod: method.
+				  oldProtocol = protocol ifFalse: [ method protocol: protocol ] ]
 		  successResult: [ :warningMessages |
 				  self
 					  successResultText: (self
 							   protocolChangeSummaryFor: (self methodReferenceForBehavior: behavior selector: selector asSymbol)
 							   from: oldProtocol
-							   to: (self protocolNameForMethod: newCompiledMethod))
+							   to: (self protocolNameForMethod: behavior >> selector asSymbol))
 					  data: Dictionary new
 					  warnings: warningMessages ]
 		  failureSummary: [ :error |
@@ -68,7 +64,7 @@ MCPToolUpdateMethod >> changeProtocolOf: request [
 						  self
 							  failureMessage: ('Unable to change protocol for {1} to {2}' format: {
 										   (self methodReferenceForClassName: className selector: selector isClassSide: classSide).
-										   (request stringArgumentNamed: 'protocol') })
+										   protocol })
 							  error: error ] ]
 ]
 
@@ -85,18 +81,14 @@ MCPToolUpdateMethod >> changeSelector: action of: request [
 		  requestedContext: (self requestedContextFor: request action: action)
 		  work: [
 				  behavior := self updateTargetBehaviorFor: request.
-				  behavior
-					  compiledMethodAt: selector
-					  ifAbsent: [ MCPCommandError signalMissingMethod: (request stringArgumentNamed: 'selector') in: behavior ].
 				  oldMethodReference := self methodReferenceForBehavior: behavior selector: selector.
 				  (MCPUpdateMethodCommand
 					   changing: selector
 					   of: behavior
 					   to: newSelector
-					   permutation: (self permutationFor: request)
 					   argumentNames: (request stringCollectionArgumentNamed: 'arguments')
-					   argumentValueExpressions: (request stringCollectionArgumentNamed: 'argumentValueExpressions')
-					   model: (self refactoringModelForScopeSpec: (self refactoringScopeSpecFromRequest: request) anchoredAtBehavior: behavior))
+					   environment:
+					   (self refactoringEnvironmentForScopeSpec: (self refactoringScopeSpecFromRequest: request) anchoredAtBehavior: behavior))
 					  execute.
 				  (request booleanArgumentNamed: 'format') ifTrue: [ self reformattedMethodForBehavior: behavior selector: newSelector ] ]
 		  successResult: [ :warningMessages |
@@ -111,21 +103,39 @@ MCPToolUpdateMethod >> changeSelector: action of: request [
 
 { #category : 'private - execution' }
 MCPToolUpdateMethod >> checkArguments: request [
-	"A side that says the other one than the class name, a permutation that does not fit the selectors, and a scope naming a package that does not exist are refused."
+	"A side that says the other one than the class name, a blank protocol, a new selector that is not one, and a scope naming a package that does not exist are refused."
 
 	self classNameAndSideOf: request do: [ :className :classSide :sideGiven |  ].
-	(request arrayArgumentNamed: 'permutation' ifAbsent: [ nil ]) ifNotNil: [ :permutation |
-		self validatePermutation: permutation of: request ].
-	(request hasArgumentNamed: 'newSelector') ifTrue: [ self refactoringScopeSpecFromRequest: request ]
+	((request hasArgumentNamed: 'protocol') and: [ (request stringArgumentNamed: 'protocol') isNil ]) ifTrue: [
+		MCPInvalidToolInput signalBlankArgumentNamed: 'protocol' forTool: self ].
+	(request hasArgumentNamed: 'newSelector') ifFalse: [ ^ self ].
+	((request stringArgumentNamed: 'newSelector') ifNil: [ '' ]) numArgs < 0 ifTrue: [
+			MCPCommandError
+				signalErrorCode: #InvalidMethodSelector
+				message:
+				('newSelector {1} is not a valid selector.' format: { (request argumentNamed: 'newSelector' ifAbsent: [ nil ]) printString })
+				details: Dictionary new ].
+	self refactoringScopeSpecFromRequest: request
 ]
 
 { #category : 'private - errors' }
-MCPToolUpdateMethod >> contextValueNamed: anArgumentName in: request permutation: aPermutation [
+MCPToolUpdateMethod >> descriptionOfVariable: aVariable [
+	"How a refusal names a variable a class sees: the instance variable name of Class, the class variable Shared of Foo, the global Array."
 
-	anArgumentName = 'permutation' ifTrue: [ ^ aPermutation ].
-	(#( 'arguments' 'argumentValueExpressions' ) includes: anArgumentName) ifTrue: [
-		^ request stringCollectionArgumentNamed: anArgumentName ].
-	^ request stringArgumentNamed: anArgumentName
+	^ String streamContents: [ :stream |
+			  stream
+				  nextPutAll: 'the ';
+				  nextPutAll: (aVariable isInstanceVariable
+						   ifTrue: [ 'instance variable ' ]
+						   ifFalse: [
+								   aVariable isClassVariable
+									   ifTrue: [ 'class variable ' ]
+									   ifFalse: [ 'global ' ] ]);
+				  nextPutAll: aVariable name.
+			  aVariable definingClass ifNotNil: [ :class |
+					  stream
+						  nextPutAll: ' of ';
+						  nextPutAll: class name ] ]
 ]
 
 { #category : 'private - errors' }
@@ -146,6 +156,37 @@ MCPToolUpdateMethod >> failureMessageForSelectorChange: action of: request error
 				  error: anError ]
 ]
 
+{ #category : 'private - updating' }
+MCPToolUpdateMethod >> formatOf: request [
+	"Format the method as it is. The formatter's text replaces the method's only where it differs, so a method already formatted is left as it was, with nothing added to its history."
+
+	| behavior formatted selector |
+	selector := (request stringArgumentNamed: 'selector') asSymbol.
+	^ self
+		  executeMutationAction: 'format'
+		  force: false
+		  requestedContext: (self requestedContextFor: request)
+		  work: [
+				  | method |
+				  behavior := self updateTargetBehaviorFor: request.
+				  method := behavior >> selector.
+				  formatted := (self reformattedMethodForBehavior: behavior selector: selector) ~~ method ]
+		  successResult: [ :warningMessages |
+				  self
+					  successResultText: ((formatted
+							    ifTrue: [ 'Formatted {1}.' ]
+							    ifFalse: [ '{1} is already formatted.' ]) format: { (self methodReferenceForBehavior: behavior selector: selector) })
+					  data: Dictionary new
+					  warnings: warningMessages ]
+		  failureSummary: [ :error |
+				  self classNameAndSideOf: request do: [ :className :classSide :sideGiven |
+						  self
+							  failureMessage:
+							  ('Unable to format {1}' format:
+								   { (self methodReferenceForClassName: className selector: selector isClassSide: classSide) })
+							  error: error ] ]
+]
+
 { #category : 'private - results' }
 MCPToolUpdateMethod >> keysStatedInSummary [
 	"Several updates each say what they did in the summary, a line each."
@@ -163,20 +204,9 @@ MCPToolUpdateMethod >> mutateWith: request [
 	actions ifEmpty: [
 			MCPCommandError
 				signalErrorCode: #NoMethodUpdateRequested
-				message: 'Method update requires one method update field such as newSelector or protocol.'
+				message: 'method_update needs protocol, newSelector or format: true; format: false alone changes nothing.'
 				details: (self requestedContextFor: request) ].
 	^ self applyUpdates: actions of: request
-]
-
-{ #category : 'private - arguments' }
-MCPToolUpdateMethod >> permutationFor: request [
-	"The permutation the call gave, or the one its selectors imply."
-
-	| selector |
-	selector := (request stringArgumentNamed: 'selector') asSymbol.
-	^ request
-		  arrayArgumentNamed: 'permutation'
-		  ifAbsent: [ MCPUpdateMethodCommand defaultPermutationFrom: selector to: (self targetSelectorFor: request) ]
 ]
 
 { #category : 'private - results' }
@@ -218,8 +248,20 @@ MCPToolUpdateMethod >> protocolTextFor: aProtocolName [
 
 { #category : 'private - errors' }
 MCPToolUpdateMethod >> requestedContextFor: request [
+	"The call as read: the class without its side, the class side when it is the one meant, the selector, and each update argument the call supplied."
 
-	^ self requestedContextFor: request permutation: (self permutationFor: request)
+	| context |
+	context := Dictionary new.
+	self classNameAndSideOf: request do: [ :className :classSide :sideGiven |
+			context at: #class put: className.
+			classSide ifTrue: [ context at: #side put: 'class' ] ].
+	context at: #selector put: (request stringArgumentNamed: 'selector').
+	self updateArgumentNames do: [ :each |
+			(request hasArgumentNamed: each) ifTrue: [
+					context at: each asSymbol put: (each = 'arguments'
+							 ifTrue: [ request stringCollectionArgumentNamed: each ]
+							 ifFalse: [ request stringArgumentNamed: each ]) ] ].
+	^ context
 ]
 
 { #category : 'private - errors' }
@@ -230,22 +272,6 @@ MCPToolUpdateMethod >> requestedContextFor: request action: action [
 	context := self requestedContextFor: request.
 	(#( 'rename' 'addArguments' 'removeArguments' ) includes: action) ifTrue: [
 		self addRefactoringScopeContextFromSpec: (self refactoringScopeSpecFromRequest: request) toRequestedContext: context ].
-	^ context
-]
-
-{ #category : 'private - errors' }
-MCPToolUpdateMethod >> requestedContextFor: request permutation: aPermutation [
-	"The call as read: the class without its side, the class side when it is the one meant, the selector, and each update argument the call supplied, with aPermutation for the permutation."
-
-	| context |
-	context := Dictionary new.
-	self classNameAndSideOf: request do: [ :className :classSide :sideGiven |
-			context at: #class put: className.
-			classSide ifTrue: [ context at: #side put: 'class' ] ].
-	context at: #selector put: (request stringArgumentNamed: 'selector').
-	self updateArgumentNames do: [ :each |
-			(request hasArgumentNamed: each) ifTrue: [
-				context at: each asSymbol put: (self contextValueNamed: each in: request permutation: aPermutation) ] ].
 	^ context
 ]
 
@@ -272,21 +298,13 @@ MCPToolUpdateMethod >> selectorUpdateActionFor: request [
 
 { #category : 'private - specs' }
 MCPToolUpdateMethod >> sendersScopeSchemaProperty [
-	"Where a selector change updates senders. The refactoring reads packages, classes and hierarchies only, so the scope offers no other entry."
+	"Where a selector change renames and rewrites. The refactoring reads packages, classes and hierarchies only, so the scope offers no other entry."
 
 	^ (self searchScopeSchemaPropertyWith:
 			   (self searchScopeSchemaProperties select: [ :each | #( 'classes' 'packages' 'hierarchyOf' ) includes: each name ]))
-		  description: 'Where to update senders; entries add up. Omitted, the whole image.';
+		  description:
+			  'Where a selector change renames the method''s implementors and rewrites its senders; entries add up. Omitted, every implementor and sender of the selector in the image.';
 		  yourself
-]
-
-{ #category : 'private - arguments' }
-MCPToolUpdateMethod >> targetSelectorFor: request [
-	"The selector the method ends up with: the new one when the call gives one, else its own."
-
-	^ (request stringArgumentNamed: 'newSelector')
-		  ifNil: [ (request stringArgumentNamed: 'selector') asSymbol ]
-		  ifNotNil: [ :newSelector | newSelector asSymbol ]
 ]
 
 { #category : 'private - specs' }
@@ -296,14 +314,14 @@ MCPToolUpdateMethod >> toolSpec [
 		  (#title -> 'Update Method').
 		  (#description
 		   ->
-		   'Change one method: its protocol, its selector, or both in one call. A selector change is classified by arity, so the same argument renames, adds or removes arguments, and senders are updated.').
+		   'Change one method: its protocol, its selector, its formatting, or several in one call. A selector change is classified by arity, so the same argument renames, adds or removes arguments, and senders are updated. format: true alone formats the method as it is.').
 		  (#action -> 'update').
 		  (#inputProperties -> {
 			   (self schemaPropertyNamed: 'class' type: 'string' description: 'The class defining the method.').
 			   (self targetSideSchemaPropertyDescribedAs: 'Which side the method is on.').
 			   self forceSchemaProperty.
 			   (self formatSchemaPropertyDescribedAs:
-				    'Reformat the method with its package''s formatter after a selector change. False keeps its source as written but for its selector line. Senders are left as Pharo''s refactoring writes them either way: a rename changes only the send, adding or removing arguments reformats each sender.').
+				    'Reformat the method with its package''s formatter. True formats it as it is, alone or after a protocol change. A selector change reformats it unless format is false, which keeps its source as written but for its selector line. Senders are left as Pharo''s refactoring writes them either way: a rename that keeps the keywords in their order changes only the send; reordering, adding or removing arguments reformats each sender.').
 			   (self schemaPropertyNamed: 'selector' type: 'string' description: 'The method selector to update.').
 			   (self
 				    schemaPropertyNamed: 'protocol'
@@ -313,39 +331,21 @@ MCPToolUpdateMethod >> toolSpec [
 			   (self
 				    schemaPropertyNamed: 'newSelector'
 				    type: 'string'
-				    description: 'Rename the method to this selector, updating its senders.').
+				    description:
+				    'Rename the method to this selector, updating its senders. Its arity says whether arguments are added or removed. Each argument goes with its keyword, so the same keywords in another order reorder the arguments; a new keyword takes the first argument no kept keyword holds, or adds one, which senders pass as nil.').
 			   ((self
 				     schemaPropertyNamed: 'arguments'
 				     type: 'array'
 				     description:
-					     'Names of the arguments the new selector takes, in order, naming the added ones and renaming the kept ones. They do not choose which current argument each one keeps: permutation does.')
+					     'Names of the new selector''s arguments, in order: required when it adds arguments, and renaming the kept ones otherwise.')
 				    items: (MCPStructureProperties new
 						     type: 'string';
 						     description: 'Argument name.';
 						     yourself);
 				    yourself).
-			   ((self
-				     schemaPropertyNamed: 'argumentValueExpressions'
-				     type: 'array'
-				     description: 'Expressions senders pass for each added argument, in order.')
-				    items: (MCPStructureProperties new
-						     type: 'string';
-						     description: 'Smalltalk expression.';
-						     yourself);
-				    yourself).
-			   ((self
-				     schemaPropertyNamed: 'permutation'
-				     type: 'array'
-				     description:
-					     'Which current argument each new one takes: one entry per new argument, holding the index of the current argument, or 0 for an added one. Omitted, each new argument takes the current one at its position when the arity is unchanged, else the one of the same keyword.')
-				    items: (MCPStructureProperties new
-						     type: 'integer';
-						     description: 'Current argument index, or 0.';
-						     yourself);
-				    yourself).
 			   self sendersScopeSchemaProperty }).
 		  (#requiredProperties -> #( 'class' 'selector' )).
-		  (#atLeastOneProperties -> #( 'protocol' 'newSelector' )) } asDictionary
+		  (#atLeastOneProperties -> #( 'protocol' 'newSelector' 'format' )) } asDictionary
 ]
 
 { #category : 'private - updating' }
@@ -356,12 +356,15 @@ MCPToolUpdateMethod >> updateActionOf: action [
 
 { #category : 'private - validating' }
 MCPToolUpdateMethod >> updateActionsFor: request [
-	"Every change the call asks for, in the order they must be applied. Changing the protocol finds the method by the selector the caller wrote, so a selector change comes after it."
+	"Every change the call asks for, in the order they must be applied. Changing the protocol finds the method by the selector the caller wrote, so a selector change comes after it. A selector change formats the method unless format is false, so formatting is a change of its own only without one, when format is true."
 
 	| actions |
 	actions := OrderedCollection new.
 	(request hasArgumentNamed: 'protocol') ifTrue: [ actions add: 'changeProtocol' ].
-	(self selectorUpdateActionFor: request) ifNotNil: [ :action | actions add: action ].
+	(self selectorUpdateActionFor: request)
+		ifNil: [
+		((request hasArgumentNamed: 'format') and: [ request booleanArgumentNamed: 'format' ]) ifTrue: [ actions add: 'format' ] ]
+		ifNotNil: [ :action | actions add: action ].
 	^ actions asArray
 ]
 
@@ -369,7 +372,7 @@ MCPToolUpdateMethod >> updateActionsFor: request [
 MCPToolUpdateMethod >> updateArgumentNames [
 	"The arguments that say what to change, in the order the requested context names them."
 
-	^ #( 'newSelector' 'protocol' 'permutation' 'arguments' 'argumentValueExpressions' )
+	^ #( 'newSelector' 'protocol' 'arguments' )
 ]
 
 { #category : 'private - updating' }
@@ -386,21 +389,24 @@ MCPToolUpdateMethod >> updateSubjectDescriptionFor: request [
 
 { #category : 'private - updating' }
 MCPToolUpdateMethod >> updateTargetBehaviorFor: request [
-	"The behaviour every update action works on. A method the class got from a trait is the trait's to rename, recategorize or re-argument, so the actions stop here rather than each learning what a trait is."
+	"The behaviour every update action works on, which defines the method. A method the class got from a trait is the trait's to rename, recategorize, re-argument or format, so the actions stop here rather than each learning what a trait is."
 
-	| behavior |
+	| behavior selector |
 	behavior := self behaviorNamedIn: request.
-	self signalTraitOriginBeforeUpdating: (request stringArgumentNamed: 'selector') in: behavior.
+	selector := request stringArgumentNamed: 'selector'.
+	self signalTraitOriginBeforeUpdating: selector in: behavior.
+	behavior compiledMethodAt: selector asSymbol ifAbsent: [ MCPCommandError signalMissingMethod: selector in: behavior ].
 	^ behavior
 ]
 
 { #category : 'private - validating' }
-MCPToolUpdateMethod >> validateAddedArguments: request [
+MCPToolUpdateMethod >> validateArgumentNames: request [
+	"A new selector that adds arguments names each of its arguments. Names given for any other one rename the arguments it keeps, so they are one per argument too. Each must be a name an argument can take, none twice, since the arguments are renamed only once the selector has changed, and none a variable the method sees that is not already one of its arguments."
 
-	| argumentNames argumentValueExpressions |
+	| argumentNames |
 	argumentNames := request stringCollectionArgumentNamed: 'arguments'.
-	argumentValueExpressions := request stringCollectionArgumentNamed: 'argumentValueExpressions'.
 	argumentNames isEmpty ifTrue: [
+			(self selectorUpdateActionFor: request) = 'addArguments' ifFalse: [ ^ self ].
 			MCPCommandError
 				signalErrorCode: #ArgumentNamesRequiredForAddedArguments
 				message: 'arguments is required when newSelector adds method arguments.'
@@ -410,83 +416,51 @@ MCPToolUpdateMethod >> validateAddedArguments: request [
 				signalErrorCode: #InvalidMethodArgumentNames
 				message: 'arguments must contain one name for each target selector argument.'
 				details: (self requestedContextFor: request) ].
-	(argumentNames allSatisfy: [ :each | each isNotEmpty ]) ifFalse: [
+	argumentNames
+		detect: [ :each |
+				(RBScanner isVariable: each) not or: [
+						(#( 'self' 'super' 'thisContext' 'thisProcess' 'nil' 'true' 'false' ) includes: each) or: [
+							(argumentNames occurrencesOf: each) > 1 ] ] ]
+		ifFound: [ :each |
+				MCPCommandError
+					signalErrorCode: #InvalidMethodArgumentNames
+					message: ('arguments must be distinct argument names, which {1} is not.' format: { each printString })
+					details: (self requestedContextFor: request) ].
+	self variableShadowedBy: argumentNames in: request ifFound: [ :name :variable |
 			MCPCommandError
 				signalErrorCode: #InvalidMethodArgumentNames
-				message: 'arguments must not contain empty names.'
-				details: (self requestedContextFor: request) ].
-	(argumentValueExpressions isNotEmpty and: [
-		 argumentValueExpressions size ~= ((self permutationFor: request) count: [ :each | each <= 0 ]) ]) ifTrue: [
-			MCPCommandError
-				signalErrorCode: #InvalidMethodArgumentValueExpressions
-				message: 'argumentValueExpressions must contain one expression for each newly added argument.'
+				message: ('arguments must be distinct argument names, which {1} is not: it would shadow {2}.' format: {
+							 name printString.
+							 variable })
 				details: (self requestedContextFor: request) ]
 ]
 
 { #category : 'private - validating' }
-MCPToolUpdateMethod >> validatePermutation: requestedPermutation of: request [
-	"While it is checked, the permutation reads as empty in the error details."
+MCPToolUpdateMethod >> validateUpdate: request [
+	"What the arguments say together: argument names only come with a new selector, which names them as validateArgumentNames: says."
 
-	| details newArgumentCount oldArgumentCount positiveIndexes |
-	details := self requestedContextFor: request permutation: #(  ).
-	oldArgumentCount := (request stringArgumentNamed: 'selector') asSymbol numArgs.
-	newArgumentCount := (self targetSelectorFor: request) numArgs.
-	requestedPermutation size = newArgumentCount ifFalse: [
+	(request hasArgumentNamed: 'newSelector') ifTrue: [ ^ self validateArgumentNames: request ].
+	(request hasArgumentNamed: 'arguments') ifTrue: [
 			MCPCommandError
-				signalErrorCode: #InvalidMethodArgumentPermutation
-				message: 'permutation must contain one entry for each target selector argument.'
-				details: details ].
-	(requestedPermutation allSatisfy: [ :each | each isInteger ]) ifFalse: [
-			MCPCommandError
-				signalErrorCode: #InvalidMethodArgumentPermutation
-				message: 'permutation entries must be integers.'
-				details: details ].
-	positiveIndexes := requestedPermutation select: [ :each | each > 0 ].
-	(positiveIndexes allSatisfy: [ :each | each between: 1 and: oldArgumentCount ]) ifFalse: [
-			MCPCommandError
-				signalErrorCode: #InvalidMethodArgumentPermutation
-				message: 'positive permutation entries must reference existing arguments by 1-based index.'
-				details: details ].
-	positiveIndexes asSet size = positiveIndexes size ifFalse: [
-			MCPCommandError
-				signalErrorCode: #InvalidMethodArgumentPermutation
-				message: 'permutation must not reference the same old argument twice.'
-				details: details ].
-	newArgumentCount >= oldArgumentCount
-		ifTrue: [
-				positiveIndexes size = oldArgumentCount ifFalse: [
-						MCPCommandError
-							signalErrorCode: #InvalidMethodArgumentPermutation
-							message: 'adding arguments requires every old argument to appear exactly once in permutation.'
-							details: details ] ]
-		ifFalse: [
-				positiveIndexes size = newArgumentCount ifFalse: [
-						MCPCommandError
-							signalErrorCode: #InvalidMethodArgumentPermutation
-							message: 'removing arguments requires permutation to contain only kept old argument indexes.'
-							details: details ].
-				(requestedPermutation allSatisfy: [ :each | each > 0 ]) ifFalse: [
-						MCPCommandError
-							signalErrorCode: #InvalidMethodArgumentPermutation
-							message: 'removing arguments does not accept negative permutation entries.'
-							details: details ] ]
+				signalErrorCode: #ArgumentMetadataRequiresMethodSelectorUpdate
+				message: 'arguments is only valid with newSelector.'
+				details: (self requestedContextFor: request) ]
 ]
 
 { #category : 'private - validating' }
-MCPToolUpdateMethod >> validateUpdate: request [
-	"What the arguments say together: permutation and the argument lists only come with a new selector, and one that adds arguments names them."
+MCPToolUpdateMethod >> variableShadowedBy: argumentNames in: request ifFound: aBlock [
+	"aBlock gets the first of argumentNames that the method already sees as a variable, and that variable described. An argument of that name would hide the variable and change what the method means: some Pharo versions compile it without a word, others refuse it only once the selector has changed. The variables are the ones the compiler will not let an argument shadow: the method's temporaries and block arguments, and what its class sees, inherited instance and class variables and globals included. A name one of the method's arguments already has hides the same variable before and after, and the call renames the arguments together, so arguments may keep or trade their names. A missing class or method, or one a trait installed, is the update's to report."
 
-	(request hasArgumentNamed: 'permutation') ifTrue: [
-			(request hasArgumentNamed: 'newSelector') ifFalse: [
-					MCPCommandError
-						signalErrorCode: #PermutationRequiresMethodSelectorUpdate
-						message: 'permutation is only valid when update changes a method selector with newSelector.'
-						details: (self requestedContextFor: request) ] ].
-	((request hasArgumentNamed: 'arguments') or: [ request hasArgumentNamed: 'argumentValueExpressions' ]) ifTrue: [
-			(request hasArgumentNamed: 'newSelector') ifFalse: [
-					MCPCommandError
-						signalErrorCode: #ArgumentMetadataRequiresMethodSelectorUpdate
-						message: 'arguments and argumentValueExpressions are only valid with newSelector.'
-						details: (self requestedContextFor: request) ] ].
-	(self selectorUpdateActionFor: request) = 'addArguments' ifTrue: [ self validateAddedArguments: request ]
+	| behavior method tree |
+	behavior := self classNameAndSideOf: request do: [ :className :classSide :sideGiven |
+			            (MCPImageLookup isClassName: className) ifFalse: [ ^ self ].
+			            self behaviorNamed: className classSide: classSide ].
+	method := behavior compiledMethodAt: (request stringArgumentNamed: 'selector') asSymbol ifAbsent: [ ^ self ].
+	method isFromTrait ifTrue: [ ^ self ].
+	tree := method ast.
+	(argumentNames copyWithoutAll: tree argumentNames) do: [ :each |
+			(tree allTemporaryVariables includes: each) ifTrue: [ ^ aBlock value: each value: ('the temporary {1}' format: { each }) ].
+			(tree allArgumentVariables includes: each) ifTrue: [ ^ aBlock value: each value: ('the block argument {1}' format: { each }) ].
+			(behavior lookupVar: each asSymbol) ifNotNil: [ :variable |
+				variable allowsShadowing ifFalse: [ ^ aBlock value: each value: (self descriptionOfVariable: variable) ] ] ]
 ]

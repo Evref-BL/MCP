@@ -156,7 +156,7 @@ TMCPMethodTool >> signalTraitOriginBeforeRemoving: aSelector in: aBehavior [
 
 { #category : 'private - traits' }
 TMCPMethodTool >> signalTraitOriginBeforeUpdating: aSelector in: aBehavior [
-	"Renaming a copy, or changing its protocol or its arguments, recompiles it into the class as a method of its own: a duplicate of the trait's source, shadowing it, which nobody asked for. There is nothing worth forcing there, so the update belongs in the trait."
+	"Renaming a copy, changing its protocol or its arguments, or formatting it, recompiles it into the class as a method of its own: a duplicate of the trait's source, shadowing it, which nobody asked for. There is nothing worth forcing there, so the update belongs in the trait."
 
 	self signalTraitOriginFor: aSelector in: aBehavior howToProceed: [ :origin |
 			String streamContents: [ :stream |

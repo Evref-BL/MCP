@@ -419,11 +419,12 @@ MCPToolMethodMutation >> receiverNoteFor: aSend in: aBehavior [
 
 { #category : 'private' }
 MCPToolMethodMutation >> reformattedMethodForBehavior: aBehavior selector: aSelector [
-	"Not CompiledMethod>>reformat: it formats in the context of the AST node's class, so it reads AST-Core's manifest instead of the formatter the method's own package declares."
+	"Not CompiledMethod>>reformat: it formats in the context of the AST node's class, so it reads AST-Core's manifest instead of the formatter the method's own package declares. A method the formatter writes as it is stays the method it was."
 
-	| compiledMethod |
+	| compiledMethod formattedSource |
 	compiledMethod := aBehavior >> aSelector.
-	aBehavior compile: (compiledMethod ast formattedCodeIn: aBehavior) classified: compiledMethod protocol.
+	formattedSource := compiledMethod ast formattedCodeIn: aBehavior.
+	formattedSource = compiledMethod sourceCode ifFalse: [ aBehavior compile: formattedSource classified: compiledMethod protocol ].
 	^ aBehavior >> aSelector
 ]
 

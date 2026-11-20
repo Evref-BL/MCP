@@ -430,7 +430,7 @@ MCPToolMutation >> refactoringEnvironmentForScopeSpec: scopeSpec [
 ]
 
 { #category : 'private - refactoring' }
-MCPToolMutation >> refactoringModelForScopeSpec: scopeSpec anchoredAtBehavior: aBehavior [
+MCPToolMutation >> refactoringEnvironmentForScopeSpec: scopeSpec anchoredAtBehavior: aBehavior [
 
 	| details environment |
 	environment := self refactoringEnvironmentForScopeSpec: scopeSpec.
@@ -445,7 +445,7 @@ MCPToolMutation >> refactoringModelForScopeSpec: scopeSpec anchoredAtBehavior: a
 								  ifTrue: [ 'the class side of ' ]
 								  ifFalse: [ 'class ' ]) << aBehavior instanceSide name asString << '.' ])
 				details: details ].
-	^ RBNamespace onEnvironment: environment
+	^ environment
 ]
 
 { #category : 'private - request' }
