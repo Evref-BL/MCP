@@ -299,6 +299,27 @@ MCPToolRemoveClassesTest >> testAnEmptyClassNamedWithItsSubclassReparentsNothing
 ]
 
 { #category : 'tests' }
+MCPToolRemoveClassesTest >> testClassesBlockedOnlyTogetherAreRefusedInSentences [
+	"From Pharo 12, the check takes the classes together: one with subclasses goes only with classes that are all empty. No class then blocks on its own, so the refusal gives the check's own text, which names only the class that is not empty in Pharo 12 and 13, and from Pharo 14 joins its two conditions after the first one's full stop."
+
+	| message result |
+	result := self callToolWith: (self argumentsForClassNames: {
+				           self senderClassName.
+				           self emptyParentClassName }).
+	self refactoringsRefuseBreakingChanges ifTrue: [ ^ self dataFrom: result ].
+	message := (self errorFrom: result) at: #message.
+	self
+		assert:
+			(({ 'Did not remove {1}, {2}. {1} is not empty. {3}'. 'Did not remove {1}, {2}. {1} is not empty, and {2} has subclasses. {3}' }
+				  collect: [ :each |
+						  each format: {
+								  self senderClassName.
+								  self emptyParentClassName.
+								  self howToProceed } ]) includes: message)
+		description: message
+]
+
+{ #category : 'tests' }
 MCPToolRemoveClassesTest >> testClassesThatReferOnlyToEachOtherAreRemovedTogether [
 
 	| result |
