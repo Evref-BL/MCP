@@ -104,5 +104,5 @@ MCPToolSearchMethods >> successSummaryForRequest: request scopeQuery: scopeQuery
 { #category : 'metadata' }
 MCPToolSearchMethods >> title [
 
-	^ 'Search Method Metadata'
+	^ 'Search Methods'
 ]

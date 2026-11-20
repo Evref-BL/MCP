@@ -186,8 +186,8 @@ MCPToolCatalogTest >> testSearchToolsKeywordsAreSingleSearchTerms [
 	| evaluateTool searchTool |
 	searchTool := MCPToolSearchTools new.
 	evaluateTool := MCPToolEvaluate new.
-	self assert: searchTool keywords asSet equals: #( 'tool' 'catalog' 'search' ) asSet.
-	self assert: evaluateTool keywords asSet equals: #( 'image' 'evaluate' 'runtime' 'expression' 'smalltalk' 'code' ) asSet
+	self assert: searchTool keywords asSet equals: #( 'tool' 'tools' 'catalog' 'search' ) asSet.
+	self assert: evaluateTool keywords asSet equals: #( 'evaluate' 'runtime' 'expression' 'smalltalk' 'code' ) asSet
 ]
 
 { #category : 'tests' }

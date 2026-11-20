@@ -667,6 +667,22 @@ MCPToolContractsTest >> testEveryToolNamesAMissingClassAlike [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testEveryToolTitleReadsItsNameVerbFirstInTitleCase [
+	"A client shows the title in place of the name, so the title must lead with the action the name ends on, and read as a title. Another project names its tools its own way."
+
+	| offenders |
+	offenders := self toolRegistry tools
+		             select: [ :tool |
+				             | words |
+				             words := tool title substrings.
+				             (self isBuiltIn: tool class) and: [
+					             words first ~= (tool name substrings: '_') last capitalized or: [
+						             words anySatisfy: [ :word | word first isUppercase not ] ] ] ]
+		             thenCollect: [ :tool | tool name ].
+	self assertEmpty: offenders
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testExternalToolFixtureIsNotBuiltIn [
 	"Two separate facts about the same fixture. It is not built in, so MCP's naming, grouping and icon conventions are not asked of it; and it answers false to discovery, which is its own doing rather than a consequence of the package it sits in."
 
