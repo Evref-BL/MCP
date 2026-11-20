@@ -222,7 +222,8 @@ MCPToolMethodMutationTest >> inferenceOutcomeSelectors [
 	^ {
 		  ('probeMerge:' , 'and:') asSymbol.
 		  ('probeCombine:and:' , 'extra:') asSymbol.
-		  'probeCombine:' asSymbol }
+		  'probeCombine:' asSymbol.
+		  ('probeCombine:with:' , 'extra:more:') asSymbol }
 ]
 
 { #category : 'private' }
@@ -827,7 +828,7 @@ MCPToolMethodMutationTestTarget class >> tonelProbe: anObject [
 
 { #category : 'tests' }
 MCPToolMethodMutationTest >> testAddArgumentsGivesANewKeywordAnArgumentNoKeywordTook [
-	"Each argument goes with its keyword. A keyword the selector lacks takes the first argument no keyword took, and once none is left it is an added one."
+	"Each argument goes with its keyword. A keyword the selector lacks takes the first argument no keyword took, and once none is left it is an added one. Every argument then takes the name the call gives it, an added one too when it takes the name a kept one gives up."
 
 	| result widened |
 	widened := self inferenceOutcomeSelectors second.
@@ -835,10 +836,10 @@ MCPToolMethodMutationTest >> testAddArgumentsGivesANewKeywordAnArgumentNoKeyword
 			          (#class -> MCPToolMethodMutationTestTarget name).
 			          (#selector -> self inferenceSelector asString).
 			          (#newSelector -> widened asString).
-			          (#arguments -> #( 'first' 'second' 'extra' )).
+			          (#arguments -> #( 'second' 'other' 'first' )).
 			          self fixturePackageScope } asDictionary.
 	self deny: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
-	self assert: (MCPToolMethodMutationTestTarget includesSelector: widened).
+	self assert: (MCPToolMethodMutationTestTarget >> widened) ast argumentNames asArray equals: #( 'second' 'other' 'first' ).
 	self assert: (MCPToolMethodMutationTestTarget new perform: widened withArguments: #( 'a' 'b' 'c' )) equals: 'a-b'
 ]
 
@@ -876,6 +877,26 @@ MCPToolMethodMutationTest >> testAddArgumentsUpdatesSendersAndReportsAction [
 	self assert: (targetSource includesSubstring: 'separator: separator').
 	self assert: (senderSource includesSubstring: 'separator: nil').
 	self assert: MCPToolMethodMutationTestSender new callInstanceTarget equals: 'first-second'
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testAddedArgumentsMayTakeTheNamesKeptOnesGiveUp [
+	"Two added arguments may take the names two kept ones give up, though the refactoring first gives both the same placeholder name. A compiler that refuses shadowing temporaries refuses that inside the refactoring, before anything changes."
+
+	| result widened |
+	widened := self inferenceOutcomeSelectors fourth.
+	result := self callToolNamed: 'method_update' withArguments: {
+			          (#class -> MCPToolMethodMutationTestTarget name).
+			          (#selector -> self inferenceSelector asString).
+			          (#newSelector -> widened asString).
+			          (#arguments -> #( 'left' 'right' 'first' 'second' )).
+			          self fixturePackageScope } asDictionary.
+	self compilerRefusesShadowingTemporaries ifTrue: [
+			self assert: (result at: #isError).
+			^ self assert: (MCPToolMethodMutationTestTarget includesSelector: self inferenceSelector) ].
+	self deny: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
+	self assert: (MCPToolMethodMutationTestTarget >> widened) ast argumentNames asArray equals: #( 'left' 'right' 'first' 'second' ).
+	self assert: (MCPToolMethodMutationTestTarget new perform: widened withArguments: #( 'a' 'b' nil nil )) equals: 'a-b'
 ]
 
 { #category : 'tests' }
@@ -3268,6 +3289,30 @@ MCPToolMethodMutationTest >> testRenameWithFormatFalseKeepsTheMethodAsWritten [
 			assert: (MCPToolMethodMutationTestTarget >> #asWrittenSender) sourceCode
 			equals: (self lines: #( 'asWrittenSender' '    ^ (self asWrittenAim: 1)+2' )) ] ensure: [
 		selectors do: [ :each | self removeSelector: each from: MCPToolMethodMutationTestTarget ] ]
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testRenamedArgumentsTakeTheBlockVariablesThatHideThem [
+	"A block argument or temporary that hides a renamed argument is renamed with it, so the block still reads its own variable."
+
+	| renamed result |
+	self compilerRefusesShadowingTemporaries ifTrue: [
+			^ self skip:
+				  'This Pharo''s compiler refuses a block variable that hides an argument, so its refactoring will not change such a method.' ].
+	renamed := self inferenceOutcomeSelectors first.
+	self
+		ensureMethodSource: 'probeCombine: first with: second
+	^ { [ :first | first ] value: second. [ | first | first := second. first ] value }'
+		protocol: 'tests'
+		on: MCPToolMethodMutationTestTarget.
+	result := self callToolNamed: 'method_update' withArguments: {
+			          (#class -> MCPToolMethodMutationTestTarget name).
+			          (#selector -> self inferenceSelector asString).
+			          (#newSelector -> renamed asString).
+			          (#arguments -> #( 'left' 'right' )).
+			          self fixturePackageScope } asDictionary.
+	self deny: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
+	self assert: (MCPToolMethodMutationTestTarget new perform: renamed with: 'a' with: 'b') equals: #( 'b' 'b' )
 ]
 
 { #category : 'tests' }

@@ -98,20 +98,22 @@ MCPUpdateMethodCommand >> initializeChanging: oldSelector of: aBehavior to: aSel
 
 { #category : 'private - refactoring' }
 MCPUpdateMethodCommand >> nameArguments [
-	"Rename the arguments the method kept to the names the call gave, in one pass so that two of them can trade names. The refactoring named the ones it added, and renamed one whose name was taken."
+	"Give each argument the name the call gave it, in one pass so that arguments can trade names: the method's arguments by their place, and the uses of a kept one by its name, with any block argument or temporary that hides it. The refactoring names an added argument as asked only when no argument has that name yet, and may give two added ones the same name."
 
 	| rewriter tree |
-	argumentNames ifEmpty: [ ^ self ].
 	tree := behavior parseTreeForSelector: newSelector.
+	(argumentNames isEmpty or: [ argumentNames = tree argumentNames ]) ifTrue: [ ^ self ].
 	rewriter := RBParseTreeRewriter new.
 	tree argumentNames withIndexDo: [ :current :index |
-			| name |
-			name := argumentNames at: index.
-			((permutation at: index) > 0 and: [ current ~= name ]) ifTrue: [
+			(permutation at: index) > 0 ifTrue: [
 					rewriter
-						replace: current with: name;
-						replaceArgument: current with: name ] ].
-	(rewriter executeTree: tree) ifTrue: [ behavior compile: rewriter tree newSource classified: (behavior >> newSelector) protocol ]
+						replace: current with: (argumentNames at: index);
+						replaceArgument: current with: (argumentNames at: index) ] ].
+	rewriter executeTree: tree body.
+	tree
+		renameSelector: newSelector
+		andArguments: (tree arguments with: argumentNames collect: [ :argument :name | argument class named: name ]).
+	behavior compile: tree newSource classified: (behavior >> newSelector) protocol
 ]
 
 { #category : 'private - planning' }
