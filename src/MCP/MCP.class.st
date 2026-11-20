@@ -41,7 +41,7 @@ MCP class >> allServers [
 	^ self allSubInstances asArray sort: [ :left :right | left port <= right port ]
 ]
 
-{ #category : 'protocol' }
+{ #category : 'accessing' }
 MCP class >> catalogCacheMilliseconds [
 	"How long a catalog answer stays good. The catalogs only move when code is loaded or removed, and list_changed invalidates a client's copy the moment they do, so a minute costs a non-listening client at most a minute of staleness and saves everyone else the refetches."
 
@@ -126,7 +126,7 @@ MCP class >> requestedProtocolVersionIn: someParams [
 	^ (self metaIn: someParams) ifNotNil: [ :meta | meta at: self modernProtocolVersionKey ifAbsent: [ nil ] ]
 ]
 
-{ #category : 'protocol' }
+{ #category : 'accessing' }
 MCP class >> resourceContentsCacheMilliseconds [
 	"Shorter than a catalog, because nothing announces that a resource's contents changed. Until a resource can signal that, the only protection a client has is a short freshness window."
 
@@ -585,7 +585,7 @@ MCP >> observabilityTraces [
 	^ self observability traceRecords
 ]
 
-{ #category : 'start' }
+{ #category : 'rpc' }
 MCP >> onInitialize: protocolVersion [
 	"A client that opens with initialize has no server/discover to call, so this answer carries the instructions too."
 

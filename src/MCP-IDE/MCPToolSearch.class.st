@@ -65,7 +65,7 @@ MCPToolSearch >> defaultFilterMode [
 	^ 'substring'
 ]
 
-{ #category : 'private - pagination' }
+{ #category : 'metadata' }
 MCPToolSearch >> defaultPageLimit [
 
 	^ 25

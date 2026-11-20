@@ -114,7 +114,7 @@ MCPToolReadScreen >> keyOrder [
 	^ #( class title bounds visible )
 ]
 
-{ #category : 'executing' }
+{ #category : 'private - results' }
 MCPToolReadScreen >> keysStatedInSummary [
 	"The summary names the target and counts the nodes, so repeating either says it twice."
 

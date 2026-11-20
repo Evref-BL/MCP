@@ -14,6 +14,12 @@ Class {
 	#tag : 'Transport'
 }
 
+{ #category : 'testing' }
+MCPEventStreamEntity class >> designatedMimeType [
+
+	^ ZnMimeType main: 'text' sub: 'event-stream'
+]
+
 { #category : 'instance creation' }
 MCPEventStreamEntity class >> on: anEventStream [
 
@@ -23,14 +29,15 @@ MCPEventStreamEntity class >> on: anEventStream [
 ]
 
 { #category : 'accessing' }
-MCPEventStreamEntity class >> designatedMimeType [
+MCPEventStreamEntity >> contentLength [
+	"A stream that stays open has no length to declare."
 
-	^ ZnMimeType main: 'text' sub: 'event-stream'
+	^ nil
 ]
 
 { #category : 'accessing' }
-MCPEventStreamEntity >> contentLength [
-	"A stream that stays open has no length to declare."
+MCPEventStreamEntity >> contents [
+	"A stream has no contents to answer: what it carries has already gone to the socket."
 
 	^ nil
 ]
@@ -47,18 +54,11 @@ MCPEventStreamEntity >> eventStream: anEventStream [
 	eventStream := anEventStream
 ]
 
-{ #category : 'accessing' }
-MCPEventStreamEntity >> contents [
-	"A stream has no contents to answer: what it carries has already gone to the socket."
+{ #category : 'initialization' }
+MCPEventStreamEntity >> initialize [
 
-	^ nil
-]
-
-{ #category : 'reading' }
-MCPEventStreamEntity >> readFrom: aStream [
-	"A notification stream is written to a client, never read from one."
-
-	^ self error: 'An MCP event stream is written, not read.'
+	super initialize.
+	contentType := ZnMimeType main: 'text' sub: 'event-stream'
 ]
 
 { #category : 'testing' }
@@ -69,10 +69,10 @@ MCPEventStreamEntity >> isEmpty [
 ]
 
 { #category : 'initialization' }
-MCPEventStreamEntity >> initialize [
+MCPEventStreamEntity >> readFrom: aStream [
+	"A notification stream is written to a client, never read from one."
 
-	super initialize.
-	contentType := ZnMimeType main: 'text' sub: 'event-stream'
+	^ self error: 'An MCP event stream is written, not read.'
 ]
 
 { #category : 'writing' }

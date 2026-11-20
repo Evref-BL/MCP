@@ -52,7 +52,7 @@ MCPToolSearchRepositories >> classNamesForRepositoryEntry: anEntry [
 	^ classNames asArray
 ]
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolSearchRepositories >> defaultPageLimit [
 	"A repository entry carries an absolute path and its modified packages, so a page holds fewer."
 
@@ -72,7 +72,7 @@ MCPToolSearchRepositories >> entryNameKeys [
 	^ #( name )
 ]
 
-{ #category : 'private - template' }
+{ #category : 'private - results' }
 MCPToolSearchRepositories >> failureScopePhraseFromRequest: request [
 
 	^ 'the image'
@@ -95,7 +95,7 @@ MCPToolSearchRepositories >> fieldTextsForRepositoryEntry: anEntry fieldName: fi
 	^ #(  )
 ]
 
-{ #category : 'private - template' }
+{ #category : 'private - results' }
 MCPToolSearchRepositories >> filtersRequest: request [
 	"Its filters are its fields and the modified state it can keep."
 
@@ -163,7 +163,7 @@ MCPToolSearchRepositories >> repositoryTextFilterPropertyNamed: propertyName des
 	^ self schemaPropertyNamed: propertyName type: 'string' description: descriptionString
 ]
 
-{ #category : 'private - template' }
+{ #category : 'private - results' }
 MCPToolSearchRepositories >> scopePhraseForScopeQuery: scopeQuery [
 	"Repositories are registered with the image, so the image is where this looks."
 

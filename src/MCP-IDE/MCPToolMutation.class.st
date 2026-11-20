@@ -120,7 +120,7 @@ MCPToolMutation >> errorResultForActionFailure: anError action: action requested
 		  summary: summary
 ]
 
-{ #category : 'private - errors' }
+{ #category : 'error handling' }
 MCPToolMutation >> errorResultForCommandError: anError action: action requestedContext: requestedContext [
 
 	| details |
@@ -131,7 +131,7 @@ MCPToolMutation >> errorResultForCommandError: anError action: action requestedC
 	^ self errorResultText: anError messageText details: details
 ]
 
-{ #category : 'private - warnings' }
+{ #category : 'error handling' }
 MCPToolMutation >> errorResultForRefactoringWarning: aWarning action: action requestedContext: requestedContext [
 
 	^ self
@@ -338,7 +338,7 @@ MCPToolMutation >> normalizedCauseMessageForMutationError: anError [
 	^ cause class name asString
 ]
 
-{ #category : 'private - errors' }
+{ #category : 'error handling' }
 MCPToolMutation >> normalizedCommandErrorForActionFailure: anError action: action requestedContext: requestedContext summary: summary [
 
 	| details normalizedSummary |

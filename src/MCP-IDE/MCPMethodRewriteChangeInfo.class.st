@@ -43,7 +43,7 @@ MCPMethodRewriteChangeInfo >> asDictionary [
 	^ data
 ]
 
-{ #category : 'accessing' }
+{ #category : 'introspection' }
 MCPMethodRewriteChangeInfo >> className [
 
 	^ className

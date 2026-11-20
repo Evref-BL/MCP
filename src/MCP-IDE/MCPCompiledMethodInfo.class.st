@@ -35,7 +35,7 @@ MCPCompiledMethodInfo >> asDictionary [
 	^ data
 ]
 
-{ #category : 'accessing' }
+{ #category : 'introspection' }
 MCPCompiledMethodInfo >> className [
 
 	^ method methodClass instanceSide name asString

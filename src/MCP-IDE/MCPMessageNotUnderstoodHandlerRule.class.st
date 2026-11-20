@@ -13,7 +13,7 @@ Class {
 	#tag : 'Critiques'
 }
 
-{ #category : 'testing' }
+{ #category : 'testing - interest' }
 MCPMessageNotUnderstoodHandlerRule class >> checksMethod [
 
 	^ true

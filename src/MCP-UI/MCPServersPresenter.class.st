@@ -25,7 +25,7 @@ Class {
 	#package : 'MCP-UI'
 }
 
-{ #category : 'defaults' }
+{ #category : 'accessing' }
 MCPServersPresenter class >> defaultPreferredExtent [
 
 	^ 760 @ 420

@@ -43,7 +43,7 @@ MCPToolUpdateClass >> actionsInApplicationOrder: plans [
 				   ifFalse: [ left first < right first ] ]) collect: [ :each | each last ]
 ]
 
-{ #category : 'private - specs' }
+{ #category : 'metadata' }
 MCPToolUpdateClass >> additionalKeywords [
 	"This tool answers for everything the per-property update tools used to, so it has to be findable by the words that led to each of them."
 
@@ -68,7 +68,7 @@ MCPToolUpdateClass >> apply: plan force: aBoolean work: workBlock summary: summa
 		  failureSummary: failureSummaryBlock
 ]
 
-{ #category : 'private - execution' }
+{ #category : 'private - updating' }
 MCPToolUpdateClass >> applyUpdate: plan of: request [
 
 	| actionBlock |
@@ -84,7 +84,7 @@ MCPToolUpdateClass >> applyUpdate: plan of: request [
 		  requestedContext: plan requestedContext
 ]
 
-{ #category : 'private - arguments' }
+{ #category : 'private - execution' }
 MCPToolUpdateClass >> checkArguments: request [
 	"Foo class is refused before anything is planned: read as Foo, it would change the class instead of its class side."
 
@@ -463,7 +463,7 @@ MCPToolUpdateClass >> moveSummaryForClassInfo: aClassInfo [
 				  nextPut: $. ]
 ]
 
-{ #category : 'private - mutation' }
+{ #category : 'private - execution' }
 MCPToolUpdateClass >> mutateWith: request [
 	"Every change is planned before the first is made, so a call asking for one that cannot be planned changes nothing."
 

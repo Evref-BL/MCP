@@ -20,7 +20,7 @@ TMCPAgentRule classSide >> severity [
 	^ #warning
 ]
 
-{ #category : 'accessing' }
+{ #category : 'manifest' }
 TMCPAgentRule classSide >> uniqueIdentifierName [
 	"The key a manifest keeps the rule's false positives under, so it stays this String."
 

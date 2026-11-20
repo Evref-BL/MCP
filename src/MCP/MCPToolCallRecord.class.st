@@ -234,13 +234,13 @@ MCPToolCallRecord >> inputByteCount: anInteger [
 	inputByteCount := anInteger
 ]
 
-{ #category : 'private' }
+{ #category : 'accessing' }
 MCPToolCallRecord >> inputObject [
 
 	^ inputObject
 ]
 
-{ #category : 'private' }
+{ #category : 'accessing' }
 MCPToolCallRecord >> inputObject: anObject [
 
 	inputObject := anObject

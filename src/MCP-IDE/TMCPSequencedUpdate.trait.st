@@ -12,7 +12,7 @@ Trait {
 	#tag : 'Tools'
 }
 
-{ #category : 'requirements' }
+{ #category : 'private - updating' }
 TMCPSequencedUpdate >> applyUpdate: update of: request [
 	"Apply one update and answer its tool result, which is an error result when it failed."
 
@@ -90,14 +90,14 @@ TMCPSequencedUpdate >> resultForUpdates: applied of: request [
 		  warnings: warnings asArray
 ]
 
-{ #category : 'requirements' }
+{ #category : 'private - updating' }
 TMCPSequencedUpdate >> updateActionOf: update [
 	"The name of the action an update performs, as the answer reports it."
 
 	^ self explicitRequirement
 ]
 
-{ #category : 'requirements' }
+{ #category : 'private - updating' }
 TMCPSequencedUpdate >> updateSubjectDescriptionFor: request [
 	"What the summary of several updates calls their target."
 

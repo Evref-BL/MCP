@@ -9,7 +9,7 @@ Class {
 	#tag : 'Queries'
 }
 
-{ #category : 'private - querying' }
+{ #category : 'querying' }
 MCPPackageScopeQuery >> packageProjectNamesMap [
 
 	| packageProjects |

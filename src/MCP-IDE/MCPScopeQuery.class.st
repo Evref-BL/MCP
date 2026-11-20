@@ -142,7 +142,7 @@ MCPScopeQuery >> namesNothingThatExists [
 	^ self scopePhraseParts isEmpty
 ]
 
-{ #category : 'private - resolution' }
+{ #category : 'resolving' }
 MCPScopeQuery >> packageNamed: packageName inScope: aScopeKey [
 	"A scope entry naming a package. A scope that must be complete refuses a missing one; any other scope skips it with a warning and leaves it out of the phrase for where it looked. aScopeKey is the entry's key as the schema spells it, such as scope.packages."
 
@@ -278,7 +278,7 @@ MCPScopeQuery >> subclassClassNames: aCollection [
 	subclassClassNames := aCollection
 ]
 
-{ #category : 'private - source' }
+{ #category : 'testing' }
 MCPScopeQuery >> usesImplicitImageScope [
 
 	^ self packageNames isEmpty and: [

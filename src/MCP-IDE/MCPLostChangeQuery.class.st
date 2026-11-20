@@ -296,7 +296,7 @@ MCPLostChangeQuery >> supersedeMembersOf: aClassName [
 	commentChanges at: aClassName ifPresent: [ :each | each supersede ]
 ]
 
-{ #category : 'visiting' }
+{ #category : 'visitor' }
 MCPLostChangeQuery >> visitBehaviorCommentChange: aChange [
 
 	(commentChanges
@@ -306,69 +306,69 @@ MCPLostChangeQuery >> visitBehaviorCommentChange: aChange [
 		packageName: (self packageNameOf: aChange)
 ]
 
-{ #category : 'visiting' }
+{ #category : 'visitor' }
 MCPLostChangeQuery >> visitBehaviorRepackagedChange: aChange [
 	"From Pharo 12 on, a class moved to another package or tag."
 
 	self recordRepackaging: aChange
 ]
 
-{ #category : 'visiting' }
+{ #category : 'visitor' }
 MCPLostChangeQuery >> visitClassAddition: aChange [
 
 	self recordDefinitionChange: aChange from: nil to: aChange classAdded
 ]
 
-{ #category : 'visiting' }
+{ #category : 'visitor' }
 MCPLostChangeQuery >> visitClassModification: aChange [
 
 	self recordDefinitionChange: aChange from: aChange oldClass to: aChange newClass
 ]
 
-{ #category : 'visiting' }
+{ #category : 'visitor' }
 MCPLostChangeQuery >> visitClassRemoval: aChange [
 
 	self recordRemoval: aChange of: aChange classRemoved
 ]
 
-{ #category : 'visiting' }
+{ #category : 'visitor' }
 MCPLostChangeQuery >> visitCodeChange: aChange [
 	"Any other code change touches no element the tools restore: a protocol comes with each method, a package with each definition."
 
 	
 ]
 
-{ #category : 'visiting' }
+{ #category : 'visitor' }
 MCPLostChangeQuery >> visitMethodAddition: aChange [
 
 	self recordMethodChange: aChange from: nil to: aChange methodAdded
 ]
 
-{ #category : 'visiting' }
+{ #category : 'visitor' }
 MCPLostChangeQuery >> visitMethodModification: aChange [
 
 	self recordMethodChange: aChange from: aChange oldMethod to: aChange newMethod
 ]
 
-{ #category : 'visiting' }
+{ #category : 'visitor' }
 MCPLostChangeQuery >> visitMethodRemoval: aChange [
 
 	self recordMethodChange: aChange from: aChange methodRemoved to: nil
 ]
 
-{ #category : 'visiting' }
+{ #category : 'visitor' }
 MCPLostChangeQuery >> visitTraitAddition: aChange [
 
 	self recordDefinitionChange: aChange from: nil to: aChange traitAdded
 ]
 
-{ #category : 'visiting' }
+{ #category : 'visitor' }
 MCPLostChangeQuery >> visitTraitModification: aChange [
 
 	self recordDefinitionChange: aChange from: aChange oldTrait to: aChange newTrait
 ]
 
-{ #category : 'visiting' }
+{ #category : 'visitor' }
 MCPLostChangeQuery >> visitTraitRemoval: aChange [
 
 	self recordRemoval: aChange of: aChange traitRemoved

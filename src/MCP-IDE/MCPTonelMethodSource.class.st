@@ -109,7 +109,7 @@ MCPTonelMethodSource >> category [
 	^ category
 ]
 
-{ #category : 'accessing' }
+{ #category : 'introspection' }
 MCPTonelMethodSource >> className [
 	"The class the method's header names, without its side; nil when the source has no header."
 

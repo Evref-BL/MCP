@@ -23,7 +23,7 @@ Class {
 	#package : 'MCP-UI'
 }
 
-{ #category : 'defaults' }
+{ #category : 'accessing' }
 MCPObservabilityPresenter class >> defaultPreferredExtent [
 
 	^ 1000 @ 700
@@ -182,7 +182,7 @@ MCPObservabilityPresenter >> logsForDisplayFrom: logEntries [
 	^ logEntries reversed
 ]
 
-{ #category : 'updating' }
+{ #category : 'initialization' }
 MCPObservabilityPresenter >> modelChanged [
 
 	self refreshView

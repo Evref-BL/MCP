@@ -19,7 +19,7 @@ MCPToolUpdateMethod class >> toolName [
 	^ 'method_update'
 ]
 
-{ #category : 'private - specs' }
+{ #category : 'metadata' }
 MCPToolUpdateMethod >> additionalKeywords [
 	"The name no longer carries protocol or selector, which are the words that led to the two tools this replaces."
 
@@ -109,7 +109,7 @@ MCPToolUpdateMethod >> changeSelector: action of: request [
 		  failureSummary: [ :error | self failureMessageForSelectorChange: action of: request error: error ]
 ]
 
-{ #category : 'executing' }
+{ #category : 'private - execution' }
 MCPToolUpdateMethod >> checkArguments: request [
 	"A side that says the other one than the class name, a permutation that does not fit the selectors, and a scope naming a package that does not exist are refused."
 
@@ -153,7 +153,7 @@ MCPToolUpdateMethod >> keysStatedInSummary [
 	^ #( updates )
 ]
 
-{ #category : 'executing' }
+{ #category : 'private - execution' }
 MCPToolUpdateMethod >> mutateWith: request [
 	"Check what the arguments ask for together, then apply each change they ask for."
 
@@ -372,7 +372,7 @@ MCPToolUpdateMethod >> updateArgumentNames [
 	^ #( 'newSelector' 'protocol' 'permutation' 'arguments' 'argumentValueExpressions' )
 ]
 
-{ #category : 'private - results' }
+{ #category : 'private - updating' }
 MCPToolUpdateMethod >> updateSubjectDescriptionFor: request [
 	"What the summary of several updates calls the method: method ZooKeeper>>feed, its class named without its side."
 
