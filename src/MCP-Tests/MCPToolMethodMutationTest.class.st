@@ -1015,9 +1015,6 @@ MCPToolMethodMutationTest >> testArgumentNamesMayKeepANameThatShadowsAVariable [
 	"A name the method's argument already has hides the same variable before and after the change, so keeping it changes nothing the method means."
 
 	| result |
-	self compilerRefusesShadowingTemporaries ifTrue: [
-			^ self skip:
-				  'This Pharo''s compiler refuses an argument that shadows a variable, so its refactoring will not change such a method.' ].
 	[
 		self ensureMethodSource: 'keptShadowProbe: name ^ name' protocol: 'reading' on: MCPToolGetMethodTestTarget classSide.
 		result := self callToolNamed: 'method_update' withArguments: {
