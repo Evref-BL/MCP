@@ -215,7 +215,7 @@ MCPToolGetMethod >> isOnClassSideOnly: selector in: className [
 
 { #category : 'private - results' }
 MCPToolGetMethod >> keyOrder [
-	"Where the method is defined comes before anything about it: a method a class inherits is read in the class that defines it, and one it got from a trait in the trait, and changed there."
+	"Where the method is defined comes before anything about it: a method a class inherits is read in the class that defines it, and one it got from a trait is read in the class, with the trait it is changed in."
 
 	^ #( inheritedFrom trait protocol )
 ]
