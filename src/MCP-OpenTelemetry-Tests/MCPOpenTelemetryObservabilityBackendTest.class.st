@@ -222,16 +222,17 @@ MCPOpenTelemetryObservabilityBackendTest >> testATracedToolsCallRequestParentsTh
 { #category : 'tests' }
 MCPOpenTelemetryObservabilityBackendTest >> testAWarningWhileRecordingIsPassedOverAndTheCallRecorded [
 
-	| previous |
+	| previous snapshot |
 	previous := OTTextMapPropagator currentOrNil.
-	OTTextMapPropagator current: nil.
+	OTTextMapPropagator current: MCPOpenTelemetryWarningPropagator new.
 	[
 		backend
 			recordToolCallFinish:
 			(self startToolCallWith: { (#meta -> { ('traceparent' -> self remoteTraceparent) } asDictionary) } asDictionary)
 			result: self successToolResult
 			error: nil ] ensure: [ OTTextMapPropagator current: previous ].
-	self assert: exporter onlySnapshot name equals: 'tools/call method_compile'
+	snapshot := exporter onlySnapshot.
+	self assert: snapshot parentSpanContext spanIdHex equals: '00f067aa0ba902b7'
 ]
 
 { #category : 'tests' }
