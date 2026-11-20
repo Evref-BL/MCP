@@ -98,6 +98,7 @@ MCPToolMethodMutation >> allowedNonErrorCritiqueRuleClasses [
 		  MCPRedundantExplicitSelfReturnRule.
 		  MCPRespondsToUsageRule.
 		  MCPSelectSizeCountRule.
+		  MCPSmalltalkGlobalsRule.
 		  MCPSortedCollectionConversionRule.
 		  MCPStreamWriteCascadeRule.
 		  MCPStringConcatenationRule.

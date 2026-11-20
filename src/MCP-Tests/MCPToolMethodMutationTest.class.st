@@ -1127,7 +1127,11 @@ MCPToolMethodMutationTest >> testCollectionStyleCritiquesProvideAutomaticChanges
 		           {
 			           #detectIfFoundProbe:.
 			           'detectIfFoundProbe: collection (collection detect: [ :each | each odd ] ifNone: [ nil ]) ifNotNil: [ :found | found printString ]'.
-			           MCPDetectIfFoundRule } }.
+			           MCPDetectIfFoundRule }.
+		           {
+			           #smalltalkGlobalsProbe.
+			           'smalltalkGlobalsProbe ^ Smalltalk globals at: #Object'.
+			           MCPSmalltalkGlobalsRule } }.
 	samples do: [ :sample |
 			| change critique method ruleClass selector source |
 			selector := sample first.
@@ -2012,6 +2016,21 @@ MCPToolMethodMutationTest >> testCompileReturnsSelectSizeCountCritique [
 			protocol: 'tests'
 			returnsSingleCritiqueRuleClass: 'MCPSelectSizeCountRule'
 			titledLike: MCPSelectSizeCountRule ruleName ] ensure: [ self removeSelector: selector from: MCPToolGetMethodTestTarget ]
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileReturnsSmalltalkGlobalsCritique [
+
+	| selector |
+	selector := #smalltalkGlobalsProbe.
+	self removeSelector: selector from: MCPToolGetMethodTestTarget.
+	[
+		self
+			assertCompileForClass: MCPToolGetMethodTestTarget
+			methodSource: 'smalltalkGlobalsProbe ^ Smalltalk globals at: #Object'
+			protocol: 'tests'
+			returnsSingleCritiqueRuleClass: 'MCPSmalltalkGlobalsRule'
+			titledLike: MCPSmalltalkGlobalsRule ruleName ] ensure: [ self removeSelector: selector from: MCPToolGetMethodTestTarget ]
 ]
 
 { #category : 'tests' }

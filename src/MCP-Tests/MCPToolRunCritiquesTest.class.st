@@ -426,6 +426,30 @@ MCPToolRunCritiquesTest >> testLeavesOutARuleThePackageRejects [
 ]
 
 { #category : 'tests' }
+MCPToolRunCritiquesTest >> testLeavesSmalltalkAloneWhereItAnswersNoGlobal [
+	"Smalltalk vm, image and session answer the running system, text naming Smalltalk globals is for a reader, an argument named Smalltalk is not the global, and a cascade sends Smalltalk its other messages too."
+
+	self compileFixtureMethodSource: 'globalsProbe
+
+	^ Smalltalk globals at: #Object'.
+	self compileFixtureMethodSource: 'forwardedProbe
+
+	^ Smalltalk allClasses size'.
+	self compileFixtureMethodSource: 'runningSystemProbe
+	"Smalltalk globals"
+
+	^ { Smalltalk vm. Smalltalk image. Smalltalk session. ''Smalltalk globals'' }'.
+	self compileFixtureMethodSource: 'sameNameProbe: Smalltalk
+
+	^ { Smalltalk globals. Smalltalk allClasses }'.
+	self compileFixtureMethodSource: 'cascadeProbe
+
+	^ { Smalltalk at: #Object; vm. Smalltalk vm; at: #Object. Smalltalk globals; vm }'.
+
+	self assert: (self selectorsHitBy: MCPSmalltalkGlobalsRule) equals: (Set with: #globalsProbe with: #forwardedProbe)
+]
+
+{ #category : 'tests' }
 MCPToolRunCritiquesTest >> testLiftsOnlyWhatStaysReadable [
 	"Lifting a send whose arguments are blocks leaves blocks inside a conditional, and lifting a return out of an assignment does not parse."
 
