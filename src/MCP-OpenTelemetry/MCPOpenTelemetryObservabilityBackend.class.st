@@ -24,50 +24,59 @@ Class {
 MCPOpenTelemetryObservabilityBackend class >> pharoVersion [
 	"Pharo's version with its build, as semantic versioning writes build metadata: 14.0.0+build.791. A development image changes from one build to the next."
 
-	^ [
-		  | version |
-		  version := SystemVersion current.
-		  '{1}.{2}.{3}+build.{4}' format: {
-				  version major.
-				  version minor.
-				  version patch.
-				  version build } ]
-		  on: Error
-		  do: [ OTTracerProvider runtimeVersion ]
+	| version |
+	version := SystemVersion current.
+	^ '{1}.{2}.{3}+build.{4}' format: {
+			  version major.
+			  version minor.
+			  version patch.
+			  version build }
 ]
 
 { #category : 'resource' }
 MCPOpenTelemetryObservabilityBackend class >> resourceAttributesFor: aServerInfo [
-	"What the image's telemetry says about what ran: this server and its version, the OpenTelemetry SDK, the OS family, and the Pharo and VM versions. Never the host name, the process, its command line or the image's path, which the SDK's default detectors would send and which name the user and the project. An attribute Pharo cannot tell is left out, and the rest still describe the server."
+	"What the image's telemetry says about what ran: this server and its version, the OpenTelemetry SDK, the OS family, and the Pharo and VM versions. Never the host name, the process, its command line or the image's path, which the SDK's default detectors would send and which name the user and the project. An attribute Pharo cannot tell, or the SDK would refuse, is left out, and the others still describe the server."
 
 	| attributes |
-	attributes := [ OTTracerProvider defaultResource attributes copy ]
-		              on: Error
-		              do: [ OrderedDictionary new ].
+	attributes := OrderedDictionary new.
+	attributes at: 'service.name' put: 'pharo-mcp'.
+	[
+		OTTracerProvider defaultResource attributes keysAndValuesDo: [ :key :value |
+			(key beginsWith: 'telemetry.sdk.') ifTrue: [ attributes at: key put: value ] ] ]
+		on: Error
+		do: [ nil ].
 	{
 		('service.version' -> [ aServerInfo version ]).
 		('process.runtime.name' -> [ OTTracerProvider runtimeName ]).
 		('process.runtime.version' -> [ self pharoVersion ]).
-		('process.runtime.description' -> [ OTTracerProvider runtimeDescription ]).
+		('process.runtime.description' -> [ Smalltalk vm version trimBoth ]).
 		('os.type' -> [ OTTracerProvider defaultOsType ]) } do: [ :each |
-			[ each value value ifNotNil: [ :value | attributes at: each key put: value ] ]
+			[ each value value ifNotNil: [ :value | attributes at: each key put: (OTAttributeNormalizer normalizeAttributeValue: value) ] ]
 				on: Error
 				do: [ nil ] ].
-	attributes at: 'service.name' put: 'pharo-mcp'.
 	^ attributes
 ]
 
 { #category : 'resource' }
 MCPOpenTelemetryObservabilityBackend class >> resourceDetectorsFor: aServerInfo [
-	"OTEL_RESOURCE_ATTRIBUTES first, so whoever runs the image can add attributes, such as deployment.environment.name, but not rename the server or change what it says about itself."
+	"OTEL_RESOURCE_ATTRIBUTES first, so whoever runs the image can add attributes, such as deployment.environment.name, but not rename the server or change what it says about itself; OTEL_SERVICE_NAME is not read, for the same reason. The server's own attributes are read each time a provider is made, so an image started again elsewhere describes where it runs."
 
 	^ OrderedCollection new
 		  add: OTEnvironmentResourceDetector new;
-		  add: (OTStaticResourceDetector
+		  add: (OTBlockResourceDetector
 				   named: 'mcp'
-				   resource:
-					   (OTResource attributes: (self resourceAttributesFor: aServerInfo) schemaUrl: OTTracerProvider semanticConventionsSchemaUrl));
+				   detecting: [
+					   OTResource attributes: (self resourceAttributesFor: aServerInfo) schemaUrl: OTTracerProvider semanticConventionsSchemaUrl ]);
 		  yourself
+]
+
+{ #category : 'resource' }
+MCPOpenTelemetryObservabilityBackend class >> resourceIsConfigured [
+	"Whether the configuration file the image was started with, named by OTEL_CONFIG_FILE, says what its telemetry describes. Whoever wrote it chose, so it wins."
+
+	^ [ OTConfigurationSource configuredResource isNotNil ]
+		  on: Error
+		  do: [ false ]
 ]
 
 { #category : 'private - reporting' }
@@ -80,13 +89,15 @@ MCPOpenTelemetryObservabilityBackend >> argumentNamesIn: inputObject [
 
 { #category : 'resource' }
 MCPOpenTelemetryObservabilityBackend >> describeServer: aServerInfo [
-	"Makes the image's OpenTelemetry providers describe this server and nothing else, now and whenever they are made again. A step Pharo refuses is skipped: the calls are recorded however little the providers could be told."
+	"Makes the image's OpenTelemetry providers describe this server and nothing that identifies the machine, its user or the image, now and whenever they are made again, unless a configuration file says what they describe. A step the SDK refuses is skipped: the calls are recorded however little the providers could be told."
 
 	| detectors resource |
-	detectors := [ self class resourceDetectorsFor: aServerInfo ]
-		             on: Error
-		             do: [ ^ self ].
-	resource := OTTracerProvider resourceFromDetectors: detectors.
+	self class resourceIsConfigured ifTrue: [ ^ self ].
+	[
+		detectors := self class resourceDetectorsFor: aServerInfo.
+		resource := OTTracerProvider resourceFromDetectors: detectors ]
+		on: Error
+		do: [ ^ self ].
 	[ OTTracerProvider resourceDetectors: detectors ]
 		on: Error
 		do: [ nil ].
@@ -389,9 +400,12 @@ MCPOpenTelemetryObservabilityBackend >> unknownArgumentNamesIn: inputObject for:
 
 { #category : 'private - recording' }
 MCPOpenTelemetryObservabilityBackend >> withoutFailingTheCall: aBlock [
-	"Recording is never a reason for a tool call to fail: whatever goes wrong while recording, warnings included, is dropped, and the call goes on unrecorded."
+	"Recording is never a reason for a tool call to fail. A warning while recording, such as a deprecation the SDK runs into, is passed over and the recording goes on; anything else that goes wrong is dropped, and the call goes on unrecorded."
 
-	^ aBlock
-		  on: Error , Warning
-		  do: [ :exception | exception return: nil ]
+	^ [
+		  aBlock
+			  on: Warning
+			  do: [ :warning | warning resume: nil ] ]
+		  on: Error
+		  do: [ :error | error return: nil ]
 ]

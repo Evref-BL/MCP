@@ -138,16 +138,32 @@ MCPOpenTelemetryObservabilityBackendTest >> tearDown [
 ]
 
 { #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testAConfigurationFileThatSaysWhatTheTelemetryDescribesIsLeftToSayIt [
+
+	| file |
+	file := (FileLocator temp / 'mcp-telemetry-configuration.yaml') asFileReference.
+	[
+		file writeStreamDo: [ :stream |
+				stream nextPutAll: 'file_format: "1.0"
+resource:
+  attributes:
+    - name: service.name
+      value: from-file
+' ].
+		self withEnvironmentVariable: 'OTEL_CONFIG_FILE' setTo: file fullName do: [
+				backend describeServer: (self serverInfoAt: '9.8.7').
+				self
+					deny: (tracerProvider resource attributes includesKey: 'service.version');
+					assert: (OTTracerProvider configuredResource attributes at: 'service.name') equals: 'from-file' ] ] ensure: [
+			file ensureDelete.
+			OTConfigurationSource reset ]
+]
+
+{ #category : 'tests' }
 MCPOpenTelemetryObservabilityBackendTest >> testADescriptionPharoCannotCompleteKeepsWhatItCanAndStillRecords [
 
-	| attributes |
 	backend describeServer: Object new.
-	attributes := tracerProvider resource attributes.
-	self
-		assert: (attributes at: 'service.name') equals: 'pharo-mcp';
-		deny: (attributes includesKey: 'service.version');
-		assert: (attributes at: 'process.runtime.name') equals: 'pharo';
-		deny: (attributes includesKey: 'host.name').
+	self deny: (tracerProvider resource attributes includesKey: 'service.version').
 	backend recordToolCallFinish: self startToolCall result: self successToolResult error: nil.
 	self assert: exporter onlySnapshot name equals: 'tools/call method_compile'
 ]
@@ -175,6 +191,16 @@ MCPOpenTelemetryObservabilityBackendTest >> testAProtocolErrorReportsItsJSONRPCC
 ]
 
 { #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testAProviderThatRefusesTheDescriptionLeavesTheOthersDescribed [
+
+	tracerProvider shutdown.
+	backend describeServer: (self serverInfoAt: '9.8.7').
+	self
+		assert: (meterProvider resource attributes at: 'service.name') equals: 'pharo-mcp';
+		assert: (loggerProvider resource attributes at: 'service.name') equals: 'pharo-mcp'
+]
+
+{ #category : 'tests' }
 MCPOpenTelemetryObservabilityBackendTest >> testATracedToolsCallRequestParentsTheSpanOnItsCaller [
 
 	| mcp snapshot |
@@ -191,6 +217,21 @@ MCPOpenTelemetryObservabilityBackendTest >> testATracedToolsCallRequestParentsTh
 	snapshot := exporter onlySnapshot.
 	self assert: snapshot name equals: 'tools/call class_search'.
 	self assert: snapshot parentSpanContext spanIdHex equals: '00f067aa0ba902b7'
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testAWarningWhileRecordingIsPassedOverAndTheCallRecorded [
+
+	| previous |
+	previous := OTTextMapPropagator currentOrNil.
+	OTTextMapPropagator current: nil.
+	[
+		backend
+			recordToolCallFinish:
+			(self startToolCallWith: { (#meta -> { ('traceparent' -> self remoteTraceparent) } asDictionary) } asDictionary)
+			result: self successToolResult
+			error: nil ] ensure: [ OTTextMapPropagator current: previous ].
+	self assert: exporter onlySnapshot name equals: 'tools/call method_compile'
 ]
 
 { #category : 'tests' }
@@ -337,11 +378,13 @@ MCPOpenTelemetryObservabilityBackendTest >> testStatusDistinguishesErrorsFromRes
 { #category : 'tests' }
 MCPOpenTelemetryObservabilityBackendTest >> testTheEnvironmentAddsAttributesButCannotRenameTheServer [
 
+	| attributes |
+	self withEnvironmentVariable: 'OTEL_RESOURCE_ATTRIBUTES' setTo: 'deployment.environment.name=test,service.name=renamed' do: [
+			backend describeServer: (self serverInfoAt: '9.8.7').
+			attributes := tracerProvider resource attributes ].
 	self
-		assert: ((MCPOpenTelemetryObservabilityBackend resourceDetectorsFor: (self serverInfoAt: '9.8.7'))
-				 collect: [ :each | each detectorName ]
-				 as: Array)
-		equals: #( 'environment' 'mcp' )
+		assert: (attributes at: 'deployment.environment.name') equals: 'test';
+		assert: (attributes at: 'service.name') equals: 'pharo-mcp'
 ]
 
 { #category : 'tests' }
@@ -353,19 +396,24 @@ MCPOpenTelemetryObservabilityBackendTest >> testThePharoVersionCarriesItsBuild [
 { #category : 'tests' }
 MCPOpenTelemetryObservabilityBackendTest >> testTheResourceDescribesTheServerAndNothingAboutTheMachine [
 
-	| attributes |
+	| defaults expected attributes |
+	defaults := OTTracerProvider resourceFromDetectors: OTTracerProvider defaultResourceDetectors.
+	{
+		tracerProvider.
+		meterProvider.
+		loggerProvider } do: [ :each | each resource: defaults ].
 	backend describeServer: (self serverInfoAt: '9.8.7').
-	attributes := tracerProvider resource attributes.
+	backend recordToolCallFinish: self startToolCall result: self successToolResult error: nil.
+	attributes := exporter onlySnapshot resource attributes.
+	expected := Set withAll:
+		            #( 'service.name' 'service.version' 'telemetry.sdk.name' 'telemetry.sdk.language' 'telemetry.sdk.version'
+		               'process.runtime.name' 'process.runtime.version' 'process.runtime.description' ).
+	OTTracerProvider defaultOsType ifNotNil: [ expected add: 'os.type' ].
 	self
+		assert: attributes keys asSet equals: expected;
 		assert: (attributes at: 'service.name') equals: 'pharo-mcp';
 		assert: (attributes at: 'service.version') equals: '9.8.7';
 		assert: (attributes at: 'process.runtime.name') equals: 'pharo';
-		assert: (attributes includesKey: 'process.runtime.version');
-		assert: (attributes includesKey: 'process.runtime.description').
-	#( 'host.name' 'host.arch' 'os.name' 'os.description' 'process.pid' 'process.executable.path' 'process.executable.name'
-	   'process.command' 'process.command_line' 'process.command_args' 'service.instance.id' ) do: [ :each |
-		self deny: (attributes includesKey: each) description: each , ' says who ran the image, or where' ].
-	self
 		assert: meterProvider resource attributes equals: attributes;
 		assert: loggerProvider resource attributes equals: attributes
 ]
@@ -427,4 +475,14 @@ MCPOpenTelemetryObservabilityBackendTest >> testUsingOpenTelemetryInstallsABacke
 	self assert: backend class equals: MCPOpenTelemetryObservabilityBackend.
 	self assert: mcp observabilityEnabled.
 	self assert: (tracerProvider resource attributes at: 'service.version') equals: mcp serverIdentity version
+]
+
+{ #category : 'private' }
+MCPOpenTelemetryObservabilityBackendTest >> withEnvironmentVariable: aName setTo: aString do: aBlock [
+
+	| environment previous |
+	environment := OSEnvironment current.
+	previous := environment at: aName ifAbsent: [ nil ].
+	environment at: aName put: aString.
+	^ aBlock ensure: [ previous ifNil: [ environment removeKey: aName ] ifNotNil: [ environment at: aName put: previous ] ]
 ]
