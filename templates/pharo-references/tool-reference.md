@@ -146,7 +146,8 @@ Compiling is the case that bites. Method source separates lines with CR, and
 `evaluate` stores whatever it receives, so source read from a file keeps its LF
 and compares unequal to every other method in the image. To keep a method's text
 as written rather than formatted, as when restoring it from another branch, pass
-`format: false` to `method_compile` instead.
+`format: false` to `method_compile` instead. To format a method already in the
+image, call `method_update` with `format: true` alone.
 
 A debugger somebody opened is theirs. Read it, act on what it shows with the
 ordinary class and method tools, and leave stepping, resuming and terminating

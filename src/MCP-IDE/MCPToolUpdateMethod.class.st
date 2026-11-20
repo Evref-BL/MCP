@@ -1,7 +1,7 @@
 "
-Tool that changes one method's protocol, its selector, or both in one call.
+Tool that changes one method's protocol, its selector, its formatting, or several in one call.
 
-The changes apply in order, protocol first, stopping at the first that fails. A selector change is MCPUpdateMethodCommand's.
+The changes apply in order, protocol first, stopping at the first that fails. A selector change is MCPUpdateMethodCommand's, and formats the method itself.
 "
 Class {
 	#name : 'MCPToolUpdateMethod',
@@ -21,17 +21,17 @@ MCPToolUpdateMethod class >> toolName [
 
 { #category : 'metadata' }
 MCPToolUpdateMethod >> additionalKeywords [
-	"The name no longer carries protocol or selector, which are the words that led to the two tools this replaces."
+	"The name says none of what the tool changes: protocol and selector are the words that led to the two tools it replaces, and format the one that leads to formatting a method."
 
-	^ super additionalKeywords , #( 'protocol' 'selector' 'rename' 'recategorize' 'signature' 'argument' 'extension' )
+	^ super additionalKeywords , #( 'protocol' 'selector' 'rename' 'recategorize' 'signature' 'argument' 'extension' 'format' )
 ]
 
 { #category : 'private - updating' }
 MCPToolUpdateMethod >> applyUpdate: action of: request [
 
-	^ action = 'changeProtocol'
-		  ifTrue: [ self changeProtocolOf: request ]
-		  ifFalse: [ self changeSelector: action of: request ]
+	action = 'changeProtocol' ifTrue: [ ^ self changeProtocolOf: request ].
+	action = 'format' ifTrue: [ ^ self formatOf: request ].
+	^ self changeSelector: action of: request
 ]
 
 { #category : 'private - updating' }
@@ -45,10 +45,7 @@ MCPToolUpdateMethod >> changeProtocolOf: request [
 		  requestedContext: (self requestedContextFor: request action: 'changeProtocol')
 		  work: [
 				  behavior := self updateTargetBehaviorFor: request.
-				  oldProtocol := self protocolNameForMethod:
-					                 (behavior
-						                  compiledMethodAt: selector asSymbol
-						                  ifAbsent: [ MCPCommandError signalMissingMethod: selector in: behavior ]).
+				  oldProtocol := self protocolNameForMethod: behavior >> selector asSymbol.
 				  self classNameAndSideOf: request do: [ :className :classSide :sideGiven |
 						  (RBMethodProtocolTransformation
 							   protocol: (request stringArgumentNamed: 'protocol')
@@ -85,9 +82,6 @@ MCPToolUpdateMethod >> changeSelector: action of: request [
 		  requestedContext: (self requestedContextFor: request action: action)
 		  work: [
 				  behavior := self updateTargetBehaviorFor: request.
-				  behavior
-					  compiledMethodAt: selector
-					  ifAbsent: [ MCPCommandError signalMissingMethod: (request stringArgumentNamed: 'selector') in: behavior ].
 				  oldMethodReference := self methodReferenceForBehavior: behavior selector: selector.
 				  (MCPUpdateMethodCommand
 					   changing: selector
@@ -134,6 +128,37 @@ MCPToolUpdateMethod >> failureMessageForSelectorChange: action of: request error
 				  error: anError ]
 ]
 
+{ #category : 'private - updating' }
+MCPToolUpdateMethod >> formatOf: request [
+	"Format the method as it is. The formatter's text replaces the method's only where it differs, so a method already formatted is left as it was, with nothing added to its history."
+
+	| behavior formatted selector |
+	selector := (request stringArgumentNamed: 'selector') asSymbol.
+	^ self
+		  executeMutationAction: 'format'
+		  force: false
+		  requestedContext: (self requestedContextFor: request)
+		  work: [
+				  | method |
+				  behavior := self updateTargetBehaviorFor: request.
+				  method := behavior >> selector.
+				  formatted := (self reformattedMethodForBehavior: behavior selector: selector) ~~ method ]
+		  successResult: [ :warningMessages |
+				  self
+					  successResultText: ((formatted
+							    ifTrue: [ 'Formatted {1}.' ]
+							    ifFalse: [ '{1} is already formatted.' ]) format: { (self methodReferenceForBehavior: behavior selector: selector) })
+					  data: Dictionary new
+					  warnings: warningMessages ]
+		  failureSummary: [ :error |
+				  self classNameAndSideOf: request do: [ :className :classSide :sideGiven |
+						  self
+							  failureMessage:
+							  ('Unable to format {1}' format:
+								   { (self methodReferenceForClassName: className selector: selector isClassSide: classSide) })
+							  error: error ] ]
+]
+
 { #category : 'private - results' }
 MCPToolUpdateMethod >> keysStatedInSummary [
 	"Several updates each say what they did in the summary, a line each."
@@ -151,7 +176,7 @@ MCPToolUpdateMethod >> mutateWith: request [
 	actions ifEmpty: [
 			MCPCommandError
 				signalErrorCode: #NoMethodUpdateRequested
-				message: 'Method update requires one method update field such as newSelector or protocol.'
+				message: 'method_update needs protocol, newSelector or format: true; format: false alone changes nothing.'
 				details: (self requestedContextFor: request) ].
 	^ self applyUpdates: actions of: request
 ]
@@ -261,14 +286,14 @@ MCPToolUpdateMethod >> toolSpec [
 		  (#title -> 'Update Method').
 		  (#description
 		   ->
-		   'Change one method: its protocol, its selector, or both in one call. A selector change is classified by arity, so the same argument renames, adds or removes arguments, and senders are updated.').
+		   'Change one method: its protocol, its selector, its formatting, or several in one call. A selector change is classified by arity, so the same argument renames, adds or removes arguments, and senders are updated. format: true alone formats the method as it is.').
 		  (#action -> 'update').
 		  (#inputProperties -> {
 			   (self schemaPropertyNamed: 'class' type: 'string' description: 'The class defining the method.').
 			   (self targetSideSchemaPropertyDescribedAs: 'Which side the method is on.').
 			   self forceSchemaProperty.
 			   (self formatSchemaPropertyDescribedAs:
-				    'Reformat the method with its package''s formatter after a selector change. False keeps its source as written but for its selector line. Senders are left as Pharo''s refactoring writes them either way: a rename that keeps the keywords in their order changes only the send; reordering, adding or removing arguments reformats each sender.').
+				    'Reformat the method with its package''s formatter. True formats it as it is, alone or after a protocol change. A selector change reformats it unless format is false, which keeps its source as written but for its selector line. Senders are left as Pharo''s refactoring writes them either way: a rename that keeps the keywords in their order changes only the send; reordering, adding or removing arguments reformats each sender.').
 			   (self schemaPropertyNamed: 'selector' type: 'string' description: 'The method selector to update.').
 			   (self
 				    schemaPropertyNamed: 'protocol'
@@ -292,7 +317,7 @@ MCPToolUpdateMethod >> toolSpec [
 				    yourself).
 			   self sendersScopeSchemaProperty }).
 		  (#requiredProperties -> #( 'class' 'selector' )).
-		  (#atLeastOneProperties -> #( 'protocol' 'newSelector' )) } asDictionary
+		  (#atLeastOneProperties -> #( 'protocol' 'newSelector' 'format' )) } asDictionary
 ]
 
 { #category : 'private - updating' }
@@ -303,12 +328,15 @@ MCPToolUpdateMethod >> updateActionOf: action [
 
 { #category : 'private - validating' }
 MCPToolUpdateMethod >> updateActionsFor: request [
-	"Every change the call asks for, in the order they must be applied. Changing the protocol finds the method by the selector the caller wrote, so a selector change comes after it."
+	"Every change the call asks for, in the order they must be applied. Changing the protocol finds the method by the selector the caller wrote, so a selector change comes after it. A selector change formats the method unless format is false, so formatting is a change of its own only without one, when format is true."
 
 	| actions |
 	actions := OrderedCollection new.
 	(request hasArgumentNamed: 'protocol') ifTrue: [ actions add: 'changeProtocol' ].
-	(self selectorUpdateActionFor: request) ifNotNil: [ :action | actions add: action ].
+	(self selectorUpdateActionFor: request)
+		ifNil: [
+		((request hasArgumentNamed: 'format') and: [ request booleanArgumentNamed: 'format' ]) ifTrue: [ actions add: 'format' ] ]
+		ifNotNil: [ :action | actions add: action ].
 	^ actions asArray
 ]
 
@@ -333,11 +361,13 @@ MCPToolUpdateMethod >> updateSubjectDescriptionFor: request [
 
 { #category : 'private - updating' }
 MCPToolUpdateMethod >> updateTargetBehaviorFor: request [
-	"The behaviour every update action works on. A method the class got from a trait is the trait's to rename, recategorize or re-argument, so the actions stop here rather than each learning what a trait is."
+	"The behaviour every update action works on, which defines the method. A method the class got from a trait is the trait's to rename, recategorize, re-argument or format, so the actions stop here rather than each learning what a trait is."
 
-	| behavior |
+	| behavior selector |
 	behavior := self behaviorNamedIn: request.
-	self signalTraitOriginBeforeUpdating: (request stringArgumentNamed: 'selector') in: behavior.
+	selector := request stringArgumentNamed: 'selector'.
+	self signalTraitOriginBeforeUpdating: selector in: behavior.
+	behavior compiledMethodAt: selector asSymbol ifAbsent: [ MCPCommandError signalMissingMethod: selector in: behavior ].
 	^ behavior
 ]
 

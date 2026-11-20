@@ -216,7 +216,8 @@ MCPToolCatalogTest >> testSearchToolsMatchesAgentGuidanceKeywords [
 		                ('watch' -> 'debug_watch').
 		                ('debugger' -> 'debug_search').
 		                ('refactor' -> 'class_update').
-		                ('refactoring' -> 'method_update') }.
+		                ('refactoring' -> 'method_update').
+		                ('format' -> 'method_update') }.
 	expectations do: [ :expectation |
 			| names |
 			names := (self toolRegistry toolsMatchingQuery: expectation key) collect: [ :each | each name ].

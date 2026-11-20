@@ -2569,6 +2569,50 @@ MCPToolMethodMutationTest >> testForceDoesNotUpdateAMethodInstalledFromATrait [
 ]
 
 { #category : 'tests' }
+MCPToolMethodMutationTest >> testFormatAloneFormatsTheMethodAsItIs [
+	"format true alone formats the method as it is, and after a protocol change when the call names one. A method already formatted is left the method it was, so its history gains nothing. format false alone asks for nothing."
+
+	| arguments method reference |
+	reference := MCPToolMethodMutationTestTarget name , '>>formatProbe:'.
+	arguments := [ :update |
+		             update asDictionary
+			             at: #class put: MCPToolMethodMutationTestTarget name;
+			             at: #selector put: 'formatProbe:';
+			             yourself ].
+	[
+		self
+			assert:
+			((self errorFrom: (self callToolNamed: 'method_update' withArguments: (arguments value: { (#format -> true) }))) at: #errorCode)
+			equals: 'MethodNotFound'.
+		self callToolNamed: 'method_compile' withArguments: {
+				(#class -> MCPToolMethodMutationTestTarget name).
+				(#protocol -> 'tests').
+				(#format -> false).
+				(#source -> (self lines: #( 'formatProbe: a' '    ^ a+1' ))) } asDictionary.
+		self
+			assert: (self summaryFrom: (self callToolNamed: 'method_update' withArguments: (arguments value: { (#format -> true) })))
+			equals: ('Formatted {1}.' format: { reference }).
+		method := MCPToolMethodMutationTestTarget >> #formatProbe:.
+		self assert: method sourceCode equals: (method ast formattedCodeIn: MCPToolMethodMutationTestTarget).
+		self
+			assert: (self summaryFrom: (self callToolNamed: 'method_update' withArguments: (arguments value: { (#format -> true) })))
+			equals: ('{1} is already formatted.' format: { reference }).
+		self assert: MCPToolMethodMutationTestTarget >> #formatProbe: == method.
+		self
+			assert: (self summaryFrom: (self callToolNamed: 'method_update' withArguments: (arguments value: {
+								   (#protocol -> 'accessing').
+								   (#format -> true) })))
+			equals: ('Applied 2 updates to method {1}:{2}Moved {1} from tests to accessing.{2}{1} is already formatted.' format: {
+						 reference.
+						 String lf }).
+		self
+			assert:
+			((self errorFrom: (self callToolNamed: 'method_update' withArguments: (arguments value: { (#format -> false) }))) at: #message)
+			equals: 'method_update needs protocol, newSelector or format: true; format: false alone changes nothing.' ] ensure: [
+		self removeSelector: #formatProbe: from: MCPToolMethodMutationTestTarget ]
+]
+
+{ #category : 'tests' }
 MCPToolMethodMutationTest >> testFormatFalseKeepsEveryMethodOfACallAsWritten [
 	"format applies to every method a call compiles, a method written as a Tonel file writes it included, whose body then ends with its last line rather than with the empty lines above its closing bracket."
 
@@ -2744,7 +2788,7 @@ MCPToolMethodMutationTest >> testMethodToolSchemasDeclareExpectedInputs [
 		equals: #( 'class' 'side' 'force' 'format' 'selector' 'protocol' 'newSelector' 'arguments' 'scope' ).
 	self assert: MCPToolCompileMethod new inputSchema required asSet equals: #( 'class' 'source' ) asSet.
 	self assert: MCPToolUpdateMethod new inputSchema required asSet equals: #( 'class' 'selector' ) asSet.
-	self assert: MCPToolUpdateMethod new atLeastOneInputProperties asSet equals: #( 'protocol' 'newSelector' ) asSet.
+	self assert: MCPToolUpdateMethod new atLeastOneInputProperties asSet equals: #( 'protocol' 'newSelector' 'format' ) asSet.
 	self assert: (classSideProperty extraProperties at: #default) equals: 'instance'
 ]
 
@@ -3299,19 +3343,22 @@ MCPToolMethodMutationTest >> testUpdateChangesProtocolAndSelectorInOneCall [
 
 { #category : 'tests' }
 MCPToolMethodMutationTest >> testUpdatingAMethodInstalledFromATraitStopsAndNamesTheTrait [
-	"Changing the protocol of a copy recompiles it into the class as a method of its own, which the next export writes to the file of a class that never had it."
+	"Changing the protocol of a copy, or formatting it, recompiles it into the class as a method of its own, which the next export writes to the file of a class that never had it."
 
-	| error result |
-	result := self callToolNamed: 'method_update' withArguments: {
-			          (#class -> 'MCPToolMethodSearchTraitUser').
-			          (#selector -> 'mcpTraitFixtureValue').
-			          (#protocol -> 'private') } asDictionary.
-	error := self errorFrom: result.
-	self assert: (self resultIndicatesError: result).
-	self assert: (error at: #errorCode) equals: 'MethodInstalledFromTrait'.
-	self assert: ((error at: #howToProceed) includesSubstring: 'Update TMCPToolMethodSearchFixture>>mcpTraitFixtureValue instead').
-	self assert: (MCPToolMethodSearchTraitUser >> #mcpTraitFixtureValue) isFromTrait.
-	self assert: (MCPToolMethodSearchTraitUser >> #mcpTraitFixtureValue) protocolName asString equals: 'accessing'
+	{
+		(#protocol -> 'private').
+		(#format -> true) } do: [ :update |
+			| error result |
+			result := self callToolNamed: 'method_update' withArguments: {
+					          (#class -> 'MCPToolMethodSearchTraitUser').
+					          (#selector -> 'mcpTraitFixtureValue').
+					          update } asDictionary.
+			error := self errorFrom: result.
+			self assert: (self resultIndicatesError: result).
+			self assert: (error at: #errorCode) equals: 'MethodInstalledFromTrait'.
+			self assert: ((error at: #howToProceed) includesSubstring: 'Update TMCPToolMethodSearchFixture>>mcpTraitFixtureValue instead').
+			self assert: (MCPToolMethodSearchTraitUser >> #mcpTraitFixtureValue) isFromTrait.
+			self assert: (MCPToolMethodSearchTraitUser >> #mcpTraitFixtureValue) protocolName asString equals: 'accessing' ]
 ]
 
 { #category : 'private' }
