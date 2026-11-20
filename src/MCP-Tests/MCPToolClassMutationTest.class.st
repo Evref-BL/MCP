@@ -1671,96 +1671,156 @@ MCPToolClassMutationTest >> testUpdatePullUpSlotStopsOnRefactoringWarningByDefau
 ]
 
 { #category : 'tests - update' }
-MCPToolClassMutationTest >> testUpdatePullsUpInstanceSlotAcrossSubclasses [
+MCPToolClassMutationTest >> testUpdatePullUpStoppedPartwaySaysWhichValuesAreLost [
+	"A subclass that gets the slot from a trait would have it twice once the class has it, which Pharo finds only after taking the slot out of the other subclasses."
 
-	| childOne childTwo instance result target |
+	| instance result target traitUserInstance |
+	target := self
+		          createClassNamed: 'MCPToolClassMutationTestPullUpTarget'
+		          superclassName: 'Object'
+		          slots: #(  )
+		          classSlots: #(  ).
+	instance := (self
+		             createClassNamed: 'MCPToolClassMutationTestPullUpChildOne'
+		             superclassName: target name
+		             slots: #( sharedSlot )
+		             classSlots: #(  )) new.
+	instance instVarNamed: 'sharedSlot' put: 41.
+	traitUserInstance := (self withoutEpiceaDuring: [
+			                      (target << #MCPToolClassMutationTestPullUpTraitUser)
+				                      traits: ((Trait << #MCPToolClassMutationTestPullUpWeighted)
+						                       slots: #( sharedSlot );
+						                       package: self generatedPackageName;
+						                       install);
+				                      package: self generatedPackageName;
+				                      install ]) new.
+	traitUserInstance instVarNamed: 'sharedSlot' put: 43.
+	result := self callToolNamed: 'class_update' withArguments: (self
+			           updateRequestArgumentsForSlotAction: 'pullUp'
+			           className: target name
+			           slotName: 'sharedSlot'
+			           classSide: false).
+	self assert: (self resultIndicatesError: result).
+	self
+		assert:
+		((self textFrom: result) endsWith:
+			 '. The values sharedSlot held in instances of MCPToolClassMutationTestPullUpChildOne are lost.')
+		description: [ self textFrom: result ].
+	self assert: (traitUserInstance instVarNamed: 'sharedSlot') equals: 43
+]
+
+{ #category : 'tests - update' }
+MCPToolClassMutationTest >> testUpdatePullsUpSlotsAcrossSubclasses [
+	"Each instance of a subclass keeps what the slot held, and each subclass what its class-side slot held, along with what the slots after them hold."
+
+	| childOne childTwo grandchild grandchildInstance instance result target |
 	self
 		createClassNamed: 'MCPToolClassMutationTestPullUpTarget'
 		superclassName: 'Object'
 		slots: #(  )
 		classSlots: #(  ).
-	self
-		createClassNamed: 'MCPToolClassMutationTestPullUpChildOne'
-		superclassName: 'MCPToolClassMutationTestPullUpTarget'
-		slots: #( sharedSlot )
-		classSlots: #(  ).
+	childOne := self
+		            createClassNamed: 'MCPToolClassMutationTestPullUpChildOne'
+		            superclassName: 'MCPToolClassMutationTestPullUpTarget'
+		            slots: #( sharedSlot keptSlot )
+		            classSlots: #( sharedClassSlot keptClassSlot ).
 	self
 		createClassNamed: 'MCPToolClassMutationTestPullUpChildTwo'
 		superclassName: 'MCPToolClassMutationTestPullUpTarget'
 		slots: #( sharedSlot )
-		classSlots: #(  ).
-	self
-		ensureMethodSource: 'slotProbe ^ sharedSlot'
-		protocol: 'testing'
-		on: (self classNamed: 'MCPToolClassMutationTestPullUpChildOne').
-	result := self callToolNamed: 'class_update' withArguments: (self
-			           updateRequestArgumentsForSlotAction: 'pullUp'
-			           className: 'MCPToolClassMutationTestPullUpTarget'
-			           slotName: 'sharedSlot'
-			           classSide: false).
+		classSlots: #( sharedClassSlot ).
+	grandchild := self
+		              createClassNamed: 'MCPToolClassMutationTestPullUpGrandchild'
+		              superclassName: 'MCPToolClassMutationTestPullUpChildOne'
+		              slots: #(  )
+		              classSlots: #(  ).
+	self ensureMethodSource: 'slotProbe ^ sharedSlot' protocol: 'testing' on: childOne.
+	instance := childOne new.
+	instance instVarNamed: 'sharedSlot' put: 41.
+	instance instVarNamed: 'keptSlot' put: 7.
+	childOne instVarNamed: 'sharedClassSlot' put: 23.
+	childOne instVarNamed: 'keptClassSlot' put: 8.
+	grandchildInstance := grandchild new.
+	grandchildInstance instVarNamed: 'sharedSlot' put: 42.
+	grandchild instVarNamed: 'sharedClassSlot' put: 24.
+	result := self callToolNamed: 'class_update' withArguments: {
+			          (#name -> 'MCPToolClassMutationTestPullUpTarget').
+			          (#slots -> (Dictionary with: 'pullUp' -> #( 'sharedSlot' ))).
+			          (#classSlots -> (Dictionary with: 'pullUp' -> #( 'sharedClassSlot' ))) } asDictionary.
 	self dataFrom: result.
 	target := self classNamed: 'MCPToolClassMutationTestPullUpTarget'.
 	childOne := self classNamed: 'MCPToolClassMutationTestPullUpChildOne'.
 	childTwo := self classNamed: 'MCPToolClassMutationTestPullUpChildTwo'.
-	instance := childOne new.
-	instance instVarNamed: 'sharedSlot' put: 41.
+	grandchild := self classNamed: 'MCPToolClassMutationTestPullUpGrandchild'.
 	self assert: (target slots collect: #name as: Array) equals: #( #sharedSlot ).
-	self assert: (childOne slots collect: #name as: Array) equals: #(  ).
+	self assert: (target classSide slots collect: #name as: Array) equals: #( #sharedClassSlot ).
+	self assert: (childOne slots collect: #name as: Array) equals: #( #keptSlot ).
 	self assert: (childTwo slots collect: #name as: Array) equals: #(  ).
-	self assert: instance slotProbe equals: 41
+	self assert: instance slotProbe equals: 41.
+	self assert: (instance instVarNamed: 'keptSlot') equals: 7.
+	self assert: grandchildInstance slotProbe equals: 42.
+	self assert: (childOne instVarNamed: 'sharedClassSlot') equals: 23.
+	self assert: (childOne instVarNamed: 'keptClassSlot') equals: 8.
+	self assert: (grandchild instVarNamed: 'sharedClassSlot') equals: 24
 ]
 
 { #category : 'tests - update' }
-MCPToolClassMutationTest >> testUpdatePushesDownClassSlotToDirectSubclasses [
+MCPToolClassMutationTest >> testUpdatePushesDownSlotsToDirectSubclasses [
+	"Each instance of a subclass keeps what the slot held, and each subclass what its class-side slot held, along with what the slots after them hold."
 
-	| childOne childTwo result target |
+	| childOne childTwo instance result target |
 	self
 		createClassNamed: 'MCPToolClassMutationTestPushDownTarget'
 		superclassName: 'Object'
-		slots: #(  )
-		classSlots: #( sharedClassSlot ).
-	self
-		createClassNamed: 'MCPToolClassMutationTestPushDownChildOne'
-		superclassName: 'MCPToolClassMutationTestPushDownTarget'
-		slots: #(  )
-		classSlots: #(  ).
+		slots: #( sharedSlot keptSlot )
+		classSlots: #( sharedClassSlot keptClassSlot ).
+	childOne := self
+		            createClassNamed: 'MCPToolClassMutationTestPushDownChildOne'
+		            superclassName: 'MCPToolClassMutationTestPushDownTarget'
+		            slots: #(  )
+		            classSlots: #(  ).
 	self
 		createClassNamed: 'MCPToolClassMutationTestPushDownChildTwo'
 		superclassName: 'MCPToolClassMutationTestPushDownTarget'
 		slots: #(  )
 		classSlots: #(  ).
-	self
-		ensureMethodSource: 'slotProbe ^ sharedClassSlot'
-		protocol: 'testing'
-		on: (self classNamed: 'MCPToolClassMutationTestPushDownChildOne') classSide.
-	result := self callToolNamed: 'class_update' withArguments: (self
-			           updateRequestArgumentsForSlotAction: 'pushDown'
-			           className: 'MCPToolClassMutationTestPushDownTarget'
-			           slotName: 'sharedClassSlot'
-			           classSide: true).
+	self ensureMethodSource: 'slotProbe ^ sharedClassSlot' protocol: 'testing' on: childOne classSide.
+	instance := childOne new.
+	instance instVarNamed: 'sharedSlot' put: 41.
+	instance instVarNamed: 'keptSlot' put: 7.
+	childOne instVarNamed: 'sharedClassSlot' put: 23.
+	childOne instVarNamed: 'keptClassSlot' put: 8.
+	result := self callToolNamed: 'class_update' withArguments: {
+			          (#name -> 'MCPToolClassMutationTestPushDownTarget').
+			          (#slots -> (Dictionary with: 'pushDown' -> #( 'sharedSlot' ))).
+			          (#classSlots -> (Dictionary with: 'pushDown' -> #( 'sharedClassSlot' ))) } asDictionary.
 	self dataFrom: result.
 	target := self classNamed: 'MCPToolClassMutationTestPushDownTarget'.
 	childOne := self classNamed: 'MCPToolClassMutationTestPushDownChildOne'.
 	childTwo := self classNamed: 'MCPToolClassMutationTestPushDownChildTwo'.
-	childOne instVarNamed: 'sharedClassSlot' put: 23.
-	self assert: (target classSide slots collect: #name as: Array) equals: #(  ).
+	self assert: (target classSide slots collect: #name as: Array) equals: #( #keptClassSlot ).
 	self assert: (childOne classSide slots collect: #name as: Array) equals: #( #sharedClassSlot ).
 	self assert: (childTwo classSide slots collect: #name as: Array) equals: #( #sharedClassSlot ).
-	self assert: childOne slotProbe equals: 23
+	self assert: childOne slotProbe equals: 23.
+	self assert: (childOne instVarNamed: 'keptClassSlot') equals: 8.
+	self assert: (instance instVarNamed: 'sharedSlot') equals: 41.
+	self assert: (instance instVarNamed: 'keptSlot') equals: 7
 ]
 
 { #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdatePushingDownASlotThatPharoAbandonsInASubclassKeepsTheSubclassListed [
-	"Pharo reshapes the subclasses that get the slot too, and lists the new subclass it abandons in place of the subclass. It has already changed the class by then."
+	"Pharo reshapes the subclasses that get the slot too, and lists the new subclass it abandons in place of the subclass. It has already changed the class by then. The instance of the subclass it abandons keeps its fields as they were, read here as stored since Pharo may have numbered anew the slots the old subclass reads them through."
 
 	| target |
 	target := self
 		          createClassNamed: 'MCPToolClassMutationTestPushDownTarget'
 		          superclassName: 'Object'
-		          slots: #( movedSlot )
+		          slots: #( movedSlot keptSlot )
 		          classSlots: #(  ).
 	self withUnmigratableInstanceOf: 'MCPToolClassMutationTestPushDownChildOne' under: target name do: [ :instance |
 			| result |
+			instance instVarNamed: 'movedSlot' put: 41.
+			instance instVarNamed: 'keptSlot' put: 7.
 			result := self callToolNamed: 'class_update' withArguments: (self
 					           updateRequestArgumentsForSlotAction: 'pushDown'
 					           className: target name
@@ -1774,7 +1834,8 @@ MCPToolClassMutationTest >> testUpdatePushingDownASlotThatPharoAbandonsInASubcla
 			self assert: instance class superclass equals: (self classNamed: target name).
 			self
 				assert: (instance class superclass subclasses select: [ :each | each name = instance class name ])
-				equals: { instance class } ]
+				equals: { instance class }.
+			self assert: ((1 to: 2) collect: [ :index | instance instVarAt: index ]) equals: #( 41 7 ) ]
 ]
 
 { #category : 'tests - update' }
@@ -1918,13 +1979,16 @@ MCPToolClassMutationTest >> testUpdateRemoveSlotStopsOnRefactoringWarningByDefau
 
 { #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateRemovesClassSideSlot [
+	"The class keeps what the class-side slot after the removed one holds."
 
 	| result target |
-	self
-		createClassNamed: 'MCPToolClassMutationTestRemoveClassSlotTarget'
-		superclassName: 'Object'
-		slots: #(  )
-		classSlots: #( removableClassSlot ).
+	target := self
+		          createClassNamed: 'MCPToolClassMutationTestRemoveClassSlotTarget'
+		          superclassName: 'Object'
+		          slots: #(  )
+		          classSlots: #( removableClassSlot keptClassSlot ).
+	target instVarNamed: 'removableClassSlot' put: 41.
+	target instVarNamed: 'keptClassSlot' put: 7.
 	result := self callToolNamed: 'class_update' withArguments: (self
 			           updateRequestArgumentsForSlotAction: 'remove'
 			           className: 'MCPToolClassMutationTestRemoveClassSlotTarget'
@@ -1932,18 +1996,28 @@ MCPToolClassMutationTest >> testUpdateRemovesClassSideSlot [
 			           classSide: true).
 	self dataFrom: result.
 	target := self classNamed: 'MCPToolClassMutationTestRemoveClassSlotTarget'.
-	self assert: (target classSide slots collect: #name as: Array) equals: #(  )
+	self assert: (target classSide slots collect: #name as: Array) equals: #( #keptClassSlot ).
+	self assert: (target instVarNamed: 'keptClassSlot') equals: 7
 ]
 
 { #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateRemovesInstanceSlot [
+	"An instance keeps what the slots after the removed one hold, a virtual one included, and stays read-only."
 
-	| result target |
-	self
-		createClassNamed: 'MCPToolClassMutationTestRemoveSlotTarget'
-		superclassName: 'Object'
-		slots: #( removableSlot )
-		classSlots: #(  ).
+	| instance result target |
+	target := self
+		          createClassNamed: 'MCPToolClassMutationTestRemoveSlotTarget'
+		          superclassName: 'Object'
+		          slots: {
+				          #removableSlot.
+				          #keptSlot.
+				          (#flagSlot => BooleanSlot) }
+		          classSlots: #(  ).
+	instance := target new.
+	instance instVarNamed: 'removableSlot' put: 41.
+	instance instVarNamed: 'keptSlot' put: 8.
+	instance instVarNamed: 'flagSlot' put: true.
+	instance beReadOnlyObject.
 	result := self callToolNamed: 'class_update' withArguments: (self
 			           updateRequestArgumentsForSlotAction: 'remove'
 			           className: 'MCPToolClassMutationTestRemoveSlotTarget'
@@ -1951,7 +2025,10 @@ MCPToolClassMutationTest >> testUpdateRemovesInstanceSlot [
 			           classSide: false).
 	self dataFrom: result.
 	target := self classNamed: 'MCPToolClassMutationTestRemoveSlotTarget'.
-	self assert: (target slots collect: #name as: Array) equals: #(  )
+	self assert: (target slots collect: #name as: Array) equals: #( #keptSlot #flagSlot ).
+	self assert: (instance instVarNamed: 'keptSlot') equals: 8.
+	self assert: (instance instVarNamed: 'flagSlot').
+	self assert: instance isReadOnlyObject
 ]
 
 { #category : 'tests - update' }
@@ -2077,18 +2154,20 @@ MCPToolClassMutationTest >> testUpdateRenameSlotThatCannotFinishChangesNothing [
 
 { #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateRenamesClassSideSlotAndPreservesValue [
+	"The class keeps what the class-side slot after the renamed one holds."
 
 	| result target |
 	self
 		createClassNamed: 'MCPToolClassMutationTestRenameClassSideSlotTarget'
 		superclassName: 'Object'
 		slots: #(  )
-		classSlots: #( oldClassSlot ).
+		classSlots: #( oldClassSlot keptClassSlot ).
 	target := self classNamed: 'MCPToolClassMutationTestRenameClassSideSlotTarget'.
 	self ensureMethodSource: 'oldClassSlot ^ oldClassSlot' protocol: 'accessing' on: target classSide.
 	self ensureMethodSource: 'oldClassSlot: anObject oldClassSlot := anObject' protocol: 'accessing' on: target classSide.
 	self ensureMethodSource: 'slotProbe ^ self oldClassSlot' protocol: 'testing' on: target classSide.
 	target oldClassSlot: 73.
+	target instVarNamed: 'keptClassSlot' put: 17.
 	result := self callToolNamed: 'class_update' withArguments: (self
 			           updateRequestArgumentsForSlotRenameInClassNamed: 'MCPToolClassMutationTestRenameClassSideSlotTarget'
 			           slotName: 'oldClassSlot'
@@ -2096,37 +2175,33 @@ MCPToolClassMutationTest >> testUpdateRenamesClassSideSlotAndPreservesValue [
 			           classSide: true).
 	self dataFrom: result.
 	target := self classNamed: 'MCPToolClassMutationTestRenameClassSideSlotTarget'.
-	self assert: (target classSide slots collect: #name as: Array) equals: #( #renamedClassSlot ).
+	self assert: (target classSide slots collect: #name as: Array) equals: #( #keptClassSlot #renamedClassSlot ).
 	self deny: (target classSide includesSelector: #oldClassSlot).
 	self deny: (target classSide includesSelector: #oldClassSlot:).
 	self assert: (target classSide includesSelector: #renamedClassSlot).
 	self assert: (target classSide includesSelector: #renamedClassSlot:).
 	self assert: target renamedClassSlot equals: 73.
+	self assert: (target instVarNamed: 'keptClassSlot') equals: 17.
 	target renamedClassSlot: 91.
 	self assert: target slotProbe equals: 91
 ]
 
 { #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateRenamesInstanceSlotAndUpdatesReferences [
+	"An instance keeps under the new name what the slot held, and what the slot after it holds."
 
 	| instance result target |
-	self
-		createClassNamed: 'MCPToolClassMutationTestRenameSlotTarget'
-		superclassName: 'Object'
-		slots: #( oldSlot )
-		classSlots: #(  ).
-	self
-		ensureMethodSource: 'oldSlot ^ oldSlot'
-		protocol: 'accessing'
-		on: (self classNamed: 'MCPToolClassMutationTestRenameSlotTarget').
-	self
-		ensureMethodSource: 'oldSlot: anObject oldSlot := anObject'
-		protocol: 'accessing'
-		on: (self classNamed: 'MCPToolClassMutationTestRenameSlotTarget').
-	self
-		ensureMethodSource: 'slotProbe ^ self oldSlot'
-		protocol: 'testing'
-		on: (self classNamed: 'MCPToolClassMutationTestRenameSlotTarget').
+	target := self
+		          createClassNamed: 'MCPToolClassMutationTestRenameSlotTarget'
+		          superclassName: 'Object'
+		          slots: #( oldSlot keptSlot )
+		          classSlots: #(  ).
+	self ensureMethodSource: 'oldSlot ^ oldSlot' protocol: 'accessing' on: target.
+	self ensureMethodSource: 'oldSlot: anObject oldSlot := anObject' protocol: 'accessing' on: target.
+	self ensureMethodSource: 'slotProbe ^ self oldSlot' protocol: 'testing' on: target.
+	instance := target new.
+	instance oldSlot: 37.
+	instance instVarNamed: 'keptSlot' put: 7.
 	result := self callToolNamed: 'class_update' withArguments: (self
 			           updateRequestArgumentsForSlotRenameInClassNamed: 'MCPToolClassMutationTestRenameSlotTarget'
 			           slotName: 'oldSlot'
@@ -2134,15 +2209,16 @@ MCPToolClassMutationTest >> testUpdateRenamesInstanceSlotAndUpdatesReferences [
 			           classSide: false).
 	self dataFrom: result.
 	target := self classNamed: 'MCPToolClassMutationTestRenameSlotTarget'.
-	instance := target new.
-	instance renamedSlot: 37.
-	self assert: (target slots collect: #name as: Array) equals: #( #renamedSlot ).
+	self assert: (target slots collect: #name as: Array) equals: #( #keptSlot #renamedSlot ).
 	self deny: (target includesSelector: #oldSlot).
 	self deny: (target includesSelector: #oldSlot:).
 	self assert: (target includesSelector: #renamedSlot).
 	self assert: (target includesSelector: #renamedSlot:).
 	self assert: instance renamedSlot equals: 37.
-	self assert: instance slotProbe equals: 37
+	self assert: instance slotProbe equals: 37.
+	self assert: (instance instVarNamed: 'keptSlot') equals: 7.
+	instance renamedSlot: 91.
+	self assert: instance slotProbe equals: 91
 ]
 
 { #category : 'tests' }

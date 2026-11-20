@@ -70,6 +70,21 @@ MCPMoveSlotCommand >> refactoringForBehavior: aBehavior [
 					   ifFalse: [ Error signal: 'direction must be pullUpSlot or pushDownSlot.' ] ]) variable: self slotName class: aBehavior
 ]
 
+{ #category : 'accessing' }
+MCPMoveSlotCommand >> unrestoredHolders [
+	"The objects below the class that held a value in the slot, if the move stopped partway with their class lacking it. The class's own instances lose the slot to a push-down."
+
+	| behavior |
+	heldValues ifNil: [ ^ #(  ) ].
+	behavior := self refactoringBehaviorForClass: self currentClass.
+	^ heldValues
+		  select: [ :each |
+				  each value key = self slotName asSymbol and: [
+						  each value value isNotNil and: [
+							  (each key class inheritsFrom: behavior) and: [ (each key class hasSlotNamed: self slotName) not ] ] ] ]
+		  thenCollect: [ :each | each key ]
+]
+
 { #category : 'private' }
 MCPMoveSlotCommand >> validatePullUpInto: aBehavior [
 	"A pull-up moves the slot into the class it names. Named on a class that already has the slot, the refactoring fails on a duplicate slot without saying which class to name."
