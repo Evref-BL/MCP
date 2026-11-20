@@ -1911,7 +1911,7 @@ MCPToolContractsTest >> testMCPRemoveToolRefreshesAdvertisedTools [
 
 { #category : 'tests' }
 MCPToolContractsTest >> testMCPsOwnTestFixturesAreNotServed [
-	"MCP's default group loads its own tests, so a fixture that names itself and forgot to answer false would be in the catalog of every server in the image. Classes a test generates are left out of the sweep: they exist to be discovered and removed again."
+	"An image that loads MCP's tests serves MCP too, so a fixture that names itself and forgot to answer false would be in the catalog of every server in that image. Classes a test generates are left out of the sweep: they exist to be discovered and removed again."
 
 	| served |
 	served := Set new.
@@ -1948,11 +1948,11 @@ MCPToolContractsTest >> testMessageNotUnderstoodByAClassSaysItsInstancesUndersta
 		equals:
 		'Instances of MCPDebugWatchTestTarget understand sumTo:, but MCPDebugWatchTestTarget itself does not: sumTo: is an instance-side method. Send it to an instance.'.
 	error := self errorFrom:
-		         (self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> 'JRPCTCPClient port: 4000') } asDictionary).
+		         (self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> 'JRPCHTTPServer port: 4000') } asDictionary).
 	self
 		assert: (error at: #note)
 		equals:
-		'Instances of JRPCTCPClient understand port:, but JRPCTCPClient itself does not: port: is an instance-side method. Send it to an instance.'.
+		'Instances of JRPCHTTPServer understand port:, but JRPCHTTPServer itself does not: port: is an instance-side method. Send it to an instance.'.
 	error := self errorFrom:
 		         (self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> 'OrderedCollection add: 1') } asDictionary).
 	self

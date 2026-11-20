@@ -43,8 +43,8 @@ names in place of `load`. The baseline groups are:
 - `Telemetry`: the OpenTelemetry backend
 - `Tests`: the tests of `Core` and `IDE`; `UI Tests` and `Telemetry Tests` hold
   those of `UI` and `Telemetry`
-- `default`: `Core`, `IDE`, `UI` and their tests
-- `all`: every group
+- `default`: `Core`, `IDE` and `UI`
+- `all`: every group, the tests included
 
 An image without a display has no use for `UI` and loads `#( 'Core' 'IDE' )`.
 A project embedding the server and serving tools of its own loads `Core` alone,
@@ -96,6 +96,9 @@ import { installGuidance } from "@evref-bl/pharo-mcp";
 
 installGuidance({ host: "codex", cwd: process.cwd() });
 ```
+
+An integration that places those files itself reads them from
+`templateDirectory()`, the package's `templates` directory.
 
 ## Contributing
 

@@ -13,8 +13,8 @@ Class {
 		'selector',
 		'sender'
 	],
-	#category : 'MCP-Utilities',
-	#package : 'MCP',
+	#category : 'MCP-IDE-Utilities',
+	#package : 'MCP-IDE',
 	#tag : 'Utilities'
 }
 

@@ -1,6 +1,12 @@
 Extension { #name : 'Object' }
 
 { #category : '*MCP-IDE' }
+Object >> mcpCompilationAst [
+
+	^ nil
+]
+
+{ #category : '*MCP-IDE' }
 Object >> mcpErrorPosition [
 
 	^ nil

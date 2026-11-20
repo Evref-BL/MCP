@@ -79,7 +79,8 @@ tool works.
 
 Live checks require an approved safe image boundary:
 
-- loading `BaselineOfMCP` into a clean image;
+- loading `BaselineOfMCP`'s `all` group, which holds the tests, into a clean
+  image;
 - starting `MCP` over HTTP;
 - verifying MCP tool listing and specific tool calls;
 - running the test packages `.smalltalk.ston` lists under `#testing`;
@@ -104,8 +105,8 @@ The public sources behind the Pharo guidance are in
 
 ## Version Compatibility
 
-The core baseline loads PharoBackwardCompatibility, JRPC, and PCRE2.
-OpenTelemetry is loaded only by the optional `Telemetry` group. Code should
+The `Core` group loads PharoBackwardCompatibility and JRPC, `IDE` adds PCRE2,
+and OpenTelemetry is loaded only by the optional `Telemetry` group. Code should
 target the Pharo 14 API; PharoBackwardCompatibility backports supported APIs to
 older images. It has no surface groups, so its default baseline is the whole of
 it:
@@ -117,7 +118,7 @@ spec
 ```
 
 A difference it does not cover belongs in a package the baseline loads only
-where it applies, the way `MCP-Compatibility-From13` is loaded when
+where it applies, the way `MCP-IDE-Compatibility-From13` is loaded when
 `SystemVersion current major >= 13`. Code written against a newer Pharo stays
 as it is: what an older version needs another body for is a method of its own,
 which a `From` package holds as written and its `Before` counterpart answers

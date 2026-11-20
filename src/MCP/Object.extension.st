@@ -7,12 +7,6 @@ Object >> asMCPStructureCallToolResult [
 ]
 
 { #category : '*MCP' }
-Object >> mcpCompilationAst [
-
-	^ nil
-]
-
-{ #category : '*MCP' }
 Object >> mcpSignalerContext [
 
 	^ nil

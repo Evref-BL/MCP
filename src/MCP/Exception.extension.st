@@ -49,6 +49,13 @@ Exception >> isIncorrectJSON [
 ]
 
 { #category : '*MCP' }
+Exception >> mcpAddNoteTo: aDictionary ifItLeavesOutSuggestions: aBlock [
+	"Core reads no Pharo code, so it has no note to add."
+
+	
+]
+
+{ #category : '*MCP' }
 Exception >> mcpAddToolErrorDetailsTo: aDictionary [
 	"Default: ordinary exceptions do not add tool-specific fields."
 

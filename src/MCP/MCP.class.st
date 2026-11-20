@@ -172,6 +172,13 @@ MCP class >> supportedProtocolVersions [
 	^ self legacyProtocolVersions , self modernProtocolVersions
 ]
 
+{ #category : 'accessing' }
+MCP class >> version [
+	"The MCP release this code belongs to. The release pull request sets it."
+
+	^ '3.8.0'
+]
+
 { #category : 'configuration' }
 MCP >> addPrompt: aPromptOrPromptClass [
 	"Register one prompt, as a class or as a ready instance. Every registered prompt is listed by prompts/list."
@@ -828,7 +835,7 @@ MCP >> serverIdentity [
 	^ MCPStructureServerInfo new
 		  name: 'MCP Pharo';
 		  title: 'The MCP server for Pharo';
-		  version: '3.8.0';
+		  version: self class version;
 		  websiteUrl: 'https://github.com/Evref-BL/MCP';
 		  icons: { (MCPStructureIcon pngIconNamed: #pharo) };
 		  yourself
