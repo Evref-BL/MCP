@@ -13,8 +13,7 @@ Class {
 		'removed',
 		'renamed',
 		'pulledUp',
-		'pushedDown',
-		'replacement'
+		'pushedDown'
 	],
 	#category : 'MCP-IDE-Specs',
 	#package : 'MCP-IDE',
@@ -42,19 +41,12 @@ MCPSlotDelta >> asContextValue [
 
 	| context |
 	context := Dictionary new.
-	self hasReplacement ifTrue: [ context at: #replace put: self replacement ].
 	self added ifNotEmpty: [ context at: #add put: self added ].
 	self removed ifNotEmpty: [ context at: #remove put: self removed ].
 	self renamed ifNotEmpty: [ context at: #rename put: self renamed ].
 	self pulledUp ifNotEmpty: [ context at: #pullUp put: self pulledUp ].
 	self pushedDown ifNotEmpty: [ context at: #pushDown put: self pushedDown ].
 	^ context
-]
-
-{ #category : 'testing' }
-MCPSlotDelta >> hasReplacement [
-
-	^ replacement isNotNil
 ]
 
 { #category : 'initialization' }
@@ -64,17 +56,14 @@ MCPSlotDelta >> initializeFrom: aDictionary in: aToolRequest [
 	removed := aToolRequest stringCollectionArgumentNamed: 'remove' in: aDictionary.
 	pulledUp := aToolRequest stringCollectionArgumentNamed: 'pullUp' in: aDictionary.
 	pushedDown := aToolRequest stringCollectionArgumentNamed: 'pushDown' in: aDictionary.
-	replacement := (aToolRequest valueNamed: 'replace' in: aDictionary ifAbsent: [ nil ]) ifNotNil: [ :value |
-		               aToolRequest stringCollectionFrom: value ].
 	renamed := self renamesFrom: (aToolRequest valueNamed: 'rename' in: aDictionary ifAbsent: [ nil ])
 ]
 
 { #category : 'testing' }
 MCPSlotDelta >> isEmpty [
 
-	^ self hasReplacement not and: [
-			  self added isEmpty and: [
-				  self removed isEmpty and: [ self renamed isEmpty and: [ self pulledUp isEmpty and: [ self pushedDown isEmpty ] ] ] ] ]
+	^ self added isEmpty and: [
+		  self removed isEmpty and: [ self renamed isEmpty and: [ self pulledUp isEmpty and: [ self pushedDown isEmpty ] ] ] ]
 ]
 
 { #category : 'accessing' }
@@ -109,10 +98,4 @@ MCPSlotDelta >> renamesFrom: aDictionaryOrNil [
 			  renames
 				  at: key asString put: (aDictionaryOrNil at: key) asString;
 				  yourself ]
-]
-
-{ #category : 'accessing' }
-MCPSlotDelta >> replacement [
-
-	^ replacement
 ]

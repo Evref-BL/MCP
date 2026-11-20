@@ -75,7 +75,7 @@ MCPToolClassMutationTest >> createdClassNames [
 	     'MCPToolClassMutationTestSharedVariablePreservationTarget' 'MCPToolClassMutationTestSharedPoolTarget'
 	     'MCPToolClassMutationTestSharedPoolRemovalTarget' 'MCPToolClassMutationTestMissingSharedPoolTarget'
 	     'MCPToolClassMutationTestLayoutTarget' 'MCPToolClassMutationTestMissingLayoutTarget'
-	     'MCPToolClassMutationTestInvalidLayoutTarget' 'MCPToolClassMutationTestDefinitionTarget'
+	     'MCPToolClassMutationTestInvalidLayoutTarget'
 	     'MCPToolClassMutationTestAddSlotTarget' 'MCPToolClassMutationTestAddClassSlotTarget'
 	     'MCPToolClassMutationTestRemoveSlotTarget' 'MCPToolClassMutationTestRemoveClassSlotTarget'
 	     'MCPToolClassMutationTestRenameSlotTarget' 'MCPToolClassMutationTestRenameClassSideSlotTarget'
@@ -268,8 +268,7 @@ MCPToolClassMutationTest >> testClassToolSchemaDescriptionsExplainRecategorizati
 	slotsSchema := (tool inputSchema asJRPCJSON at: #properties) at: 'slots'.
 	self
 		assert: (((slotsSchema at: #properties) at: 'rename') at: #description)
-		equals: 'Slots to rename, as current name to new name. Values are migrated and references updated.'.
-	self assert: ((((slotsSchema at: #properties) at: 'replace') at: #description) includesSubstring: 'Prefer add and remove')
+		equals: 'Slots to rename, as current name to new name. Values are migrated and references updated.'
 ]
 
 { #category : 'tests - schema' }
@@ -294,7 +293,7 @@ MCPToolClassMutationTest >> testClassToolSchemasDeclareExpectedInputs [
 	"Slots are patched, so their argument is a delta rather than a list."
 	slotsSchema := (MCPToolUpdateClass new inputSchema asJRPCJSON at: #properties) at: 'slots'.
 	self assert: (slotsSchema at: #type) equals: 'object'.
-	self assert: (slotsSchema at: #properties) keys asSet equals: #( 'add' 'remove' 'rename' 'pullUp' 'pushDown' 'replace' ) asSet
+	self assert: (slotsSchema at: #properties) keys asSet equals: #( 'add' 'remove' 'rename' 'pullUp' 'pushDown' ) asSet
 ]
 
 { #category : 'tests - create' }
@@ -1341,12 +1340,6 @@ MCPToolClassMutationTest >> testUpdateMapsClassPatchFieldsToUpdateActions [
 	self assert: (self updatePlansFor: { (#package -> 'MCP') }) first updateAction equals: 'move'.
 	self assert: (self updatePlansFor: { (#tag -> 'Commands') }) first updateAction equals: 'move'.
 	self assert: (self updatePlansFor: { (#comment -> '') }) first updateAction equals: 'setComment'.
-	self
-		assert: (self updatePlansFor: { (#slots -> (Dictionary with: 'replace' -> #( 'slot' ))) }) first updateAction
-		equals: 'replaceDefinition'.
-	self
-		assert: (self updatePlansFor: { (#classSlots -> (Dictionary with: 'replace' -> #( 'Current' ))) }) first updateAction
-		equals: 'replaceDefinition'.
 	self assert: (self updatePlansFor: { (#traits -> #( 'TAbleToRotate' )) }) first updateAction equals: 'replaceTraits'.
 	self assert: (self updatePlansFor: { (#sharedVariables -> #( 'Current' )) }) first updateAction equals: 'replaceSharedVariables'.
 	self
@@ -1434,20 +1427,6 @@ MCPToolClassMutationTest >> testUpdateOfAGlobalThatIsNotAClassIsRefused [
 	self assert: (error at: #errorCode) equals: 'NotAClass'.
 	self assert: (error at: #class) equals: 'Transcript'.
 	self assert: (error at: #message) equals: 'Transcript is a global variable, not a class.'
-]
-
-{ #category : 'tests - planning' }
-MCPToolClassMutationTest >> testUpdatePlansADefinitionReplacement [
-
-	| context plan |
-	plan := (self updatePlansFor: {
-			         (#slots -> (Dictionary with: 'replace' -> #( 'first' 'second' ))).
-			         (#classSlots -> (Dictionary with: 'replace' -> #( 'Current' ))) }) first.
-	context := plan requestedContext.
-	self assert: plan updateAction equals: 'replaceDefinition'.
-	self assert: (context at: #name) equals: 'Object'.
-	self assert: (context at: #slots) equals: (Dictionary with: #replace -> #( 'first' 'second' )).
-	self assert: (context at: #classSlots) equals: (Dictionary with: #replace -> #( 'Current' ))
 ]
 
 { #category : 'tests - planning' }
@@ -1853,7 +1832,6 @@ MCPToolClassMutationTest >> testUpdateReadsASlotPatch [
 	self deny: delta isEmpty.
 	self assert: (delta renamed at: 'oldName') equals: 'newName'.
 	self assert: delta added isEmpty.
-	self deny: delta hasReplacement.
 	self
 		assert: ((tool requestedContextFor: request checked: true) at: #classSlots)
 		equals: (Dictionary with: #rename -> delta renamed).
@@ -1904,15 +1882,20 @@ MCPToolClassMutationTest >> testUpdateRefusesAClassSideName [
 ]
 
 { #category : 'tests - update' }
-MCPToolClassMutationTest >> testUpdateRefusesASlotListWithThePatchItTakes [
-	"class_create takes its slots as a list, and a caller that comes from it sends class_update one too. The refusal names the keys of the patch, with the list under the one that adds the slots."
+MCPToolClassMutationTest >> testUpdateRefusesASlotPatchItCannotReadNamingTheKeysItTakes [
+	"class_create takes its slots as a list, and a caller that comes from it sends class_update one too. The refusal names the keys of the patch, with the list under the one that adds the slots. A key the patch does not take is refused naming them too, even beside one it takes, rather than dropped."
 
 	self
 		assertResult: (self callDiscoveredToolNamed: 'class_update' withArguments: {
 					 (#name -> self originalClassName).
 					 (#slots -> #( 'color' )) } asDictionary)
 		refusesArgumentsSaying:
-		'slots must be object, not array. Give it as an object with the keys add, pullUp, pushDown, remove, rename or replace, for example {"add":["color"]}.'
+		'slots must be object, not array. Give it as an object with the keys add, pullUp, pushDown, remove or rename, for example {"add":["color"]}.'.
+	self
+		assertResult: (self callDiscoveredToolNamed: 'class_update' withArguments: {
+					 (#name -> self originalClassName).
+					 (#classSlots -> (Dictionary with: 'remove' -> #( 'color' ) with: 'delete' -> #( 'color' ))) } asDictionary)
+		refusesArgumentsSaying: 'classSlots.delete is not accepted here; expected one of add, pullUp, pushDown, remove, rename.'
 ]
 
 { #category : 'tests - update' }
@@ -2378,31 +2361,6 @@ MCPToolClassMutationTest >> testUpdateReplacesSharedVariables [
 	self dataFrom: result.
 	targetClass := self classNamed: 'MCPToolClassMutationTestSharedVariableTarget'.
 	self assert: targetClass classVarNames equals: #( #BetaShared )
-]
-
-{ #category : 'tests - update' }
-MCPToolClassMutationTest >> testUpdateReplacesSlotDefinitionAndPreservesMatchingValues [
-
-	| instance result target |
-	self
-		createClassNamed: 'MCPToolClassMutationTestDefinitionTarget'
-		superclassName: 'Object'
-		slots: #( oldSlot keptSlot )
-		classSlots: #( oldClassSlot keptClassSlot ).
-	target := self classNamed: 'MCPToolClassMutationTestDefinitionTarget'.
-	instance := target new.
-	instance instVarNamed: 'keptSlot' put: 13.
-	target instVarNamed: 'keptClassSlot' put: 17.
-	result := self callToolNamed: 'class_update' withArguments: {
-			          (#name -> 'MCPToolClassMutationTestDefinitionTarget').
-			          (#slots -> (Dictionary with: 'replace' -> #( 'keptSlot' 'newSlot' ))).
-			          (#classSlots -> (Dictionary with: 'replace' -> #( 'keptClassSlot' 'newClassSlot' ))) } asDictionary.
-	self dataFrom: result.
-	target := self classNamed: 'MCPToolClassMutationTestDefinitionTarget'.
-	self assert: (target slots collect: #name as: Array) equals: #( #keptSlot #newSlot ).
-	self assert: (target classSide slots collect: #name as: Array) equals: #( #keptClassSlot #newClassSlot ).
-	self assert: (instance instVarNamed: 'keptSlot') equals: 13.
-	self assert: (target instVarNamed: 'keptClassSlot') equals: 17
 ]
 
 { #category : 'tests - update' }
