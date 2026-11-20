@@ -400,12 +400,12 @@ MCPOpenTelemetryObservabilityBackend >> unknownArgumentNamesIn: inputObject for:
 
 { #category : 'private - recording' }
 MCPOpenTelemetryObservabilityBackend >> withoutFailingTheCall: aBlock [
-	"Recording is never a reason for a tool call to fail. A warning while recording, such as a deprecation the SDK runs into, is passed over and the recording goes on; anything else that goes wrong is dropped, and the call goes on unrecorded."
+	"Recording is never a reason for a tool call to fail. A warning while recording, such as a deprecation the SDK runs into, is resumed as a tool call resumes it, and the recording goes on; anything that goes wrong is dropped, and the call goes on unrecorded."
 
 	^ [
 		  aBlock
 			  on: Warning
-			  do: [ :warning | warning resume: nil ] ]
+			  do: [ :warning | warning mcpResume ] ]
 		  on: Error
 		  do: [ :error | error return: nil ]
 ]

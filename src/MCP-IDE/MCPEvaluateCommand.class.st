@@ -309,7 +309,7 @@ MCPEvaluateCommand >> resumeNotification: aNotification collectingWarningInto: w
 	"A warning is the one notification the caller has to see: the value still arrives, and the warning is what says it is not what it looks like. Pharo's own description names the class first, which is the word that gets read, and the same text is kept once, since a loop over a deprecated method raises one sentence as often as it runs."
 
 	(aNotification isKindOf: Warning) ifTrue: [ warningDescriptions addIfNotPresent: aNotification description ].
-	^ self callBoundary resumeNotification: aNotification
+	^ aNotification mcpResume
 ]
 
 { #category : 'private' }
