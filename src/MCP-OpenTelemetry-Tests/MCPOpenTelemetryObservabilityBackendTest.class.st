@@ -96,6 +96,17 @@ MCPOpenTelemetryObservabilityBackendTest >> setUp [
 ]
 
 { #category : 'private' }
+MCPOpenTelemetryObservabilityBackendTest >> settingsAskingForTraces: aBoolean [
+	"Settings of an environment that asks for traces or not, with no settings file to fall back on."
+
+	| environment |
+	environment := Dictionary new.
+	environment at: 'XDG_CONFIG_HOME' put: (FileLocator temp asFileReference / 'mcp-no-such-config') fullName.
+	aBoolean ifTrue: [ environment at: 'OTEL_EXPORTER_OTLP_ENDPOINT' put: 'http://127.0.0.1:9' ].
+	^ MCPOpenTelemetrySettings environment: environment
+]
+
+{ #category : 'private' }
 MCPOpenTelemetryObservabilityBackendTest >> startToolCall [
 
 	^ self startToolCallWith: Dictionary new
@@ -368,6 +379,38 @@ MCPOpenTelemetryObservabilityBackendTest >> testSessionLifecycleGoesThroughTheLo
 ]
 
 { #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testSettingsThatAskForNoTracesRecordNothing [
+
+	| mcp |
+	mcp := MCP new.
+	backend := mcp useOpenTelemetryObservabilityWith: (self settingsAskingForTraces: false).
+	self deny: mcp observabilityEnabled.
+	self assert: self startToolCall isNil.
+	backend recordSessionStart.
+	self assert: exporter snapshots isEmpty
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testStartingTheImageAgainConfiguresItsServersFromTheSettingsItNowHas [
+
+	| traced untraced untracedBackend |
+	traced := MCP new.
+	traced observability: backend.
+	untraced := MCP new.
+	untracedBackend := untraced observability.
+	MCPOpenTelemetryObservabilityBackend
+		reconfigure: {
+				traced.
+				untraced }
+		with: (self settingsAskingForTraces: false).
+	self assert: traced observability identicalTo: backend.
+	self assert: backend isNoop.
+	self assert: untraced observability identicalTo: untracedBackend.
+	MCPOpenTelemetryObservabilityBackend reconfigure: { traced } with: (self settingsAskingForTraces: true).
+	self deny: backend isNoop
+]
+
+{ #category : 'tests' }
 MCPOpenTelemetryObservabilityBackendTest >> testStatusDistinguishesErrorsFromResults [
 
 	self assert: (backend statusForResult: self successToolResult error: nil) equals: 'ok'.
@@ -471,11 +514,11 @@ MCPOpenTelemetryObservabilityBackendTest >> testUsingOpenTelemetryInstallsABacke
 
 	| mcp |
 	mcp := MCP new.
-	backend := mcp useOpenTelemetryObservability.
+	backend := mcp useOpenTelemetryObservabilityWith: (self settingsAskingForTraces: true).
 	self assert: mcp observability identicalTo: backend.
 	self assert: backend class equals: MCPOpenTelemetryObservabilityBackend.
 	self assert: mcp observabilityEnabled.
-	self assert: (tracerProvider resource attributes at: 'service.version') equals: mcp serverIdentity version
+	self assert: (OTTracerProvider current resource attributes at: 'service.version') equals: mcp serverIdentity version
 ]
 
 { #category : 'private' }

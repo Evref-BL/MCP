@@ -62,7 +62,17 @@ mcp useOpenTelemetryObservability
 
 The exporter is configured the standard way, through the `OTEL_*` environment
 variables the image was started with; see opentelemetry-pharo for the ones it
-reads.
+reads. An image started by hand rarely has them, so when the environment sets
+no `OTEL_*` variable the image reads the settings file the pharo-agent plugin
+and PLexus read too: `$XDG_CONFIG_HOME/pharo-agent/otel.env`
+(`~/.config/pharo-agent/otel.env`, or `%APPDATA%\pharo-agent\otel.env` on
+Windows), one `OTEL_NAME=value` per line.
+
+Nothing is recorded while neither asks for traces: no traces exporter other
+than OTLP, and an OTLP endpoint (or an `OTEL_CONFIG_FILE`). The image reads
+its settings again each time it starts, and rebuilds its providers from them,
+so a saved image sends where its settings say now, or nothing once they are
+gone, never where they said when it was saved.
 
 Enabling it sets the image's OpenTelemetry resource, for every provider in
 the image and those made later, to what describes the server: `service.name`
