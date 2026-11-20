@@ -147,15 +147,7 @@ MCPEvaluateCommand >> evaluate [
 MCPEvaluateCommand >> evaluateWithinCallBoundary [
 	"The boundary MCPTool>>executeRequest:do:onError: keeps around a call, in the process the code runs in, so that no exception goes unhandled there, opens a debugger and leaves the call waiting for its limit."
 
-	| boundary |
-	boundary := self callBoundary.
-	[
-		[ self evaluate ]
-			on: Notification
-			do: [ :notification |
-					notification mcpResumesAtToolBoundary
-						ifTrue: [ boundary resumeNotification: notification ]
-						ifFalse: [ notification pass ] ] ]
+	[ self callBoundary resumingNotificationsDuring: [ self evaluate ] ]
 		on: Exception
 		do: [ :error | self failureFor: error ]
 ]

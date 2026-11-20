@@ -2125,15 +2125,24 @@ MCPToolClassMutationTest >> testUpdateRenamesInstanceSlotAndUpdatesReferences [
 
 { #category : 'tests' }
 MCPToolClassMutationTest >> testUpdateRenamesTheClassItsSubclassesAndItsReferences [
-	"A rename is a refactoring that takes a second, so one rename is read every way."
+	"A rename is a refactoring that takes a second, so one rename is read every way, to a name a method already refers to besides. Loaded code can name a class before it exists, which a plain compile refuses."
 
-	| reference result |
-	result := self callToolNamed: 'class_update' withArguments: self updateRequestArgumentsForRename.
+	| referenceClass reference result |
+	referenceClass := self classNamed: self referenceClassName.
+	self withoutEpiceaDuring: [
+			referenceClass methodInstaller
+				logged: false;
+				install: (referenceClass compiler
+						 permitUndeclared: true;
+						 compile: 'namesTheNewName ^ ' , self renamedClassName)
+				into: referenceClass compiler: nil ].
+	result := [ self callToolNamed: 'class_update' withArguments: self updateRequestArgumentsForRename ] ensure: [
+		          self removeSelector: #namesTheNewName from: referenceClass ].
 	self deny: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
 	self assert: (Smalltalk globals includesKey: self renamedClassName asSymbol).
 	self deny: (Smalltalk globals includesKey: self originalClassName asSymbol).
 	self assert: (self classNamed: self subclassName) superclass name asString equals: self renamedClassName.
-	reference := (self classNamed: self referenceClassName) new.
+	reference := referenceClass new.
 	self assert: reference referencedClass name asString equals: self renamedClassName.
 	self assert: reference newReferencedInstance class name asString equals: self renamedClassName
 ]

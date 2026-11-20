@@ -29,10 +29,10 @@ MCPToolDebugSearch >> description [
 
 { #category : 'private - reading' }
 MCPToolDebugSearch >> descriptionOf: aDebugger [
-	"A debugger as a failure is described: its exception, and the frames nearest the stop carrying the receiver and the frame's variables under their own names."
+	"An open debugger as a failure is described: its exception, and the frames nearest the stop carrying the receiver and the frame's variables under their own names. A closed debugger stays in the image until it is collected, so its window says whether it is open."
 
 	| session |
-	session := [ aDebugger session ]
+	session := [ aDebugger window ifNotNil: [ :window | window isOpen ifTrue: [ aDebugger session ] ] ]
 		           on: Error
 		           do: [ :error | nil ].
 	session ifNil: [ ^ nil ].
@@ -70,7 +70,7 @@ MCPToolDebugSearch >> inputProperties [
 
 { #category : 'private - reading' }
 MCPToolDebugSearch >> openDebuggersMatching: aQuery [
-	"The image already knows which debuggers are open, so nothing has to be kept between calls, and a person's debugger is left exactly as it was."
+	"The image holds every debugger, so nothing has to be kept between calls, and a person's debugger is left exactly as it was."
 
 	| entries |
 	entries := OrderedCollection new.

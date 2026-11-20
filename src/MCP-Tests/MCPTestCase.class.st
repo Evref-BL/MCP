@@ -277,19 +277,22 @@ MCPTestCase >> removeSelector: aSelector from: aBehavior [
 
 { #category : 'private - classes' }
 MCPTestCase >> restoreClassNamed: originalName renamedTo: renamedName [
-	"A fixture class a test renamed gets its name back, and a copy a failed test left under the new name beside it goes. The fixture and every reference to it are in the fixtures' package, so the rename reads that package rather than the whole image."
+	"A fixture class a test renamed gets its name back, and a copy a failed test left under the new name beside it goes. So does either name a method or a rename, the restoring one included, left in Undeclared, so that every run starts as the first. The fixture and every reference to it are in the fixtures' package, so the rename reads that package rather than the whole image."
 
-	| original renamed |
+	| globals original renamed |
+	globals := self class environment.
 	original := originalName asSymbol.
 	renamed := renamedName asSymbol.
 	self withoutEpiceaDuring: [
-			((Smalltalk globals includesKey: original) and: [ Smalltalk globals includesKey: renamed ]) ifTrue: [
-				(Smalltalk globals at: renamed) removeFromSystem ].
-			((Smalltalk globals includesKey: renamed) and: [ (Smalltalk globals includesKey: original) not ]) ifTrue: [
+			((globals includesKey: original) and: [ globals includesKey: renamed ]) ifTrue: [ (globals at: renamed) removeFromSystem ].
+			((globals includesKey: renamed) and: [ (globals includesKey: original) not ]) ifTrue: [
 					(ReRenameClassRefactoring
 						 model: (RBNamespace onEnvironment: (RBBrowserEnvironment new forPackageNames: #( 'MCP-Tests-Resources' )))
 						 rename: renamedName
-						 to: originalName) execute ] ]
+						 to: originalName) execute ] ].
+	{
+		original.
+		renamed } do: [ :each | Undeclared removeKey: each ifAbsent: [ nil ] ]
 ]
 
 { #category : 'running' }

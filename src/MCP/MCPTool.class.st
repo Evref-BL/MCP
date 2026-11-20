@@ -641,17 +641,10 @@ MCPTool >> executeRequest: request do: executionBlock [
 
 { #category : 'private - execution' }
 MCPTool >> executeRequest: request do: executionBlock onError: errorBlock [
-	"Run the call inside one exception boundary. The error block receives the error.
-	Every Warning and Notification is an Exception, so notifications are resumed here instead of failing the call."
+	"Run the call inside one exception boundary. The error block receives the error."
 
 	^ self duringCall: [
-			  [
-				  [ executionBlock value ]
-					  on: Notification
-					  do: [ :notification |
-							  notification mcpResumesAtToolBoundary
-								  ifTrue: [ self resumeNotification: notification ]
-								  ifFalse: [ notification pass ] ] ]
+			  [ self resumingNotificationsDuring: executionBlock ]
 				  on: Exception
 				  do: [ :error | errorBlock value: error ] ]
 ]
@@ -968,6 +961,18 @@ MCPTool >> resumeNotification: aNotification [
 				   do: [ :nested | self resumeNotification: nested ] ]
 			   on: UnhandledError
 			   do: [ :unhandled | unhandled return: nil ])
+]
+
+{ #category : 'private - execution' }
+MCPTool >> resumingNotificationsDuring: aBlock [
+	"Every Warning and Notification is an Exception, so notifications are resumed here instead of failing the call."
+
+	^ aBlock
+		  on: Notification
+		  do: [ :notification |
+				  notification mcpResumesAtToolBoundary
+					  ifTrue: [ self resumeNotification: notification ]
+					  ifFalse: [ notification pass ] ]
 ]
 
 { #category : 'private - schema' }
