@@ -405,6 +405,15 @@ MCPToolEvaluateTest >> testEvaluateLooksAtTheMemoryOnlyOnceTheCodeHasStarted [
 ]
 
 { #category : 'tests' }
+MCPToolEvaluateTest >> testEvaluateNamesAFailureSignalledWithoutAText [
+	"An error signalled without a text is named by its description, so the answer still says what failed after its colon."
+
+	| result |
+	result := self callToolNamed: 'evaluate' withArguments: { (#code -> 'Error new signal') } asDictionary.
+	self assert: (self textFrom: result) lines first equals: 'Evaluation failed during execution (Error): Error'
+]
+
+{ #category : 'tests' }
 MCPToolEvaluateTest >> testEvaluateNamesAFrameOnOneLineByItsClassAndMethod [
 	"Every Pharo names a frame so; before 14, Pharo printed a block's frame with the block's source, over as many lines as it has."
 

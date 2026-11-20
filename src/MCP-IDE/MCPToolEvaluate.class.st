@@ -161,10 +161,7 @@ MCPToolEvaluate >> executeWithRequest: request [
 						   code: (request stringArgumentNamed: 'code')
 						   timeLimit: (request integerArgumentNamed: 'timeoutSeconds')
 						   previewLimit: self resultPreviewCharacterLimit) execute ]
-		  onError: [ :error |
-				  self
-					  errorResultText: (error messageText ifNil: [ error asString ] ifNotNil: [ :text | text ])
-					  details: (self errorDetailsFor: error) ]
+		  onError: [ :error | self errorResultText: error mcpMessageText details: (self errorDetailsFor: error) ]
 ]
 
 { #category : 'private - results' }
@@ -388,14 +385,12 @@ MCPToolEvaluate >> resultTextFor: data [
 MCPToolEvaluate >> runtimeFailureMessageFor: anError [
 	"The signaler context is the first frame of the stack trace the failure already reports, so it is not repeated here."
 
-	| message |
-	message := anError messageText ifNil: [ anError asString ] ifNotNil: [ :text | text asString ].
 	^ String streamContents: [ :stream |
 			  stream
 				  nextPutAll: 'Evaluation failed during execution (';
 				  nextPutAll: anError class name;
 				  nextPutAll: '): ';
-				  nextPutAll: message ]
+				  nextPutAll: anError mcpMessageText ]
 ]
 
 { #category : 'private' }

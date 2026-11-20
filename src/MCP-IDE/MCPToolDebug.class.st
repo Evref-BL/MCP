@@ -38,9 +38,7 @@ MCPToolDebug >> debugErrorDetailsFor: anError [
 { #category : 'private - errors' }
 MCPToolDebug >> errorResultForDebugError: anError [
 
-	^ self
-		  errorResultText: (anError messageText ifNil: [ anError asString ] ifNotNil: [ :text | text asString ])
-		  details: (self debugErrorDetailsFor: anError)
+	^ self errorResultText: anError mcpMessageText details: (self debugErrorDetailsFor: anError)
 ]
 
 { #category : 'executing' }

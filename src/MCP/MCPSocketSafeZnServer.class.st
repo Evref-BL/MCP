@@ -32,7 +32,7 @@ MCPSocketSafeZnServer >> executeOneRequestResponseOn: stream [
 { #category : 'private' }
 MCPSocketSafeZnServer >> handleSocketErrorDuringListen: aSocketError [
 
-	lastListenError := aSocketError messageText.
+	lastListenError := aSocketError mcpMessageText.
 	self releaseServerSocketAfterSocketError
 ]
 

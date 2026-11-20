@@ -53,8 +53,8 @@ MCPToolDebugSearch >> exceptionTextFor: anException [
 	anException ifNil: [ ^ 'none' ].
 	^ [
 		  anException messageText
-			  ifNil: [ anException printString ]
-			  ifNotNil: [ :text | String streamContents: [ :stream | stream << anException class name << ': ' << text ] ] ]
+			  ifEmpty: [ anException printString ]
+			  ifNotEmpty: [ :text | String streamContents: [ :stream | stream << anException class name << ': ' << text ] ] ]
 		  on: Error
 		  do: [ :error | anException class name ]
 ]

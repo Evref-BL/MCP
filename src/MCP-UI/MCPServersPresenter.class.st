@@ -107,7 +107,7 @@ MCPServersPresenter >> createServer [
 		on: Error
 		do: [ :error |
 				server stop.
-				^ self showMessage: error messageText ].
+				^ self showMessage: error mcpMessageText ].
 	self refreshView.
 	serversTable selectItem: server.
 	self showMessage: (String streamContents: [ :stream | stream << 'Started a server on port ' << server port asString << '.' ])
@@ -270,7 +270,7 @@ MCPServersPresenter >> removeSelectedServer [
 	self showMessage: ''.
 	[ server stop ]
 		on: Error
-		do: [ :error | ^ self showMessage: error messageText ].
+		do: [ :error | ^ self showMessage: error mcpMessageText ].
 	serversTable items: (serversTable items copyWithout: server).
 	self refreshView.
 	self showMessage: (String streamContents: [ :stream | stream << 'Removed the server on port ' << server port asString << '.' ])
@@ -290,7 +290,7 @@ MCPServersPresenter >> selectedServerDo: aBlock [
 	serversTable selectedItem ifNotNil: [ :server |
 			[ aBlock value: server ]
 				on: Error
-				do: [ :error | self showMessage: error messageText ] ].
+				do: [ :error | self showMessage: error mcpMessageText ] ].
 	self refreshView
 ]
 

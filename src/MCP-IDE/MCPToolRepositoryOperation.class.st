@@ -102,7 +102,7 @@ MCPToolRepositoryOperation >> expectedBranchNameIn: request [
 MCPToolRepositoryOperation >> failureSummaryFor: anError request: request [
 	"What failed, then why."
 
-	^ (self failureSummaryPrefixFor: request) , (anError messageText ifNil: [ anError asString ])
+	^ (self failureSummaryPrefixFor: request) , anError mcpMessageText
 ]
 
 { #category : 'private - errors' }

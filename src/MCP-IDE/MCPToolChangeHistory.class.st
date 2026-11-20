@@ -185,7 +185,7 @@ MCPToolChangeHistory >> logAndFileNameFromFileReference: aFileReference [
 							       (#directoryPath -> aFileReference parent fullName).
 							       (#historyFile -> aFileReference basename).
 							       (#causeClass -> error class name).
-							       (#causeMessage -> (error messageText ifNil: [ error asString ])) } asDictionary ].
+							       (#causeMessage -> error mcpMessageText) } asDictionary ].
 	^ {
 		  log.
 		  aFileReference basename }

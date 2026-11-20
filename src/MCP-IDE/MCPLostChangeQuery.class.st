@@ -379,7 +379,7 @@ MCPLostChangeQuery >> warningForFile: aFile readUpTo: aCount error: anError [
 
 	^ String streamContents: [ :stream |
 			  stream << aFile basename << ' could not be read past its entry ' << aCount printString
-			  << ', so the changes it records after it are not listed: ' << anError messageText ]
+			  << ', so the changes it records after it are not listed: ' << anError mcpMessageText ]
 ]
 
 { #category : 'accessing' }

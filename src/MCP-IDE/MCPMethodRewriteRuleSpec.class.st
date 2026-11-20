@@ -98,14 +98,15 @@ MCPMethodRewriteRuleSpec >> ruleIndex [
 { #category : 'validating' }
 MCPMethodRewriteRuleSpec >> signalInvalidPatternError: anError [
 
-	| details message |
+	| details |
 	details := self diagnosticDetails.
 	details at: #backendErrorClass put: anError class name asString.
-	details at: #backendMessage put: anError messageText.
-	message := String streamContents: [ :stream | stream << 'Rewrite rule ' << self ruleIndex asString << ' has an invalid pattern.' ].
-	anError messageText ifNotNil: [ :errorMessage |
-		message := String streamContents: [ :stream | stream << message << ' ' << errorMessage ] ].
-	MCPCommandError signalErrorCode: #RewriteRuleInvalidPattern message: message details: details
+	details at: #backendMessage put: anError mcpMessageText.
+	MCPCommandError
+		signalErrorCode: #RewriteRuleInvalidPattern
+		message: (String streamContents: [ :stream |
+				 stream << 'Rewrite rule ' << self ruleIndex asString << ' has an invalid pattern. ' << anError mcpMessageText ])
+		details: details
 ]
 
 { #category : 'validating' }

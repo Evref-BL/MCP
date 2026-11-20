@@ -77,10 +77,10 @@ MCPTool >> errorResultFor: anError unableTo: aPhrase details: someAssociations [
 	^ self errorResultFor: anError otherwise: [ :toolError |
 			  self
 				  errorResultText: (String streamContents: [ :stream |
-						   stream << 'Unable to ' << aPhrase << ' (' << toolError class name << '): ' << toolError messageText ])
+						   stream << 'Unable to ' << aPhrase << ' (' << toolError class name << '): ' << toolError mcpMessageText ])
 				  details: ({
 						   (#errorClass -> toolError class name).
-						   (#message -> toolError messageText) } , someAssociations) asDictionary ]
+						   (#message -> toolError mcpMessageText) } , someAssociations) asDictionary ]
 ]
 
 { #category : '*MCP-IDE' }

@@ -272,7 +272,7 @@ MCPDashboardPresenter >> serverDo: aBlock [
 
 	[ aBlock value: self model ]
 		on: Error
-		do: [ :error | UIManager default alert: error messageText ].
+		do: [ :error | UIManager default alert: error mcpMessageText ].
 	self refreshView
 ]
 

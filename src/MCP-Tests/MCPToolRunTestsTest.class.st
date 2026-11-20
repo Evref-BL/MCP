@@ -448,6 +448,22 @@ MCPToolRunTestsTest >> testASkipIsItsOwnOutcome [
 ]
 
 { #category : 'tests - outcomes' }
+MCPToolRunTestsTest >> testASkipWithoutAReasonSaysNone [
+	"self skip gives no reason, and the answer makes none up."
+
+	[
+		self
+			ensureMethodSource: 'testSkipsWithoutAReason self skip'
+			protocol: 'tests'
+			on: (self createTestClassNamed: 'MCPToolRunTestsSkippingTarget' traits: nil).
+		self
+			assert:
+			(self issueLinesFrom: (self runTests: { (#methods -> #( 'MCPToolRunTestsSkippingTarget>>#testSkipsWithoutAReason' )) }))
+			equals: #( 'skipped MCPToolRunTestsSkippingTarget>>#testSkipsWithoutAReason' ) ] ensure: [
+		self removeClassesNamed: #( 'MCPToolRunTestsSkippingTarget' ) ]
+]
+
+{ #category : 'tests - outcomes' }
 MCPToolRunTestsTest >> testAStatementIsReadOnOneLineAndCutPastAHundredCharacters [
 
 	| statement |

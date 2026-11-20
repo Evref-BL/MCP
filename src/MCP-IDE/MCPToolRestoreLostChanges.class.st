@@ -156,7 +156,7 @@ MCPToolRestoreLostChanges >> restore: aLostChange into: data [
 	| reason |
 	reason := [ self reasonNotRestoring: aLostChange ]
 		          on: Error
-		          do: [ :error | error messageText ].
+		          do: [ :error | error mcpMessageText ].
 	reason
 		ifNil: [ (data at: #restored) add: (self rowFor: aLostChange because: nil) ]
 		ifNotNil: [ (data at: #notRestored) add: (self rowFor: aLostChange because: reason) ]
