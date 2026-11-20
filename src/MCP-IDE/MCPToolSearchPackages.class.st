@@ -24,7 +24,7 @@ MCPToolSearchPackages class >> toolName [
 { #category : 'metadata' }
 MCPToolSearchPackages >> buildInputSchema [
 
-	^ self queryInputSchemaWithProperties: self packageFilterInputProperties , { self offsetInputProperty }
+	^ MCPStructureInputSchema properties: self packageFilterInputProperties , { self offsetInputProperty } required: #(  )
 ]
 
 { #category : 'metadata' }

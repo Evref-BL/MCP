@@ -27,9 +27,3 @@ MCPToolApplyChangeHistoryEntries >> changeHistoryToolSpec [
 		  (#pastTense -> 'Applied').
 		  (#unchangedReason -> 'already applied in the image') } asDictionary
 ]
-
-{ #category : 'private - actions' }
-MCPToolApplyChangeHistoryEntries >> reverts [
-
-	^ false
-]

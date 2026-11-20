@@ -9,12 +9,6 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'testing' }
-MCPToolChangeHistoryOperation class >> isAbstract [
-
-	^ self = MCPToolChangeHistoryOperation
-]
-
 { #category : 'private - actions' }
 MCPToolChangeHistoryOperation >> actionName [
 
@@ -45,12 +39,16 @@ MCPToolChangeHistoryOperation >> addEntriesOf: aSelection in: aLog to: data [
 { #category : 'metadata' }
 MCPToolChangeHistoryOperation >> buildInputSchema [
 
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: self selectionInputProperties;
-		  required: #( 'indexes' );
-		  additionalProperties: false;
-		  yourself
+	^ MCPStructureInputSchema
+		  properties: {
+				  self directoryPathSchemaProperty.
+				  self historyFileSchemaProperty.
+				  (self
+					   arraySchemaNamed: 'indexes'
+					   itemType: 'integer'
+					   description: 'The entries to act on, by the one-based index history_entry_list prints.'
+					   itemDescription: 'Entry index.') }
+		  required: #( 'indexes' )
 ]
 
 { #category : 'private - specs' }
@@ -130,7 +128,7 @@ MCPToolChangeHistoryOperation >> redundantKeys [
 MCPToolChangeHistoryOperation >> reverts [
 	"Whether the tool reverts the entries it selects rather than applies them."
 
-	^ self subclassResponsibility
+	^ self actionName = 'revert'
 ]
 
 { #category : 'private - results' }
@@ -145,15 +143,6 @@ MCPToolChangeHistoryOperation >> selectionFor: request in: aLog [
 	"The operation that selects the entries of aLog the request names, and applies or reverts them."
 
 	^ MCPChangeHistorySelectionCommand revert: self reverts log: aLog indexes: (request arrayArgumentNamed: 'indexes')
-]
-
-{ #category : 'private - schema' }
-MCPToolChangeHistoryOperation >> selectionInputProperties [
-
-	^ self historyLocationInputProperties , { (self
-		   integerArraySchemaNamed: 'indexes'
-		   description: 'The entries to act on, by the one-based index history_entry_list prints.'
-		   itemDescription: 'Entry index.') }
 ]
 
 { #category : 'private - validation' }

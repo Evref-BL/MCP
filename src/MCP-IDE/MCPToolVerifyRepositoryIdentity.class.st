@@ -153,29 +153,11 @@ MCPToolVerifyRepositoryIdentity >> repositoryToVerifyFor: request [
 					  ifFalse: [ error signal ] ]
 ]
 
-{ #category : 'private - specs' }
-MCPToolVerifyRepositoryIdentity >> repositoryToolSpec [
-
-	^ {
-		  (#title -> 'Verify Repository Identity').
-		  (#description
-		   ->
-		   'Assert what the image believes about a registered repository, without writing files. Give at least one expectation beside the repository reference: location, branch, subdirectory, packages, modifiedPackages or isModified. The call fails when one of them does not hold.').
-		  (#action -> 'verifyIdentity').
-		  (#inputProperties -> {
-			   self branchNameSchemaProperty.
-			   self subdirectorySchemaProperty.
-			   self packageNamesSchemaProperty.
-			   self modifiedPackageNamesSchemaProperty.
-			   self isModifiedSchemaProperty }) } asDictionary
-]
-
 { #category : 'private - errors' }
 MCPToolVerifyRepositoryIdentity >> requestedContextFor: request [
 
 	| context |
-	context := (super requestedContextFor: request) copy.
-	(self expectedBranchNameIn: request) ifNotEmpty: [ :branchName | context at: #branch put: branchName ].
+	context := super requestedContextFor: request.
 	(request hasArgumentNamed: 'subdirectory') ifTrue: [ context at: #subdirectory put: (self expectedSubdirectoryIn: request) ].
 	(request hasArgumentNamed: 'packages') ifTrue: [
 		context at: #packages put: (request uniqueStringCollectionArgumentNamed: 'packages') ].
@@ -206,4 +188,22 @@ MCPToolVerifyRepositoryIdentity >> signalMissingExpectationsFor: request [
 		details: ((self requestedContextFor: request) copy
 				 at: #expectedFields put: #( 'location' 'branch' 'subdirectory' 'packages' 'modifiedPackages' 'isModified' );
 				 yourself)
+]
+
+{ #category : 'private - specs' }
+MCPToolVerifyRepositoryIdentity >> toolSpec [
+
+	^ {
+		  (#title -> 'Verify Repository Identity').
+		  (#description
+		   ->
+		   'Assert what the image believes about a registered repository, without writing files. Give at least one expectation beside the repository reference: location, branch, subdirectory, packages, modifiedPackages or isModified. The call fails when one of them does not hold.').
+		  (#action -> 'verifyIdentity').
+		  (#inputProperties -> {
+			   self branchNameSchemaProperty.
+			   self subdirectorySchemaProperty.
+			   self packageNamesSchemaProperty.
+			   self modifiedPackageNamesSchemaProperty.
+			   self isModifiedSchemaProperty }).
+		  (#requiredProperties -> #( 'repository' )) } asDictionary
 ]

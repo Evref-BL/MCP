@@ -53,27 +53,21 @@ MCPToolRestoreMethod >> batchSummaryVerb [
 { #category : 'metadata' }
 MCPToolRestoreMethod >> buildInputSchema [
 
-	^ MCPStructureInputSchema new
-		  type: 'object';
+	^ MCPStructureInputSchema
 		  properties: {
 				  (self schemaPropertyNamed: 'class' type: 'string' description: 'The class the method is in, or was in.').
 				  (self targetSideSchemaPropertyDescribedAs: 'Which side the method is on.').
-				  ((self
-					    schemaPropertyNamed: 'selector'
-					    type: #( 'string' 'array' )
-					    description: 'The method''s selector, or several of that class.')
-					   items: (MCPStructureProperties new
-							    type: 'string';
-							    yourself);
-					   yourself).
+				  (self
+					   stringOrArraySchemaNamed: 'selector'
+					   description: 'The method''s selector, or several of that class.'
+					   itemDescription: 'Selector name.').
 				  ((self
 					    integerSchemaPropertyNamed: 'version'
 					    description:
 						    'The version to install, as method_version_list numbers it. Omitted, the method goes back to how it was before its last change.')
 					   minimum: 1;
-					   yourself) };
-		  required: #( 'class' 'selector' );
-		  yourself
+					   yourself) }
+		  required: #( 'class' 'selector' )
 ]
 
 { #category : 'private - errors' }
@@ -127,9 +121,7 @@ MCPToolRestoreMethod >> detailsFor: aSelector in: aBehavior [
 
 	^ Dictionary new
 		  at: #class put: aBehavior instanceSide name asString;
-		  at: #side put: (aBehavior isClassSide
-				   ifTrue: [ 'class' ]
-				   ifFalse: [ 'instance' ]);
+		  at: #side put: (self sideNameFor: aBehavior isClassSide);
 		  at: #selector put: aSelector asString;
 		  yourself
 ]
@@ -138,13 +130,11 @@ MCPToolRestoreMethod >> detailsFor: aSelector in: aBehavior [
 MCPToolRestoreMethod >> executeWithRequest: request [
 	"A version is one method's, so a call naming one restores one selector. Each selector is restored on its own."
 
-	^ self
-		  executeRequest: request
-		  do: [
-				  self checkVersionNamesOneMethodIn: request.
-				  self executeBatchedRequest: request do: [ :targetRequest |
-					  self executeRequest: targetRequest do: [ self restoreWith: targetRequest ] onError: [ :error | self errorResultFor: error ] ] ]
-		  onError: [ :error | self errorResultFor: error ]
+	^ self executeRequest: request do: [
+			  self checkVersionNamesOneMethodIn: request.
+			  self
+				  executeBatchedRequest: request
+				  do: [ :targetRequest | self executeRequest: targetRequest do: [ self restoreWith: targetRequest ] ] ]
 ]
 
 { #category : 'private - restoring' }

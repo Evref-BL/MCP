@@ -65,35 +65,11 @@ MCPToolUpdateRepository >> remove: packageNames from: aRepository with: steps re
 	packageNames do: [ :each | (steps removePackageNamed: each from: aRepository) ifTrue: [ removed add: each ] ]
 ]
 
-{ #category : 'private - specs' }
-MCPToolUpdateRepository >> repositoryToolSpec [
-
-	^ {
-		  (#title -> 'Update Repository').
-		  (#description -> 'Change image-side repository subdirectory or package membership without writing packages to files.').
-		  (#action -> 'update').
-		  (#inputProperties -> {
-			   (self schemaPropertyNamed: 'subdirectory' type: 'string' description: 'Set the repository source subdirectory in the image.').
-			   (self
-				    stringArraySchemaNamed: 'packages'
-				    description:
-				    'Replace the full managed package list by adding and removing repository package membership without unloading packages or writing files.'
-				    itemDescription: 'A package name.').
-			   (self
-				    stringArraySchemaNamed: 'addPackages'
-				    description: 'Package names to add to the repository working copy without writing packages to files.'
-				    itemDescription: 'A package name to add.').
-			   (self
-				    stringArraySchemaNamed: 'removePackages'
-				    description: 'Package names to remove from repository membership without unloading packages from the image.'
-				    itemDescription: 'A package name to remove.') }) } asDictionary
-]
-
 { #category : 'private - errors' }
 MCPToolUpdateRepository >> requestedContextFor: request [
 
 	| context supplied |
-	context := (super requestedContextFor: request) copy.
+	context := super requestedContextFor: request.
 	supplied := self suppliedUpdateArgumentNamesIn: request.
 	supplied do: [ :each |
 			context at: each asSymbol put: (each = 'subdirectory'
@@ -116,6 +92,31 @@ MCPToolUpdateRepository >> signalNoUpdateRequestedFor: request [
 MCPToolUpdateRepository >> suppliedUpdateArgumentNamesIn: request [
 
 	^ self updateActionsByArgumentName keys select: [ :each | request hasArgumentNamed: each ]
+]
+
+{ #category : 'private - specs' }
+MCPToolUpdateRepository >> toolSpec [
+
+	^ {
+		  (#title -> 'Update Repository').
+		  (#description -> 'Change image-side repository subdirectory or package membership without writing packages to files.').
+		  (#action -> 'update').
+		  (#inputProperties -> {
+			   (self schemaPropertyNamed: 'subdirectory' type: 'string' description: 'Set the repository source subdirectory in the image.').
+			   (self
+				    stringArraySchemaNamed: 'packages'
+				    description:
+				    'Replace the full managed package list by adding and removing repository package membership without unloading packages or writing files.'
+				    itemDescription: 'A package name.').
+			   (self
+				    stringArraySchemaNamed: 'addPackages'
+				    description: 'Package names to add to the repository working copy without writing packages to files.'
+				    itemDescription: 'A package name to add.').
+			   (self
+				    stringArraySchemaNamed: 'removePackages'
+				    description: 'Package names to remove from repository membership without unloading packages from the image.'
+				    itemDescription: 'A package name to remove.') }).
+		  (#requiredProperties -> #( 'repository' )) } asDictionary
 ]
 
 { #category : 'private - packages' }

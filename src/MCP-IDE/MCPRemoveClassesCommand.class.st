@@ -113,7 +113,7 @@ MCPRemoveClassesCommand >> forcedFactsFor: anException [
 
 	^ self factsFor: anException sayingOfSubclasses: [ :aClass :names |
 			  String streamContents: [ :stream |
-					  stream << (MCPScopeQuery listPhraseFor: names) << ' lost what ' << (names size = 1
+					  stream << (MCPCommandError joinedNames: names) << ' lost what ' << (names size = 1
 						   ifTrue: [ 'it' ]
 						   ifFalse: [ 'they' ]) << ' inherited from ' << aClass name << '.' ] ]
 ]

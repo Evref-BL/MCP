@@ -86,10 +86,9 @@ MCPToolCompileMethod >> changeSummaryVerbFor: changeKindString [
 
 { #category : 'executing' }
 MCPToolCompileMethod >> checkArguments: request [
-	"A side that says the other one than the class name is refused, as is a call without a source."
+	"A side that says the other one than the class name is refused."
 
-	self classNameAndSideOf: request do: [ :className :classSide :sideGiven |  ].
-	request argumentNamed: 'source' ifAbsent: [ MCPInvalidToolInput signalMissingRequiredArgumentNamed: 'source' forTool: self ]
+	self classNameAndSideOf: request do: [ :className :classSide :sideGiven |  ]
 ]
 
 { #category : 'private - header' }
@@ -105,6 +104,34 @@ MCPToolCompileMethod >> classlessHeaderIn: aLine source: aSource of: request [
 						   stream << className.
 						   (namesClassSide not and: [ classSide ]) ifTrue: [ stream << ' class' ].
 						   stream << ' ' << aLine ]) ]
+]
+
+{ #category : 'private' }
+MCPToolCompileMethod >> compile: methodSource into: aBehavior classified: protocol of: request do: aBlock [
+	"aBlock gets the method as stored, whether it was created or replaced, and the protocol it was in before. The method is reformatted unless format is false, which keeps it as written. Naming no protocol keeps the one the method is in: Pharo's own compile:classified: with nil does not promise that, so it is passed explicitly."
+
+	| changeKind previousProtocolName selector |
+	[
+		selector := self selectorForMethodSource: methodSource in: aBehavior.
+		changeKind := (aBehavior includesSelector: selector)
+			              ifTrue: [ 'replaced' ]
+			              ifFalse: [ 'created' ].
+		previousProtocolName := changeKind = 'replaced' ifTrue: [ self protocolNameOf: aBehavior >> selector ].
+		self signalTraitOriginBeforeCompiling: selector in: aBehavior unlessForced: (request booleanArgumentNamed: 'force').
+		selector := aBehavior mcpCompile: methodSource classified: (protocol ifNil: [ previousProtocolName ]) ]
+		on: Exception
+		do: [ :error |
+				self
+					signalCompileFailure: error
+					methodSource: methodSource
+					in: aBehavior
+					of: request ].
+	^ aBlock
+		  value: ((request booleanArgumentNamed: 'format')
+				   ifTrue: [ self reformattedMethodForBehavior: aBehavior selector: selector ]
+				   ifFalse: [ aBehavior >> selector ])
+		  value: changeKind
+		  value: previousProtocolName
 ]
 
 { #category : 'private - results' }
@@ -153,8 +180,9 @@ MCPToolCompileMethod >> failureSummaryFor: anError in: aBehaviorOrNil of: reques
 	| summary |
 	summary := self classNameAndSideOf: request do: [ :className :classSide :sideGiven |
 			           self
-				           failureMessageForCompileClassNamed: className
-				           classSide: (aBehaviorOrNil ifNil: [ classSide ] ifNotNil: [ :behavior | behavior isClassSide ])
+				           failureMessage: 'Unable to compile method on ' , (self
+						            classReferenceNameFor: className
+						            classSide: (aBehaviorOrNil ifNil: [ classSide ] ifNotNil: [ :behavior | behavior isClassSide ]))
 				           error: anError ].
 	^ (self otherSideSlotTextFor: anError in: aBehaviorOrNil of: request)
 		  ifNil: [ summary ]
@@ -223,107 +251,36 @@ MCPToolCompileMethod >> methodNodeOf: aString [
 	^ RBParser parseMethod: aString onError: [ :message :position | ^ nil ]
 ]
 
-{ #category : 'private - specs' }
-MCPToolCompileMethod >> methodToolSpec [
-
-	^ {
-		  (#title -> 'Compile Method').
-		  (#description -> 'Add or replace methods in a class from their full source, selector line included.').
-		  (#action -> 'compile').
-		  (#inputProperties -> {
-			   (MCPStructureProperties new
-				    name: 'class';
-				    type: 'string';
-				    description: 'The class to compile into.';
-				    yourself).
-			   (self targetSideSchemaPropertyDescribedAs: 'Which side to compile into.').
-			   (MCPStructureProperties new
-				    name: 'source';
-				    type: #( 'string' 'array' );
-				    description: 'Full method source, selector line included, or several for the same class.';
-				    items: (MCPStructureProperties new
-						     type: 'string';
-						     yourself);
-				    yourself).
-			   (MCPStructureProperties new
-				    name: 'protocol';
-				    type: 'string';
-				    description:
-					    'Protocol for the method; a replaced method keeps its own when omitted. Extension methods take *Package-Name.';
-				    yourself).
-			   self forceSchemaProperty.
-			   (self formatSchemaPropertyDescribedAs:
-				    'Reformat each method with its package''s formatter. False keeps the source as written, only trimming the whitespace it begins and ends with.') }).
-		  (#requiredProperties -> #( 'class' 'source' )) } asDictionary
-]
-
 { #category : 'executing' }
 MCPToolCompileMethod >> mutateWith: request [
-	"Compile the source into the class the call names, on the side it names or, when it names none, the side a header names. A method written as a Tonel file writes it compiles without its header and brackets, its category line giving the protocol when the call names none. The method is reformatted unless format is false, which keeps it as written. The answer says whether the method was created or replaced, and what its critiques find in it as stored."
+	"Compile the source into the class the call names, and answer whether the method was created or replaced, and what its critiques find in it as stored."
 
-	| behavior changeKind compiledMethod critiques force format headerWarnings methodReference methodSource previousProtocolName protocol selector |
-	force := request booleanArgumentNamed: 'force'.
-	format := request booleanArgumentNamed: 'format'.
-	headerWarnings := #(  ).
+	| behavior changeKind compiledMethod headerWarnings previousProtocolName |
 	^ self
 		  executeMutationAction: 'compile'
-		  force: force
+		  force: (request booleanArgumentNamed: 'force')
 		  requestedContext: (self requestedContextFor: request)
 		  work: [
-				  behavior := self
-					              classNameAndSideOf: request
-					              do: [ :className :classSide :sideGiven | MCPImageLookup compileTargetNamed: className classSide: classSide ].
-				  methodSource := request argumentNamed: 'source' ifAbsent: [ nil ].
-				  protocol := request stringArgumentNamed: 'protocol'.
-				  self signalClassDefinitionIn: methodSource of: request.
-				  (MCPTonelMethodSource fromString: methodSource) ifNotNil: [ :tonel |
-						  tonel hasHeader ifTrue: [ behavior := self target: behavior forTonel: tonel of: request ].
-						  protocol ifNil: [ protocol := tonel category ].
-						  methodSource := tonel source ].
-				  (self headerIn: methodSource of: request) ifNotNil: [ :header |
-						  behavior := self
-							              target: behavior
-							              forHeader: header
-							              source: methodSource
-							              of: request.
-						  methodSource := self source: methodSource withSelectorLine: header selector.
-						  headerWarnings := { self droppedHeaderWarning } ].
-				  methodSource := self sourceWithoutUnopenedClosingBracket: methodSource.
-				  selector := [ self selectorForMethodSource: methodSource in: behavior ]
-					              on: Exception
-					              do: [ :error |
-							              self
-								              signalCompileFailure: error
-								              methodSource: methodSource
-								              in: behavior
-								              of: request ].
-				  changeKind := (behavior includesSelector: selector)
-					                ifTrue: [ 'replaced' ]
-					                ifFalse: [ 'created' ].
-				  previousProtocolName := changeKind = 'replaced' ifTrue: [ self protocolNameOf: behavior >> selector ].
-				  self signalTraitOriginBeforeCompiling: selector in: behavior unlessForced: force.
-				  "Naming no protocol keeps the one the method is in. Pharo's own compile:classified: with nil does not promise that, so it is passed explicitly."
-				  selector := [ behavior mcpCompile: methodSource classified: (protocol ifNil: [ previousProtocolName ]) ]
-					              on: Exception
-					              do: [ :error |
-							              self
-								              signalCompileFailure: error
-								              methodSource: methodSource
-								              in: behavior
-								              of: request ].
-				  compiledMethod := format
-					                    ifTrue: [ self reformattedMethodForBehavior: behavior selector: selector ]
-					                    ifFalse: [ behavior >> selector ].
-				  methodReference := self methodReferenceForBehavior: behavior selector: selector.
-				  critiques := self critiqueDataForMethod: compiledMethod ]
+				  self targetAndSourceOf: request do: [ :targetBehavior :methodSource :protocol :warnings |
+						  behavior := targetBehavior.
+						  headerWarnings := warnings.
+						  self
+							  compile: methodSource
+							  into: behavior
+							  classified: protocol
+							  of: request
+							  do: [ :method :kind :previousProtocol |
+									  compiledMethod := method.
+									  changeKind := kind.
+									  previousProtocolName := previousProtocol ] ] ]
 		  successResult: [ :warningMessages |
 				  self
 					  successResultText: (self
 							   summaryFor: changeKind
 							   of: compiledMethod
-							   named: methodReference
+							   named: (self methodReferenceForBehavior: behavior selector: compiledMethod selector)
 							   from: previousProtocolName)
-					  data: (self dataForChange: changeKind critiques: critiques)
+					  data: (self dataForChange: changeKind critiques: (self critiqueDataForMethod: compiledMethod))
 					  warnings: warningMessages , headerWarnings , (self protocolWarningsFor: compiledMethod from: previousProtocolName) ]
 		  failureSummary: [ :error | self failureSummaryFor: error in: behavior of: request ]
 ]
@@ -436,14 +393,6 @@ MCPToolCompileMethod >> selectorLineStartingAMethodIn: aLine [
 		        ((MCPMethodReference fromString: aLine) ifNil: [ aLine ] ifNotNil: [ :reference | reference selector ]).
 	(node isNotNil and: [ node body statements isEmpty and: [ node pragmas isEmpty ] ]) ifFalse: [ ^ nil ].
 	^ node
-]
-
-{ #category : 'private - header' }
-MCPToolCompileMethod >> sideNameFor: isClassSide [
-
-	^ isClassSide
-		  ifTrue: [ 'class' ]
-		  ifFalse: [ 'instance' ]
 ]
 
 { #category : 'private - header' }
@@ -593,6 +542,37 @@ MCPToolCompileMethod >> target: aBehavior forTonel: aTonelMethod of: request [
 				  ifFalse: [ aBehavior instanceSide ] ]
 ]
 
+{ #category : 'private - header' }
+MCPToolCompileMethod >> targetAndSourceOf: request do: aBlock [
+	"aBlock gets the behavior to compile into, the source to compile, the protocol, and the warnings about a header the source began with. The behavior is the class the call names, on the side it names or, when it names none, the side a header names. A method written as a Tonel file writes it compiles without its header and brackets, its category line giving the protocol when the call names none."
+
+	| behavior headerWarnings methodSource protocol |
+	behavior := self
+		            classNameAndSideOf: request
+		            do: [ :className :classSide :sideGiven | MCPImageLookup compileTargetNamed: className classSide: classSide ].
+	methodSource := request argumentNamed: 'source' ifAbsent: [ nil ].
+	protocol := request stringArgumentNamed: 'protocol'.
+	headerWarnings := #(  ).
+	self signalClassDefinitionIn: methodSource of: request.
+	(MCPTonelMethodSource fromString: methodSource) ifNotNil: [ :tonel |
+			tonel hasHeader ifTrue: [ behavior := self target: behavior forTonel: tonel of: request ].
+			protocol ifNil: [ protocol := tonel category ].
+			methodSource := tonel source ].
+	(self headerIn: methodSource of: request) ifNotNil: [ :header |
+			behavior := self
+				            target: behavior
+				            forHeader: header
+				            source: methodSource
+				            of: request.
+			methodSource := self source: methodSource withSelectorLine: header selector.
+			headerWarnings := { self droppedHeaderWarning } ].
+	^ aBlock
+		  value: behavior
+		  value: (self sourceWithoutUnopenedClosingBracket: methodSource)
+		  value: protocol
+		  value: headerWarnings
+]
+
 { #category : 'private - errors' }
 MCPToolCompileMethod >> temporariesAfterAStatementTextIn: aSource at: aPosition [
 	"What to do when the compiler stopped at aPosition on temporaries declared after a statement; nil when it stopped anywhere else. A method or block declares its temporaries before its first statement, so a declaration further down reads as an expression, which cannot begin with a bar. The declaration goes to the method or block it is in, into the temporaries that one already declares."
@@ -642,4 +622,29 @@ MCPToolCompileMethod >> tokensIn: aString [
 	| scanner |
 	scanner := RBScanner on: aString readStream.
 	^ Array streamContents: [ :stream | [ scanner atEnd ] whileFalse: [ stream nextPut: scanner next ] ]
+]
+
+{ #category : 'private - specs' }
+MCPToolCompileMethod >> toolSpec [
+
+	^ {
+		  (#title -> 'Compile Method').
+		  (#description -> 'Add or replace methods in a class from their full source, selector line included.').
+		  (#action -> 'compile').
+		  (#inputProperties -> {
+			   (self schemaPropertyNamed: 'class' type: 'string' description: 'The class to compile into.').
+			   (self targetSideSchemaPropertyDescribedAs: 'Which side to compile into.').
+			   (self
+				    stringOrArraySchemaNamed: 'source'
+				    description: 'Full method source, selector line included, or several for the same class.'
+				    itemDescription: nil).
+			   (self
+				    schemaPropertyNamed: 'protocol'
+				    type: 'string'
+				    description:
+				    'Protocol for the method; a replaced method keeps its own when omitted. Extension methods take *Package-Name.').
+			   self forceSchemaProperty.
+			   (self formatSchemaPropertyDescribedAs:
+				    'Reformat each method with its package''s formatter. False keeps the source as written, only trimming the whitespace it begins and ends with.') }).
+		  (#requiredProperties -> #( 'class' 'source' )) } asDictionary
 ]

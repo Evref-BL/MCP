@@ -46,27 +46,6 @@ MCPToolCreateClass >> checkArguments: request [
 				ifFound: [ :list | MCPCommandError signalNameIsAList: list kind: argument value argument: argument key ] ]
 ]
 
-{ #category : 'private - specs' }
-MCPToolCreateClass >> classToolSpec [
-
-	^ {
-		  (#title -> 'Create Class').
-		  (#description -> 'Create a class in the running image, or several sharing one definition.').
-		  (#inputProperties -> {
-			   self createClassNameSchemaProperty.
-			   self createSuperclassNameSchemaProperty.
-			   self createPackageNameSchemaProperty.
-			   self createTagSchemaProperty.
-			   self createSlotsSchemaProperty.
-			   self createClassSlotsSchemaProperty.
-			   self createTraitsSchemaProperty.
-			   self createSharedVariablesSchemaProperty.
-			   self createSharedPoolsSchemaProperty.
-			   self layoutSchemaProperty.
-			   self createCommentSchemaProperty }).
-		  (#requiredProperties -> #( 'name' 'package' )) } asDictionary
-]
-
 { #category : 'private - errors' }
 MCPToolCreateClass >> classUpdateArgumentsFor: aClass from: request [
 	"The arguments of the class_update call that gives aClass what this call asked class_create for and it lacks, its name first and the rest in the order class_create takes them: each one the call gave that aClass does not have. The slots aClass lacks are counted under the superclass the call names, since class_update moves a class before it changes its slots: one that superclass defines is not given again, and one aClass inherits only where it is now is. A list class_update replaces whole keeps what aClass has, so nothing is removed. A trait is given no superclass, as class_update gives a trait none."
@@ -105,79 +84,6 @@ MCPToolCreateClass >> classUpdateArgumentsFor: aClass from: request [
 	^ arguments
 ]
 
-{ #category : 'private - schema' }
-MCPToolCreateClass >> createClassNameSchemaProperty [
-
-	^ (self
-		   schemaPropertyNamed: 'name'
-		   type: #( 'string' 'array' )
-		   description: 'Name of the class to create, or several names sharing the other arguments.')
-		  items: (MCPStructureProperties new
-				   type: 'string';
-				   yourself);
-		  yourself
-]
-
-{ #category : 'private - schema' }
-MCPToolCreateClass >> createClassSlotsSchemaProperty [
-
-	^ self stringArraySchemaNamed: 'classSlots' description: 'Class-side instance variable names.' itemDescription: 'Slot name.'
-]
-
-{ #category : 'private - schema' }
-MCPToolCreateClass >> createCommentSchemaProperty [
-
-	^ self schemaPropertyNamed: 'comment' type: 'string' description: 'Class comment.'
-]
-
-{ #category : 'private - schema' }
-MCPToolCreateClass >> createPackageNameSchemaProperty [
-
-	^ self schemaPropertyNamed: 'package' type: 'string' description: 'Package for the class, created if missing.'
-]
-
-{ #category : 'private - schema' }
-MCPToolCreateClass >> createSharedPoolsSchemaProperty [
-
-	^ self
-		  stringArraySchemaNamed: 'sharedPools'
-		  description: 'Shared pools the class reads variables from.'
-		  itemDescription: 'Pool name.'
-]
-
-{ #category : 'private - schema' }
-MCPToolCreateClass >> createSharedVariablesSchemaProperty [
-
-	^ self stringArraySchemaNamed: 'sharedVariables' description: 'Class variable names.' itemDescription: 'Variable name.'
-]
-
-{ #category : 'private - schema' }
-MCPToolCreateClass >> createSlotsSchemaProperty [
-
-	^ self stringArraySchemaNamed: 'slots' description: 'Instance variable names.' itemDescription: 'Slot name.'
-]
-
-{ #category : 'private - schema' }
-MCPToolCreateClass >> createSuperclassNameSchemaProperty [
-
-	^ self
-		  schemaPropertyNamed: 'superclass'
-		  type: 'string'
-		  description: 'Superclass name, Object when omitted. Trait creates a trait.'
-]
-
-{ #category : 'private - schema' }
-MCPToolCreateClass >> createTagSchemaProperty [
-
-	^ self schemaPropertyNamed: 'tag' type: 'string' description: 'Tag within the package.'
-]
-
-{ #category : 'private - schema' }
-MCPToolCreateClass >> createTraitsSchemaProperty [
-
-	^ self stringArraySchemaNamed: 'traits' description: 'Traits the class uses, class side included.' itemDescription: 'Trait name.'
-]
-
 { #category : 'private - results' }
 MCPToolCreateClass >> createdSummaryFor: aClass from: request [
 	"A trait is named as one, so asking for a trait is not answered with the word class. A class made with no superclass given is said to subclass Object: a caller that meant another, as for a test class, would not see it otherwise."
@@ -194,21 +100,6 @@ MCPToolCreateClass >> createdSummaryFor: aClass from: request [
 MCPToolCreateClass >> defaultExposure [
 
 	^ 'static'
-]
-
-{ #category : 'private - errors' }
-MCPToolCreateClass >> failureMessageForCreateClassNamed: className superclassName: superclassName packageName: packageName error: anError [
-
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Unable to create class ';
-				  nextPutAll: className;
-				  nextPutAll: ' < ';
-				  nextPutAll: superclassName;
-				  nextPutAll: ' in package ';
-				  nextPutAll: packageName;
-				  nextPutAll: ': ';
-				  nextPutAll: (self normalizedCauseMessageForMutationError: anError) ]
 ]
 
 { #category : 'private - mutation' }
@@ -242,16 +133,11 @@ MCPToolCreateClass >> mutateWith: request [
 			  self successResultText: (self createdSummaryFor: createdClass from: request) data: Dictionary new warnings: warningMessages ]
 		  failureSummary: [ :error |
 				  self
-					  failureMessageForCreateClassNamed: className
-					  superclassName: superclassName
-					  packageName: packageName
+					  failureMessage: ('Unable to create class {1} < {2} in package {3}' format: {
+								   className.
+								   superclassName.
+								   packageName })
 					  error: error ]
-]
-
-{ #category : 'private - errors' }
-MCPToolCreateClass >> mutationActionFor: request checked: aBoolean [
-
-	^ 'create'
 ]
 
 { #category : 'private - errors' }
@@ -306,7 +192,7 @@ MCPToolCreateClass >> requestedContextFor: request [
 		  (#class -> (request stringArgumentNamed: 'name')).
 		  (#superclass -> (self superclassNameIn: request)).
 		  (#package -> (request stringArgumentNamed: 'package')).
-		  (#tag -> (request stringArgumentNamed: 'tag' default: '')).
+		  (#tag -> (request stringArgumentOrDefaultNamed: 'tag')).
 		  (#comment -> ((self classCommentIn: request) ifNil: [ '' ])).
 		  (#slots -> (request stringCollectionArgumentNamed: 'slots')).
 		  (#classSlots -> (request stringCollectionArgumentNamed: 'classSlots')).
@@ -359,9 +245,44 @@ MCPToolCreateClass >> slotsDefinedBy: aClass alsoIn: aSuperclass [
 
 { #category : 'private - arguments' }
 MCPToolCreateClass >> superclassNameIn: request [
-	"Object when the caller omits it, because that is what a new class subclasses unless it says otherwise. Defaulting here rather than in MCPCreateClassCommand keeps the error details and the failure messages naming the superclass the class actually gets."
+	"The superclass the class gets, its schema default when the caller omits it. Reading it here rather than in MCPCreateClassCommand keeps the error details and the failure messages naming that superclass."
 
-	^ request stringArgumentNamed: 'superclass' default: 'Object'
+	^ request stringArgumentOrDefaultNamed: 'superclass'
+]
+
+{ #category : 'private - specs' }
+MCPToolCreateClass >> toolSpec [
+
+	^ {
+		  (#title -> 'Create Class').
+		  (#description -> 'Create a class in the running image, or several sharing one definition.').
+		  (#action -> 'create').
+		  (#inputProperties -> {
+			   (self
+				    stringOrArraySchemaNamed: 'name'
+				    description: 'Name of the class to create, or several names sharing the other arguments.'
+				    itemDescription: 'Class name.').
+			   ((self schemaPropertyNamed: 'superclass' type: 'string' description: 'Superclass name. Trait creates a trait.')
+				    default: 'Object';
+				    yourself).
+			   (self schemaPropertyNamed: 'package' type: 'string' description: 'Package for the class, created if missing.').
+			   ((self schemaPropertyNamed: 'tag' type: 'string' description: 'Tag within the package.')
+				    default: '';
+				    yourself).
+			   (self stringArraySchemaNamed: 'slots' description: 'Instance variable names.' itemDescription: 'Slot name.').
+			   (self stringArraySchemaNamed: 'classSlots' description: 'Class-side instance variable names.' itemDescription: 'Slot name.').
+			   (self
+				    stringArraySchemaNamed: 'traits'
+				    description: 'Traits the class uses, class side included.'
+				    itemDescription: 'Trait name.').
+			   (self stringArraySchemaNamed: 'sharedVariables' description: 'Class variable names.' itemDescription: 'Variable name.').
+			   (self
+				    stringArraySchemaNamed: 'sharedPools'
+				    description: 'Shared pools the class reads variables from.'
+				    itemDescription: 'Pool name.').
+			   self layoutSchemaProperty.
+			   (self schemaPropertyNamed: 'comment' type: 'string' description: 'Class comment.') }).
+		  (#requiredProperties -> #( 'name' 'package' )) } asDictionary
 ]
 
 { #category : 'private - errors' }

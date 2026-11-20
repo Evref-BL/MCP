@@ -1,7 +1,7 @@
 "
 Shared base class for mutating MCP tools.
 
-It runs each target of a call through one checked flow: checkArguments: refuses what the schema cannot, then mutateWith: makes the change and answers the result. An error raised before the check echoes the arguments as the caller wrote them; one raised after reports them as the tool read them, through requestedContextFor:. mutationActionFor:checked: names the action an error reports.
+A concrete tool gives its metadata and its contract in toolSpec. It runs each target of a call through one checked flow: checkArguments: refuses what the schema cannot, then mutateWith: makes the change and answers the result. An error raised before the check echoes the arguments as the caller wrote them; one raised after reports them as the tool read them, through requestedContextFor:. mutationActionFor:checked: names the action an error reports.
 
 It also centralizes refactoring warning handling and structured mutation failure reporting.
 "
@@ -13,18 +13,24 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'testing' }
-MCPToolMutation class >> isAbstract [
-
-	^ self = MCPToolMutation
-]
-
 { #category : 'private - errors' }
 MCPToolMutation >> actionErrorCodePrefixFor: action [
 
 	action ifNil: [ ^ 'Action' ].
 	action isEmpty ifTrue: [ ^ 'Action' ].
 	^ action first asUppercase asString , action allButFirst
+]
+
+{ #category : 'private - errors' }
+MCPToolMutation >> addAction: action to: details [
+	"compile, create and update are actions of their own; any other action is a kind of update."
+
+	(#( 'compile' 'create' 'update' ) includes: action)
+		ifTrue: [ details at: #action put: action ]
+		ifFalse: [
+				details
+					at: #action put: 'update';
+					at: #updateAction put: action ]
 ]
 
 { #category : 'private - refactoring' }
@@ -66,18 +72,13 @@ MCPToolMutation >> addSupplementalSelectorFromMethodNode: methodNode to: details
 MCPToolMutation >> atLeastOneInputProperties [
 	"Properties of which a request must carry at least one. Empty means no such constraint."
 
-	^ #(  )
+	^ self toolSpec at: #atLeastOneProperties ifAbsent: [ #(  ) ]
 ]
 
 { #category : 'metadata' }
 MCPToolMutation >> buildInputSchema [
 
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: self inputProperties;
-		  required: self requiredInputProperties;
-		  additionalProperties: false;
-		  yourself
+	^ MCPStructureInputSchema properties: self inputProperties required: self requiredInputProperties
 ]
 
 { #category : 'private - execution' }
@@ -91,6 +92,12 @@ MCPToolMutation >> checkArguments: request [
 MCPToolMutation >> classesRefactoringEnvironmentForClassNames: classNames baseEnvironment: baseEnvironment [
 
 	^ baseEnvironment forClasses: (self resolvedRefactoringScopeClassesFrom: classNames inScope: 'scope.classes')
+]
+
+{ #category : 'metadata' }
+MCPToolMutation >> description [
+
+	^ self toolSpec at: #description
 ]
 
 { #category : 'private - errors' }
@@ -120,11 +127,7 @@ MCPToolMutation >> errorResultForCommandError: anError action: action requestedC
 	details := anError structuredDetails copy.
 	requestedContext ifNotNil: [
 		requestedContext keysAndValuesDo: [ :key :value | value ifNotNil: [ details at: key ifAbsentPut: [ value ] ] ] ].
-	(#( 'compile' 'create' 'update' ) includes: action)
-		ifTrue: [ details at: #action put: action ]
-		ifFalse: [
-				details at: #action put: 'update'.
-				details at: #updateAction put: action ].
+	self addAction: action to: details.
 	^ self errorResultText: anError messageText details: details
 ]
 
@@ -218,6 +221,13 @@ MCPToolMutation >> failureErrorCodeFor: anError action: action [
 	^ prefix , cause mcpMutationFailureErrorCodeSuffix
 ]
 
+{ #category : 'private - errors' }
+MCPToolMutation >> failureMessage: aPhrase error: anError [
+	"Unable to rename class Foo to Bar: and what caused the failure."
+
+	^ String streamContents: [ :stream | stream << aPhrase << ': ' << (self normalizedCauseMessageForMutationError: anError) ]
+]
+
 { #category : 'private - schema' }
 MCPToolMutation >> forceSchemaProperty [
 
@@ -280,7 +290,7 @@ MCPToolMutation >> impactMessagesForRefactoringWarning: aWarning action: action 
 { #category : 'private - schema' }
 MCPToolMutation >> inputProperties [
 
-	self subclassResponsibility
+	^ self toolSpec at: #inputProperties
 ]
 
 { #category : 'private' }
@@ -301,7 +311,7 @@ MCPToolMutation >> mutateWith: request [
 MCPToolMutation >> mutationActionFor: request checked: aBoolean [
 	"The action an error names."
 
-	self subclassResponsibility
+	^ self toolSpec at: #action
 ]
 
 { #category : 'private - mutation failures' }
@@ -467,7 +477,7 @@ MCPToolMutation >> refactoringWarningSummaryFor: aWarning action: action request
 			            impactMessages isEmpty ifFalse: [
 					            stream nextPutAll: ': '.
 					            impactMessages
-						            do: [ :each | stream nextPutAll: (self textWithoutFinalPeriod: each) ]
+						            do: [ :each | stream nextPutAll: (self textWithoutFinalPeriod: each trimRight) ]
 						            separatedBy: [ stream nextPutAll: '; ' ] ] ].
 	^ String streamContents: [ :stream |
 			  stream nextPutAll: sentence.
@@ -493,7 +503,7 @@ MCPToolMutation >> requestedContextFor: request checked: aBoolean [
 { #category : 'private - schema' }
 MCPToolMutation >> requiredInputProperties [
 
-	self subclassResponsibility
+	^ self toolSpec at: #requiredProperties
 ]
 
 { #category : 'private - request' }
@@ -526,15 +536,17 @@ MCPToolMutation >> targetDescriptionForRequestedContext: requestedContext [
 						  nextPutAll: slotName ] ]
 ]
 
-{ #category : 'private - warnings' }
-MCPToolMutation >> textWithoutFinalPeriod: aString [
-	"An impact message as a clause of a longer sentence."
+{ #category : 'metadata' }
+MCPToolMutation >> title [
 
-	| trimmed |
-	trimmed := aString trimRight.
-	^ (trimmed endsWith: '.')
-		  ifTrue: [ trimmed allButLast ]
-		  ifFalse: [ trimmed ]
+	^ self toolSpec at: #title
+]
+
+{ #category : 'private - specs' }
+MCPToolMutation >> toolSpec [
+	"The tool's metadata and contract, by key: title, description, the action an error names, inputProperties, requiredProperties, and atLeastOneProperties when a call must carry one of them."
+
+	self subclassResponsibility
 ]
 
 { #category : 'private - errors' }

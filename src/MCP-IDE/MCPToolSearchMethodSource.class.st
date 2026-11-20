@@ -31,31 +31,21 @@ MCPToolSearchMethodSource >> addMatchContextTo: entry sourceText: sourceText mat
 { #category : 'metadata' }
 MCPToolSearchMethodSource >> buildInputSchema [
 
-	| properties |
-	properties := self methodQueryScopeInputProperties , {
-		              (self filterSchemaPropertyWithDescription: 'Text to find in method source. Case matters.').
-		              (self
-			               filterModeSchemaPropertyWithDescription:
-			               'Match query as a substring or as a regular expression. In substring mode, blanks match any blanks, line breaks included.'
-			               values: self supportedFilterModes).
-		              self offsetInputProperty }.
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: properties;
-		  required: #( 'query' );
-		  yourself
+	^ MCPStructureInputSchema
+		  properties: self methodQueryScopeInputProperties , {
+				  (self filterSchemaPropertyWithDescription: 'Text to find in method source. Case matters.').
+				  (self
+					   filterModeSchemaPropertyWithDescription:
+					   'Match query as a substring or as a regular expression. In substring mode, blanks match any blanks, line breaks included.'
+					   values: self supportedFilterModes).
+				  self offsetInputProperty }
+		  required: #( 'query' )
 ]
 
 { #category : 'metadata' }
 MCPToolSearchMethodSource >> defaultExposure [
 
 	^ 'static'
-]
-
-{ #category : 'private - request' }
-MCPToolSearchMethodSource >> defaultFilterMode [
-
-	^ 'substring'
 ]
 
 { #category : 'metadata' }
@@ -124,13 +114,6 @@ MCPToolSearchMethodSource >> matcherForPattern: aPattern mode: aMode caseSensiti
 MCPToolSearchMethodSource >> needsSourceForFiltering [
 
 	^ true
-]
-
-{ #category : 'private - template' }
-MCPToolSearchMethodSource >> queryEntriesForRequest: request scopeQuery: scopeQuery [
-
-	self requiredFilterPatternFromRequest: request.
-	^ super queryEntriesForRequest: request scopeQuery: scopeQuery
 ]
 
 { #category : 'private - results' }

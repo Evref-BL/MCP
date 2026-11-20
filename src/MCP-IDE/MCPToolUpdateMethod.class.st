@@ -66,10 +66,9 @@ MCPToolUpdateMethod >> changeProtocolOf: request [
 		  failureSummary: [ :error |
 				  self classNameAndSideOf: request do: [ :className :classSide :sideGiven |
 						  self
-							  failureMessageForChangeProtocolClassNamed: className
-							  classSide: classSide
-							  selector: selector
-							  protocol: (request stringArgumentNamed: 'protocol')
+							  failureMessage: ('Unable to change protocol for {1} to {2}' format: {
+										   (self methodReferenceForClassName: className selector: selector isClassSide: classSide).
+										   (request stringArgumentNamed: 'protocol') })
 							  error: error ] ]
 ]
 
@@ -132,23 +131,19 @@ MCPToolUpdateMethod >> contextValueNamed: anArgumentName in: request permutation
 { #category : 'private - errors' }
 MCPToolUpdateMethod >> failureMessageForSelectorChange: action of: request error: anError [
 
+	| template |
+	template := action = 'rename'
+		            ifTrue: [ 'Unable to rename method {1} to {2}' ]
+		            ifFalse: [
+				            action = 'addArguments'
+					            ifTrue: [ 'Unable to add arguments to method {1} as {2}' ]
+					            ifFalse: [ 'Unable to remove arguments from method {1} as {2}' ] ].
 	^ self classNameAndSideOf: request do: [ :className :classSide :sideGiven |
-			  action = 'rename'
-				  ifTrue: [
-						  self
-							  failureMessageForRenameClassNamed: className
-							  classSide: classSide
-							  selector: (request stringArgumentNamed: 'selector')
-							  newSelector: (request stringArgumentNamed: 'newSelector')
-							  error: anError ]
-				  ifFalse: [
-						  self
-							  failureMessageForArgumentUpdateAction: action
-							  classNamed: className
-							  classSide: classSide
-							  selector: (request stringArgumentNamed: 'selector')
-							  newSelector: (request stringArgumentNamed: 'newSelector')
-							  error: anError ] ]
+			  self
+				  failureMessage: (template format: {
+							   (self methodReferenceForClassName: className selector: (request stringArgumentNamed: 'selector') isClassSide: classSide).
+							   (request stringArgumentNamed: 'newSelector') })
+				  error: anError ]
 ]
 
 { #category : 'private - results' }
@@ -156,75 +151,6 @@ MCPToolUpdateMethod >> keysStatedInSummary [
 	"Several updates each say what they did in the summary, a line each."
 
 	^ #( updates )
-]
-
-{ #category : 'private - specs' }
-MCPToolUpdateMethod >> methodToolSpec [
-
-	^ {
-		  (#title -> 'Update Method').
-		  (#description
-		   ->
-		   'Change one method: its protocol, its selector, or both in one call. A selector change is classified by arity, so the same argument renames, adds or removes arguments, and senders are updated.').
-		  (#action -> 'update').
-		  (#inputProperties -> {
-			   (MCPStructureProperties new
-				    name: 'class';
-				    type: 'string';
-				    description: 'The class defining the method.';
-				    yourself).
-			   (self targetSideSchemaPropertyDescribedAs: 'Which side the method is on.').
-			   self forceSchemaProperty.
-			   (self formatSchemaPropertyDescribedAs:
-				    'Reformat the method with its package''s formatter after a selector change. False keeps its source as written but for its selector line. Senders are left as Pharo''s refactoring writes them either way: a rename changes only the send, adding or removing arguments reformats each sender.').
-			   (MCPStructureProperties new
-				    name: 'selector';
-				    type: 'string';
-				    description: 'The method selector to update.';
-				    yourself).
-			   (MCPStructureProperties new
-				    name: 'protocol';
-				    type: 'string';
-				    description:
-					    'Refile the method under this protocol. For an extension method, name an extension protocol such as *Package-Name.';
-				    yourself).
-			   (MCPStructureProperties new
-				    name: 'newSelector';
-				    type: 'string';
-				    description: 'Rename the method to this selector, updating its senders.';
-				    yourself).
-			   ((MCPStructureProperties new
-				     name: 'arguments';
-				     type: 'array';
-				     description:
-					     'Names of the arguments the new selector takes, in order. Names matching the current ones are kept, new names are added arguments, and current ones left out are removed.')
-				    items: (MCPStructureProperties new
-						     type: 'string';
-						     description: 'Argument name.';
-						     yourself);
-				    yourself).
-			   ((MCPStructureProperties new
-				     name: 'argumentValueExpressions';
-				     type: 'array';
-				     description: 'Expressions senders pass for each added argument, in order.')
-				    items: (MCPStructureProperties new
-						     type: 'string';
-						     description: 'Smalltalk expression.';
-						     yourself);
-				    yourself).
-			   ((MCPStructureProperties new
-				     name: 'permutation';
-				     type: 'array';
-				     description:
-					     'Only to reorder arguments, which names cannot express: one entry per new argument, holding the index of the current argument it takes, or 0 for an added one. Inferred from arguments when omitted.')
-				    items: (MCPStructureProperties new
-						     type: 'integer';
-						     description: 'Current argument index, or 0.';
-						     yourself);
-				    yourself).
-			   self sendersScopeSchemaProperty }).
-		  (#requiredProperties -> #( 'class' 'selector' )).
-		  (#atLeastOneProperties -> #( 'protocol' 'newSelector' )) } asDictionary
 ]
 
 { #category : 'executing' }
@@ -363,6 +289,65 @@ MCPToolUpdateMethod >> targetSelectorFor: request [
 		  ifNotNil: [ :newSelector | newSelector asSymbol ]
 ]
 
+{ #category : 'private - specs' }
+MCPToolUpdateMethod >> toolSpec [
+
+	^ {
+		  (#title -> 'Update Method').
+		  (#description
+		   ->
+		   'Change one method: its protocol, its selector, or both in one call. A selector change is classified by arity, so the same argument renames, adds or removes arguments, and senders are updated.').
+		  (#action -> 'update').
+		  (#inputProperties -> {
+			   (self schemaPropertyNamed: 'class' type: 'string' description: 'The class defining the method.').
+			   (self targetSideSchemaPropertyDescribedAs: 'Which side the method is on.').
+			   self forceSchemaProperty.
+			   (self formatSchemaPropertyDescribedAs:
+				    'Reformat the method with its package''s formatter after a selector change. False keeps its source as written but for its selector line. Senders are left as Pharo''s refactoring writes them either way: a rename changes only the send, adding or removing arguments reformats each sender.').
+			   (self schemaPropertyNamed: 'selector' type: 'string' description: 'The method selector to update.').
+			   (self
+				    schemaPropertyNamed: 'protocol'
+				    type: 'string'
+				    description:
+				    'Refile the method under this protocol. For an extension method, name an extension protocol such as *Package-Name.').
+			   (self
+				    schemaPropertyNamed: 'newSelector'
+				    type: 'string'
+				    description: 'Rename the method to this selector, updating its senders.').
+			   ((self
+				     schemaPropertyNamed: 'arguments'
+				     type: 'array'
+				     description:
+					     'Names of the arguments the new selector takes, in order, naming the added ones and renaming the kept ones. They do not choose which current argument each one keeps: permutation does.')
+				    items: (MCPStructureProperties new
+						     type: 'string';
+						     description: 'Argument name.';
+						     yourself);
+				    yourself).
+			   ((self
+				     schemaPropertyNamed: 'argumentValueExpressions'
+				     type: 'array'
+				     description: 'Expressions senders pass for each added argument, in order.')
+				    items: (MCPStructureProperties new
+						     type: 'string';
+						     description: 'Smalltalk expression.';
+						     yourself);
+				    yourself).
+			   ((self
+				     schemaPropertyNamed: 'permutation'
+				     type: 'array'
+				     description:
+					     'Which current argument each new one takes: one entry per new argument, holding the index of the current argument, or 0 for an added one. Omitted, each new argument takes the current one at its position when the arity is unchanged, else the one of the same keyword.')
+				    items: (MCPStructureProperties new
+						     type: 'integer';
+						     description: 'Current argument index, or 0.';
+						     yourself);
+				    yourself).
+			   self sendersScopeSchemaProperty }).
+		  (#requiredProperties -> #( 'class' 'selector' )).
+		  (#atLeastOneProperties -> #( 'protocol' 'newSelector' )) } asDictionary
+]
+
 { #category : 'private - updating' }
 MCPToolUpdateMethod >> updateActionOf: action [
 
@@ -404,9 +389,7 @@ MCPToolUpdateMethod >> updateTargetBehaviorFor: request [
 	"The behaviour every update action works on. A method the class got from a trait is the trait's to rename, recategorize or re-argument, so the actions stop here rather than each learning what a trait is."
 
 	| behavior |
-	behavior := self
-		            classNameAndSideOf: request
-		            do: [ :className :classSide :sideGiven | self behaviorNamed: className classSide: classSide ].
+	behavior := self behaviorNamedIn: request.
 	self signalTraitOriginBeforeUpdating: (request stringArgumentNamed: 'selector') in: behavior.
 	^ behavior
 ]

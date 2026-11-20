@@ -129,17 +129,6 @@ MCPToolExportRepository >> refuseExportWithNothingToWriteFor: aRepository [
 				(#packages -> names) } asDictionary
 ]
 
-{ #category : 'private - specs' }
-MCPToolExportRepository >> repositoryToolSpec [
-
-	^ {
-		  (#title -> 'Export Repository').
-		  (#description
-		   ->
-		   'Write the packages of a registered repository to its checkout, in the format the checkout declares. It names the files written. Nothing is staged or committed.').
-		  (#action -> 'export') } asDictionary
-]
-
 { #category : 'private - results' }
 MCPToolExportRepository >> summaryForExportOf: aRepository files: files [
 	"Name the packages export wrote; when it wrote no package file, the files it wrote outside every package, such as .project; and otherwise that there was nothing to write."
@@ -152,4 +141,16 @@ MCPToolExportRepository >> summaryForExportOf: aRepository files: files [
 					  changedPaths
 						  ifNotEmpty: [ stream << 'wrote ' << (', ' join: changedPaths asArray sort) << ', not committed yet.' ]
 						  ifEmpty: [ stream << 'nothing to write, its files already hold what the image has.' ] ] ]
+]
+
+{ #category : 'private - specs' }
+MCPToolExportRepository >> toolSpec [
+
+	^ {
+		  (#title -> 'Export Repository').
+		  (#description
+		   ->
+		   'Write the packages of a registered repository to its checkout, in the format the checkout declares. It names the files written. Nothing is staged or committed.').
+		  (#action -> 'export').
+		  (#requiredProperties -> #( 'repository' )) } asDictionary
 ]

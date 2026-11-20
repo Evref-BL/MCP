@@ -447,10 +447,10 @@ MCPToolMethodSearchTest >> testImplementorsLeaveOutWhatTraitedClassInstalls [
 ]
 
 { #category : 'tests' }
-MCPToolMethodSearchTest >> testMatchOverLinesIsReadWhereItStartsInEitherEngine [
-	"The line a match over several lines starts on is counted in characters, the way lines splits the text: a CR, an LF or a CR and LF each end one, and a character outside ASCII counts once, whichever engine finds the match."
+MCPToolMethodSearchTest >> testMatchAcrossBlanksIsReadOnTheLineItStarts [
+	"The line a match over several lines starts on is counted in characters, the way lines splits the text: a CR, an LF or a CR and LF each end one, and a character outside ASCII counts once."
 
-	| source tool |
+	| finder source tool |
 	source := String streamContents: [ :stream |
 			          stream
 				          nextPutAll: (String new: 10 withAll: $é);
@@ -464,34 +464,26 @@ MCPToolMethodSearchTest >> testMatchOverLinesIsReadWhereItStartsInEitherEngine [
 				          tab;
 				          nextPutAll: 'ifTrue: [ ^ x ]' ].
 	tool := MCPToolSearchMethodSource new.
-	{
-		MCPToolSearchWithoutPCRE2TestStub new.
-		tool } do: [ :engine |
-			| finder |
-			finder := engine matchStartFinderForPiecesAcrossBlanks: #( 'isNil' 'ifTrue:' ) caseSensitive: true.
-			self assert: (tool lineNumberOfMatchIn: source lines: source lines finder: finder) equals: 4 ]
+	finder := tool matchStartFinderForPiecesAcrossBlanks: #( 'isNil' 'ifTrue:' ) caseSensitive: true.
+	self assert: (tool lineNumberOfMatchIn: source lines: source lines finder: finder) equals: 4
 ]
 
 { #category : 'tests' }
-MCPToolMethodSearchTest >> testMatcherAcrossBlanksMatchesEachPieceAsWrittenInEitherEngine [
-	"Each piece is escaped in the regex that joins them, so a colon, a bracket, a caret or a period matches itself, whether PCRE2 or Pharo's own engine runs it, and pieces need blanks between them."
+MCPToolMethodSearchTest >> testMatcherAcrossBlanksMatchesEachPieceAsWritten [
+	"Each piece is escaped in the regex that joins them, so a colon, a bracket, a caret or a period matches itself, and pieces need blanks between them."
 
-	| source |
+	| matcher source |
 	source := String streamContents: [ :stream |
 			          stream
 				          nextPutAll: 'x ifNil:';
 				          cr;
 				          tab;
 				          nextPutAll: '[ ^ nil ].' ].
-	{
-		MCPToolSearchWithoutPCRE2TestStub new.
-		MCPToolSearchMethods new } do: [ :tool |
-			| matcher |
-			matcher := tool matcherForPiecesAcrossBlanks: #( 'ifNil:' '[' '^' 'nil' '].' ) caseSensitive: true.
-			self assert: (matcher value: source).
-			self deny: (matcher value: 'x ifNil [ ^ nil ].').
-			self deny: (matcher value: 'x ifNil: [ ^ nil ]!').
-			self deny: (matcher value: 'x ifNil:[ ^ nil ].') ]
+	matcher := MCPToolSearchMethods new matcherForPiecesAcrossBlanks: #( 'ifNil:' '[' '^' 'nil' '].' ) caseSensitive: true.
+	self assert: (matcher value: source).
+	self deny: (matcher value: 'x ifNil [ ^ nil ].').
+	self deny: (matcher value: 'x ifNil: [ ^ nil ]!').
+	self deny: (matcher value: 'x ifNil:[ ^ nil ].')
 ]
 
 { #category : 'tests' }
@@ -590,22 +582,10 @@ MCPToolMethodSearchTest >> testParentClassNamesReturnParentMethods [
 ]
 
 { #category : 'tests' }
-MCPToolMethodSearchTest >> testRegexMatcherUsesBasicRegexWhenPCRE2Unavailable [
+MCPToolMethodSearchTest >> testRegexMatcherReadsPerlCompatibleSyntax [
 
-	| matcher tool |
-	tool := MCPToolSearchWithoutPCRE2TestStub new.
-	matcher := tool regexMatcherForPattern: 'MCP.*Test' caseSensitive: true.
-	self assert: (matcher value: 'MCPToolMethodSearchTest').
-	self deny: (matcher value: 'mcpToolMethodSearchTest')
-]
-
-{ #category : 'tests' }
-MCPToolMethodSearchTest >> testRegexMatcherUsesPCRE2WhenLibraryAvailable [
-
-	| matcher tool |
-	tool := MCPToolSearchMethods new.
-	tool pcre2RegexLibraryAvailable ifFalse: [ self skip: 'PCRE2 native library unavailable' ].
-	matcher := tool regexMatcherForPattern: '(?<=a)b' caseSensitive: true.
+	| matcher |
+	matcher := MCPToolSearchMethods new regexMatcherForPattern: '(?<=a)b' caseSensitive: true.
 	self assert: (matcher value: 'ab').
 	self deny: (matcher value: 'cb')
 ]

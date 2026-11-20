@@ -53,12 +53,7 @@ MCPToolRegistryTest >> createProbeToolClass [
 	self
 		ensureMethodSource: 'buildInputSchema
 
-	^ MCPStructureInputSchema new
-		  type: ''object'';
-		  properties: #(  );
-		  required: #(  );
-		  additionalProperties: false;
-		  yourself'
+	^ MCPStructureInputSchema properties: #(  ) required: #(  )'
 		protocol: 'metadata'
 		on: probeClass.
 	self

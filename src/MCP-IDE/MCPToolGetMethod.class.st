@@ -56,35 +56,19 @@ MCPToolGetMethod >> bindingClassNameFor: aBinding [
 { #category : 'metadata' }
 MCPToolGetMethod >> buildInputSchema [
 
-	| includeVariableDetailsProperty selectorProperty |
-	includeVariableDetailsProperty := MCPStructureProperties new
-		                                  name: 'includeVariableDetails';
-		                                  type: 'boolean';
-		                                  description:
-			                                  'Also report, for every variable the method reads or writes, where it is defined and how often it is used.';
-		                                  default: false;
-		                                  yourself.
-	selectorProperty := MCPStructureProperties new
-		                    name: 'selector';
-		                    type: #( 'string' 'array' );
-		                    description: 'Class>>selector, Class class>>selector, or a bare selector with class. One or several.';
-		                    items: (MCPStructureProperties new
-				                     type: 'string';
-				                     yourself);
-		                    yourself.
-	^ MCPStructureInputSchema new
-		  type: 'object';
+	^ MCPStructureInputSchema
 		  properties: {
-				  (MCPStructureProperties new
-					   name: 'class';
-					   type: 'string';
-					   description: 'Class for bare selectors.';
-					   yourself).
-				  selectorProperty.
-				  (self targetSideSchemaPropertyDescribedAs: 'Which side a bare selector is on.').
-				  includeVariableDetailsProperty };
-		  required: #( 'selector' );
-		  yourself
+				  (self schemaPropertyNamed: 'class' type: 'string' description: 'The class to look the method up in.').
+				  (self
+					   stringOrArraySchemaNamed: 'selector'
+					   description: 'The method''s selector, or several of that class.'
+					   itemDescription: 'Method name.').
+				  (self targetSideSchemaPropertyDescribedAs: 'Which side the method is on.').
+				  (self
+					   booleanSchemaPropertyNamed: 'includeVariableDetails'
+					   description: 'Also report, for every variable the method reads or writes, where it is defined and how often it is used.'
+					   default: false) }
+		  required: #( 'selector' )
 ]
 
 { #category : 'private - errors' }
@@ -92,16 +76,15 @@ MCPToolGetMethod >> classNameFor: request checked: aBoolean [
 	"The class an error names: the one the arguments name once checked, else the class argument as written, without the side it may name."
 
 	aBoolean ifTrue: [ ^ self methodNamedIn: request do: [ :className :selector :classSide | className ] ].
-	^ (request stringArgumentNamed: 'class') ifNil: [ '' ] ifNotNil: [ :className | MCPImageLookup baseNameOf: className ]
+	^ (self requestedClassNameIn: request) ifNil: [ '' ]
 ]
 
 { #category : 'private - errors' }
 MCPToolGetMethod >> classSideFor: request checked: aBoolean [
-	"Whether an error names the class side: the side the arguments name once checked, else the class side when the call said so, by side or by a class written as Foo class."
+	"Whether an error names the class side: the side the arguments name once checked, else the class side when the call said so."
 
 	aBoolean ifTrue: [ ^ self methodNamedIn: request do: [ :className :selector :classSide | classSide ] ].
-	^ (request stringArgumentNamed: 'side') = 'class' or: [
-		  (request stringArgumentNamed: 'class') ifNil: [ false ] ifNotNil: [ :className | MCPImageLookup namesClassSide: className ] ]
+	^ self requestedClassSideIn: request
 ]
 
 { #category : 'private - results' }
@@ -115,7 +98,7 @@ MCPToolGetMethod >> classSideNoteForClassName: className selector: selector [
 						  stream
 							  nextPutAll: 'It is on the class side, the only side that has one of its own. The instance side inherits ';
 							  nextPutAll:
-								  (self methodReferenceTextForClassName: inheritedMethod methodClass name asString selector: selector classSide: false);
+								  (self methodReferenceForClassName: inheritedMethod methodClass name asString selector: selector isClassSide: false);
 							  nextPut: $. ] ]
 ]
 
@@ -134,7 +117,7 @@ MCPToolGetMethod >> definingClassNameFromBinding: aBinding [
 { #category : 'metadata' }
 MCPToolGetMethod >> description [
 
-	^ 'Get the source of methods named Class>>selector or Class class>>selector, one or several.'
+	^ 'Get the source of a method by its class and selector, or of several methods of that class.'
 ]
 
 { #category : 'private - results' }
@@ -158,19 +141,12 @@ MCPToolGetMethod >> errorResultForError: anError className: className selector: 
 				  self errorResultText: commandError messageText details: details ]
 		  otherwise: [ :toolError |
 				  self
-					  errorResultText: (self
-							   failureMessageForClassNamed: className
-							   selector: selectorString
-							   classSide: classSide
-							   error: toolError)
+					  errorResultFor: toolError
+					  unableTo: 'get method ' , (self methodReferenceForClassName: className selector: selectorString isClassSide: classSide)
 					  details: {
-							  (#errorClass -> toolError class name).
-							  (#message -> toolError messageText).
 							  (#class -> className).
 							  (#selector -> selectorString).
-							  (#side -> (classSide
-								    ifTrue: [ 'class' ]
-								    ifFalse: [ 'instance' ])) } asDictionary ]
+							  (#side -> (self sideNameFor: classSide)) } ]
 ]
 
 { #category : 'executing' }
@@ -197,19 +173,6 @@ MCPToolGetMethod >> executeWithRequest: request [
 							  className: (self classNameFor: targetRequest checked: checked)
 							  selector: (self selectorFor: targetRequest checked: checked)
 							  classSide: (self classSideFor: targetRequest checked: checked) ] ]
-]
-
-{ #category : 'private - results' }
-MCPToolGetMethod >> failureMessageForClassNamed: className selector: selectorString classSide: classSide error: anError [
-
-	^ String streamContents: [ :stream |
-		  stream
-			  nextPutAll: 'Unable to get method ';
-			  nextPutAll: (self methodReferenceTextForClassName: className selector: selectorString classSide: classSide);
-			  nextPutAll: ' (';
-			  nextPutAll: anError class name;
-			  nextPutAll: '): ';
-			  nextPutAll: anError messageText ]
 ]
 
 { #category : 'private - execution' }
@@ -271,7 +234,7 @@ MCPToolGetMethod >> methodNamedIn: request do: aBlock [
 	"Give aBlock the class name without its side, the selector, whether the class side is meant and, to a block that takes it, whether the call said which side. A selector written as a reference names it alone, and its side with it; a bare one needs class, and a class written with its side must agree with side."
 
 	| className text |
-	text := self selectorStringFromRequest: request.
+	text := request stringArgumentNamed: 'selector'.
 	(MCPMethodReference fromString: text) ifNotNil: [ :reference |
 			^ aBlock
 				  cull: reference className
@@ -291,14 +254,6 @@ MCPToolGetMethod >> methodNamedIn: request do: aBlock [
 				  cull: text
 				  cull: isClassSide
 				  cull: isSideGiven ]
-]
-
-{ #category : 'private - results' }
-MCPToolGetMethod >> methodReferenceTextForClassName: className selector: selector classSide: classSide [
-
-	^ className , (classSide
-		   ifTrue: [ ' class>>' ]
-		   ifFalse: [ '>>' ]) , selector
 ]
 
 { #category : 'private - analysis' }
@@ -369,9 +324,9 @@ MCPToolGetMethod >> successSummaryForMethod: aCompiledMethod readIn: aBehavior s
 			  stream
 				  nextPutAll: 'Got method ';
 				  nextPutAll: (self
-						   methodReferenceTextForClassName: definingClass instanceSide name asString
+						   methodReferenceForClassName: definingClass instanceSide name asString
 						   selector: selector
-						   classSide: definingClass isClassSide).
+						   isClassSide: definingClass isClassSide).
 			  definingClass == aBehavior ifFalse: [
 					  stream
 						  nextPutAll: ', which ';

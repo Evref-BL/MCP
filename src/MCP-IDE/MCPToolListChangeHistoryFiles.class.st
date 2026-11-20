@@ -24,17 +24,11 @@ MCPToolListChangeHistoryFiles >> annotations [
 { #category : 'metadata' }
 MCPToolListChangeHistoryFiles >> buildInputSchema [
 
-	^ MCPStructureInputSchema new
-		  type: 'object';
+	^ MCPStructureInputSchema
 		  properties: {
-				  (self
-					   schemaPropertyNamed: 'directoryPath'
-					   type: 'string'
-					   description: 'Directory holding the .ombu files. Defaults to this image''s own history directory.').
-				  self offsetInputProperty };
-		  required: #(  );
-		  additionalProperties: false;
-		  yourself
+				  self directoryPathSchemaProperty.
+				  self offsetInputProperty }
+		  required: #(  )
 ]
 
 { #category : 'private - execution' }
@@ -70,28 +64,14 @@ MCPToolListChangeHistoryFiles >> description [
 
 { #category : 'private - files' }
 MCPToolListChangeHistoryFiles >> directoryToList: directoryPath current: currentFile [
-	"The directory directoryPath names, else the one holding this image's history."
+	"The directory directoryPath names, else the one holding this image's history. The file in progress is a file even before it is written to disk."
 
 	| directory |
 	directoryPath ifNil: [ ^ self historyDirectoryForCurrentFile: currentFile ].
 	self refuseRelativeDirectoryPath: directoryPath.
 	directory := directoryPath asFileReference.
-	currentFile ifNotNil: [
-			(self sameFileReference: directory as: currentFile) ifTrue: [
-					MCPCommandError
-						signalErrorCode: #ChangeHistoryPathNotDirectory
-						message: (String streamContents: [ :stream | stream << 'Change history path ' << directoryPath << ' is not a directory.' ])
-						details: { (#directoryPath -> directoryPath) } asDictionary ] ].
-	directory exists ifFalse: [
-			MCPCommandError
-				signalErrorCode: #ChangeHistoryDirectoryNotFound
-				message: (String streamContents: [ :stream | stream << 'Change history directory ' << directoryPath << ' does not exist.' ])
-				details: { (#directoryPath -> directoryPath) } asDictionary ].
-	directory isDirectory ifFalse: [
-			MCPCommandError
-				signalErrorCode: #ChangeHistoryPathNotDirectory
-				message: (String streamContents: [ :stream | stream << 'Change history path ' << directoryPath << ' is not a directory.' ])
-				details: { (#directoryPath -> directoryPath) } asDictionary ].
+	(currentFile isNotNil and: [ self sameFileReference: directory as: currentFile ]) ifTrue: [ self refuseFileNamed: directoryPath ].
+	self refuseUnusableDirectory: directory named: directoryPath.
 	^ directory
 ]
 

@@ -19,12 +19,6 @@ MCPToolMethodMutation class >> groupName [
 	^ self methodsGroupName
 ]
 
-{ #category : 'testing' }
-MCPToolMethodMutation class >> isAbstract [
-
-	^ self = MCPToolMethodMutation
-]
-
 { #category : 'private' }
 MCPToolMethodMutation >> addChainedSendNoteAt: anInterval flaggedBy: aRuleClassName in: aString to: data [
 	"A send that nothing implements, whose keywords split into two selectors that are methods somewhere, as sorted:collect: into sorted: and collect:, was most likely meant as two sends: Smalltalk reads the keywords of one send as one selector, so sending the second to what the first answers takes parentheses. The rule's title alone reads as sorted: not being implemented."
@@ -119,12 +113,6 @@ MCPToolMethodMutation >> allowedNonErrorCritiqueRuleClasses [
 		  ReUseIsEmptyNotSizeRule } , self notOptimizedIfRuleClasses
 ]
 
-{ #category : 'private - specs' }
-MCPToolMethodMutation >> atLeastOneInputProperties [
-
-	^ self methodToolSpec at: #atLeastOneProperties ifAbsent: [ #(  ) ]
-]
-
 { #category : 'private' }
 MCPToolMethodMutation >> behaviorChangingRewriteRuleClasses [
 	"Pharo rewrites a one-armed conditional on these rules whether or not the method reads its value: ^ x isNil ifTrue: [ 1 ] becomes ^ x ifNil: [ 1 ], which answers x when x is set. method_rewrite rewrites at least a whole class, so a critique of one of them names the idiom but not method_rewrite, even on a hit whose rewrite would keep what the method answers. A rule this Pharo lacks reads as nil."
@@ -166,21 +154,6 @@ MCPToolMethodMutation >> blockingCritiqueDataForMethodNode: aMethodNode in: aBeh
 MCPToolMethodMutation >> blockingPreCompileRuleClasses [
 
 	^ { ReDeadBlockRule }
-]
-
-{ #category : 'private - arguments' }
-MCPToolMethodMutation >> classNameAndSideOf: request do: aBlock [
-	"aBlock gets the class the call names without its side, whether the class side is meant, and whether the call said which side, by side or by a class written as Foo class. A side that says the other one is refused."
-
-	^ MCPImageLookup className: (request stringArgumentNamed: 'class') side: (request stringArgumentNamed: 'side') do: aBlock
-]
-
-{ #category : 'private' }
-MCPToolMethodMutation >> classReferenceNameFor: className classSide: classSide [
-
-	^ classSide
-		  ifTrue: [ className , ' class' ]
-		  ifFalse: [ className ]
 ]
 
 { #category : 'private' }
@@ -287,7 +260,7 @@ MCPToolMethodMutation >> critiqueDataFor: aCritique source: aString in: aBehavio
 		        (#ruleClass -> ruleClassName asString).
 		        (#title -> aCritique title asString).
 		        (#description -> aCritique description asString) } asDictionary.
-	interval := self sourceIntervalForCritique: aCritique.
+	interval := self sourceIntervalOf: aCritique sourceAnchor.
 	interval ifNotNil: [
 			data
 				at: #start put: interval first;
@@ -373,12 +346,6 @@ MCPToolMethodMutation >> critiquesOfMethod: aCompiledMethod [
 		  each isCritique and: [ manifestRules excludes: each rule on: aCompiledMethod ] ]
 ]
 
-{ #category : 'metadata' }
-MCPToolMethodMutation >> description [
-
-	^ self methodToolSpec at: #description
-]
-
 { #category : 'private' }
 MCPToolMethodMutation >> distinctCritiqueData: critiqueData [
 	"Each problem once, in the order of the method: of equal hits the first is kept, and a hit lying strictly inside another of the same rule and title, or restating another, says nothing that one does not."
@@ -393,75 +360,6 @@ MCPToolMethodMutation >> distinctCritiqueData: critiqueData [
 	^ kept asArray sort: [ :left :right | self critiqueData: left precedes: right ]
 ]
 
-{ #category : 'private' }
-MCPToolMethodMutation >> failureMessageForArgumentUpdateAction: updateAction classNamed: className classSide: classSide selector: oldSelector newSelector: newSelector error: anError [
-
-	| targetName verb |
-	targetName := self classReferenceNameFor: className classSide: classSide.
-	verb := updateAction = 'addArguments'
-		        ifTrue: [ 'add arguments to' ]
-		        ifFalse: [ 'remove arguments from' ].
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Unable to ';
-				  nextPutAll: verb;
-				  nextPutAll: ' method ';
-				  nextPutAll: targetName;
-				  nextPutAll: '>>';
-				  nextPutAll: oldSelector;
-				  nextPutAll: ' as ';
-				  nextPutAll: newSelector;
-				  nextPutAll: ': ';
-				  nextPutAll: (self normalizedCauseMessageForMutationError: anError) ]
-]
-
-{ #category : 'private' }
-MCPToolMethodMutation >> failureMessageForChangeProtocolClassNamed: className classSide: classSide selector: selector protocol: protocol error: anError [
-
-	| targetName |
-	targetName := self classReferenceNameFor: className classSide: classSide.
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Unable to change protocol for ';
-				  nextPutAll: targetName;
-				  nextPutAll: '>>';
-				  nextPutAll: selector;
-				  nextPutAll: ' to ';
-				  nextPutAll: protocol;
-				  nextPutAll: ': ';
-				  nextPutAll: (self normalizedCauseMessageForMutationError: anError) ]
-]
-
-{ #category : 'private' }
-MCPToolMethodMutation >> failureMessageForCompileClassNamed: className classSide: classSide error: anError [
-
-	| targetName |
-	targetName := self classReferenceNameFor: className classSide: classSide.
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Unable to compile method on ';
-				  nextPutAll: targetName;
-				  nextPutAll: ': ';
-				  nextPutAll: (self normalizedCauseMessageForMutationError: anError) ]
-]
-
-{ #category : 'private' }
-MCPToolMethodMutation >> failureMessageForRenameClassNamed: className classSide: classSide selector: oldSelector newSelector: newSelector error: anError [
-
-	| targetName |
-	targetName := self classReferenceNameFor: className classSide: classSide.
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Unable to rename method ';
-				  nextPutAll: targetName;
-				  nextPutAll: '>>';
-				  nextPutAll: oldSelector;
-				  nextPutAll: ' to ';
-				  nextPutAll: newSelector;
-				  nextPutAll: ': ';
-				  nextPutAll: (self normalizedCauseMessageForMutationError: anError) ]
-]
-
 { #category : 'private - schema' }
 MCPToolMethodMutation >> formatSchemaPropertyDescribedAs: aString [
 	"Formatting is the default, so that what is compiled reads like the rest of the image. Restoring a method's text from another branch, or a small edit across many methods, needs the text kept as written: formatted, every line the formatter writes differently changes too."
@@ -473,12 +371,6 @@ MCPToolMethodMutation >> formatSchemaPropertyDescribedAs: aString [
 MCPToolMethodMutation >> howToProceedForBlockedCompile [
 
 	^ 'Correct the source and compile it again.'
-]
-
-{ #category : 'private - schema' }
-MCPToolMethodMutation >> inputProperties [
-
-	^ self methodToolSpec at: #inputProperties
 ]
 
 { #category : 'private' }
@@ -501,24 +393,6 @@ MCPToolMethodMutation >> isSelfOrSuper: aNode [
 	"Whether aNode, parsed without a class to resolve its names in, is self or super."
 
 	^ aNode isVariable and: [ #( 'self' 'super' ) includes: aNode name asString ]
-]
-
-{ #category : 'private - specs' }
-MCPToolMethodMutation >> methodToolSpec [
-
-	self subclassResponsibility
-]
-
-{ #category : 'private - actions' }
-MCPToolMethodMutation >> mutationAction [
-
-	^ self methodToolSpec at: #action
-]
-
-{ #category : 'private - errors' }
-MCPToolMethodMutation >> mutationActionFor: request checked: aBoolean [
-
-	^ self mutationAction
 ]
 
 { #category : 'private' }
@@ -550,12 +424,6 @@ MCPToolMethodMutation >> reformattedMethodForBehavior: aBehavior selector: aSele
 	compiledMethod := aBehavior >> aSelector.
 	aBehavior compile: (compiledMethod ast formattedCodeIn: aBehavior) classified: compiledMethod protocol.
 	^ aBehavior >> aSelector
-]
-
-{ #category : 'private - schema' }
-MCPToolMethodMutation >> requiredInputProperties [
-
-	^ self methodToolSpec at: #requiredProperties ifAbsent: [ #( 'class' ) ]
 ]
 
 { #category : 'private' }
@@ -623,20 +491,4 @@ MCPToolMethodMutation >> slotNoteFor: aSelector receivedBy: aReceiverBehavior in
 							  ifTrue: [ stream << 'read it directly, as ' << slotName << '.' ]
 							  ifFalse: [ stream << 'assign it directly, as ' << slotName << ' := ...' ] ] ]
 		  ifNone: [ nil ]
-]
-
-{ #category : 'private' }
-MCPToolMethodMutation >> sourceIntervalForCritique: aCritique [
-
-	| sourceAnchor |
-	sourceAnchor := aCritique sourceAnchor.
-	sourceAnchor ifNil: [ ^ nil ].
-	sourceAnchor providesInterval ifFalse: [ ^ nil ].
-	^ sourceAnchor interval
-]
-
-{ #category : 'metadata' }
-MCPToolMethodMutation >> title [
-
-	^ self methodToolSpec at: #title
 ]

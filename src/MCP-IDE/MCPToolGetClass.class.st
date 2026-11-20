@@ -4,8 +4,6 @@ Answers a class or trait as its Tonel file, a page at a time: offset 0 is the co
 Class {
 	#name : 'MCPToolGetClass',
 	#superclass : 'MCPTool',
-	#traits : 'TMCPClassTool',
-	#classTraits : 'TMCPClassTool classTrait',
 	#category : 'MCP-IDE-Tools',
 	#package : 'MCP-IDE',
 	#tag : 'Tools'
@@ -50,28 +48,11 @@ MCPToolGetClass >> batchSummaryVerb [
 { #category : 'metadata' }
 MCPToolGetClass >> buildInputSchema [
 
-	| nameProperty |
-	nameProperty := MCPStructureProperties new
-		                name: 'name';
-		                type: #( 'string' 'array' );
-		                description: 'Class name, or several class names.';
-		                items: (MCPStructureProperties new
-				                 type: 'string';
-				                 yourself);
-		                yourself.
-	^ MCPStructureInputSchema new
-		  type: 'object';
+	^ MCPStructureInputSchema
 		  properties: {
-				  nameProperty.
-				  self offsetInputProperty };
-		  required: #( 'name' );
-		  yourself
-]
-
-{ #category : 'private - request' }
-MCPToolGetClass >> classNameFromRequest: request [
-
-	^ request stringArgumentNamed: 'name'
+				  (self stringOrArraySchemaNamed: 'name' description: 'Class name, or several class names.' itemDescription: 'Class name.').
+				  self offsetInputProperty }
+		  required: #( 'name' )
 ]
 
 { #category : 'metadata' }
@@ -133,27 +114,15 @@ MCPToolGetClass >> description [
 	^ 'Get classes or traits by name as their Tonel files, a page at a time. Offset 0 answers the comment and definition (superclass, slots, traits, variables, pools, package), later offsets the methods of both sides. class_search lists superclasses and subclasses.'
 ]
 
-{ #category : 'private' }
-MCPToolGetClass >> errorResultForError: anError className: className [
-
-	^ anError
-		  mcpCommandErrorDo: [ :commandError | self errorResultText: commandError messageText details: commandError structuredDetails ]
-		  otherwise: [ :toolError |
-				  self errorResultText: (self failureMessageForClassName: className error: toolError) details: {
-						  (#errorClass -> toolError class name).
-						  (#message -> toolError messageText).
-						  (#class -> className) } asDictionary ]
-]
-
 { #category : 'executing' }
 MCPToolGetClass >> executeWithRequest: request [
 	"An error names the class as the name argument gives it, the same name before and after it is checked."
 
 	^ self executeBatchedRequest: request do: [ :targetRequest |
-			  self
-				  executeRequest: targetRequest
-				  do: [ self getClassWith: targetRequest ]
-				  onError: [ :error | self errorResultForError: error className: ((targetRequest stringArgumentNamed: 'name') ifNil: [ '' ]) ] ]
+			  self executeRequest: targetRequest do: [ self getClassWith: targetRequest ] onError: [ :error |
+					  | className |
+					  className := (targetRequest stringArgumentNamed: 'name') ifNil: [ '' ].
+					  self errorResultFor: error unableTo: 'get class ' , className details: { (#class -> className) } ] ]
 ]
 
 { #category : 'private - source' }
@@ -185,25 +154,12 @@ MCPToolGetClass >> extensionSummaryOn: aStream of: aClass methodCount: methodCou
 				 ifFalse: [ 'them.' ])
 ]
 
-{ #category : 'private' }
-MCPToolGetClass >> failureMessageForClassName: className error: anError [
-
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Unable to get class ';
-				  nextPutAll: className;
-				  nextPutAll: ' (';
-				  nextPutAll: anError class name;
-				  nextPutAll: '): ';
-				  nextPutAll: anError messageText ]
-]
-
 { #category : 'private - execution' }
 MCPToolGetClass >> getClassWith: request [
 	"The class's Tonel file, a page at a time: offset 0 is its comment and definition, and offset n starts at its nth method. The answer names the class found, not the name asked for: Foo class reads as Foo. Every page says what the image lost of the class since its last save."
 
 	| data offset summary targetClass |
-	targetClass := self resolvedClassNamed: (self classNameFromRequest: request).
+	targetClass := MCPImageLookup classNamed: (request stringArgumentNamed: 'name').
 	offset := request integerArgumentNamed: 'offset'.
 	data := offset = 0
 		        ifTrue: [ self definitionDictionaryForClass: targetClass ]

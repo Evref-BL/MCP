@@ -15,17 +15,26 @@ Class {
 	#tag : 'Errors'
 }
 
-{ #category : 'private - names' }
-MCPCommandError class >> joinedNames: someStrings [
+{ #category : 'phrasing' }
+MCPCommandError class >> joinedNames: someNames [
 	"A, A and B, A, B and C."
 
 	^ String streamContents: [ :stream |
-			  someStrings withIndexDo: [ :each :index |
+			  someNames withIndexDo: [ :each :index |
 					  index > 1 ifTrue: [
-							  stream nextPutAll: (index = someStrings size
+							  stream nextPutAll: (index = someNames size
 									   ifTrue: [ ' and ' ]
 									   ifFalse: [ ', ' ]) ].
-					  stream nextPutAll: each ] ]
+					  stream nextPutAll: each asString ] ]
+]
+
+{ #category : 'phrasing' }
+MCPCommandError class >> joinedNames: someNames upTo: aLimit [
+	"A, B, C and 4 more: past aLimit names, how many more rather than each of them."
+
+	^ self joinedNames: (someNames size > aLimit
+			   ifTrue: [ (someNames first: aLimit) copyWith: (someNames size - aLimit) printString , ' more' ]
+			   ifFalse: [ someNames ])
 ]
 
 { #category : 'signaling' }

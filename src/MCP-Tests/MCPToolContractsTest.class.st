@@ -701,19 +701,6 @@ MCPToolContractsTest >> testClassToolSchemaDescriptionsExplainRecategorizationAn
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testClassToolTraitOwnsSharedClassHelpers [
-
-	| classToolClasses sharedSelectors |
-	classToolClasses := {
-		                    MCPToolSearchClasses.
-		                    MCPToolGetClass } , self classMutationToolClasses , { MCPToolRemoveClasses }.
-	sharedSelectors := #( resolvedClassNamed: sortedClassesByName: ).
-	classToolClasses do: [ :toolClass |
-			self assert: (toolClass withAllSuperclasses anySatisfy: [ :each | each traits includes: TMCPClassTool ]).
-			sharedSelectors do: [ :selector | self assert: (toolClass lookupSelector: selector) origin equals: TMCPClassTool ] ]
-]
-
-{ #category : 'tests' }
 MCPToolContractsTest >> testCompileMethodAnswersItsSummaryAsText [
 
 	| text |
@@ -2257,9 +2244,11 @@ MCPToolContractsTest >> testMethodToolTraitOwnsSharedMethodHelpers [
 		                     MCPToolMethodMutation.
 		                     MCPToolMethodSearch.
 		                     MCPToolRewriteMethods.
-		                     MCPToolRemoveMethods }.
-	sharedSelectors := #( selectorStringFromRequest: behaviorNamed:classSide: methodReferenceForBehavior:selector:
-	                      methodReferenceForClassName:selector:isClassSide: methodScopeQueryFromRequest: ).
+		                     MCPToolRemoveMethods.
+		                     MCPToolRunCritiques }.
+	sharedSelectors := #( behaviorNamed:classSide: classNameAndSideOf:do: classReferenceNameFor:classSide:
+	                      methodReferenceForBehavior:selector: methodReferenceForClassName:selector:isClassSide:
+	                      methodScopeQueryFromRequest: requestedClassNameIn: requestedClassSideIn: ).
 	methodToolClasses do: [ :toolClass |
 			self assert: (toolClass withAllSuperclasses anySatisfy: [ :each | each traits includes: TMCPMethodTool ]).
 			sharedSelectors do: [ :selector |
@@ -2390,7 +2379,14 @@ MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable 
 	self assert: ((self inputPropertyNamed: 'confirm' inTool: rewriteMethodsTool) extraProperties at: #default) equals: false.
 	self assert: ((self scopePropertyNamed: 'side' inTool: rewriteMethodsTool) extraProperties at: #default) equals: 'both'.
 	self assert: ((self inputPropertyNamed: 'force' inTool: removeClassesTool) extraProperties at: #default) equals: false.
-	self assert: ((self inputPropertyNamed: 'side' inTool: removeMethodsTool) extraProperties at: #default) equals: 'instance'
+	self assert: ((self inputPropertyNamed: 'side' inTool: removeMethodsTool) extraProperties at: #default) equals: 'instance'.
+	self
+		assert: ((self inputPropertyNamed: 'superclass' inTool: MCPToolCreateClass new) extraProperties at: #default)
+		equals: 'Object'.
+	self assert: ((self inputPropertyNamed: 'tag' inTool: MCPToolCreateClass new) extraProperties at: #default) equals: ''.
+	self
+		assert: ((self inputPropertyNamed: 'queryMode' inTool: MCPToolSearchMethodSource new) extraProperties at: #default)
+		equals: 'substring'
 ]
 
 { #category : 'tests' }

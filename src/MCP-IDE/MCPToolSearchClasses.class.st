@@ -4,8 +4,6 @@ Lists classes in a chosen scope with optional filtering. It is optimized for cla
 Class {
 	#name : 'MCPToolSearchClasses',
 	#superclass : 'MCPToolSearch',
-	#traits : 'TMCPClassTool',
-	#classTraits : 'TMCPClassTool classTrait',
 	#category : 'MCP-IDE-Tools',
 	#package : 'MCP-IDE',
 	#tag : 'Tools'
@@ -26,9 +24,9 @@ MCPToolSearchClasses class >> toolName [
 { #category : 'metadata' }
 MCPToolSearchClasses >> buildInputSchema [
 
-	| properties |
-	properties := self classQueryScopeInputProperties , self classFilterInputProperties , { self offsetInputProperty }.
-	^ self queryInputSchemaWithProperties: properties
+	^ MCPStructureInputSchema
+		  properties: self classQueryScopeInputProperties , self classFilterInputProperties , { self offsetInputProperty }
+		  required: #(  )
 ]
 
 { #category : 'private - schema' }
@@ -58,7 +56,7 @@ MCPToolSearchClasses >> defaultPageLimit [
 { #category : 'metadata' }
 MCPToolSearchClasses >> description [
 
-	^ 'Search classes by name, package, tag, or superclass/subclass scope. Use class_get when you already know the class name.'
+	^ 'Search classes by name or tag within a scope: the packages, classes, superclasses, subclasses or hierarchies it names. Use class_get when you already know the class name.'
 ]
 
 { #category : 'private - results' }

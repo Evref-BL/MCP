@@ -26,57 +26,22 @@ MCPToolRemoveMethods class >> toolName [
 { #category : 'metadata' }
 MCPToolRemoveMethods >> buildInputSchema [
 
-	^ MCPStructureInputSchema new
-		  type: 'object';
+	^ MCPStructureInputSchema
 		  properties: {
-				  (MCPStructureProperties new
-					   name: 'class';
-					   type: 'string';
-					   description: 'The class to remove the methods from.';
-					   yourself).
+				  (self schemaPropertyNamed: 'class' type: 'string' description: 'The class to remove the methods from.').
 				  (self targetSideSchemaPropertyDescribedAs: 'Which side to remove from.').
-				  ((MCPStructureProperties new
-					    name: 'selector';
-					    type: #( 'string' 'array' );
-					    description: 'The selector to remove, or several removed together as one change.')
-					   items: (MCPStructureProperties new
-							    type: 'string';
-							    yourself);
-					   yourself) };
-		  required: #( 'class' 'selector' );
-		  yourself
+				  (self
+					   stringOrArraySchemaNamed: 'selector'
+					   description: 'The selector to remove, or several removed together as one change.'
+					   itemDescription: 'Selector name.') }
+		  required: #( 'class' 'selector' )
 ]
 
 { #category : 'executing' }
 MCPToolRemoveMethods >> checkArguments: request [
 	"A side that says the other one than the class name is refused, as is a selector list that names none."
 
-	MCPImageLookup
-		className: (request stringArgumentNamed: 'class')
-		side: (request stringArgumentNamed: 'side')
-		do: [ :className :classSide :sideGiven | self selectorsFromRequest: request ]
-]
-
-{ #category : 'private - errors' }
-MCPToolRemoveMethods >> classNameFor: request checked: aBoolean [
-	"The class an error names. Before the arguments are checked, a call that gave none reads as an empty name."
-
-	^ (self classNameOf: request) ifNil: [ aBoolean ifFalse: [ '' ] ]
-]
-
-{ #category : 'private' }
-MCPToolRemoveMethods >> classNameOf: request [
-	"The class the call names, without the side it may name."
-
-	^ (request stringArgumentNamed: 'class') ifNotNil: [ :className | MCPImageLookup baseNameOf: className ]
-]
-
-{ #category : 'private' }
-MCPToolRemoveMethods >> classSideOf: request [
-	"The class side is meant when the call says so, by side or by a class written as Foo class."
-
-	^ (request stringArgumentNamed: 'side') = 'class' or: [
-		  (request stringArgumentNamed: 'class') ifNil: [ false ] ifNotNil: [ :className | MCPImageLookup namesClassSide: className ] ]
+	self classNameAndSideOf: request do: [ :className :classSide :sideGiven | self selectorsFromRequest: request ]
 ]
 
 { #category : 'metadata' }
@@ -91,26 +56,6 @@ MCPToolRemoveMethods >> description [
 	^ 'Remove methods from one class. Senders do not stop it; the answer warns of sends it leaves without a method.'
 ]
 
-{ #category : 'private' }
-MCPToolRemoveMethods >> errorResultForError: anError className: className classSide: classSide selectors: selectors [
-
-	^ anError
-		  mcpCommandErrorDo: [ :commandError | self errorResultText: commandError messageText details: commandError structuredDetails ]
-		  otherwise: [ :toolError |
-				  self
-					  errorResultText: (self
-							   failureMessageForClassNamed: className
-							   classSide: classSide
-							   selectors: selectors
-							   error: toolError)
-					  details: {
-							  (#errorClass -> toolError class name).
-							  (#message -> toolError messageText).
-							  (#class -> className).
-							  (#side -> (classSide ifTrue: [ 'class' ] ifFalse: [ 'instance' ])).
-							  (#selectors -> selectors asArray) } asDictionary ]
-]
-
 { #category : 'executing' }
 MCPToolRemoveMethods >> executeWithRequest: request [
 
@@ -123,30 +68,19 @@ MCPToolRemoveMethods >> executeWithRequest: request [
 				  checked := true.
 				  self removeWith: request ]
 		  onError: [ :error |
+				  | className classSide selectors |
+				  className := (self requestedClassNameIn: request) ifNil: [ checked ifFalse: [ '' ] ].
+				  classSide := self requestedClassSideIn: request.
+				  selectors := self selectorsFor: request checked: checked.
 				  self
-					  errorResultForError: error
-					  className: (self classNameFor: request checked: checked)
-					  classSide: (self classSideOf: request)
-					  selectors: (self selectorsFor: request checked: checked) ]
-]
-
-{ #category : 'private' }
-MCPToolRemoveMethods >> failureMessageForClassNamed: className classSide: classSide selectors: selectors error: anError [
-
-	| targetName |
-	targetName := classSide
-		              ifTrue: [ className , ' class' ]
-		              ifFalse: [ className ].
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Unable to remove methods from ';
-				  nextPutAll: targetName;
-				  nextPutAll: ': ';
-				  nextPutAll: (', ' join: selectors);
-				  nextPutAll: ' (';
-				  nextPutAll: anError class name;
-				  nextPutAll: '): ';
-				  nextPutAll: anError messageText ]
+					  errorResultFor: error
+					  unableTo: (String streamContents: [ :stream |
+							   stream << 'remove methods from ' << (self classReferenceNameFor: className classSide: classSide) << ': '
+							   << (', ' join: selectors) ])
+					  details: {
+							  (#class -> className).
+							  (#side -> (self sideNameFor: classSide)).
+							  (#selectors -> selectors asArray) } ]
 ]
 
 { #category : 'private - warnings' }
@@ -208,7 +142,7 @@ MCPToolRemoveMethods >> listTextForMethods: someMethods [
 	references := (someMethods
 		               collect: [ :each | self methodReferenceForBehavior: each methodClass selector: each selector ]
 		               as: Array) sort.
-	references size > 10 ifFalse: [ ^ MCPScopeQuery listPhraseFor: references ].
+	references size > 10 ifFalse: [ ^ MCPCommandError joinedNames: references ].
 	^ String streamContents: [ :stream |
 			  (references first: 10) do: [ :each | stream nextPutAll: each ] separatedBy: [ stream nextPutAll: ', ' ].
 			  stream
@@ -239,8 +173,8 @@ MCPToolRemoveMethods >> removeWith: request [
 	"Senders do not stop a removal. Once the methods are gone, the answer warns of the sends they left without a method."
 
 	| behavior className classSide selectorSymbols selectors |
-	className := self classNameOf: request.
-	classSide := self classSideOf: request.
+	className := self requestedClassNameIn: request.
+	classSide := self requestedClassSideIn: request.
 	selectors := self selectorsFromRequest: request.
 	selectorSymbols := selectors collect: #asSymbol.
 	behavior := self behaviorNamed: className classSide: classSide.
@@ -293,9 +227,7 @@ MCPToolRemoveMethods >> successSummaryForClassName: className classSide: classSi
 						  stream
 							  print: selectors size;
 							  nextPutAll: ' methods from ';
-							  nextPutAll: className.
-						  classSide ifTrue: [ stream nextPutAll: ' class' ].
-						  stream
+							  nextPutAll: (self classReferenceNameFor: className classSide: classSide);
 							  nextPutAll: ': ';
 							  nextPutAll: (', ' join: selectors) ].
 			  stream nextPut: $. ]

@@ -54,17 +54,6 @@ MCPToolReloadRepository >> mutateWith: request [
 					  warnings: warnings ]
 ]
 
-{ #category : 'private - specs' }
-MCPToolReloadRepository >> repositoryToolSpec [
-
-	^ {
-		  (#title -> 'Reload Repository').
-		  (#description
-		   ->
-		   'Load the packages this image has from the repository files on disk, replacing image-side changes, and align the image with the repository HEAD. Use after switching branch, pulling or any other checkout change made outside the image.').
-		  (#action -> 'reload') } asDictionary
-]
-
 { #category : 'private - results' }
 MCPToolReloadRepository >> summaryForReloadOf: aRepository packageNames: packageNames [
 	"Reload loads only the packages the image has. When the image has none of those the repository registers, it loaded nothing: say so, and say of each registered package whether the checkout holds it."
@@ -91,4 +80,16 @@ MCPToolReloadRepository >> summaryForReloadOf: aRepository packageNames: package
 			  registeredNames
 				  reject: [ :each | inCheckout includes: each ]
 				  thenDo: [ :each | stream << ' ' << (self warningForPackageInNeitherImageNorCheckoutNamed: each) ] ]
+]
+
+{ #category : 'private - specs' }
+MCPToolReloadRepository >> toolSpec [
+
+	^ {
+		  (#title -> 'Reload Repository').
+		  (#description
+		   ->
+		   'Load the packages this image has from the repository files on disk, replacing image-side changes, and align the image with the repository HEAD. Use after switching branch, pulling or any other checkout change made outside the image.').
+		  (#action -> 'reload').
+		  (#requiredProperties -> #( 'repository' )) } asDictionary
 ]

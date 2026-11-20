@@ -17,10 +17,11 @@ MCPToolRepositoryOperation class >> groupName [
 	^ self repositoriesGroupName
 ]
 
-{ #category : 'testing' }
-MCPToolRepositoryOperation class >> isAbstract [
+{ #category : 'private - errors' }
+MCPToolRepositoryOperation >> addAction: action to: details [
+	"Each repository tool's action is its own."
 
-	^ self = MCPToolRepositoryOperation
+	details at: #action put: action
 ]
 
 { #category : 'metadata' }
@@ -77,29 +78,12 @@ MCPToolRepositoryOperation >> dataKeepingNonEmpty: associations [
 	^ data
 ]
 
-{ #category : 'metadata' }
-MCPToolRepositoryOperation >> description [
-
-	^ self repositoryToolSpec at: #description
-]
-
-{ #category : 'private - errors' }
-MCPToolRepositoryOperation >> errorResultForCommandError: anError action: action requestedContext: requestedContext [
-
-	| details |
-	details := anError structuredDetails copy.
-	requestedContext ifNotNil: [
-		requestedContext keysAndValuesDo: [ :key :value | value ifNotNil: [ details at: key ifAbsentPut: [ value ] ] ] ].
-	details at: #action put: action.
-	^ self errorResultText: anError messageText details: details
-]
-
 { #category : 'private - execution' }
 MCPToolRepositoryOperation >> executeOperationFor: request work: workBlock successResult: successBlock [
 	"Run the operation inside the mutation boundary, where an error answers with what the call asked for, under the tool's action, and with a summary saying what failed."
 
 	^ self
-		  executeMutationAction: self operationAction
+		  executeMutationAction: (self toolSpec at: #action)
 		  force: false
 		  requestedContext: (self requestedContextFor: request)
 		  work: workBlock
@@ -144,8 +128,8 @@ MCPToolRepositoryOperation >> headPhraseFor: aRepository [
 { #category : 'private - schema' }
 MCPToolRepositoryOperation >> inputProperties [
 
-	^ (self repositoryToolSpec at: #referenceInputProperties ifAbsent: [ self repositoryReferenceInputProperties ])
-	  , (self repositoryToolSpec at: #inputProperties ifAbsent: [ #(  ) ])
+	^ (self toolSpec at: #referenceInputProperties ifAbsent: [ self repositoryReferenceInputProperties ])
+	  , (self toolSpec at: #inputProperties ifAbsent: [ #(  ) ])
 ]
 
 { #category : 'private - schema' }
@@ -169,18 +153,6 @@ MCPToolRepositoryOperation >> modifiedPackageNamesSchemaProperty [
 		  stringArraySchemaNamed: 'modifiedPackages'
 		  description: 'Assert exactly these managed packages differ from the repository files.'
 		  itemDescription: 'Package name.'
-]
-
-{ #category : 'private - errors' }
-MCPToolRepositoryOperation >> mutationActionFor: request checked: aBoolean [
-
-	^ self operationAction
-]
-
-{ #category : 'private - actions' }
-MCPToolRepositoryOperation >> operationAction [
-
-	^ self repositoryToolSpec at: #action
 ]
 
 { #category : 'private - results' }
@@ -243,23 +215,14 @@ MCPToolRepositoryOperation >> repositoryReferenceInputProperties [
 			   description: 'Checkout path, to tell apart repositories registered under the same name.') }
 ]
 
-{ #category : 'private - specs' }
-MCPToolRepositoryOperation >> repositoryToolSpec [
-
-	self subclassResponsibility
-]
-
 { #category : 'private - errors' }
 MCPToolRepositoryOperation >> requestedContextFor: request [
-	"The repository the call names."
+	"The repository the call names, and the branch it expects the repository on when it names one."
 
-	^ (self repositoryReferenceFor: request) requestedContext
-]
-
-{ #category : 'private - schema' }
-MCPToolRepositoryOperation >> requiredInputProperties [
-
-	^ self repositoryToolSpec at: #requiredProperties ifAbsent: [ #( 'repository' ) ]
+	| context |
+	context := (self repositoryReferenceFor: request) requestedContext.
+	(self expectedBranchNameIn: request) ifNotEmpty: [ :branchName | context at: #branch put: branchName ].
+	^ context
 ]
 
 { #category : 'private - results' }
@@ -285,12 +248,6 @@ MCPToolRepositoryOperation >> subdirectorySchemaProperty [
 		  schemaPropertyNamed: 'subdirectory'
 		  type: 'string'
 		  description: 'Directory inside the checkout holding the package sources, such as src.'
-]
-
-{ #category : 'metadata' }
-MCPToolRepositoryOperation >> title [
-
-	^ self repositoryToolSpec at: #title
 ]
 
 { #category : 'private - results' }

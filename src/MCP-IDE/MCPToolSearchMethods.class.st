@@ -20,10 +20,9 @@ MCPToolSearchMethods class >> toolName [
 { #category : 'metadata' }
 MCPToolSearchMethods >> buildInputSchema [
 
-	| properties |
-	properties := self methodQueryScopeInputProperties , self metadataFilterInputProperties
-	              , { self offsetInputProperty }.
-	^ self queryInputSchemaWithProperties: properties
+	^ MCPStructureInputSchema
+		  properties: self methodQueryScopeInputProperties , self metadataFilterInputProperties , { self offsetInputProperty }
+		  required: #(  )
 ]
 
 { #category : 'metadata' }

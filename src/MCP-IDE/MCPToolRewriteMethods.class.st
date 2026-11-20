@@ -27,12 +27,7 @@ MCPToolRewriteMethods class >> toolName [
 { #category : 'metadata' }
 MCPToolRewriteMethods >> buildInputSchema [
 
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: self rewriteInputProperties;
-		  required: #( 'scope' );
-		  additionalProperties: false;
-		  yourself
+	^ MCPStructureInputSchema properties: self rewriteInputProperties required: #( 'scope' )
 ]
 
 { #category : 'private - results' }
@@ -65,18 +60,10 @@ MCPToolRewriteMethods >> description [
 	^ 'Preview or apply Smalltalk AST pattern rewrites within scoped methods. Write the patterns, or name rewrite rule classes whose patterns to apply. Smalltalk AST pattern syntax, not regex.'
 ]
 
-{ #category : 'error handling' }
-MCPToolRewriteMethods >> errorResultForRewriteError: anError [
-
-	^ anError
-		  mcpCommandErrorDo: [ :commandError | self errorResultText: commandError messageText details: commandError structuredDetails ]
-		  otherwise: [ :toolError | self errorResultFor: toolError ]
-]
-
 { #category : 'executing' }
 MCPToolRewriteMethods >> executeWithRequest: request [
 
-	^ self executeRequest: request do: [ self rewriteWith: request ] onError: [ :error | self errorResultForRewriteError: error ]
+	^ self executeRequest: request do: [ self rewriteWith: request ]
 ]
 
 { #category : 'private - results' }
@@ -113,8 +100,7 @@ MCPToolRewriteMethods >> rewriteRuleClassesSchemaProperty [
 	^ MCPStructureProperties new
 		  name: 'ruleClasses';
 		  type: 'array';
-		  description:
-			  'Rewrite rules to apply, as critique_run names them. Any subclass of ReNodeRewriteRule, Pharo''s own included, and one that builds its replacement instead of writing it as a pattern just as well.';
+		  description: 'Rewrite rules to apply, subclasses of ReNodeRewriteRule.';
 		  items: (MCPStructureProperties new
 				   type: 'string';
 				   description: 'One rule class name.';
@@ -221,9 +207,7 @@ MCPToolRewriteMethods >> successSummaryForChangeCount: count applied: apply scop
 				  nextPutAll: (apply
 						   ifTrue: [ 'Applied ' ]
 						   ifFalse: [ 'Previewed ' ]);
-				  print: count;
-				  nextPutAll: ' method rewrite change'.
-			  count = 1 ifFalse: [ stream nextPut: $s ].
+				  nextPutAll: (self textForCount: count noun: 'method rewrite change').
 			  scopePhrase ifNotNil: [
 					  stream
 						  nextPutAll: ' in ';

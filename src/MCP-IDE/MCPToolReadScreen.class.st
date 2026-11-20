@@ -56,17 +56,15 @@ MCPToolReadScreen >> boundsTextFor: aMorph [
 { #category : 'metadata' }
 MCPToolReadScreen >> buildInputSchema [
 
-	^ MCPStructureInputSchema new
-		  type: 'object';
+	^ MCPStructureInputSchema
 		  properties: {
 				  self windowSchemaProperty.
 				  ((self schemaPropertyNamed: 'depth' type: 'integer' description: 'How deep to walk what the target contains.')
 					   default: self defaultDepth;
 					   minimum: 0;
 					   maximum: self maximumDepth;
-					   yourself) };
-		  required: #(  );
-		  yourself
+					   yourself) }
+		  required: #(  )
 ]
 
 { #category : 'private - reading' }
@@ -100,16 +98,13 @@ MCPToolReadScreen >> entryNameKeys [
 { #category : 'executing' }
 MCPToolReadScreen >> executeWithRequest: request [
 
-	^ self
-		  executeRequest: request
-		  do: [
-				  | window |
-				  window := request stringArgumentNamed: 'window'.
-				  self
-					  resultForReadOf: (self targetMorphNamed: window)
-					  target: (window ifNil: [ 'world' ])
-					  depth: (request integerArgumentNamed: 'depth') ]
-		  onError: [ :error | self errorResultForError: error ]
+	^ self executeRequest: request do: [
+			  | window |
+			  window := request stringArgumentNamed: 'window'.
+			  self
+				  resultForReadOf: (self targetMorphNamed: window)
+				  target: (window ifNil: [ 'world' ])
+				  depth: (request integerArgumentNamed: 'depth') ]
 ]
 
 { #category : 'private - results' }
@@ -189,13 +184,7 @@ MCPToolReadScreen >> resultForReadOf: aMorph target: aString depth: anInteger [
 { #category : 'private - results' }
 MCPToolReadScreen >> successSummaryForTarget: aString nodeCount: anInteger [
 
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Read ';
-				  nextPutAll: aString;
-				  nextPutAll: ', ';
-				  print: anInteger;
-				  nextPutAll: ' nodes.' ]
+	^ String streamContents: [ :stream | stream << 'Read ' << aString << ', ' << (self textForCount: anInteger noun: 'node') << '.' ]
 ]
 
 { #category : 'metadata' }

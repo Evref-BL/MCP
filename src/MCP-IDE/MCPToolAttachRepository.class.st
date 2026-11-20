@@ -43,8 +43,23 @@ MCPToolAttachRepository >> mutateWith: request [
 		  self successResultText: summary data: (self dataForPackagesOf: repository) warnings: warnings , packageWarnings ]
 ]
 
+{ #category : 'private - errors' }
+MCPToolAttachRepository >> requestedContextFor: request [
+
+	^ (self creationFor: request) requestedDetails
+]
+
+{ #category : 'private - results' }
+MCPToolAttachRepository >> summaryForAttaching: aRepository [
+
+	^ String streamContents: [ :stream |
+			  stream << 'Attached repository ' << aRepository name << ' at ' << aRepository location fullName << ', '
+			  << (self headPhraseFor: aRepository) << ', ' << (self sourcesPhraseFor: aRepository) << '.'
+			  << (self projectFileNoteFor: aRepository) ]
+]
+
 { #category : 'private - specs' }
-MCPToolAttachRepository >> repositoryToolSpec [
+MCPToolAttachRepository >> toolSpec [
 
 	^ {
 		  (#title -> 'Attach Repository').
@@ -63,19 +78,4 @@ MCPToolAttachRepository >> repositoryToolSpec [
 				    description: 'Package names to manage initially from the attached checkout.'
 				    itemDescription: 'A package name.') }).
 		  (#requiredProperties -> #( 'repository' 'location' )) } asDictionary
-]
-
-{ #category : 'private - errors' }
-MCPToolAttachRepository >> requestedContextFor: request [
-
-	^ (self creationFor: request) requestedDetails
-]
-
-{ #category : 'private - results' }
-MCPToolAttachRepository >> summaryForAttaching: aRepository [
-
-	^ String streamContents: [ :stream |
-			  stream << 'Attached repository ' << aRepository name << ' at ' << aRepository location fullName << ', '
-			  << (self headPhraseFor: aRepository) << ', ' << (self sourcesPhraseFor: aRepository) << '.'
-			  << (self projectFileNoteFor: aRepository) ]
 ]

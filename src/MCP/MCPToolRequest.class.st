@@ -8,7 +8,8 @@ Class {
 		'tool',
 		'arguments',
 		'violations',
-		'defaults'
+		'defaults',
+		'nestedDefaults'
 	],
 	#category : 'MCP-Requests',
 	#package : 'MCP',
@@ -33,9 +34,16 @@ MCPToolRequest >> argumentNamed: anArgumentName ifAbsent: absentBlock [
 
 { #category : 'accessing' }
 MCPToolRequest >> argumentOrDefaultNamed: anArgumentName [
-	"The argument, or the default its schema declares when the caller left it out. Only the accessors built on it, booleanArgumentNamed: and integerArgumentNamed:, answer that default; every other accessor answers only what the caller supplied, so that code can tell an argument left out from one given, as an inferred side or a patch must."
+	"The argument, or the default its schema declares when the caller left it out. The accessors built on it or on another OrDefault accessor answer that default too; every other accessor answers only what the caller supplied, so that code can tell an argument left out from one given, as an inferred side or a patch must."
 
 	^ self valueNamed: anArgumentName in: self arguments ifAbsent: [ defaults at: anArgumentName asString ifAbsent: [ nil ] ]
+]
+
+{ #category : 'accessing' }
+MCPToolRequest >> argumentOrDefaultNamed: anArgumentName in: aDictionary [
+	"The argument inside aDictionary, an object argument or one an array argument holds, or else the default the schema declares for that name inside the arguments, unless two arguments declare it with different defaults."
+
+	^ self valueNamed: anArgumentName in: aDictionary ifAbsent: [ nestedDefaults at: anArgumentName asString ifAbsent: [ nil ] ]
 ]
 
 { #category : 'accessing' }
@@ -79,12 +87,10 @@ MCPToolRequest >> booleanArgumentNamed: anArgumentName [
 ]
 
 { #category : 'accessing' }
-MCPToolRequest >> booleanArgumentNamed: anArgumentName in: aDictionary default: aBoolean [
+MCPToolRequest >> booleanArgumentNamed: anArgumentName in: aDictionary [
+	"The argument inside aDictionary, else its schema default, else false."
 
-	| value |
-	value := self valueNamed: anArgumentName in: aDictionary ifAbsent: [ ^ aBoolean ].
-	value ifNil: [ ^ aBoolean ].
-	^ value
+	^ (self argumentOrDefaultNamed: anArgumentName in: aDictionary) ifNil: [ false ]
 ]
 
 { #category : 'private - validating' }
@@ -109,6 +115,7 @@ MCPToolRequest >> initialize [
 	super initialize.
 	arguments := Dictionary new.
 	defaults := Dictionary new.
+	nestedDefaults := Dictionary new.
 	violations := #(  )
 ]
 
@@ -161,11 +168,16 @@ MCPToolRequest >> normalizeArgumentsForInputSchema: anInputSchema [
 ]
 
 { #category : 'private - validating' }
-MCPToolRequest >> rememberDefaultsOf: anInputSchema [
-	"The default each property declares, which argumentOrDefaultNamed: and the accessors built on it answer when the caller leaves the argument out, so that a tool states a default once, in its schema."
+MCPToolRequest >> rememberDefaultsIn: aSchema [
+	"The default each property of aSchema, the input schema as JSON, declares, which the accessors that answer defaults answer when the caller leaves the argument out, so that a tool states a default once, in its schema. One declared inside an object argument, or inside the objects an array argument holds, is remembered under its own name for the accessors that read inside an argument. Those are given the object, not the argument it came from, so a name two arguments declare with different defaults, or one with a default and one without, is remembered with none rather than with the wrong one."
 
-	anInputSchema properties do: [ :property |
-		property extraProperties at: #default ifPresent: [ :value | defaults at: property name asString put: value ] ]
+	(aSchema at: #properties ifAbsent: [ ^ self ]) keysAndValuesDo: [ :name :property |
+			property at: #default ifPresent: [ :value | defaults at: name asString put: value ].
+			((property at: #items ifAbsent: [ property ]) at: #properties ifAbsent: [ #(  ) ]) keysAndValuesDo: [ :nestedName :nested |
+					| default |
+					default := nested at: #default ifAbsent: [ nil ].
+					(nestedDefaults at: nestedName asString ifAbsentPut: [ default ]) = default ifFalse: [
+						nestedDefaults at: nestedName asString put: nil ] ] ]
 ]
 
 { #category : 'accessing' }
@@ -190,6 +202,13 @@ MCPToolRequest >> stringArgumentNamed: anArgumentName in: aDictionary [
 MCPToolRequest >> stringArgumentNamed: anArgumentName in: aDictionary default: defaultValue [
 
 	^ (self stringArgumentNamed: anArgumentName in: aDictionary) ifNil: [ defaultValue ]
+]
+
+{ #category : 'accessing' }
+MCPToolRequest >> stringArgumentOrDefaultNamed: anArgumentName [
+	"The argument as stringArgumentNamed: reads it, else the default its schema declares."
+
+	^ (self stringArgumentNamed: anArgumentName) ifNil: [ defaults at: anArgumentName asString ifAbsent: [ nil ] ]
 ]
 
 { #category : 'accessing' }
@@ -262,11 +281,12 @@ MCPToolRequest >> uniqueStringCollectionFrom: strings [
 { #category : 'validating' }
 MCPToolRequest >> validate [
 
-	| inputSchema |
+	| inputSchema schema |
 	inputSchema := self tool inputSchema ifNil: [ ^ self ].
 	self normalizeArgumentsForInputSchema: inputSchema.
-	self rememberDefaultsOf: inputSchema.
-	violations := MCPJSONSchemaValidator violationsFor: self arguments schema: inputSchema.
+	schema := inputSchema asJRPCJSON.
+	self rememberDefaultsIn: schema.
+	violations := MCPJSONSchemaValidator violationsFor: self arguments schema: schema.
 	violations ifNotEmpty: [ MCPInvalidToolInput signalForTool: self tool violations: violations ].
 	self tool validateRequest: self
 ]

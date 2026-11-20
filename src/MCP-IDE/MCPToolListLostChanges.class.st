@@ -32,19 +32,10 @@ MCPToolListLostChanges class >> noticeOf: aCount changesTo: someNames [
 	^ String streamContents: [ :stream |
 			  stream << 'Since its last save, the image lost ' << aCount printString << (aCount = 1
 				   ifTrue: [ ' change' ]
-				   ifFalse: [ ' changes' ]) << ' to ' << (self phraseForNames: someNames) << ': ' << self toolName << ' lists '
-			  << (aCount = 1
-					   ifTrue: [ 'it.' ]
-					   ifFalse: [ 'them.' ]) ]
-]
-
-{ #category : 'private - notices' }
-MCPToolListLostChanges class >> phraseForNames: someNames [
-	"A, A and B, A, B and C, and from four names on the first three and how many more, so a page of packages does not read as a list of them."
-
-	someNames size > 3 ifFalse: [ ^ MCPScopeQuery listPhraseFor: someNames ].
-	^ String streamContents: [ :stream |
-		  stream << (', ' join: (someNames first: 3)) << ' and ' << (someNames size - 3) printString << ' more' ]
+				   ifFalse: [ ' changes' ]) << ' to ' << (MCPCommandError joinedNames: someNames upTo: 3) << ': ' << self toolName
+			  << ' lists ' << (aCount = 1
+				   ifTrue: [ 'it.' ]
+				   ifFalse: [ 'them.' ]) ]
 ]
 
 { #category : 'notices' }
@@ -78,12 +69,7 @@ MCPToolListLostChanges >> annotations [
 { #category : 'metadata' }
 MCPToolListLostChanges >> buildInputSchema [
 
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: { self offsetInputProperty };
-		  required: #(  );
-		  additionalProperties: false;
-		  yourself
+	^ MCPStructureInputSchema properties: { self offsetInputProperty } required: #(  )
 ]
 
 { #category : 'private - execution' }

@@ -17,12 +17,6 @@ MCPToolLostChanges class >> groupName [
 	^ self historyGroupName
 ]
 
-{ #category : 'testing' }
-MCPToolLostChanges class >> isAbstract [
-
-	^ self = MCPToolLostChanges
-]
-
 { #category : 'metadata' }
 MCPToolLostChanges >> additionalKeywords [
 	"The words an agent reaches for after a crash or an image stopped unsaved."
@@ -48,14 +42,11 @@ MCPToolLostChanges >> entryNameKeys [
 MCPToolLostChanges >> executeWithRequest: request [
 	"The history is read once per image session and the image compared with it at each call, so the answer is for the image as it is. A session file that cannot be read in full qualifies the answer rather than failing it."
 
-	^ self
-		  executeRequest: request
-		  do: [
-				  | data query |
-				  query := MCPLostChangeQuery ofSessionInProgress.
-				  data := self dataFor: request from: query.
-				  self successResultText: (self successSummaryForData: data) data: data warnings: query warnings ]
-		  onError: [ :error | self errorResultFor: error ]
+	^ self executeRequest: request do: [
+			  | data query |
+			  query := MCPLostChangeQuery ofSessionInProgress.
+			  data := self dataFor: request from: query.
+			  self successResultText: (self successSummaryForData: data) data: data warnings: query warnings ]
 ]
 
 { #category : 'private - results' }

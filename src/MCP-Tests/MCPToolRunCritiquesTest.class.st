@@ -279,6 +279,18 @@ MCPToolRunCritiquesTest >> testHitQuotesItsCodeAcrossLines [
 ]
 
 { #category : 'tests' }
+MCPToolRunCritiquesTest >> testHitWhoseAnchorHasNoIntervalNamesOnlyItsEntity [
+	"A search anchor given no string points nowhere in the source; asking it for its interval would fail."
+
+	| critique data rule |
+	rule := ReTemporaryNeitherReadNorWrittenRule new.
+	critique := ReTrivialCritique withAnchor: (ReSearchStringSourceAnchor entity: self fixtureClass string: nil) by: rule.
+	data := MCPToolRunCritiques new hitDataForCritique: critique rule: rule fallbackEntity: self fixtureClass.
+	self assert: (data at: #class) asString equals: self fixtureClassName.
+	self deny: (data includesKey: #interval)
+]
+
+{ #category : 'tests' }
 MCPToolRunCritiquesTest >> testLeavesBooleanNilBranchesToPharo [
 	"ReNilBranchRule says it of ifTrue:ifFalse: already."
 

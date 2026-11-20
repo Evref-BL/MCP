@@ -60,13 +60,10 @@ MCPToolSearchTools >> argumentsTextOn: aStream for: aSearchEntry [
 { #category : 'metadata' }
 MCPToolSearchTools >> buildInputSchema [
 
-	^ MCPStructureInputSchema new
-		  type: 'object';
+	^ MCPStructureInputSchema
 		  properties:
-			  { (self schemaPropertyNamed: 'query' type: 'string' description: 'Search words; tools matching more of them rank first.') };
-		  required: #(  );
-		  additionalProperties: false;
-		  yourself
+		  { (self schemaPropertyNamed: 'query' type: 'string' description: 'Search words; tools matching more of them rank first.') }
+		  required: #(  )
 ]
 
 { #category : 'private - results' }
@@ -139,17 +136,14 @@ MCPToolSearchTools >> description [
 { #category : 'executing' }
 MCPToolSearchTools >> executeWithRequest: request [
 
-	^ self
-		  executeRequest: request
-		  do: [
-				  | query matchingTools shownTools data |
-				  query := request stringArgumentNamed: 'query'.
-				  matchingTools := self toolRegistry toolsMatchingQuery: query.
-				  shownTools := matchingTools first: (matchingTools size min: self resultLimit).
-				  data := { (#tools -> (shownTools collect: [ :each | self toolRegistry searchMetadataForTool: each ] as: Array)) }
-					          asDictionary.
-				  self successResultText: (self summaryForQuery: query matching: matchingTools shown: shownTools) data: data ]
-		  onError: [ :error | self errorResultFor: error ]
+	^ self executeRequest: request do: [
+			  | query matchingTools shownTools data |
+			  query := request stringArgumentNamed: 'query'.
+			  matchingTools := self toolRegistry toolsMatchingQuery: query.
+			  shownTools := matchingTools first: (matchingTools size min: self resultLimit).
+			  data := { (#tools -> (shownTools collect: [ :each | self toolRegistry searchMetadataForTool: each ] as: Array)) }
+				          asDictionary.
+			  self successResultText: (self summaryForQuery: query matching: matchingTools shown: shownTools) data: data ]
 ]
 
 { #category : 'private - results' }

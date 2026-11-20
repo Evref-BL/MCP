@@ -24,12 +24,7 @@ MCPHaltingTestTool class >> toolName [
 { #category : 'metadata' }
 MCPHaltingTestTool >> buildInputSchema [
 
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: #(  );
-		  required: #(  );
-		  additionalProperties: false;
-		  yourself
+	^ MCPStructureInputSchema properties: #(  ) required: #(  )
 ]
 
 { #category : 'metadata' }
