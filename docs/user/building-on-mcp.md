@@ -20,22 +20,23 @@ BaselineOfMyProject >> baseline: spec
 	spec for: #common do: [
 		spec baseline: 'MCP' with: [
 			spec
-				repository: 'github://Evref-BL/MCP:vX.Y.Z/src';   "a release, not a branch"
+				repository: 'github://Evref-BL/MCP:vX.Y.Z/src';
 				loads: #( 'Core' ) ].
+		spec package: 'MyProject'.
 		spec package: 'MyProject-MCP' with: [ spec requires: #( 'MyProject' 'MCP' ) ].
 		spec group: 'Tools' with: #( 'MyProject-MCP' ).
-		spec group: 'default' with: #( 'Core' 'Tests' ) ]
+		spec group: 'default' with: #( 'MyProject' ) ]
 ```
+
+Name a [release](https://github.com/Evref-BL/MCP/releases) in place of
+`vX.Y.Z`, not a branch, which moves under the project that depends on it.
+The README's [Install And Start](../../README.md#install-and-start) says what
+the baseline's other groups hold.
 
 Two things in it are worth copying. The group is named `Tools` rather than
 `MCP`, because Metacello refuses a group and a baseline that share one name.
 And it is left out of `default`: your project is useful without a server, and
 an image that does not serve MCP has no use for tools it cannot register.
-
-The other groups are `IDE`, MCP's own image tools for classes, methods,
-packages, tests, repositories, change history and debugging; `UI`,
-the world-menu server list; `Telemetry`, the OpenTelemetry backend; and
-`default`, which is `Core`, `IDE`, `UI` and their tests.
 
 ## The three things a server offers
 
@@ -99,17 +100,19 @@ MyProjectToolListWidgets >> buildInputSchema
 
 	^ MCPStructureInputSchema new
 		  type: 'object';
-		  properties: { (self
-				   schemaPropertyNamed: 'prefix'
-				   type: 'string'
-				   description: 'Only answer widgets whose name starts with this. Defaults to all of them.') };
+		  properties: { ((self
+				    schemaPropertyNamed: 'prefix'
+				    type: 'string'
+				    description: 'Only answer widgets whose name starts with this. Defaults to all of them.')
+				   default: '';
+				   yourself) };
 		  required: #(  );
 		  yourself
 
 MyProjectToolListWidgets >> executeWithRequest: request
 
 	| prefix names |
-	prefix := request stringArgumentNamed: 'prefix' default: ''.
+	prefix := request argumentOrDefaultNamed: 'prefix'.
 	names := (MyProject widgetNames select: [ :each | each beginsWith: prefix ]) asArray sorted.
 	^ self
 		  successResultText: names size asString , ' widget(s): ' , (', ' join: names) , '.'
@@ -184,6 +187,13 @@ request stringCollectionArgumentNamed: 'packages'.
 request hasArgumentNamed: 'prefix'.
 ```
 
+A default known only when the tool runs, such as a path computed from the
+image, cannot be in the schema. Pass it where the argument is read:
+
+```smalltalk
+request stringArgumentNamed: 'directory' default: FileLocator imageDirectory fullName.
+```
+
 Read the arguments in the tool, and hand an object that does the work plain
 values rather than the request.
 
@@ -209,8 +219,9 @@ the exception does not, such as what the caller should have asked for.
 Which of the two reaches the client is the server's choice, not the tool's.
 `toolResponseFields` defaults to `#content`, where the data is rendered into
 the text. `useContentAndStructuredContentToolResponses` sends both, and
-`useStructuredContentOnlyToolResponses` sends only the structured half. The
-structured half carries your text as `summary` and your dictionary as `data`.
+`useStructuredContentOnlyToolResponses` sends only the structured half.
+`useContentOnlyToolResponses` goes back to the default. The structured half
+carries your text as `summary` and your dictionary as `data`.
 
 ### Answering a page
 
@@ -448,6 +459,10 @@ built this way has no `tool_search`, `tool_get` or `tool_call` unless you add
 them back. Add `MCPToolSearchTools`, `MCPToolGetTool` and `MCPToolCallTool`
 when you want a surface a model can explore, or build up from `MCP new` with
 `addTool:` instead.
+
+An `MCP` instance takes prompts and resources the same way: `mcp addPrompt:`
+and `mcp addResource:` add one to what it discovered, and `mcp onlyPrompts:`
+and `mcp onlyResources:` replace its catalog of them with exactly those.
 
 ## Testing what you serve
 

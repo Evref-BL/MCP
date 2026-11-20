@@ -32,21 +32,27 @@ Metacello new
    load.
 ```
 
-The baseline groups are:
+That loads the `default` group. To choose the groups, send `load:` with their
+names in place of `load`. The baseline groups are:
 
 - `Core`: the server, its transport and schema machinery, and the catalog
   tools it dispatches through
 - `IDE`: the image tools — classes, methods, packages, tests, critiques,
   repositories, change history, debugging
-- `UI`: the world-menu server list
+- `UI`: the world-menu windows and the inspector tabs
 - `Telemetry`: the OpenTelemetry backend
+- `Tests`: the tests of `Core` and `IDE`; `UI Tests` and `Telemetry Tests` hold
+  those of `UI` and `Telemetry`
 - `default`: `Core`, `IDE`, `UI` and their tests
+- `all`: every group
 
+An image without a display has no use for `UI` and loads `#( 'Core' 'IDE' )`.
 A project embedding the server and serving tools of its own loads `Core` alone,
 which leaves out the image tools and everything behind them. Loading its package
 is all its tools need: a tool that names itself is in the catalog.
 [Building on MCP](docs/user/building-on-mcp.md) walks through
-a tool, a resource and a prompt of your own.
+a tool, a resource and a prompt of your own, and shows how a project's baseline
+depends on a release of MCP.
 
 Start the Streamable HTTP server:
 
@@ -54,9 +60,8 @@ Start the Streamable HTTP server:
 MCP startOnPort: 4000.
 ```
 
-That answers the server already on 4000 when the image has one, so running it
-again after a restart is safe. `MCP allServers` lists what the image holds, and
-`Library → MCP Servers` in the world menu shows the same list.
+[Getting started](docs/user/getting-started.md#start-and-stop) says what it
+answers when the image already has a server there.
 
 Connect a local MCP client to `http://127.0.0.1:4000`. Client configuration
 formats differ; see [Getting started](docs/user/getting-started.md) for setup
@@ -94,7 +99,6 @@ installGuidance({ host: "codex", cwd: process.cwd() });
 
 ## Contributing
 
-Use Pharo 14 for normal development and preserve Pharo 10, 11, 12, 13 and 15
-compatibility. Live behavior must be verified in an image; source inspection
-alone is not enough. Start with [AGENTS.md](AGENTS.md) and
-[MCP verification](docs/mcp-verification.md).
+Live behavior must be verified in an image; source inspection alone is not
+enough. Start with [AGENTS.md](AGENTS.md) and
+[Developing MCP](docs/developing-mcp.md).

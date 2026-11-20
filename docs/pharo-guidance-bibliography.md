@@ -38,8 +38,6 @@ maintenance context, not required reading for agents that only use MCP.
 
 - [Booklet-ManagingCode](https://github.com/SquareBracketAssociates/Booklet-ManagingCode):
   package and code-management context.
-- [Booklet-uFFI](https://github.com/SquareBracketAssociates/Booklet-uFFI):
-  FFI concepts and boundary behavior.
 - [Iceberg](https://github.com/pharo-vcs/iceberg) and
   [Iceberg wiki](https://github.com/pharo-vcs/iceberg/wiki): repository,
   working-copy, authentication, recovery, and Metacello integration behavior.
@@ -50,20 +48,13 @@ maintenance context, not required reading for agents that only use MCP.
 
 ## Cross-Language Style And Refactoring Sources
 
-These sources backed the readability heuristics the guidance used to carry,
-before the critique rules took them over. They are not Pharo authorities, but they
-confirm that the guidance is consistent with established style and refactoring
-practice.
+These sources back the readability rules in
+`templates/pharo-references/pharo-coding.md` and MCP's own critique rules. They
+are not Pharo authorities, but they show that the guidance agrees with
+established style and refactoring practice.
 
-- [Kent Beck, "Guard Clause" from Implementation Patterns](https://www.informit.com/articles/article.aspx?p=1149121&seqNum=11):
-  guard clauses for simple local exceptional flows and keeping the main flow
-  visible.
-- [Go Code Review Comments: Indent Error Flow](https://go.googlesource.com/wiki/+/6a941f07bde0a8939058c1fc3610dc4cba782a06/CodeReviewComments.md):
-  handling exceptional/error flow first so normal code remains minimally
-  indented.
 - [Martin Fowler, Refactoring second edition changes](https://martinfowler.com/articles/refactoring-2nd-changes.html):
-  guard clauses, replacing conditionals with polymorphism, replacing temps
-  with queries, separating query from modifier, and related conditional
+  replacing conditionals with polymorphism, and related conditional
   simplification refactorings.
 - [Google Python Style Guide](https://google.github.io/styleguide/pyguide.html):
   compact expressions only for simple cases, and readability over conciseness.
@@ -78,9 +69,6 @@ practice.
   loop is clearer.
 - [PEP 20 / The Zen of Python](https://pep20.org/): readability, flatness,
   explicitness, and practicality over purity.
-- [Airbnb JavaScript Style Guide](https://javascript.airbnb.tech/): consistent
-  style, avoiding confusing complex conditionals, and using immutability where
-  it makes data flow clearer.
 
 ## Maintenance Rule
 
