@@ -72,7 +72,6 @@ MCPToolSearchPackagesTest >> testImageScopeCanPaginateFilteredPackages [
 	expected := (self packageOrganizer packages
 		             select: [ :each | each name asString includesSubstring: 'MCP-' ]
 		             thenCollect: [ :each | each name asString ]) asArray sort.
-	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: packageNames size equals: expected size - 1.
 	self deny: (data includesKey: #nextOffset).
 	self assert: (pagination at: #returnedCount) equals: expected size - 1.
@@ -90,7 +89,6 @@ MCPToolSearchPackagesTest >> testImageScopeReturnsStructuredPackages [
 	| entry result |
 	result := self callToolWith: { (#query -> 'MCP-Tests-Resources') } asDictionary.
 	entry := self entryNamed: 'MCP-Tests-Resources' in: ((self dataFrom: result) at: #packages).
-	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (entry includesKey: #projects).
 	self assert: (entry includesKey: #tags).
 	self deny: (entry includesKey: #definedClassCount).
@@ -114,6 +112,27 @@ MCPToolSearchPackagesTest >> testProjectRegistrationWithPresentPackagesIsUsableW
 	query := MCPPackageScopeQuery new.
 	registration := self packageSearchFixtureRegistrationLoadedInImage: false.
 	self assert: (query shouldUseProjectRegistration: registration)
+]
+
+{ #category : 'tests' }
+MCPToolSearchPackagesTest >> testSearchPackagesHasAccurateNameAndSchema [
+
+	| propertyNames schema |
+	schema := MCPToolSearchPackages new inputSchema.
+	propertyNames := schema properties collect: [ :each | each name ].
+	self assert: MCPToolSearchPackages new name equals: 'package_search'.
+	self assert: schema required equals: #(  ).
+	self assert: propertyNames asSet equals: #( 'query' 'project' 'tag' 'offset' ) asSet
+]
+
+{ #category : 'tests' }
+MCPToolSearchPackagesTest >> testSearchPackagesReturnsStructuredArrayData [
+
+	| packages result |
+	result := self callToolNamed: 'package_search' withArguments: { (#query -> 'MCP-Tests-R') } asDictionary.
+	packages := (self dataFrom: result) at: #packages.
+	self assert: (packages allSatisfy: [ :each | (each includesKey: #package) and: [ each includesKey: #projects ] ]).
+	self assert: ((packages collect: [ :each | each at: #package ]) includesAll: self packageSearchFixturePackageNames)
 ]
 
 { #category : 'private - calling' }

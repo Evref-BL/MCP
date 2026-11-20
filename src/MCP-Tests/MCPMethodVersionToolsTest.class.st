@@ -3,24 +3,13 @@ Tests method_version_list and method_restore through the server, over a change h
 "
 Class {
 	#name : 'MCPMethodVersionToolsTest',
-	#superclass : 'MCPToolAPITestCase',
+	#superclass : 'MCPChangeHistoryTestCase',
 	#instVars : [
-		'originalMonitor',
-		'originalMonitorWasEnabled',
-		'temporaryMonitor',
-		'target',
-		'directory'
+		'target'
 	],
 	#category : 'MCP-Tests',
 	#package : 'MCP-Tests'
 }
-
-{ #category : 'testing' }
-MCPMethodVersionToolsTest class >> shouldLogWithEpicea [
-	"The changes these tests restore must be in a change history; setUp gives them one of their own."
-
-	^ true
-]
 
 { #category : 'private' }
 MCPMethodVersionToolsTest >> compile: aSource [
@@ -31,6 +20,12 @@ MCPMethodVersionToolsTest >> compile: aSource [
 			(#source -> aSource).
 			(#protocol -> 'testing') } asDictionary.
 	^ (target >> (RBParser parseMethod: aSource) selector) sourceCode
+]
+
+{ #category : 'private' }
+MCPMethodVersionToolsTest >> fixtureClassNames [
+
+	^ { self targetName }
 ]
 
 { #category : 'private' }
@@ -56,15 +51,6 @@ MCPMethodVersionToolsTest >> remove: aSelector [
 ]
 
 { #category : 'private' }
-MCPMethodVersionToolsTest >> restart [
-	"Save the image at the session's last entry and start it again: the next session is a new file, which has logged nothing yet and continues from that entry."
-
-	temporaryMonitor sessionStore
-		flush;
-		resetWithNextStoreName
-]
-
-{ #category : 'private' }
 MCPMethodVersionToolsTest >> restore: someAssociations [
 
 	^ self callToolNamed: 'method_restore' withArguments: ({ (#class -> self targetName) } , someAssociations) asDictionary
@@ -79,7 +65,6 @@ MCPMethodVersionToolsTest >> sentence: aString about: aSelector [
 
 { #category : 'running' }
 MCPMethodVersionToolsTest >> setUp [
-	"The monitor logs to a session store, as the image's does, in a directory of the test's own: on disk, since a session store needs a file system that says it is writable, which a memory one does not."
 
 	super setUp.
 	target := self
@@ -87,33 +72,13 @@ MCPMethodVersionToolsTest >> setUp [
 		          superclassName: 'Object'
 		          slots: #(  )
 		          classSlots: #(  ).
-	originalMonitor := EpMonitor current.
-	originalMonitorWasEnabled := originalMonitor isEnabled.
-	originalMonitor disable.
-	directory := (FileLocator temp asFileReference / ('mcp-method-version-tools-test-' , UUID new asString36)) ensureCreateDirectory.
-	temporaryMonitor := EpMonitor newWithLog: (EpLog newWithStore: (OmSessionStore newWithBaseLocator: directory)).
-	EpMonitor current: temporaryMonitor.
-	temporaryMonitor enable
+	self logToASessionStore
 ]
 
 { #category : 'private' }
 MCPMethodVersionToolsTest >> targetName [
 
 	^ 'MCPMethodVersionToolsTestTarget'
-]
-
-{ #category : 'running' }
-MCPMethodVersionToolsTest >> tearDown [
-
-	temporaryMonitor ifNotNil: [ temporaryMonitor disable ].
-	originalMonitor ifNotNil: [
-			EpMonitor current: originalMonitor.
-			originalMonitorWasEnabled
-				ifTrue: [ originalMonitor enable ]
-				ifFalse: [ originalMonitor disable ] ].
-	directory ifNotNil: [ directory ensureDeleteAll ].
-	self removeClassNamed: self targetName.
-	super tearDown
 ]
 
 { #category : 'tests' }

@@ -1,5 +1,5 @@
 "
-Fixture class used by structured output tests.
+Fixture test class that test_run tests run: one test passes, one fails, one errors and one skips.
 "
 Class {
 	#name : 'MCPToolStructuredOutputTestTarget',

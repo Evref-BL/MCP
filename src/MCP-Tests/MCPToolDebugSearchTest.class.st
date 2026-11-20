@@ -48,6 +48,26 @@ MCPToolDebugSearchTest >> testAnswersAnOpenDebuggerWithItsExceptionAndStack [
 ]
 
 { #category : 'tests' }
+MCPToolDebugSearchTest >> testDebugResultDoesNotRepeatItsWarnings [
+
+	| contentText |
+	contentText := MCPToolDebugSearch new contentTextForStructuredContent: (Dictionary new
+		               at: #summary put: 'One open debugger.';
+		               at: #warnings put: { 'Careful.' };
+		               at: #data put: (Dictionary new
+				                at: #debuggers put: { (Dictionary new
+						                 at: #debugger put: 'A debugger';
+						                 at: #exception put: 'ZeroDivide: divide by zero';
+						                 yourself) };
+				                yourself);
+		               yourself).
+	self assert: (contentText includesSubstring: 'debugger="A debugger"').
+	self assert: (contentText includesSubstring: 'Careful.').
+	"The warnings are read out above the payload, so the payload does not name them again."
+	self deny: (contentText includesSubstring: 'warnings')
+]
+
+{ #category : 'tests' }
 MCPToolDebugSearchTest >> testLeavesTheDebuggersItFound [
 
 	| before debugger |

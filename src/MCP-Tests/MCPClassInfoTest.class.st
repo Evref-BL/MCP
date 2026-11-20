@@ -26,9 +26,9 @@ MCPClassInfoTest >> ensureFixtureClasses [
 ]
 
 { #category : 'private' }
-MCPClassInfoTest >> removeFixtureClasses [
+MCPClassInfoTest >> fixtureClassNames [
 
-	self removeClassNamed: self baseClassName
+	^ { self baseClassName }
 ]
 
 { #category : 'running' }
@@ -36,13 +36,6 @@ MCPClassInfoTest >> setUp [
 
 	super setUp.
 	self ensureFixtureClasses
-]
-
-{ #category : 'running' }
-MCPClassInfoTest >> tearDown [
-
-	self removeFixtureClasses.
-	super tearDown
 ]
 
 { #category : 'tests' }

@@ -1,9 +1,9 @@
 "
-Tests for repository operation behavior. These tests execute the internal dispatcher directly so temporary Iceberg repository registry changes are not saved by the MCP RPC wrapper.
+Tests the repository tools, on checkouts and Iceberg registrations each test makes and removes.
 "
 Class {
 	#name : 'MCPToolRepositoryOperationTest',
-	#superclass : 'MCPToolTestCase',
+	#superclass : 'MCPToolAPITestCase',
 	#category : 'MCP-Tests',
 	#package : 'MCP-Tests'
 }
@@ -11,35 +11,10 @@ Class {
 { #category : 'private - calling' }
 MCPToolRepositoryOperationTest >> attachRepositoryNamed: aRepositoryName location: aLocationString packages: packageNames [
 
-	^ self callToolWith: {
-			  (#action -> 'attach').
+	^ self callToolNamed: 'repository_attach' withArguments: {
 			  (#repository -> aRepositoryName).
 			  (#location -> aLocationString).
 			  (#packages -> packageNames) } asDictionary
-]
-
-{ #category : 'private' }
-MCPToolRepositoryOperationTest >> callToolWith: someArguments [
-
-	| action arguments request result tool toolClass |
-	arguments := someArguments copy.
-	action := arguments removeKey: #action ifAbsent: [ arguments removeKey: #action ifAbsent: [ nil ] ].
-	toolClass := Dictionary new
-		             at: 'create' put: MCPToolCreateRepository;
-		             at: 'attach' put: MCPToolAttachRepository;
-		             at: 'update' put: MCPToolUpdateRepository;
-		             at: 'verifyIdentity' put: MCPToolVerifyRepositoryIdentity;
-		             at: 'diff' put: MCPToolListRepositoryChanges;
-		             at: 'discard' put: MCPToolDiscardRepositoryChanges;
-		             at: 'export' put: MCPToolExportRepository;
-		             at: 'commit' put: MCPToolCommitRepository;
-		             at: 'adoptHead' put: MCPToolAdoptRepositoryHead;
-		             at: 'reload' put: MCPToolReloadRepository;
-		             at: action ifAbsent: [ Error signal: 'Unknown repository action: ' , action asString ].
-	tool := toolClass new.
-	request := tool requestFromToolCallArguments: arguments.
-	result := tool executeWithRequest: request.
-	^ result asJRPCJSON
 ]
 
 { #category : 'private' }
@@ -69,8 +44,7 @@ MCPToolRepositoryOperationTest >> commitCheckoutNamed: aRepositoryName at: aLoca
 { #category : 'private - calling' }
 MCPToolRepositoryOperationTest >> commitRepositoryNamed: aRepositoryName message: aMessage [
 
-	^ self callToolWith: {
-			  (#action -> 'commit').
+	^ self callToolNamed: 'repository_commit' withArguments: {
 			  (#repository -> aRepositoryName).
 			  (#message -> aMessage) } asDictionary
 ]
@@ -93,13 +67,12 @@ MCPToolRepositoryOperationTest >> createRepositoryNamed: aRepositoryName locatio
 
 	| arguments result |
 	arguments := Dictionary new
-		             at: #action put: 'create';
 		             at: #repository put: aRepositoryName;
 		             at: #location put: aLocation pathString;
 		             at: #packages put: packageNames;
 		             yourself.
 	aSubdirectory ifNotNil: [ arguments at: #subdirectory put: aSubdirectory ].
-	result := self callToolWith: arguments.
+	result := self callToolNamed: 'repository_create' withArguments: arguments.
 	self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
 	^ result
 ]
@@ -137,9 +110,7 @@ MCPToolRepositoryOperationTest >> directChildNamesOf: aFileReference [
 { #category : 'private - calling' }
 MCPToolRepositoryOperationTest >> exportRepositoryNamed: aRepositoryName [
 
-	^ self callToolWith: {
-			  (#action -> 'export').
-			  (#repository -> aRepositoryName) } asDictionary
+	^ self callToolNamed: 'repository_export' withArguments: { (#repository -> aRepositoryName) } asDictionary
 ]
 
 { #category : 'private' }
@@ -169,17 +140,6 @@ MCPToolRepositoryOperationTest >> isRegistered: aRepositoryName [
 ]
 
 { #category : 'private' }
-MCPToolRepositoryOperationTest >> newRepositoryNamed: aRepositoryName location: aFileReference packageNames: somePackageNames [
-
-	| repository |
-	repository := IceLibgitRepository new.
-	repository name: aRepositoryName.
-	repository location: aFileReference.
-	somePackageNames do: [ :each | repository workingCopy addPackageNamed: each ].
-	^ repository
-]
-
-{ #category : 'private' }
 MCPToolRepositoryOperationTest >> newTestRepositoryNamed: aRepositoryName [
 
 	| location repository |
@@ -202,8 +162,7 @@ MCPToolRepositoryOperationTest >> refusedCreateNamed: aRepositoryName location: 
 	"Ask create for a repository with no packages, and fail the test unless it refuses."
 
 	| result |
-	result := self callToolWith: {
-			          (#action -> 'create').
+	result := self callToolNamed: 'repository_create' withArguments: {
 			          (#repository -> aRepositoryName).
 			          (#location -> aLocationString) } asDictionary.
 	self assert: (self resultIndicatesError: result) description: 'create should have refused'.
@@ -217,6 +176,15 @@ MCPToolRepositoryOperationTest >> removeRegisteredRepositoriesNamed: aRepository
 	registry := IceRepository registry.
 	repositories := registry select: [ :each | each name asString = aRepositoryName ].
 	repositories do: [ :each | registry remove: each ifAbsent: [ ] ]
+]
+
+{ #category : 'private' }
+MCPToolRepositoryOperationTest >> searchMetadataByToolName [
+
+	| metadata |
+	metadata := Dictionary new.
+	self toolRegistry tools do: [ :tool | metadata at: tool name put: tool searchMetadata ].
+	^ metadata
 ]
 
 { #category : 'private - calling' }
@@ -291,8 +259,7 @@ MCPToolRepositoryOperationTest >> testACreatedRepositoryReattachesWithItsPackage
 							result := self commitRepositoryNamed: repositoryName message: 'Hold the package'.
 							self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
 							self removeRegisteredRepositoriesNamed: repositoryName.
-							result := self callToolWith: {
-									          (#action -> 'attach').
+							result := self callToolNamed: 'repository_attach' withArguments: {
 									          (#repository -> repositoryName).
 									          (#location -> location pathString) } asDictionary.
 							self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
@@ -311,8 +278,7 @@ MCPToolRepositoryOperationTest >> testAdoptHeadAdoptsRepositoryHeadAndReportsBef
 	repository modifiedPackageNames: #( 'MCP' 'MCP-Tests' ).
 	repository workingCopy referenceCommit: (MCPTestRepositoryCommit id: 'head-1').
 	self withRegisteredRepository: repository do: [
-			result := self callToolWith: {
-					          (#action -> 'adoptHead').
+			result := self callToolNamed: 'repository_head_adopt' withArguments: {
 					          (#repository -> repository name).
 					          (#branch -> 'main') } asDictionary.
 			data := self dataFrom: result.
@@ -337,8 +303,7 @@ MCPToolRepositoryOperationTest >> testAdoptHeadClearsModifiedPackagesWhenReferen
 	repository modifiedPackageNames: #( 'MCP' ).
 	repository workingCopy referenceCommit: (MCPTestRepositoryCommit id: 'head-1').
 	self withRegisteredRepository: repository do: [
-			result := self callToolWith: {
-					          (#action -> 'adoptHead').
+			result := self callToolNamed: 'repository_head_adopt' withArguments: {
 					          (#repository -> repository name).
 					          (#branch -> 'main') } asDictionary.
 			data := self dataFrom: result.
@@ -360,26 +325,12 @@ MCPToolRepositoryOperationTest >> testAdoptHeadNamesADetachedHead [
 	repository isDetachedHead: true.
 	repository workingCopy referenceCommit: (MCPTestRepositoryCommit id: 'head-1').
 	self withRegisteredRepository: repository do: [
-			result := self callToolWith: {
-					          (#action -> 'adoptHead').
-					          (#repository -> repository name) } asDictionary.
+			result := self callToolNamed: 'repository_head_adopt' withArguments: { (#repository -> repository name) } asDictionary.
 			self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
 			self
 				assert: (self summaryFrom: result)
 				equals: 'Repository MCP Adopt Detached Head Test Repository now refers to its detached HEAD 0123456.'.
 			self assert: (self dataFrom: result) isEmpty ]
-]
-
-{ #category : 'tests' }
-MCPToolRepositoryOperationTest >> testAdoptHeadReadsItsRequest [
-
-	| request tool |
-	tool := MCPToolAdoptRepositoryHead new.
-	request := tool requestFromToolCallArguments: {
-			           (#repository -> 'MCP').
-			           (#branch -> 'main') } asDictionary.
-	self assert: (tool mutationActionFor: request checked: true) equals: 'adoptHead'.
-	self assert: ((tool requestedContextFor: request checked: true) at: #branch) equals: 'main'
 ]
 
 { #category : 'tests' }
@@ -390,8 +341,7 @@ MCPToolRepositoryOperationTest >> testAdoptHeadValidatesExpectedBranch [
 	repository branchName: 'main'.
 	repository headCommitId: 'head-1'.
 	self withRegisteredRepository: repository do: [
-			result := self callToolWith: {
-					          (#action -> 'adoptHead').
+			result := self callToolNamed: 'repository_head_adopt' withArguments: {
 					          (#repository -> repository name).
 					          (#branch -> 'feature') } asDictionary.
 			self assert: (self resultIndicatesError: result).
@@ -412,20 +362,16 @@ MCPToolRepositoryOperationTest >> testAttachGivesACheckoutWithoutProjectFileItsS
 	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestAttachWithoutProjectFile'.
 	self withExportPackageNamed: packageName className: 'MCPToolRepositoryOperationNoProjectClass' do: [
 			self withCleanRepositoryNamed: repositoryName location: location do: [
-					self callToolWith: {
-							(#action -> 'create').
+					self callToolNamed: 'repository_create' withArguments: {
 							(#repository -> repositoryName).
 							(#location -> location pathString).
 							(#subdirectory -> 'src').
 							(#packages -> { packageName }) } asDictionary.
-					self callToolWith: {
-							(#action -> 'export').
-							(#repository -> repositoryName) } asDictionary.
+					self callToolNamed: 'repository_export' withArguments: { (#repository -> repositoryName) } asDictionary.
 					(location / '.project') ensureDelete.
 					self commitAllIn: location message: 'Keep the sources without a project file'.
 					self removeRegisteredRepositoriesNamed: repositoryName.
-					result := self callToolWith: {
-							          (#action -> 'attach').
+					result := self callToolNamed: 'repository_attach' withArguments: {
 							          (#repository -> repositoryName).
 							          (#location -> location pathString).
 							          (#subdirectory -> 'src').
@@ -435,9 +381,7 @@ MCPToolRepositoryOperationTest >> testAttachGivesACheckoutWithoutProjectFileItsS
 					self assert: repository subdirectory equals: 'src'.
 					self assert: (self packageNamesIn: repository) equals: { packageName }.
 					self assert: ((self summaryFrom: result) includesSubstring: '.project').
-					self callToolWith: {
-							(#action -> 'export').
-							(#repository -> repositoryName) } asDictionary.
+					self callToolNamed: 'repository_export' withArguments: { (#repository -> repositoryName) } asDictionary.
 					self assert: ((location / '.project') contents includesSubstring: 'src') ] ]
 ]
 
@@ -450,30 +394,13 @@ MCPToolRepositoryOperationTest >> testAttachGivesAnEmptyCheckoutItsSubdirectory 
 	self withCleanRepositoryNamed: repositoryName location: location do: [
 			location ensureCreateDirectory.
 			self shellCommand: 'git init --initial-branch=main ' , (self shellQuote: location pathString).
-			result := self callToolWith: {
-					          (#action -> 'attach').
+			result := self callToolNamed: 'repository_attach' withArguments: {
 					          (#repository -> repositoryName).
 					          (#location -> location pathString).
 					          (#subdirectory -> 'src') } asDictionary.
 			self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
 			repository := IceRepository repositories detect: [ :each | each name asString = repositoryName ].
 			self assert: repository subdirectory equals: 'src' ]
-]
-
-{ #category : 'tests' }
-MCPToolRepositoryOperationTest >> testAttachReadsItsRequest [
-
-	| context request tool |
-	tool := MCPToolAttachRepository new.
-	request := tool requestFromToolCallArguments: {
-			           (#repository -> 'MCP').
-			           (#location -> 'C:/src/MCP').
-			           (#packages -> #( 'MCP' )) } asDictionary.
-	context := tool requestedContextFor: request checked: true.
-
-	self assert: (tool mutationActionFor: request checked: true) equals: 'attach'.
-	self assert: (context at: #location) equals: 'C:/src/MCP'.
-	self assert: (context at: #packages) equals: #( 'MCP' )
 ]
 
 { #category : 'tests' }
@@ -486,21 +413,17 @@ MCPToolRepositoryOperationTest >> testAttachReadsThePackagesOfACheckoutWithoutPr
 	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestAttachReadsWithoutProjectFile'.
 	self withExportPackageNamed: packageName className: 'MCPToolRepositoryOperationNoProjectReadClass' do: [
 			self withCleanRepositoryNamed: repositoryName location: location do: [
-					self callToolWith: {
-							(#action -> 'create').
+					self callToolNamed: 'repository_create' withArguments: {
 							(#repository -> repositoryName).
 							(#location -> location pathString).
 							(#subdirectory -> 'src').
 							(#packages -> { packageName }) } asDictionary.
-					self callToolWith: {
-							(#action -> 'export').
-							(#repository -> repositoryName) } asDictionary.
+					self callToolNamed: 'repository_export' withArguments: { (#repository -> repositoryName) } asDictionary.
 					(location / '.project') ensureDelete.
 					location / 'src' / '.properties' writeStreamDo: [ :stream | stream nextPutAll: '{ #format : #tonel }' ].
 					self commitAllIn: location message: 'Keep the sources without a project file'.
 					self removeRegisteredRepositoriesNamed: repositoryName.
-					result := self callToolWith: {
-							          (#action -> 'attach').
+					result := self callToolNamed: 'repository_attach' withArguments: {
 							          (#repository -> repositoryName).
 							          (#location -> location pathString).
 							          (#subdirectory -> 'src') } asDictionary.
@@ -612,8 +535,7 @@ MCPToolRepositoryOperationTest >> testAttachReportsDuplicateRepository [
 	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestAttachDuplicate'.
 	repository := self newRepositoryNamed: repositoryName location: location packageNames: #(  ).
 	self withRegisteredRepository: repository do: [
-			result := self callToolWith: {
-					          (#action -> 'attach').
+			result := self callToolNamed: 'repository_attach' withArguments: {
 					          (#repository -> repositoryName).
 					          (#location -> location pathString) } asDictionary.
 			self assert: (self resultIndicatesError: result).
@@ -677,9 +599,7 @@ MCPToolRepositoryOperationTest >> testChangeListSaysWhenNothingIsUncommitted [
 						packages: { packageName }.
 					self exportRepositoryNamed: repositoryName.
 					self commitRepositoryNamed: repositoryName message: 'Hold the package'.
-					result := self callToolWith: {
-							          (#action -> 'diff').
-							          (#repository -> repositoryName) } asDictionary.
+					result := self callToolNamed: 'repository_change_list' withArguments: { (#repository -> repositoryName) } asDictionary.
 					self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
 					self
 						assert: (self summaryFrom: result)
@@ -700,36 +620,28 @@ MCPToolRepositoryOperationTest >> testCheckoutBranchLoadsTargetBranchSnapshot [
 	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestCheckoutBranch'.
 	self withExportPackageNamed: packageName className: className do: [
 			self withCleanRepositoryNamed: repositoryName location: location do: [
-					self callToolWith: {
-							(#action -> 'create').
+					self callToolNamed: 'repository_create' withArguments: {
 							(#repository -> repositoryName).
 							(#location -> location pathString).
 							(#packages -> { packageName }) } asDictionary.
-					self callToolWith: {
-							(#action -> 'export').
-							(#repository -> repositoryName) } asDictionary.
+					self callToolNamed: 'repository_export' withArguments: { (#repository -> repositoryName) } asDictionary.
 					self commitAllIn: location message: 'Prepare checkout base branch'.
 					repository := IceRepository repositories detect: [ :each | each name asString = repositoryName ].
 					baseBranch := repository branchName.
 					self shellCommand: (String streamContents: [ :stream |
 							 stream << 'git -C ' << (self shellQuote: location pathString) << ' checkout -b ' << (self shellQuote: featureBranch) ]).
 					(Smalltalk at: className asSymbol) compile: 'staleBranchOnlyValue ^ 42' classified: 'tests'.
-					self callToolWith: {
-							(#action -> 'export').
-							(#repository -> repositoryName) } asDictionary.
+					self callToolNamed: 'repository_export' withArguments: { (#repository -> repositoryName) } asDictionary.
 					self commitAllIn: location message: 'Add branch-only method'.
 					self removeRegisteredRepositoriesNamed: repositoryName.
-					self callToolWith: {
-							(#action -> 'attach').
+					self callToolNamed: 'repository_attach' withArguments: {
 							(#repository -> repositoryName).
 							(#location -> location pathString).
 							(#packages -> { packageName }) } asDictionary.
 					self assert: ((Smalltalk at: className asSymbol) includesSelector: extraSelector).
 					self shellCommand: (String streamContents: [ :stream |
 							 stream << 'git -C ' << (self shellQuote: location pathString) << ' checkout ' << (self shellQuote: baseBranch) ]).
-					checkoutResult := self callToolWith: {
-							                  (#action -> 'reload').
-							                  (#repository -> repositoryName) } asDictionary.
+					checkoutResult := self callToolNamed: 'repository_reload' withArguments: { (#repository -> repositoryName) } asDictionary.
 					self deny: (self resultIndicatesError: checkoutResult) description: (self summaryFrom: checkoutResult).
 					self deny: ((Smalltalk at: className asSymbol) includesSelector: extraSelector) ] ]
 ]
@@ -821,8 +733,7 @@ MCPToolRepositoryOperationTest >> testCommitOfARepositoryWithoutPackages [
 	self withCleanRepositoryNamed: repositoryName location: location do: [
 			location ensureCreateDirectory.
 			self shellCommand: 'git init --initial-branch=main ' , (self shellQuote: location pathString).
-			self callToolWith: {
-					(#action -> 'attach').
+			self callToolNamed: 'repository_attach' withArguments: {
 					(#repository -> repositoryName).
 					(#location -> location pathString) } asDictionary.
 			self write: 'a' to: location / 'a.txt'.
@@ -835,19 +746,6 @@ MCPToolRepositoryOperationTest >> testCommitOfARepositoryWithoutPackages [
 			self assert: (data at: #otherFiles) asArray equals: #( 'a.txt' ).
 			self deny: (data includesKey: #packages).
 			self assert: (self git: 'log -1 --format=%s' in: location) equals: 'Add a file written by hand' ]
-]
-
-{ #category : 'tests' }
-MCPToolRepositoryOperationTest >> testCommitReadsItsRequest [
-
-	| request tool |
-	tool := MCPToolCommitRepository new.
-	request := tool requestFromToolCallArguments: {
-			           (#repository -> 'MCP').
-			           (#message -> 'Commit from test') } asDictionary.
-
-	self assert: ((tool requestedContextFor: request checked: true) at: #message) equals: 'Commit from test'.
-	self assert: (tool mutationActionFor: request checked: true) equals: 'commit'
 ]
 
 { #category : 'tests' }
@@ -915,8 +813,7 @@ MCPToolRepositoryOperationTest >> testCommitWarnsOfARegisteredPackageNotInTheIma
 						location: location
 						subdirectory: 'src'
 						packages: { packageName }.
-					self callToolWith: {
-							(#action -> 'update').
+					self callToolNamed: 'repository_update' withArguments: {
 							(#repository -> repositoryName).
 							(#addPackages -> { absentPackageName }) } asDictionary.
 					result := self commitRepositoryNamed: repositoryName message: 'Write the package'.
@@ -939,26 +836,21 @@ MCPToolRepositoryOperationTest >> testCommitWritesTheProjectFileAnAttachGave [
 	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestCommitPendingProjectFile'.
 	self withExportPackageNamed: packageName className: 'MCPToolRepositoryOperationPendingProjectClass' do: [
 			self withCleanRepositoryNamed: repositoryName location: location do: [
-					self callToolWith: {
-							(#action -> 'create').
+					self callToolNamed: 'repository_create' withArguments: {
 							(#repository -> repositoryName).
 							(#location -> location pathString).
 							(#subdirectory -> 'src').
 							(#packages -> { packageName }) } asDictionary.
-					self callToolWith: {
-							(#action -> 'export').
-							(#repository -> repositoryName) } asDictionary.
+					self callToolNamed: 'repository_export' withArguments: { (#repository -> repositoryName) } asDictionary.
 					(location / '.project') ensureDelete.
 					self commitAllIn: location message: 'Keep the sources without a project file'.
 					self removeRegisteredRepositoriesNamed: repositoryName.
-					self callToolWith: {
-							(#action -> 'attach').
+					self callToolNamed: 'repository_attach' withArguments: {
 							(#repository -> repositoryName).
 							(#location -> location pathString).
 							(#subdirectory -> 'src').
 							(#packages -> { packageName }) } asDictionary.
-					result := self callToolWith: {
-							          (#action -> 'commit').
+					result := self callToolNamed: 'repository_commit' withArguments: {
 							          (#repository -> repositoryName).
 							          (#message -> 'Name the source directory') } asDictionary.
 					self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
@@ -1098,8 +990,7 @@ MCPToolRepositoryOperationTest >> testCreateRefusesAPackageNotInTheImage [
 	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestCreateMissingPackage'.
 	self withExportPackageNamed: packageName className: 'MCPToolRepositoryOperationTypoClass' do: [
 			self withCleanRepositoryNamed: repositoryName location: location do: [
-					result := self callToolWith: {
-							          (#action -> 'create').
+					result := self callToolNamed: 'repository_create' withArguments: {
 							          (#repository -> repositoryName).
 							          (#location -> location pathString).
 							          (#packages -> {
@@ -1361,9 +1252,7 @@ MCPToolRepositoryOperationTest >> testDiffCanReportImageModifiedPackagesWithoutW
 	repository := self newTestRepositoryNamed: 'MCP Diff Package Only Test Repository'.
 	repository modifiedPackageNames: #( 'MCP-Test-Dirty' ).
 	self withRegisteredRepository: repository do: [
-			result := self callToolWith: {
-					          (#action -> 'diff').
-					          (#repository -> repository name) } asDictionary.
+			result := self callToolNamed: 'repository_change_list' withArguments: { (#repository -> repository name) } asDictionary.
 			data := self dataFrom: result.
 			self deny: (result at: #isError ifAbsent: false).
 			self assert: (self summaryFrom: result) equals: 'Repository MCP Diff Package Only Test Repository has uncommitted changes.'.
@@ -1382,22 +1271,17 @@ MCPToolRepositoryOperationTest >> testDiffLeavesOutAPackageMarkedOverNothing [
 	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestDiffMark'.
 	self withExportPackageNamed: packageName className: className do: [
 			self withCleanRepositoryNamed: repositoryName location: location do: [
-					self callToolWith: {
-							(#action -> 'create').
+					self callToolNamed: 'repository_create' withArguments: {
 							(#repository -> repositoryName).
 							(#location -> location pathString).
 							(#packages -> { packageName }) } asDictionary.
-					self callToolWith: {
-							(#action -> 'export').
-							(#repository -> repositoryName) } asDictionary.
+					self callToolNamed: 'repository_export' withArguments: { (#repository -> repositoryName) } asDictionary.
 					repository := IceRepository repositories detect: [ :each | each name asString = repositoryName ].
 					class := self class environment at: className asSymbol.
 					class compile: 'probe ^ 1' classified: 'probing'.
 					class removeSelector: #probe.
 					self assert: (repository modifiedPackages collect: [ :each | each name ] as: Array) equals: { packageName }.
-					result := self callToolWith: {
-							          (#action -> 'diff').
-							          (#repository -> repositoryName) } asDictionary.
+					result := self callToolNamed: 'repository_change_list' withArguments: { (#repository -> repositoryName) } asDictionary.
 					data := self dataFrom: result.
 					self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
 					self deny: (data includesKey: #imageModifiedPackages) ] ]
@@ -1413,18 +1297,13 @@ MCPToolRepositoryOperationTest >> testDiffListsAPackageWhoseImageDiffersFromItsF
 	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestDiffDiffers'.
 	self withExportPackageNamed: packageName className: className do: [
 			self withCleanRepositoryNamed: repositoryName location: location do: [
-					self callToolWith: {
-							(#action -> 'create').
+					self callToolNamed: 'repository_create' withArguments: {
 							(#repository -> repositoryName).
 							(#location -> location pathString).
 							(#packages -> { packageName }) } asDictionary.
-					self callToolWith: {
-							(#action -> 'export').
-							(#repository -> repositoryName) } asDictionary.
+					self callToolNamed: 'repository_export' withArguments: { (#repository -> repositoryName) } asDictionary.
 					(self class environment at: className asSymbol) compile: 'probe ^ 1' classified: 'probing'.
-					result := self callToolWith: {
-							          (#action -> 'diff').
-							          (#repository -> repositoryName) } asDictionary.
+					result := self callToolNamed: 'repository_change_list' withArguments: { (#repository -> repositoryName) } asDictionary.
 					data := self dataFrom: result.
 					self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
 					self assert: (data at: #imageModifiedPackages) equals: { packageName } ] ]
@@ -1450,16 +1329,13 @@ MCPToolRepositoryOperationTest >> testDiffReportsImageChangesWithoutWriting [
 	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestDiff'.
 	self withExportPackageNamed: packageName className: 'MCPToolRepositoryOperationDiffClass' do: [
 			self withCleanRepositoryNamed: repositoryName location: location do: [
-					self callToolWith: {
-							(#action -> 'create').
+					self callToolNamed: 'repository_create' withArguments: {
 							(#repository -> repositoryName).
 							(#location -> location pathString).
 							(#packages -> { packageName }) } asDictionary.
 					repository := IceRepository repositories detect: [ :each | each name asString = repositoryName ].
 					self assert: repository index isEmpty.
-					result := self callToolWith: {
-							          (#action -> 'diff').
-							          (#repository -> repositoryName) } asDictionary.
+					result := self callToolNamed: 'repository_change_list' withArguments: { (#repository -> repositoryName) } asDictionary.
 					data := self dataFrom: result.
 					childNames := self directChildNamesOf: location.
 					self deny: (result at: #isError ifAbsent: false).
@@ -1475,9 +1351,7 @@ MCPToolRepositoryOperationTest >> testDiscardCleanRepositoryDoesNothing [
 	| data repository result |
 	repository := self newTestRepositoryNamed: 'MCP Discard Clean Test Repository'.
 	self withRegisteredRepository: repository do: [
-			result := self callToolWith: {
-					          (#action -> 'discard').
-					          (#repository -> repository name) } asDictionary.
+			result := self callToolNamed: 'repository_change_discard' withArguments: { (#repository -> repository name) } asDictionary.
 			data := self dataFrom: result.
 			self deny: (result at: #isError ifAbsent: [ false ]).
 			self assert: (self summaryFrom: result) equals: 'Repository MCP Discard Clean Test Repository had no changes to discard.'.
@@ -1492,9 +1366,7 @@ MCPToolRepositoryOperationTest >> testDiscardClearsImageModifiedPackages [
 	repository := self newTestRepositoryNamed: 'MCP Discard Package Only Test Repository'.
 	repository modifiedPackageNames: #( 'MCP-Test-Dirty' ).
 	self withRegisteredRepository: repository do: [
-			result := self callToolWith: {
-					          (#action -> 'discard').
-					          (#repository -> repository name) } asDictionary.
+			result := self callToolNamed: 'repository_change_discard' withArguments: { (#repository -> repository name) } asDictionary.
 			data := self dataFrom: result.
 			self deny: (result at: #isError ifAbsent: [ false ]).
 			self assert: (self summaryFrom: result) equals: 'Discarded the changes of repository MCP Discard Package Only Test Repository.'.
@@ -1522,9 +1394,7 @@ MCPToolRepositoryOperationTest >> testDiscardNamesNoPackageForAnUnregisteredDire
 					self commitRepositoryNamed: repositoryName message: 'Write the package'.
 					self write: '# Zoo' to: location / 'README.md'.
 					self write: 'x' to: location / 'src' / 'X' / 'a.st'.
-					result := self callToolWith: {
-							          (#action -> 'discard').
-							          (#repository -> repositoryName) } asDictionary.
+					result := self callToolNamed: 'repository_change_discard' withArguments: { (#repository -> repositoryName) } asDictionary.
 					self assert: (self resultIndicatesError: result).
 					details := self errorFrom: result.
 					self assert: (details at: #errorCode) equals: 'RepositoryDiscardIncomplete'.
@@ -1539,12 +1409,9 @@ MCPToolRepositoryOperationTest >> testDiscardNamesThePackagesIcebergStillMarks [
 	| error repository |
 	repository := self newTestRepositoryNamed: 'MCP Discard Marks Remain Test Repository'.
 	repository modifiedPackageNames: #( 'MCP-Test-Dirty' ).
-	self withRegisteredRepository: repository do: [
-			error := [
-				         MCPRepositoryWorkingCopyCommand new assertRepositoryCleanAfterDiscard: repository.
-				         nil ]
-				         on: MCPCommandError
-				         do: [ :caught | caught ] ].
+	self
+		withRegisteredRepository: repository
+		do: [ error := self capture: [ MCPRepositoryWorkingCopyCommand new assertRepositoryCleanAfterDiscard: repository ] ].
 	self assert: error errorCode equals: 'RepositoryDiscardIncomplete'.
 	self assert: error messageText equals: 'Repository changes remain after discard: Iceberg still marks MCP-Test-Dirty as modified.'
 ]
@@ -1560,11 +1427,7 @@ MCPToolRepositoryOperationTest >> testDiscardNamesThePackagesIcebergStillMarksBe
 	self withRegisteredRepository: repository do: [
 			self shellCommand: 'git init --quiet ' , (self shellQuote: location pathString).
 			self write: 'x' to: location / 'notes.txt'.
-			error := [
-				         MCPRepositoryWorkingCopyCommand new assertRepositoryCleanAfterDiscard: repository.
-				         nil ]
-				         on: MCPCommandError
-				         do: [ :caught | caught ] ].
+			error := self capture: [ MCPRepositoryWorkingCopyCommand new assertRepositoryCleanAfterDiscard: repository ] ].
 	self assert: error errorCode equals: 'RepositoryDiscardIncomplete'.
 	self
 		assert: error messageText
@@ -1591,9 +1454,7 @@ MCPToolRepositoryOperationTest >> testDiscardNamesWhatRemainsAndWhatGitDoesNotTr
 					self commitRepositoryNamed: repositoryName message: 'Write the package'.
 					self write: '# Notes, changed' to: location / 'README.md'.
 					self write: 'x' to: location / 'notes.txt'.
-					result := self callToolWith: {
-							          (#action -> 'discard').
-							          (#repository -> repositoryName) } asDictionary.
+					result := self callToolNamed: 'repository_change_discard' withArguments: { (#repository -> repositoryName) } asDictionary.
 					self assert: (self resultIndicatesError: result).
 					self assert: ((self errorFrom: result) at: #errorCode) equals: 'RepositoryDiscardIncomplete'.
 					self
@@ -1622,17 +1483,14 @@ MCPToolRepositoryOperationTest >> testExportAndReloadUseTheFormatTheCheckoutDecl
 	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestFiletree'.
 	self withExportPackageNamed: packageName className: className do: [
 			self withCleanRepositoryNamed: repositoryName location: location do: [
-					self callToolWith: {
-							(#action -> 'create').
+					self callToolNamed: 'repository_create' withArguments: {
 							(#repository -> repositoryName).
 							(#location -> location pathString).
 							(#packages -> { packageName }) } asDictionary.
 					repository := IceRepository repositories detect: [ :each | each name asString = repositoryName ].
 					repository workingCopy repositoryProperties fileFormatId: #filetree.
 					(Smalltalk at: className asSymbol) compile: 'filetreeOnlyValue ^ 42' classified: 'tests'.
-					result := self callToolWith: {
-							          (#action -> 'export').
-							          (#repository -> repositoryName) } asDictionary.
+					result := self callToolNamed: 'repository_export' withArguments: { (#repository -> repositoryName) } asDictionary.
 					data := self dataFrom: result.
 					packageDirectory := location / (packageName , '.package').
 					self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
@@ -1646,9 +1504,7 @@ MCPToolRepositoryOperationTest >> testExportAndReloadUseTheFormatTheCheckoutDecl
 						description: 'Exporting must not leave a filetree marker at the root of the checkout.'.
 					self commitAllIn: location message: 'Export filetree source'.
 					(Smalltalk at: className asSymbol) removeSelector: #filetreeOnlyValue.
-					result := self callToolWith: {
-							          (#action -> 'reload').
-							          (#repository -> repositoryName) } asDictionary.
+					result := self callToolNamed: 'repository_reload' withArguments: { (#repository -> repositoryName) } asDictionary.
 					self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
 					self
 						assert: ((Smalltalk at: className asSymbol) includesSelector: #filetreeOnlyValue)
@@ -1697,24 +1553,19 @@ MCPToolRepositoryOperationTest >> testExportHonoursTheTonelVersionTheCheckoutPin
 	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestTonelVersion'.
 	self withExportPackageNamed: packageName className: className do: [
 			self withCleanRepositoryNamed: repositoryName location: location do: [
-					self callToolWith: {
-							(#action -> 'create').
+					self callToolNamed: 'repository_create' withArguments: {
 							(#repository -> repositoryName).
 							(#location -> location pathString).
 							(#packages -> { packageName }) } asDictionary.
 					repository := IceRepository repositories detect: [ :each | each name asString = repositoryName ].
-					self callToolWith: {
-							(#action -> 'export').
-							(#repository -> repositoryName) } asDictionary.
+					self callToolNamed: 'repository_export' withArguments: { (#repository -> repositoryName) } asDictionary.
 					sourceFile := location / packageName / (className , '.class.st').
 					self assert: sourceFile exists.
 					self
 						assert: (sourceFile contents includesSubstring: '#package :') = self currentTonelFormatNamesPackages
 						description: 'A checkout that pins no version is written in the current Tonel format.'.
 					repository workingCopy repositoryProperties at: #version put: #'1.0'.
-					self callToolWith: {
-							(#action -> 'export').
-							(#repository -> repositoryName) } asDictionary.
+					self callToolNamed: 'repository_export' withArguments: { (#repository -> repositoryName) } asDictionary.
 					self
 						deny: (sourceFile contents includesSubstring: '#package :')
 						description: 'A checkout pinned to Tonel 1.0 must not be written in the version 3 format.' ] ]
@@ -1874,8 +1725,7 @@ MCPToolRepositoryOperationTest >> testExportRefusesARepositoryWithoutPackages [
 	self withCleanRepositoryNamed: repositoryName location: location do: [
 			location ensureCreateDirectory.
 			self shellCommand: 'git init --initial-branch=main ' , (self shellQuote: location pathString).
-			self callToolWith: {
-					(#action -> 'attach').
+			self callToolNamed: 'repository_attach' withArguments: {
 					(#repository -> repositoryName).
 					(#location -> location pathString) } asDictionary.
 			file := location / 'src' / 'X' / 'a.st'.
@@ -1907,8 +1757,7 @@ MCPToolRepositoryOperationTest >> testExportRefusesWhenNoRegisteredPackageIsInTh
 				location: location
 				subdirectory: 'src'
 				packages: #(  ).
-			self callToolWith: {
-					(#action -> 'update').
+			self callToolNamed: 'repository_update' withArguments: {
 					(#repository -> repositoryName).
 					(#addPackages -> { absentPackageName }) } asDictionary.
 			result := self exportRepositoryNamed: repositoryName.
@@ -1932,22 +1781,16 @@ MCPToolRepositoryOperationTest >> testExportRewritesAShorterProjectFileWhole [
 	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestExportShorterProjectFile'.
 	self withExportPackageNamed: packageName className: 'MCPToolRepositoryOperationShorterProjectClass' do: [
 			self withCleanRepositoryNamed: repositoryName location: location do: [
-					self callToolWith: {
-							(#action -> 'create').
+					self callToolNamed: 'repository_create' withArguments: {
 							(#repository -> repositoryName).
 							(#location -> location pathString).
 							(#subdirectory -> 'repository').
 							(#packages -> { packageName }) } asDictionary.
-					self callToolWith: {
-							(#action -> 'export').
-							(#repository -> repositoryName) } asDictionary.
-					self callToolWith: {
-							(#action -> 'update').
+					self callToolNamed: 'repository_export' withArguments: { (#repository -> repositoryName) } asDictionary.
+					self callToolNamed: 'repository_update' withArguments: {
 							(#repository -> repositoryName).
 							(#subdirectory -> 'src') } asDictionary.
-					self callToolWith: {
-							(#action -> 'export').
-							(#repository -> repositoryName) } asDictionary.
+					self callToolNamed: 'repository_export' withArguments: { (#repository -> repositoryName) } asDictionary.
 					self assert: ((STON fromString: (location / '.project') contents) at: 'srcDirectory') equals: 'src'.
 					self assert: ((location / '.project') contents occurrencesOf: $}) equals: 1 ] ]
 ]
@@ -1968,8 +1811,7 @@ MCPToolRepositoryOperationTest >> testExportWarnsOfARegisteredPackageNotInTheIma
 						location: location
 						subdirectory: 'src'
 						packages: { packageName }.
-					self callToolWith: {
-							(#action -> 'update').
+					self callToolNamed: 'repository_update' withArguments: {
 							(#repository -> repositoryName).
 							(#addPackages -> { absentPackageName }) } asDictionary.
 					result := self exportRepositoryNamed: repositoryName.
@@ -1990,17 +1832,13 @@ MCPToolRepositoryOperationTest >> testExportWarnsOfARegisteredPackageNotInTheIma
 { #category : 'tests' }
 MCPToolRepositoryOperationTest >> testGitCommandFailureSignalsStructuredCommandError [
 
-	| command error |
-	command := MCPCommitRepositoryCommand new.
-	error := [
-		         command
-			         signalGitCommandFailed: {
-					         (#status -> 128).
-					         (#output -> 'fatal: no upstream') } asDictionary
-			         action: 'commit'.
-		         nil ]
-		         on: MCPCommandError
-		         do: [ :caught | caught ].
+	| error |
+	error := self capture: [
+			         MCPCommitRepositoryCommand new
+				         signalGitCommandFailed: {
+						         (#status -> 128).
+						         (#output -> 'fatal: no upstream') } asDictionary
+				         action: 'commit' ].
 	self assert: error errorCode equals: 'commitGitCommandFailed'.
 	self assert: error messageText equals: 'fatal: no upstream'.
 	self assert: (error details at: #exitStatus) equals: 128.
@@ -2022,19 +1860,15 @@ MCPToolRepositoryOperationTest >> testLinkedWorktreeAttachExportsOnLinkedBranch 
 	self withExportPackageNamed: packageName className: initialClassName do: [
 			self withCleanRepositoryNamed: repositoryName location: location do: [
 					linkedLocation exists ifTrue: [ linkedLocation deleteAll ].
-					createResult := self callToolWith: {
-							                (#action -> 'create').
+					createResult := self callToolNamed: 'repository_create' withArguments: {
 							                (#repository -> repositoryName).
 							                (#location -> location pathString).
 							                (#subdirectory -> 'src').
 							                (#packages -> { packageName }) } asDictionary.
 					self deny: (self resultIndicatesError: createResult) description: (self summaryFrom: createResult).
-					exportResult := self callToolWith: {
-							                (#action -> 'export').
-							                (#repository -> repositoryName) } asDictionary.
+					exportResult := self callToolNamed: 'repository_export' withArguments: { (#repository -> repositoryName) } asDictionary.
 					self deny: (self resultIndicatesError: exportResult) description: (self summaryFrom: exportResult).
-					commitResult := self callToolWith: {
-							                (#action -> 'commit').
+					commitResult := self callToolNamed: 'repository_commit' withArguments: {
 							                (#repository -> repositoryName).
 							                (#message -> 'Prepare linked checkout contract test') } asDictionary.
 					self deny: (self resultIndicatesError: commitResult) description: (self summaryFrom: commitResult).
@@ -2051,8 +1885,7 @@ MCPToolRepositoryOperationTest >> testLinkedWorktreeAttachExportsOnLinkedBranch 
 									 stream << 'git -C ' << (self shellQuote: linkedLocation pathString) << ' config branch.' << branchName
 									 << '.merge refs/heads/' << branchName ]).
 						self removeRegisteredRepositoriesNamed: repositoryName.
-						attachResult := self callToolWith: {
-								                (#action -> 'attach').
+						attachResult := self callToolNamed: 'repository_attach' withArguments: {
 								                (#repository -> repositoryName).
 								                (#location -> linkedLocation pathString).
 								                (#subdirectory -> 'src').
@@ -2066,9 +1899,7 @@ MCPToolRepositoryOperationTest >> testLinkedWorktreeAttachExportsOnLinkedBranch 
 						self assert: (entry at: #subdirectory) equals: 'src'.
 						self assert: (entry at: #packageCount) equals: 1.
 						self createClassNamed: exportedClassName inPackageNamed: packageName.
-						exportResult := self callToolWith: {
-								                (#action -> 'export').
-								                (#repository -> repositoryName) } asDictionary.
+						exportResult := self callToolNamed: 'repository_export' withArguments: { (#repository -> repositoryName) } asDictionary.
 						self deny: (self resultIndicatesError: exportResult) description: (self summaryFrom: exportResult).
 						self assert: exportedClassFile exists ] ensure: [
 							self removeClassNamed: exportedClassName.
@@ -2122,8 +1953,7 @@ MCPToolRepositoryOperationTest >> testPathRuleNamesTheRegisteredPackagesOfAPath 
 						subdirectory: 'src'
 						packages: { packageName }.
 					self exportRepositoryNamed: repositoryName.
-					self callToolWith: {
-							(#action -> 'update').
+					self callToolNamed: 'repository_update' withArguments: {
 							(#repository -> repositoryName).
 							(#addPackages -> { absentPackageName }) } asDictionary.
 					self write: 'a' to: location / 'src' / absentPackageName / 'a.st'.
@@ -2159,9 +1989,7 @@ MCPToolRepositoryOperationTest >> testReloadAnswersBranchAndPackages [
 						packages: { packageName }.
 					self exportRepositoryNamed: repositoryName.
 					self commitRepositoryNamed: repositoryName message: 'Hold the package'.
-					result := self callToolWith: {
-							          (#action -> 'reload').
-							          (#repository -> repositoryName) } asDictionary.
+					result := self callToolNamed: 'repository_reload' withArguments: { (#repository -> repositoryName) } asDictionary.
 					self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
 					self assert: (self summaryFrom: result) equals: ('Reloaded repository {1} from its files, on branch {2}.' format: {
 								 repositoryName.
@@ -2179,20 +2007,15 @@ MCPToolRepositoryOperationTest >> testReloadRefusesWhenAPackageHasNoSourceOnDisk
 	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestReloadMissing'.
 	self withExportPackageNamed: packageName className: 'MCPToolRepositoryOperationReloadMissingClass' do: [
 			self withCleanRepositoryNamed: repositoryName location: location do: [
-					self callToolWith: {
-							(#action -> 'create').
+					self callToolNamed: 'repository_create' withArguments: {
 							(#repository -> repositoryName).
 							(#location -> location pathString).
 							(#packages -> { packageName }) } asDictionary.
-					self callToolWith: {
-							(#action -> 'export').
-							(#repository -> repositoryName) } asDictionary.
+					self callToolNamed: 'repository_export' withArguments: { (#repository -> repositoryName) } asDictionary.
 					packageDirectory := (location allChildrenMatching: packageName) detect: [ :each | each isDirectory ] ifNone: [ nil ].
 					self deny: packageDirectory isNil description: 'The exported repository should hold the package on disk.'.
 					packageDirectory deleteAll.
-					result := self callToolWith: {
-							          (#action -> 'reload').
-							          (#repository -> repositoryName) } asDictionary.
+					result := self callToolNamed: 'repository_reload' withArguments: { (#repository -> repositoryName) } asDictionary.
 					self
 						assert: (self resultIndicatesError: result)
 						description: 'Reloading a package with no source on disk must not report success.'.
@@ -2217,9 +2040,7 @@ MCPToolRepositoryOperationTest >> testReloadSaysItLoadedNothingWhenTheImageHasNo
 					self attachRepositoryNamed: repositoryName location: location pathString packages: {
 							packageName.
 							missingName }.
-					result := self callToolWith: {
-							          (#action -> 'reload').
-							          (#repository -> repositoryName) } asDictionary.
+					result := self callToolNamed: 'repository_reload' withArguments: { (#repository -> repositoryName) } asDictionary.
 					summary := self summaryFrom: result.
 					self assert: (summary beginsWith:
 							 ('None of the packages repository {1} registers is in the image, so reload loaded nothing: it loads only the packages the image has. {2} is in the checkout but not in the image. {3} is in neither the image nor the checkout.'
@@ -2241,15 +2062,70 @@ MCPToolRepositoryOperationTest >> testReloadSaysItLoadedNothingWhenTheRepository
 	self withCleanRepositoryNamed: repositoryName location: location do: [
 			self shellCommand: 'git init --initial-branch=main ' , (self shellQuote: location pathString).
 			self attachRepositoryNamed: repositoryName location: location pathString packages: #(  ).
-			result := self callToolWith: {
-					          (#action -> 'reload').
-					          (#repository -> repositoryName) } asDictionary.
+			result := self callToolNamed: 'repository_reload' withArguments: { (#repository -> repositoryName) } asDictionary.
 			self
 				assert: (self summaryFrom: result)
 				equals:
 					('Repository {1} has no packages, so reload loaded nothing. repository_update addPackages registers them, and reload then loads those the image has.'
 						 format: { repositoryName }).
 			self assert: (self dataFrom: result) isEmpty ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testRepositoryToolsAreDiscoverableWithExpectedMetadata [
+	"repository_change_list and repository_export are advertised, since they move the image's work to the checkout in every project that has one; the other repository tools are found through tool_search."
+
+	| metadataByName |
+	metadataByName := self searchMetadataByToolName.
+	#( 'repository_identity_verify' 'repository_create' 'repository_attach' 'repository_update' 'repository_commit'
+	   'repository_change_discard' 'repository_reload' 'repository_head_adopt' ) do: [ :toolName |
+			| tool |
+			tool := self toolRegistry toolNamed: toolName ifAbsent: [ self fail: 'Missing tool ' , toolName ].
+			self assert: tool defaultExposure equals: 'discoverable'.
+			self assert: (metadataByName at: toolName) keys asSet equals: #( name description ) asSet ].
+	#( 'repository_change_list' 'repository_export' ) do: [ :toolName |
+			| tool |
+			tool := self toolRegistry toolNamed: toolName ifAbsent: [ self fail: 'Missing tool ' , toolName ].
+			self assert: tool defaultExposure equals: 'static'.
+			self assert: (self toolRegistry advertisedToolNames includes: toolName).
+			self assert: (metadataByName at: toolName) keys asSet equals: #( name description ) asSet ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testRepositoryToolsRequiredInputs [
+
+	| expectations |
+	expectations := {
+		                (MCPToolVerifyRepositoryIdentity -> #( 'repository' )).
+		                (MCPToolListRepositoryChanges -> #( 'repository' )).
+		                (MCPToolCreateRepository -> #( 'repository' )).
+		                (MCPToolAttachRepository -> #( 'repository' 'location' )).
+		                (MCPToolUpdateRepository -> #( 'repository' )).
+		                (MCPToolExportRepository -> #( 'repository' )).
+		                (MCPToolCommitRepository -> #( 'repository' 'message' )).
+		                (MCPToolAdoptRepositoryHead -> #( 'repository' )) }.
+	expectations do: [ :association | self assert: association key new inputSchema required asArray equals: association value ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testRepositoryToolsUseDedicatedInputs [
+
+	| expectations |
+	expectations := {
+		                (MCPToolVerifyRepositoryIdentity
+		                 -> #( 'repository' 'location' 'branch' 'subdirectory' 'packages' 'modifiedPackages' 'isModified' )).
+		                (MCPToolListRepositoryChanges -> #( 'repository' 'location' )).
+		                (MCPToolCreateRepository -> #( 'repository' 'location' 'subdirectory' 'packages' )).
+		                (MCPToolAttachRepository -> #( 'repository' 'location' 'subdirectory' 'packages' )).
+		                (MCPToolUpdateRepository
+		                 -> #( 'repository' 'location' 'subdirectory' 'packages' 'addPackages' 'removePackages' )).
+		                (MCPToolExportRepository -> #( 'repository' 'location' )).
+		                (MCPToolCommitRepository -> #( 'repository' 'location' 'message' )).
+		                (MCPToolAdoptRepositoryHead -> #( 'repository' 'location' 'branch' )) }.
+	expectations do: [ :association |
+			| propertyNames |
+			propertyNames := self inputPropertyNamesFor: association key new.
+			self assert: propertyNames asArray equals: association value ]
 ]
 
 { #category : 'tests' }
@@ -2320,8 +2196,7 @@ MCPToolRepositoryOperationTest >> testUpdateAddsPackageToWorkingCopy [
 	packageName := 'MCPToolRepositoryOperationAddedPackage'.
 	repository := self newRepositoryNamed: 'MCP Repository Command Add Test' location: FileLocator imageDirectory packageNames: #(  ).
 	self withRegisteredRepository: repository do: [
-			result := self callToolWith: {
-					          (#action -> 'update').
+			result := self callToolNamed: 'repository_update' withArguments: {
 					          (#repository -> repository name).
 					          (#addPackages -> { packageName }) } asDictionary.
 			data := self dataFrom: result.
@@ -2342,8 +2217,7 @@ MCPToolRepositoryOperationTest >> testUpdateCanReplacePackageMembership [
 		              location: FileLocator imageDirectory
 		              packageNames: #( 'MCPToolRepositoryOperationOldA' 'MCPToolRepositoryOperationOldB' ).
 	self withRegisteredRepository: repository do: [
-			result := self callToolWith: {
-					          (#action -> 'update').
+			result := self callToolNamed: 'repository_update' withArguments: {
 					          (#repository -> repository name).
 					          (#packages -> #( 'MCPToolRepositoryOperationNewC' 'MCPToolRepositoryOperationOldB' )) } asDictionary.
 			data := self dataFrom: result.
@@ -2363,13 +2237,11 @@ MCPToolRepositoryOperationTest >> testUpdateGivesAnEmptyCheckoutItsSubdirectory 
 	self withCleanRepositoryNamed: repositoryName location: location do: [
 			location ensureCreateDirectory.
 			self shellCommand: 'git init --initial-branch=main ' , (self shellQuote: location pathString).
-			result := self callToolWith: {
-					          (#action -> 'attach').
+			result := self callToolNamed: 'repository_attach' withArguments: {
 					          (#repository -> repositoryName).
 					          (#location -> location pathString) } asDictionary.
 			self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
-			result := self callToolWith: {
-					          (#action -> 'update').
+			result := self callToolNamed: 'repository_update' withArguments: {
 					          (#repository -> repositoryName).
 					          (#subdirectory -> 'src') } asDictionary.
 			self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
@@ -2389,13 +2261,11 @@ MCPToolRepositoryOperationTest >> testUpdateKeepsThePackagesOfACheckoutItGivesAS
 			self withCleanRepositoryNamed: repositoryName location: location do: [
 					location ensureCreateDirectory.
 					self shellCommand: 'git init --initial-branch=main ' , (self shellQuote: location pathString).
-					self callToolWith: {
-							(#action -> 'attach').
+					self callToolNamed: 'repository_attach' withArguments: {
 							(#repository -> repositoryName).
 							(#location -> location pathString).
 							(#packages -> { packageName }) } asDictionary.
-					result := self callToolWith: {
-							          (#action -> 'update').
+					result := self callToolNamed: 'repository_update' withArguments: {
 							          (#repository -> repositoryName).
 							          (#subdirectory -> 'src') } asDictionary.
 					self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
@@ -2415,8 +2285,7 @@ MCPToolRepositoryOperationTest >> testUpdateRemovesPackageWithoutUnloading [
 			              location: FileLocator imageDirectory
 			              packageNames: { packageName }.
 		self withRegisteredRepository: repository do: [
-				result := self callToolWith: {
-						          (#action -> 'update').
+				result := self callToolNamed: 'repository_update' withArguments: {
 						          (#repository -> repository name).
 						          (#removePackages -> { packageName }) } asDictionary.
 				data := self dataFrom: result.
@@ -2436,9 +2305,7 @@ MCPToolRepositoryOperationTest >> testUpdateWithNothingToDoNamesItsArguments [
 		              location: FileLocator imageDirectory
 		              packageNames: #(  ).
 	self withRegisteredRepository: repository do: [
-			result := self callToolWith: {
-					          (#action -> 'update').
-					          (#repository -> repository name) } asDictionary.
+			result := self callToolNamed: 'repository_update' withArguments: { (#repository -> repository name) } asDictionary.
 			self assert: (self resultIndicatesError: result).
 			self assert: ((self errorFrom: result) at: #errorCode) equals: 'NoRepositoryUpdateRequested'.
 			self
@@ -2454,8 +2321,7 @@ MCPToolRepositoryOperationTest >> testVerifyIdentityPassesWhenExpectedIdentityMa
 	repository workingCopy packageNames: #( 'MCP-Tests' 'MCP' ).
 	repository modifiedPackageNames: #( 'MCP' ).
 	self withRegisteredRepository: repository do: [
-			result := self callToolWith: {
-					          (#action -> 'verifyIdentity').
+			result := self callToolNamed: 'repository_identity_verify' withArguments: {
 					          (#repository -> repository name).
 					          (#location -> repository location pathString).
 					          (#branch -> 'main').
@@ -2479,8 +2345,7 @@ MCPToolRepositoryOperationTest >> testVerifyIdentityReadsItsMismatchesWithoutStr
 	repository := self newTestRepositoryNamed: 'MCP VerifyIdentity Content Test Repository'.
 	repository workingCopy packageNames: #( 'MCP' ).
 	self withRegisteredRepository: repository do: [
-			result := self callToolWith: {
-					          (#action -> 'verifyIdentity').
+			result := self callToolNamed: 'repository_identity_verify' withArguments: {
 					          (#repository -> repository name).
 					          (#branch -> 'feature').
 					          (#packages -> #( 'MCP' 'MCP-Tests' )) } asDictionary.
@@ -2492,31 +2357,13 @@ MCPToolRepositoryOperationTest >> testVerifyIdentityReadsItsMismatchesWithoutStr
 ]
 
 { #category : 'tests' }
-MCPToolRepositoryOperationTest >> testVerifyIdentityReadsItsRequest [
-
-	| context request tool |
-	tool := MCPToolVerifyRepositoryIdentity new.
-	request := tool requestFromToolCallArguments: {
-			           (#repository -> 'MCP').
-			           (#branch -> 'main').
-			           (#packages -> #( 'MCP' )).
-			           (#isModified -> false) } asDictionary.
-	context := tool requestedContextFor: request checked: true.
-
-	self assert: (tool mutationActionFor: request checked: true) equals: 'verifyIdentity'.
-	self assert: (context at: #branch) equals: 'main'.
-	self assert: (context at: #isModified) equals: false
-]
-
-{ #category : 'tests' }
 MCPToolRepositoryOperationTest >> testVerifyIdentityReportsStructuredMismatch [
 
 	| branchMismatch errorDetails mismatchFields repository result |
 	repository := self newTestRepositoryNamed: 'MCP VerifyIdentity Mismatch Test Repository'.
 	repository workingCopy packageNames: #( 'MCP' ).
 	self withRegisteredRepository: repository do: [
-			result := self callToolWith: {
-					          (#action -> 'verifyIdentity').
+			result := self callToolNamed: 'repository_identity_verify' withArguments: {
 					          (#repository -> repository name).
 					          (#branch -> 'feature').
 					          (#packages -> #( 'MCP' 'MCP-Tests' )).
@@ -2540,8 +2387,7 @@ MCPToolRepositoryOperationTest >> testVerifyIdentityReportsWrongLocationAsIdenti
 	| errorDetails locationMismatch repository result |
 	repository := self newTestRepositoryNamed: 'MCP VerifyIdentity Location Mismatch Test Repository'.
 	self withRegisteredRepository: repository do: [
-			result := self callToolWith: {
-					          (#action -> 'verifyIdentity').
+			result := self callToolNamed: 'repository_identity_verify' withArguments: {
 					          (#repository -> repository name).
 					          (#location -> 'memory://different-location') } asDictionary.
 			self assert: (self resultIndicatesError: result).
@@ -2558,9 +2404,7 @@ MCPToolRepositoryOperationTest >> testVerifyIdentityRequiresExpectedIdentityFiel
 	| errorDetails repository result |
 	repository := self newTestRepositoryNamed: 'MCP VerifyIdentity Missing Expected Field Test Repository'.
 	self withRegisteredRepository: repository do: [
-			result := self callToolWith: {
-					          (#action -> 'verifyIdentity').
-					          (#repository -> repository name) } asDictionary.
+			result := self callToolNamed: 'repository_identity_verify' withArguments: { (#repository -> repository name) } asDictionary.
 			self assert: (self resultIndicatesError: result).
 			errorDetails := self errorFrom: result.
 			self assert: (errorDetails at: #errorCode) equals: 'RepositoryIdentityExpectationRequired'.
@@ -2612,12 +2456,6 @@ MCPToolRepositoryOperationTest >> tonelSource: aString withFirstTwoMethodsSwappe
 			  stream << (aString copyFrom: 1 to: first - 1) << (aString copyFrom: second to: aString size).
 			  keepsBlankLine ifTrue: [ stream nextPut: Character lf ].
 			  stream << (aString copyFrom: first to: second - 2) ]
-]
-
-{ #category : 'private - calling' }
-MCPToolRepositoryOperationTest >> toolName [
-
-	self shouldNotImplement
 ]
 
 { #category : 'private' }

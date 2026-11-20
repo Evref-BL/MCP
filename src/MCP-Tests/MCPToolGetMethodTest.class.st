@@ -9,6 +9,22 @@ Class {
 }
 
 { #category : 'tests' }
+MCPToolGetMethodTest >> testEmptyListOfTargetsIsRejectedAsInput [
+	"A list whose values are all blank names nothing either, though it has items."
+
+	self
+		assertResult: (self callToolNamed: 'method_get' withArguments: {
+					 (#class -> 'MCPTool').
+					 (#selector -> #(  )) } asDictionary)
+		refusesArgumentsSaying: 'selector names nothing to act on; give at least one value that is not blank.'.
+	self
+		assertResult: (self callToolNamed: 'method_get' withArguments: {
+					 (#class -> 'MCPTool').
+					 (#selector -> #( '' '  ' )) } asDictionary)
+		refusesArgumentsSaying: 'selector names nothing to act on'
+]
+
+{ #category : 'tests' }
 MCPToolGetMethodTest >> testGetMethodAnswersAnInheritedMethodInABatch [
 	"Each target of a call is looked up on its own, so one the class inherits is answered beside one it has."
 
@@ -205,8 +221,6 @@ MCPToolGetMethodTest >> testGetMethodReturnsInstanceSideVariableContext [
 	classVariable := self variableNamed: 'SharedLimit' in: (data at: #variableReferences).
 	globalVariable := self variableNamed: 'OrderedCollection' in: (data at: #variableReferences).
 	selfVariable := self variableNamed: 'self' in: (data at: #variableReferences).
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self deny: (self resultIndicatesError: result).
 	self assert: (data at: #protocol) equals: 'reading'.
 	self assert: (instanceVariable at: #kind) equals: 'instanceVariable'.
 	self assert: (instanceVariable at: #ownerName) equals: 'MCPToolGetMethodTestTarget'.
@@ -233,11 +247,10 @@ MCPToolGetMethodTest >> testGetMethodReturnsInstanceSideVariableContext [
 { #category : 'tests' }
 MCPToolGetMethodTest >> testGetMethodReturnsStructuredErrorForMissingSelector [
 
-	| error result structured |
+	| error result |
 	result := self callToolWith: {
 			          (#class -> 'MCPToolGetMethodTestTarget').
 			          (#selector -> 'doesNotExist') } asDictionary.
-	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
@@ -247,6 +260,28 @@ MCPToolGetMethodTest >> testGetMethodReturnsStructuredErrorForMissingSelector [
 	self assert: (error includesKey: #side).
 	self assert: (error at: #side) equals: 'instance'.
 	self assert: ((error at: #message) includesSubstring: 'Method MCPToolGetMethodTestTarget>>doesNotExist does not exist.')
+]
+
+{ #category : 'tests' }
+MCPToolGetMethodTest >> testGetMethodReturnsStructuredSuccess [
+
+	| data result |
+	result := self callToolNamed: 'method_get' withArguments: {
+			          (#class -> 'MCPToolGetMethodTestTarget').
+			          (#selector -> 'readInstanceWith:') } asDictionary.
+	data := self dataFrom: result.
+	self assert: (data at: #protocol) equals: 'reading'.
+	self deny: (data includesKey: #variableReferences).
+	self deny: (data includesKey: #class).
+	self deny: (data includesKey: #selector).
+	self deny: (data includesKey: #side).
+	self deny: (data includesKey: #arguments).
+	self deny: (data includesKey: #temporaryNames).
+	self deny: (data includesKey: #variableDetailsIncluded).
+	self deny: (data includesKey: #externalVariableCount).
+	self deny: (data includesKey: #variableReferenceCount).
+	self deny: (data includesKey: #externalVariableReferences).
+	self assert: ((data at: #source) includesSubstring: String cr asString)
 ]
 
 { #category : 'tests' }
@@ -293,7 +328,6 @@ MCPToolGetMethodTest >> testGetMethodSupportsClassSideContext [
 	data := self dataFrom: result.
 	classInstanceVariable := self variableNamed: 'classCounter' in: (data at: #variableReferences).
 	thisContextVariable := self variableNamed: 'thisContext' in: (data at: #variableReferences).
-	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (self summaryFrom: result) equals: 'Got method MCPToolGetMethodTestTarget class>>readClassSide.'.
 	self assert: (classInstanceVariable at: #kind) equals: 'classInstanceVariable'.
 	self assert: (classInstanceVariable at: #ownerName) equals: 'MCPToolGetMethodTestTarget class'.
@@ -331,9 +365,15 @@ MCPToolGetMethodTest >> testNamesTheTraitAMethodIsInstalledFrom [
 ]
 
 { #category : 'tests' }
-MCPToolGetMethodTest >> testToolRequiresClassNameAndSelectorInSchema [
+MCPToolGetMethodTest >> testToolRequiresOnlyTheSelectorInSchema [
 
-	self assert: MCPToolGetMethod new inputSchema required asSet equals: #( 'selector' ) asSet
+	| tool |
+	tool := MCPToolGetMethod new.
+	self assert: tool name equals: 'method_get'.
+	self assert: tool inputSchema required asSet equals: #( 'selector' ) asSet.
+	self assert:
+		((tool inputSchema properties collect: [ :each | each name ]) includesAll:
+			 #( 'class' 'selector' 'side' 'includeVariableDetails' ))
 ]
 
 { #category : 'tests' }

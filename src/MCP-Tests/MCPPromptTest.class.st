@@ -60,17 +60,6 @@ MCPPromptTest >> testGettingAPromptUsesSuppliedOptionalArguments [
 ]
 
 { #category : 'tests' }
-MCPPromptTest >> testGettingAnUnknownPromptIsInvalidParams [
-
-	| raised |
-	raised := [
-	          self serverWithGreeting rpcPromptGet: 'no_such_prompt' arguments: Dictionary new.
-	          nil ] on: MCPUnknownPrompt do: [ :error | error ].
-	self assert: raised promptName equals: 'no_such_prompt'.
-	self assert: (raised isKindOf: JRPCInvalidParameters)
-]
-
-{ #category : 'tests' }
 MCPPromptTest >> testOmittingARequiredArgumentIsInvalidParams [
 
 	| raised |
@@ -79,6 +68,16 @@ MCPPromptTest >> testOmittingARequiredArgumentIsInvalidParams [
 	          nil ] on: MCPMissingPromptArgument do: [ :error | error ].
 	self assert: raised missingArguments equals: #( 'who' ).
 	self assert: (raised isKindOf: JRPCInvalidParameters)
+]
+
+{ #category : 'tests' }
+MCPPromptTest >> testPromptsGetReturnsInvalidParamsWhenPromptIsUnknown [
+
+	| response |
+	response := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"prompts/get","params":{"name":"missing"}}'.
+	self assert: (response includesSubstring: '"code":-32602').
+	self assert: (response includesSubstring: '"message":"Invalid method parameter(s)."').
+	self assert: (response includesSubstring: '"prompt":"missing"')
 ]
 
 { #category : 'tests' }
@@ -94,7 +93,9 @@ MCPPromptTest >> testPromptsListCarriesTheDeclaredArguments [
 ]
 
 { #category : 'tests' }
-MCPPromptTest >> testPromptsListIsEmptyOnAStockServer [
+MCPPromptTest >> testPromptsListReturnsEmptyPromptList [
 
-	self assert: (self mcpWithoutObservabilityExport rpcPromptsList at: #prompts) isEmpty
+	| response |
+	response := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"prompts/list"}'.
+	self assert: (response includesSubstring: '"result":{"prompts":[]}')
 ]

@@ -14,12 +14,6 @@ MCPToolAPITestCase class >> isAbstract [
 	^ self = MCPToolAPITestCase or: [ super isAbstract ]
 ]
 
-{ #category : 'private - calling' }
-MCPToolAPITestCase >> aroundToolCall: aBlock [
-
-	^ aBlock value
-]
-
 { #category : 'private - results' }
 MCPToolAPITestCase >> assertResult: aResult refusesArgumentsSaying: aString [
 	"Arguments a tool refuses come back as a tool result for the model to correct, saying what is wrong, without the stack that found it."
@@ -43,7 +37,7 @@ MCPToolAPITestCase >> callDiscoveredToolNamed: aToolName withArguments: someArgu
 { #category : 'private - calling' }
 MCPToolAPITestCase >> callRawToolNamed: aToolName withArguments: someArguments [
 
-	^ self aroundToolCall: [ self mcpWithoutObservabilityExport rpcToolCall: aToolName withParams: someArguments ]
+	^ self mcpWithoutObservabilityExport rpcToolCall: aToolName withParams: someArguments
 ]
 
 { #category : 'private - calling' }
@@ -62,6 +56,22 @@ MCPToolAPITestCase >> dataFrom: aResult [
 	structuredContent := self structuredContentFrom: aResult.
 	self deny: (self resultIndicatesError: aResult) description: (self summaryFrom: aResult).
 	^ structuredContent at: #data
+]
+
+{ #category : 'private - results' }
+MCPToolAPITestCase >> entryForReference: aReference in: methods [
+
+	^ methods
+		  detect: [ :each |
+				  | reference |
+				  reference := String streamContents: [ :stream |
+						               stream nextPutAll: (each at: #class).
+						               (each at: #side ifAbsent: [ 'instance' ]) = 'class' ifTrue: [ stream nextPutAll: ' class' ].
+						               stream
+							               nextPutAll: '>>';
+							               nextPutAll: (each at: #selector) ].
+				  reference = aReference ]
+		  ifNone: [ self fail: 'Missing method ' , aReference ]
 ]
 
 { #category : 'private - results' }
@@ -89,6 +99,18 @@ MCPToolAPITestCase >> expectedSyntaxErrorNoticeClassName [
 MCPToolAPITestCase >> expectedUndeclaredVariableNoticeClassNames [
 
 	^ #( 'OCUndeclaredVariableWarning' 'OCUndeclaredVariableNotice' 'OCCompilationError' )
+]
+
+{ #category : 'private - results' }
+MCPToolAPITestCase >> inputPropertyNamed: aPropertyName inTool: aTool [
+
+	^ aTool inputSchema properties detect: [ :each | each name = aPropertyName ]
+]
+
+{ #category : 'private - results' }
+MCPToolAPITestCase >> inputPropertyNamesFor: aTool [
+
+	^ aTool inputSchema properties collect: [ :each | each name ]
 ]
 
 { #category : 'private - fixtures' }
@@ -127,6 +149,12 @@ MCPToolAPITestCase >> packageSearchFixtureRegistrationLoadedInImage: aBoolean [
 ]
 
 { #category : 'private - results' }
+MCPToolAPITestCase >> referencesOf: methodEntries [
+
+	^ methodEntries collect: [ :each | MCPToolSearchMethods new methodEntryLabel: each ] as: Array
+]
+
+{ #category : 'private - results' }
 MCPToolAPITestCase >> resultIndicatesError: aResult [
 	"isError travels beside the structured content, not inside it."
 
@@ -158,11 +186,13 @@ MCPToolAPITestCase >> summaryFrom: aResult [
 	^ (self structuredContentFrom: aResult) at: #summary
 ]
 
-{ #category : 'private - calling' }
-MCPToolAPITestCase >> testReferenceForMethod: aCompiledMethod [
+{ #category : 'private - results' }
+MCPToolAPITestCase >> summaryOf: aTool forArguments: arguments page: page [
+	"The summary aTool gives a call with these arguments that found page, built without running the search."
 
-	^ String streamContents: [ :stream |
-		  stream << aCompiledMethod methodClass name asString << '>>#' << aCompiledMethod selector asString ]
+	| request |
+	request := aTool requestFromToolCallArguments: arguments.
+	^ aTool successSummaryForRequest: request scopeQuery: (aTool scopeQueryFromRequest: request) page: page
 ]
 
 { #category : 'private - results' }

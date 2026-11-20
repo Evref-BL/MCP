@@ -3,7 +3,7 @@ Tests command-level class creation behavior.
 "
 Class {
 	#name : 'MCPCreateClassCommandTest',
-	#superclass : 'MCPCommandTestCase',
+	#superclass : 'MCPTestCase',
 	#category : 'MCP-Tests',
 	#package : 'MCP-Tests'
 }
@@ -45,7 +45,7 @@ MCPCreateClassCommandTest >> errorCreating: aClassName superclass: aSuperclassNa
 	| command |
 	command := self commandCreating: aClassName superclass: aSuperclassName.
 	aBlock value: command.
-	^ self captureCommandError: [ command execute ]
+	^ self capture: [ command execute ]
 ]
 
 { #category : 'private' }
@@ -134,11 +134,11 @@ MCPCreateClassCommandTest >> testAPackageIsRemovedOnlyWhileItDefinesNoClass [
 
 	| command |
 	command := MCPCreateClassCommand new.
-	self executeCommand: (self commandCreating: 'MCPCreateClassCommandTestGenerated' superclass: 'Object').
-	self deny: (self aroundCommandExecution: [ command removePackageIfEmptyNamed: self generatedPackageName ]).
+	(self commandCreating: 'MCPCreateClassCommandTestGenerated' superclass: 'Object') execute.
+	self deny: (command removePackageIfEmptyNamed: self generatedPackageName).
 	self assert: (self packageOrganizer hasPackage: self generatedPackageName).
 	self withoutEpiceaDuring: [ (self classNamed: 'MCPCreateClassCommandTestGenerated') removeFromSystem ].
-	self assert: (self aroundCommandExecution: [ command removePackageIfEmptyNamed: self generatedPackageName ]).
+	self assert: (command removePackageIfEmptyNamed: self generatedPackageName).
 	self deny: (self packageOrganizer hasPackage: self generatedPackageName)
 ]
 
@@ -173,7 +173,7 @@ MCPCreateClassCommandTest >> testClassesOfTheWrongKindAreRefusedSayingWhatTheRol
 MCPCreateClassCommandTest >> testCreatesClassAndAnswersIt [
 
 	| result createdClass |
-	result := self executeCommand: (self commandCreating: 'MCPCreateClassCommandTestGenerated' superclass: 'Object').
+	result := (self commandCreating: 'MCPCreateClassCommandTestGenerated' superclass: 'Object') execute.
 	createdClass := self classNamed: 'MCPCreateClassCommandTestGenerated'.
 	self assert: createdClass superclass equals: Object.
 	self assert: createdClass packageName asString equals: self generatedPackageName.
@@ -184,11 +184,11 @@ MCPCreateClassCommandTest >> testCreatesClassAndAnswersIt [
 MCPCreateClassCommandTest >> testCreatesClassWithTagSlotsAndClassSlots [
 
 	| createdClass result |
-	result := self executeCommand: ((self commandCreating: 'MCPCreateClassCommandTestTagged' superclass: 'Object')
-			           tag: 'Generated';
-			           slots: #( #firstName #lastName );
-			           classSlots: #( #defaultName );
-			           yourself).
+	result := ((self commandCreating: 'MCPCreateClassCommandTestTagged' superclass: 'Object')
+		           tag: 'Generated';
+		           slots: #( #firstName #lastName );
+		           classSlots: #( #defaultName );
+		           yourself) execute.
 	createdClass := self classNamed: 'MCPCreateClassCommandTestTagged'.
 	self assert: (createdClass slots collect: #name as: Array) equals: #( #firstName #lastName ).
 	self assert: (createdClass classSide slots collect: #name as: Array) equals: #( #defaultName ).
@@ -200,17 +200,17 @@ MCPCreateClassCommandTest >> testCreatesClassWithTagSlotsAndClassSlots [
 MCPCreateClassCommandTest >> testCreatesClassWithTraitsSharedVariablesSharedPoolsAndLayout [
 
 	| createdClass |
-	self executeCommand: (MCPCreateClassCommand
-			 className: 'MCPCreateClassCommandTestConfigured'
-			 superclassName: 'Object'
-			 packageName: self generatedPackageName
-			 tag: 'Configured'
-			 slots: #( #firstName )
-			 classSlots: #( #defaultName )
-			 traits: #( 'TAbleToRotate' )
-			 sharedVariables: #( 'AlphaShared' 'BetaShared' )
-			 sharedPools: #( 'ChronologyConstants' )
-			 layout: 'WeakLayout').
+	(MCPCreateClassCommand
+		 className: 'MCPCreateClassCommandTestConfigured'
+		 superclassName: 'Object'
+		 packageName: self generatedPackageName
+		 tag: 'Configured'
+		 slots: #( #firstName )
+		 classSlots: #( #defaultName )
+		 traits: #( 'TAbleToRotate' )
+		 sharedVariables: #( 'AlphaShared' 'BetaShared' )
+		 sharedPools: #( 'ChronologyConstants' )
+		 layout: 'WeakLayout') execute.
 	createdClass := self classNamed: 'MCPCreateClassCommandTestConfigured'.
 	self assert: (createdClass traits collect: [ :each | each name asString ] as: Array) equals: #( 'TAbleToRotate' ).
 	"The class side comes with the trait: the class uses TAbleToRotate as a whole."
@@ -226,7 +226,7 @@ MCPCreateClassCommandTest >> testCreatesClassWithTraitsSharedVariablesSharedPool
 MCPCreateClassCommandTest >> testCreatesTraitWhenSuperclassIsTrait [
 
 	| createdTrait |
-	self executeCommand: (self commandCreating: 'TMCPCreateClassCommandTestTrait' superclass: 'Trait').
+	(self commandCreating: 'TMCPCreateClassCommandTestTrait' superclass: 'Trait') execute.
 	createdTrait := self classNamed: 'TMCPCreateClassCommandTestTrait'.
 	self assert: createdTrait isTrait.
 	self assert: createdTrait superclass isNil
@@ -236,7 +236,7 @@ MCPCreateClassCommandTest >> testCreatesTraitWhenSuperclassIsTrait [
 MCPCreateClassCommandTest >> testExistingClassSignalsCommandError [
 
 	| error |
-	self executeCommand: (self commandCreating: 'MCPCreateClassCommandTestGenerated' superclass: 'Object').
+	(self commandCreating: 'MCPCreateClassCommandTestGenerated' superclass: 'Object') execute.
 	error := self errorCreating: 'MCPCreateClassCommandTestGenerated' superclass: 'Object'.
 	self assert: error errorCode equals: #ClassAlreadyExists.
 	self assert: (error structuredDetails at: #class) equals: 'MCPCreateClassCommandTestGenerated'.

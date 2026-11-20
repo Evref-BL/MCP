@@ -105,7 +105,6 @@ MCPToolRewriteMethodsTest >> testAPreviewRepeatsTheScopeUnderTheKeysTheCallUsed 
 				           (#hierarchyOf -> { self targetClassName }).
 				           (#subclassesOf -> { self targetClassName }) } asDictionary) } asDictionary.
 	data := self dataFrom: result.
-	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: ((data at: #scope) at: #hierarchyOf) equals: { self targetClassName }.
 	self assert: ((data at: #scope) at: #subclassesOf) equals: { self targetClassName }.
 	#( 'hierarchyClasses' 'subclassClasses' 'parentClasses' ) do: [ :each |
@@ -141,7 +140,6 @@ MCPToolRewriteMethodsTest >> testApplyMutatesMethodInOneCall [
 	rule := self rewriteRuleFrom: 'self oldValue' to: 'self newValue'.
 	result := self callToolWith: (self applyArgumentsForRule: rule).
 	data := self dataFrom: result.
-	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #apply).
 	self assert: (data at: #changeCount) equals: 1.
 	self assert: (data at: #appliedCount) equals: 1.
@@ -189,7 +187,6 @@ MCPToolRewriteMethodsTest >> testClassSideScopeRewritesOnlyClassSideMethod [
 				           (#side -> 'class') } asDictionary) } asDictionary.
 	data := self dataFrom: result.
 	change := (data at: #changes) first.
-	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #changeCount) equals: 1.
 	self assert: (change at: #side) equals: 'class'.
 	self assert: (change at: #selector) equals: 'sideTarget'.
@@ -399,7 +396,6 @@ MCPToolRewriteMethodsTest >> testPreviewReturnsChangesWithoutMutatingMethod [
 	result := self callToolWith: (self previewArgumentsForRule: rule).
 	data := self dataFrom: result.
 	change := (data at: #changes) first.
-	self deny: (result at: #isError ifAbsent: [ false ]).
 	self deny: (data at: #apply).
 	self assert: (data at: #changeCount) equals: 1.
 	self assert: (data at: #appliedCount) equals: 0.
@@ -424,6 +420,13 @@ MCPToolRewriteMethodsTest >> testRewriteLeavesAMethodInstalledFromATraitToItsOri
 	self assert: (data at: #skippedTraitMethods) asArray equals: #( 'TMCPToolMethodSearchFixture>>mcpTraitFixtureValue' ).
 	self assert: ((self summaryFrom: result) includesSubstring: 'Skipped 1 method installed from a trait.').
 	self assert: MCPToolMethodSearchTraitUser new mcpTraitFixtureValue equals: 'from the trait'
+]
+
+{ #category : 'tests' }
+MCPToolRewriteMethodsTest >> testRewriteMethodsIsMethodScopedCommandTool [
+
+	self assert: MCPToolRewriteMethods superclass equals: MCPTool.
+	self assert: (MCPToolRewriteMethods traits includes: TMCPMethodTool)
 ]
 
 { #category : 'tests' }
@@ -576,13 +579,13 @@ MCPToolRewriteMethodsTest >> testSchemaAdvertisesRewriteContract [
 	| matchProperty propertyNames replacementProperty ruleProperties rulesProperty scopeProperty scopePropertyNames tool |
 	tool := MCPToolRewriteMethods new.
 	propertyNames := tool inputSchema properties collect: [ :each | each name ].
-	rulesProperty := tool inputSchema properties detect: [ :each | each name = 'rules' ].
+	rulesProperty := self inputPropertyNamed: 'rules' inTool: tool.
 	ruleProperties := ((rulesProperty extraProperties at: #items) extraProperties at: #properties) collect: [ :each | each name ].
 	matchProperty := ((rulesProperty extraProperties at: #items) extraProperties at: #properties) detect: [ :each |
 		                 each name = 'match' ].
 	replacementProperty := ((rulesProperty extraProperties at: #items) extraProperties at: #properties) detect: [ :each |
 		                       each name = 'replacement' ].
-	scopeProperty := tool inputSchema properties detect: [ :each | each name = 'scope' ].
+	scopeProperty := self inputPropertyNamed: 'scope' inTool: tool.
 	scopePropertyNames := (scopeProperty extraProperties at: #properties) collect: [ :each | each name ].
 
 	self assert: tool name equals: 'method_rewrite'.

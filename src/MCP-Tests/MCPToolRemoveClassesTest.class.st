@@ -76,7 +76,6 @@ MCPToolRemoveClassesTest >> ensureMethodSource: aMethodSource onClassNamed: aCla
 
 { #category : 'private' }
 MCPToolRemoveClassesTest >> fixtureClassNames [
-	"Removed in reverse order, so a subclass goes before its superclass."
 
 	^ {
 		  self simpleClassName.
@@ -166,7 +165,7 @@ MCPToolRemoveClassesTest >> referencedClassName [
 { #category : 'private' }
 MCPToolRemoveClassesTest >> removeFixtureClasses [
 
-	self fixtureClassNames reverseDo: [ :each | self removeClassNamed: each ].
+	super removeFixtureClasses.
 	self removePackageNamed: self packageCleanupPackageName
 ]
 
@@ -215,13 +214,6 @@ MCPToolRemoveClassesTest >> simpleChildClassName [
 MCPToolRemoveClassesTest >> simpleClassName [
 
 	^ self fixturePrefix , 'Simple'
-]
-
-{ #category : 'running' }
-MCPToolRemoveClassesTest >> tearDown [
-
-	self removeFixtureClasses.
-	super tearDown
 ]
 
 { #category : 'tests' }
@@ -400,6 +392,21 @@ MCPToolRemoveClassesTest >> testManyMethodsThatGoWithTheClassesAreCounted [
 ]
 
 { #category : 'tests' }
+MCPToolRemoveClassesTest >> testOnlyAClassThatIsNotEmptyIsBlockedByItsSubclasses [
+
+	| command parent |
+	parent := self classNamed: self emptyParentClassName.
+	command := MCPRemoveClassesCommand classNames: { self emptyParentClassName }.
+	self assertEmpty: (command subclassesBlockingRemovalOf: parent).
+	self ensureMethodSource: 'marker ^ 1' onClassNamed: self emptyParentClassName.
+	self assert: (command subclassesBlockingRemovalOf: parent) equals: { self emptyChildClassName }.
+	command := MCPRemoveClassesCommand classNames: {
+			           self emptyParentClassName.
+			           self emptyChildClassName }.
+	self assertEmpty: (command subclassesBlockingRemovalOf: parent)
+]
+
+{ #category : 'tests' }
 MCPToolRemoveClassesTest >> testRefusesAClassSideNameAndRemovesNothing [
 	"Read as its class, Foo class would delete the whole class without a word. One such name refuses the call, before anything is looked up."
 
@@ -422,11 +429,10 @@ MCPToolRemoveClassesTest >> testRefusesAClassSideNameAndRemovesNothing [
 { #category : 'tests' }
 MCPToolRemoveClassesTest >> testReturnsStructuredErrorWhenClassIsMissing [
 
-	| error result structured |
+	| error result |
 	result := self callToolWith: (self argumentsForClassNames: {
 				           self simpleClassName.
 				           self missingClassName }).
-	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
@@ -441,7 +447,6 @@ MCPToolRemoveClassesTest >> testSafelyRemovesEmptyClassAndReparentsDirectSubclas
 	| data result |
 	result := self callToolWith: (self argumentsForClassNames: { self emptyParentClassName }).
 	data := self dataFrom: result.
-	self deny: (result at: #isError ifAbsent: [ false ]).
 	self deny: (self class environment includesKey: self emptyParentClassName asSymbol).
 	self assert: (self classNamed: self emptyChildClassName) superclass name asString equals: 'Object'.
 	self assert: (data at: #reparentedSubclassNames ifAbsent: [ #(  ) ]) equals: { self emptyChildClassName } asArray.
@@ -470,19 +475,35 @@ MCPToolRemoveClassesTest >> testTheMethodsThatGoWithTheClassesAreSaid [
 ]
 
 { #category : 'tests' }
+MCPToolRemoveClassesTest >> testTheScanFindsReferencesOutsideTheClassesAskedFor [
+	"The command finds the methods that access a class's binding, as method_reference_search does. A class asked for does not count, on either side."
+
+	| command references |
+	command := MCPRemoveClassesCommand classNames: { self referencedClassName }.
+	references := command referencesOutsideRemoval.
+	self assert: references keys asArray equals: { self referencedClassName }.
+	self
+		assert: (command referenceListOf: (references at: self referencedClassName))
+		equals: ('{1}>>useReferencedClass' format: { self senderClassName }).
+	self withoutEpiceaDuring: [
+			(self classNamed: self referencedClassName) classSide
+				compile: ('make ^ {1} new' format: { self referencedClassName })
+				classified: 'tests' ].
+	references := (MCPRemoveClassesCommand classNames: {
+			               self referencedClassName.
+			               self senderClassName }) referencesOutsideRemoval.
+	self assertEmpty: references
+]
+
+{ #category : 'tests' }
 MCPToolRemoveClassesTest >> testToolRequiresClassNameInSchema [
 
 	| propertyNames schema |
 	schema := MCPToolRemoveClasses new inputSchema.
 	propertyNames := schema properties collect: [ :each | each name ].
+	self assert: MCPToolRemoveClasses new name equals: 'class_remove'.
 	self assert: schema required asSet equals: #( 'name' ) asSet.
 	self assert: (propertyNames includes: 'force')
-]
-
-{ #category : 'private' }
-MCPToolRemoveClassesTest >> textFrom: aResult [
-
-	^ (aResult at: #content) first at: #text
 ]
 
 { #category : 'private - calling' }

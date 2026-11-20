@@ -11,12 +11,6 @@ Class {
 }
 
 { #category : 'private' }
-MCPProtocolEraTest >> handleJSON: aJSONString [
-
-	^ self mcpWithoutObservabilityExport server messageProcessor handleJSON: aJSONString
-]
-
-{ #category : 'private' }
 MCPProtocolEraTest >> listenStreamFor: aFilterFragment [
 
 	| server body |

@@ -9,17 +9,6 @@ Class {
 }
 
 { #category : 'private' }
-MCPRepositorySpecTest >> newRepositoryNamed: aRepositoryName location: aFileReference packageNames: somePackageNames [
-
-	| repository |
-	repository := IceLibgitRepository new.
-	repository name: aRepositoryName.
-	repository location: aFileReference.
-	somePackageNames do: [ :each | repository workingCopy addPackageNamed: each ].
-	^ repository
-]
-
-{ #category : 'private' }
 MCPRepositorySpecTest >> refusalFor: aReference [
 	"What resolving aReference refuses with, nil when it resolves."
 
@@ -250,6 +239,7 @@ MCPRepositorySpecTest >> testMutationToolsReadTheirRequests [
 			           (#message -> 'Commit from test') } asDictionary.
 	self assert: (tool mutationActionFor: request checked: true) equals: 'commit'.
 	self assert: (tool messageIn: request) equals: 'Commit from test'.
+	self assert: ((tool requestedContextFor: request checked: true) at: #message) equals: 'Commit from test'.
 	tool := MCPToolReloadRepository new.
 	request := tool requestFromToolCallArguments: { (#repository -> 'MCP Repo') } asDictionary.
 	self assert: (tool mutationActionFor: request checked: true) equals: 'reload'.
@@ -324,18 +314,4 @@ MCPRepositorySpecTest >> testVerifyIdentitySuccessAnswersNoData [
 	self
 		assert: (result structuredContent at: #summary)
 		equals: 'Verified repository MCP VerifyIdentity Repository: branch, packages, isModified as expected.'
-]
-
-{ #category : 'private' }
-MCPRepositorySpecTest >> withRepositories: repositories do: aBlock [
-
-	| previousRepositories registry |
-	registry := IceRepository registry.
-	previousRepositories := registry copy.
-	[
-		registry removeAll.
-		registry addAll: repositories.
-		aBlock value ] ensure: [
-			registry removeAll.
-			registry addAll: previousRepositories ]
 ]

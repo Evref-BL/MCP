@@ -16,17 +16,6 @@ MCPToolSearchRepositoriesTest >> entryNamed: aRepositoryName in: repositoryEntri
 		  ifNone: [ self fail: 'Missing repository entry ' , aRepositoryName ]
 ]
 
-{ #category : 'private' }
-MCPToolSearchRepositoriesTest >> newRepositoryNamed: aRepositoryName location: aFileReference packageNames: somePackageNames [
-
-	| repository |
-	repository := IceLibgitRepository new.
-	repository name: aRepositoryName.
-	repository location: aFileReference.
-	somePackageNames do: [ :each | repository workingCopy addPackageNamed: each ].
-	^ repository
-]
-
 { #category : 'tests' }
 MCPToolSearchRepositoriesTest >> testCanFilterByClassName [
 
@@ -249,6 +238,17 @@ MCPToolSearchRepositoriesTest >> testSearchOmitsAnEmptyLocation [
 ]
 
 { #category : 'tests' }
+MCPToolSearchRepositoriesTest >> testSearchRepositoriesHasAccurateNameAndSchema [
+
+	| propertyNames schema |
+	schema := MCPToolSearchRepositories new inputSchema.
+	propertyNames := schema properties collect: [ :each | each name ].
+	self assert: MCPToolSearchRepositories new name equals: 'repository_search'.
+	self assert: schema required equals: #(  ).
+	self assert: propertyNames asSet equals: #( 'isModified' 'query' 'location' 'subdirectory' 'package' 'class' 'offset' ) asSet
+]
+
+{ #category : 'tests' }
 MCPToolSearchRepositoriesTest >> testSummaryCountsTheRepositoriesOfTheImage [
 	"Repositories are registered with the image, so that is where a search looks; a name, a field or a state it keeps makes the count one that matches."
 
@@ -273,18 +273,4 @@ MCPToolSearchRepositoriesTest >> testSummaryCountsTheRepositoriesOfTheImage [
 MCPToolSearchRepositoriesTest >> toolName [
 
 	^ 'repository_search'
-]
-
-{ #category : 'private' }
-MCPToolSearchRepositoriesTest >> withRepositories: repositories do: aBlock [
-
-	| previousRepositories registry |
-	registry := IceRepository registry.
-	previousRepositories := registry copy.
-	[
-		registry removeAll.
-		registry addAll: repositories.
-		aBlock value ] ensure: [
-			registry removeAll.
-			registry addAll: previousRepositories ]
 ]

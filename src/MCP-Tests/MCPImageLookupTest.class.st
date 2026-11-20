@@ -8,16 +8,6 @@ Class {
 	#package : 'MCP-Tests'
 }
 
-{ #category : 'private' }
-MCPImageLookupTest >> capture: aBlock [
-
-	^ [
-		  aBlock value.
-		  self fail: 'Expected MCPCommandError' ]
-		  on: MCPCommandError
-		  do: [ :error | error ]
-]
-
 { #category : 'tests' }
 MCPImageLookupTest >> testAClassOfTheRightKindIsAnswered [
 
