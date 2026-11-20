@@ -1,5 +1,5 @@
 "
-Concrete history_entry_apply tool. It applies selected Pharo change-history entries through MCPToolChangeHistoryOperation.
+The apply side of the change-history selection, as its spec describes it.
 "
 Class {
 	#name : 'MCPToolApplyChangeHistoryEntries',

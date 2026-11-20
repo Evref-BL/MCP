@@ -1,7 +1,5 @@
 "
-Concrete repository_change_list tool.
-
-It reports what the image holds that its files do not, and what the checkout holds that its last commit does not, through MCPToolRepositoryOperation without writing files.
+Reads both sides of the repository, the image and the checkout, and writes nothing.
 "
 Class {
 	#name : 'MCPToolListRepositoryChanges',
@@ -52,7 +50,7 @@ MCPToolListRepositoryChanges >> failureSummaryPrefixFor: request [
 
 { #category : 'private - execution' }
 MCPToolListRepositoryChanges >> mutateWith: request [
-	"Compare each package Iceberg marks modified with the checkout's files and read the checkout's git status, writing nothing."
+	"Compare each package Iceberg marks modified with the checkout's files and read the checkout's git status."
 
 	| imageModifiedPackageNames modifiedPaths repository |
 	^ self

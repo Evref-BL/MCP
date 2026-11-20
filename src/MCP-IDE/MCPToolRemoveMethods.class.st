@@ -1,5 +1,5 @@
 "
-Removes methods from one class in one batch. It is intentionally direct and does not perform sender safety checks.
+Removes methods from one class as one change. A method still sent is removed anyway, and the answer warns of the sends it leaves without a method.
 "
 Class {
 	#name : 'MCPToolRemoveMethods',

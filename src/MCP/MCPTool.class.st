@@ -438,12 +438,13 @@ MCPTool >> entryLineTextFor: entry omitting: omittedKeys [
 ]
 
 { #category : 'private - results' }
-MCPTool >> entryNameKeyOf: aDictionary [
-	"The key whose value opens the record, or nil. A record naming a method opens with the method reference instead."
+MCPTool >> entryNameKeyOf: aDictionary ifFound: aBlock [
+	"Answer what aBlock makes of the key whose value opens the record, or nil when none does. A record naming a method opens with the method reference instead."
 
 	(self methodReferenceTextFor: aDictionary) ifNotNil: [ ^ nil ].
 	^ self entryNameKeys
 		  detect: [ :key | (self valueIn: aDictionary at: key) ifNil: [ false ] ifNotNil: [ :value | self isInlineValue: value ] ]
+		  ifFound: aBlock
 		  ifNone: [ nil ]
 ]
 
@@ -459,7 +460,7 @@ MCPTool >> entryNameTextFor: aDictionary [
 	"What opens a record's line: the method it names, the way Pharo writes it, or else the value of the first name key it holds."
 
 	^ (self methodReferenceTextFor: aDictionary) ifNil: [
-		  (self entryNameKeyOf: aDictionary) ifNotNil: [ :key | (self valueIn: aDictionary at: key) asString ] ]
+		  self entryNameKeyOf: aDictionary ifFound: [ :key | (self valueIn: aDictionary at: key) asString ] ]
 ]
 
 { #category : 'private - results' }
@@ -1011,7 +1012,7 @@ MCPTool >> shownKeysOf: entry [
 	| skipped |
 	skipped := self redundantKeys asOrderedCollection.
 	(self methodReferenceTextFor: entry) ifNotNil: [ skipped addAll: self methodReferenceKeys ].
-	(self entryNameKeyOf: entry) ifNotNil: [ :key | skipped add: key asSymbol ].
+	self entryNameKeyOf: entry ifFound: [ :key | skipped add: key asSymbol ].
 	^ self orderedKeys: (entry keys reject: [ :key | skipped includes: key asSymbol ])
 ]
 

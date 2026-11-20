@@ -166,9 +166,12 @@ MCPRemoveClassesCommand >> referenceListOf: someMethods [
 	"The first five, then how many more: method_reference_search lists them all."
 
 	| names |
-	names := (someMethods collect: [ :each | each methodClass name , '>>' , each selector ] as: Set) asArray sort.
+	names := (someMethods
+		          collect: [ :each | String streamContents: [ :stream | stream << each methodClass name << '>>' << each selector ] ]
+		          as: Set) asArray sort.
 	names size <= 5 ifTrue: [ ^ ', ' join: names ].
-	^ (', ' join: (names first: 5)) , ', and ' , (names size - 5) printString , ' more'
+	^ String streamContents: [ :stream |
+		  stream << (', ' join: (names first: 5)) << ', and ' << (names size - 5) printString << ' more' ]
 ]
 
 { #category : 'private - facts' }
@@ -243,18 +246,18 @@ MCPRemoveClassesCommand >> shouldReparentSubclassesWhenRemoving: aClass [
 MCPRemoveClassesCommand >> signalBlockedBy: anException [
 	"Force is offered only where it gets past the check."
 
-	| facts forceSupported howToProceed |
+	| facts forceSupported howToProceed names |
 	facts := self blockingFactsFor: anException.
 	forceSupported := self forceGoesPast: anException.
 	howToProceed := forceSupported
 		                ifTrue: [ 'Change that first, or resend with force: true to remove anyway.' ]
 		                ifFalse: [ 'Change that first: force does not get past this check in this Pharo version.' ].
+	names := self resolvedClasses collect: [ :each | each name asString ] as: Array.
 	^ MCPCommandError
-		  signalClassRemovalBlocked:
-			  'Did not remove ' , (', ' join: (self resolvedClasses collect: [ :each | each name ])) , '. ' , (' ' join: facts) , ' '
-			  , howToProceed
+		  signalClassRemovalBlocked: (String streamContents: [ :stream |
+				   stream << 'Did not remove ' << (', ' join: names) << '. ' << (' ' join: facts) << ' ' << howToProceed ])
 		  details: (Dictionary new
-				   at: #classes put: (self resolvedClasses collect: [ :each | each name asString ]) asArray;
+				   at: #classes put: names;
 				   at: #impactMessages put: facts;
 				   at: #howToProceed put: howToProceed;
 				   at: #forceSupported put: forceSupported;

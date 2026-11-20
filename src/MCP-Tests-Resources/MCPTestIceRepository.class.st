@@ -90,8 +90,7 @@ MCPTestIceRepository >> initialize [
 	remoteNames := #(  ).
 	actionLog := OrderedCollection new.
 	modifiedPackages := #(  ).
-	self workingCopy: (MCPTestRepositoryWorkingCopy packageNames: #(  ) modifiedPackages: #(  )).
-	^ self
+	self workingCopy: (MCPTestRepositoryWorkingCopy packageNames: #(  ) modifiedPackages: #(  ))
 ]
 
 { #category : 'testing' }

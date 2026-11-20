@@ -403,17 +403,17 @@ MCPToolUpdateMethod >> validateAddedArguments: request [
 	argumentNames isEmpty ifTrue: [
 			MCPCommandError
 				signalErrorCode: #ArgumentNamesRequiredForAddedArguments
-				message: 'argumentNames is required when newSelector adds method arguments.'
+				message: 'arguments is required when newSelector adds method arguments.'
 				details: (self requestedContextFor: request) ].
 	argumentNames size = (request stringArgumentNamed: 'newSelector') asSymbol numArgs ifFalse: [
 			MCPCommandError
 				signalErrorCode: #InvalidMethodArgumentNames
-				message: 'argumentNames must contain one name for each target selector argument.'
+				message: 'arguments must contain one name for each target selector argument.'
 				details: (self requestedContextFor: request) ].
 	(argumentNames allSatisfy: [ :each | each isNotEmpty ]) ifFalse: [
 			MCPCommandError
 				signalErrorCode: #InvalidMethodArgumentNames
-				message: 'argumentNames must not contain empty names.'
+				message: 'arguments must not contain empty names.'
 				details: (self requestedContextFor: request) ].
 	(argumentValueExpressions isNotEmpty and: [
 		 argumentValueExpressions size ~= ((self permutationFor: request) count: [ :each | each <= 0 ]) ]) ifTrue: [
@@ -486,7 +486,7 @@ MCPToolUpdateMethod >> validateUpdate: request [
 			(request hasArgumentNamed: 'newSelector') ifFalse: [
 					MCPCommandError
 						signalErrorCode: #ArgumentMetadataRequiresMethodSelectorUpdate
-						message: 'argumentNames and argumentValueExpressions are only valid with newSelector.'
+						message: 'arguments and argumentValueExpressions are only valid with newSelector.'
 						details: (self requestedContextFor: request) ] ].
 	(self selectorUpdateActionFor: request) = 'addArguments' ifTrue: [ self validateAddedArguments: request ]
 ]

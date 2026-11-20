@@ -1,6 +1,4 @@
 "
-Concrete debug_search tool. It answers the debuggers a person has open in the image.
-
 It is a query and nothing else. No session is started, attached, registered or remembered, so there is no reference to keep and nothing to clean up: ask again and the answer reflects whatever is open then. To act on what it shows, use the ordinary class and method tools.
 "
 Class {

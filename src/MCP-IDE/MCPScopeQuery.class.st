@@ -1,7 +1,5 @@
 "
-Abstract query over named class/package scopes.
-
-Subclasses add the concrete entity lookup, but common scope names, completeness handling, and missing-name warnings live here.
+The scope part of a query over named packages and classes: the names each scope key holds, whether the scope must name only what exists, and the warnings for the names that do not. Its subclasses look up what the scope holds.
 "
 Class {
 	#name : 'MCPScopeQuery',

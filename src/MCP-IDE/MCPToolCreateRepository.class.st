@@ -1,5 +1,5 @@
 "
-Concrete repository_create tool. It starts a Git repository with no history at a location that does not exist yet or holds no file, registers it and gives it packages from the image, through MCPToolRepositoryOperation. An existing checkout is registered with repository_attach instead.
+The answer says what comes next.
 "
 Class {
 	#name : 'MCPToolCreateRepository',

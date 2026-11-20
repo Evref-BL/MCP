@@ -374,8 +374,8 @@ MCPToolMethodMutation >> howToProceedForBlockedCompile [
 ]
 
 { #category : 'private' }
-MCPToolMethodMutation >> instanceSideNoteFor: aSend of: aClass in: aBehavior [
-	"When aClass itself does not understand aSend and its instances do, as a constructor compiled on the instance side and sent to the class: that its instances have it, and what to do, as MCPNotUnderstoodNote says when the send is made. Sent to self, the method of aBehavior is on the class side, which the note says first."
+MCPToolMethodMutation >> instanceSideNoteFor: aSend of: aClass [
+	"When aClass itself does not understand aSend and its instances do, as a constructor compiled on the instance side and sent to the class: that its instances have it, and what to do, as MCPNotUnderstoodNote says when the send is made. Sent to self, the sending method is on the class side, which the note says first."
 
 	| method selector |
 	selector := aSend selector.
@@ -396,11 +396,11 @@ MCPToolMethodMutation >> isSelfOrSuper: aNode [
 ]
 
 { #category : 'private' }
-MCPToolMethodMutation >> otherSideNoteFor: aSend receivedBy: aReceiverBehavior in: aBehavior [
-	"When the other side of the receiver's class has a method for aSend, as a constructor compiled on the instance side and sent to the class: which side has it, and what to do from the side the method of aBehavior is on."
+MCPToolMethodMutation >> otherSideNoteFor: aSend receivedBy: aReceiverBehavior [
+	"When the other side of the receiver's class has a method for aSend, as a constructor compiled on the instance side and sent to the class: which side has it, and what to do from the side the sending method is on."
 
 	^ aReceiverBehavior isClassSide
-		  ifTrue: [ self instanceSideNoteFor: aSend of: aReceiverBehavior instanceSide in: aBehavior ]
+		  ifTrue: [ self instanceSideNoteFor: aSend of: aReceiverBehavior instanceSide ]
 		  ifFalse: [ self classSideNoteFor: aSend selector of: aReceiverBehavior ]
 ]
 
@@ -413,7 +413,7 @@ MCPToolMethodMutation >> receiverNoteFor: aSend in: aBehavior [
 	receiver ifNil: [ ^ nil ].
 	(self classVariableNoteFor: aSend selector receivedBy: receiver in: aBehavior) ifNotNil: [ :note | ^ note ].
 	(self slotNoteFor: aSend selector receivedBy: receiver in: aBehavior) ifNotNil: [ :note | ^ note ].
-	^ self otherSideNoteFor: aSend receivedBy: receiver in: aBehavior
+	^ self otherSideNoteFor: aSend receivedBy: receiver
 ]
 
 { #category : 'private' }

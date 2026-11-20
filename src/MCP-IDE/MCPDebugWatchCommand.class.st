@@ -137,13 +137,12 @@ MCPDebugWatchCommand >> locatedTargets [
 ]
 
 { #category : 'private - probes' }
-MCPDebugWatchCommand >> nodeMatching: aTarget [
-	"Installing an earlier probe regenerated this method's AST, so the node is found again now."
+MCPDebugWatchCommand >> nodeMatching: aTarget ifFound: aBlock [
+	"Answer what aBlock makes of the node, or nil when the method no longer has it. Installing an earlier probe regenerated this method's AST, so the node is found again now."
 
-	| ast |
-	ast := (aTarget at: #compiledMethod) ast.
-	^ ast allChildren
+	^ (aTarget at: #compiledMethod) ast allChildren
 		  detect: [ :each | each sourceInterval = (aTarget at: #interval) and: [ each isAssignment = (aTarget at: #isAssignment) ] ]
+		  ifFound: aBlock
 		  ifNone: [ nil ]
 ]
 

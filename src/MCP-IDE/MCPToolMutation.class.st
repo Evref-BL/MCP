@@ -357,11 +357,7 @@ MCPToolMutation >> normalizedCommandErrorForRefactoringWarning: aWarning action:
 
 	| details impactMessages summary |
 	impactMessages := self impactMessagesForRefactoringWarning: aWarning action: action requestedContext: requestedContext.
-	summary := self
-		           refactoringWarningSummaryFor: aWarning
-		           action: action
-		           requestedContext: requestedContext
-		           impactMessages: impactMessages.
+	summary := self refactoringWarningSummaryForAction: action requestedContext: requestedContext impactMessages: impactMessages.
 	details := self errorDetailsForRequestedContext: requestedContext causedBy: aWarning.
 	details at: #impactMessages put: impactMessages.
 	details at: #howToProceed put: self howToProceedForRefactoringWarning.
@@ -465,7 +461,7 @@ MCPToolMutation >> refactoringScopeSpecFromRequest: request [
 ]
 
 { #category : 'private - warnings' }
-MCPToolMutation >> refactoringWarningSummaryFor: aWarning action: action requestedContext: requestedContext impactMessages: impactMessages [
+MCPToolMutation >> refactoringWarningSummaryForAction: action requestedContext: requestedContext impactMessages: impactMessages [
 	"Refactoring warning for pullUpSlot on X slot y: <impact>; <impact>. Rerun with force: true to proceed anyway. Every impact is named, since a client reading text sees nothing else of them; one that ends on a question keeps its question mark."
 
 	| sentence |

@@ -1,5 +1,5 @@
 "
-Concrete history_lost_change_restore tool. It installs the lost changes history_lost_change_list lists, all of them or those the call names by element, in an order where each finds what it needs, and says what it restored and what it could not, with why. A change the image has made since its save is refused unless forced, as restoring would discard it.
+Puts back the changes the image lost since its last save.
 "
 Class {
 	#name : 'MCPToolRestoreLostChanges',

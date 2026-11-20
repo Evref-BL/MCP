@@ -26,7 +26,8 @@ MCPMessageProcessor >> addCachingHintsFor: aMethodName to: aResult [
 { #category : 'handlers management' }
 MCPMessageProcessor >> addHandler: aJRPCHandler [
 
-	(self handlers includes: aJRPCHandler) ifTrue: [ "handler has been override" ^ self ].
+	(self handlers includes: aJRPCHandler) ifTrue: [ "pragmas are read from the subclass up, so an override of this JSON-RPC method came first"
+		^ self ].
 
 	handlers add: aJRPCHandler
 ]

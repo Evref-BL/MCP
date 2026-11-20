@@ -899,6 +899,19 @@ MCPToolMethodMutationTest >> testAddArgumentsUpdatesSendersAndReportsAction [
 ]
 
 { #category : 'tests' }
+MCPToolMethodMutationTest >> testAddingArgumentsAsksForTheirNames [
+	"A new selector with more keywords needs a name for each argument it adds, and the refusal names the argument that gives them."
+
+	| error |
+	error := self errorFrom: (self callToolWith: {
+				          (#class -> MCPToolMethodMutationTestTarget name).
+				          (#selector -> self instanceSelector asString).
+				          (#newSelector -> 'combine:with:separator:') } asDictionary).
+	self assert: (error at: #errorCode) equals: 'ArgumentNamesRequiredForAddedArguments'.
+	self assert: (error at: #message) equals: 'arguments is required when newSelector adds method arguments.'
+]
+
+{ #category : 'tests' }
 MCPToolMethodMutationTest >> testAnUnterminatedLeadingCommentIsASyntaxError [
 	"A header is looked for past the comments a source begins with. A comment that is never closed holds the rest of the source, so there is no header to find, and the compiler's answer is the one given."
 
@@ -914,6 +927,20 @@ headerProbe
 		self assert: (result at: #isError).
 		self assert: (error at: #errorCode) equals: 'CompileSyntaxError'.
 		self deny: (MCPToolMethodMutationTestTarget includesSelector: #headerProbe) ] ensure: [ self removeHeaderProbes ]
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testArgumentListsWithoutANewSelectorAreRefused [
+	"The argument lists say what the arguments of a new selector are, so without one they have nothing to describe."
+
+	| error |
+	error := self errorFrom: (self callToolWith: {
+				          (#class -> MCPToolMethodMutationTestTarget name).
+				          (#selector -> self instanceSelector asString).
+				          (#protocol -> 'accessing').
+				          (#arguments -> #( 'first' 'second' )) } asDictionary).
+	self assert: (error at: #errorCode) equals: 'ArgumentMetadataRequiresMethodSelectorUpdate'.
+	self assert: (error at: #message) equals: 'arguments and argumentValueExpressions are only valid with newSelector.'
 ]
 
 { #category : 'tests' }

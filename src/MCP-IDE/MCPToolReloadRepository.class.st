@@ -1,5 +1,5 @@
 "
-Concrete repository_reload tool. It loads the packages this image has from the files on disk, which is what an image needs after the checkout moved underneath it. When the image has none of the packages the repository registers, it loads nothing and says so, and says which of them the checkout holds.
+For an image whose checkout moved underneath it.
 "
 Class {
 	#name : 'MCPToolReloadRepository',

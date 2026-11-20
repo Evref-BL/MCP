@@ -1,5 +1,5 @@
 "
-Concrete repository_update tool. It changes image-side repository subdirectory or package membership through MCPToolRepositoryOperation without writing packages to files.
+Changes only what the image records of the repository: it writes no file and unloads no package.
 "
 Class {
 	#name : 'MCPToolUpdateRepository',
@@ -29,7 +29,7 @@ MCPToolUpdateRepository >> failureSummaryPrefixFor: request [
 
 { #category : 'private - execution' }
 MCPToolUpdateRepository >> mutateWith: request [
-	"Change the repository's subdirectory or package membership in the image, writing nothing to its files and unloading nothing."
+	"Change the repository's subdirectory or package membership in the image."
 
 	| added packageWarnings removed repository |
 	^ self
