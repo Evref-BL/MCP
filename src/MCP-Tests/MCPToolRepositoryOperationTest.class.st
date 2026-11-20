@@ -2120,8 +2120,7 @@ MCPToolRepositoryOperationTest >> testRepositoryToolsUseDedicatedInputs [
 		                (MCPToolListRepositoryChanges -> #( 'repository' 'location' )).
 		                (MCPToolCreateRepository -> #( 'repository' 'location' 'subdirectory' 'packages' )).
 		                (MCPToolAttachRepository -> #( 'repository' 'location' 'subdirectory' 'packages' )).
-		                (MCPToolUpdateRepository
-		                 -> #( 'repository' 'location' 'subdirectory' 'packages' 'addPackages' 'removePackages' )).
+		                (MCPToolUpdateRepository -> #( 'repository' 'location' 'subdirectory' 'addPackages' 'removePackages' )).
 		                (MCPToolExportRepository -> #( 'repository' 'location' )).
 		                (MCPToolCommitRepository -> #( 'repository' 'location' 'message' )).
 		                (MCPToolAdoptRepositoryHead -> #( 'repository' 'location' 'branch' )) }.
@@ -2212,26 +2211,6 @@ MCPToolRepositoryOperationTest >> testUpdateAddsPackageToWorkingCopy [
 ]
 
 { #category : 'tests' }
-MCPToolRepositoryOperationTest >> testUpdateCanReplacePackageMembership [
-
-	| data repository result |
-	repository := self
-		              newRepositoryNamed: 'MCP Repository Command Replace Test'
-		              location: FileLocator imageDirectory
-		              packageNames: #( 'MCPToolRepositoryOperationOldA' 'MCPToolRepositoryOperationOldB' ).
-	self withRegisteredRepository: repository do: [
-			result := self callToolNamed: 'repository_update' withArguments: {
-					          (#repository -> repository name).
-					          (#packages -> #( 'MCPToolRepositoryOperationNewC' 'MCPToolRepositoryOperationOldB' )) } asDictionary.
-			data := self dataFrom: result.
-			self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
-			self assert: (self packageNamesIn: repository) equals: #( 'MCPToolRepositoryOperationNewC' 'MCPToolRepositoryOperationOldB' ).
-			self assert: data keys asSet equals: #( addedPackages removedPackages ) asSet.
-			self assert: (data at: #addedPackages) equals: #( 'MCPToolRepositoryOperationNewC' ).
-			self assert: (data at: #removedPackages) equals: #( 'MCPToolRepositoryOperationOldA' ) ]
-]
-
-{ #category : 'tests' }
 MCPToolRepositoryOperationTest >> testUpdateGivesAnEmptyCheckoutItsSubdirectory [
 
 	| location repository repositoryName result |
@@ -2313,7 +2292,7 @@ MCPToolRepositoryOperationTest >> testUpdateWithNothingToDoNamesItsArguments [
 			self assert: ((self errorFrom: result) at: #errorCode) equals: 'NoRepositoryUpdateRequested'.
 			self
 				assert: (self summaryFrom: result)
-				equals: 'repository_update needs at least one of subdirectory, packages, addPackages or removePackages.' ]
+				equals: 'repository_update needs at least one of subdirectory, addPackages or removePackages.' ]
 ]
 
 { #category : 'tests' }

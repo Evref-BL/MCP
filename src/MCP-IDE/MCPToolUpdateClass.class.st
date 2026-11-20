@@ -23,8 +23,8 @@ MCPToolUpdateClass class >> toolName [
 MCPToolUpdateClass >> actionApplicationOrder [
 	"Changes to one class are not independent, so the caller does not choose their order. The superclass goes first because it decides what everything after it validates against; slots are added before anything can refer to them and removed last, after any move that needed them; the name goes last because every other change resolves the class by the name the caller wrote."
 
-	^ #( 'reparent' 'replaceLayout' 'replaceDefinition' 'addSlot' 'renameSlot' 'pullUpSlot' 'pushDownSlot' 'removeSlot' 'replaceTraits'
-	     'replaceSharedVariables' 'replaceSharedPools' 'setComment' 'move' 'rename' )
+	^ #( 'reparent' 'replaceLayout' 'addSlot' 'renameSlot' 'pullUpSlot' 'pushDownSlot' 'removeSlot' 'replaceTraits' 'replaceSharedVariables'
+	     'replaceSharedPools' 'setComment' 'move' 'rename' )
 ]
 
 { #category : 'private - planning' }
@@ -144,7 +144,6 @@ MCPToolUpdateClass >> executeBlockForAction: action [
 		  ('replaceSharedVariables' -> [ :plan :request | self executeReplaceSharedVariablesWithPlan: plan request: request ]).
 		  ('replaceSharedPools' -> [ :plan :request | self executeReplaceSharedPoolsWithPlan: plan request: request ]).
 		  ('replaceLayout' -> [ :plan :request | self executeReplaceLayoutWithPlan: plan request: request ]).
-		  ('replaceDefinition' -> [ :plan :request | self executeReplaceDefinitionWithPlan: plan request: request ]).
 		  ('addSlot' -> [ :plan :request | self executeAddSlotWithPlan: plan request: request ]).
 		  ('removeSlot' -> [ :plan :request | self executeRemoveSlotWithPlan: plan request: request ]).
 		  ('renameSlot' -> [ :plan :request | self executeRenameSlotWithPlan: plan request: request ]).
@@ -290,24 +289,6 @@ MCPToolUpdateClass >> executeReparentWithPlan: plan request: request [
 								   className.
 								   superclassName })
 					  error: error ]
-]
-
-{ #category : 'private - execution' }
-MCPToolUpdateClass >> executeReplaceDefinitionWithPlan: plan request: request [
-
-	| className command |
-	className := request stringArgumentNamed: 'name'.
-	command := MCPReplaceClassDefinitionCommand
-		           className: className
-		           slotNames: (self slotReplacementIn: request side: false)
-		           classSlotNames: (self slotReplacementIn: request side: true).
-	^ self
-		  apply: plan
-		  force: false
-		  work: [ command execute ]
-		  summary: [ :updatedClass |
-		  String streamContents: [ :stream | stream << 'Replaced slot definition for class ' << className << '.' ] ]
-		  failureSummary: [ :error | self failureMessage: 'Unable to replace slot definition for class ' , className error: error ]
 ]
 
 { #category : 'private - execution' }
@@ -549,12 +530,13 @@ MCPToolUpdateClass >> slotDeltaIn: request side: aBoolean [
 
 { #category : 'private - schema' }
 MCPToolUpdateClass >> slotDeltaSchemaPropertyNamed: aName describedAs: aDescription [
-	"Slots are patched, not replaced: naming one slot to add needs nothing else, where a replacement list has to be complete and a stale one silently drops a slot the caller did not know about."
+	"Slots are patched, not replaced: naming one slot to add needs nothing else, where a replacement list has to be complete and a stale one silently drops a slot the caller did not know about. A key the patch does not take is refused, so a misspelt one is reported rather than silently dropped."
 
 	^ (MCPStructureProperties new
 		   name: aName;
 		   type: 'object';
 		   description: aDescription;
+		   additionalProperties: false;
 		   yourself)
 		  properties: {
 				  (self stringArraySchemaNamed: 'add' description: 'Slots to add.' itemDescription: 'Slot name.').
@@ -571,10 +553,6 @@ MCPToolUpdateClass >> slotDeltaSchemaPropertyNamed: aName describedAs: aDescript
 				  (self
 					   stringArraySchemaNamed: 'pushDown'
 					   description: 'Slots to move down to every direct subclass.'
-					   itemDescription: 'Slot name.').
-				  (self
-					   stringArraySchemaNamed: 'replace'
-					   description: 'The complete slot list, replacing what the class has. Prefer add and remove.'
 					   itemDescription: 'Slot name.') };
 		  yourself
 ]
@@ -589,7 +567,7 @@ MCPToolUpdateClass >> slotDescriptionForClassSide: aBoolean [
 
 { #category : 'private - planning' }
 MCPToolUpdateClass >> slotPlansIn: request side: classSide [
-	"One plan per slot named in the patch, so each failure names the slot it was about. The wholesale replacement is not here: it covers both sides at once, so updatePlansFor: plans it once."
+	"One plan per slot named in the patch, so each failure names the slot it was about."
 
 	| delta planFor plans |
 	delta := self slotDeltaIn: request side: classSide.
@@ -597,7 +575,7 @@ MCPToolUpdateClass >> slotPlansIn: request side: classSide [
 	delta isEmpty ifTrue: [
 			MCPCommandError
 				signalErrorCode: #EmptySlotDelta
-				message: 'A slots patch must ask for at least one of add, remove, rename, pullUp, pushDown or replace.'
+				message: 'A slots patch must ask for at least one of add, remove, rename, pullUp or pushDown.'
 				details: (self requestedContextFor: request) ].
 	planFor := [ :action :slotName :newSlotName |
 		           | context |
@@ -619,13 +597,6 @@ MCPToolUpdateClass >> slotPlansIn: request side: classSide [
 	delta pushedDown do: [ :each | plans add: (planFor value: 'pushDownSlot' value: each value: nil) ].
 	delta removed do: [ :each | plans add: (planFor value: 'removeSlot' value: each value: nil) ].
 	^ plans
-]
-
-{ #category : 'private - arguments' }
-MCPToolUpdateClass >> slotReplacementIn: request side: aBoolean [
-	"The complete slot list the call gives for that side, nil when it patches the side or leaves it alone."
-
-	^ (self slotDeltaIn: request side: aBoolean) ifNotNil: [ :delta | delta replacement ]
 ]
 
 { #category : 'private - arguments' }
@@ -693,8 +664,6 @@ MCPToolUpdateClass >> updatePlansFor: request [
 	| plans |
 	plans := OrderedCollection new.
 	(self requestedClassUpdateActionsIn: request) do: [ :action | plans add: (self planForAction: action in: request) ].
-	((self slotReplacementIn: request side: false) isNotNil or: [ (self slotReplacementIn: request side: true) isNotNil ]) ifTrue: [
-		plans add: (self planForAction: 'replaceDefinition' in: request) ].
 	plans addAll: (self slotPlansIn: request side: false).
 	plans addAll: (self slotPlansIn: request side: true).
 	plans ifEmpty: [ self signalNoUpdateRequestedIn: request ].
