@@ -84,10 +84,10 @@ MCPToolRestoreMethod >> checkVersionNamesOneMethodIn: request [
 
 { #category : 'private - restoring' }
 MCPToolRestoreMethod >> compile: aSource protocol: aProtocol of: aSelector in: aBehavior [
-	"The recorded source exactly, without the formatting method_compile applies, since putting the method back means the text it had. A source that no longer compiles, as one reading a variable since removed, is refused with what the compiler said."
+	"The recorded source exactly, without the formatting method_compile applies, since putting the method back means the text it had. A source that no longer compiles is refused with what the compiler said, and from Pharo 14 on so is one reading a variable since removed, which older versions compile reading it as undeclared."
 
 	[ aBehavior mcpCompile: aSource classified: aProtocol ]
-		on: Error , Warning
+		on: Error
 		do: [ :error |
 				MCPCommandError
 					signalErrorCode: #RecordedSourceDoesNotCompile

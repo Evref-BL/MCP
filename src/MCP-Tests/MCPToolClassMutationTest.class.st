@@ -1115,19 +1115,44 @@ MCPToolClassMutationTest >> testSeveralUpdatesSayEachChange [
 ]
 
 { #category : 'tests - update' }
-MCPToolClassMutationTest >> testUpdateAddingASlotThatPharoAbandonsLeavesTheClassAsItWas [
-	"The new class Pharo abandons is not left among the subclasses of the class's superclass, which lists the class again."
+MCPToolClassMutationTest >> testUpdateAddingASlotResumesAndReportsAWarningRaisedWhileMigratingInstances [
+	"Pharo migrates the instances partway through the change. A warning raised there is resumed as at the boundary of the call, the change goes on, and the answer says what it warned of."
 
-	self withUnmigratableInstanceOf: 'MCPToolClassMutationTestGenerated' under: 'Object' do: [ :instance |
-			| result |
-			result := self callToolNamed: 'class_update' withArguments: (self
-					           updateRequestArgumentsForSlotAction: 'add'
-					           className: 'MCPToolClassMutationTestGenerated'
-					           slotName: 'extra'
-					           classSide: false).
-			self assert: (self resultIndicatesError: result) description: [ self textFrom: result ].
-			self assert: instance class slotNames equals: #( #unreadable ).
-			self assert: (Object subclasses select: [ :each | each name = instance class name ]) equals: { instance class } ]
+	self
+		withInstanceOf: 'MCPToolClassMutationTestGenerated'
+		under: 'Object'
+		readingItsSlotBy: 'read: anObject Warning signal: ''Read while migrating.''. ^ super read: anObject'
+		do: [ :instance |
+				| result |
+				result := self callToolNamed: 'class_update' withArguments: (self
+						           updateRequestArgumentsForSlotAction: 'add'
+						           className: 'MCPToolClassMutationTestGenerated'
+						           slotName: 'extra'
+						           classSide: false).
+				self deny: (self resultIndicatesError: result) description: [ self textFrom: result ].
+				self assert: (self warningsFrom: result) asArray equals: #( 'Read while migrating.' ).
+				self assert: instance class slotNames equals: #( #migrated #extra ) ]
+]
+
+{ #category : 'tests - update' }
+MCPToolClassMutationTest >> testUpdateAddingASlotThatPharoAbandonsLeavesTheClassAsItWas [
+	"The new class Pharo abandons is not left among the subclasses of the class's superclass, which lists the class again. The failure still says what a warning raised before it warned of."
+
+	self
+		withInstanceOf: 'MCPToolClassMutationTestGenerated'
+		under: 'Object'
+		readingItsSlotBy: 'read: anObject Warning signal: ''Read while migrating.''. ^ self error: ''This slot cannot be read.'''
+		do: [ :instance |
+				| result |
+				result := self callToolNamed: 'class_update' withArguments: (self
+						           updateRequestArgumentsForSlotAction: 'add'
+						           className: 'MCPToolClassMutationTestGenerated'
+						           slotName: 'extra'
+						           classSide: false).
+				self assert: (self resultIndicatesError: result) description: [ self textFrom: result ].
+				self assert: (self warningsFrom: result) asArray equals: #( 'Read while migrating.' ).
+				self assert: instance class slotNames equals: #( #migrated ).
+				self assert: (Object subclasses select: [ :each | each name = instance class name ]) equals: { instance class } ]
 ]
 
 { #category : 'tests - update' }
@@ -1269,7 +1294,6 @@ MCPToolClassMutationTest >> testUpdateForcePullUpSlotContinuesPastRefactoringWar
 			          (#name -> 'MCPToolClassMutationTestWarningPullUpTarget').
 			          (#slots -> (Dictionary with: 'pullUp' -> #( 'sharedSlot' ))).
 			          (#force -> true) } asDictionary.
-	self refactoringsRefuseBreakingChanges ifTrue: [ ^ self assert: (result at: #isError) ].
 	warnings := self warningsFrom: result.
 	target := self classNamed: 'MCPToolClassMutationTestWarningPullUpTarget'.
 	childOne := self classNamed: 'MCPToolClassMutationTestWarningPullUpChildOne'.
@@ -1674,7 +1698,6 @@ MCPToolClassMutationTest >> testUpdatePullsUpInstanceSlotAcrossSubclasses [
 			           className: 'MCPToolClassMutationTestPullUpTarget'
 			           slotName: 'sharedSlot'
 			           classSide: false).
-	self refactoringsRefuseBreakingChanges ifTrue: [ ^ self assert: (result at: #isError) ].
 	self dataFrom: result.
 	target := self classNamed: 'MCPToolClassMutationTestPullUpTarget'.
 	childOne := self classNamed: 'MCPToolClassMutationTestPullUpChildOne'.
@@ -1715,7 +1738,6 @@ MCPToolClassMutationTest >> testUpdatePushesDownClassSlotToDirectSubclasses [
 			           className: 'MCPToolClassMutationTestPushDownTarget'
 			           slotName: 'sharedClassSlot'
 			           classSide: true).
-	self refactoringsRefuseBreakingChanges ifTrue: [ ^ self assert: (result at: #isError) ].
 	self dataFrom: result.
 	target := self classNamed: 'MCPToolClassMutationTestPushDownTarget'.
 	childOne := self classNamed: 'MCPToolClassMutationTestPushDownChildOne'.
@@ -2809,25 +2831,33 @@ MCPToolClassMutationTest >> usedSlotUses [
 ]
 
 { #category : 'private' }
-MCPToolClassMutationTest >> withUnmigratableInstanceOf: aClassName under: aSuperclassName do: aBlock [
-	"Pharo cannot migrate an instance whose slot cannot be read when it reshapes the instance's class."
+MCPToolClassMutationTest >> withInstanceOf: aClassName under: aSuperclassName readingItsSlotBy: aReadSource do: aBlock [
+	"Pharo reads each slot of an instance it migrates when it reshapes the instance's class, this one through aReadSource, the read: method of a slot class of its own."
 
 	| slotClass |
 	slotClass := self
-		             createClassNamed: 'MCPToolClassMutationTestUnreadableSlot'
+		             createClassNamed: 'MCPToolClassMutationTestMigratedSlot'
 		             superclassName: 'InstanceVariableSlot'
 		             slots: #(  )
 		             classSlots: #(  ).
 	[
-		self
-			ensureMethodSource: 'read: anObject ^ self error: ''This slot cannot be read.'''
-			protocol: 'meta-object-protocol'
-			on: slotClass.
+		self ensureMethodSource: aReadSource protocol: 'meta-object-protocol' on: slotClass.
 		aBlock value: (self
 				 createClassNamed: aClassName
 				 superclassName: aSuperclassName
-				 slots: { (#unreadable => slotClass) }
+				 slots: { (#migrated => slotClass) }
 				 classSlots: #(  )) new ] ensure: [
 			self removeClassNamed: aClassName.
 			self removeClassNamed: slotClass name ]
+]
+
+{ #category : 'private' }
+MCPToolClassMutationTest >> withUnmigratableInstanceOf: aClassName under: aSuperclassName do: aBlock [
+	"Pharo cannot migrate an instance whose slot cannot be read."
+
+	self
+		withInstanceOf: aClassName
+		under: aSuperclassName
+		readingItsSlotBy: 'read: anObject ^ self error: ''This slot cannot be read.'''
+		do: aBlock
 ]
