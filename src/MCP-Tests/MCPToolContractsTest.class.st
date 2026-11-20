@@ -2908,8 +2908,7 @@ MCPToolContractsTest >> testServerCanConfigureAdvertisedTools [
 	server := self mcpWithoutObservabilityExport.
 	server advertiseTools: #( 'tool_search' 'tool_get' 'tool_call' 'class_search' ).
 	toolNames := (server rpcToolsList at: #tools) collect: [ :each | each at: #name ].
-	self assert: toolNames asSet equals: #( 'tool_search' 'tool_get' 'tool_call' 'class_search' ) asSet.
-	self deny: (toolNames includes: 'class_name_update')
+	self assert: toolNames asSet equals: #( 'tool_search' 'tool_get' 'tool_call' 'class_search' ) asSet
 ]
 
 { #category : 'tests' }

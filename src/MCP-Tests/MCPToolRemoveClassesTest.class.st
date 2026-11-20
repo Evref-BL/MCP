@@ -400,6 +400,21 @@ MCPToolRemoveClassesTest >> testManyMethodsThatGoWithTheClassesAreCounted [
 ]
 
 { #category : 'tests' }
+MCPToolRemoveClassesTest >> testOnlyAClassThatIsNotEmptyIsBlockedByItsSubclasses [
+
+	| command parent |
+	parent := self classNamed: self emptyParentClassName.
+	command := MCPRemoveClassesCommand classNames: { self emptyParentClassName }.
+	self assertEmpty: (command subclassesBlockingRemovalOf: parent).
+	self ensureMethodSource: 'marker ^ 1' onClassNamed: self emptyParentClassName.
+	self assert: (command subclassesBlockingRemovalOf: parent) equals: { self emptyChildClassName }.
+	command := MCPRemoveClassesCommand classNames: {
+			           self emptyParentClassName.
+			           self emptyChildClassName }.
+	self assertEmpty: (command subclassesBlockingRemovalOf: parent)
+]
+
+{ #category : 'tests' }
 MCPToolRemoveClassesTest >> testRefusesAClassSideNameAndRemovesNothing [
 	"Read as its class, Foo class would delete the whole class without a word. One such name refuses the call, before anything is looked up."
 
@@ -467,6 +482,27 @@ MCPToolRemoveClassesTest >> testTheMethodsThatGoWithTheClassesAreSaid [
 		equals: ('Removed class {1}. Its method {1}>>gamma was removed with it. Removed packages: {2}.' format: {
 					 self packageCleanupClassName.
 					 self packageCleanupPackageName })
+]
+
+{ #category : 'tests' }
+MCPToolRemoveClassesTest >> testTheScanFindsReferencesOutsideTheClassesAskedFor [
+	"The command finds the methods that access a class's binding, as method_reference_search does. A class asked for does not count, on either side."
+
+	| command references |
+	command := MCPRemoveClassesCommand classNames: { self referencedClassName }.
+	references := command referencesOutsideRemoval.
+	self assert: references keys asArray equals: { self referencedClassName }.
+	self
+		assert: (command referenceListOf: (references at: self referencedClassName))
+		equals: ('{1}>>useReferencedClass' format: { self senderClassName }).
+	self withoutEpiceaDuring: [
+			(self classNamed: self referencedClassName) classSide
+				compile: ('make ^ {1} new' format: { self referencedClassName })
+				classified: 'tests' ].
+	references := (MCPRemoveClassesCommand classNames: {
+			               self referencedClassName.
+			               self senderClassName }) referencesOutsideRemoval.
+	self assertEmpty: references
 ]
 
 { #category : 'tests' }

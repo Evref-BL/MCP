@@ -2134,6 +2134,7 @@ MCPToolClassMutationTest >> testUpdateReparentsClassAndPreservesExistingState [
 	self assert: target superclass name asString equals: self reparentSuperclassName.
 	self assert: target new probeMethod equals: 41.
 	self assert: target mcpComment equals: 'reparent comment'.
+	self assert: (target slots collect: #name as: Array) equals: #( #alphaSlot ).
 	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
@@ -2317,12 +2318,6 @@ MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenCommentClassIsMi
 ]
 
 { #category : 'tests - update' }
-MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenDestinationTagIsMissing [
-
-	self testUpdateMoveEnsuresMissingDestinationTag
-]
-
-{ #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenMoveClassIsMissing [
 
 	| error result structured |
@@ -2423,6 +2418,21 @@ MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenRenameSlotClassI
 	self assert: (error at: #slot) equals: 'oldSlot'.
 	self assert: (error at: #newSlot) equals: 'renamedSlot'.
 	self assert: (error at: #side) equals: 'instance'
+]
+
+{ #category : 'tests - update' }
+MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenReparentClassIsMissing [
+
+	| error result |
+	result := self callToolWith: {
+			          (#action -> 'update').
+			          (#name -> 'MCPToolClassMutationTestMissing').
+			          (#superclass -> self reparentSuperclassName) } asDictionary.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (error at: #updateAction) equals: 'reparent'.
+	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
+	self assert: (error at: #class) equals: 'MCPToolClassMutationTestMissing'
 ]
 
 { #category : 'tests - update' }

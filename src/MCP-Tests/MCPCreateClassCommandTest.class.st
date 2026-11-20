@@ -3,10 +3,26 @@ Tests command-level class creation behavior.
 "
 Class {
 	#name : 'MCPCreateClassCommandTest',
-	#superclass : 'MCPCommandTestCase',
+	#superclass : 'MCPTestCase',
 	#category : 'MCP-Tests',
 	#package : 'MCP-Tests'
 }
+
+{ #category : 'private - execution' }
+MCPCreateClassCommandTest >> aroundCommandExecution: aBlock [
+
+	^ self withoutEpiceaDuring: aBlock
+]
+
+{ #category : 'private - errors' }
+MCPCreateClassCommandTest >> captureCommandError: aBlock [
+
+	^ [
+		  self aroundCommandExecution: [ aBlock value ].
+		  self fail: 'Expected MCPCommandError' ]
+		  on: MCPCommandError
+		  do: [ :error | error ]
+]
 
 { #category : 'private' }
 MCPCreateClassCommandTest >> commandCreating: aClassName superclass: aSuperclassName [
@@ -46,6 +62,12 @@ MCPCreateClassCommandTest >> errorCreating: aClassName superclass: aSuperclassNa
 	command := self commandCreating: aClassName superclass: aSuperclassName.
 	aBlock value: command.
 	^ self captureCommandError: [ command execute ]
+]
+
+{ #category : 'private - execution' }
+MCPCreateClassCommandTest >> executeCommand: aCommand [
+
+	^ self aroundCommandExecution: [ aCommand execute ]
 ]
 
 { #category : 'private' }

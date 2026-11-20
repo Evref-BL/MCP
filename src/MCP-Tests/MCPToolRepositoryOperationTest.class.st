@@ -1,5 +1,5 @@
 "
-Tests for repository operation behavior. These tests execute the internal dispatcher directly so temporary Iceberg repository registry changes are not saved by the MCP RPC wrapper.
+Tests the repository tools, on checkouts and Iceberg registrations each test makes and removes.
 "
 Class {
 	#name : 'MCPToolRepositoryOperationTest',
@@ -163,6 +163,12 @@ MCPToolRepositoryOperationTest >> git: arguments in: aLocation [
 ]
 
 { #category : 'private' }
+MCPToolRepositoryOperationTest >> inputPropertyNamesFor: aTool [
+
+	^ aTool inputSchema properties collect: [ :each | each name ]
+]
+
+{ #category : 'private' }
 MCPToolRepositoryOperationTest >> isRegistered: aRepositoryName [
 
 	^ IceRepository repositories anySatisfy: [ :each | each name asString = aRepositoryName ]
@@ -217,6 +223,15 @@ MCPToolRepositoryOperationTest >> removeRegisteredRepositoriesNamed: aRepository
 	registry := IceRepository registry.
 	repositories := registry select: [ :each | each name asString = aRepositoryName ].
 	repositories do: [ :each | registry remove: each ifAbsent: [ ] ]
+]
+
+{ #category : 'private' }
+MCPToolRepositoryOperationTest >> searchMetadataByToolName [
+
+	| metadata |
+	metadata := Dictionary new.
+	self toolRegistry tools do: [ :tool | metadata at: tool name put: tool searchMetadata ].
+	^ metadata
 ]
 
 { #category : 'private - calling' }
@@ -371,18 +386,6 @@ MCPToolRepositoryOperationTest >> testAdoptHeadNamesADetachedHead [
 ]
 
 { #category : 'tests' }
-MCPToolRepositoryOperationTest >> testAdoptHeadReadsItsRequest [
-
-	| request tool |
-	tool := MCPToolAdoptRepositoryHead new.
-	request := tool requestFromToolCallArguments: {
-			           (#repository -> 'MCP').
-			           (#branch -> 'main') } asDictionary.
-	self assert: (tool mutationActionFor: request checked: true) equals: 'adoptHead'.
-	self assert: ((tool requestedContextFor: request checked: true) at: #branch) equals: 'main'
-]
-
-{ #category : 'tests' }
 MCPToolRepositoryOperationTest >> testAdoptHeadValidatesExpectedBranch [
 
 	| errorDetails repository result |
@@ -458,22 +461,6 @@ MCPToolRepositoryOperationTest >> testAttachGivesAnEmptyCheckoutItsSubdirectory 
 			self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
 			repository := IceRepository repositories detect: [ :each | each name asString = repositoryName ].
 			self assert: repository subdirectory equals: 'src' ]
-]
-
-{ #category : 'tests' }
-MCPToolRepositoryOperationTest >> testAttachReadsItsRequest [
-
-	| context request tool |
-	tool := MCPToolAttachRepository new.
-	request := tool requestFromToolCallArguments: {
-			           (#repository -> 'MCP').
-			           (#location -> 'C:/src/MCP').
-			           (#packages -> #( 'MCP' )) } asDictionary.
-	context := tool requestedContextFor: request checked: true.
-
-	self assert: (tool mutationActionFor: request checked: true) equals: 'attach'.
-	self assert: (context at: #location) equals: 'C:/src/MCP'.
-	self assert: (context at: #packages) equals: #( 'MCP' )
 ]
 
 { #category : 'tests' }
@@ -835,19 +822,6 @@ MCPToolRepositoryOperationTest >> testCommitOfARepositoryWithoutPackages [
 			self assert: (data at: #otherFiles) asArray equals: #( 'a.txt' ).
 			self deny: (data includesKey: #packages).
 			self assert: (self git: 'log -1 --format=%s' in: location) equals: 'Add a file written by hand' ]
-]
-
-{ #category : 'tests' }
-MCPToolRepositoryOperationTest >> testCommitReadsItsRequest [
-
-	| request tool |
-	tool := MCPToolCommitRepository new.
-	request := tool requestFromToolCallArguments: {
-			           (#repository -> 'MCP').
-			           (#message -> 'Commit from test') } asDictionary.
-
-	self assert: ((tool requestedContextFor: request checked: true) at: #message) equals: 'Commit from test'.
-	self assert: (tool mutationActionFor: request checked: true) equals: 'commit'
 ]
 
 { #category : 'tests' }
@@ -2253,6 +2227,63 @@ MCPToolRepositoryOperationTest >> testReloadSaysItLoadedNothingWhenTheRepository
 ]
 
 { #category : 'tests' }
+MCPToolRepositoryOperationTest >> testRepositoryToolsAreDiscoverableWithExpectedMetadata [
+	"repository_change_list and repository_export are advertised, since they move the image's work to the checkout in every project that has one; the other repository tools are found through tool_search."
+
+	| metadataByName |
+	metadataByName := self searchMetadataByToolName.
+	#( 'repository_identity_verify' 'repository_create' 'repository_attach' 'repository_update' 'repository_commit'
+	   'repository_change_discard' 'repository_reload' 'repository_head_adopt' ) do: [ :toolName |
+			| tool |
+			tool := self toolRegistry toolNamed: toolName ifAbsent: [ self fail: 'Missing tool ' , toolName ].
+			self assert: tool defaultExposure equals: 'discoverable'.
+			self assert: (metadataByName at: toolName) keys asSet equals: #( name description ) asSet ].
+	#( 'repository_change_list' 'repository_export' ) do: [ :toolName |
+			| tool |
+			tool := self toolRegistry toolNamed: toolName ifAbsent: [ self fail: 'Missing tool ' , toolName ].
+			self assert: tool defaultExposure equals: 'static'.
+			self assert: (self toolRegistry advertisedToolNames includes: toolName).
+			self assert: (metadataByName at: toolName) keys asSet equals: #( name description ) asSet ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testRepositoryToolsRequiredInputs [
+
+	| expectations |
+	expectations := {
+		                (MCPToolVerifyRepositoryIdentity -> #( 'repository' )).
+		                (MCPToolListRepositoryChanges -> #( 'repository' )).
+		                (MCPToolCreateRepository -> #( 'repository' )).
+		                (MCPToolAttachRepository -> #( 'repository' 'location' )).
+		                (MCPToolUpdateRepository -> #( 'repository' )).
+		                (MCPToolExportRepository -> #( 'repository' )).
+		                (MCPToolCommitRepository -> #( 'repository' 'message' )).
+		                (MCPToolAdoptRepositoryHead -> #( 'repository' )) }.
+	expectations do: [ :association | self assert: association key new inputSchema required asArray equals: association value ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testRepositoryToolsUseDedicatedInputs [
+
+	| expectations |
+	expectations := {
+		                (MCPToolVerifyRepositoryIdentity
+		                 -> #( 'repository' 'location' 'branch' 'subdirectory' 'packages' 'modifiedPackages' 'isModified' )).
+		                (MCPToolListRepositoryChanges -> #( 'repository' 'location' )).
+		                (MCPToolCreateRepository -> #( 'repository' 'location' 'subdirectory' 'packages' )).
+		                (MCPToolAttachRepository -> #( 'repository' 'location' 'subdirectory' 'packages' )).
+		                (MCPToolUpdateRepository
+		                 -> #( 'repository' 'location' 'subdirectory' 'packages' 'addPackages' 'removePackages' )).
+		                (MCPToolExportRepository -> #( 'repository' 'location' )).
+		                (MCPToolCommitRepository -> #( 'repository' 'location' 'message' )).
+		                (MCPToolAdoptRepositoryHead -> #( 'repository' 'location' 'branch' )) }.
+	expectations do: [ :association |
+			| propertyNames |
+			propertyNames := self inputPropertyNamesFor: association key new.
+			self assert: propertyNames asArray equals: association value ]
+]
+
+{ #category : 'tests' }
 MCPToolRepositoryOperationTest >> testRestoreOrderOnlyTonelChurnRestoresOriginalFile [
 	"The snapshot holds each file's bytes by path from the checkout root."
 
@@ -2489,23 +2520,6 @@ MCPToolRepositoryOperationTest >> testVerifyIdentityReadsItsMismatchesWithoutStr
 			self assert: (contentText includesSubstring: 'Repository identity verification failed').
 			self assert: (contentText includesSubstring: 'branch: expected feature, actual main').
 			self assert: (contentText includesSubstring: 'packages: expected [MCP, MCP-Tests], actual [MCP]') ]
-]
-
-{ #category : 'tests' }
-MCPToolRepositoryOperationTest >> testVerifyIdentityReadsItsRequest [
-
-	| context request tool |
-	tool := MCPToolVerifyRepositoryIdentity new.
-	request := tool requestFromToolCallArguments: {
-			           (#repository -> 'MCP').
-			           (#branch -> 'main').
-			           (#packages -> #( 'MCP' )).
-			           (#isModified -> false) } asDictionary.
-	context := tool requestedContextFor: request checked: true.
-
-	self assert: (tool mutationActionFor: request checked: true) equals: 'verifyIdentity'.
-	self assert: (context at: #branch) equals: 'main'.
-	self assert: (context at: #isModified) equals: false
 ]
 
 { #category : 'tests' }

@@ -250,6 +250,7 @@ MCPRepositorySpecTest >> testMutationToolsReadTheirRequests [
 			           (#message -> 'Commit from test') } asDictionary.
 	self assert: (tool mutationActionFor: request checked: true) equals: 'commit'.
 	self assert: (tool messageIn: request) equals: 'Commit from test'.
+	self assert: ((tool requestedContextFor: request checked: true) at: #message) equals: 'Commit from test'.
 	tool := MCPToolReloadRepository new.
 	request := tool requestFromToolCallArguments: { (#repository -> 'MCP Repo') } asDictionary.
 	self assert: (tool mutationActionFor: request checked: true) equals: 'reload'.
