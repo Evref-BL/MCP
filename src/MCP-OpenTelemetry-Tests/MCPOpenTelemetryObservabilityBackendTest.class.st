@@ -138,6 +138,21 @@ MCPOpenTelemetryObservabilityBackendTest >> tearDown [
 ]
 
 { #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testADescriptionPharoCannotCompleteKeepsWhatItCanAndStillRecords [
+
+	| attributes |
+	backend describeServer: Object new.
+	attributes := tracerProvider resource attributes.
+	self
+		assert: (attributes at: 'service.name') equals: 'pharo-mcp';
+		deny: (attributes includesKey: 'service.version');
+		assert: (attributes at: 'process.runtime.name') equals: 'pharo';
+		deny: (attributes includesKey: 'host.name').
+	backend recordToolCallFinish: self startToolCall result: self successToolResult error: nil.
+	self assert: exporter onlySnapshot name equals: 'tools/call method_compile'
+]
+
+{ #category : 'tests' }
 MCPOpenTelemetryObservabilityBackendTest >> testAMalformedTraceContextStartsARootSpan [
 
 	| snapshot |

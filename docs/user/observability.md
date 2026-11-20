@@ -70,7 +70,8 @@ reports), `os.type`, the Pharo version with its build
 (`process.runtime.version`) and the VM's (`process.runtime.description`).
 `OTEL_RESOURCE_ATTRIBUTES` can add attributes but not replace these. The
 host name, the process and its command line, which the SDK would otherwise
-detect and which name the user and the image, are not sent.
+detect and which name the user and the image, are not sent. An attribute
+Pharo cannot tell is left out, and the calls are recorded anyway.
 
 Each tool call is a server span named `tools/call <tool>`, with the attributes
 the OpenTelemetry conventions for MCP define (`mcp.method.name`,

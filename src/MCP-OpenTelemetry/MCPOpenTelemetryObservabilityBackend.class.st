@@ -38,17 +38,22 @@ MCPOpenTelemetryObservabilityBackend class >> pharoVersion [
 
 { #category : 'resource' }
 MCPOpenTelemetryObservabilityBackend class >> resourceAttributesFor: aServerInfo [
-	"What the image's telemetry says about what ran: this server and its version, the OpenTelemetry SDK, the OS family, and the Pharo and VM versions. Never the host name, the process, its command line or the image's path, which the SDK's default detectors would send and which name the user and the project."
+	"What the image's telemetry says about what ran: this server and its version, the OpenTelemetry SDK, the OS family, and the Pharo and VM versions. Never the host name, the process, its command line or the image's path, which the SDK's default detectors would send and which name the user and the project. An attribute Pharo cannot tell is left out, and the rest still describe the server."
 
 	| attributes |
-	attributes := OTTracerProvider defaultResource attributes copy.
-	attributes
-		at: 'service.name' put: 'pharo-mcp';
-		at: 'service.version' put: aServerInfo version;
-		at: 'process.runtime.name' put: OTTracerProvider runtimeName;
-		at: 'process.runtime.version' put: self pharoVersion;
-		at: 'process.runtime.description' put: OTTracerProvider runtimeDescription.
-	OTTracerProvider defaultOsType ifNotNil: [ :type | attributes at: 'os.type' put: type ].
+	attributes := [ OTTracerProvider defaultResource attributes copy ]
+		              on: Error
+		              do: [ OrderedDictionary new ].
+	{
+		('service.version' -> [ aServerInfo version ]).
+		('process.runtime.name' -> [ OTTracerProvider runtimeName ]).
+		('process.runtime.version' -> [ self pharoVersion ]).
+		('process.runtime.description' -> [ OTTracerProvider runtimeDescription ]).
+		('os.type' -> [ OTTracerProvider defaultOsType ]) } do: [ :each |
+			[ each value value ifNotNil: [ :value | attributes at: each key put: value ] ]
+				on: Error
+				do: [ nil ] ].
+	attributes at: 'service.name' put: 'pharo-mcp'.
 	^ attributes
 ]
 
@@ -75,15 +80,23 @@ MCPOpenTelemetryObservabilityBackend >> argumentNamesIn: inputObject [
 
 { #category : 'resource' }
 MCPOpenTelemetryObservabilityBackend >> describeServer: aServerInfo [
-	"Makes the image's OpenTelemetry providers describe this server and nothing else, now and whenever they are made again."
+	"Makes the image's OpenTelemetry providers describe this server and nothing else, now and whenever they are made again. A step Pharo refuses is skipped: the calls are recorded however little the providers could be told."
 
 	| detectors resource |
-	detectors := self class resourceDetectorsFor: aServerInfo.
-	OTTracerProvider resourceDetectors: detectors.
+	detectors := [ self class resourceDetectorsFor: aServerInfo ]
+		             on: Error
+		             do: [ ^ self ].
 	resource := OTTracerProvider resourceFromDetectors: detectors.
-	OTTracerProvider current resource: resource.
-	OTMeterProvider current resource: resource.
-	OTLoggerProvider current resource: resource
+	[ OTTracerProvider resourceDetectors: detectors ]
+		on: Error
+		do: [ nil ].
+	{
+		OTTracerProvider.
+		OTMeterProvider.
+		OTLoggerProvider } do: [ :each |
+			[ each current resource: resource ]
+				on: Error
+				do: [ nil ] ]
 ]
 
 { #category : 'private - logging' }
