@@ -6,7 +6,7 @@ The tool registry owns the registered tools and their exposure policy, and is th
 Two words govern the tool surface. A *registered* tool is in the catalog, callable by name, and findable through tool_search and tool_get. An *advertised* tool is also in tools/list.
 
 - `mcp addTool: MyToolClass` and `mcp addTools: { A. B }` register tools, as classes or ready instances;
-- `mcp removeTool: 'evaluate'` takes one back out;
+- `mcp removeTool: 'tool_call'` takes one back out, and refuses one the catalog does not hold, as `unadvertiseTool:` does;
 - `mcp onlyTools: { A. B }` replaces the catalog with exactly those;
 - `mcp advertiseTools: { A. 'class_search' }` chooses what tools/list shows, registering anything not yet in the catalog;
 - `mcp advertiseAllTools` and `mcp advertiseToolDefaults` are the other two advertising states;
@@ -704,9 +704,9 @@ MCP >> refreshToolsList [
 ]
 
 { #category : 'configuration' }
-MCP >> removeTool: aToolName [
+MCP >> removeTool: aToolOrToolClassOrName [
 
-	self toolRegistry removeToolNamed: aToolName.
+	self toolRegistry removeTool: aToolOrToolClassOrName.
 	self refreshToolsList
 ]
 

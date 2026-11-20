@@ -387,12 +387,6 @@ MCPToolContractsTest >> testAdvertisingOverridesToolDefault [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testAdvertisingRejectsUnknownToolNames [
-
-	self should: [ self mcpWithoutObservabilityExport advertiseTools: #( 'tool_search' 'not-a-tool' ) ] raise: Error
-]
-
-{ #category : 'tests' }
 MCPToolContractsTest >> testAllToolSchemasUseSupportedDialect [
 
 	self builtInToolClasses do: [ :toolClass | self assertUsesSupportedSchemaDialect: toolClass new inputSchema asJRPCJSON ]
@@ -470,6 +464,17 @@ MCPToolContractsTest >> testConfiguredDiscoverableToolsAreDirectlyCallable [
 	result := server rpcToolCall: 'package_search' withParams: { (#query -> 'MCP') } asDictionary.
 	self assert: ((self dataFrom: result) at: #packages) isNotEmpty.
 	self assert: (self resultIndicatesError: (server rpcToolCall: 'no_such_tool' withParams: Dictionary new))
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testConfiguringAToolTheCatalogDoesNotHoldIsRefused [
+	"A typo, or a tool since renamed, would otherwise configure nothing without a word. Unadvertising a class must not register it either, or removing it next would succeed."
+
+	| server |
+	server := self mcpWithoutObservabilityExport.
+	self should: [ server advertiseTools: #( 'tool_search' 'not-a-tool' ) ] raise: MCPCommandError.
+	self should: [ server unadvertiseTool: MCPExternalTestTool ] raise: MCPCommandError.
+	self should: [ server removeTool: MCPExternalTestTool ] raise: MCPCommandError
 ]
 
 { #category : 'tests' }
@@ -924,7 +929,7 @@ MCPToolContractsTest >> testMCPRemoveToolRefreshesAdvertisedTools [
 	server advertiseAllTools.
 	server addTool: MCPHaltingTestTool.
 	self assert: (server advertisedToolNames includes: MCPHaltingTestTool toolName).
-	server removeTool: MCPHaltingTestTool toolName.
+	server removeTool: MCPHaltingTestTool.
 	self deny: (server toolRegistry includesToolNamed: MCPHaltingTestTool toolName).
 	self deny: (server advertisedToolNames includes: MCPHaltingTestTool toolName)
 ]

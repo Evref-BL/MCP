@@ -426,15 +426,20 @@ Against that default, a server is configured directly:
 
 ```smalltalk
 mcp := MCP new.
-mcp addTool: MyProjectToolListWidgets.          "or addTools: { A. B }"
-mcp removeTool: 'evaluate'.
+mcp addTool: MyProjectTestTool.                 "kept out of discovery, so a test adds it; or addTools: { A. B }"
+mcp removeTool: 'tool_call'.
 mcp advertiseTool: MyProjectToolListWidgets.    "adds one to what is advertised"
+mcp unadvertiseTool: 'tool_get'.                "takes one out of it"
 mcp advertiseTools: { MyProjectToolListWidgets }. "replaces the advertised set"
 mcp advertiseAllTools.
 mcp advertiseToolDefaults.
 mcp port: 4000.
 mcp start.
 ```
+
+`removeTool:` and `unadvertiseTool:` refuse a tool the catalog does not hold,
+as `advertiseTools:` refuses a name that matches none, so a typo or a renamed
+tool is reported rather than leaving the server as it was.
 
 `MCP startOnPort:` on the class side answers the server already on that port,
 or builds one with the default catalog. A server you configured is started

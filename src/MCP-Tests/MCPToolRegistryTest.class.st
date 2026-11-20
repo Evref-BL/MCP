@@ -142,7 +142,7 @@ MCPToolRegistryTest >> testDeliberatelyRemovedToolsStayRemoved [
 	| registry |
 	registry := MCPToolRegistry default.
 	self assert: (registry includesToolNamed: 'evaluate').
-	registry removeToolNamed: 'evaluate'.
+	registry removeTool: 'evaluate'.
 	self createProbeToolClass.
 	self assert: (registry includesToolNamed: self probeToolName).
 	self deny: (registry includesToolNamed: 'evaluate')
