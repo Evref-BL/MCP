@@ -440,6 +440,24 @@ MCPToolMethodMutationTest >> testABinaryHeaderKeepsItsSelector [
 ]
 
 { #category : 'tests' }
+MCPToolMethodMutationTest >> testABlankProtocolOrANewSelectorThatIsNoSelectorIsRefused [
+	"Neither names anything to change to, so the method is left as it was."
+
+	{
+		(#protocol -> '  ' -> 'Invalid arguments for method_update. protocol is blank; leave it out or give it a value.').
+		(#newSelector -> '  ' -> 'newSelector ''  '' is not a valid selector.').
+		(#newSelector -> 'combine: with:' -> 'newSelector ''combine: with:'' is not a valid selector.') } do: [ :each |
+			| result |
+			result := self callToolNamed: 'method_update' withArguments: {
+					          (#class -> MCPToolMethodMutationTestTarget name).
+					          (#selector -> self instanceSelector asString).
+					          each key } asDictionary.
+			self assert: (self resultIndicatesError: result).
+			self assert: (self textFrom: result) equals: each value.
+			self assert: (MCPToolMethodMutationTestTarget >> self instanceSelector) protocolName asString equals: 'tests' ]
+]
+
+{ #category : 'tests' }
 MCPToolMethodMutationTest >> testACategoryLineAboveASourceGivesItsProtocol [
 	"A Tonel category line kept above a method that begins with its selector line, or with its reference, gives the protocol, and the rest compiles as it would without it."
 
@@ -1068,12 +1086,31 @@ MCPToolMethodMutationTest >> testChangesInstanceSideMethodProtocol [
 ]
 
 { #category : 'tests' }
+MCPToolMethodMutationTest >> testChangingATraitMethodProtocolReachesTheClassesUsingIt [
+	"A class using a trait holds a copy of each of its methods, filed where the trait's own is."
+
+	[
+		self createProbeClassNamed: 'TMCPToolMethodMutationProbe' with: { (#superclass -> 'Trait') }.
+		self createProbeClassNamed: 'MCPToolMethodMutationProbeUser' with: { (#traits -> #( 'TMCPToolMethodMutationProbe' )) }.
+		self ensureMethodSource: 'traitProbe ^ 1' protocol: 'tests' on: (self classNamed: 'TMCPToolMethodMutationProbe').
+		self dataFrom: (self callToolNamed: 'method_update' withArguments: {
+					 (#class -> 'TMCPToolMethodMutationProbe').
+					 (#selector -> 'traitProbe').
+					 (#protocol -> 'accessing') } asDictionary).
+		self assert: ((self classNamed: 'MCPToolMethodMutationProbeUser') >> #traitProbe) protocolName asString equals: 'accessing' ]
+		ensure: [ #( 'MCPToolMethodMutationProbeUser' 'TMCPToolMethodMutationProbe' ) do: [ :each | self removeClassNamed: each ] ]
+]
+
+{ #category : 'tests' }
 MCPToolMethodMutationTest >> testChangingExtensionMethodProtocolUpdatesPackageMetadata [
 
 	| data result |
 	result := self callToolNamed: 'method_update' withArguments: self extensionChangeArguments.
 	data := self dataFrom: result.
 	self assert: (MCPToolMethodMutationTestTarget >> self extensionProtocolSelector) protocolName asString equals: 'tests'.
+	self
+		assert: (MCPToolMethodMutationTestTarget >> self extensionProtocolSelector) package
+		equals: MCPToolMethodMutationTestTarget package.
 	self assertSuccessDataHasMethodShape: data
 ]
 
@@ -2803,11 +2840,12 @@ MCPToolMethodMutationTest >> testMutationDescriptionsExplainForceWarningBehavior
 
 { #category : 'tests' }
 MCPToolMethodMutationTest >> testProtocolChangeSaysFromAndTo [
-	"A protocol change names the protocol the method left and the one it went to, in the words method_compile uses for a replace that moves a method; asking for the protocol it is in says so, and a method with none was in no protocol."
+	"A protocol change names the protocol the method left and the one it went to, in the words method_compile uses for a replace that moves a method; asking for the protocol it is in says so, and a method with none was in no protocol. Neither recompiles the method, so a move is one change in the history, and asking for the protocol it is in is none."
 
-	| oldProtocol reference |
+	| method oldProtocol reference |
 	reference := 'MCPToolMethodMutationTestTarget>>' , self instanceProtocolSelector.
-	oldProtocol := (MCPToolMethodMutationTestTarget >> self instanceProtocolSelector) protocolName asString.
+	method := MCPToolMethodMutationTestTarget >> self instanceProtocolSelector.
+	oldProtocol := method protocolName asString.
 	self deny: oldProtocol equals: 'accessing'.
 	self
 		assert: (self summaryFrom: (self callToolNamed: 'method_update' withArguments: self instanceChangeArguments))
@@ -2817,6 +2855,7 @@ MCPToolMethodMutationTest >> testProtocolChangeSaysFromAndTo [
 	self
 		assert: (self summaryFrom: (self callToolNamed: 'method_update' withArguments: self instanceChangeArguments))
 		equals: ('{1} is already in accessing.' format: { reference }).
+	self assert: MCPToolMethodMutationTestTarget >> self instanceProtocolSelector == method.
 	self
 		assert: (MCPToolUpdateMethod new protocolChangeSummaryFor: 'ZooKeeper>>feed' from: '' to: 'feeding')
 		equals: 'Moved ZooKeeper>>feed from no protocol to feeding.'

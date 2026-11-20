@@ -36,28 +36,27 @@ MCPToolUpdateMethod >> applyUpdate: action of: request [
 
 { #category : 'private - updating' }
 MCPToolUpdateMethod >> changeProtocolOf: request [
+	"CompiledMethod>>protocol: files the method under the protocol, and an extension method in the package its protocol names, as a refactoring does, without recompiling it: the history holds one change for the move, and none for a move to the protocol it is in, which changes nothing."
 
-	| behavior newCompiledMethod oldProtocol selector |
+	| behavior oldProtocol protocol selector |
 	selector := request stringArgumentNamed: 'selector'.
+	protocol := request stringArgumentNamed: 'protocol'.
 	^ self
 		  executeMutationAction: 'changeProtocol'
 		  force: false
 		  requestedContext: (self requestedContextFor: request action: 'changeProtocol')
 		  work: [
+				  | method |
 				  behavior := self updateTargetBehaviorFor: request.
-				  oldProtocol := self protocolNameForMethod: behavior >> selector asSymbol.
-				  self classNameAndSideOf: request do: [ :className :classSide :sideGiven |
-						  (RBMethodProtocolTransformation
-							   protocol: (request stringArgumentNamed: 'protocol')
-							   inMethod: selector asSymbol
-							   inClass: (self classReferenceNameFor: className classSide: classSide)) execute ].
-				  newCompiledMethod := behavior compiledMethodAt: selector asSymbol ]
+				  method := behavior >> selector asSymbol.
+				  oldProtocol := self protocolNameForMethod: method.
+				  oldProtocol = protocol ifFalse: [ method protocol: protocol ] ]
 		  successResult: [ :warningMessages |
 				  self
 					  successResultText: (self
 							   protocolChangeSummaryFor: (self methodReferenceForBehavior: behavior selector: selector asSymbol)
 							   from: oldProtocol
-							   to: (self protocolNameForMethod: newCompiledMethod))
+							   to: (self protocolNameForMethod: behavior >> selector asSymbol))
 					  data: Dictionary new
 					  warnings: warningMessages ]
 		  failureSummary: [ :error |
@@ -65,7 +64,7 @@ MCPToolUpdateMethod >> changeProtocolOf: request [
 						  self
 							  failureMessage: ('Unable to change protocol for {1} to {2}' format: {
 										   (self methodReferenceForClassName: className selector: selector isClassSide: classSide).
-										   (request stringArgumentNamed: 'protocol') })
+										   protocol })
 							  error: error ] ]
 ]
 
@@ -104,10 +103,19 @@ MCPToolUpdateMethod >> changeSelector: action of: request [
 
 { #category : 'private - execution' }
 MCPToolUpdateMethod >> checkArguments: request [
-	"A side that says the other one than the class name, and a scope naming a package that does not exist, are refused."
+	"A side that says the other one than the class name, a blank protocol, a new selector that is not one, and a scope naming a package that does not exist are refused."
 
 	self classNameAndSideOf: request do: [ :className :classSide :sideGiven |  ].
-	(request hasArgumentNamed: 'newSelector') ifTrue: [ self refactoringScopeSpecFromRequest: request ]
+	((request hasArgumentNamed: 'protocol') and: [ (request stringArgumentNamed: 'protocol') isNil ]) ifTrue: [
+		MCPInvalidToolInput signalBlankArgumentNamed: 'protocol' forTool: self ].
+	(request hasArgumentNamed: 'newSelector') ifFalse: [ ^ self ].
+	((request stringArgumentNamed: 'newSelector') ifNil: [ '' ]) numArgs < 0 ifTrue: [
+			MCPCommandError
+				signalErrorCode: #InvalidMethodSelector
+				message:
+				('newSelector {1} is not a valid selector.' format: { (request argumentNamed: 'newSelector' ifAbsent: [ nil ]) printString })
+				details: Dictionary new ].
+	self refactoringScopeSpecFromRequest: request
 ]
 
 { #category : 'private - errors' }
