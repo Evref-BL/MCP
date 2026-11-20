@@ -15,12 +15,6 @@ MCPToolUpdateRepository class >> toolName [
 	^ 'repository_update'
 ]
 
-{ #category : 'private - packages' }
-MCPToolUpdateRepository >> add: packageNames to: aRepository with: steps recordingIn: added [
-
-	packageNames do: [ :each | (steps addPackageNamed: each to: aRepository) ifTrue: [ added add: each ] ]
-]
-
 { #category : 'private - errors' }
 MCPToolUpdateRepository >> failureSummaryPrefixFor: request [
 
@@ -59,12 +53,6 @@ MCPToolUpdateRepository >> mutateWith: request [
 					  warnings: warnings , packageWarnings ]
 ]
 
-{ #category : 'private - packages' }
-MCPToolUpdateRepository >> remove: packageNames from: aRepository with: steps recordingIn: removed [
-
-	packageNames do: [ :each | (steps removePackageNamed: each from: aRepository) ifTrue: [ removed add: each ] ]
-]
-
 { #category : 'private - errors' }
 MCPToolUpdateRepository >> requestedContextFor: request [
 
@@ -84,7 +72,7 @@ MCPToolUpdateRepository >> signalNoUpdateRequestedFor: request [
 
 	MCPCommandError
 		signalErrorCode: #NoRepositoryUpdateRequested
-		message: 'repository_update needs at least one of subdirectory, packages, addPackages or removePackages.'
+		message: 'repository_update needs at least one of subdirectory, addPackages or removePackages.'
 		details: (self requestedContextFor: request)
 ]
 
@@ -104,11 +92,6 @@ MCPToolUpdateRepository >> toolSpec [
 		  (#inputProperties -> {
 			   (self schemaPropertyNamed: 'subdirectory' type: 'string' description: 'Set the repository source subdirectory in the image.').
 			   (self
-				    stringArraySchemaNamed: 'packages'
-				    description:
-				    'Replace the full managed package list by adding and removing repository package membership without unloading packages or writing files.'
-				    itemDescription: 'A package name.').
-			   (self
 				    stringArraySchemaNamed: 'addPackages'
 				    description: 'Package names to add to the repository working copy without writing packages to files.'
 				    itemDescription: 'A package name to add.').
@@ -121,36 +104,16 @@ MCPToolUpdateRepository >> toolSpec [
 
 { #category : 'private - packages' }
 MCPToolUpdateRepository >> update: aRepository as: request added: added removed: removed [
-	"Set the subdirectory, replace the whole package list, add packages, then remove them, each when the call asks for it, recording the packages added and removed."
+	"Set the subdirectory, add packages, then remove them, each when the call asks for it, recording the packages added and removed."
 
 	| steps |
 	steps := MCPRepositoryCommand new.
 	(request hasArgumentNamed: 'subdirectory') ifTrue: [
 		steps setSubdirectory: ((request stringArgumentNamed: 'subdirectory') ifNil: [ '' ]) on: aRepository ].
-	(request hasArgumentNamed: 'packages') ifTrue: [
-			| current desired |
-			desired := steps sortedStringsFrom: (request stringCollectionArgumentNamed: 'packages').
-			current := steps sortedStringsFrom: aRepository workingCopy packageNames.
-			self
-				remove: (current reject: [ :each | desired includes: each ])
-				from: aRepository
-				with: steps
-				recordingIn: removed.
-			self
-				add: (desired reject: [ :each | current includes: each ])
-				to: aRepository
-				with: steps
-				recordingIn: added ].
-	self
-		add: (request stringCollectionArgumentNamed: 'addPackages')
-		to: aRepository
-		with: steps
-		recordingIn: added.
-	self
-		remove: (request stringCollectionArgumentNamed: 'removePackages')
-		from: aRepository
-		with: steps
-		recordingIn: removed
+	(request stringCollectionArgumentNamed: 'addPackages') do: [ :each |
+		(steps addPackageNamed: each to: aRepository) ifTrue: [ added add: each ] ].
+	(request stringCollectionArgumentNamed: 'removePackages') do: [ :each |
+		(steps removePackageNamed: each from: aRepository) ifTrue: [ removed add: each ] ]
 ]
 
 { #category : 'private - request' }
@@ -159,7 +122,6 @@ MCPToolUpdateRepository >> updateActionsByArgumentName [
 
 	^ OrderedDictionary new
 		  at: 'subdirectory' put: 'setSubdirectory';
-		  at: 'packages' put: 'replacePackages';
 		  at: 'addPackages' put: 'addPackages';
 		  at: 'removePackages' put: 'removePackages';
 		  yourself
