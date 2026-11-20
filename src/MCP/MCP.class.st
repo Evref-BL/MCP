@@ -280,6 +280,22 @@ MCP >> anotherServerListeningOnThisPortDo: aBlock [
 ]
 
 { #category : 'private - tools' }
+MCP >> answerMissingToolNamed: aName withParams: arguments [
+	"A name the server does not have is the caller's mistake, answered as tool_call answers it, with the tools it may have meant, which a JSON-RPC error would lose in a client that shows only its message. A call naming no tool at all has invalid parameters."
+
+	| record |
+	(aName isString and: [ aName isNotEmpty ]) ifFalse: [ JRPCInvalidParameters signal ].
+	record := self observability
+		          recordToolCallStart: aName
+		          input: arguments
+		          dispatchPath: 'direct'
+		          context: (self observabilityContextFor: nil).
+	^ [ self toolRegistry signalMissingToolNamed: aName ]
+		  on: Exception
+		  do: [ :error | self answerToolError: error tool: MCPToolCallTool new record: record ]
+]
+
+{ #category : 'private - tools' }
 MCP >> answerToolError: error tool: aTool record: aRecord [
 	"A protocol error is the transport's to answer, as JSON-RPC; any other failure is the tool's answer."
 
@@ -809,7 +825,7 @@ MCP >> rpcToolCall: name withParams: arguments [
 
 	<jrpc: #'tools/call'>
 	| tool |
-	tool := self toolRegistry toolNamed: name ifAbsent: [ JRPCNonExistentHandler signal: name ].
+	tool := self toolRegistry toolNamed: name ifAbsent: [ ^ self answerMissingToolNamed: name withParams: arguments ].
 	name = MCPToolCallTool toolName ifTrue: [ ^ self callToolCall: tool withParams: arguments ].
 	^ self executeTool: tool withParams: arguments dispatchPath: 'direct'
 ]

@@ -268,7 +268,7 @@ MCPToolRegistry >> signalMissingToolNamed: aToolName [
 		message: (String streamContents: [ :stream |
 					 stream << 'No MCP tool named ' << aToolName << '.'.
 					 suggestions
-						 ifEmpty: [ stream << ' Use tool_search to find one.' ]
+						 ifEmpty: [ (self includesToolNamed: MCPToolSearchTools toolName) ifTrue: [ stream << ' Use tool_search to find one.' ] ]
 						 ifNotEmpty: [ stream << ' Did you mean: ' << (', ' join: suggestions) << '?' ] ])
 		details: details
 ]

@@ -193,12 +193,34 @@ MCPOpenTelemetryObservabilityBackendTest >> testAMalformedTraceContextStartsARoo
 ]
 
 { #category : 'tests' }
-MCPOpenTelemetryObservabilityBackendTest >> testAProtocolErrorReportsItsJSONRPCCode [
+MCPOpenTelemetryObservabilityBackendTest >> testANameTheCallerChoseIsExportedOnlyWhenItReadsAsAnIdentifier [
+	"An argument name is the caller's, and so is the name of a tool the server does not have."
 
 	| snapshot |
-	backend recordToolCallFinish: self startToolCall result: nil error: JRPCNonExistentHandler new.
+	backend
+		recordToolCallFinish: (backend
+				 recordToolCallStart: 'Object subclass: #Secret'
+				 input: {
+						 ('name' -> 'Object').
+						 ('Object subclass: #Secret' -> 1) } asDictionary
+				 dispatchPath: 'direct'
+				 context: { (#tool -> nil) } asDictionary)
+		result: self successToolResult
+		error: nil.
 	snapshot := exporter onlySnapshot.
-	self assert: (self attributeNamed: 'error.type' in: snapshot) equals: '-32601'
+	self assert: (self attributeNamed: 'pharo.mcp.argument.names' in: snapshot) equals: #( 'name' ).
+	self assert: snapshot name equals: 'tools/call _OTHER'.
+	self assert: (self attributeNamed: 'gen_ai.tool.name' in: snapshot) equals: '_OTHER'
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testAProtocolErrorReportsItsJSONRPCCode [
+	"A tool that raises a JSON-RPC error of its own is answered with it, so the call is recorded by its code."
+
+	| snapshot |
+	backend recordToolCallFinish: self startToolCall result: nil error: JRPCInvalidParameters new.
+	snapshot := exporter onlySnapshot.
+	self assert: (self attributeNamed: 'error.type' in: snapshot) equals: '-32602'
 ]
 
 { #category : 'tests' }
@@ -209,6 +231,20 @@ MCPOpenTelemetryObservabilityBackendTest >> testAProviderThatRefusesTheDescripti
 	self
 		assert: (meterProvider resource attributes at: 'service.name') equals: 'pharo-mcp';
 		assert: (loggerProvider resource attributes at: 'service.name') equals: 'pharo-mcp'
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testAToolTheServerDoesNotHaveIsRecordedAsAToolError [
+	"tools/call answers a name the server does not have with a result reporting the error, as tool_call answers it, so the call is recorded as a tool error and not by a JSON-RPC code."
+
+	| mcp snapshot |
+	mcp := MCP new.
+	mcp observability: backend.
+	mcp rpcToolCall: 'no_such_tool' withParams: Dictionary new.
+	snapshot := exporter onlySnapshot.
+	self assert: snapshot name equals: 'tools/call no_such_tool'.
+	self assert: (self attributeNamed: 'error.type' in: snapshot) equals: 'tool_error'.
+	self assert: (self attributeNamed: 'pharo.mcp.error.code' in: snapshot) equals: 'ToolNotFound'
 ]
 
 { #category : 'tests' }
@@ -244,24 +280,6 @@ MCPOpenTelemetryObservabilityBackendTest >> testAWarningWhileRecordingIsPassedOv
 			error: nil ] ensure: [ OTTextMapPropagator current: previous ].
 	snapshot := exporter onlySnapshot.
 	self assert: snapshot parentSpanContext spanIdHex equals: '00f067aa0ba902b7'
-]
-
-{ #category : 'tests' }
-MCPOpenTelemetryObservabilityBackendTest >> testAnArgumentNameThatIsNotAnIdentifierIsNotExported [
-
-	| snapshot |
-	backend
-		recordToolCallFinish: (backend
-				 recordToolCallStart: 'class_get'
-				 input: {
-						 ('name' -> 'Object').
-						 ('Object subclass: #Secret' -> 1) } asDictionary
-				 dispatchPath: 'direct'
-				 context: Dictionary new)
-		result: self successToolResult
-		error: nil.
-	snapshot := exporter onlySnapshot.
-	self assert: (self attributeNamed: 'pharo.mcp.argument.names' in: snapshot) equals: #( 'name' )
 ]
 
 { #category : 'tests' }

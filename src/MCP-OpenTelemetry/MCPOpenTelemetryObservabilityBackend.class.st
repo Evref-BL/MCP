@@ -420,7 +420,10 @@ MCPOpenTelemetryObservabilityBackend >> recordToolCallStart: aToolName input: in
 	| record span |
 	self isNoop ifTrue: [ ^ nil ].
 	^ self withoutFailingTheCall: [
-			  record := self newRecordFor: aToolName input: inputObject dispatchPath: dispatchPath.
+			  record := self
+				            newRecordFor: (self reportableToolName: aToolName in: contextDictionary)
+				            input: inputObject
+				            dispatchPath: dispatchPath.
 			  span := (self tracer spanBuilderNamed: 'tools/call ' , record toolName)
 				          kind: OTSpan server;
 				          inContext: (self parentContextIn: contextDictionary);
@@ -440,6 +443,15 @@ MCPOpenTelemetryObservabilityBackend >> reportableClassNameOf: aClass [
 			(self isReportablePackageName: class package name) ifTrue: [ ^ class name asString ].
 			class := class superclass ].
 	^ '_OTHER'
+]
+
+{ #category : 'private - reporting' }
+MCPOpenTelemetryObservabilityBackend >> reportableToolName: aToolName in: contextDictionary [
+	"A tool the server has is named as it names itself. A name it does not have is the caller's, and leaves the image only when it reads as an identifier."
+
+	^ ((contextDictionary at: #tool ifAbsent: [ nil ]) isNotNil or: [ self isReportableName: aToolName ])
+		  ifTrue: [ aToolName ]
+		  ifFalse: [ '_OTHER' ]
 ]
 
 { #category : 'actions' }

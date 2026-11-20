@@ -325,6 +325,26 @@ MCPToolContractsTest >> testAToolDecidesForItselfWhetherDiscoveryServesIt [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testAToolTheServerDoesNotHaveIsAnsweredAsToolCallAnswersIt [
+	"tools/call answers a name the server does not have with the result tool_call gives, which names the tools the caller may have meant, rather than with a JSON-RPC error, and points at tool_search only on a server that has it. A call naming no tool has invalid parameters, and a method the server does not have is still not found."
+
+	| server |
+	self
+		assert: (self callRawToolNamed: 'method_serch' withArguments: Dictionary new)
+		equals: (self callRawToolNamed: 'tool_call' withArguments: { (#name -> 'method_serch') } asDictionary).
+	server := self mcpWithoutObservabilityExport onlyTools: { MCPExternalTestTool }.
+	self assert: (self summaryFrom: (server rpcToolCall: 'nope' withParams: Dictionary new)) equals: 'No MCP tool named nope.'.
+	server addTool: MCPToolSearchTools.
+	self
+		assert: (self summaryFrom: (server rpcToolCall: 'nope' withParams: Dictionary new))
+		equals: 'No MCP tool named nope. Use tool_search to find one.'.
+	#( '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"arguments":{}}}'
+	   '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"","arguments":{}}}' ) do: [ :request |
+		self assert: ((self handleJSON: request) includesSubstring: '"code":-32602') description: request ].
+	self assert: ((self handleJSON: '{"jsonrpc":"2.0","id":3,"method":"tools/nope"}') includesSubstring: '"code":-32601')
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testAdvertisingAToolClassRegistersItFirst [
 	"A class says its own tool name, so naming one that is not in the catalog yet registers it instead of failing on order."
 
@@ -449,7 +469,7 @@ MCPToolContractsTest >> testConfiguredDiscoverableToolsAreDirectlyCallable [
 	self deny: (server toolsList includesKey: 'package_search').
 	result := server rpcToolCall: 'package_search' withParams: { (#query -> 'MCP') } asDictionary.
 	self assert: ((self dataFrom: result) at: #packages) isNotEmpty.
-	self should: [ server rpcToolCall: 'no_such_tool' withParams: Dictionary new ] raise: JRPCNonExistentHandler
+	self assert: (self resultIndicatesError: (server rpcToolCall: 'no_such_tool' withParams: Dictionary new))
 ]
 
 { #category : 'tests' }
@@ -710,15 +730,6 @@ MCPToolContractsTest >> testHandleJSONReturnsInternalErrorForUnhandledHalt [
 	self assert: (response includesSubstring: '"code":-32603').
 	self assert: (response includesSubstring: 'Halt').
 	self assert: (response includesSubstring: 'mcp processor halt test')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testHandleJSONReturnsMethodNotFoundForUnknownTool [
-
-	| response |
-	response := self handleJSON: '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"does-not-exist","arguments":{}}}'.
-	self assert: (response includesSubstring: '"code":-32601').
-	self assert: (response includesSubstring: '"message":"The method does not exist / is not available."')
 ]
 
 { #category : 'tests' }
