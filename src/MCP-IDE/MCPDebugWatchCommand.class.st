@@ -1,5 +1,5 @@
 "
-Implements debug_watch's work: it installs non-halting probes on the given methods, evaluates an expression with them in place, and removes them again before it answers. Nothing survives the call: the probes are the whole state, and they are taken out in an ensure block.
+Implements debug_watch's work: it installs non-halting probes on the given methods, evaluates an expression with them in place, and removes them again before it answers. Nothing survives the call: the probes are taken out in an ensure block, and with them the link installer Pharo made for them once no link is left.
 
 Installing a probe recompiles its method and regenerates the AST, so every target is located as a source interval on the pristine AST first, and each node is found again in a freshly fetched AST immediately before its own probe goes in. A source interval alone is ambiguous, since a statement and the sequence containing it can share one, so a target is matched on its node kind as well.
 
@@ -83,7 +83,8 @@ MCPDebugWatchCommand >> execute [
 				                installed do: [ :each |
 						                [ each remove ]
 							                on: Error
-							                do: [ :ignored | nil ] ] ]
+							                do: [ :ignored | nil ] ].
+				                self releaseLinkInstaller ]
 ]
 
 { #category : 'defaults' }
@@ -152,6 +153,16 @@ MCPDebugWatchCommand >> recordedHits [
 	"What the probes recorded, as the index of the target that recorded it and the value it saw, in order."
 
 	^ recordedHits
+]
+
+{ #category : 'private - probes' }
+MCPDebugWatchCommand >> releaseLinkInstaller [
+	"Pharo's link installer, made by the first metalink, outlives the probes and reads again every method the image replaces. Before Pharo 12 that reading signals each global a replaced method names that the image no longer has, such as the old name of a class just renamed, and declares it in Undeclared. It goes once no link is installed, nor waits on a variable for the methods still to come, and the next link makes another."
+
+	| registry |
+	registry := MetaLink linkInstaller linksRegistry.
+	(MetaLink allInstances anySatisfy: [ :each | each hasNodes or: [ registry hasPermaLinks: each ] ]) ifFalse: [
+		MetaLink uninstallAll ]
 ]
 
 { #category : 'accessing' }

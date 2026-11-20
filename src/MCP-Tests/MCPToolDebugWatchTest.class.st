@@ -1,5 +1,5 @@
 "
-Tests debug_watch: what it records, what it answers when the watched code fails, and that it leaves no probe behind.
+Tests debug_watch: what it records, what it answers when the watched code fails, and that it leaves no probe behind and the links it did not set in place.
 "
 Class {
 	#name : 'MCPToolDebugWatchTest',
@@ -7,6 +7,12 @@ Class {
 	#category : 'MCP-Tests',
 	#package : 'MCP-Tests'
 }
+
+{ #category : 'private - classes' }
+MCPToolDebugWatchTest >> fixtureClassNames [
+
+	^ #( #MCPDebugWatchTestLinkTarget )
+]
 
 { #category : 'private' }
 MCPToolDebugWatchTest >> seriesFor: aMethodName watching: aVariableName in: data [
@@ -29,13 +35,38 @@ MCPToolDebugWatchTest >> testEntryWatchRecordsTheArgumentsOfEveryCall [
 ]
 
 { #category : 'tests' }
+MCPToolDebugWatchTest >> testKeepsALinkSetElsewhereThatWaitsOnAVariable [
+	"A link on a variable no method uses yet holds no node, and waits in Pharo's link installer for the methods still to come."
+
+	| target link |
+	target := self
+		          createClassNamed: self fixtureClassNames first
+		          superclassName: 'Object'
+		          slots: #( unused )
+		          classSlots: #(  ).
+	link := MetaLink new.
+	target link: link toVariableNamed: #unused option: #write.
+	[
+		self watchWith: {
+				(#method -> 'MCPDebugWatchTestTarget>>sumTo:').
+				(#run -> 'MCPDebugWatchTestTarget new sumTo: 1') } asDictionary.
+		self ensureMethodSource: 'writeUnused unused := 1' protocol: 'fixtures' on: target.
+		self assert: (target >> #writeUnused) hasMetaLinks ] ensure: [ link uninstall ]
+]
+
+{ #category : 'tests' }
 MCPToolDebugWatchTest >> testLeavesNoProbeBehindWhenTheWatchedCodeFails [
 
+	| registry linkedElsewhere |
+	registry := MetaLink linkInstaller linksRegistry.
+	linkedElsewhere := MetaLink allInstances anySatisfy: [ :each | each hasNodes or: [ registry hasPermaLinks: each ] ].
 	self watchWith: {
 			(#method -> 'MCPDebugWatchTestTarget>>failingSumTo:').
 			(#variable -> 'total').
 			(#run -> 'MCPDebugWatchTestTarget new failingSumTo: 3') } asDictionary.
-	self deny: (MCPDebugWatchTestTarget >> #failingSumTo:) hasMetaLinks
+	self deny: (MCPDebugWatchTestTarget >> #failingSumTo:) hasMetaLinks.
+	"Nor the link installer the probes made, which would go on reading every method the image changes, unless a link set elsewhere keeps it."
+	linkedElsewhere ifFalse: [ self assert: (MetaLink instVarNamed: #linkInstaller) isNil ]
 ]
 
 { #category : 'tests' }
