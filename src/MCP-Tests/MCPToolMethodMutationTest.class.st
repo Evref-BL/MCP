@@ -2727,6 +2727,8 @@ MCPToolMethodMutationTest >> testMethodToolSchemasDeclareExpectedInputs [
 	createPropertyNames := MCPToolCompileMethod new inputSchema properties collect: [ :each | each name ].
 	updatePropertyNames := MCPToolUpdateMethod new inputSchema properties collect: [ :each | each name ].
 	classSideProperty := MCPToolCompileMethod new inputSchema properties detect: [ :each | each name = 'side' ].
+	self assert: MCPToolCompileMethod new name equals: 'method_compile'.
+	self assert: MCPToolUpdateMethod new name equals: 'method_update'.
 	self assert: createPropertyNames asArray equals: #( 'class' 'side' 'source' 'protocol' 'force' 'format' ).
 	self
 		assert: updatePropertyNames asArray
@@ -2734,6 +2736,7 @@ MCPToolMethodMutationTest >> testMethodToolSchemasDeclareExpectedInputs [
 			   'permutation' 'scope' ).
 	self assert: MCPToolCompileMethod new inputSchema required asSet equals: #( 'class' 'source' ) asSet.
 	self assert: MCPToolUpdateMethod new inputSchema required asSet equals: #( 'class' 'selector' ) asSet.
+	self assert: MCPToolUpdateMethod new atLeastOneInputProperties asSet equals: #( 'protocol' 'newSelector' ) asSet.
 	self assert: (classSideProperty extraProperties at: #default) equals: 'instance'
 ]
 

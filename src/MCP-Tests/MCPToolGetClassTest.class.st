@@ -458,7 +458,11 @@ MCPToolGetClassTest >> testThePagesAfterTheFirstAreItsMethods [
 { #category : 'tests' }
 MCPToolGetClassTest >> testToolRequiresNameInSchema [
 
-	self assert: MCPToolGetClass new inputSchema required asSet equals: #( 'name' ) asSet
+	| tool |
+	tool := MCPToolGetClass new.
+	self assert: tool name equals: 'class_get'.
+	self assert: tool inputSchema required asSet equals: #( 'name' ) asSet.
+	self assert: ((tool inputSchema properties collect: [ :each | each name ]) includes: 'offset')
 ]
 
 { #category : 'private - calling' }

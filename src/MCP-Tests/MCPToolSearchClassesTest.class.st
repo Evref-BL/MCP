@@ -159,26 +159,6 @@ MCPToolSearchClassesTest >> testDefaultFilterAppliesToClassOnly [
 ]
 
 { #category : 'tests' }
-MCPToolSearchClassesTest >> testDirectionalScopesAreUnionedWithExactClassNames [
-
-	| classNames data result |
-	result := self callToolWith: {
-			          (self searchScope: {
-					           (#classes -> { self childClassName }).
-					           (#subclassesOf -> { self childClassName }).
-					           (#superclassesOf -> { self childClassName }) }).
-			          (#query -> self fixturePrefix) } asDictionary.
-	data := self dataFrom: result.
-	classNames := (data at: #classes) collect: [ :each | each at: #class ].
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #classes) size equals: 3.
-	self assert: classNames equals: {
-			self baseClassName.
-			self childClassName.
-			self grandchildClassName } asArray
-]
-
-{ #category : 'tests' }
 MCPToolSearchClassesTest >> testHierarchyOfScopeSelectsTheWholeHierarchy [
 	"The scope advertised hierarchyOf but no query builder read it, so naming one silently widened the sweep to the whole image."
 
@@ -311,23 +291,6 @@ MCPToolSearchClassesTest >> testPackageNamesReturnPackageClasses [
 ]
 
 { #category : 'tests' }
-MCPToolSearchClassesTest >> testPackageNamesSelectPackageScope [
-
-	| classNames data result |
-	result := self callToolWith: {
-			          (self searchScope: { (#packages -> { self generatedPackageName }) }).
-			          (#query -> self fixturePrefix) } asDictionary.
-	data := self dataFrom: result.
-	classNames := (data at: #classes) collect: [ :each | each at: #class ].
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #classes) size equals: 3.
-	self assert: classNames equals: {
-			self baseClassName.
-			self childClassName.
-			self grandchildClassName } asArray
-]
-
-{ #category : 'tests' }
 MCPToolSearchClassesTest >> testPageStopsAtTheToolsOwnSize [
 	"A search wider than one page says where the next one starts, without being told a size."
 
@@ -377,10 +340,13 @@ MCPToolSearchClassesTest >> testReturnsWarningsAndEmptyResultsWhenPackageIsMissi
 	data := self dataFrom: result.
 	warnings := self warningsFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
+	self deny: ((self structuredContentFrom: result) includesKey: #error).
 	self assert: (data at: #classes) size equals: 0.
 	self assert: (data at: #classes) isEmpty.
 	self assert: warnings size equals: 1.
-	self assert: (warnings first includesSubstring: 'MCP-Definitely-Missing')
+	self assert: (warnings first includesSubstring: 'MCP-Definitely-Missing').
+	self assert: (warnings first includesSubstring: 'does not exist, so ').
+	self assert: (warnings first includesSubstring: 'Did you mean:')
 ]
 
 { #category : 'tests' }
@@ -473,29 +439,17 @@ MCPToolSearchClassesTest >> testSuperclassAndSubclassScopesReturnRelatedClasses 
 ]
 
 { #category : 'tests' }
-MCPToolSearchClassesTest >> testSuperclassAndSubclassScopesSelectRelatedScope [
-
-	| classNames data result |
-	result := self callToolWith: {
-			          (self searchScope: {
-					           (#classes -> { self childClassName }).
-					           (#superclassesOf -> { self childClassName }).
-					           (#subclassesOf -> { self childClassName }) }).
-			          (#query -> self fixturePrefix) } asDictionary.
-	data := self dataFrom: result.
-	classNames := (data at: #classes) collect: [ :each | each at: #class ].
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #classes) size equals: 3.
-	self assert: classNames equals: {
-			self baseClassName.
-			self childClassName.
-			self grandchildClassName } asArray
-]
-
-{ #category : 'tests' }
 MCPToolSearchClassesTest >> testToolDoesNotRequireArgumentsInSchema [
 
-	self assert: MCPToolSearchClasses new inputSchema required equals: #(  )
+	| schema scopeProperty |
+	schema := MCPToolSearchClasses new inputSchema.
+	scopeProperty := schema properties detect: [ :each | each name = 'scope' ].
+	self assert: MCPToolSearchClasses new name equals: 'class_search'.
+	self assert: schema required equals: #(  ).
+	self assert: (schema properties collect: [ :each | each name ] as: Set) equals: #( 'scope' 'query' 'tag' 'offset' ) asSet.
+	self
+		assert: ((scopeProperty extraProperties at: #properties) collect: [ :each | each name ] as: Set)
+		equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' 'hierarchyOf' ) asSet
 ]
 
 { #category : 'private - calling' }

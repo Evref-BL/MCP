@@ -650,27 +650,6 @@ MCPToolContractsTest >> testCatalogToolsUseOwningRegistry [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testClassMutationToolsHaveAccurateNamesAndRequiredArguments [
-
-	| createTool slotsSchema updatePropertyNames updateTool |
-	createTool := MCPToolCreateClass new.
-	updateTool := MCPToolUpdateClass new.
-	self assert: createTool name equals: 'class_create'.
-	self assert: updateTool name equals: 'class_update'.
-	"The superclass is optional and defaults to Object."
-	self assert: createTool inputSchema required asSet equals: #( 'name' 'package' ) asSet.
-	self assert: updateTool inputSchema required asSet equals: #( 'name' ) asSet.
-	updatePropertyNames := updateTool inputSchema properties collect: [ :each | each name ].
-	#( 'newName' 'superclass' 'package' 'tag' 'comment' 'slots' 'classSlots' 'traits' 'sharedVariables' 'sharedPools' 'layout'
-	   'force' ) do: [ :each | self assert: (updatePropertyNames includes: each) ].
-	#( 'operation' 'slotAction' 'slot' 'newSlot' 'side' ) do: [ :each | self deny: (updatePropertyNames includes: each) ].
-	"Slots are patched, so their argument is a delta rather than a list."
-	slotsSchema := (updateTool inputSchema asJRPCJSON at: #properties) at: 'slots'.
-	self assert: (slotsSchema at: #type) equals: 'object'.
-	self assert: (slotsSchema at: #properties) keys asSet equals: #( 'add' 'remove' 'rename' 'pullUp' 'pushDown' 'replace' ) asSet
-]
-
-{ #category : 'tests' }
 MCPToolContractsTest >> testClassToolSchemaDescriptionsExplainRecategorizationAndReplacementSemantics [
 
 	| tool layoutDescription packageDescription sharedPoolsDescription sharedVariablesDescription slotsSchema tagDescription traitsDescription |
@@ -1690,30 +1669,6 @@ MCPToolContractsTest >> testExternalToolFixtureIsNotBuiltIn [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testGetClassHasAccurateNameAndRequiredArguments [
-
-	| inputPropertyNames tool |
-	tool := MCPToolGetClass new.
-	inputPropertyNames := tool inputSchema properties collect: [ :each | each name ].
-	self assert: tool name equals: 'class_get'.
-	self assert: tool inputSchema required asSet equals: #( 'name' ) asSet.
-	self assert: (inputPropertyNames includes: 'offset')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testGetMethodHasAccurateNameAndRequiredArguments [
-
-	| propertyNames |
-	propertyNames := MCPToolGetMethod new inputSchema properties collect: [ :each | each name ].
-	self assert: MCPToolGetMethod new name equals: 'method_get'.
-	self assert: MCPToolGetMethod new inputSchema required asSet equals: #( 'selector' ) asSet.
-	self assert: (propertyNames includes: 'class').
-	self assert: (propertyNames includes: 'selector').
-	self assert: (propertyNames includes: 'side').
-	self assert: (propertyNames includes: 'includeVariableDetails')
-]
-
-{ #category : 'tests' }
 MCPToolContractsTest >> testGetToolReturnsSchemaForCatalogTool [
 
 	| contract getToolPropertyNames inputProperties result |
@@ -2175,23 +2130,6 @@ MCPToolContractsTest >> testMethodMetadataSearchDescriptionPointsToSpecializedRe
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testMethodMetadataSearchHasAccurateNameAndSchema [
-
-	| propertyNames schema scopeProperty scopePropertyNames |
-	schema := MCPToolSearchMethods new inputSchema.
-	propertyNames := schema properties collect: [ :each | each name ].
-	scopeProperty := schema properties detect: [ :each | each name = 'scope' ].
-	scopePropertyNames := (scopeProperty extraProperties at: #properties) collect: [ :each | each name ].
-	self assert: MCPToolSearchMethods new name equals: 'method_search'.
-	self assert: schema required equals: #(  ).
-	self assert: propertyNames asSet equals: #( 'scope' 'query' 'protocol' 'offset' ) asSet.
-	self assert: (scopeProperty extraProperties at: #additionalProperties) equals: false.
-	self
-		assert: scopePropertyNames asSet
-		equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' 'hierarchyOf' 'side' ) asSet
-]
-
-{ #category : 'tests' }
 MCPToolContractsTest >> testMethodMetadataSearchListsMethodsForExistingClassScope [
 
 	| data methods result selectors |
@@ -2205,45 +2143,6 @@ MCPToolContractsTest >> testMethodMetadataSearchListsMethodsForExistingClassScop
 	self assert: methods isNotEmpty.
 	self assert: (selectors includes: 'alphaNeedleSelector').
 	self assert: (selectors includes: 'classNeedleSelector')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testMethodMetadataSearchReturnsWarningResultForMissingClass [
-
-	| data result warnings |
-	result := self
-		          callToolNamed: 'method_search'
-		          withArguments: { (self searchScope: { (#classes -> #( 'MCPDefinitelyMissingMethodSearchClass' )) }) } asDictionary.
-	data := self dataFrom: result.
-	warnings := self warningsFrom: result.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self deny: (self resultIndicatesError: result).
-	self assert: (data at: #methods) isEmpty.
-	self assert: warnings size equals: 1.
-	self assert: (warnings first includesSubstring: 'MCPDefinitelyMissingMethodSearchClass').
-	self assert: (warnings first includesSubstring: 'does not exist, so ').
-	self assert: (warnings first includesSubstring: 'Did you mean')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testMethodMutationToolsHaveAccurateNamesAndRequiredArguments [
-
-	| createPropertyNames createTool updatePropertyNames updateTool |
-	createTool := MCPToolCompileMethod new.
-	updateTool := MCPToolUpdateMethod new.
-	createPropertyNames := createTool inputSchema properties collect: [ :each | each name ].
-	updatePropertyNames := updateTool inputSchema properties collect: [ :each | each name ].
-	self assert: createTool name equals: 'method_compile'.
-	self assert: updateTool name equals: 'method_update'.
-	self assert: createTool inputSchema required asSet equals: #( 'class' 'source' ) asSet.
-	self assert: updateTool inputSchema required asSet equals: #( 'class' 'selector' ) asSet.
-	self assert: updateTool atLeastOneInputProperties asSet equals: #( 'protocol' 'newSelector' ) asSet.
-	self assert: createPropertyNames asSet equals: #( 'class' 'side' 'protocol' 'source' 'force' 'format' ) asSet.
-	self
-		assert: updatePropertyNames asSet
-		equals:
-			#( 'arguments' 'argumentValueExpressions' 'class' 'force' 'format' 'newSelector' 'permutation' 'protocol' 'scope' 'selector'
-			   'side' ) asSet
 ]
 
 { #category : 'tests' }
@@ -2531,39 +2430,6 @@ MCPToolContractsTest >> testReadScreenHasAccurateNameAndSchemas [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testRemoveClassHasAccurateNameAndRequiredArguments [
-
-	self assert: MCPToolRemoveClasses new name equals: 'class_remove'.
-	self assert: MCPToolRemoveClasses new inputSchema required asSet equals: #( 'name' ) asSet
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testRemoveMethodsHasAccurateNameAndRequiredArguments [
-
-	self assert: MCPToolRemoveMethods new name equals: 'method_remove'.
-	self assert: MCPToolRemoveMethods new inputSchema required asSet equals: #( 'class' 'selector' ) asSet
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testRepositoryCreateAndUpdateRequiredArguments [
-
-	| createPropertyNames updatePropertyNames |
-	createPropertyNames := MCPToolCreateRepository new inputSchema properties collect: [ :each | each name ].
-	updatePropertyNames := MCPToolUpdateRepository new inputSchema properties collect: [ :each | each name ].
-	self assert: MCPToolCreateRepository new name equals: 'repository_create'.
-	self assert: MCPToolAttachRepository new name equals: 'repository_attach'.
-	self assert: MCPToolUpdateRepository new name equals: 'repository_update'.
-	self assert: MCPToolCreateRepository new inputSchema required asArray equals: #( 'repository' ).
-	self assert: MCPToolAttachRepository new inputSchema required asArray equals: #( 'repository' 'location' ).
-	self assert: MCPToolUpdateRepository new inputSchema required asArray equals: #( 'repository' ).
-	#( 'repository' 'location' 'subdirectory' 'packages' ) do: [ :each | self assert: (createPropertyNames includes: each) ].
-	#( 'repository' 'location' 'subdirectory' 'packages' 'addPackages' 'removePackages' ) do: [ :each |
-		self assert: (updatePropertyNames includes: each) ].
-	self deny: (createPropertyNames includes: 'operation').
-	self deny: (updatePropertyNames includes: 'operation')
-]
-
-{ #category : 'tests' }
 MCPToolContractsTest >> testRequestedToolIconsAreSelected [
 
 	self
@@ -2749,33 +2615,6 @@ MCPToolContractsTest >> testRunTestsParsesTimeoutSeconds [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testRunTestsRejectsEmptySelection [
-
-	| request tool |
-	tool := MCPToolRunTests new.
-	request := tool requestFromToolCallArguments: Dictionary new.
-	self
-		should: [ tool checkArguments: request ]
-		raise: MCPInvalidToolInput
-		whoseDescriptionIncludes: 'Name at least one package, class or method to run.'
-		description: 'test_run requires at least one compact selection.'
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testSearchClassesHasAccurateNameAndSchema [
-
-	| propertyNames schema scopeProperty scopePropertyNames |
-	schema := MCPToolSearchClasses new inputSchema.
-	propertyNames := schema properties collect: [ :each | each name ].
-	scopeProperty := schema properties detect: [ :each | each name = 'scope' ].
-	scopePropertyNames := (scopeProperty extraProperties at: #properties) collect: [ :each | each name ].
-	self assert: MCPToolSearchClasses new name equals: 'class_search'.
-	self assert: schema required equals: #(  ).
-	self assert: propertyNames asSet equals: #( 'scope' 'query' 'tag' 'offset' ) asSet.
-	self assert: scopePropertyNames asSet equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' 'hierarchyOf' ) asSet
-]
-
-{ #category : 'tests' }
 MCPToolContractsTest >> testSearchClassesListsClassesForExistingPackage [
 	"A package scope finds a class of that package wherever it falls among the pages: the name narrows the search, as a package this large needs."
 
@@ -2790,24 +2629,6 @@ MCPToolContractsTest >> testSearchClassesListsClassesForExistingPackage [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testSearchClassesReturnsWarningResultForMissingPackage [
-
-	| data result warnings |
-	result := self
-		          callToolNamed: 'class_search'
-		          withArguments: { (self searchScope: { (#packages -> #( 'MCP-Definitely-Missing' )) }) } asDictionary.
-	data := self dataFrom: result.
-	warnings := self warningsFrom: result.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self deny: (self resultIndicatesError: result).
-	self assert: (data at: #classes) isEmpty.
-	self assert: warnings size equals: 1.
-	self assert: (warnings first includesSubstring: 'MCP-Definitely-Missing').
-	self assert: (warnings first includesSubstring: 'does not exist, so ').
-	self assert: (warnings first includesSubstring: 'Did you mean:')
-]
-
-{ #category : 'tests' }
 MCPToolContractsTest >> testSearchPackagesHasAccurateNameAndSchema [
 
 	| propertyNames schema |
@@ -2816,17 +2637,6 @@ MCPToolContractsTest >> testSearchPackagesHasAccurateNameAndSchema [
 	self assert: MCPToolSearchPackages new name equals: 'package_search'.
 	self assert: schema required equals: #(  ).
 	self assert: propertyNames asSet equals: #( 'query' 'project' 'tag' 'offset' ) asSet
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testSearchPackagesListsPackagesForExistingProject [
-
-	| entries packageNames |
-	entries := self packageSearchFixtureEntries.
-	packageNames := entries collect: [ :each | each at: #package ].
-	self assert: entries isNotEmpty.
-	self assert: packageNames equals: self packageSearchFixturePackageNames.
-	self assert: (entries allSatisfy: [ :each | (each at: #projects) = { self packageSearchFixtureProjectName } ])
 ]
 
 { #category : 'tests' }

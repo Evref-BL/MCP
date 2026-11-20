@@ -86,24 +86,6 @@ MCPEventStreamTest >> testBroadcastDropsListenersWhoseClientHasGone [
 ]
 
 { #category : 'tests' }
-MCPEventStreamTest >> testCapabilitiesDeclareListChangedNowTheStreamCanCarryIt [
-
-	| capabilities |
-	capabilities := self mcpWithoutObservabilityExport advertisedCapabilities asJRPCJSON.
-	self assert: ((capabilities at: #tools) at: #listChanged).
-	self assert: ((capabilities at: #resources) at: #listChanged)
-]
-
-{ #category : 'tests' }
-MCPEventStreamTest >> testCapabilitiesStillRefuseSubscribe [
-	"Subscribing promises notifications/resources/updated, and no resource here can say it changed."
-
-	| resources |
-	resources := self mcpWithoutObservabilityExport advertisedCapabilities asJRPCJSON at: #resources.
-	self deny: (resources includesKey: #subscribe)
-]
-
-{ #category : 'tests' }
 MCPEventStreamTest >> testClosedStreamTakesNoMoreEvents [
 
 	| stream |

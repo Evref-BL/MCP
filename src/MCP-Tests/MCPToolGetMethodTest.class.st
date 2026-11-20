@@ -331,9 +331,15 @@ MCPToolGetMethodTest >> testNamesTheTraitAMethodIsInstalledFrom [
 ]
 
 { #category : 'tests' }
-MCPToolGetMethodTest >> testToolRequiresClassNameAndSelectorInSchema [
+MCPToolGetMethodTest >> testToolRequiresOnlyTheSelectorInSchema [
 
-	self assert: MCPToolGetMethod new inputSchema required asSet equals: #( 'selector' ) asSet
+	| tool |
+	tool := MCPToolGetMethod new.
+	self assert: tool name equals: 'method_get'.
+	self assert: tool inputSchema required asSet equals: #( 'selector' ) asSet.
+	self assert:
+		((tool inputSchema properties collect: [ :each | each name ]) includesAll:
+			 #( 'class' 'selector' 'side' 'includeVariableDetails' ))
 ]
 
 { #category : 'tests' }

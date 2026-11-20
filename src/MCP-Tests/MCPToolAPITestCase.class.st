@@ -65,6 +65,22 @@ MCPToolAPITestCase >> dataFrom: aResult [
 ]
 
 { #category : 'private - results' }
+MCPToolAPITestCase >> entryForReference: aReference in: methods [
+
+	^ methods
+		  detect: [ :each |
+				  | reference |
+				  reference := String streamContents: [ :stream |
+						               stream nextPutAll: (each at: #class).
+						               (each at: #side ifAbsent: [ 'instance' ]) = 'class' ifTrue: [ stream nextPutAll: ' class' ].
+						               stream
+							               nextPutAll: '>>';
+							               nextPutAll: (each at: #selector) ].
+				  reference = aReference ]
+		  ifNone: [ self fail: 'Missing method ' , aReference ]
+]
+
+{ #category : 'private - results' }
 MCPToolAPITestCase >> errorFrom: aResult [
 
 	^ (self structuredContentFrom: aResult) at: #error
@@ -127,6 +143,12 @@ MCPToolAPITestCase >> packageSearchFixtureRegistrationLoadedInImage: aBoolean [
 ]
 
 { #category : 'private - results' }
+MCPToolAPITestCase >> referencesOf: methodEntries [
+
+	^ methodEntries collect: [ :each | MCPToolSearchMethods new methodEntryLabel: each ] as: Array
+]
+
+{ #category : 'private - results' }
 MCPToolAPITestCase >> resultIndicatesError: aResult [
 	"isError travels beside the structured content, not inside it."
 
@@ -156,6 +178,15 @@ MCPToolAPITestCase >> structuredContentFrom: aResult [
 MCPToolAPITestCase >> summaryFrom: aResult [
 
 	^ (self structuredContentFrom: aResult) at: #summary
+]
+
+{ #category : 'private - results' }
+MCPToolAPITestCase >> summaryOf: aTool forArguments: arguments page: page [
+	"The summary aTool gives a call with these arguments that found page, built without running the search."
+
+	| request |
+	request := aTool requestFromToolCallArguments: arguments.
+	^ aTool successSummaryForRequest: request scopeQuery: (aTool scopeQueryFromRequest: request) page: page
 ]
 
 { #category : 'private - calling' }

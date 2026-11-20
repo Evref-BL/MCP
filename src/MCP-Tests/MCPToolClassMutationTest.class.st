@@ -284,9 +284,11 @@ MCPToolClassMutationTest >> testASingleUpdateAnswersNoData [
 { #category : 'tests - schema' }
 MCPToolClassMutationTest >> testClassToolSchemasDeclareExpectedInputs [
 
-	| createProperties updateProperties |
+	| createProperties slotsSchema updateProperties |
 	createProperties := MCPToolCreateClass new inputSchema properties collect: [ :each | each name ].
 	updateProperties := MCPToolUpdateClass new inputSchema properties collect: [ :each | each name ].
+	self assert: MCPToolCreateClass new name equals: 'class_create'.
+	self assert: MCPToolUpdateClass new name equals: 'class_update'.
 	self
 		assert: createProperties asArray
 		equals:
@@ -297,7 +299,11 @@ MCPToolClassMutationTest >> testClassToolSchemasDeclareExpectedInputs [
 		equals:
 			#( 'name' 'newName' 'superclass' 'package' 'tag' 'comment' 'slots' 'classSlots' 'traits' 'sharedVariables' 'sharedPools'
 			   'layout' 'force' ).
-	self assert: MCPToolUpdateClass new inputSchema required asSet equals: #( 'name' ) asSet
+	self assert: MCPToolUpdateClass new inputSchema required asSet equals: #( 'name' ) asSet.
+	"Slots are patched, so their argument is a delta rather than a list."
+	slotsSchema := (MCPToolUpdateClass new inputSchema asJRPCJSON at: #properties) at: 'slots'.
+	self assert: (slotsSchema at: #type) equals: 'object'.
+	self assert: (slotsSchema at: #properties) keys asSet equals: #( 'add' 'remove' 'rename' 'pullUp' 'pushDown' 'replace' ) asSet
 ]
 
 { #category : 'tests - create' }

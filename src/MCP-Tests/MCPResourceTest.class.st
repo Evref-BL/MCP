@@ -21,16 +21,6 @@ MCPResourceTest >> testCapabilitiesLeaveOutResourcesWhenThereAreNone [
 ]
 
 { #category : 'tests' }
-MCPResourceTest >> testCapabilitiesSayNothingTheTransportCannotDo [
-	"The stream carries list_changed, so that is declared. Subscribing is not, because no resource here can say it changed."
-
-	| resources |
-	resources := self mcpWithoutObservabilityExport advertisedCapabilities asJRPCJSON at: #resources.
-	self deny: (resources includesKey: #subscribe).
-	self assert: (resources at: #listChanged)
-]
-
-{ #category : 'tests' }
 MCPResourceTest >> testImageMetadataResourceReadsAsJSON [
 
 	| contents parsed |

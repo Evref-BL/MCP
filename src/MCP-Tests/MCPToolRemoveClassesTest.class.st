@@ -475,6 +475,7 @@ MCPToolRemoveClassesTest >> testToolRequiresClassNameInSchema [
 	| propertyNames schema |
 	schema := MCPToolRemoveClasses new inputSchema.
 	propertyNames := schema properties collect: [ :each | each name ].
+	self assert: MCPToolRemoveClasses new name equals: 'class_remove'.
 	self assert: schema required asSet equals: #( 'name' ) asSet.
 	self assert: (propertyNames includes: 'force')
 ]

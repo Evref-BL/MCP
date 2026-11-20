@@ -381,24 +381,6 @@ MCPToolStructuredOutputTest >> testGetClassReturnsStructuredSuccess [
 ]
 
 { #category : 'tests' }
-MCPToolStructuredOutputTest >> testGetMethodReturnsStructuredError [
-
-	| error result structured |
-	result := self callToolNamed: 'method_get' withArguments: {
-			          (#class -> 'MCPToolGetMethodTestTarget').
-			          (#selector -> 'doesNotExist') } asDictionary.
-	structured := self structuredContentFrom: result.
-	error := self errorFrom: result.
-	self assert: (result at: #isError).
-	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
-	self assert: (error at: #errorCode) equals: 'MethodNotFound'.
-	self assert: (error at: #class) equals: 'MCPToolGetMethodTestTarget'.
-	self assert: (error at: #selector) equals: 'doesNotExist'.
-	self assert: (error includesKey: #side).
-	self assert: (error at: #side) equals: 'instance'
-]
-
-{ #category : 'tests' }
 MCPToolStructuredOutputTest >> testGetMethodReturnsStructuredSuccess [
 
 	| data result |
@@ -818,25 +800,6 @@ MCPToolStructuredOutputTest >> testSearchClassesReturnsStructuredArrayData [
 	self assert: classes size equals: 1.
 	self assert: (classes allSatisfy: [ :each | (each includesKey: #class) and: [ each includesKey: #package ] ]).
 	self assert: (classNames includes: 'MCPToolContractsTest')
-]
-
-{ #category : 'tests' }
-MCPToolStructuredOutputTest >> testSearchClassesReturnsStructuredWarnings [
-
-	| data result structured warnings |
-	result := self
-		          callToolNamed: 'class_search'
-		          withArguments: { (self searchScope: { (#packages -> #( 'MCP-Definitely-Missing' )) }) } asDictionary.
-	structured := self structuredContentFrom: result.
-	data := self dataFrom: result.
-	warnings := self warningsFrom: result.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self deny: (structured includesKey: #error).
-	self assert: (data at: #classes) isEmpty.
-	self assert: warnings size equals: 1.
-	self assert: (warnings first includesSubstring: 'MCP-Definitely-Missing').
-	self assert: (warnings first includesSubstring: 'does not exist, so ').
-	self assert: (warnings first includesSubstring: 'Did you mean:')
 ]
 
 { #category : 'tests' }

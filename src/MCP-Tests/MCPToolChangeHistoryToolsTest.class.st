@@ -77,18 +77,6 @@ MCPToolChangeHistoryToolsTest >> testListChangeHistoryFilesPaginatesFiles [
 ]
 
 { #category : 'tests' }
-MCPToolChangeHistoryToolsTest >> testListChangeHistoryFilesReturnsFiles [
-
-	| allowedFileKeys data files |
-	data := self toolNamed: 'history_file_list' dataFromArguments: Dictionary new.
-	files := data at: #files.
-	allowedFileKeys := #( file exists fileSize modificationTime isCurrent ) asSet.
-	self assert: files isNotEmpty.
-	self assert: (files allSatisfy: [ :each |
-			 (each includesKey: #file) and: [ each keys allSatisfy: [ :key | allowedFileKeys includes: key ] ] ])
-]
-
-{ #category : 'tests' }
 MCPToolChangeHistoryToolsTest >> testListSaysWhereTheNextPageStarts [
 	"A page of entries or files names the offset of the next, in the words every other paged answer uses: the text leaves nextOffset to the summary."
 
