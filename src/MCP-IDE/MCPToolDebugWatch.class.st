@@ -130,5 +130,5 @@ MCPToolDebugWatch >> resultForWatch: aWatch [
 { #category : 'metadata' }
 MCPToolDebugWatch >> title [
 
-	^ 'Watch Values While Code Runs'
+	^ 'Watch Values'
 ]

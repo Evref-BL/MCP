@@ -177,7 +177,7 @@ MCPToolSearchTools >> summaryForQuery: aQuery matching: matchingTools shown: sho
 { #category : 'metadata' }
 MCPToolSearchTools >> title [
 
-	^ 'Search Tool Catalog'
+	^ 'Search Tools'
 ]
 
 { #category : 'accessing' }

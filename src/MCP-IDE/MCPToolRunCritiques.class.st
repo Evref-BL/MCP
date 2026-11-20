@@ -506,5 +506,5 @@ MCPToolRunCritiques >> targetEntityFromAnchor: sourceAnchor fallbackEntity: fall
 { #category : 'metadata' }
 MCPToolRunCritiques >> title [
 
-	^ 'Run critiques'
+	^ 'Run Critiques'
 ]

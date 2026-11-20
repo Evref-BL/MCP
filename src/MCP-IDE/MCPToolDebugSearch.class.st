@@ -103,5 +103,5 @@ MCPToolDebugSearch >> text: aString matches: aQuery [
 { #category : 'metadata' }
 MCPToolDebugSearch >> title [
 
-	^ 'Open Debuggers'
+	^ 'Search Debuggers'
 ]

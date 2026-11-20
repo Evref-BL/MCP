@@ -98,5 +98,5 @@ MCPToolCaptureScreen >> successSummaryForTarget: aString form: aForm [
 { #category : 'metadata' }
 MCPToolCaptureScreen >> title [
 
-	^ 'Capture Screenshot'
+	^ 'Capture Screen'
 ]

@@ -529,7 +529,7 @@ MCPToolEvaluate >> timeoutSecondsDescription [
 { #category : 'metadata' }
 MCPToolEvaluate >> title [
 
-	^ 'Evaluate Image Code'
+	^ 'Evaluate Code'
 ]
 
 { #category : 'private - results' }
