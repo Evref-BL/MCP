@@ -430,7 +430,7 @@ MCPToolRemoveMethodsTest >> testSummaryNamesOneMethodAsAReference [
 MCPToolRemoveMethodsTest >> testToolRequiresSelectorsInSchema [
 
 	| classSideProperty |
-	classSideProperty := MCPToolRemoveMethods new inputSchema properties detect: [ :each | each name = 'side' ].
+	classSideProperty := self inputPropertyNamed: 'side' inTool: MCPToolRemoveMethods new.
 	self assert: MCPToolRemoveMethods new name equals: 'method_remove'.
 	self assert: MCPToolRemoveMethods new inputSchema required asSet equals: #( 'class' 'selector' ) asSet.
 	self assert: (classSideProperty extraProperties at: #default) equals: 'instance'

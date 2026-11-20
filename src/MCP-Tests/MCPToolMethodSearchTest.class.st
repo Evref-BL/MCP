@@ -126,29 +126,15 @@ MCPToolMethodSearchTest >> testClassNamesLimitImplementorLookupToExactClasses [
 { #category : 'tests' }
 MCPToolMethodSearchTest >> testClassNamesReturnMethodsForExactClasses [
 
-	| data result selectors |
-	result := self callToolWith: { (self searchScope: { (#classes -> { self targetClassName }) }) } asDictionary.
-	data := self dataFrom: result.
-	selectors := (data at: #methods) collect: [ :each | each at: #selector ].
-	self assert: (data at: #methods) size equals: 5.
-	self assert: (data at: #methods) size equals: 5.
+	| methods |
+	methods := (self dataFrom: (self callToolWith: { (self searchScope: { (#classes -> { self targetClassName }) }) } asDictionary))
+		           at: #methods.
+	self assert: methods size equals: 5.
 	self
-		assert: selectors asSet
+		assert: (methods collect: [ :each | each at: #selector ] as: Set)
 		equals: #( 'alphaNeedleSelector' 'betaHelper' 'classNeedleSelector' 'classUtility' 'gammaUtility' ) asSet.
-	self entryForReference: self targetClassName , ' class>>classNeedleSelector' in: (data at: #methods)
-]
-
-{ #category : 'tests' }
-MCPToolMethodSearchTest >> testClassNamesSelectExactClassScope [
-
-	| data result selectors |
-	result := self callToolWith: { (self searchScope: { (#classes -> { self targetClassName }) }) } asDictionary.
-	data := self dataFrom: result.
-	selectors := (data at: #methods) collect: [ :each | each at: #selector ].
-	self assert: (data at: #methods) size equals: 5.
-	self
-		assert: selectors asSet
-		equals: #( 'alphaNeedleSelector' 'betaHelper' 'classNeedleSelector' 'classUtility' 'gammaUtility' ) asSet
+	self assert: (methods allSatisfy: [ :each | (each includesKey: #class) and: [ each includesKey: #package ] ]).
+	self entryForReference: self targetClassName , ' class>>classNeedleSelector' in: methods
 ]
 
 { #category : 'tests' }
@@ -210,6 +196,20 @@ MCPToolMethodSearchTest >> testImageScopeLeavesOutWhatTraitedClassInstalls [
 				             (self searchScope: {  } side: 'class').
 				             (#query -> 'findOriginClassOf:') } asDictionary)) at: #methods.
 	self deny: (methods anySatisfy: [ :each | (each at: #trait ifAbsent: [ '' ]) = 'TraitedClass' ])
+]
+
+{ #category : 'tests' }
+MCPToolMethodSearchTest >> testMethodMetadataSearchDescriptionPointsToSpecializedReferenceTools [
+
+	| description protocolDescription queryDescription tool |
+	tool := MCPToolSearchMethods new.
+	description := tool description.
+	self assert: (description includesSubstring: 'method_source_search').
+	self assert: (description includesSubstring: 'method_reference_search').
+	queryDescription := (self inputPropertyNamed: 'query' inTool: tool) description.
+	protocolDescription := (self inputPropertyNamed: 'protocol' inTool: tool) description.
+	self assert: (queryDescription includesSubstring: 'selector').
+	self assert: (protocolDescription includesSubstring: 'protocol')
 ]
 
 { #category : 'tests' }
@@ -304,7 +304,6 @@ MCPToolMethodSearchTest >> testReturnsWarningsAndEmptyResultsWhenClassIsMissing 
 	result := self callToolWith: { (self searchScope: { (#classes -> #( 'MCPDefinitelyMissingMethodSearchClass' )) }) } asDictionary.
 	data := self dataFrom: result.
 	warnings := self warningsFrom: result.
-	self assert: (data at: #methods) size equals: 0.
 	self assert: (data at: #methods) isEmpty.
 	self assert: warnings size equals: 1.
 	self assert: (warnings first includesSubstring: 'MCPDefinitelyMissingMethodSearchClass').
@@ -315,14 +314,15 @@ MCPToolMethodSearchTest >> testReturnsWarningsAndEmptyResultsWhenClassIsMissing 
 { #category : 'tests' }
 MCPToolMethodSearchTest >> testReturnsWarningsAndEmptyResultsWhenPackageIsMissing [
 
-	| data result warnings |
+	| result warnings |
 	result := self callToolWith: { (self searchScope: { (#packages -> #( 'MCP-Definitely-Missing' )) }) } asDictionary.
-	data := self dataFrom: result.
 	warnings := self warningsFrom: result.
-	self assert: (data at: #methods) size equals: 0.
-	self assert: (data at: #methods) isEmpty.
+	self deny: ((self structuredContentFrom: result) includesKey: #error).
+	self assert: ((self dataFrom: result) at: #methods) isEmpty.
 	self assert: warnings size equals: 1.
-	self assert: (warnings first includesSubstring: 'MCP-Definitely-Missing')
+	self assert: (warnings first includesSubstring: 'MCP-Definitely-Missing').
+	self assert: (warnings first includesSubstring: 'does not exist, so ').
+	self assert: (warnings first includesSubstring: 'Did you mean:')
 ]
 
 { #category : 'tests' }
@@ -380,7 +380,7 @@ MCPToolMethodSearchTest >> testToolDoesNotRequireArgumentsInSchema [
 
 	| schema scopeProperty |
 	schema := MCPToolSearchMethods new inputSchema.
-	scopeProperty := schema properties detect: [ :each | each name = 'scope' ].
+	scopeProperty := self inputPropertyNamed: 'scope' inTool: MCPToolSearchMethods new.
 	self assert: MCPToolSearchMethods new name equals: 'method_search'.
 	self assert: schema required equals: #(  ).
 	self assert: (schema properties collect: [ :each | each name ] as: Set) equals: #( 'scope' 'query' 'protocol' 'offset' ) asSet.

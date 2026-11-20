@@ -1409,6 +1409,21 @@ MCPToolMethodMutationTest >> testCompileIntoAMisspeltClassSuggestsItAndClassCrea
 ]
 
 { #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileMethodAnswersItsSummaryAsText [
+
+	[
+		self
+			assert: (self textFrom: (self callToolNamed: 'method_compile' withArguments: {
+							  (#class -> MCPToolMethodMutationTestTarget name).
+							  (#protocol -> 'accessing').
+							  (#source -> 'mcpPlainTextContentFixture
+
+	^ 42') } asDictionary))
+			equals: 'Created MCPToolMethodMutationTestTarget>>mcpPlainTextContentFixture.' ] ensure: [
+		self removeSelector: #mcpPlainTextContentFixture from: MCPToolMethodMutationTestTarget ]
+]
+
+{ #category : 'tests' }
 MCPToolMethodMutationTest >> testCompileMethodReportsCreatedChangeKind [
 
 	| data result selector |
@@ -2679,7 +2694,7 @@ MCPToolMethodMutationTest >> testMethodToolSchemasDeclareExpectedInputs [
 	| classSideProperty createPropertyNames updatePropertyNames |
 	createPropertyNames := MCPToolCompileMethod new inputSchema properties collect: [ :each | each name ].
 	updatePropertyNames := MCPToolUpdateMethod new inputSchema properties collect: [ :each | each name ].
-	classSideProperty := MCPToolCompileMethod new inputSchema properties detect: [ :each | each name = 'side' ].
+	classSideProperty := self inputPropertyNamed: 'side' inTool: MCPToolCompileMethod new.
 	self assert: MCPToolCompileMethod new name equals: 'method_compile'.
 	self assert: MCPToolUpdateMethod new name equals: 'method_update'.
 	self assert: createPropertyNames asArray equals: #( 'class' 'side' 'source' 'protocol' 'force' 'format' ).
@@ -2691,6 +2706,15 @@ MCPToolMethodMutationTest >> testMethodToolSchemasDeclareExpectedInputs [
 	self assert: MCPToolUpdateMethod new inputSchema required asSet equals: #( 'class' 'selector' ) asSet.
 	self assert: MCPToolUpdateMethod new atLeastOneInputProperties asSet equals: #( 'protocol' 'newSelector' ) asSet.
 	self assert: (classSideProperty extraProperties at: #default) equals: 'instance'
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testMutationDescriptionsExplainForceWarningBehavior [
+
+	| methodForceDescription |
+	methodForceDescription := (self inputPropertyNamed: 'force' inTool: MCPToolUpdateMethod new) description.
+	self assert: (methodForceDescription includesSubstring: 'refactoring warnings').
+	self assert: (methodForceDescription includesSubstring: 'stopping')
 ]
 
 { #category : 'tests' }

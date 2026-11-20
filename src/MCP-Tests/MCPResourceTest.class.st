@@ -34,22 +34,12 @@ MCPResourceTest >> testImageMetadataResourceReadsAsJSON [
 ]
 
 { #category : 'tests' }
-MCPResourceTest >> testReadingAnUnknownUriAnswersResourceNotFound [
+MCPResourceTest >> testResourcesListAnswersTheRegisteredResources [
 
-	| raised |
-	raised := [
-	          self mcpWithoutObservabilityExport rpcResourceRead: 'pharo://nothing/here'.
-	          nil ] on: MCPResourceNotFound do: [ :error | error ].
-	self assert: raised uri equals: 'pharo://nothing/here'.
-	self assert: MCPResourceNotFound errorCode equals: -32002
-]
-
-{ #category : 'tests' }
-MCPResourceTest >> testResourcesListAnswersRegisteredResources [
-
-	| uris |
-	uris := (self mcpWithoutObservabilityExport rpcResourcesList at: #resources) collect: [ :each | each at: #uri ].
-	self assert: (uris includes: MCPImageMetadataResource resourceUri)
+	| response |
+	response := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"resources/list"}'.
+	self assert: (response includesSubstring: '"resources":').
+	self assert: (response includesSubstring: MCPImageMetadataResource resourceUri)
 ]
 
 { #category : 'tests' }
@@ -60,6 +50,25 @@ MCPResourceTest >> testResourcesListEntriesCarryTheRequiredFields [
 			self assert: (each includesKey: #uri).
 			self assert: (each includesKey: #name).
 			self deny: (each values includes: nil) ]
+]
+
+{ #category : 'tests' }
+MCPResourceTest >> testResourcesReadAnswersResourceNotFoundWhenTheUriIsUnknown [
+	"The spec gives resource-not-found its own code rather than folding it into invalid params, and asks for the URI in the error data."
+
+	| response |
+	response := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"resources/read","params":{"uri":"pharo://missing"}}'.
+	self assert: (response includesSubstring: '"code":-32002').
+	self assert: (response includesSubstring: '"message":"Resource not found"').
+	self assert: (response includesSubstring: '"uri":"pharo://missing"')
+]
+
+{ #category : 'tests' }
+MCPResourceTest >> testResourcesTemplatesListReturnsEmptyTemplateList [
+
+	| response |
+	response := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"resources/templates/list"}'.
+	self assert: (response includesSubstring: '"result":{"resourceTemplates":[]}')
 ]
 
 { #category : 'tests' }

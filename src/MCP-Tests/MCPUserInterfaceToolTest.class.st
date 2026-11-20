@@ -3,7 +3,7 @@ Tests the tools that look at the running image: the screenshot capture and the s
 "
 Class {
 	#name : 'MCPUserInterfaceToolTest',
-	#superclass : 'MCPTestCase',
+	#superclass : 'MCPToolAPITestCase',
 	#category : 'MCP-Tests',
 	#package : 'MCP-Tests'
 }
@@ -40,12 +40,58 @@ MCPUserInterfaceToolTest >> testAMessageNotUnderstoodInAScreenToolSuggestsSelect
 ]
 
 { #category : 'tests' }
+MCPUserInterfaceToolTest >> testCaptureScreenHasAccurateNameAndSchemas [
+
+	| inputPropertyNames tool |
+	tool := MCPToolCaptureScreen new.
+	inputPropertyNames := tool inputSchema properties collect: [ :each | each name ].
+	self assert: tool name equals: 'screen_capture'.
+	self assert: tool inputSchema required equals: #(  ).
+	self assert: inputPropertyNames equals: #( 'window' )
+]
+
+{ #category : 'tests' }
+MCPUserInterfaceToolTest >> testCaptureScreenPackagesTheFormAsImageContent [
+
+	| data imageContent imageJSON result |
+	result := MCPToolCaptureScreen new
+		          resultForCaptureOf: (Morph new
+				           extent: 2 @ 3;
+				           yourself)
+		          window: nil.
+	data := result structuredContent at: #data.
+	imageContent := result content second.
+	imageJSON := imageContent asJRPCJSON.
+	self assert: (data at: #target) equals: 'world'.
+	self assert: (data at: #width) equals: 2.
+	self assert: (data at: #height) equals: 3.
+	self assert: imageContent mimeType equals: 'image/png'.
+	self assert: imageContent data isNotEmpty.
+	self assert: (imageJSON at: #type) equals: 'image'.
+	self assert: (imageJSON at: #mimeType) equals: 'image/png'
+]
+
+{ #category : 'tests' }
 MCPUserInterfaceToolTest >> testNamingAWindowThatIsNotOpenIsAnError [
 
 	| error |
 	error := self capture: [ MCPToolReadScreen new targetMorphNamed: 'no such window' ].
 	self assert: (error messageText includesSubstring: 'no such window').
 	self deny: ((error structuredDetails at: #open) includes: 'no such window')
+]
+
+{ #category : 'tests' }
+MCPUserInterfaceToolTest >> testReadScreenHasAccurateNameAndSchemas [
+
+	| depthProperty inputPropertyNames tool |
+	tool := MCPToolReadScreen new.
+	inputPropertyNames := tool inputSchema properties collect: [ :each | each name ].
+	depthProperty := self inputPropertyNamed: 'depth' inTool: tool.
+	self assert: tool name equals: 'screen_read'.
+	self assert: tool inputSchema required equals: #(  ).
+	self assert: inputPropertyNames equals: #( 'window' 'depth' ).
+	self assert: (depthProperty extraProperties at: #default) equals: tool defaultDepth.
+	self assert: (depthProperty extraProperties at: #maximum) equals: tool maximumDepth
 ]
 
 { #category : 'tests' }

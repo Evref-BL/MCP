@@ -9,6 +9,22 @@ Class {
 }
 
 { #category : 'tests' }
+MCPToolGetMethodTest >> testEmptyListOfTargetsIsRejectedAsInput [
+	"A list whose values are all blank names nothing either, though it has items."
+
+	self
+		assertResult: (self callToolNamed: 'method_get' withArguments: {
+					 (#class -> 'MCPTool').
+					 (#selector -> #(  )) } asDictionary)
+		refusesArgumentsSaying: 'selector names nothing to act on; give at least one value that is not blank.'.
+	self
+		assertResult: (self callToolNamed: 'method_get' withArguments: {
+					 (#class -> 'MCPTool').
+					 (#selector -> #( '' '  ' )) } asDictionary)
+		refusesArgumentsSaying: 'selector names nothing to act on'
+]
+
+{ #category : 'tests' }
 MCPToolGetMethodTest >> testGetMethodAnswersAnInheritedMethodInABatch [
 	"Each target of a call is looked up on its own, so one the class inherits is answered beside one it has."
 
@@ -244,6 +260,28 @@ MCPToolGetMethodTest >> testGetMethodReturnsStructuredErrorForMissingSelector [
 	self assert: (error includesKey: #side).
 	self assert: (error at: #side) equals: 'instance'.
 	self assert: ((error at: #message) includesSubstring: 'Method MCPToolGetMethodTestTarget>>doesNotExist does not exist.')
+]
+
+{ #category : 'tests' }
+MCPToolGetMethodTest >> testGetMethodReturnsStructuredSuccess [
+
+	| data result |
+	result := self callToolNamed: 'method_get' withArguments: {
+			          (#class -> 'MCPToolGetMethodTestTarget').
+			          (#selector -> 'readInstanceWith:') } asDictionary.
+	data := self dataFrom: result.
+	self assert: (data at: #protocol) equals: 'reading'.
+	self deny: (data includesKey: #variableReferences).
+	self deny: (data includesKey: #class).
+	self deny: (data includesKey: #selector).
+	self deny: (data includesKey: #side).
+	self deny: (data includesKey: #arguments).
+	self deny: (data includesKey: #temporaryNames).
+	self deny: (data includesKey: #variableDetailsIncluded).
+	self deny: (data includesKey: #externalVariableCount).
+	self deny: (data includesKey: #variableReferenceCount).
+	self deny: (data includesKey: #externalVariableReferences).
+	self assert: ((data at: #source) includesSubstring: String cr asString)
 ]
 
 { #category : 'tests' }

@@ -99,34 +99,21 @@ MCPToolSearchClassesTest >> testAnUntaggedClassRowHasNoTag [
 { #category : 'tests' }
 MCPToolSearchClassesTest >> testClassNamesReturnExactClassInfos [
 
-	| baseEntry data result |
-	result := self callToolWith: { (self searchScope: { (#classes -> {
-				            self childClassName.
-				            self baseClassName }) }) } asDictionary.
-	data := self dataFrom: result.
-	baseEntry := self entryNamed: self baseClassName in: (data at: #classes).
-	self assert: (data at: #classes) size equals: 2.
+	| baseEntry classes |
+	classes := (self dataFrom: (self callToolWith: { (self searchScope: { (#classes -> {
+					               self childClassName.
+					               self baseClassName }) }) } asDictionary)) at: #classes.
+	baseEntry := self entryNamed: self baseClassName in: classes.
+	self assert: (classes collect: [ :each | each at: #class ]) equals: {
+			self baseClassName.
+			self childClassName } asArray.
+	self assert: (classes allSatisfy: [ :each | each includesKey: #package ]).
 	self assert: (baseEntry at: #package) equals: self generatedPackageName.
 	self assert: (baseEntry at: #tag) equals: self generatedTagName.
 	self deny: (baseEntry includesKey: #instanceSlots).
 	self deny: (baseEntry includesKey: #classSlots).
 	self deny: (baseEntry includesKey: #superclass).
 	self deny: (baseEntry includesKey: #subclasses)
-]
-
-{ #category : 'tests' }
-MCPToolSearchClassesTest >> testClassNamesSelectExactClassScope [
-
-	| classNames data result |
-	result := self callToolWith: { (self searchScope: { (#classes -> {
-				            self childClassName.
-				            self baseClassName }) }) } asDictionary.
-	data := self dataFrom: result.
-	classNames := (data at: #classes) collect: [ :each | each at: #class ].
-	self assert: (data at: #classes) size equals: 2.
-	self assert: classNames equals: {
-			self baseClassName.
-			self childClassName } asArray
 ]
 
 { #category : 'tests' }
@@ -360,6 +347,14 @@ MCPToolSearchClassesTest >> testRowsReachedByInheritanceSayWhatTheyInheritFrom [
 ]
 
 { #category : 'tests' }
+MCPToolSearchClassesTest >> testScopeArgumentIsRejected [
+
+	self
+		assertResult: (self callToolWith: { (#scope -> 'packages') } asDictionary)
+		refusesArgumentsSaying: 'scope must be object, not string.'
+]
+
+{ #category : 'tests' }
 MCPToolSearchClassesTest >> testScopeEntriesWrittenWithTheirSideSelectTheirClass [
 	"A class search answers whole classes, so Foo class selects Foo, in every scope key, without a warning, and the summary names Foo."
 
@@ -377,6 +372,20 @@ MCPToolSearchClassesTest >> testScopeEntriesWrittenWithTheirSideSelectTheirClass
 			self childClassName.
 			self grandchildClassName }.
 	self assert: (self summaryFrom: result) equals: '3 classes match in the hierarchy of ' , self childClassName , '.'
+]
+
+{ #category : 'tests' }
+MCPToolSearchClassesTest >> testSearchClassesListsClassesForExistingPackage [
+	"A package scope finds a class of that package wherever it falls among the pages: the name narrows the search, as a package this large needs."
+
+	| result |
+	result := self callToolNamed: 'class_search' withArguments: {
+			          (self searchScope: { (#packages -> #( 'MCP-Tests' )) }).
+			          (#query -> 'MCPToolMethodMutationTest') } asDictionary.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self
+		assert: ((((result at: #structuredContent) at: #data) at: #classes) collect: [ :each | each at: #class ] as: Array)
+		equals: #( 'MCPToolMethodMutationTest' )
 ]
 
 { #category : 'tests' }
@@ -416,7 +425,7 @@ MCPToolSearchClassesTest >> testToolDoesNotRequireArgumentsInSchema [
 
 	| schema scopeProperty |
 	schema := MCPToolSearchClasses new inputSchema.
-	scopeProperty := schema properties detect: [ :each | each name = 'scope' ].
+	scopeProperty := self inputPropertyNamed: 'scope' inTool: MCPToolSearchClasses new.
 	self assert: MCPToolSearchClasses new name equals: 'class_search'.
 	self assert: schema required equals: #(  ).
 	self assert: (schema properties collect: [ :each | each name ] as: Set) equals: #( 'scope' 'query' 'tag' 'offset' ) asSet.

@@ -436,6 +436,22 @@ MCPToolMethodLookupTest >> testReturnsStructuredErrorForInvalidRegex [
 ]
 
 { #category : 'tests' }
+MCPToolMethodLookupTest >> testSearchFailureNamesTheScope [
+	"A search that fails names what it was asked to search, a name that does not exist included, and leaves the scope key of the details to the schema path of a scope entry."
+
+	| error result |
+	result := self callToolNamed: 'method_source_search' withArguments: {
+			          (self searchScope: { (#classes -> #( 'MCPToolMethodSearchTestTarget' 'MCPNoSuchSummaryClass' )) }).
+			          (#queryMode -> 'regex').
+			          (#query -> '[') } asDictionary.
+	error := self errorFrom: result.
+	self assert: (self resultIndicatesError: result).
+	self assert: ((self summaryFrom: result) beginsWith:
+			 'Unable to search methods in MCPToolMethodSearchTestTarget and MCPNoSuchSummaryClass (RegexSyntaxError): ').
+	self deny: (error includesKey: #scope)
+]
+
+{ #category : 'tests' }
 MCPToolMethodLookupTest >> testSearchMethodImplementorsReturnsExactSelectorMatches [
 
 	| data |
@@ -634,7 +650,7 @@ MCPToolMethodLookupTest >> testSourceSearchSchemaUsesDedicatedInputs [
 
 	| queryModeProperty sourceSchema |
 	sourceSchema := MCPToolSearchMethodSource new inputSchema.
-	queryModeProperty := sourceSchema properties detect: [ :each | each name = 'queryMode' ].
+	queryModeProperty := self inputPropertyNamed: 'queryMode' inTool: MCPToolSearchMethodSource new.
 	self assert: sourceSchema required asArray equals: #( 'query' ).
 	self
 		assert: (sourceSchema properties collect: [ :each | each name ] as: Set)

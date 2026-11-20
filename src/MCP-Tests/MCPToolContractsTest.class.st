@@ -1,5 +1,5 @@
 "
-Tests shared MCP tool contracts and catalog metadata.
+Tests what holds across the tools rather than for one of them: their names, icons, schemas and descriptions, how they are registered and advertised, how their answers read, and the protocol requests the server answers beside the tool calls.
 "
 Class {
 	#name : 'MCPToolContractsTest',
@@ -104,64 +104,6 @@ MCPToolContractsTest >> collectSchemaNames: names descriptions: texts from: aDic
 	aDictionary
 		at: #items
 		ifPresent: [ :items | items isDictionary ifTrue: [ self collectSchemaNames: names descriptions: texts from: items ] ]
-]
-
-{ #category : 'private - evaluate' }
-MCPToolContractsTest >> evaluate: aString within: seconds [
-	"The answer of an evaluation with a time limit, as a call gets it: once it has answered, what it deferred runs, as the server runs it after the response. Through test_run a test runs inside a call of its own, which would otherwise hold what the evaluation deferred until the whole run has answered."
-
-	| actions result |
-	actions := OrderedCollection new.
-	result := MCPPostResponseActions value: actions during: [
-			          self callDiscoveredToolNamed: 'evaluate' withArguments: {
-					          (#code -> aString).
-					          (#timeoutSeconds -> seconds) } asDictionary ].
-	actions do: [ :each | each value ].
-	^ result
-]
-
-{ #category : 'private - evaluate' }
-MCPToolContractsTest >> evaluateBriefly: aString [
-	"The answer to an evaluation of aString with the tests' short limit, once what it deferred has run, as the server runs it after the response."
-
-	| actions result |
-	actions := OrderedCollection new.
-	result := self evaluateBriefly: aString deferringInto: actions.
-	actions do: [ :each | each value ].
-	^ result
-]
-
-{ #category : 'private - evaluate' }
-MCPToolContractsTest >> evaluateBriefly: aString deferringInto: actions [
-	"The answer to an evaluation of aString with the tests' short limit, counted from when its code runs, leaving in actions what the call deferred until after its response."
-
-	| tool |
-	tool := MCPToolEvaluate new.
-	^ MCPPostResponseActions value: actions during: [
-			  tool answerFor:
-				  (MCPEvaluateCommandWaitingForTheCode
-					   code: aString
-					   timeLimit: self stopLimitSeconds
-					   previewLimit: tool resultPreviewCharacterLimit) execute ]
-]
-
-{ #category : 'private - evaluate' }
-MCPToolContractsTest >> fullGarbageCollections [
-	"How many full collections the VM has made since it started."
-
-	^ Smalltalk vm parameterAt: 7
-]
-
-{ #category : 'private' }
-MCPToolContractsTest >> inputPropertyNamed: aPropertyName inTool: aTool [
-
-	^ aTool inputSchema properties detect: [ :each | each name = aPropertyName ]
-]
-
-{ #category : 'private - evaluate' }
-MCPToolContractsTest >> liveProcessesNamed: aString [
-
-	^ Process allInstances select: [ :each | each name = aString and: [ each isTerminated not ] ]
 ]
 
 { #category : 'private' }
@@ -312,38 +254,11 @@ MCPToolContractsTest >> missingClassTargetName [
 	^ 'MCPToolContractsMissingClassTarget'
 ]
 
-{ #category : 'private - evaluate' }
-MCPToolContractsTest >> notStartedTextHeldBy: processes [
-	"The text of an evaluation that never started within 1 s, while these processes held the priority evaluations run at."
-
-	| tool |
-	tool := MCPToolEvaluate new.
-	^ tool contentTextForStructuredContent: (Dictionary new
-			   at: #summary put: (tool notStartedMessageFor: 1);
-			   at: #error put: (tool notStartedDetailsFor: processes within: 1);
-			   yourself)
-]
-
-{ #category : 'private - evaluate' }
-MCPToolContractsTest >> processesNamed: aString [
-	"Terminated or not, as long as something still holds them."
-
-	^ Process allInstances select: [ :each | each name = aString ]
-]
-
 { #category : 'private' }
 MCPToolContractsTest >> scopePropertyNamed: aPropertyName inTool: aTool [
 
 	^ ((self inputPropertyNamed: 'scope' inTool: aTool) extraProperties at: #properties) detect: [ :each |
 		  each name = aPropertyName ]
-]
-
-{ #category : 'private' }
-MCPToolContractsTest >> searchedToolNamesFor: aQuery [
-
-	| data |
-	data := self dataFrom: (self callToolNamed: 'tool_search' withArguments: { (#query -> aQuery) } asDictionary).
-	^ (data at: #tools) collect: [ :each | each at: #name ]
 ]
 
 { #category : 'private' }
@@ -365,51 +280,13 @@ MCPToolContractsTest >> signalHaltForMCPMessageProcessorTest [
 	(Smalltalk globals at: #Halt) signal: 'mcp processor halt test'
 ]
 
-{ #category : 'private - evaluate' }
-MCPToolContractsTest >> stopLimitSeconds [
-	"The time limit of an evaluation a test lets stop, counted from when its code runs: the command takes a fraction of a second, which the tool's schema does not, so these tests wait a tenth of what a whole second would cost."
+{ #category : 'private' }
+MCPToolContractsTest >> summaryOfTool: aToolName with: someAssociations [
 
-	^ 0.1
-]
-
-{ #category : 'private - evaluate' }
-MCPToolContractsTest >> stoppedEarlyResultOf: aString bounds: aBlock [
-	"The answer to an evaluation of aString with a limit of 30 s, by a command whose bounds aBlock sets. What the call deferred runs once it has answered, as the server runs it after the response."
-
-	| actions command result tool |
-	tool := MCPToolEvaluate new.
-	command := MCPEvaluateCommandStoppingEarly code: aString timeLimit: 30 previewLimit: tool resultPreviewCharacterLimit.
-	aBlock value: command.
-	actions := OrderedCollection new.
-	result := MCPPostResponseActions value: actions during: [ tool answerFor: command execute ].
-	actions do: #value.
-	^ result
-]
-
-{ #category : 'private - evaluate' }
-MCPToolContractsTest >> stoppedTextOf: aResult [
-	"The text of an evaluation's answer that must be a stop at the tests' limit."
-
-	| text |
-	self assert: aResult isError.
-	text := aResult content first text.
-	self assert: (text lines first: 2) equals: {
-			('Evaluation stopped after ' , self stopLimitSeconds printString , ' s, its time limit.').
-			'What it changed before then stays changed.' }.
-	^ text
-]
-
-{ #category : 'private - evaluate' }
-MCPToolContractsTest >> stoppedTextUnwindingBrieflyOf: aString deferringInto: actions [
-	"The text of an evaluation of aString that must be stopped at the tests' limit, by a command that waits less than the command's bound for the stopped code to unwind, leaving in actions what the call deferred until after its response. A test whose stopped code unwinds slowly waits that shorter bound in full."
-
-	| command tool |
-	tool := MCPToolEvaluate new.
-	command := MCPEvaluateCommandUnwindingBriefly
-		           code: aString
-		           timeLimit: self stopLimitSeconds
-		           previewLimit: tool resultPreviewCharacterLimit.
-	^ self stoppedTextOf: (MCPPostResponseActions value: actions during: [ tool answerFor: command execute ])
+	| result |
+	result := self callToolNamed: aToolName withArguments: someAssociations asDictionary.
+	self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
+	^ self summaryFrom: result
 ]
 
 { #category : 'tests' }
@@ -554,134 +431,6 @@ MCPToolContractsTest >> testBuiltInToolsProvideCatalogMetadata [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testCallToolInvokesDiscoverableToolAfterStaticConfiguration [
-
-	| data result server |
-	server := self mcpWithoutObservabilityExport.
-	server advertiseTools: #( 'tool_search' 'tool_get' 'tool_call' ).
-	result := server rpcToolCall: 'tool_call' withParams: {
-			          (#name -> 'package_search').
-			          (#arguments -> { (#query -> 'MCP') } asDictionary) } asDictionary.
-	data := self dataFrom: result.
-	self assert: (data at: #packages) isNotEmpty.
-	self assert: ((data at: #packages) allSatisfy: [ :each | (each at: #package) includesSubstring: 'MCP' ])
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testCallToolInvokesTargetToolThroughServerPath [
-
-	| data result |
-	result := self callToolNamed: 'tool_call' withArguments: {
-			          (#name -> 'package_search').
-			          (#arguments -> { (#query -> 'MCP') } asDictionary) } asDictionary.
-	data := self dataFrom: result.
-	self assert: (data at: #packages) isNotEmpty.
-	self assert: ((data at: #packages) allSatisfy: [ :each | (each at: #package) includesSubstring: 'MCP' ])
-]
-
-{ #category : 'tests - validation' }
-MCPToolContractsTest >> testCallToolPreservesNestedValidationViolations [
-
-	| error result violations |
-	result := self callToolNamed: 'tool_call' withArguments: {
-			          (#name -> 'method_reference_search').
-			          (#arguments -> { (#query -> '') } asDictionary) } asDictionary.
-	error := self errorFrom: result.
-	violations := error at: #violations.
-	self assert: (error at: #tool) equals: 'method_reference_search'.
-	self assert: violations size equals: 1.
-	self assert: (violations first at: #keyword) equals: #required.
-	self assert: (violations first at: #expected) equals: 'query'
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testCaptureScreenHasAccurateNameAndSchemas [
-
-	| inputPropertyNames tool |
-	tool := MCPToolCaptureScreen new.
-	inputPropertyNames := tool inputSchema properties collect: [ :each | each name ].
-	self assert: tool name equals: 'screen_capture'.
-	self assert: tool inputSchema required equals: #(  ).
-	self assert: inputPropertyNames equals: #( 'window' )
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testCaptureScreenPackagesTheFormAsImageContent [
-
-	| data imageContent imageJSON result |
-	result := MCPToolCaptureScreen new
-		          resultForCaptureOf: (Morph new
-				           extent: 2 @ 3;
-				           yourself)
-		          window: nil.
-	data := result structuredContent at: #data.
-	imageContent := result content second.
-	imageJSON := imageContent asJRPCJSON.
-	self assert: (data at: #target) equals: 'world'.
-	self assert: (data at: #width) equals: 2.
-	self assert: (data at: #height) equals: 3.
-	self assert: imageContent mimeType equals: 'image/png'.
-	self assert: imageContent data isNotEmpty.
-	self assert: (imageJSON at: #type) equals: 'image'.
-	self assert: (imageJSON at: #mimeType) equals: 'image/png'
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testCatalogToolsUseOwningRegistry [
-
-	| registry |
-	registry := MCPToolRegistry default.
-	#( 'tool_search' 'tool_get' ) do: [ :toolName |
-			| tool |
-			tool := registry toolNamed: toolName ifAbsent: [ self fail ].
-			self assert: tool toolRegistry == registry ]
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testClassToolSchemaDescriptionsExplainRecategorizationAndReplacementSemantics [
-
-	| tool layoutDescription packageDescription sharedPoolsDescription sharedVariablesDescription slotsSchema tagDescription traitsDescription |
-	tool := MCPToolUpdateClass new.
-	packageDescription := (self inputPropertyNamed: 'package' inTool: tool) description.
-	tagDescription := (self inputPropertyNamed: 'tag' inTool: tool) description.
-	traitsDescription := (self inputPropertyNamed: 'traits' inTool: tool) description.
-	sharedVariablesDescription := (self inputPropertyNamed: 'sharedVariables' inTool: tool) description.
-	sharedPoolsDescription := (self inputPropertyNamed: 'sharedPools' inTool: tool) description.
-	layoutDescription := (self inputPropertyNamed: 'layout' inTool: tool) description.
-	"Moving and retagging are different changes, and package says how to ask for the second one."
-	self assert: (packageDescription includesSubstring: 'tag alone').
-	self assert: (tagDescription includesSubstring: 'package').
-	"The stateless collections are replaced by value, and say so."
-	self assert: (traitsDescription includesSubstring: 'empty array').
-	"A trait is used by the whole class, so traits says it covers the class side too."
-	self assert: (traitsDescription includesSubstring: 'class side').
-	self assert: (sharedVariablesDescription includesSubstring: 'empty array').
-	self assert: (sharedPoolsDescription includesSubstring: 'empty array').
-	self assert: (sharedPoolsDescription includesSubstring: 'Shared pools').
-	self assert: (layoutDescription includesSubstring: 'AbstractLayout').
-	"Slots are patched, and each part of the patch says what it does."
-	slotsSchema := (tool inputSchema asJRPCJSON at: #properties) at: 'slots'.
-	self
-		assert: (((slotsSchema at: #properties) at: 'rename') at: #description)
-		equals: 'Slots to rename, as current name to new name. Values are migrated and references updated.'.
-	self assert: ((((slotsSchema at: #properties) at: 'replace') at: #description) includesSubstring: 'Prefer add and remove')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testCompileMethodAnswersItsSummaryAsText [
-
-	| text |
-	text := self textFrom: (self callToolNamed: 'method_compile' withArguments: {
-				          (#class -> MCPToolContractsTest name).
-				          (#protocol -> 'tests - fixtures').
-				          (#source -> 'mcpPlainTextContentFixture
-
-	^ 42') } asDictionary).
-	self assert: text equals: 'Created MCPToolContractsTest>>mcpPlainTextContentFixture.'.
-	MCPToolContractsTest removeSelector: #mcpPlainTextContentFixture
-]
-
-{ #category : 'tests' }
 MCPToolContractsTest >> testConcreteMCPClassesHaveNoUnimplementedResponsibilities [
 
 	| issues |
@@ -701,6 +450,18 @@ MCPToolContractsTest >> testConfiguredDiscoverableToolsAreDirectlyCallable [
 	result := server rpcToolCall: 'package_search' withParams: { (#query -> 'MCP') } asDictionary.
 	self assert: ((self dataFrom: result) at: #packages) isNotEmpty.
 	self should: [ server rpcToolCall: 'no_such_tool' withParams: Dictionary new ] raise: JRPCNonExistentHandler
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testCountedNounsReadAsEnglish [
+
+	| tool |
+	tool := MCPToolGetClass new.
+	self assert: (tool textForCount: 1 noun: 'change history entry') equals: '1 change history entry'.
+	self assert: (tool textForCount: 2 noun: 'change history entry') equals: '2 change history entries'.
+	self assert: (tool textForCount: 2 noun: 'class') equals: '2 classes'.
+	self assert: (tool textForCount: 2 noun: 'match') equals: '2 matches'.
+	self assert: (tool textForCount: 2 noun: 'method') equals: '2 methods'
 ]
 
 { #category : 'tests' }
@@ -800,773 +561,33 @@ MCPToolContractsTest >> testDiscoveryUsesConfiguredAdvertisedTools [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testEmptyListOfTargetsIsRejectedAsInput [
-	"A list whose values are all blank names nothing either, though it has items."
+MCPToolContractsTest >> testEntryFieldQuotingEscapesEmbeddedQuotes [
 
-	self
-		assertResult: (self callToolNamed: 'method_get' withArguments: {
-					 (#class -> 'MCPTool').
-					 (#selector -> #(  )) } asDictionary)
-		refusesArgumentsSaying: 'selector names nothing to act on; give at least one value that is not blank.'.
-	self
-		assertResult: (self callToolNamed: 'method_get' withArguments: {
-					 (#class -> 'MCPTool').
-					 (#selector -> #( '' '  ' )) } asDictionary)
-		refusesArgumentsSaying: 'selector names nothing to act on'
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testEvaluateAnswersBeforeASlowUnwindEnds [
-	"An ensure block may take as long as it likes. The answer waits for it only so long, says it was still running, and puts the Transcript back itself."
-
-	| actions milliseconds text transcript |
-	self timeLimit: 30 seconds.
-	MCPEvaluateTestProbe reset.
-	transcript := Smalltalk globals at: #Transcript.
-	actions := OrderedCollection new.
-	[
-		milliseconds := Time millisecondsToRun: [
-				                text := self
-					                        stoppedTextUnwindingBrieflyOf:
-					                        '[ [ true ] whileTrue ] ensure: [ MCPEvaluateTestProbe holdUntilReleased ]'
-					                        deferringInto: actions ].
-		self assert: (Smalltalk globals at: #Transcript) identicalTo: transcript ] ensure: [
-			actions do: #value.
-			MCPEvaluateTestProbe release.
-			MCPEvaluateTestProbe holder ifNotNil: [ :holder | self waitUntilEnded: holder ] ].
-	self assert: (text lines at: 3) equals: 'Its ensure blocks were still running when this answer was sent.'.
-	self assert: milliseconds < 15000
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testEvaluateAnswersThePrintStringAsItsWholeText [
-	"The envelope around a one-line answer cost more than the answer."
-
-	self
-		assert: (self textFrom:
-				 (self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> '3 + 4') } asDictionary))
-		equals: '7'
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testEvaluateAnswersWhenAFailingCodesEnsureBlockEndsItsProcess [
-	"A failure is answered once the code's process has unwound, so an ensure block that ends that process leaves no value and no failure to answer."
-
-	| result |
-	result := self
-		          callDiscoveredToolNamed: 'evaluate'
-		          withArguments: { (#code -> '[ 1/0 ] ensure: [ Processor activeProcess terminate ]') } asDictionary.
-	self assert: (self resultIndicatesError: result).
-	self
-		assert: (self textFrom: result)
-		equals: 'Evaluation ended the process running it, so it has no value to answer.'
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testEvaluateAnswersWhenTheCodeEndsItsOwnProcess [
-	"The process that ends is the one the code runs in, not the one that answers."
-
-	| result |
-	result := self
-		          callDiscoveredToolNamed: 'evaluate'
-		          withArguments: { (#code -> 'Processor activeProcess terminate') } asDictionary.
-	self assert: (self resultIndicatesError: result).
-	self
-		assert: (self textFrom: result)
-		equals: 'Evaluation ended the process running it, so it has no value to answer.'
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testEvaluateAnswersWhileAForkHoldsItsPriority [
-	"A fork computing at the evaluator's priority may keep the process that terminates the evaluator from ever running, so the answer waits for the termination only so long. The test then waits for its own stopping process, which ends only once the evaluator has."
-
-	self timeLimit: 30 seconds.
-	self underEitherPreemptionRuleDo: [ :yields |
-			| actions before milliseconds |
-			before := self liveProcessesNamed: 'evaluate stop'.
-			actions := OrderedCollection new.
-			[
-				milliseconds := Time millisecondsToRun: [
-						                self
-							                stoppedTextUnwindingBrieflyOf:
-							                '[ [ true ] whileTrue ] forkAt: Processor activePriority named: ''mcp-evaluate-hog-probe''. [ true ] whileTrue'
-							                deferringInto: actions ] ] ensure: [
-					actions do: #value.
-					(self liveProcessesNamed: 'mcp-evaluate-hog-probe') do: [ :each | each terminate ] ].
-			((self liveProcessesNamed: 'evaluate stop') copyWithoutAll: before) do: [ :each | self waitUntilEnded: each ].
-			self assert: milliseconds < 15000 ]
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testEvaluateCatchesHaltAsRuntimeFailure [
-
-	| result text |
-	result := self
-		          callDiscoveredToolNamed: 'evaluate'
-		          withArguments: { (#code -> 'Halt signal: ''mcp halt test''') } asDictionary.
-	text := self textFrom: result.
-	self assert: (result at: #isError).
-	self assert: (text includesSubstring: 'failed during execution').
-	self assert: (text includesSubstring: 'Halt').
-	self assert: (text includesSubstring: 'mcp halt test')
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testEvaluateFailureTextNamesSuggestionsAndFrames [
-
-	| lines text |
-	text := self textFrom: (self
-			         callDiscoveredToolNamed: 'evaluate'
-			         withArguments: { (#code -> 'OrderedCollection new adAll: #( 1 2 3 )') } asDictionary).
-	lines := text lines.
-	self assert: (lines anySatisfy: [ :each | each beginsWith: 'Did you mean: addAll:' ]).
-	self assert: (lines reject: [ :each | each beginsWith: '   ' ]) last equals: 'UndefinedObject>>DoIt'.
-	self deny: (text includesSubstring: '"errorClass"')
+	| contentText entry |
+	entry := Dictionary new
+		         at: #label put: 'says "hi" there';
+		         at: #name put: 'Plain';
+		         yourself.
+	contentText := MCPToolGetClass new contentTextForStructuredContent: (Dictionary new
+		               at: #summary put: 'Summary.';
+		               at: #data put: (Dictionary new
+				                at: #entries put: { entry };
+				                yourself);
+		               yourself).
+	self assert: (contentText includesSubstring: 'label="says \"hi\" there"').
+	self assert: (contentText includesSubstring: 'name=Plain')
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testEvaluateIsMarkedAsAdvancedEscapeHatch [
-
-	| description |
-	self assert: (MCPToolEvaluate new asJRPCJSON at: #name) equals: 'evaluate'.
-	description := MCPToolEvaluate new description.
-	self assert: (description includesSubstring: 'escape hatch').
-	self assert: (description includesSubstring: 'arbitrary Smalltalk code')
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testEvaluateLeavesTheProcessesItForkedRunning [
-	"Forking is how longer work runs, so a stop leaves alone what the code forked."
-
-	self timeLimit: 30 seconds.
-	[
-		self stoppedTextOf: (self evaluateBriefly:
-				 '[ (Delay forSeconds: 30) wait ] forkAt: Processor userBackgroundPriority named: ''mcp-evaluate-fork-probe''. [ true ] whileTrue').
-		self denyEmpty: (self liveProcessesNamed: 'mcp-evaluate-fork-probe') ] ensure: [
-		(self liveProcessesNamed: 'mcp-evaluate-fork-probe') do: [ :each | each terminate ] ]
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testEvaluateLetsASaveFinish [
-	"Stopped between the snapshot and the restart of the listener that follows it, a save would leave the image without its listener. Neither process is resumed, so nothing is saved."
-
-	| command other saving |
-	command := MCPEvaluateCommand code: 'Smalltalk saveSession' timeLimit: 1 previewLimit: 100.
-	saving := Process
-		          forContext: (Context
-				           sender: nil
-				           receiver: SessionManager default
-				           method: SessionManager >> #snapshot:andQuit:
-				           arguments: #( true false ))
-		          priority: Processor userBackgroundPriority.
-	other := Process
-		         forContext: (Context
-				          sender: nil
-				          receiver: SessionManager default
-				          method: SessionManager >> #currentSession
-				          arguments: #(  ))
-		         priority: Processor userBackgroundPriority.
-	self assert: (command isSaving: saving).
-	self deny: (command isSaving: other)
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testEvaluateLetsNotificationsUseTheirDefaultAction [
-
-	| data result |
-	result := self
-		          callDiscoveredToolNamed: 'evaluate'
-		          withArguments: { (#code -> 'MCPToolDefaultActionNotification signal') } asDictionary.
-	data := self dataFrom: result.
-	self deny: (result includesKey: #isError).
-	self assert: (data at: #resultClassName) equals: 'ByteSymbol'.
-	self assert: (data at: #resultPrintString) equals: '#mcpDefaultAction'
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testEvaluateLooksAtTheMemoryOnlyOnceTheCodeHasStarted [
-	"Before the code has started, whatever grows the image is not the code, so only the time limit stops it. A bound below any growth stands for one the image passed. Code that has ended is never stopped."
-
-	| command tool unstarted |
-	tool := MCPToolEvaluate new.
-	command := MCPEvaluateCommandStoppingEarly code: '3 + 4' timeLimit: self unstartedLimitSeconds previewLimit: 100.
-	command memoryGrowthLimit: -1024 * 1024 * 1024.
-	unstarted := [ 3 + 4 ] newProcess.
-	self
-		assert: (tool stopSummaryFor: (command watch: unstarted until: Semaphore new started: [ false ]) of: command)
-		equals: 'Evaluation stopped after ' , self unstartedLimitSeconds printString , ' s, its time limit.'.
-	self assert: ((tool stopSummaryFor: (command watch: unstarted until: Semaphore new started: [ true ]) of: command) beginsWith:
-			 'Evaluation stopped: the image''s memory grew by more than ').
-	self assert: (command
-			 watch: unstarted
-			 until: (Semaphore new
-					  signal;
-					  yourself)
-			 started: [ true ]) isNil
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testEvaluateNamesAFrameOnOneLineByItsClassAndMethod [
-	"Every Pharo names a frame so; before 14, Pharo printed a block's frame with the block's source, over as many lines as it has."
-
-	| tool |
-	tool := MCPToolEvaluate new.
-	self assert: (tool frameNameFor: thisContext) equals: 'MCPToolContractsTest>>testEvaluateNamesAFrameOnOneLineByItsClassAndMethod'.
-	self
-		assert: [ tool frameNameFor: thisContext ] value
-		equals: '[ ] in MCPToolContractsTest>>testEvaluateNamesAFrameOnOneLineByItsClassAndMethod'.
-	self
-		assert: (tool frameNameFor: (Context
-					  sender: nil
-					  receiver: 3
-					  method: Object >> #printString
-					  arguments: #(  )))
-		equals: 'SmallInteger(Object)>>printString'
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testEvaluateNotStartedTextTellsAnEvaluationFromAFork [
-	"A process named after the tool is an earlier evaluation, which ends at its own limit; any other at the priority evaluations run at was forked by one, and has no limit."
-
-	| evaluation fork lines summary |
-	evaluation := [ 1 ] newProcess
-		              name: 'evaluate';
-		              yourself.
-	fork := [ 2 ] newProcess
-		        name: 'mcp-fork-probe';
-		        yourself.
-	summary := 'Evaluation did not start within 1 s, its time limit; none of it ran.'.
-	lines := (self notStartedTextHeldBy: {
-			          evaluation.
-			          fork }) lines.
-	self assert: (lines first: 2) equals: {
-			summary.
-			'Holding the priority evaluations run at:' }.
-	self assert: ((lines at: 3) beginsWith: 'an earlier evaluation, in ').
-	self assert: ((lines at: 4) beginsWith: 'a process an evaluation forked, named mcp-fork-probe, in ').
-	self assert: (lines allButFirst: 4) equals: #( 'An earlier evaluation stops at its own time limit; call again after it.'
-		   'A fork has no time limit; while it computes, evaluations may not start.'
-		   'If it never ends, only an image restart ends it, losing what was not saved.'
-		   'Fork long work at Processor userBackgroundPriority, below evaluations.' ).
-	lines := (self notStartedTextHeldBy: { evaluation }) lines.
-	self assert: lines size equals: 4.
-	self assert: (lines at: 3) equals: 'an earlier evaluation, in ' , (MCPToolEvaluate new frameNameFor: evaluation suspendedContext).
-	self assert: lines last equals: 'An earlier evaluation stops at its own time limit; call again after it.'.
-	self assert: (self notStartedTextHeldBy: #(  )) lines equals: {
-			summary.
-			'No other process holds the priority evaluations run at,'.
-			'so code at a higher priority, such as another call, kept the processor.' }
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testEvaluateOmitsTruncationFieldsForSmallResults [
-
-	| data |
-	data := self dataFrom:
-		        (self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> '#( 1 2 3 )') } asDictionary).
-	self deny: (data includesKey: #truncated).
-	self deny: (data includesKey: #resultSize)
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testEvaluateQueuesPostResponseActionsOfTheCall [
-	"The code runs in a process of its own, and what it defers must still wait for the response of the call that ran it."
-
-	| actions result |
-	actions := OrderedCollection new.
-	result := MCPPostResponseActions value: actions during: [
-			          self
-				          callDiscoveredToolNamed: 'evaluate'
-				          withArguments: { (#code -> 'MCPPostResponseActions value add: [ 1 ]. #queued') } asDictionary ].
-	self assert: (self textFrom: result) equals: '#queued'.
-	self assert: actions size equals: 1
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testEvaluateReportsTheFailingSourceLine [
-	"A character offset makes a caller count through its own source to find the mistake."
-
-	| error result |
-	result := self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> '| s |
-s := WriteStream on: String new.
-s << cr.
-s contents') } asDictionary.
-	self compilerReadsUndeclaredNamesAsNil ifTrue: [ ^ self assert: (result at: #isError) ].
-	error := self errorFrom: result.
-	self assert: (error at: #line) equals: 3.
-	self assert: (error at: #sourceLine) equals: 's << cr.'
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testEvaluateReportsTruncationAndCollectionSize [
-	"A cut preview used to end in a marker and nothing else, so the caller could not tell whether two or two hundred kilobytes were missing."
-
-	| data |
-	data := self dataFrom:
-		        (self
-			         callDiscoveredToolNamed: 'evaluate'
-			         withArguments: { (#code -> '(1 to: 40000) asOrderedCollection') } asDictionary).
-	self assert: (data at: #truncated).
-	self assert: (data at: #resultSize) equals: 40000.
-	self
-		assert: (data at: #resultPrintString) size
-		equals: ((1 to: 40000) asOrderedCollection printStringLimitedTo: MCPToolEvaluate new resultPreviewCharacterLimit) size
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testEvaluateRequiresCodeInSchema [
-
-	self assert: (MCPToolEvaluate new inputSchema required includes: 'code')
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testEvaluateResumesNotificationsSignaledByADefaultAction [
-	"A default action may signal a notification of its own, and a handler is suspended while its block runs: Deprecation>>defaultAction logs, logging signals DeprecationPerformedNotification, and that second notification used to escape and fail the call."
-
-	| data result |
-	result := self
-		          callDiscoveredToolNamed: 'evaluate'
-		          withArguments: { (#code -> 'MCPToolNestedNotification signal') } asDictionary.
-	data := self dataFrom: result.
-	self deny: (result includesKey: #isError).
-	self assert: (data at: #resultPrintString) equals: '''nested-mcpDefaultAction'''
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testEvaluateReturnsCompilationFailureInformation [
-
-	| result text |
-	result := self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> '1 +') } asDictionary.
-	text := self textFrom: result.
-	self assert: (result at: #isError).
-	self assert: (text includesSubstring: 'failed during compilation').
-	self assert: (text includesSubstring: self expectedSyntaxErrorNoticeClassName).
-	self assert: (text includesSubstring: 'Line 1')
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testEvaluateReturnsRuntimeFailureInformation [
-
-	| result text |
-	result := self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> 'Error signal: ''boom''') } asDictionary.
-	text := self textFrom: result.
-	self assert: (result at: #isError).
-	self assert: (text includesSubstring: 'failed during execution').
-	self assert: (text includesSubstring: 'boom').
-	self assert: ((text lines reject: [ :each | each beginsWith: '   ' ]) last includesSubstring: 'UndefinedObject>>DoIt')
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testEvaluateRunsJustBelowTheCallingProcess [
-	"Only a process above the code can take the processor back from code that computes, so the code runs one priority below the call."
-
-	self
-		assert: (self textFrom:
-				 (self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> 'Processor activePriority') } asDictionary))
-		equals: (Processor activePriority - 1) printString
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testEvaluateStackAndMemoryStopsSayWhy [
-	"Each early stop names what the code passed and how far, and the stack's names what runs that deep."
-
-	| command tool |
-	tool := MCPToolEvaluate new.
-	command := MCPEvaluateCommand code: '3 + 4' timeLimit: 30 previewLimit: 100.
-	self
-		assert: (tool stackStoppedMessageFor: command stackDepthLimit)
-		equals: 'Evaluation stopped: its stack passed 1000000 frames, which an endless recursion does.'.
-	self
-		assert: (tool memoryStoppedMessageFor: command memoryGrowthLimit)
-		equals: 'Evaluation stopped: the image''s memory grew by more than 4 GB while it ran.'.
-	self
-		assert: (tool memoryStoppedMessageFor: 16 * 1024 * 1024)
-		equals: 'Evaluation stopped: the image''s memory grew by more than 16 MB while it ran.'
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testEvaluateStackTraceStopsAtTheEvaluatedCode [
-	"Below the outermost doIt every frame is compiler and dispatch scaffolding, identical on every failure."
-
-	| error stackTrace |
-	error := self errorFrom:
-		         (self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> '#( 1 2 3 ) do: [ :each | each frobnicate ]') } asDictionary).
-	stackTrace := error at: #stackTrace.
-	self assert: stackTrace last equals: 'UndefinedObject>>DoIt'.
-	self deny: (stackTrace anySatisfy: [ :each | each includesSubstring: 'MCP' ]).
-	self deny: (stackTrace anySatisfy: [ :each | each includesSubstring: 'OpalCompiler' ])
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testEvaluateStopCollapsesARecursion [
-	"A recursion fills every frame kept with one name. The fixture's name must not begin with MCP, whose frames are cut as the server's own, and it waits rather than computes, so the test grows no memory."
-
-	| fixture result |
-	self timeLimit: 30 seconds.
-	fixture := self
-		           createClassNamed: 'StopRecursionFixture'
-		           superclassName: 'Object'
-		           slots: #(  )
-		           classSlots: #(  ).
-	result := [
-		          self
-			          ensureMethodSource: 'descend: n
-	n = 0 ifTrue: [ ^ (Delay forSeconds: 60) wait ].
-	^ self descend: n - 1'
-			          protocol: 'fixture'
-			          on: fixture.
-		          self evaluateBriefly: 'StopRecursionFixture new descend: 100' ] ensure: [
-		          self removeClassNamed: 'StopRecursionFixture' ].
-	self assert: ((self stoppedTextOf: result) lines anySatisfy: [ :each |
-			 (each beginsWith: 'StopRecursionFixture>>descend:, at least ') and: [ each endsWith: ' times in a row' ] ])
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testEvaluateStopCollectsGarbageAfterTheAnswer [
-	"What a stopped evaluation grew is garbage once it ends. A full collection of a large heap takes seconds, so the process that stopped it collects only once the answer has gone out, which the call's post-response action tells it, and until then it waits."
-
-	| actions before helpers |
-	self timeLimit: 30 seconds.
-	before := self liveProcessesNamed: 'evaluate stop'.
-	actions := OrderedCollection new.
-	self evaluateBriefly: '[ true ] whileTrue' deferringInto: actions.
-	helpers := (self liveProcessesNamed: 'evaluate stop') copyWithoutAll: before.
-	[
-		self assert: actions size equals: 1.
-		self assert: helpers size equals: 1.
-		(Delay forMilliseconds: 20) wait.
-		self deny: helpers first isTerminated ] ensure: [ actions do: #value ].
-	self waitUntilEnded: helpers first.
-	self assert: helpers first isTerminated
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testEvaluateStopCollectsGarbageOnceTheCodeHasUnwound [
-	"The answer may go out while the stopped code still unwinds, and what it grew stays reachable until it has, so the collection waits for the unwinding as well as for the answer."
-
-	| actions before helpers collections |
-	self timeLimit: 30 seconds.
-	MCPEvaluateTestProbe reset.
-	before := self liveProcessesNamed: 'evaluate stop'.
-	actions := OrderedCollection new.
-	[
-		self
-			stoppedTextUnwindingBrieflyOf: '[ [ true ] whileTrue ] ensure: [ MCPEvaluateTestProbe holdUntilReleased ]'
-			deferringInto: actions.
-		collections := self fullGarbageCollections.
-		actions do: #value.
-		self assert: self fullGarbageCollections equals: collections.
-		helpers := (self liveProcessesNamed: 'evaluate stop') copyWithoutAll: before.
-		self assert: helpers size equals: 1 ] ensure: [
-			MCPEvaluateTestProbe release.
-			MCPEvaluateTestProbe holder ifNotNil: [ :holder | self waitUntilEnded: holder ] ].
-	self waitUntilEnded: helpers first.
-	self assert: helpers first isTerminated.
-	self assert: self fullGarbageCollections > collections
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testEvaluateStopCollectsGarbageWhenTheAnswerNeverGoesOut [
-	"A client that gave up leaves the answer unwritten, and what the call deferred unrun. The process that stopped the code waits for the answer only as long as the answer waits for the unwinding, then collects anyway, rather than keep itself and the garbage forever."
-
-	| actions before collections helpers |
-	self timeLimit: 30 seconds.
-	before := self liveProcessesNamed: 'evaluate stop'.
-	collections := self fullGarbageCollections.
-	actions := OrderedCollection new.
-	self stoppedTextUnwindingBrieflyOf: '[ true ] whileTrue' deferringInto: actions.
-	helpers := (self liveProcessesNamed: 'evaluate stop') copyWithoutAll: before.
-	self assert: helpers size equals: 1.
-	self waitUntilEnded: helpers first.
-	self assert: helpers first isTerminated.
-	self assert: self fullGarbageCollections > collections
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testEvaluateStoppedAnswersItsTranscript [
-	"What the code wrote before it was stopped may be all that says how far it got. It comes last, after the recipe, as in every other answer, and the Transcript is put back."
-
-	| previous result |
-	self timeLimit: 30 seconds.
-	previous := Smalltalk globals at: #Transcript.
-	result := self evaluateBriefly: 'Transcript show: ''started''. [ true ] whileTrue'.
-	self assert: (Smalltalk globals at: #Transcript) identicalTo: previous.
-	self
-		assert: ((self stoppedTextOf: result) lines last: 3)
-		equals: #( 'A fork has no time limit, and at this priority it holds up no evaluation.'
-			   'Transcript:' 'started' ).
-	self assert: ((result structuredContent at: #error) at: #transcript) equals: 'started'
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testEvaluateStoppedAnswersTheTranscriptAsItWasAtTheStop [
-	"Once the call has stopped the code, what its unwinding writes or raises does not reach the answer."
-
-	| result |
-	self timeLimit: 30 seconds.
-	result := self evaluateBriefly:
-		          '[ Transcript show: ''before''. (Delay forSeconds: 10) wait ] ensure: [ Transcript show: ''cleanup''. 1/0 ]'.
-	self stoppedTextOf: result.
-	self assert: ((result structuredContent at: #error) at: #transcript) equals: 'before'
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testEvaluateStoppedFramesCollapseARecursion [
-	"A run of equal frame names is one line with its count, and the run that reaches the last frame kept, when the stack goes deeper, counts at least that many."
-
-	| lines tool |
-	tool := MCPToolEvaluate new.
-	lines := tool collapsedFrameLines: (Array new: 20 withAll: 'StopRecursionFixture>>descend:') deeper: true.
-	self assert: lines equals: #( 'StopRecursionFixture>>descend:, at least 20 times in a row' ).
-	self assert: (tool collapsedFrameLines: #( 'a' 'b' 'b' 'c' 'b' ) deeper: false) equals: #( 'a' 'b, 2 times in a row'
-	   'c' 'b' ).
-	self assert: (tool collapsedFrameLines: #( 'a' 'b' ) deeper: true) equals: #( 'a' 'b' )
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testEvaluateStoppedTextNamesTheLimitAndTheWayToRunLongerWork [
-	"The answer names the limit the code reached, where it was, and the one way it recommends to run longer work. It does not offer to raise the limit: through a client that waits less, a raised limit loses the answer while the code goes on."
-
-	| text tool |
-	tool := MCPToolEvaluate new.
-	text := tool contentTextForStructuredContent: (Dictionary new
-			         at: #summary put: (tool stoppedMessageFor: 30);
-			         at: #error put: (Dictionary new
-					          at: #stoppedIn put: (tool collapsedFrameLines: (Array new: 20 withAll: 'ZooKeeper>>animals') deeper: true);
-					          at: #hint put: tool longerWorkHintLines;
-					          at: #timeoutSeconds put: 30;
-					          yourself);
-			         yourself).
-	self assert: text equals: (String lf join: 'Evaluation stopped after 30 s, its time limit.
-What it changed before then stays changed.
-Stopped in:
-ZooKeeper>>animals, at least 20 times in a row
-Run longer work in a forked process that writes its result to a file:
-[ | file result |
-	file := FileLocator imageDirectory / ''result.txt''.
-	file ensureDelete.
-	result := [ "the work" ] on: Error do: [ :error | error description ].
-	file writeStreamDo: [ :out | out print: result ] ]
-		forkAt: Processor userBackgroundPriority
-		named: ''result''
-The file appears when the work ends; read it in a later call.
-A fork has no time limit, and at this priority it holds up no evaluation.' lines).
-	self deny: (text includesSubstring: 'timeoutSeconds')
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testEvaluateStopsAComputingLoopUnderEitherPreemptionRule [
-	"A loop that computes never yields, so only a process above it can take the processor back, whichever way the virtual machine requeues the process it preempts. The process that terminates the loop runs at the loop's priority, so the loop is taken off the run queue first, and has unwound under either rule by the time the answer goes."
-
-	self timeLimit: 30 seconds.
-	self underEitherPreemptionRuleDo: [ :yields |
-			| actions before evaluators lines milliseconds result rule |
-			rule := 'With processPreemptionYields ' , yields printString.
-			before := self processesNamed: 'evaluate'.
-			actions := OrderedCollection new.
-			[
-				milliseconds := Time millisecondsToRun: [ result := self evaluateBriefly: '[ true ] whileTrue' deferringInto: actions ].
-				evaluators := (self processesNamed: 'evaluate') copyWithoutAll: before ] ensure: [ actions do: #value ].
-			lines := (self stoppedTextOf: result) lines.
-			self deny: (lines includes: 'Its ensure blocks were still running when this answer was sent.') description: rule.
-			self assert: (lines includes: 'Stopped in:').
-			self assert: (lines includes: 'UndefinedObject>>DoIt').
-			self assert: evaluators size equals: 1.
-			self waitUntilEnded: evaluators first.
-			self assert: evaluators first isTerminated description: rule.
-			self assert: milliseconds < 10000 ]
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testEvaluateStopsAFailureWhoseEnsureBlockOutlastsTheLimit [
-	"A failure is answered only once its ensure blocks have run, so one that waits past the limit is stopped there, like any other code."
-
-	| result |
-	self timeLimit: 30 seconds.
-	result := self evaluateBriefly: '[ 1/0 ] ensure: [ (Delay forMilliseconds: 500) wait ]'.
-	self assert: ((self stoppedTextOf: result) includesSubstring: 'Stopped in:')
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testEvaluateStopsARecursionPastItsStackBound [
-	"An endless recursion grows the image by GBs within its time limit, so the stack is looked at while the code runs, and the code is stopped once it passes a bound, long before the limit. The fixture waits at the bottom of a recursion just past a low bound, so the test grows no memory."
-
-	| fixture lines milliseconds result |
-	self timeLimit: 30 seconds.
-	fixture := self
-		           createClassNamed: 'StopRecursionFixture'
-		           superclassName: 'Object'
-		           slots: #(  )
-		           classSlots: #(  ).
-	[
-		self
-			ensureMethodSource: 'descend: n
-	n = 0 ifTrue: [ ^ (Delay forSeconds: 60) wait ].
-	^ self descend: n - 1'
-			protocol: 'fixture'
-			on: fixture.
-		milliseconds := Time millisecondsToRun: [
-			                result := self
-				                          stoppedEarlyResultOf: 'StopRecursionFixture new descend: 2000'
-				                          bounds: [ :command | command stackDepthLimit: 1000 ] ] ] ensure: [
-		self removeClassNamed: 'StopRecursionFixture' ].
-	self assert: result isError.
-	lines := (self textOfEvaluateResult: result) lines.
-	self assert: (lines first: 2) equals: #( 'Evaluation stopped: its stack passed 1000 frames, which an endless recursion does.'
-		   'What it changed before then stays changed.' ).
-	self assert: (lines anySatisfy: [ :each | each beginsWith: 'StopRecursionFixture>>descend:, at least ' ]).
-	self assert: milliseconds < 10000
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testEvaluateStopsAWaitAndRunsItsEnsureBlocks [
-	"A stop unwinds the code as any termination does: its ensure blocks run, and the Transcript it was recording is put back."
-
-	| result transcript |
-	self timeLimit: 30 seconds.
-	MCPEvaluateTestProbe reset.
-	transcript := Smalltalk globals at: #Transcript.
-	result := self evaluateBriefly: '[ (Delay forSeconds: 60) wait ] ensure: [ MCPEvaluateTestProbe noteEnsureRan ]'.
-	self deny: ((self stoppedTextOf: result) includesSubstring: 'still running').
-	self assert: MCPEvaluateTestProbe ensureRan.
-	self assert: (Smalltalk globals at: #Transcript) identicalTo: transcript
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testEvaluateStopsAWaitInACriticalSectionWithoutSignallingIt [
-	"Terminated while it waits to enter a critical section, a process leaves without signalling the semaphore, which it never acquired, but only when terminated from where it waits: suspended first, it would signal on its way out and let a second process in. So a stop leaves a waiting evaluator waiting."
-
-	| holder mutex |
-	self timeLimit: 30 seconds.
-	MCPEvaluateTestProbe reset.
-	mutex := MCPEvaluateTestProbe mutex.
-	holder := [ mutex critical: [ MCPEvaluateTestProbe holdUntilReleased ] ]
-		          forkAt: Processor activePriority + 1
-		          named: 'mcp-evaluate-mutex-holder-probe'.
-	[
-		self deny:
-			((self stoppedTextOf: (self evaluateBriefly: 'MCPEvaluateTestProbe mutex critical: [ #entered ]')) includesSubstring:
-				 'still running').
-		self deny: mutex isSignaled description: 'The stopped evaluation signalled a semaphore it never acquired.' ] ensure: [
-			MCPEvaluateTestProbe release.
-			self waitUntilEnded: holder ].
-	self assert: holder isTerminated.
-	self assert: mutex isSignaled.
-	mutex wait.
-	self deny: mutex isSignaled description: 'The semaphore admits a second process.'
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testEvaluateStopsAnEndlessRecursionWithinASecondOrTwo [
-	"An eval run's recursion grew the image by more than a GB a second until its time limit, and stopping a stack that deep took longer than the limit. Its stack passes the bound within a fraction of a second, so it is stopped long before the limit, having grown the image by a few hundred MB."
-
-	| fixture milliseconds result |
-	self timeLimit: 30 seconds.
-	fixture := self
-		           createClassNamed: 'StopRecursionFixture'
-		           superclassName: 'Object'
-		           slots: #(  )
-		           classSlots: #(  ).
-	[
-		self
-			ensureMethodSource: 'members
-	^ self members sorted'
-			protocol: 'fixture'
-			on: fixture.
-		milliseconds := Time millisecondsToRun: [ result := self evaluate: 'StopRecursionFixture new members' within: 30 ] ] ensure: [
-		self removeClassNamed: 'StopRecursionFixture' ].
-	self assert: (self resultIndicatesError: result).
-	self
-		assert: (self textFrom: result) lines first
-		equals: 'Evaluation stopped: its stack passed 1000000 frames, which an endless recursion does.'.
-	self assert: milliseconds < 10000
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testEvaluateStopsCodeThatCatchesEveryException [
-	"A limit that signals is caught by the first handler that takes every exception, and the code carries on. Terminating a process signals nothing."
-
-	| milliseconds result |
-	self timeLimit: 30 seconds.
-	milliseconds := Time millisecondsToRun: [
-		                result := self evaluateBriefly: '[ [ true ] whileTrue ] on: Exception do: [ :e | [ true ] whileTrue ]' ].
-	self deny: ((self stoppedTextOf: result) includesSubstring: 'still running').
-	self assert: milliseconds < 10000
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testEvaluateStopsCodeThatKeepsMoreMemoryThanItsBound [
-	"Code that keeps what it allocates without recursing passes no stack bound, so the image's memory backs the stack up. The bound is set low and the code keeps 24 MB, then waits, so the test allocates no GBs. A collection beforehand keeps garbage freed meanwhile from hiding the growth."
-
-	| lines milliseconds result |
-	self timeLimit: 30 seconds.
-	Smalltalk garbageCollect.
-	milliseconds := Time millisecondsToRun: [
-			                result := self
-				                          stoppedEarlyResultOf:
-				                          '| kept | kept := (1 to: 3) collect: [ :each | ByteArray new: 8 * 1024 * 1024 ]. (Delay forSeconds: 60) wait. kept size'
-				                          bounds: [ :command | command memoryGrowthLimit: 16 * 1024 * 1024 ] ].
-	self assert: result isError.
-	lines := (self textOfEvaluateResult: result) lines.
-	self assert: (lines first: 2) equals: #( 'Evaluation stopped: the image''s memory grew by more than 16 MB while it ran.'
-		   'What it changed before then stays changed.' ).
-	self assert: (lines includes: 'Stopped in:').
-	self assert: milliseconds < 10000
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testEvaluateThatNeverStartedSaysSo [
-	"Whether an evaluation behind a computing process ever gets a turn depends on how the virtual machine schedules processes of one priority, so the double leaves it unstarted, as if it never did."
-
-	| command error holder result |
-	self timeLimit: 30 seconds.
-	holder := [ [ true ] whileTrue ] forkAt: Processor activePriority - 1 named: 'mcp-evaluate-holder-probe'.
-	[
-		command := MCPEvaluateCommandNeverStarting code: '3 + 4' timeLimit: self unstartedLimitSeconds previewLimit: 100.
-		result := MCPToolEvaluate new answerFor: command execute ] ensure: [ holder terminate ].
-	error := result structuredContent at: #error.
-	self assert: result isError.
-	self
-		assert: (result structuredContent at: #summary)
-		equals: 'Evaluation did not start within ' , self unstartedLimitSeconds printString , ' s, its time limit; none of it ran.'.
-	self assert: ((error at: #heldBy) anySatisfy: [ :each |
-			 each beginsWith: 'a process an evaluation forked, named mcp-evaluate-holder-probe, in ' ]).
-	self assert: (error at: #timeoutSeconds) equals: self unstartedLimitSeconds.
-	self assert: command evaluator isTerminated
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testEvaluateTimeoutSecondsIsAnIntegerFromOneToSixHundred [
-	"A limit of 0 would stop the code before it ran, and one above ten minutes would let an evaluation nobody waits for any more cost more. The description says what a limit longer than the client waits costs."
-
-	| property tool |
-	tool := MCPToolEvaluate new.
-	property := self inputPropertyNamed: 'timeoutSeconds' inTool: tool.
-	self assert: property type equals: 'integer'.
-	self assert: (property extraProperties at: #default) equals: 30.
-	self assert: (property extraProperties at: #minimum) equals: 1.
-	self assert: (property extraProperties at: #maximum) equals: 600.
-	self assert: (property description includesSubstring: 'loses the answer').
-	self assert: tool inputSchema required equals: #( 'code' ).
-	self
-		assertResult: (self callDiscoveredToolNamed: 'evaluate' withArguments: {
-					 (#code -> '1').
-					 (#timeoutSeconds -> 0) } asDictionary)
-		refusesArgumentsSaying: 'timeoutSeconds must be at least 1, not 0.'.
-	self
-		assert: ((tool requestFromToolCallArguments: {
-					  (#code -> '1').
-					  (#timeoutSeconds -> 3600) } asDictionary) integerArgumentNamed: 'timeoutSeconds')
-		equals: 600
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testEvaluateToolPointsAtTheToolCatalog [
-	"evaluate is where an agent lands when it believes no dedicated tool exists, so its description has to name the way out."
-
-	| tool |
-	tool := self toolRegistry toolNamed: 'evaluate' ifAbsent: [ self fail: 'Missing evaluate tool' ].
-	self assert: (tool description includesSubstring: 'tool_search')
+MCPToolContractsTest >> testEntryFieldsWithSeparatorsAreQuoted [
+
+	| contentText result |
+	result := self callToolNamed: 'method_search' withArguments: {
+		          (#protocol -> 'meta filtering').
+		          (self searchScope: { (#classes -> #( 'MCPToolMethodSearchTestTarget' )) } side: 'class') } asDictionary.
+	contentText := (result at: #content) first at: #text.
+	self deny: (self resultIndicatesError: result).
+	self assert: (contentText includesSubstring: 'protocol="meta filtering"')
 ]
 
 { #category : 'tests' }
@@ -1654,50 +675,6 @@ MCPToolContractsTest >> testExternalToolFixtureIsNotBuiltIn [
 	self deny: MCPExternalTestTool shouldAutoRegister.
 	self deny: (self builtInToolClasses includes: MCPExternalTestTool).
 	self deny: (self builtInGroupNames includes: MCPExternalTestTool groupName)
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testGetToolReturnsSchemaForCatalogTool [
-
-	| contract getToolPropertyNames inputProperties result |
-	result := self callToolNamed: 'tool_get' withArguments: { (#name -> 'repository_create') } asDictionary.
-	contract := (self dataFrom: result) at: #tool.
-	self assert: (contract at: #name) equals: 'repository_create'.
-	self assert: contract keys asSet equals: #( name description group exposure annotations keywords inputSchema ) asSet.
-	self assert: (contract at: #group) equals: 'repositories'.
-	self assert: (contract at: #exposure) equals: 'discoverable'.
-	self deny: ((contract at: #annotations) includesKey: #readOnlyHint).
-	self assert: ((contract at: #keywords) includes: 'repo').
-	inputProperties := ((contract at: #inputSchema) at: #properties) keys.
-	self assert: inputProperties asSet equals: #( 'repository' 'location' 'packages' 'subdirectory' ) asSet.
-	self assert: ((contract at: #inputSchema) at: #required) asArray equals: #( 'repository' ).
-	getToolPropertyNames := MCPToolGetTool new inputSchema properties collect: [ :each | each name ].
-	self assert: getToolPropertyNames equals: #( 'name' )
-]
-
-{ #category : 'tests - validation' }
-MCPToolContractsTest >> testHandleJSONAnswersMissingRequiredArgumentsAsAToolError [
-	"Arguments a tool's schema refuses are for the model to correct, so they come back as a tool result naming the argument, not as a protocol error a client may keep to itself."
-
-	| response |
-	response := self handleJSON:
-		            '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"tool_call","arguments":{"name":"evaluate","arguments":{}}}}'.
-	self deny: (response includesSubstring: '"code":-32602').
-	self assert: (response includesSubstring: '"isError":true').
-	self assert: (response includesSubstring: 'Invalid arguments for evaluate. code is required.')
-]
-
-{ #category : 'tests - validation' }
-MCPToolContractsTest >> testHandleJSONAnswersToolCallArgumentsItRefusesAsAToolError [
-	"tool_call checks its own arguments before it dispatches, and refuses them the same way."
-
-	| response |
-	response := self handleJSON:
-		            '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"tool_call","arguments":{"toolName":"evaluate","arguments":{}}}}'.
-	self deny: (response includesSubstring: '"code":-32602').
-	self assert: (response includesSubstring: '"isError":true').
-	self assert: (response includesSubstring: 'Invalid arguments for tool_call. name is required.').
-	self assert: (response includesSubstring: 'toolName is not accepted here; expected one of arguments, name.')
 ]
 
 { #category : 'tests' }
@@ -1807,6 +784,79 @@ MCPToolContractsTest >> testInputSchemaJSONHasCompactTopLevelShape [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testLineFeedTextReadsAsABlock [
+	"Text the server writes ends its lines with LF, and reads as a block as text ending them with CR does."
+
+	| contentText |
+	contentText := MCPToolGetClass new contentTextForStructuredContent: (Dictionary new
+			                at: #summary put: 'Summary.';
+			                at: #data put: {
+					                (#text -> (String lf join: #( 'one' 'two' ))).
+					                (#name -> 'Plain') } asDictionary;
+			                yourself).
+	self assert: contentText lines equals: #( 'Summary.' 'name: Plain' 'text:' 'one' 'two' )
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testListOfMultiLineValuesReadsOneValueAtATime [
+	"A list whose values have lines of their own gives each value its own lines, every one of them indented as an item of the list, so no value runs into the next."
+
+	| lines |
+	lines := (String streamContents: [ :stream |
+			          MCPToolGetClass new
+				          entriesTextOn: stream
+				          for: {
+						          (String lf join: #( 'first' '   detail' )).
+						          'second' }
+				          labelled: 'values'
+				          indent: '  ' ]) lines.
+	self assert: lines equals: #( '' '  values:' '    first' '       detail' '    second' ).
+	lines := (String streamContents: [ :stream |
+			          MCPToolGetClass new
+				          entriesTextOn: stream
+				          for: #( 'one' 'two' )
+				          labelled: 'values'
+				          indent: '' ]) lines.
+	self assert: lines equals: #( '' 'values: [one, two]' )
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testListsKeepAFieldWhenSayingItOnceWouldEmptyARow [
+	"Rows that differ in nothing on their line keep their fields, or the list would read as blank lines."
+
+	| lines |
+	lines := (String streamContents: [ :stream |
+			          MCPToolSearchMethodReferences new
+				          entriesTextOn: stream
+				          for: {
+						          { (#kind -> 'senders') } asDictionary.
+						          { (#kind -> 'senders') } asDictionary }
+				          labelled: 'rows'
+				          indent: '' ]) lines.
+	self assert: lines equals: #( '' 'rows:' '  kind=senders' '  kind=senders' )
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testListsSayAFieldEveryRowSharesOnce [
+	"A field the request fixed is the same on every row, so the list says it once beside its name and the rows keep what tells them apart."
+
+	| lines |
+	lines := (String streamContents: [ :stream |
+			          MCPToolSearchMethodReferences new
+				          entriesTextOn: stream
+				          for: {
+						          {
+							          (#kind -> 'senders').
+							          (#rank -> 1) } asDictionary.
+						          {
+							          (#kind -> 'senders').
+							          (#rank -> 2) } asDictionary }
+				          labelled: 'rows'
+				          indent: '' ]) lines.
+	self assert: lines equals: #( '' 'rows (each kind=senders):' '  rank=1' '  rank=2' )
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testMCPAddToolRefreshesAdvertisedTools [
 
 	| server |
@@ -1871,146 +921,6 @@ MCPToolContractsTest >> testMCPsOwnTestFixturesAreNotServed [
 	self assert: served asArray sorted equals: #(  )
 ]
 
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testMessageNotUnderstoodByAClassSaysItsInstancesUnderstandIt [
-	"A constructor compiled on the instance side, then sent to the class, was answered with the class side's selectors that resembled it. Its send of new, which no instance understands, says it was meant for the class side, and compiling it there is offered. Any other instance-side method is sent to an instance: add: sent to OrderedCollection when new was forgotten, sumTo: whose source is in the .changes file as the caller's is, and port:, a library's setter, whose source is there too. Every class understands at:, so at:ifAbsent: also reads as at: then ifAbsent:, a guess that the instances understanding it outweighs. A new instance of the class of Smalltalk globals is empty, so the one everyone means is named."
-
-	| error |
-	error := self errorFrom: (self
-			          callDiscoveredToolNamed: 'evaluate'
-			          withArguments: { (#code -> 'MCPNotUnderstoodNoteTestTarget withLabel: ''a''') } asDictionary).
-	self
-		assert: (error at: #note)
-		equals:
-		'Instances of MCPNotUnderstoodNoteTestTarget understand withLabel:, but MCPNotUnderstoodNoteTestTarget itself does not: withLabel: is an instance-side method. It sends new to self, which instances of MCPNotUnderstoodNoteTestTarget do not understand: compile it with method_compile and side class to send it to MCPNotUnderstoodNoteTestTarget.'.
-	self deny: (error includesKey: #suggestedSelectors).
-	error := self errorFrom:
-		         (self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> 'MCPDebugWatchTestTarget sumTo: 3') } asDictionary).
-	self
-		assert: (error at: #note)
-		equals:
-		'Instances of MCPDebugWatchTestTarget understand sumTo:, but MCPDebugWatchTestTarget itself does not: sumTo: is an instance-side method. Send it to an instance.'.
-	error := self errorFrom:
-		         (self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> 'JRPCHTTPServer port: 4000') } asDictionary).
-	self
-		assert: (error at: #note)
-		equals:
-		'Instances of JRPCHTTPServer understand port:, but JRPCHTTPServer itself does not: port: is an instance-side method. Send it to an instance.'.
-	error := self errorFrom:
-		         (self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> 'OrderedCollection add: 1') } asDictionary).
-	self
-		assert: (error at: #note)
-		equals:
-		'Instances of OrderedCollection understand add:, but OrderedCollection itself does not: add: is an instance-side method. Send it to an instance.'.
-	error := self errorFrom:
-		         (self
-			          callDiscoveredToolNamed: 'evaluate'
-			          withArguments: { (#code -> 'OrderedCollection at: 1 ifAbsent: [ 0 ]') } asDictionary).
-	self assert:
-		((error at: #note) beginsWith: 'Instances of OrderedCollection understand at:ifAbsent:, but OrderedCollection itself does not').
-	self deny: ((error at: #note) includesSubstring: 'method_compile').
-	error := self errorFrom: (self
-			          callDiscoveredToolNamed: 'evaluate'
-			          withArguments: { (#code -> 'Smalltalk globals class at: #Object ifAbsent: [ nil ]') } asDictionary).
-	self assert: ((error at: #note) endsWith: ' is an instance-side method. Send it to an instance, such as Smalltalk globals.')
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testMessageNotUnderstoodByAnInstanceSaysItsClassUnderstandsIt [
-	"A class-side method is sent to the class, whether it is one of Pharo's own, such as withAll:, or one compiled since the image shipped: nothing in it tells that it was meant for the instances. Every class understands name, which Class implements, so an instance that does not lacks an accessor rather than was sent a class-side message: only a method a class side of its own hierarchy defines says so."
-
-	| error |
-	error := self errorFrom:
-		         (self
-			          callDiscoveredToolNamed: 'evaluate'
-			          withArguments: { (#code -> 'MCPDebugWatchTestTarget new doubleOf: 3') } asDictionary).
-	self
-		assert: (error at: #note)
-		equals:
-		'MCPDebugWatchTestTarget itself understands doubleOf:, but its instances do not: doubleOf: is a class-side method. Send it to MCPDebugWatchTestTarget.'.
-	error := self errorFrom:
-		         (self
-			          callDiscoveredToolNamed: 'evaluate'
-			          withArguments: { (#code -> 'OrderedCollection new withAll: #( 1 )') } asDictionary).
-	self
-		assert: (error at: #note)
-		equals:
-		'OrderedCollection itself understands withAll:, but its instances do not: withAll: is a class-side method. Send it to OrderedCollection.'.
-	error := self errorFrom: (self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> 'Object new name') } asDictionary).
-	self deny: (error includesKey: #note)
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testMessageNotUnderstoodPassedOnToSuperIsSentByTheFrameThatSentIt [
-	"An override of doesNotUnderstand: that passes the message on to super, as nil's own does in Pharo 10 and 11, runs one doesNotUnderstand: inside the one the virtual machine sent. The note reads the frame that sent the message, the sender of the outermost, not the override, which only passed it on: in those versions it named UndefinedObject>>doesNotUnderstand: as the code that sent a message to nil."
-
-	| sender |
-	sender := [
-		          MCPNotUnderstoodNotePassingOnTarget new mcpProbeNobodyUnderstands.
-		          nil ]
-		          on: Error
-		          do: [ :error | error return: (MCPNotUnderstoodNote senderOf: error) ].
-	self assert: sender compiledCode method equals: thisContext method
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testMessageNotUnderstoodSaysTwoKeywordMessagesRunTogether [
-	"sorted:collect:, which nothing implements, was meant as sorted: then collect:. The selectors it resembles, sorted: among them, read as blaming the receiver, so the compile critique's sentence comes first. It is a guess, which a mistyped selector such as at:ifAbsentPut:put: matches too, so the selectors stay after it."
-
-	| error result |
-	result := self
-		          callDiscoveredToolNamed: 'evaluate'
-		          withArguments:
-		          { (#code -> '#( 3 1 2 ) asOrderedCollection sorted: [ :a :b | a < b ] collect: [ :each | each ]') } asDictionary.
-	error := self errorFrom: result.
-	self
-		assert: (error at: #note)
-		equals:
-		'sorted:collect: is one message. To send collect: to what sorted: answers, put the sorted: send in parentheses: (... sorted: ...) collect: ...'.
-	self assert: ((error at: #suggestedSelectors) includes: 'sorted:').
-	self assert: (self textFrom: result) lines second equals: (error at: #note).
-	self assert: ((self textFrom: result) lines third beginsWith: 'Did you mean: ').
-	error := self errorFrom: (self
-			          callDiscoveredToolNamed: 'evaluate'
-			          withArguments: { (#code -> 'Dictionary new at: 1 ifAbsentPut: [ 0 ] put: 3') } asDictionary).
-	self assert: ((error at: #suggestedSelectors) includes: 'at:ifAbsentPut:')
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testMessageNotUnderstoodSuggestsNearMissSelectors [
-	"Thirty-five failures in a day of real use were guesses at an API; the receiver knows which selectors the guess resembles."
-
-	| error |
-	error := self errorFrom: (self
-			         callDiscoveredToolNamed: 'evaluate'
-			         withArguments: { (#code -> 'OrderedCollection new adAll: #( 1 2 3 )') } asDictionary).
-	self assert: (error at: #suggestedSelectors) first equals: 'addAll:'
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testMessageNotUnderstoodSuggestsNothingForAnUnrelatedSelector [
-	"Pharo's corrector answers its closest candidates whatever their distance; suggesting those would be worse than saying nothing."
-
-	| error |
-	error := self errorFrom: (self
-			         callDiscoveredToolNamed: 'evaluate'
-			         withArguments: { (#code -> 'OrderedCollection new frobnicate') } asDictionary).
-	self deny: (error includesKey: #suggestedSelectors)
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testMessageNotUnderstoodWithNoSelectorAnswersTheFailure [
-	"Before Pharo 14, perform: nil raises a message not understood whose selector is nil, which has no keywords to read: the answer is that failure, not an error raised while reading it."
-
-	| result |
-	result := self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> 'MessageNotUnderstood new
-	message: (Message selector: nil arguments: #(  ));
-	receiver: 3;
-	signal') } asDictionary.
-	self assert: ((self textFrom: result) beginsWith: 'Evaluation failed during execution (MessageNotUnderstood)').
-	self deny: ((self errorFrom: result) includesKey: #note)
-]
-
 { #category : 'tests' }
 MCPToolContractsTest >> testMessageProcessorRegistersInheritedMCPHandlersForSubclass [
 
@@ -2037,100 +947,18 @@ MCPToolContractsTest >> testMessageProcessorUsesSubclassJRPCHandlerOverride [
 	self assert: (result at: #source) equals: 'subclass'
 ]
 
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testMessageSentToNilByAnInlinedSendNamesTheSendTheCodeWrote [
-	"to:do: is compiled inline, as a <= the code never wrote, which fails in Pharo's own methods when the limit is nil. The note names to:do:, the send the code wrote, and since the <= does not say which of to:do:'s operands was nil, it does not either."
-
-	| error |
-	error := self errorFrom: (self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> '| limit |
-1 to: limit do: [ :each | each ]') } asDictionary).
-	self assert: (error at: #note) equals: 'The code sent to:do:, which met the nil.'
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testMessageSentToNilByPharoNamesTheVariableTheCodePassed [
-	"Comparing with nil, or adding it, fails in the kernel, which sends nil a message of its own from a method running on nil. The variable the code left nil is width, or each in a block, not that method's self."
-
-	| error |
-	error := self errorFrom: (self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> '| width |
-3 > width') } asDictionary).
-	self assert: (error at: #note) equals: 'The code sent > with the argument width, which is nil.'.
-	self deny: (error includesKey: #suggestedSelectors).
-	error := self errorFrom: (self
-			          callDiscoveredToolNamed: 'evaluate'
-			          withArguments: { (#code -> '#( 1 nil 3 ) inject: 0 into: [ :sum :each | sum + each ]') } asDictionary).
-	self assert: (error at: #note) equals: 'The code sent + with the argument each, which is nil.'
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testMessageSentToNilInsidePharoSaysTheCodePassedNone [
-	"Sorting a collection that holds nil fails in Pharo's own methods, on an element the code never named: the send the code made says so, rather than pointing at its receiver. Adding a number to a point whose coordinate is nil passes through Number>>adaptToPoint:andSend:, which the code never sent, and the send named is still the code's own."
-
-	| error |
-	error := self errorFrom:
-		         (self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> '#( 3 nil 1 ) asSortedCollection') } asDictionary).
-	self
-		assert: (error at: #note)
-		equals: 'The code sent asSortedCollection, whose receiver and arguments are not nil: the nil was met inside it.'.
-	error := self errorFrom: (self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> '| point |
-point := 3 @ nil.
-point + 1') } asDictionary).
-	self assert: (error at: #note) equals: 'The code sent +, whose receiver and arguments are not nil: the nil was met inside it.'
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testMessageSentToNilNamesTheMethodThatSentIt [
-	"nil's own selectors, such as addModelItemsToWindowMenu: for add:, are nobody's guess. Which method sent the message says where the nil came from."
-
-	| error result |
-	result := self
-		          callDiscoveredToolNamed: 'evaluate'
-		          withArguments: { (#code -> 'MCPToolRunTestsRaiser new addToNil') } asDictionary.
-	error := self errorFrom: result.
-	self assert: (error at: #note) equals: 'MCPToolRunTestsRaiser>>addToNil sent + to nil.'.
-	self deny: (error includesKey: #suggestedSelectors).
-	self assert: (self textFrom: result) lines second equals: (error at: #note)
-]
-
-{ #category : 'tests - evaluate' }
-MCPToolContractsTest >> testMessageSentToNilNamesTheVariableThatHeldIt [
-	"The variable that held nil is what was never set."
-
-	| error |
-	error := self errorFrom: (self callDiscoveredToolNamed: 'evaluate' withArguments: { (#code -> '| names |
-names add: 3') } asDictionary).
-	self assert: (error at: #note) equals: 'The code sent add: to names, which is nil.'.
-	self deny: (error includesKey: #suggestedSelectors)
-]
-
 { #category : 'tests' }
-MCPToolContractsTest >> testMethodMetadataSearchDescriptionPointsToSpecializedReferenceTools [
+MCPToolContractsTest >> testMethodRecordsReadAsMethodReferences [
 
-	| description protocolDescription queryDescription tool |
-	tool := MCPToolSearchMethods new.
-	description := tool description.
-	self assert: (description includesSubstring: 'method_source_search').
-	self assert: (description includesSubstring: 'method_reference_search').
-	queryDescription := (self inputPropertyNamed: 'query' inTool: tool) description.
-	protocolDescription := (self inputPropertyNamed: 'protocol' inTool: tool) description.
-	self assert: (queryDescription includesSubstring: 'selector').
-	self assert: (protocolDescription includesSubstring: 'protocol')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testMethodMetadataSearchListsMethodsForExistingClassScope [
-
-	| data methods result selectors |
-	result := self
-		          callToolNamed: 'method_search'
-		          withArguments: { (self searchScope: { (#classes -> #( 'MCPToolMethodSearchTestTarget' )) }) } asDictionary.
-	data := (result at: #structuredContent) at: #data.
-	methods := data at: #methods.
-	selectors := methods collect: [ :each | each at: #selector ].
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: methods isNotEmpty.
-	self assert: (selectors includes: 'alphaNeedleSelector').
-	self assert: (selectors includes: 'classNeedleSelector')
+	| contentText result |
+	result := self callToolNamed: 'method_search' withArguments: {
+		          (self searchScope: { (#classes -> #( 'MCPToolMethodSearchTestTarget' )) }) } asDictionary.
+	contentText := (result at: #content) first at: #text.
+	self deny: (self resultIndicatesError: result).
+	self assert: (contentText includesSubstring: 'MCPToolMethodSearchTestTarget>>alphaNeedleSelector').
+	self assert: (contentText includesSubstring: 'MCPToolMethodSearchTestTarget class>>classNeedleSelector').
+	self deny: (contentText includesSubstring: 'className=').
+	self deny: (contentText includesSubstring: 'classSide=')
 ]
 
 { #category : 'tests' }
@@ -2154,15 +982,6 @@ MCPToolContractsTest >> testMethodToolTraitOwnsSharedMethodHelpers [
 					implementingClass := toolClass whichClassIncludesSelector: selector.
 					self assert: implementingClass isNotNil.
 					self assert: (implementingClass >> selector) origin equals: TMCPMethodTool ] ]
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testMutationDescriptionsExplainForceWarningBehavior [
-
-	| methodForceDescription |
-	methodForceDescription := (self inputPropertyNamed: 'force' inTool: MCPToolUpdateMethod new) description.
-	self assert: (methodForceDescription includesSubstring: 'refactoring warnings').
-	self assert: (methodForceDescription includesSubstring: 'stopping')
 ]
 
 { #category : 'tests' }
@@ -2311,23 +1130,6 @@ MCPToolContractsTest >> testProjectMethodsDoNotSendReflectiveProtocolChecks [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testPromptsGetReturnsInvalidParamsWhenPromptIsUnknown [
-
-	| response |
-	response := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"prompts/get","params":{"name":"missing"}}'.
-	self assert: (response includesSubstring: '"code":-32602').
-	self assert: (response includesSubstring: '"message":"Invalid method parameter(s)."')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testPromptsListReturnsEmptyPromptList [
-
-	| response |
-	response := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"prompts/list"}'.
-	self assert: (response includesSubstring: '"result":{"prompts":[]}')
-]
-
-{ #category : 'tests' }
 MCPToolContractsTest >> testProtocolVersionNegotiation [
 
 	self assert: (MCP negotiatedProtocolVersionFor: '2025-06-18') equals: '2025-06-18'.
@@ -2404,17 +1206,48 @@ MCPToolContractsTest >> testRPCRefreshesCachedToolMetadata [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testReadScreenHasAccurateNameAndSchemas [
+MCPToolContractsTest >> testRecordListsCarryTheirLabel [
 
-	| depthProperty inputPropertyNames tool |
-	tool := MCPToolReadScreen new.
-	inputPropertyNames := tool inputSchema properties collect: [ :each | each name ].
-	depthProperty := self inputPropertyNamed: 'depth' inTool: tool.
-	self assert: tool name equals: 'screen_read'.
-	self assert: tool inputSchema required equals: #(  ).
-	self assert: inputPropertyNames equals: #( 'window' 'depth' ).
-	self assert: (depthProperty extraProperties at: #default) equals: tool defaultDepth.
-	self assert: (depthProperty extraProperties at: #maximum) equals: tool maximumDepth
+	| lines result |
+	result := self
+		          callToolNamed: 'class_search'
+		          withArguments: { (self searchScope: { (#subclassesOf -> #( 'MCPToolMutation' )) }) } asDictionary.
+	lines := ((result at: #content) first at: #text) lines.
+	self deny: (self resultIndicatesError: result).
+	self assert: (lines first includesSubstring: 'in the subclasses of MCPToolMutation').
+	self assert: (lines second beginsWith: 'classes').
+	self assert: (lines third beginsWith: '  ')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testRecordsLeadWithTheirName [
+	"A record opens with what it names, bare, rather than spending a field on it, and its name is what tells it from the others."
+
+	| lines |
+	lines := (((self
+		            callToolNamed: 'class_search'
+		            withArguments:
+		            { (self searchScope: { (#classes -> #( 'MCPToolHierarchyTestMid' 'MCPToolGetClass' )) }) } asDictionary) at:
+		           #content) first at: #text) lines.
+	self assert: (lines includes: 'classes:').
+	self assert: (lines anySatisfy: [ :each | each beginsWith: '  MCPToolGetClass package=MCP-IDE' ]).
+	self assert: (lines anySatisfy: [ :each | each beginsWith: '  MCPToolHierarchyTestMid package=MCP-Tests-Resources' ]).
+	self deny: (lines anySatisfy: [ :each | each includesSubstring: 'class=' ]).
+	lines := (((self callToolNamed: 'package_search' withArguments: { (#query -> 'MCP-Tests-Resources') } asDictionary) at: #content)
+		          first at: #text) lines.
+	self assert: (lines includes: '  MCP-Tests-Resources').
+	self deny: (lines anySatisfy: [ :each | each includesSubstring: 'package=' ]).
+	lines := (MCPToolListChangeHistoryFiles new contentTextForStructuredContent: (Dictionary new
+			           at: #summary put: 'Listed 2 change history files.';
+			           at: #data put: { (#files -> {
+						            {
+							            (#file -> 'a.ombu').
+							            (#isCurrent -> true) } asDictionary.
+						            {
+							            (#file -> 'b.ombu').
+							            (#isCurrent -> true) } asDictionary }) } asDictionary;
+			           yourself)) lines.
+	self assert: lines equals: #( 'Listed 2 change history files.' 'files (each isCurrent=true):' '  a.ombu' '  b.ombu' )
 ]
 
 { #category : 'tests' }
@@ -2447,41 +1280,6 @@ MCPToolContractsTest >> testRequestedToolIconsAreSelected [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testResourcesListAnswersTheRegisteredResources [
-
-	| response |
-	response := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"resources/list"}'.
-	self assert: (response includesSubstring: '"resources":').
-	self assert: (response includesSubstring: MCPImageMetadataResource resourceUri)
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testResourcesReadAnswersResourceNotFoundWhenTheUriIsUnknown [
-	"The spec gives resource-not-found its own code rather than folding it into invalid params, and asks for the URI in the error data."
-
-	| response |
-	response := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"resources/read","params":{"uri":"pharo://missing"}}'.
-	self assert: (response includesSubstring: '"code":-32002').
-	self assert: (response includesSubstring: '"message":"Resource not found"').
-	self assert: (response includesSubstring: '"uri":"pharo://missing"')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testResourcesTemplatesListReturnsEmptyTemplateList [
-
-	| response |
-	response := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"resources/templates/list"}'.
-	self assert: (response includesSubstring: '"result":{"resourceTemplates":[]}')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testRewriteMethodsIsMethodScopedCommandTool [
-
-	self assert: MCPToolRewriteMethods superclass equals: MCPTool.
-	self assert: (MCPToolRewriteMethods traits includes: TMCPMethodTool)
-]
-
-{ #category : 'tests' }
 MCPToolContractsTest >> testRpcToolCallCatchesUnhandledHaltFromTool [
 
 	| mcp result text tool |
@@ -2499,7 +1297,7 @@ MCPToolContractsTest >> testRpcToolCallCatchesUnhandledHaltFromTool [
 MCPToolContractsTest >> testRpcToolCallRefusesAMissingRequiredArgument [
 
 	self
-		assertResult: (self callDiscoveredToolNamed: 'evaluate' withArguments: Dictionary new)
+		assertResult: (self callToolNamed: 'evaluate' withArguments: Dictionary new)
 		refusesArgumentsSaying: 'code is required.'
 ]
 
@@ -2524,118 +1322,128 @@ MCPToolContractsTest >> testRpcToolCallRefusesAnInvalidNestedArrayItem [
 MCPToolContractsTest >> testRpcToolCallRefusesAnUnexpectedArgument [
 
 	self
-		assertResult: (self callDiscoveredToolNamed: 'evaluate' withArguments: {
+		assertResult: (self callToolNamed: 'evaluate' withArguments: {
 					 (#code -> '1 + 1').
 					 (#unexpected -> true) } asDictionary)
 		refusesArgumentsSaying: 'unexpected is not accepted here; expected one of '
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testRpcToolCallRejectsLegacyScopeArgument [
+MCPToolContractsTest >> testSearchSummaryCountsOneInTheSingular [
 
 	self
-		assertResult: (self callToolNamed: 'class_search' withArguments: { (#scope -> 'packages') } asDictionary)
-		refusesArgumentsSaying: 'scope must be object, not string.'
+		assert: (self summaryOfTool: 'class_search' with: { (self searchScope: { (#classes -> #( 'MCPToolHierarchyTestMid' )) }) })
+		equals: '1 class in MCPToolHierarchyTestMid.'.
+	self
+		assert: (self summaryOfTool: 'class_search' with: { (#query -> 'MCPToolHierarchyTestMid') })
+		equals: '1 class matches in the image.'.
+	self
+		assert: (self summaryOfTool: 'method_search' with: {
+					 (self searchScope: { (#classes -> #( 'MCPToolMethodSearchTestTarget' )) }).
+					 (#query -> 'classNeedleSelector') })
+		equals: '1 method matches in MCPToolMethodSearchTestTarget.'
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testRunTestsHasAccurateNameAndSchema [
-
-	| inputPropertyNames tool |
-	tool := MCPToolRunTests new.
-	self assert: tool name equals: 'test_run'.
-	self assert: (tool inputSchema required ifNil: [ #(  ) ]) isEmpty.
-	inputPropertyNames := tool inputSchema properties collect: [ :each | each name ].
-	self assert: inputPropertyNames asSet equals: #( 'packages' 'classes' 'methods' 'timeoutSeconds' ) asSet
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testRunTestsKeepsPackagesAsPackageSelections [
-
-	| command request selections testCases tool |
-	tool := MCPToolRunTests new.
-	request := tool requestFromToolCallArguments: { (#packages -> #( 'MCP-Tests' )) } asDictionary.
-	command := tool operationFor: request.
-	selections := command selections.
-	self assert: selections size equals: 1.
-	self assert: selections first isPackageSelection.
-	self assert: selections first packageName equals: 'MCP-Tests'.
-	self assert: selections first displayName equals: 'MCP-Tests'.
-	self assert: selections first className equals: nil.
-	self assert: selections first testMethodName equals: nil.
-	command validateSelections.
-	testCases := command testCasesFor: selections first.
-	self assert: testCases isNotEmpty.
-	self assert: (testCases noneSatisfy: [ :each | each class isAbstract ])
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testRunTestsParsesCompactSelections [
-
-	| command fixtureClassName request selections testMethodReference tool |
-	tool := MCPToolRunTests new.
-	fixtureClassName := MCPToolStructuredOutputTestTarget name asString.
-	testMethodReference := self testReferenceForMethod: MCPToolStructuredOutputTestTarget >> #testPasses.
-	request := tool requestFromToolCallArguments: {
-			           (#classes -> { MCPToolContractsTest name asString }).
-			           (#methods -> { testMethodReference }) } asDictionary.
-	command := tool operationFor: request.
-	command validateSelections.
-	selections := command selections.
-	self assert: selections size equals: 2.
-	self assert: selections first className equals: MCPToolContractsTest name asString.
-	self assert: selections first testMethodName equals: nil.
-	self assert: selections second className equals: fixtureClassName.
-	self assert: selections second testMethodName equals: #testPasses asString.
-	self assert: selections second displayName equals: testMethodReference.
-	self assert: selections first testClass equals: MCPToolContractsTest
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testRunTestsParsesTimeoutSeconds [
-
-	| request tool |
-	tool := MCPToolRunTests new.
-	request := tool requestFromToolCallArguments: {
-			           (#classes -> #( 'MCPToolContractsTest' )).
-			           (#timeoutSeconds -> 2) } asDictionary.
-	self assert: (tool operationFor: request) timeoutMilliseconds equals: 2000
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testSearchClassesListsClassesForExistingPackage [
-	"A package scope finds a class of that package wherever it falls among the pages: the name narrows the search, as a package this large needs."
+MCPToolContractsTest >> testSearchSummaryLeavesOutANameOnlyWhereItIsMissing [
+	"A name given under two kinds of scope entry may exist as one and not the other: the summary names it where it exists, and the warning where it does not."
 
 	| result |
-	result := self callToolNamed: 'class_search' withArguments: {
-			          (self searchScope: { (#packages -> #( 'MCP-Tests' )) }).
-			          (#query -> 'MCPToolMethodMutationTest') } asDictionary.
-	self deny: (result at: #isError ifAbsent: [ false ]).
+	result := self callToolNamed: 'class_search' withArguments: { (self searchScope: {
+				           (#packages -> #( 'MCPToolHierarchyTestMid' )).
+				           (#classes -> #( 'MCPToolHierarchyTestMid' )) }) } asDictionary.
+	self assert: (self summaryFrom: result) equals: '1 class in MCPToolHierarchyTestMid.'.
+	self assert: (self warningsFrom: result) size equals: 1.
+	self assert: ((self warningsFrom: result) first includesSubstring: 'Package MCPToolHierarchyTestMid').
+	result := self callToolNamed: 'method_search' withArguments: {
+			          (self searchScope: {
+					           (#packages -> #( 'MCP-Tests-Resources' )).
+					           (#hierarchyOf -> #( 'MCP-Tests-Resources' )) }).
+			          (#query -> 'classNeedleSelector') } asDictionary.
+	self assert: (self summaryFrom: result) equals: '1 method matches in package MCP-Tests-Resources.'.
+	self assert: (self warningsFrom: result) size equals: 1.
+	self assert: ((self warningsFrom: result) first includesSubstring: 'Class MCP-Tests-Resources')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testSearchSummaryLeavesOutANameThatDoesNotExist [
+	"The warning names a missing name; the summary says where the search did look."
+
+	| result |
+	result := self
+		          callToolNamed: 'class_search'
+		          withArguments:
+		          { (self searchScope: { (#classes -> #( 'MCPToolHierarchyTestMid' 'MCPNoSuchSummaryClass' )) }) } asDictionary.
+	self assert: (self summaryFrom: result) equals: '1 class in MCPToolHierarchyTestMid.'.
+	self assert: (self warningsFrom: result) size equals: 1.
+	self assert: ((self warningsFrom: result) first includesSubstring: 'MCPNoSuchSummaryClass').
+	result := self callToolNamed: 'method_search' withArguments: {
+			          (self searchScope: { (#classes -> #( 'MCPNoSuchSummaryClass' )) }).
+			          (#query -> 'size') } asDictionary.
+	self assert: (self summaryFrom: result) equals: 'No methods match: the scope names nothing that exists.'.
+	self assert: ((self warningsFrom: result) first includesSubstring: 'MCPNoSuchSummaryClass')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testSearchSummaryNamesTheScopeItSearched [
+	"A summary says where the search looked, in words, rather than which arguments the scope was given."
+
 	self
-		assert: ((((result at: #structuredContent) at: #data) at: #classes) collect: [ :each | each at: #class ] as: Array)
-		equals: #( 'MCPToolMethodMutationTest' )
+		assert: (self
+				 summaryOfTool: 'class_search'
+				 with: { (self searchScope: { (#classes -> #( 'MCPToolHierarchyTestBase' 'MCPToolHierarchyTestMid' )) }) })
+		equals: '2 classes in MCPToolHierarchyTestBase and MCPToolHierarchyTestMid.'.
+	self
+		assert:
+		(self summaryOfTool: 'class_search' with: { (self searchScope: { (#subclassesOf -> #( 'MCPToolHierarchyTestBase' )) }) })
+		equals: '2 classes in the subclasses of MCPToolHierarchyTestBase.'.
+	self
+		assert: (self summaryOfTool: 'class_search' with: { (#query -> 'MCPToolHierarchyTest') })
+		equals: '3 classes match in the image.'.
+	self
+		assert: (self
+				 summaryOfTool: 'method_search'
+				 with: { (self searchScope: { (#classes -> #( 'MCPToolMethodSearchTestTarget' )) } side: 'class') })
+		equals: '2 methods in MCPToolMethodSearchTestTarget, class side.'.
+	self
+		assert: (self summaryOfTool: 'class_search' with: { (self searchScope: {
+						  (#packages -> #( 'MCP-Tests-Resources-Extensions' )).
+						  (#classes -> #( 'MCPToolHierarchyTestMid' )) }) })
+		equals: ('{1} classes in package MCP-Tests-Resources-Extensions and MCPToolHierarchyTestMid.' format:
+				 { (1 + (self packageOrganizer packageNamed: 'MCP-Tests-Resources-Extensions') classes size) })
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testSearchPackagesHasAccurateNameAndSchema [
+MCPToolContractsTest >> testSearchSummarySaysWhenNothingMatched [
 
-	| propertyNames schema |
-	schema := MCPToolSearchPackages new inputSchema.
-	propertyNames := schema properties collect: [ :each | each name ].
-	self assert: MCPToolSearchPackages new name equals: 'package_search'.
-	self assert: schema required equals: #(  ).
-	self assert: propertyNames asSet equals: #( 'query' 'project' 'tag' 'offset' ) asSet
+	self
+		assert: (self summaryOfTool: 'class_search' with: { (#query -> 'MCPNoClassIsNamedLikeThisAnywhere') })
+		equals: 'No classes match in the image.'.
+	self
+		assert:
+		(self summaryOfTool: 'class_search' with: { (self searchScope: { (#subclassesOf -> #( 'MCPToolHierarchyTestChild' )) }) })
+		equals: 'No classes in the subclasses of MCPToolHierarchyTestChild.'
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testSearchRepositoriesHasAccurateNameAndSchema [
+MCPToolContractsTest >> testSearchSummarySaysWhereTheNextPageStarts [
 
-	| propertyNames schema |
-	schema := MCPToolSearchRepositories new inputSchema.
-	propertyNames := schema properties collect: [ :each | each name ].
-	self assert: MCPToolSearchRepositories new name equals: 'repository_search'.
-	self assert: schema required equals: #(  ).
-	self assert: propertyNames asSet equals: #( 'isModified' 'query' 'location' 'subdirectory' 'package' 'class' 'offset' ) asSet
+	| arguments result total |
+	arguments := { (self searchScope: { (#packages -> #( 'MCP-IDE' )) }) }.
+	result := self callToolNamed: 'method_search' withArguments: arguments asDictionary.
+	total := ((self dataFrom: result) at: #pagination) at: #totalCount.
+	self assert: total > 50.
+	self
+		assert: (self summaryFrom: result)
+		equals: ('25 of {1} methods in package MCP-IDE. Next page: offset 25, or narrow the search.' format: { total }).
+	self
+		assert: (self summaryOfTool: 'method_search' with: arguments , { (#offset -> 25) })
+		equals: ('25 of {1} methods in package MCP-IDE. Next page: offset 50, or narrow the search.' format: { total }).
+	self
+		assert: (self summaryOfTool: 'method_search' with: arguments , { (#offset -> (total + 5)) })
+		equals: ('No methods from offset {1}; {2} methods in package MCP-IDE.' format: {
+					 (total + 5).
+					 total })
 ]
 
 { #category : 'tests' }
@@ -2695,183 +1503,6 @@ MCPToolContractsTest >> testSearchToolsAnswerEntriesAsLines [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testSearchToolsAnswerPlainTextContent [
-	"A catalog listing is read as prose, so the text block carries one line per tool instead of the canonical JSON. method_update is not advertised, which its line says."
-
-	| lines result text |
-	result := self callToolNamed: 'tool_search' withArguments: { (#query -> 'method signature') } asDictionary.
-	text := self textFrom: result.
-	lines := text lines.
-	self assert: lines first equals: (self summaryFrom: result).
-	self assert: (lines anySatisfy: [ :each | each beginsWith: 'method_update (not in the advertised list) - ' ]).
-	self deny: (text includesSubstring: '"tools"')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testSearchToolsAnswersBestMatchesWhenNoToolMatchesEveryWord [
-	"A query word boosts a tool, it never gates it out: this query used to answer nothing because no tool matches all four words."
-
-	| names |
-	names := self searchedToolNamesFor: 'class update modify slots'.
-	self assert: names first equals: 'class_update'.
-	self assert: (names includes: 'class_create')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testSearchToolsAnswersCatalogOverviewWhenNothingMatches [
-	"Answering a bare zero is read as proof of absence, so a caller that matched nothing is told the size and vocabulary of the catalog instead."
-
-	| result summary |
-	result := self callToolNamed: 'tool_search' withArguments: { (#query -> 'frobnicate the widget') } asDictionary.
-	summary := self summaryFrom: result.
-	self assert: ((self dataFrom: result) at: #tools) isEmpty.
-	self assert: (summary beginsWith: 'No tool matched. ').
-	self assert: (summary includesSubstring: ' tools in ').
-	self assert: (summary includesSubstring: 'classes ')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testSearchToolsAnswersCatalogOverviewWithoutQuery [
-
-	| result summary |
-	result := self callToolNamed: 'tool_search' withArguments: Dictionary new.
-	summary := self summaryFrom: result.
-	self assert: ((self dataFrom: result) at: #tools) isEmpty.
-	self assert: (summary includesSubstring: self toolRegistry tools size asString , ' tools in ').
-	self assert: (summary includesSubstring: 'classes ')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testSearchToolsCapsResultsAtResultLimit [
-
-	| result tools |
-	result := self callToolNamed: 'tool_search' withArguments: { (#query -> 'class method repository') } asDictionary.
-	tools := (self dataFrom: result) at: #tools.
-	self assert: tools size equals: MCPToolSearchTools new resultLimit.
-	self assert: ((self summaryFrom: result) includesSubstring: 'matching tools, best first')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testSearchToolsIncludesStaticSurface [
-
-	| metadataByName result advertisedTool |
-	result := self callToolNamed: 'tool_search' withArguments: { (#query -> 'classes') } asDictionary.
-	metadataByName := (((self dataFrom: result) at: #tools) collect: [ :each | (each at: #name) -> each ]) asDictionary.
-	self assert: (metadataByName includesKey: 'class_search').
-	advertisedTool := self toolRegistry toolNamed: 'class_search' ifAbsent: [ self fail: 'Missing class_search tool' ].
-	self assert: advertisedTool defaultExposure equals: 'static'
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testSearchToolsKeywordsAreSingleSearchTerms [
-
-	| evaluateTool searchTool |
-	searchTool := MCPToolSearchTools new.
-	evaluateTool := MCPToolEvaluate new.
-	self assert: searchTool keywords asSet equals: #( 'tool' 'catalog' 'search' ) asSet.
-	self assert: evaluateTool keywords asSet equals: #( 'image' 'evaluate' 'runtime' 'expression' 'smalltalk' 'code' ) asSet
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testSearchToolsLetDescriptionsRefineRankingWithoutAdmittingTools [
-	"'the' appears in most descriptions, so a word found only there must not turn a tool into a result, but it still ranks a tool that already matches."
-
-	self assert: (self searchedToolNamesFor: 'frobnicate the widget') isEmpty.
-	self assert: (self searchedToolNamesFor: 'rename a method everywhere') first equals: 'method_update'
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testSearchToolsMatchesAgentGuidanceKeywords [
-
-	| expectations |
-	expectations := {
-		                ('repo' -> 'repository_search').
-		                ('identity' -> 'repository_identity_verify').
-		                ('diff' -> 'repository_change_list').
-		                ('stale' -> 'repository_reload').
-		                ('SUnit' -> 'test_run').
-		                ('file' -> 'history_file_list').
-		                ('entry' -> 'history_entry_list').
-		                ('recover' -> 'history_entry_apply').
-		                ('window' -> 'screen_capture').
-		                ('display' -> 'screen_capture').
-		                ('watch' -> 'debug_watch').
-		                ('debugger' -> 'debug_search').
-		                ('refactor' -> 'class_update').
-		                ('refactoring' -> 'method_update') }.
-	expectations do: [ :expectation |
-			| names |
-			names := (self toolRegistry toolsMatchingQuery: expectation key) collect: [ :each | each name ].
-			self assert: (names includes: expectation value) ]
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testSearchToolsMatchesPluralQueryTerms [
-
-	| expectations |
-	expectations := {
-		                ('classes' -> 'class_search').
-		                ('repositories' -> 'repository_search').
-		                ('traits' -> 'class_update').
-		                ('variables' -> 'class_update').
-		                ('refactorings' -> 'method_update') }.
-	expectations do: [ :expectation |
-			| names |
-			names := (self toolRegistry toolsMatchingQuery: expectation key) collect: [ :each | each name ].
-			self assert: (names includes: expectation value) ]
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testSearchToolsMatchesSpecializedClassKeywords [
-	"class_update answers for every part of a class definition, so the words that used to lead to a tool each must still lead to it."
-
-	#( 'trait composition' 'metaclass trait' 'classvar' 'pooldictionary' 'weak layout' 'rename class' 'recategorize' ) do: [ :query |
-		self assert: ((self searchedToolNamesFor: query) includes: 'class_update') ]
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testSearchToolsRanksEveryToolFirstForItsOwnName [
-
-	self toolRegistry tools do: [ :tool |
-		self assert: (self toolRegistry toolsMatchingQuery: tool name) first name equals: tool name ]
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testSearchToolsRanksMoreMatchedWordsFirst [
-
-	self assert: (self searchedToolNamesFor: 'method source') first equals: 'method_source_search'.
-	self assert: (self searchedToolNamesFor: 'method version') first equals: 'method_version_list'.
-	self assert: (self searchedToolNamesFor: 'repository reload') first equals: 'repository_reload'
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testSearchToolsReturnsDiscoverableMetadata [
-
-	| createRepositoryMetadata data names result tools |
-	result := self callToolNamed: 'tool_search' withArguments: { (#query -> 'repository') } asDictionary.
-	data := self dataFrom: result.
-	tools := data at: #tools.
-	names := tools collect: [ :each | each at: #name ].
-	self assert: (names includes: 'repository_search').
-	self assert: (names includes: 'repository_create').
-	self assert: (names includes: 'repository_attach').
-	self assert: (names includes: 'repository_update').
-	self assert: (names includes: 'repository_reload').
-	self deny: (names includes: 'class_search').
-	createRepositoryMetadata := tools detect: [ :each | (each at: #name) = 'repository_create' ].
-	self assert: createRepositoryMetadata keys asSet equals: #( name description exposure arguments requiredArguments ) asSet.
-	self assert: (createRepositoryMetadata at: #exposure) equals: 'discoverable'
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testSearchToolsUsesQueryOnlyContract [
-
-	| propertyNames |
-	propertyNames := MCPToolSearchTools new inputSchema properties collect: [ :each | each name ].
-	self assert: propertyNames asArray equals: #( 'query' )
-]
-
-{ #category : 'tests' }
 MCPToolContractsTest >> testSelectorSuggestionsPreferASharedPrefixOverACorrection [
 	"A wrong guess usually keeps the prefix of the right selector, which no spelling distance recovers."
 
@@ -2915,16 +1546,6 @@ MCPToolContractsTest >> testServerWithNoToolsRegistersNone [
 	self assert: server toolRegistry toolNames isEmpty.
 	self assert: server advertisedToolNames isEmpty.
 	self assert: (server rpcToolsList at: #tools) isEmpty
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testSingularSearchTermsUseGenericInflectionRules [
-
-	| registry |
-	registry := MCPToolRegistry new.
-	self assert: (registry singularSearchTermFor: 'classes') equals: 'class'.
-	self assert: (registry singularSearchTermFor: 'repositories') equals: 'repository'.
-	self assert: (registry singularSearchTermFor: 'histories') equals: 'history'
 ]
 
 { #category : 'tests' }
@@ -2994,39 +1615,6 @@ MCPToolContractsTest >> testToolCallsResumeNotificationsWithoutAToolOfTheirOwn [
 	structured := result at: #structuredContent.
 	self deny: (result includesKey: #isError).
 	self assert: ((structured at: #data) at: #resumedWith) equals: 'nested-mcpDefaultAction'
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testToolGetOnAnUnknownNameSuggestsCloseNames [
-
-	| error result |
-	result := self callToolNamed: 'tool_get' withArguments: { (#name -> 'method_serch') } asDictionary.
-	error := self errorFrom: result.
-	self assert: (result at: #isError).
-	self assert: (error at: #errorCode) equals: 'ToolNotFound'.
-	self assert: ((error at: #suggestedTools) includes: 'method_source_search')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testToolGetTextCarriesOnlyWhatACallNeeds [
-	"A contract is read to build a call. Its annotations, exposure, group and keywords stay in the data for whoever catalogs tools, and the text leaves them out; whether the tool is advertised is said once, in the summary."
-
-	| contract lines result |
-	result := self callToolNamed: 'tool_get' withArguments: { (#name -> 'repository_create') } asDictionary.
-	lines := (self textFrom: result) lines.
-	self assert: lines first equals: 'Tool repository_create (not in the advertised list).'.
-	self assert: lines second equals: 'tool:'.
-	self assert: (lines includes: '  name: repository_create').
-	self assert: (lines anySatisfy: [ :each | each beginsWith: '  description: ' ]).
-	self assert: (lines includes: '  inputSchema:').
-	#( '  annotations:' '  exposure:' '  group:' '  keywords:' ) do: [ :label |
-		self deny: (lines anySatisfy: [ :each | each beginsWith: label ]) description: label ].
-	contract := (self dataFrom: result) at: #tool.
-	self assert: contract keys asSet equals: #( name description group exposure annotations keywords inputSchema ) asSet.
-	result := self callToolNamed: 'tool_get' withArguments: { (#name -> 'class_search') } asDictionary.
-	lines := (self textFrom: result) lines.
-	self assert: lines first equals: 'Tool class_search.'.
-	self assert: (lines includes: '  pageSize: ' , MCPToolSearchClasses new defaultPageLimit printString)
 ]
 
 { #category : 'tests' }
@@ -3183,87 +1771,6 @@ MCPToolContractsTest >> testToolResponsesDefaultToContentOnly [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testToolSearchCountsOneToolInTheSingular [
-
-	| server |
-	server := self mcpWithoutObservabilityExport
-		          onlyTools: {
-				          MCPToolSearchTools.
-				          MCPToolEvaluate.
-				          MCPToolGetClass.
-				          MCPToolSearchClasses };
-		          yourself.
-	self
-		assert: (self summaryFrom: (server rpcToolCall: 'tool_search' withParams: { (#query -> 'evaluate') } asDictionary))
-		equals: '1 tool matched, best first.'.
-	self
-		assert: (self summaryFrom: (server rpcToolCall: 'tool_search' withParams: { (#query -> 'class') } asDictionary))
-		equals: '2 tools matched, best first.'
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testToolSearchMarksToolsNotAdvertised [
-	"A client that calls only the tools it lists cannot call the others by their bare name, so their lines say they are not listed. Once every tool is advertised, nothing is marked and no route is given."
-
-	| lines result server summary text |
-	server := self mcpWithoutObservabilityExport.
-	server advertiseTools: #( 'tool_search' 'tool_get' 'tool_call' 'repository_search' ).
-	result := server rpcToolCall: 'tool_search' withParams: { (#query -> 'repository') } asDictionary.
-	text := self textFrom: result.
-	lines := text lines.
-	summary := self summaryFrom: result.
-	self assert: lines first equals: summary.
-	self assert: (lines anySatisfy: [ :each | each beginsWith: 'repository_search - ' ]).
-	self assert: (lines anySatisfy: [ :each | each beginsWith: 'repository_create (not in the advertised list) - ' ]).
-	self deny: (text includesSubstring: '(through tool_call)').
-	self
-		assert: ((((self dataFrom: result) at: #tools) detect: [ :each | (each at: #name) = 'repository_create' ]) at: #exposure)
-		equals: 'discoverable'.
-	server advertiseAllTools.
-	result := server rpcToolCall: 'tool_search' withParams: { (#query -> 'repository') } asDictionary.
-	text := self textFrom: result.
-	self deny: (text includesSubstring: 'not in the advertised list').
-	self deny: (text includesSubstring: 'not in your list').
-	self deny: (text includesSubstring: 'Arguments:')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testToolSearchNamesTheArgumentsOfAToolNotAdvertised [
-	"A client has no schema for a tool outside its list, so that tool's line names its arguments, the required ones marked. A listed tool's line stays as it was: its schema is already in the client's list."
-
-	| lines result server |
-	server := self mcpWithoutObservabilityExport.
-	server addTool: MCPExternalTestTool.
-	server advertiseTools: #( 'tool_search' 'tool_call' ).
-	result := server rpcToolCall: 'tool_search' withParams: { (#query -> 'tool external') } asDictionary.
-	lines := (self textFrom: result) lines.
-	self assert: (lines includes:
-			 'tool_get (not in the advertised list) - Get a tool''s description and input schema by name. Arguments: name (required).').
-	self assert: (lines includes:
-			 'external_test_tool (not in the advertised list) - Test fixture for external MCP tool extensions. It takes no arguments.').
-	self assert: (lines includes: 'tool_search - Search the whole tool catalog, best match first, including tools not in your list.').
-	self
-		assert: ((((self dataFrom: result) at: #tools) detect: [ :each | (each at: #name) = 'tool_get' ]) at: #requiredArguments)
-		equals: #( 'name' )
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testToolSearchSendsAToolNotAdvertisedThroughToolCall [
-	"A host may let a model call only the tools its own list holds, and the model cannot tell whether its host is one. The route every client has, tool_call, is the one the answer gives, for the tools marked as not advertised, shown with the first unlisted tool it lists."
-
-	| result server summary unlisted |
-	server := self mcpWithoutObservabilityExport.
-	server advertiseTools: #( 'tool_search' 'tool_get' 'tool_call' 'repository_search' ).
-	result := server rpcToolCall: 'tool_search' withParams: { (#query -> 'repository') } asDictionary.
-	summary := self summaryFrom: result.
-	unlisted := ((self dataFrom: result) at: #tools) detect: [ :each | (each at: #exposure) = 'discoverable' ].
-	self assert: (summary endsWith:
-			 ' Call a tool marked (not in the advertised list) through tool_call, with the arguments its line names: tool_call {"name": "'
-			 , (unlisted at: #name) , '", "arguments": {...}}.').
-	self deny: (summary includesSubstring: 'by name')
-]
-
-{ #category : 'tests' }
 MCPToolContractsTest >> testToolsDoNotResumeRefactoringWarnings [
 	"A refactoring warning reports a change that breaks something: resuming it at the boundary would apply a mutation that force did not authorize."
 
@@ -3272,46 +1779,12 @@ MCPToolContractsTest >> testToolsDoNotResumeRefactoringWarnings [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testToolsOwnRegistryMetadata [
+MCPToolContractsTest >> testToolsListAdvertisesToolContracts [
 
-	| tool |
-	tool := MCPToolEvaluate new.
-	self assert: tool groupName equals: 'runtime'.
-	self assert: tool defaultExposure equals: 'static'.
-	self assert: tool annotations readOnlyHint equals: nil.
-	self assert: (tool keywords includes: 'smalltalk')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testUnknownToolNameSuggestsCloseNames [
-
-	| error result |
-	result := self callToolNamed: 'tool_call' withArguments: { (#name -> 'method_serch') } asDictionary.
-	error := self errorFrom: result.
-	self assert: (result at: #isError).
-	self assert: (error at: #errorCode) equals: 'ToolNotFound'.
-	self assert: (error at: #tool) equals: 'method_serch'.
-	self assert: ((error at: #suggestedTools) includes: 'method_source_search').
-	self deny: (error includesKey: #stackTrace)
-]
-
-{ #category : 'private - evaluate' }
-MCPToolContractsTest >> textOfEvaluateResult: aResult [
-	"The text a call gets for an evaluation that failed."
-
-	^ aResult content first text
-]
-
-{ #category : 'private - evaluate' }
-MCPToolContractsTest >> underEitherPreemptionRuleDo: aBlock [
-	"Whether a preempted process goes to the back of its run queue is a setting of the virtual machine, which an image keeps from whoever built it. It reaches the image file only on a save, which no test makes."
-
-	| original |
-	original := Smalltalk vm processPreemptionYields.
-	[
-		#( true false ) do: [ :yields |
-				Smalltalk vm processPreemptionYields: yields.
-				aBlock value: yields ] ] ensure: [ Smalltalk vm processPreemptionYields: original ]
+	| tools |
+	tools := MCP new rpcToolsList at: #tools.
+	self assert: tools isNotEmpty.
+	tools do: [ :tool | self assert: tool keys asSet equals: #( name title description annotations inputSchema ) asSet ]
 ]
 
 { #category : 'private' }
@@ -3328,20 +1801,4 @@ MCPToolContractsTest >> unimplementedResponsibilitiesForConcreteMCPClasses [
 	issues := OrderedCollection new.
 	behaviors do: [ :each | self addUnimplementedResponsibilitiesOf: each among: selectors to: issues ].
 	^ issues asArray sort
-]
-
-{ #category : 'private - evaluate' }
-MCPToolContractsTest >> unstartedLimitSeconds [
-	"The time limit of an evaluation whose code a test never runs: nothing has to be reached first, so it is shorter than the tests' limit for code they let stop."
-
-	^ 0.02
-]
-
-{ #category : 'private - evaluate' }
-MCPToolContractsTest >> waitUntilEnded: aProcess [
-	"Up to 5 s, for what a stopped evaluation left unwinding."
-
-	| deadline |
-	deadline := Time millisecondClockValue + 5000.
-	[ aProcess isTerminated or: [ Time millisecondClockValue > deadline ] ] whileFalse: [ (Delay forMilliseconds: 5) wait ]
 ]

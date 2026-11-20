@@ -423,6 +423,13 @@ MCPToolRewriteMethodsTest >> testRewriteLeavesAMethodInstalledFromATraitToItsOri
 ]
 
 { #category : 'tests' }
+MCPToolRewriteMethodsTest >> testRewriteMethodsIsMethodScopedCommandTool [
+
+	self assert: MCPToolRewriteMethods superclass equals: MCPTool.
+	self assert: (MCPToolRewriteMethods traits includes: TMCPMethodTool)
+]
+
+{ #category : 'tests' }
 MCPToolRewriteMethodsTest >> testRewriteSkipsNothingWhenTheTraitItselfIsInScope [
 
 	| data result |
@@ -572,13 +579,13 @@ MCPToolRewriteMethodsTest >> testSchemaAdvertisesRewriteContract [
 	| matchProperty propertyNames replacementProperty ruleProperties rulesProperty scopeProperty scopePropertyNames tool |
 	tool := MCPToolRewriteMethods new.
 	propertyNames := tool inputSchema properties collect: [ :each | each name ].
-	rulesProperty := tool inputSchema properties detect: [ :each | each name = 'rules' ].
+	rulesProperty := self inputPropertyNamed: 'rules' inTool: tool.
 	ruleProperties := ((rulesProperty extraProperties at: #items) extraProperties at: #properties) collect: [ :each | each name ].
 	matchProperty := ((rulesProperty extraProperties at: #items) extraProperties at: #properties) detect: [ :each |
 		                 each name = 'match' ].
 	replacementProperty := ((rulesProperty extraProperties at: #items) extraProperties at: #properties) detect: [ :each |
 		                       each name = 'replacement' ].
-	scopeProperty := tool inputSchema properties detect: [ :each | each name = 'scope' ].
+	scopeProperty := self inputPropertyNamed: 'scope' inTool: tool.
 	scopePropertyNames := (scopeProperty extraProperties at: #properties) collect: [ :each | each name ].
 
 	self assert: tool name equals: 'method_rewrite'.

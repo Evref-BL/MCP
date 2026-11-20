@@ -242,6 +242,36 @@ MCPToolClassMutationTest >> testASingleUpdateAnswersNoData [
 	self assert: (self dataFrom: result) isEmpty
 ]
 
+{ #category : 'tests' }
+MCPToolClassMutationTest >> testClassToolSchemaDescriptionsExplainRecategorizationAndReplacementSemantics [
+
+	| tool layoutDescription packageDescription sharedPoolsDescription sharedVariablesDescription slotsSchema tagDescription traitsDescription |
+	tool := MCPToolUpdateClass new.
+	packageDescription := (self inputPropertyNamed: 'package' inTool: tool) description.
+	tagDescription := (self inputPropertyNamed: 'tag' inTool: tool) description.
+	traitsDescription := (self inputPropertyNamed: 'traits' inTool: tool) description.
+	sharedVariablesDescription := (self inputPropertyNamed: 'sharedVariables' inTool: tool) description.
+	sharedPoolsDescription := (self inputPropertyNamed: 'sharedPools' inTool: tool) description.
+	layoutDescription := (self inputPropertyNamed: 'layout' inTool: tool) description.
+	"Moving and retagging are different changes, and package says how to ask for the second one."
+	self assert: (packageDescription includesSubstring: 'tag alone').
+	self assert: (tagDescription includesSubstring: 'package').
+	"The stateless collections are replaced by value, and say so."
+	self assert: (traitsDescription includesSubstring: 'empty array').
+	"A trait is used by the whole class, so traits says it covers the class side too."
+	self assert: (traitsDescription includesSubstring: 'class side').
+	self assert: (sharedVariablesDescription includesSubstring: 'empty array').
+	self assert: (sharedPoolsDescription includesSubstring: 'empty array').
+	self assert: (sharedPoolsDescription includesSubstring: 'Shared pools').
+	self assert: (layoutDescription includesSubstring: 'AbstractLayout').
+	"Slots are patched, and each part of the patch says what it does."
+	slotsSchema := (tool inputSchema asJRPCJSON at: #properties) at: 'slots'.
+	self
+		assert: (((slotsSchema at: #properties) at: 'rename') at: #description)
+		equals: 'Slots to rename, as current name to new name. Values are migrated and references updated.'.
+	self assert: ((((slotsSchema at: #properties) at: 'replace') at: #description) includesSubstring: 'Prefer add and remove')
+]
+
 { #category : 'tests - schema' }
 MCPToolClassMutationTest >> testClassToolSchemasDeclareExpectedInputs [
 

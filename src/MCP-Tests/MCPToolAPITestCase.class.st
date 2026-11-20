@@ -102,6 +102,12 @@ MCPToolAPITestCase >> expectedUndeclaredVariableNoticeClassNames [
 ]
 
 { #category : 'private - results' }
+MCPToolAPITestCase >> inputPropertyNamed: aPropertyName inTool: aTool [
+
+	^ aTool inputSchema properties detect: [ :each | each name = aPropertyName ]
+]
+
+{ #category : 'private - results' }
 MCPToolAPITestCase >> inputPropertyNamesFor: aTool [
 
 	^ aTool inputSchema properties collect: [ :each | each name ]
@@ -187,13 +193,6 @@ MCPToolAPITestCase >> summaryOf: aTool forArguments: arguments page: page [
 	| request |
 	request := aTool requestFromToolCallArguments: arguments.
 	^ aTool successSummaryForRequest: request scopeQuery: (aTool scopeQueryFromRequest: request) page: page
-]
-
-{ #category : 'private - calling' }
-MCPToolAPITestCase >> testReferenceForMethod: aCompiledMethod [
-
-	^ String streamContents: [ :stream |
-		  stream << aCompiledMethod methodClass name asString << '>>#' << aCompiledMethod selector asString ]
 ]
 
 { #category : 'private - results' }

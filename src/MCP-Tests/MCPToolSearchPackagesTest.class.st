@@ -114,6 +114,27 @@ MCPToolSearchPackagesTest >> testProjectRegistrationWithPresentPackagesIsUsableW
 	self assert: (query shouldUseProjectRegistration: registration)
 ]
 
+{ #category : 'tests' }
+MCPToolSearchPackagesTest >> testSearchPackagesHasAccurateNameAndSchema [
+
+	| propertyNames schema |
+	schema := MCPToolSearchPackages new inputSchema.
+	propertyNames := schema properties collect: [ :each | each name ].
+	self assert: MCPToolSearchPackages new name equals: 'package_search'.
+	self assert: schema required equals: #(  ).
+	self assert: propertyNames asSet equals: #( 'query' 'project' 'tag' 'offset' ) asSet
+]
+
+{ #category : 'tests' }
+MCPToolSearchPackagesTest >> testSearchPackagesReturnsStructuredArrayData [
+
+	| packages result |
+	result := self callToolNamed: 'package_search' withArguments: { (#query -> 'MCP-Tests-R') } asDictionary.
+	packages := (self dataFrom: result) at: #packages.
+	self assert: (packages allSatisfy: [ :each | (each includesKey: #package) and: [ each includesKey: #projects ] ]).
+	self assert: ((packages collect: [ :each | each at: #package ]) includesAll: self packageSearchFixturePackageNames)
+]
+
 { #category : 'private - calling' }
 MCPToolSearchPackagesTest >> toolName [
 

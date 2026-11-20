@@ -248,6 +248,39 @@ MCPToolGetClassTest >> testCountsWhatSeveralPackagesAdd [
 ]
 
 { #category : 'tests' }
+MCPToolGetClassTest >> testGetClassRefusesABlankNameAsInvalidInput [
+	"A blank name is no name: it is refused with the arguments, under the argument's own name, before the tool looks anything up."
+
+	| error result |
+	result := self callToolNamed: 'class_get' withArguments: { (#name -> '') } asDictionary.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (error at: #errorClass) equals: #MCPInvalidToolInput.
+	self assert: (error at: #message) equals: 'Invalid arguments for class_get. name is required.'
+]
+
+{ #category : 'tests' }
+MCPToolGetClassTest >> testGetClassReturnsStructuredSuccess [
+	"The first page holds the class's definition as its file writes it, class variables included, beside how many methods each side holds; the summary names the class, so no field says it again."
+
+	| contentText data result structured |
+	result := self callToolNamed: 'class_get' withArguments: { (#name -> 'MCPToolGetMethodTestTarget') } asDictionary.
+	structured := self structuredContentFrom: result.
+	data := self dataFrom: result.
+	contentText := (result at: #content) first at: #text.
+	self deny: (structured includesKey: #warnings).
+	self assert: (contentText includesSubstring: (structured at: #summary)).
+	self deny: (contentText includesSubstring: 'class: MCPToolGetMethodTestTarget').
+	self assert: (self warningsFrom: result) equals: #(  ).
+	self assert: (data at: #class) equals: 'MCPToolGetMethodTestTarget'.
+	self assert: (data at: #methods) equals: 1.
+	self assert: (data at: #classMethods) equals: 1.
+	self assert: MCPToolGetMethodTestTarget classVarNames isNotEmpty.
+	MCPToolGetMethodTestTarget classVarNames do: [ :each | self assert: ((data at: #source) includesSubstring: each) ].
+	#( #superclass #sharedVariables #comment #superclasses #subclasses ) do: [ :each | self deny: (data includesKey: each) ]
+]
+
+{ #category : 'tests' }
 MCPToolGetClassTest >> testGetsAClassWrittenWithItsSideAsTheClass [
 	"class_get reads the file of a class, which holds both sides, so Foo class, as MCP's own answers print a class side, reads as Foo and gets what Foo gets."
 
@@ -309,10 +342,15 @@ MCPToolGetClassTest >> testLeavesOutWhatOtherPackagesAdd [
 { #category : 'tests' }
 MCPToolGetClassTest >> testReturnsStructuredErrorWhenClassIsMissing [
 
-	| error result |
+	| error result structured text |
 	result := self callToolWith: { (#name -> self missingClassName) } asDictionary.
+	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
+	text := self textFrom: result.
 	self assert: (result at: #isError).
+	self deny: (structured includesKey: #warnings).
+	self assert: (text includesSubstring: (structured at: #summary)).
+	self deny: (text includesSubstring: '"errorCode"').
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
 	self assert: (error at: #class) equals: self missingClassName.
