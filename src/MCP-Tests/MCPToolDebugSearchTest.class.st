@@ -10,22 +10,27 @@ Class {
 
 { #category : 'private' }
 MCPToolDebugSearchTest >> debuggerNamed: aString [
-	"A debugger on a session of its own, standing in for one a person opened."
+	"A debugger opened on a process of its own, standing in for one a person opened: closing a debugger terminates its process, which must not be the test's."
 
-	| exception session |
-	exception := (OupsNullException fromSignallerContext: thisContext)
+	| process exception session |
+	process := [ ] newProcess.
+	exception := (OupsNullException fromSignallerContext: process suspendedContext)
 		             messageText: aString;
 		             yourself.
-	session := (DebugSession named: aString on: Processor activeProcess startedAt: thisContext)
+	session := (DebugSession named: aString on: process startedAt: process suspendedContext)
 		           exception: exception;
 		           yourself.
-	^ StDebugger on: session
+	^ (StDebugger on: session)
+		  open;
+		  yourself
 ]
 
 { #category : 'private' }
-MCPToolDebugSearchTest >> entryNamed: aString in: data [
+MCPToolDebugSearchTest >> entryNamed: aString searchedWith: someArguments [
 
-	^ (data at: #debuggers) detect: [ :each | (each at: #debugger) = aString ] ifNone: [ nil ]
+	^ ((self dataFrom: (self searchWith: someArguments)) at: #debuggers)
+		  detect: [ :each | (each at: #debugger) = aString ]
+		  ifNone: [ nil ]
 ]
 
 { #category : 'private' }
@@ -35,16 +40,18 @@ MCPToolDebugSearchTest >> searchWith: someArguments [
 ]
 
 { #category : 'tests' }
-MCPToolDebugSearchTest >> testAnswersAnOpenDebuggerWithItsExceptionAndStack [
+MCPToolDebugSearchTest >> testAnswersAMatchingOpenDebuggerWithItsExceptionAndStack [
 
-	| data entry debugger |
+	| debugger entry |
 	debugger := self debuggerNamed: 'MCP searchable debugger'.
-	data := self dataFrom: (self searchWith: Dictionary new).
-	entry := self entryNamed: 'MCP searchable debugger' in: data.
-	self deny: entry isNil.
-	self assert: ((entry at: #exception) includesSubstring: 'MCP searchable debugger').
-	self deny: (entry at: #stack) isEmpty.
-	self assert: debugger isNotNil
+	[
+		entry := self entryNamed: 'MCP searchable debugger' searchedWith: Dictionary new.
+		self deny: entry isNil.
+		self assert: ((entry at: #exception) includesSubstring: 'MCP searchable debugger').
+		self deny: (entry at: #stack) isEmpty.
+		self deny: (self entryNamed: 'MCP searchable debugger' searchedWith: { (#query -> 'searchable') } asDictionary) isNil.
+		self assert: (self entryNamed: 'MCP searchable debugger' searchedWith: { (#query -> 'other') } asDictionary) isNil ] ensure: [
+		debugger close ]
 ]
 
 { #category : 'tests' }
@@ -70,25 +77,13 @@ MCPToolDebugSearchTest >> testDebugResultDoesNotRepeatItsWarnings [
 { #category : 'tests' }
 MCPToolDebugSearchTest >> testLeavesTheDebuggersItFound [
 
-	| before debugger |
+	| debugger |
 	debugger := self debuggerNamed: 'MCP untouched debugger'.
-	before := StDebugger allInstances size.
-	self searchWith: Dictionary new.
-	self assert: StDebugger allInstances size equals: before.
-	self assert: debugger session exception messageText equals: 'MCP untouched debugger'
-]
-
-{ #category : 'tests' }
-MCPToolDebugSearchTest >> testQueryKeepsOnlyTheMatchingDebuggers [
-
-	| data wanted unwanted |
-	wanted := self debuggerNamed: 'MCP wanted debugger'.
-	unwanted := self debuggerNamed: 'MCP other debugger'.
-	data := self dataFrom: (self searchWith: { (#query -> 'wanted') } asDictionary).
-	self deny: (self entryNamed: 'MCP wanted debugger' in: data) isNil.
-	self assert: (self entryNamed: 'MCP other debugger' in: data) isNil.
-	self assert: wanted isNotNil.
-	self assert: unwanted isNotNil
+	[
+		self searchWith: Dictionary new.
+		self assert: debugger window isOpen.
+		self deny: debugger session interruptedProcess isTerminated.
+		self assert: debugger session exception messageText equals: 'MCP untouched debugger' ] ensure: [ debugger close ]
 ]
 
 { #category : 'tests' }

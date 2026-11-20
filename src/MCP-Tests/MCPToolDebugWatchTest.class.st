@@ -9,17 +9,6 @@ Class {
 }
 
 { #category : 'private' }
-MCPToolDebugWatchTest >> installedDebugPointCount [
-	"Before Pharo 12 there are no debug points, and a watch installs metalinks of its own."
-
-	^ self class environment
-		  at: #DebugPoint
-		  ifPresent: [ :debugPoint | debugPoint all size ]
-		  ifAbsent: [
-		  MetaLink allInstances count: [ :each | each metaObject class name = #MCPWatchProbe and: [ each nodes isNotEmpty ] ] ]
-]
-
-{ #category : 'private' }
 MCPToolDebugWatchTest >> seriesFor: aMethodName watching: aVariableName in: data [
 
 	^ (data at: #watched)
@@ -42,13 +31,11 @@ MCPToolDebugWatchTest >> testEntryWatchRecordsTheArgumentsOfEveryCall [
 { #category : 'tests' }
 MCPToolDebugWatchTest >> testLeavesNoProbeBehindWhenTheWatchedCodeFails [
 
-	| before |
-	before := self installedDebugPointCount.
 	self watchWith: {
 			(#method -> 'MCPDebugWatchTestTarget>>failingSumTo:').
 			(#variable -> 'total').
 			(#run -> 'MCPDebugWatchTestTarget new failingSumTo: 3') } asDictionary.
-	self assert: self installedDebugPointCount equals: before
+	self deny: (MCPDebugWatchTestTarget >> #failingSumTo:) hasMetaLinks
 ]
 
 { #category : 'tests' }
