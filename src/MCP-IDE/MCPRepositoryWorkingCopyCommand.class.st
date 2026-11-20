@@ -443,12 +443,6 @@ MCPRepositoryWorkingCopyCommand >> untrackedPathsFromGitStatusIn: aRepository [
 			   thenCollect: [ :line | self pathFromGitStatusLine: line ])
 ]
 
-{ #category : 'export' }
-MCPRepositoryWorkingCopyCommand >> withNonInteractiveAuthorDuring: aBlock [
-
-	^ aBlock value
-]
-
 { #category : 'files' }
 MCPRepositoryWorkingCopyCommand >> writtenPathsFrom: before to: after newDirectories: directoryPaths [
 	"Each file created or changed between the two readings. A package directory that did not exist before is named once, with a trailing slash, as git names an untracked directory; in one that existed, files are named one by one, which a filetree package, a file per method, needs."
