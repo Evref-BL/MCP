@@ -20,12 +20,70 @@ Class {
 	#package : 'MCP-OpenTelemetry'
 }
 
+{ #category : 'resource' }
+MCPOpenTelemetryObservabilityBackend class >> pharoVersion [
+	"Pharo's version with its build, as semantic versioning writes build metadata: 14.0.0+build.791. A development image changes from one build to the next."
+
+	^ [
+		  | version |
+		  version := SystemVersion current.
+		  '{1}.{2}.{3}+build.{4}' format: {
+				  version major.
+				  version minor.
+				  version patch.
+				  version build } ]
+		  on: Error
+		  do: [ OTTracerProvider runtimeVersion ]
+]
+
+{ #category : 'resource' }
+MCPOpenTelemetryObservabilityBackend class >> resourceAttributesFor: aServerInfo [
+	"What the image's telemetry says about what ran: this server and its version, the OpenTelemetry SDK, the OS family, and the Pharo and VM versions. Never the host name, the process, its command line or the image's path, which the SDK's default detectors would send and which name the user and the project."
+
+	| attributes |
+	attributes := OTTracerProvider defaultResource attributes copy.
+	attributes
+		at: 'service.name' put: 'pharo-mcp';
+		at: 'service.version' put: aServerInfo version;
+		at: 'process.runtime.name' put: OTTracerProvider runtimeName;
+		at: 'process.runtime.version' put: self pharoVersion;
+		at: 'process.runtime.description' put: OTTracerProvider runtimeDescription.
+	OTTracerProvider defaultOsType ifNotNil: [ :type | attributes at: 'os.type' put: type ].
+	^ attributes
+]
+
+{ #category : 'resource' }
+MCPOpenTelemetryObservabilityBackend class >> resourceDetectorsFor: aServerInfo [
+	"OTEL_RESOURCE_ATTRIBUTES first, so whoever runs the image can add attributes, such as deployment.environment.name, but not rename the server or change what it says about itself."
+
+	^ OrderedCollection new
+		  add: OTEnvironmentResourceDetector new;
+		  add: (OTStaticResourceDetector
+				   named: 'mcp'
+				   resource:
+					   (OTResource attributes: (self resourceAttributesFor: aServerInfo) schemaUrl: OTTracerProvider semanticConventionsSchemaUrl));
+		  yourself
+]
+
 { #category : 'private - reporting' }
 MCPOpenTelemetryObservabilityBackend >> argumentNamesIn: inputObject [
 	"The names of the arguments a call was given, sorted, without their values."
 
 	inputObject isDictionary ifFalse: [ ^ #(  ) ].
 	^ ((inputObject keys collect: [ :each | each asString ] as: Array) select: [ :each | self isReportableName: each ]) sort
+]
+
+{ #category : 'resource' }
+MCPOpenTelemetryObservabilityBackend >> describeServer: aServerInfo [
+	"Makes the image's OpenTelemetry providers describe this server and nothing else, now and whenever they are made again."
+
+	| detectors resource |
+	detectors := self class resourceDetectorsFor: aServerInfo.
+	OTTracerProvider resourceDetectors: detectors.
+	resource := OTTracerProvider resourceFromDetectors: detectors.
+	OTTracerProvider current resource: resource.
+	OTMeterProvider current resource: resource.
+	OTLoggerProvider current resource: resource
 ]
 
 { #category : 'private - logging' }
