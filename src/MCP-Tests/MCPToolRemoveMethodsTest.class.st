@@ -413,6 +413,30 @@ MCPToolRemoveMethodsTest >> testReturnsStructuredErrorWhenAnyMethodIsMissing [
 ]
 
 { #category : 'tests' }
+MCPToolRemoveMethodsTest >> testSendsOfAClassTheImageNoLongerHoldsAreNotWarnedOf [
+	"A class Pharo abandoned installing stays among its superclass's subclasses, although the image holds another class, or none, under its name."
+
+	| child result |
+	self ensureMethodSource: 'asUppercase ^ ''FIVE''' protocol: 'tests' on: MCPToolRemoveMethodsTestTarget.
+	child := self
+		         createClassNamed: 'MCPToolRemoveMethodsTestTargetChild'
+		         superclassName: MCPToolRemoveMethodsTestTarget name
+		         slots: #(  )
+		         classSlots: #(  ).
+	[
+		self ensureMethodSource: 'louder ^ super asUppercase' protocol: 'tests' on: child.
+		self removeClassNamed: child name.
+		MCPToolRemoveMethodsTestTarget addSubclass: child.
+		result := self callToolWith: {
+				          (#class -> 'MCPToolRemoveMethodsTestTarget').
+				          (#selector -> #( 'asUppercase' )) } asDictionary.
+		self assert: (self warningsFrom: result) isEmpty description: [ self textFrom: result ] ] ensure: [
+			self removeClassNamed: 'MCPToolRemoveMethodsTestTargetChild'.
+			MCPToolRemoveMethodsTestTarget removeSubclass: child.
+			self removeSelector: #asUppercase from: MCPToolRemoveMethodsTestTarget ]
+]
+
+{ #category : 'tests' }
 MCPToolRemoveMethodsTest >> testSummaryNamesOneMethodAsAReference [
 	"One method is named the way Pharo writes it; several are counted and listed after their class."
 

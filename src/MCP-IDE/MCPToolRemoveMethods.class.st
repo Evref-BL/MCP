@@ -153,9 +153,9 @@ MCPToolRemoveMethods >> listTextForMethods: someMethods [
 
 { #category : 'private - warnings' }
 MCPToolRemoveMethods >> localMethodsOfHierarchyOf: aBehavior [
-	"The methods the class and its subclasses define themselves, on aBehavior's side; what they get from a trait is the trait's."
+	"The methods the class and its subclasses define themselves, on aBehavior's side; what they get from a trait is the trait's. A subclass the image no longer holds under its name, as a class Pharo abandoned installing stays, has no method in the image."
 
-	^ aBehavior instanceSide withAllSubclasses flatCollect: [ :each |
+	^ (aBehavior instanceSide withAllSubclasses select: [ :each | MCPImageLookup holds: each ]) flatCollect: [ :each |
 			  (aBehavior isMeta
 				   ifTrue: [ each classSide ]
 				   ifFalse: [ each ]) localMethods ]
