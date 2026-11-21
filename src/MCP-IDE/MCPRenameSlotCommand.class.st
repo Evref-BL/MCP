@@ -1,5 +1,5 @@
 "
-Renames a slot on either side of a class: the objects hold under the new name what the slot held, and it rewrites the references and renames local accessors.
+Renames a slot on either side of a class: the objects hold under the new name what the slot held, its references are rewritten, and the methods named after it are renamed as method_update renames a method, their senders across the image with them.
 "
 Class {
 	#name : 'MCPRenameSlotCommand',
@@ -24,34 +24,17 @@ MCPRenameSlotCommand class >> className: aClassName slotName: aSlotName newSlotN
 ]
 
 { #category : 'private' }
-MCPRenameSlotCommand >> accessorMessageRewriter [
-
-	| rewriter |
-	rewriter := RBParseTreeRewriter new.
-	rewriter
-		replace: (String streamContents: [ :stream | stream << '`@receiver ' << self slotName << ': `@value' ])
-		with: (String streamContents: [ :stream | stream << '`@receiver ' << self newSlotName << ': `@value' ]);
-		replace: '`@receiver ' , self slotName with: '`@receiver ' , self newSlotName.
-	^ rewriter
-]
-
-{ #category : 'private' }
 MCPRenameSlotCommand >> applyToBehavior: aBehavior [
-	"The same rename on either side: a class-side slot is an instance variable of the metaclass. The methods that refer to the slot are rewritten before anything changes, since rewriting one can be refused, and compiled once the new slot is there."
+	"The same rename on either side: a class-side slot is an instance variable of the metaclass. The methods that refer to the slot are rewritten once before anything changes, since rewriting one can be refused, and again after the accessors are renamed, whose senders that renaming changes, to be compiled once the new slot is there."
 
 	| rewrittenReferences |
 	self validateSlotRenameInBehavior: aBehavior.
+	self rewrittenReferencesInBehavior: aBehavior.
+	self renameAccessorsInBehavior: aBehavior.
 	rewrittenReferences := self rewrittenReferencesInBehavior: aBehavior.
 	self installing: [ aBehavior addInstVarNamed: self newSlotName ].
 	rewrittenReferences do: [ :each | each value ].
-	self renameAccessorsInBehavior: aBehavior.
 	aBehavior removeInstVarNamed: self slotName
-]
-
-{ #category : 'private' }
-MCPRenameSlotCommand >> getterSourceForNewSlot [
-
-	^ String streamContents: [ :stream | stream << self newSlotName << String cr << String cr << '^ ' << self newSlotName ]
 ]
 
 { #category : 'private' }
@@ -76,47 +59,54 @@ MCPRenameSlotCommand >> newSlotName: aNewSlotName [
 { #category : 'private' }
 MCPRenameSlotCommand >> referenceSelectorsInBehavior: aBehavior [
 
-	| selectors |
-	selectors := Set new.
-	selectors addAll: ((aBehavior whichMethodsAccess: self slotName) collect: #selector).
-	selectors addAll: (aBehavior whichSelectorsReferTo: self slotName asSymbol).
-	selectors addAll: (aBehavior whichSelectorsReferTo: (self slotName , ':') asSymbol).
-	^ selectors
+	^ (aBehavior whichMethodsAccess: self slotName) collect: [ :each | each selector ] as: Set
 ]
 
 { #category : 'private' }
-MCPRenameSlotCommand >> renameAccessor: oldSelector source: sourceString inBehavior: aBehavior [
+MCPRenameSlotCommand >> refuseOtherImplementorsOf: aSelector inBehavior: aBehavior [
 
-	(aBehavior includesLocalSelector: oldSelector) ifFalse: [ ^ self ].
-	aBehavior compile: sourceString withInternalLineEndings classified: (aBehavior >> oldSelector) protocol.
-	aBehavior removeSelector: oldSelector
+	| others names |
+	others := ((SystemNavigation default allImplementorsOf: aSelector) collect: [ :each | each methodClass ]) reject: [ :each |
+		          aBehavior withAllSubclasses includes: each ].
+	others ifEmpty: [ ^ self ].
+	names := ', ' join: ((others first: (others size min: 3)) collect: [ :each | each name ]).
+	others size > 3 ifTrue: [
+			names := '{1} and {2} more' format: {
+					         names.
+					         (others size - 3) } ].
+	RBRefactoringError signal:
+		('Cannot rename accessor {1}: other classes define it too ({2}), and its senders cannot be told from theirs. Rename the accessors with method_update and a scope first, then the slot.'
+			 format: {
+					 aSelector.
+					 names })
 ]
 
 { #category : 'private' }
 MCPRenameSlotCommand >> renameAccessorsInBehavior: aBehavior [
+	"Each method named after the slot is renamed as method_update renames a method: its source kept but for its selector line, and its senders across the image changed."
 
-	self renameAccessor: self slotName asSymbol source: self getterSourceForNewSlot inBehavior: aBehavior.
-	self renameAccessor: (self slotName , ':') asSymbol source: self setterSourceForNewSlot inBehavior: aBehavior
+	{
+		(self slotName asSymbol -> self newSlotName asSymbol).
+		((self slotName , ':') asSymbol -> (self newSlotName , ':') asSymbol) } do: [ :each |
+			(aBehavior includesLocalSelector: each key) ifTrue: [
+					(MCPUpdateMethodCommand
+						 changing: each key
+						 of: aBehavior
+						 to: each value
+						 argumentNames: #(  )
+						 environment: RBBrowserEnvironment new) execute ] ]
 ]
 
 { #category : 'private' }
 MCPRenameSlotCommand >> rewriteOfSelector: aSelector inBehavior: aBehavior [
 	"A block compiling the method rewritten for the new name, or nil when nothing in it changes."
 
-	| accessorRewriter changed parseTree source variableRewriter |
+	| parseTree rewriter source |
 	parseTree := aBehavior parseTreeForSelector: aSelector.
 	parseTree ifNil: [ ^ nil ].
-	changed := false.
-	variableRewriter := self variableReferenceRewriterForSelector: aSelector inBehavior: aBehavior.
-	(variableRewriter executeTree: parseTree) ifTrue: [
-			parseTree := variableRewriter tree.
-			changed := true ].
-	accessorRewriter := self accessorMessageRewriter.
-	(accessorRewriter executeTree: parseTree) ifTrue: [
-			parseTree := accessorRewriter tree.
-			changed := true ].
-	changed ifFalse: [ ^ nil ].
-	source := (parseTree formattedCodeIn: aBehavior) withInternalLineEndings.
+	rewriter := self variableReferenceRewriterForSelector: aSelector inBehavior: aBehavior.
+	(rewriter executeTree: parseTree) ifFalse: [ ^ nil ].
+	source := (rewriter tree formattedCodeIn: aBehavior) withInternalLineEndings.
 	^ [ aBehavior compile: source classified: (aBehavior >> aSelector) protocol ]
 ]
 
@@ -131,13 +121,6 @@ MCPRenameSlotCommand >> rewrittenReferencesInBehavior: aBehavior [
 ]
 
 { #category : 'private' }
-MCPRenameSlotCommand >> setterSourceForNewSlot [
-
-	^ String streamContents: [ :stream |
-		  stream << self newSlotName << ': anObject' << String cr << String cr << self newSlotName << ' := anObject' ]
-]
-
-{ #category : 'private' }
 MCPRenameSlotCommand >> slotNameAfterChange: aSlotName [
 
 	^ aSlotName = self slotName asSymbol
@@ -147,16 +130,18 @@ MCPRenameSlotCommand >> slotNameAfterChange: aSlotName [
 
 { #category : 'private' }
 MCPRenameSlotCommand >> validateAccessorRenamesInBehavior: aBehavior [
-	"Checked before anything changes: a refusal met while renaming the accessors would come after the new slot was added and the senders rewritten."
+	"Checked before anything changes: a refusal met while renaming the accessors would come after the new slot was added and the senders rewritten. An accessor is renamed with its senders across the image, which a class outside the slot's hierarchy implementing the same selector would share: its method and its sends would be renamed too."
 
 	{
-		(self slotName -> self newSlotName).
-		(self slotName , ':' -> (self newSlotName , ':')) } do: [ :each |
-			((aBehavior includesLocalSelector: each key asSymbol) and: [ aBehavior includesLocalSelector: each value asSymbol ]) ifTrue: [
-					RBRefactoringError signal: ('Cannot rename accessor {1} to {2} because {3} already defines {2}.' format: {
-								 each key.
-								 each value.
-								 aBehavior name }) ] ]
+		(self slotName asSymbol -> self newSlotName asSymbol).
+		((self slotName , ':') asSymbol -> (self newSlotName , ':') asSymbol) } do: [ :each |
+			(aBehavior includesLocalSelector: each key) ifTrue: [
+					(aBehavior includesLocalSelector: each value) ifTrue: [
+							RBRefactoringError signal: ('Cannot rename accessor {1} to {2} because {3} already defines {2}.' format: {
+										 each key.
+										 each value.
+										 aBehavior name }) ].
+					self refuseOtherImplementorsOf: each key inBehavior: aBehavior ] ]
 ]
 
 { #category : 'private' }
