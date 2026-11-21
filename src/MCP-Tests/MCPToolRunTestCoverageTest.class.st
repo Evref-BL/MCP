@@ -188,14 +188,17 @@ MCPToolRunTestCoverageTest >> testNotificationsKeepTheNormalTestRunnerBehaviour 
 
 { #category : 'tests' }
 MCPToolRunTestCoverageTest >> testPharosOwnMethodsAreLeftOutWithAWarning [
-	"Measured, the methods a coverage link runs through would stop the image, so they are left out and the answer says so."
+	"Measured, the methods a coverage link runs through would stop the image, so they are left out and the answer says so. Another package's extension to IdentitySet, as Fuel has on Pharo 10, is that package's to measure."
 
-	| arguments result coverage |
+	| command extensions arguments result coverage |
+	command := MCPRunTestCoverageCommand new.
+	extensions := IdentitySet methods , IdentitySet class methods reject: [ :each |
+		              (command isInstrumentationMethod: each) or: [ command shouldIgnoreMethod: each ] ].
 	arguments := self arguments.
 	(arguments at: #coverage) at: #scope put: { (#classes -> #( 'IdentitySet' 'MCPToolCoverageTarget' )) } asDictionary.
 	result := self runCoverage: arguments.
 	coverage := (self dataFrom: result) at: #coverage.
-	self assert: (coverage at: #methodCount) equals: 4.
+	self assert: (coverage at: #methodCount) equals: 4 + extensions size.
 	self assert: ((self warningsFrom: result) anySatisfy: [ :each | each includesSubstring: 'Did not measure' ]).
 	self assertNoCoverageLinks
 ]
