@@ -51,7 +51,8 @@ MCPToolRunTestCoverage >> coverageOptionsObjectSchema [
 	limit minimum: 0.
 	scope := self methodSearchScopeSchemaProperty.
 	scope description:
-		'Methods to measure, with an explicit package, class or hierarchy. Test classes, abstract methods and methods with the coverage exclusion pragma are excluded.'.
+		('Methods to measure, naming at least one package, class or hierarchy. Test classes, abstract methods, methods with the <ignoreForCoverage> pragma, and the methods of Pharo''s {1} packages, which coverage runs through, are left out.'
+			 format: { (', ' join: MCPRunTestCoverageCommand instrumentationPackageNames) }).
 	^ (self
 		   schemaPropertyNamed: 'coverage'
 		   type: 'object'
@@ -84,13 +85,12 @@ MCPToolRunTestCoverage >> coverageScopeFrom: request [
 
 { #category : 'private - results' }
 MCPToolRunTestCoverage >> dataTextOn: stream for: data [
+	"The summary gives the percentage, and a list that was not cut short needs no word."
 
-	| coverage rest |
+	| rest coverage |
 	rest := data copy.
 	coverage := (rest at: #coverage) copy.
-	coverage removeKey: #percentage.
-	coverage keys do: [ :key |
-		((key asString endsWith: 'Truncated') and: [ (coverage at: key) = false ]) ifTrue: [ coverage removeKey: key ] ].
+	coverage keysAndValuesRemove: [ :key :value | key = #percentage or: [ value == false and: [ key endsWith: 'Truncated' ] ] ].
 	rest at: #coverage put: coverage.
 	super dataTextOn: stream for: rest
 ]
@@ -121,7 +121,7 @@ MCPToolRunTestCoverage >> operationFor: request [
 		  yourself
 ]
 
-{ #category : 'private - results' }
+{ #category : 'private' }
 MCPToolRunTestCoverage >> successSummaryForData: data [
 
 	| percentage |
@@ -141,5 +141,5 @@ MCPToolRunTestCoverage >> title [
 { #category : 'private - results' }
 MCPToolRunTestCoverage >> warningsFor: anOperation [
 
-	^ anOperation coverageScope warnings
+	^ anOperation warnings
 ]
