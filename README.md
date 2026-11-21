@@ -27,7 +27,7 @@ Load MCP in a supported image:
 ```smalltalk
 Metacello new
    baseline: 'MCP';
-   repository: 'github://Evref-BL/MCP:main/src';
+   repository: 'github://Evref-BL/MCP:v4.x.x/src';
    onConflictUseIncoming;
    load.
 ```
