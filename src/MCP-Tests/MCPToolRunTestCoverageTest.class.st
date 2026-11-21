@@ -172,7 +172,7 @@ MCPToolRunTestCoverageTest >> testMissingScopeWarnsAndHasNoPercentage [
 	data := self dataFrom: result.
 	self assert: ((data at: #coverage) at: #methodCount) equals: 0.
 	self assert: ((data at: #coverage) at: #percentage) isNil.
-	self assert: (self warningsFrom: result) notEmpty
+	self assert: (self warningsFrom: result) isNotEmpty
 ]
 
 { #category : 'tests' }
@@ -183,6 +183,20 @@ MCPToolRunTestCoverageTest >> testNotificationsKeepTheNormalTestRunnerBehaviour 
 	arguments at: #classes put: #( 'MCPToolNotificationTargetTest' ).
 	data := self dataFrom: (self runCoverage: arguments).
 	self assert: (data at: #passedCount) equals: 1.
+	self assertNoCoverageLinks
+]
+
+{ #category : 'tests' }
+MCPToolRunTestCoverageTest >> testPharosOwnMethodsAreLeftOutWithAWarning [
+	"Measured, the methods a coverage link runs through would stop the image, so they are left out and the answer says so."
+
+	| arguments result coverage |
+	arguments := self arguments.
+	(arguments at: #coverage) at: #scope put: { (#classes -> #( 'IdentitySet' 'MCPToolCoverageTarget' )) } asDictionary.
+	result := self runCoverage: arguments.
+	coverage := (self dataFrom: result) at: #coverage.
+	self assert: (coverage at: #methodCount) equals: 4.
+	self assert: ((self warningsFrom: result) anySatisfy: [ :each | each includesSubstring: 'Did not measure' ]).
 	self assertNoCoverageLinks
 ]
 

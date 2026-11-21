@@ -78,9 +78,9 @@ MCPToolContractsTest >> assertUsesSupportedSchemaDialect: aValue [
 
 { #category : 'private' }
 MCPToolContractsTest >> camelCaseWordsIn: aString [
-	"The words in a description that are spelled like an argument name, so a caller would read them as one."
+	"The words in a description that are spelled like an argument name, so a caller would read them as one. A pragma written as <pragma> is Pharo's, not an argument."
 
-	^ (aString substrings: ' ,.;:()[]{}''"/<>#*-') select: [ :each |
+	^ ((aString copyWithRegex: '<\w+>' matchesReplacedWith: '') substrings: ' ,.;:()[]{}''"/<>#*-') select: [ :each |
 			  (each allSatisfy: [ :character | character isLetter ]) and: [
 				  each first isLowercase and: [ each anySatisfy: [ :character | character isUppercase ] ] ] ]
 ]
