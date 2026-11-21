@@ -268,7 +268,7 @@ MCPToolClassMutationTest >> testClassToolSchemaDescriptionsExplainRecategorizati
 	slotsSchema := (tool inputSchema asJRPCJSON at: #properties) at: 'slots'.
 	self
 		assert: (((slotsSchema at: #properties) at: 'rename') at: #description)
-		equals: 'Slots to rename, as current name to new name. Values are migrated and references updated.'
+		equals: 'Slots to rename, as current name to new name. Values are migrated and references updated. Methods named after the slot are renamed with their senders across the image, their source kept.'
 ]
 
 { #category : 'tests - schema' }
