@@ -11,7 +11,8 @@ Class {
 { #category : 'tests' }
 MCPToolCoverageTargetTest >> testCoveredMethod [
 
-	self assert: MCPToolCoverageTarget new coveredMethod equals: 2
+	self assert: MCPToolCoverageTarget new coveredMethod equals: 2.
+	self assert: MCPToolCoverageTarget classCoveredMethod equals: 3
 ]
 
 { #category : 'tests' }

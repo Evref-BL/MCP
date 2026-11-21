@@ -1,5 +1,5 @@
 "
-A plain class, not a test class, for the test_run tests: one names its method to see it refused, and MCPToolCoverageTargetTest tests it.
+A plain class for test selection and scoped coverage fixtures.
 "
 Class {
 	#name : 'MCPToolCoverageTarget',
@@ -9,9 +9,28 @@ Class {
 }
 
 { #category : 'examples' }
+MCPToolCoverageTarget class >> classCoveredMethod [
+
+	^ 3
+]
+
+{ #category : 'examples' }
+MCPToolCoverageTarget >> abstractMethod [
+
+	self subclassResponsibility
+]
+
+{ #category : 'examples' }
 MCPToolCoverageTarget >> coveredMethod [
 
 	^ 1 + 1
+]
+
+{ #category : 'examples' }
+MCPToolCoverageTarget >> ignoredMethod [
+
+	<ignoreForCoverage>
+	^ 4
 ]
 
 { #category : 'examples' }
@@ -20,4 +39,10 @@ MCPToolCoverageTarget >> partiallyCoveredMethod: anInteger [
 	anInteger > 0
 		ifTrue: [ ^ 1 ]
 		ifFalse: [ ^ 0 ]
+]
+
+{ #category : 'examples' }
+MCPToolCoverageTarget >> uncoveredMethod [
+
+	^ 5
 ]
