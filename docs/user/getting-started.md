@@ -110,7 +110,6 @@ tools, and `test_run` over `evaluate`.
 
 Continue with:
 
-- [Test coverage](test-coverage.md)
 - [Building on MCP](building-on-mcp.md)
 - [Observability and UI](observability.md)
 
