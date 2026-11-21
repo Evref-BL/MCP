@@ -279,7 +279,7 @@ MCPToolUpdateClass >> executeReparentWithPlan: plan request: request [
 	superclassName := request stringArgumentNamed: 'superclass'.
 	^ self
 		  apply: plan
-		  force: false
+		  force: (request booleanArgumentOrDefaultNamed: 'force')
 		  work: [ (MCPReparentClassCommand className: className superclassName: superclassName) execute ]
 		  summary: [ :updatedClass |
 			  String streamContents: [ :stream | stream << 'Reparented class ' << className << ' to superclass ' << superclassName << '.' ] ]
@@ -311,7 +311,7 @@ MCPToolUpdateClass >> executeReplaceSharedPoolsWithPlan: plan request: request [
 	className := request stringArgumentNamed: 'name'.
 	^ self
 		  apply: plan
-		  force: false
+		  force: (request booleanArgumentOrDefaultNamed: 'force')
 		  work: [
 				  (MCPReplaceClassSharedPoolsCommand
 					   className: className
@@ -328,7 +328,7 @@ MCPToolUpdateClass >> executeReplaceSharedVariablesWithPlan: plan request: reque
 	className := request stringArgumentNamed: 'name'.
 	^ self
 		  apply: plan
-		  force: false
+		  force: (request booleanArgumentOrDefaultNamed: 'force')
 		  work: [
 				  (MCPReplaceClassSharedVariablesCommand
 					   className: className
@@ -345,7 +345,7 @@ MCPToolUpdateClass >> executeReplaceTraitsWithPlan: plan request: request [
 	className := request stringArgumentNamed: 'name'.
 	^ self
 		  apply: plan
-		  force: false
+		  force: (request booleanArgumentOrDefaultNamed: 'force')
 		  work: [
 		  (MCPReplaceClassTraitsCommand className: className traitNames: (request stringCollectionArgumentNamed: 'traits')) execute ]
 		  summary: [ :updatedClass | String streamContents: [ :stream | stream << 'Replaced traits for class ' << className << '.' ] ]

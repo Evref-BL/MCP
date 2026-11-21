@@ -24,6 +24,15 @@ MCPRenameSlotCommand class >> className: aClassName slotName: aSlotName newSlotN
 ]
 
 { #category : 'private' }
+MCPRenameSlotCommand >> accessorRenames [
+	"The selector of each method named after the slot, the getter and the setter, with the one it is renamed to."
+
+	^ {
+		  (self slotName asSymbol -> self newSlotName asSymbol).
+		  ((self slotName , ':') asSymbol -> (self newSlotName , ':') asSymbol) }
+]
+
+{ #category : 'private' }
 MCPRenameSlotCommand >> applyToBehavior: aBehavior [
 	"The same rename on either side: a class-side slot is an instance variable of the metaclass. The methods that refer to the slot are rewritten once before anything changes, since rewriting one can be refused, and again after the accessors are renamed, whose senders that renaming changes, to be compiled once the new slot is there."
 
@@ -42,6 +51,13 @@ MCPRenameSlotCommand >> hierarchyDefinesSlotNamed: aSlotName inBehavior: aBehavi
 
 	(aBehavior hasSlotNamed: aSlotName asSymbol) ifTrue: [ ^ true ].
 	^ aBehavior allSubclasses anySatisfy: [ :each | self definesSlotNamed: aSlotName in: each ]
+]
+
+{ #category : 'private' }
+MCPRenameSlotCommand >> hierarchyImplementorsOf: aSelector inBehavior: aBehavior [
+	"The classes at or below aBehavior that define aSelector themselves: a method of that name in a subclass reads the slot as well."
+
+	^ aBehavior withAllSubclasses select: [ :each | each includesLocalSelector: aSelector ]
 ]
 
 { #category : 'accessing' }
@@ -83,15 +99,13 @@ MCPRenameSlotCommand >> refuseOtherImplementorsOf: aSelector inBehavior: aBehavi
 
 { #category : 'private' }
 MCPRenameSlotCommand >> renameAccessorsInBehavior: aBehavior [
-	"Each method named after the slot is renamed as method_update renames a method: its source kept but for its selector line, and its senders across the image changed."
+	"Each method named after the slot, in its class or one below, is renamed as method_update renames a method: its source kept but for its selector line, and its senders across the image changed. One rename renames every implementor, and the validation has made sure they are all at or below aBehavior."
 
-	{
-		(self slotName asSymbol -> self newSlotName asSymbol).
-		((self slotName , ':') asSymbol -> (self newSlotName , ':') asSymbol) } do: [ :each |
-			(aBehavior includesLocalSelector: each key) ifTrue: [
+	self accessorRenames do: [ :each |
+			(self hierarchyImplementorsOf: each key inBehavior: aBehavior) ifNotEmpty: [ :implementors |
 					(MCPUpdateMethodCommand
 						 changing: each key
-						 of: aBehavior
+						 of: implementors first
 						 to: each value
 						 argumentNames: #(  )
 						 environment: RBBrowserEnvironment new) execute ] ]
@@ -132,16 +146,15 @@ MCPRenameSlotCommand >> slotNameAfterChange: aSlotName [
 MCPRenameSlotCommand >> validateAccessorRenamesInBehavior: aBehavior [
 	"Checked before anything changes: a refusal met while renaming the accessors would come after the new slot was added and the senders rewritten. An accessor is renamed with its senders across the image, which a class outside the slot's hierarchy implementing the same selector would share: its method and its sends would be renamed too."
 
-	{
-		(self slotName asSymbol -> self newSlotName asSymbol).
-		((self slotName , ':') asSymbol -> (self newSlotName , ':') asSymbol) } do: [ :each |
-			(aBehavior includesLocalSelector: each key) ifTrue: [
-					(aBehavior includesLocalSelector: each value) ifTrue: [
-							RBRefactoringError signal: ('Cannot rename accessor {1} to {2} because {3} already defines {2}.' format: {
-										 each key.
-										 each value.
-										 aBehavior name }) ].
-					self refuseOtherImplementorsOf: each key inBehavior: aBehavior ] ]
+	self accessorRenames do: [ :each |
+			| implementors |
+			implementors := self hierarchyImplementorsOf: each key inBehavior: aBehavior.
+			implementors detect: [ :implementor | implementor includesLocalSelector: each value ] ifFound: [ :implementor |
+					RBRefactoringError signal: ('Cannot rename accessor {1} to {2} because {3} already defines {2}.' format: {
+								 each key.
+								 each value.
+								 implementor name }) ].
+			implementors ifNotEmpty: [ self refuseOtherImplementorsOf: each key inBehavior: aBehavior ] ]
 ]
 
 { #category : 'private' }

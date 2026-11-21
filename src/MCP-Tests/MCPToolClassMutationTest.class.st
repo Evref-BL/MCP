@@ -79,12 +79,12 @@ MCPToolClassMutationTest >> createdClassNames [
 	     'MCPToolClassMutationTestAddClassSlotTarget' 'MCPToolClassMutationTestRemoveSlotTarget'
 	     'MCPToolClassMutationTestRemoveClassSlotTarget' 'MCPToolClassMutationTestRenameSlotTarget'
 	     'MCPToolClassMutationTestRenameClassSideSlotTarget' 'MCPToolClassMutationTestRenameSlotSender'
-	     'MCPToolClassMutationTestSlotUserSubclass' 'MCPToolClassMutationTestWarningRemoveSlotTarget'
-	     'MCPToolClassMutationTestPullUpTarget' 'MCPToolClassMutationTestPullUpChildOne' 'MCPToolClassMutationTestPullUpChildTwo'
-	     'MCPToolClassMutationTestPushDownTarget' 'MCPToolClassMutationTestPushDownChildOne'
-	     'MCPToolClassMutationTestPushDownChildTwo' 'MCPToolClassMutationTestWarningPullUpTarget'
-	     'MCPToolClassMutationTestWarningPullUpChildOne' 'MCPToolClassMutationTestWarningPullUpChildTwo'
-	     'TMCPToolClassMutationTestTrait' )
+	     'MCPToolClassMutationTestRenameSlotSubclass' 'MCPToolClassMutationTestSlotUserSubclass'
+	     'MCPToolClassMutationTestWarningRemoveSlotTarget' 'MCPToolClassMutationTestPullUpTarget'
+	     'MCPToolClassMutationTestPullUpChildOne' 'MCPToolClassMutationTestPullUpChildTwo' 'MCPToolClassMutationTestPushDownTarget'
+	     'MCPToolClassMutationTestPushDownChildOne' 'MCPToolClassMutationTestPushDownChildTwo'
+	     'MCPToolClassMutationTestWarningPullUpTarget' 'MCPToolClassMutationTestWarningPullUpChildOne'
+	     'MCPToolClassMutationTestWarningPullUpChildTwo' 'TMCPToolClassMutationTestTrait' )
 ]
 
 { #category : 'private' }
@@ -1332,6 +1332,31 @@ MCPToolClassMutationTest >> testUpdateForceRemoveSlotContinuesPastRefactoringWar
 	self assert: (target slots collect: #name as: Array) equals: #(  )
 ]
 
+{ #category : 'tests - update' }
+MCPToolClassMutationTest >> testUpdateForceRemovesASharedVariableInUseAndNamesItsUsers [
+
+	| arguments createArguments result |
+	createArguments := self
+		                   createRequestArgumentsForClassName: 'MCPToolClassMutationTestSharedVariableRemovalTarget'
+		                   superclassName: 'Object'
+		                   packageName: self generatedPackageName.
+	createArguments at: #sharedVariables put: #( 'AlphaShared' ).
+	self callToolNamed: 'class_create' withArguments: createArguments.
+	self
+		ensureMethodSource: 'readsAlpha ^ AlphaShared'
+		protocol: 'testing'
+		on: (self classNamed: 'MCPToolClassMutationTestSharedVariableRemovalTarget').
+	arguments := self
+		             updateRequestArgumentsForSharedVariablesInClassNamed: 'MCPToolClassMutationTestSharedVariableRemovalTarget'
+		             sharedVariables: #(  ).
+	arguments at: #force put: true.
+	result := self callToolNamed: 'class_update' withArguments: arguments.
+	self deny: (result at: #isError ifAbsent: [ false ]) description: [ self textFrom: result ].
+	self assert: ((self warningsFrom: result) anySatisfy: [ :each |
+			 each includesSubstring: 'MCPToolClassMutationTestSharedVariableRemovalTarget>>readsAlpha (AlphaShared)' ]).
+	self assert: (self classNamed: 'MCPToolClassMutationTestSharedVariableRemovalTarget') classVarNames isEmpty
+]
+
 { #category : 'tests - planning' }
 MCPToolClassMutationTest >> testUpdateMapsClassPatchFieldsToUpdateActions [
 
@@ -2073,6 +2098,88 @@ MCPToolClassMutationTest >> testUpdateRemovesTraitsWithEmptyArray [
 ]
 
 { #category : 'tests - update' }
+MCPToolClassMutationTest >> testUpdateRemovingASharedPoolInUseStopsAndNamesItsUsers [
+
+	| createArguments error result |
+	createArguments := self
+		                   createRequestArgumentsForClassName: 'MCPToolClassMutationTestSharedPoolRemovalTarget'
+		                   superclassName: 'Object'
+		                   packageName: self generatedPackageName.
+	createArguments at: #sharedPools put: #( 'ChronologyConstants' ).
+	self callToolNamed: 'class_create' withArguments: createArguments.
+	self
+		ensureMethodSource: 'readsPool ^ SecondsInDay'
+		protocol: 'testing'
+		on: (self classNamed: 'MCPToolClassMutationTestSharedPoolRemovalTarget').
+	result := self
+		          callToolNamed: 'class_update'
+		          withArguments:
+		          (self
+			           updateRequestArgumentsForSharedPoolsInClassNamed: 'MCPToolClassMutationTestSharedPoolRemovalTarget'
+			           sharedPools: #(  )).
+	error := self errorFrom: result.
+	self assert: ((error at: #impactMessages) anySatisfy: [ :each |
+			 each includesSubstring: 'MCPToolClassMutationTestSharedPoolRemovalTarget>>readsPool (SecondsInDay)' ]).
+	self assert: (self classNamed: 'MCPToolClassMutationTestSharedPoolRemovalTarget') sharedPools size equals: 1
+]
+
+{ #category : 'tests - update' }
+MCPToolClassMutationTest >> testUpdateRemovingASharedVariableInUseStopsAndNamesItsUsers [
+	"Pharo would compile the methods reading the variable again with an undeclared one, and the call said nothing."
+
+	| createArguments error result |
+	createArguments := self
+		                   createRequestArgumentsForClassName: 'MCPToolClassMutationTestSharedVariableRemovalTarget'
+		                   superclassName: 'Object'
+		                   packageName: self generatedPackageName.
+	createArguments at: #sharedVariables put: #( 'AlphaShared' ).
+	self callToolNamed: 'class_create' withArguments: createArguments.
+	self
+		ensureMethodSource: 'readsAlpha ^ AlphaShared'
+		protocol: 'testing'
+		on: (self classNamed: 'MCPToolClassMutationTestSharedVariableRemovalTarget') classSide.
+	result := self callToolNamed: 'class_update' withArguments: (self
+			           updateRequestArgumentsForSharedVariablesInClassNamed: 'MCPToolClassMutationTestSharedVariableRemovalTarget'
+			           sharedVariables: #(  )).
+	error := self errorFrom: result.
+	self assert: (error at: #forceSupported).
+	self assert: ((error at: #impactMessages) anySatisfy: [ :each |
+			 each includesSubstring: 'MCPToolClassMutationTestSharedVariableRemovalTarget class>>readsAlpha (AlphaShared)' ]).
+	self
+		assert: (self classNamed: 'MCPToolClassMutationTestSharedVariableRemovalTarget') classVarNames asArray
+		equals: #( #AlphaShared )
+]
+
+{ #category : 'tests - update' }
+MCPToolClassMutationTest >> testUpdateRemovingATraitWhoseSlotIsInUseStopsAndNamesItsUsers [
+
+	| createArguments error result |
+	self callToolNamed: 'class_create' withArguments: {
+			(#name -> 'TMCPToolClassMutationTestTrait').
+			(#superclass -> 'Trait').
+			(#slots -> #( 'traitSlot' )).
+			(#package -> self generatedPackageName) } asDictionary.
+	createArguments := self
+		                   createRequestArgumentsForClassName: 'MCPToolClassMutationTestTraitRemovalTarget'
+		                   superclassName: 'Object'
+		                   packageName: self generatedPackageName.
+	createArguments at: #traits put: #( 'TMCPToolClassMutationTestTrait' ).
+	self callToolNamed: 'class_create' withArguments: createArguments.
+	self
+		ensureMethodSource: 'readsTraitSlot ^ traitSlot'
+		protocol: 'testing'
+		on: (self classNamed: 'MCPToolClassMutationTestTraitRemovalTarget').
+	result := self
+		          callToolNamed: 'class_update'
+		          withArguments:
+		          (self updateRequestArgumentsForTraitsInClassNamed: 'MCPToolClassMutationTestTraitRemovalTarget' traits: #(  )).
+	error := self errorFrom: result.
+	self assert: ((error at: #impactMessages) anySatisfy: [ :each |
+			 each includesSubstring: 'MCPToolClassMutationTestTraitRemovalTarget>>readsTraitSlot (traitSlot)' ]).
+	self assert: (self classNamed: 'MCPToolClassMutationTestTraitRemovalTarget') traits size equals: 1
+]
+
+{ #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateRenameSlotKeepsItsAccessorsAndRenamesTheirSenders [
 	"A rename used to make the accessors anew, losing what the old ones did, and to leave their senders outside the class sending the old selectors (Evref-BL/MCP#402). The old names are built: renaming an accessor renames its symbols and its sends across the image, this test's included."
 
@@ -2166,6 +2273,45 @@ MCPToolClassMutationTest >> testUpdateRenameSlotRefusesAnAccessorOtherClassesDef
 	target := self classNamed: target name.
 	self assert: (target slots collect: #name as: Array) equals: #( #value ).
 	self assert: (target includesSelector: #value)
+]
+
+{ #category : 'tests - update' }
+MCPToolClassMutationTest >> testUpdateRenameSlotRenamesTheAccessorsASubclassDefines [
+	"A subclass's method named after the slot reads it as well, so it is renamed with its senders, its source kept. The old names are built, since renaming an accessor renames its symbols and sends across the image."
+
+	| oldName subclass sender |
+	oldName := 'probeDepth' , 'Before'.
+	self
+		createClassNamed: 'MCPToolClassMutationTestRenameSlotTarget'
+		superclassName: 'Object'
+		slots: { oldName asSymbol }
+		classSlots: #(  ).
+	subclass := self
+		            createClassNamed: 'MCPToolClassMutationTestRenameSlotSubclass'
+		            superclassName: 'MCPToolClassMutationTestRenameSlotTarget'
+		            slots: #(  )
+		            classSlots: #(  ).
+	self ensureMethodSource: oldName , ' "The depth, in points." ^ ' , oldName protocol: 'accessing' on: subclass.
+	self ensureMethodSource: oldName , ': aNumber ' , oldName , ' := aNumber' protocol: 'accessing' on: subclass.
+	sender := self
+		          createClassNamed: 'MCPToolClassMutationTestRenameSlotSender'
+		          superclassName: 'Object'
+		          slots: #(  )
+		          classSlots: #(  ).
+	self
+		ensureMethodSource: 'use ^ MCPToolClassMutationTestRenameSlotSubclass new ' , oldName , ': 4; ' , oldName
+		protocol: 'accessing'
+		on: sender.
+	self dataFrom: (self callToolNamed: 'class_update' withArguments: (self
+				  updateRequestArgumentsForSlotRenameInClassNamed: 'MCPToolClassMutationTestRenameSlotTarget'
+				  slotName: oldName
+				  newSlotName: 'probeDepthAfter'
+				  classSide: false)).
+	subclass := self classNamed: subclass name.
+	self assert: ((subclass >> #probeDepthAfter) sourceCode includesSubstring: '"The depth, in points."').
+	self deny: (subclass includesSelector: oldName asSymbol).
+	self deny: (subclass includesSelector: (oldName , ':') asSymbol).
+	self assert: (self classNamed: sender name) new use equals: 4
 ]
 
 { #category : 'tests - update' }
@@ -2323,6 +2469,31 @@ MCPToolClassMutationTest >> testUpdateRenamingASlotThatPharoAbandonsInASubclassS
 			self
 				assert: ((self classNamed: target name) subclasses select: [ :each | each name = instance class name ])
 				equals: { instance class } ]
+]
+
+{ #category : 'tests - update' }
+MCPToolClassMutationTest >> testUpdateReparentAwayFromAVariableInUseStopsAndNamesItsUsers [
+	"Under another superclass, the methods reading a slot the old one gave would read an undeclared variable."
+
+	| error result |
+	self
+		createClassNamed: self reparentSuperclassName
+		superclassName: 'Object'
+		slots: #( betaSlot )
+		classSlots: #(  ).
+	self
+		createClassNamed: self reparentTargetClassName
+		superclassName: self reparentSuperclassName
+		slots: #(  )
+		classSlots: #(  ).
+	self ensureMethodSource: 'readsBeta ^ betaSlot' protocol: 'testing' on: (self classNamed: self reparentTargetClassName).
+	result := self callToolNamed: 'class_update' withArguments: {
+			          (#name -> self reparentTargetClassName).
+			          (#superclass -> 'Object') } asDictionary.
+	error := self errorFrom: result.
+	self assert: ((error at: #impactMessages) anySatisfy: [ :each |
+			 each includesSubstring: self reparentTargetClassName , '>>readsBeta (betaSlot)' ]).
+	self assert: (self classNamed: self reparentTargetClassName) superclass name asString equals: self reparentSuperclassName
 ]
 
 { #category : 'tests - update' }

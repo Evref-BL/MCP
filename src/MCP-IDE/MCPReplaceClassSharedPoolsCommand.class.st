@@ -23,8 +23,12 @@ MCPReplaceClassSharedPoolsCommand class >> className: aClassName sharedPoolNames
 
 { #category : 'executing' }
 MCPReplaceClassSharedPoolsCommand >> execute [
+	"A pool left out goes, and the methods reading its variables are named in a warning first."
 
-	^ self installing: [ self replaceSharedPoolsOn: self currentClass ]
+	| class |
+	class := self currentClass.
+	self warnOfMethodsUsing: (self variablesRemovedFrom: class) below: class.
+	^ self installing: [ self replaceSharedPoolsOn: class ]
 ]
 
 { #category : 'accessing' }
@@ -37,4 +41,14 @@ MCPReplaceClassSharedPoolsCommand >> sharedPoolNames [
 MCPReplaceClassSharedPoolsCommand >> sharedPoolNames: someNames [
 
 	sharedPoolNames := someNames ifNil: [ #(  ) ] ifNotNil: [ someNames asArray ]
+]
+
+{ #category : 'private' }
+MCPReplaceClassSharedPoolsCommand >> variablesRemovedFrom: aClass [
+	"The variables of the pools aClass names itself that the replacement leaves out, unless its superclass still reads that pool."
+
+	| inherited |
+	inherited := aClass superclass ifNil: [ #(  ) ] ifNotNil: [ :superclass | superclass allSharedPools ].
+	^ (aClass sharedPools reject: [ :each | (self sharedPoolNames includes: each name asString) or: [ inherited includes: each ] ])
+		  flatCollect: [ :each | each classVarNames collect: [ :name | each classVariableNamed: name ] ]
 ]
