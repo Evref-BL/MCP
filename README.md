@@ -32,9 +32,6 @@ Metacello new
    load.
 ```
 
-`v4.x.x` follows releases within major version 4; `v4.0.x` follows patch
-releases within 4.0. Use an exact release tag to keep a fixed version.
-
 That loads the `default` group. To choose the groups, send `load:` with their
 names in place of `load`. The baseline groups are:
 

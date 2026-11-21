@@ -4,7 +4,6 @@ on:
   push:
     branches: [main]
     paths:
-      - .github/scripts/move-floating-tags.sh
       - .github/workflows/npm.yml
       - bin/**
       - package.json
@@ -14,7 +13,6 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - .github/scripts/move-floating-tags.sh
       - .github/workflows/npm.yml
       - bin/**
       - package.json
