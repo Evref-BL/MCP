@@ -23,8 +23,12 @@ MCPReplaceClassTraitsCommand class >> className: aClassName traitNames: someTrai
 
 { #category : 'executing' }
 MCPReplaceClassTraitsCommand >> execute [
+	"A trait left out takes its slots with it, and the methods of the class using them are named in a warning first."
 
-	self installing: [ self currentClass setTraitComposition: (self resolvedTraitsNamed: self traitNames) ].
+	| class |
+	class := self currentClass.
+	self warnOfMethodsUsing: (self variablesRemovedFrom: class) below: class.
+	self installing: [ class setTraitComposition: (self resolvedTraitsNamed: self traitNames) ].
 	^ self currentClass
 ]
 
@@ -38,4 +42,18 @@ MCPReplaceClassTraitsCommand >> traitNames [
 MCPReplaceClassTraitsCommand >> traitNames: someNames [
 
 	traitNames := someNames ifNil: [ #(  ) ] ifNotNil: [ someNames asArray ]
+]
+
+{ #category : 'private' }
+MCPReplaceClassTraitsCommand >> variablesRemovedFrom: aClass [
+	"The slots, on either side, that aClass has from a trait the replacement leaves out, a trait being kept when one of the traits named supplies it."
+
+	| kept |
+	kept := (self resolvedTraitsNamed: self traitNames) flatCollect: [ :each | each allTraits copyWith: each ].
+	^ {
+		  aClass.
+		  aClass classSide } flatCollect: [ :behavior |
+			  behavior slots select: [ :each |
+					  each definingClass isTrait and: [
+						  (kept anySatisfy: [ :trait | trait == each definingClass or: [ trait classSide == each definingClass ] ]) not ] ] ]
 ]

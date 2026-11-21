@@ -64,6 +64,25 @@ MCPClassCommand >> installing: aBlock under: aSuperclass [
 	^ value
 ]
 
+{ #category : 'private' }
+MCPClassCommand >> methodsUsing: someVariables below: aClass [
+	"The methods at or below aClass, on either side, that read or write one of someVariables, each with the names of those it uses. A method is matched on the variable its name is bound to, so a temporary of the same name does not count. A trait's methods are left to the trait."
+
+	| variables |
+	variables := someVariables asIdentitySet.
+	variables ifEmpty: [ ^ #(  ) ].
+	^ (aClass withAllSubclasses flatCollect: [ :each |
+			   {
+				   each instanceSide.
+				   each classSide } ]) flatCollect: [ :behavior |
+			  behavior localMethods
+				  collect: [ :method |
+						  method -> ((method ast allChildren select: [ :node | node isVariable and: [ variables includes: node variable ] ])
+							   collect: [ :node | node name ]
+							   as: Set) ]
+				  thenSelect: [ :each | each value isNotEmpty ] ]
+]
+
 { #category : 'private - resolving' }
 MCPClassCommand >> resolvedLayoutClassNamed: layoutName [
 
@@ -109,4 +128,22 @@ MCPClassCommand >> restoreHierarchyOf: someClasses afterAbandonedInstallUnder: a
 							each removeSubclass: subclass.
 							abandoned add: subclass name ] ] ].
 	^ abandoned
+]
+
+{ #category : 'private' }
+MCPClassCommand >> warnOfMethodsUsing: someVariables below: aClass [
+	"Stop at a refactoring warning when methods at or below aClass use one of someVariables, which the change takes from them: Pharo would compile them again reading undeclared variables. Force goes past it, as it goes past a slot removal's."
+
+	| uses |
+	uses := ((self methodsUsing: someVariables below: aClass) collect: [ :each |
+			         '{1}>>{2} ({3})' format: {
+					         each key methodClass name.
+					         each key selector.
+					         (', ' join: each value sorted) } ]) sorted.
+	uses ifEmpty: [ ^ self ].
+	RBRefactoringWarning signal: (String streamContents: [ :stream |
+				 stream << 'Methods use what this change takes away, and would read undeclared variables: '
+				 << ('; ' join: (uses first: (uses size min: 5))).
+				 uses size > 5 ifTrue: [ stream << ' and ' << (uses size - 5) printString << ' more' ].
+				 stream nextPut: $. ])
 ]

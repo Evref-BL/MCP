@@ -23,8 +23,12 @@ MCPReplaceClassSharedVariablesCommand class >> className: aClassName sharedVaria
 
 { #category : 'executing' }
 MCPReplaceClassSharedVariablesCommand >> execute [
+	"A class variable left out goes, and the methods using it are named in a warning first."
 
-	^ self installing: [ self replaceSharedVariablesOn: self currentClass ]
+	| class |
+	class := self currentClass.
+	self warnOfMethodsUsing: (self variablesRemovedFrom: class) below: class.
+	^ self installing: [ self replaceSharedVariablesOn: class ]
 ]
 
 { #category : 'accessing' }
@@ -37,4 +41,12 @@ MCPReplaceClassSharedVariablesCommand >> sharedVariableNames [
 MCPReplaceClassSharedVariablesCommand >> sharedVariableNames: someNames [
 
 	sharedVariableNames := someNames ifNil: [ #(  ) ] ifNotNil: [ someNames asArray ]
+]
+
+{ #category : 'private' }
+MCPReplaceClassSharedVariablesCommand >> variablesRemovedFrom: aClass [
+	"The class variables of aClass that the replacement leaves out."
+
+	^ (aClass classVarNames reject: [ :each | self sharedVariableNames includes: each asString ]) collect: [ :each |
+		  aClass classVariableNamed: each ]
 ]
