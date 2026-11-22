@@ -34,9 +34,6 @@ MCPOpenTelemetryObservabilityBackend class >> configureProvidersWith: aSettings 
 			[ each reset ]
 				on: Error
 				do: [ :error | error return: nil ] ].
-	[ aSettings apply ]
-		on: Error
-		do: [ :error | error return: nil ].
 	^ [ aSettings isConfigured ]
 		  on: Error
 		  do: [ false ]

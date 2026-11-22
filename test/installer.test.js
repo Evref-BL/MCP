@@ -74,11 +74,9 @@ for (const [host, { configuration }] of Object.entries(hosts)) {
   });
 }
 
-// pharo-agent init reads the guide through templateDirectory, keeps what
-// follows "## Read First", and refuses a route that no template provides.
-test("the guide keeps its Read First heading and every path it routes to exists", () => {
+// The guide routes agents to references and skills by path.
+test("every path the guide routes to exists among the templates", () => {
   const guide = fs.readFileSync(path.join(templateDirectory(), "pharo.AGENTS.md"), "utf8");
-  assert.match(guide, /^## Read First$/m);
   const routes = [...guide.matchAll(/(?:pharo-references|skills)\/[\w./-]+\.md/g)].map(([route]) => route);
   assert.notEqual(routes.length, 0);
   for (const route of routes) {

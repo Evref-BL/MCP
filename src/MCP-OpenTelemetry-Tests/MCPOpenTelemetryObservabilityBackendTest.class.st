@@ -97,11 +97,10 @@ MCPOpenTelemetryObservabilityBackendTest >> setUp [
 
 { #category : 'private' }
 MCPOpenTelemetryObservabilityBackendTest >> settingsAskingForTraces: aBoolean [
-	"Settings of an environment that asks for traces or not, with no settings file to fall back on."
+	"Settings of an environment that asks for traces or not."
 
 	| environment |
 	environment := Dictionary new.
-	environment at: 'XDG_CONFIG_HOME' put: (FileLocator temp asFileReference / 'mcp-no-such-config') fullName.
 	aBoolean ifTrue: [ environment at: 'OTEL_EXPORTER_OTLP_ENDPOINT' put: 'http://127.0.0.1:9' ].
 	^ MCPOpenTelemetrySettings environment: environment
 ]
