@@ -9,6 +9,21 @@ Class {
 }
 
 { #category : 'private' }
+MCPHTTPServerTest >> post: anEntity to: aPath on: aServer [
+	"The response a client gets posting anEntity to aPath of aServer, over HTTP."
+
+	| client |
+	client := ZnClient new.
+	^ [
+		  client
+			  url: aServer localUrl / aPath;
+			  headerAt: 'Accept' put: 'application/json, text/event-stream';
+			  entity: anEntity;
+			  post.
+		  client response ] ensure: [ client close ]
+]
+
+{ #category : 'private' }
 MCPHTTPServerTest >> postRequestWithContents: contents [
 
 	| request |
@@ -86,6 +101,56 @@ MCPHTTPServerTest >> testABackgroundForkLeavesCallsAnswered [
 ]
 
 { #category : 'tests' }
+MCPHTTPServerTest >> testABatchInsideABatchIsAnInvalidRequest [
+	"A batch holds requests; a list inside one is answered as an invalid request, and the requests beside it as usual."
+
+	| answers |
+	answers := STONJSON fromString: (self
+			            responseForRequest:
+			            (self postRequestWithContents:
+				             '[[{"jsonrpc":"2.0","id":1,"method":"ping"}],{"jsonrpc":"2.0","id":2,"method":"ping"}]')
+			            using: (MCP new
+					             observabilityExportDirectory: nil;
+					             yourself) server) contents.
+	self assert: answers size equals: 2.
+	self assert: ((answers first at: 'error') at: 'code') equals: -32600.
+	self assert: (answers first at: 'id') isNil.
+	self assert: (answers second at: 'id') equals: 2.
+	self assert: (answers second includesKey: 'result')
+]
+
+{ #category : 'tests' }
+MCPHTTPServerTest >> testABodyThatIsNotUTF8IsAParseError [
+	"Zinc refuses such a body before the endpoint sees it; the refusal is still JSON-RPC."
+
+	| body |
+	self timeLimit: 30 seconds.
+	self withServerDo: [ :server |
+			body := self
+				        refusalIn:
+				        (self post: (ZnEntity with: #[ 123 34 97 34 58 34 255 34 125 ] type: ZnMimeType applicationJson) to: '' on: server)
+				        withStatus: 400.
+			self assert: ((body at: 'error') at: 'code') equals: -32700 ]
+]
+
+{ #category : 'tests' }
+MCPHTTPServerTest >> testABodyTooLargeToReadIsRefusedWith413 [
+
+	| body |
+	self timeLimit: 30 seconds.
+	self withServerDo: [ :server |
+			(server instVarNamed: #server) maximumEntitySize: 64.
+			body := self
+				        refusalIn:
+				        (self
+					         post: (ZnEntity json: (String new: 200 withAll: $ ) , '{"jsonrpc":"2.0","id":1,"method":"ping"}')
+					         to: ''
+					         on: server)
+				        withStatus: 413.
+			self assert: ((body at: 'error') at: 'message') isString ]
+]
+
+{ #category : 'tests' }
 MCPHTTPServerTest >> testAComputingEvaluationLeavesOtherCallsAnswered [
 	"An evaluation runs below the process serving its call, so while one computes the server still answers other calls. The evaluated code computes until the listing has its answer, which the listing asks for once the code computes, so the listing comes first only when it was answered meanwhile; otherwise the evaluation's time limit ends it first. The clients run at the priority calls are served at, since this test's own process gets no turn while the evaluation computes."
 
@@ -157,6 +222,18 @@ MCPHTTPServerTest >> testAModernRequestMissingAHeaderIsRefused [
 	body := self refusalIn: (self responseForRequest: request using: MCPHTTPServer new) withStatus: 400.
 	self assert: (body at: 'id') equals: 7.
 	self assert: ((body at: 'error') at: 'code') equals: MCPHeaderMismatch errorCode
+]
+
+{ #category : 'tests' }
+MCPHTTPServerTest >> testAPostToMcpReachesTheEndpoint [
+	"/mcp is the path many clients put after the server's address by default."
+
+	self timeLimit: 30 seconds.
+	self withServerDo: [ :server |
+			| response |
+			response := self post: (ZnEntity json: '{"jsonrpc":"2.0","id":1,"method":"ping"}') to: 'mcp' on: server.
+			self assert: response code equals: 200.
+			self assert: ((STONJSON fromString: response contents) includesKey: 'result') ]
 ]
 
 { #category : 'tests' }
@@ -320,4 +397,17 @@ MCPHTTPServerTest >> testRejectsUnsupportedProtocolVersion [
 MCPHTTPServerTest >> testServerBindsToLoopbackByDefault [
 
 	self assert: MCPHTTPServer new bindingAddress equals: #[ 127 0 0 1 ]
+]
+
+{ #category : 'private' }
+MCPHTTPServerTest >> withServerDo: aBlock [
+	"Runs aBlock with a server listening on a port the system chose, and stops it after."
+
+	| server |
+	server := (MCP new
+		           observabilityExportDirectory: nil;
+		           yourself) server.
+	server port: 0.
+	server start.
+	^ [ aBlock value: server ] ensure: [ server stop ]
 ]

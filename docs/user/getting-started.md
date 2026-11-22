@@ -72,6 +72,9 @@ The endpoint above is:
 http://127.0.0.1:4000
 ```
 
+It answers at `http://127.0.0.1:4000/mcp` too, the path some clients add by
+default.
+
 Client configuration formats differ. Configure a Streamable HTTP MCP server
 using the client documentation rather than copying another client's JSON.
 Loopback addresses work only when the client connects from the local machine;

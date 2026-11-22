@@ -270,16 +270,21 @@ MCPHTTPServer >> headerNamed: aName in: request [
 
 { #category : 'initialization' }
 MCPHTTPServer >> initialize [
+	"The endpoint answers at / and at /mcp, the path many clients put there by default."
 
+	| endpoint |
 	super initialize.
 	eventStreams := OrderedCollection new.
 	messageProcessor := MCPMessageProcessor new.
 	server := MCPSocketSafeZnServer new.
-
+	endpoint := [ :request :response | self answer: request with: response ].
 	server
 		bindingAddress: #[ 127 0 0 1 ];
 		port: self defaultPort;
-		delegate: (ZnDispatcherDelegate new map: '/' to: [ :request :response | self answer: request with: response ])
+		delegate: (ZnDispatcherDelegate new
+				 map: '/' to: endpoint;
+				 map: '/mcp' to: endpoint;
+				 yourself)
 ]
 
 { #category : 'private - validation' }

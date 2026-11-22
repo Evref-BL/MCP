@@ -201,3 +201,38 @@ MCPSocketSafeZnServer >> stop: unregister [
 	unregister ifTrue: [ self closeConnections ].
 	self logStopped
 ]
+
+{ #category : 'private' }
+MCPSocketSafeZnServer >> unreadableRequestErrorFor: anException [
+	"The JSON-RPC error answering a request that could not be read, naming no request: one too large to read, or a body that is not UTF-8 or a request that is not HTTP, which is a parse error."
+
+	| error |
+	error := (ZnEntityTooLarge handles: anException)
+		         ifTrue: [
+				         JRPCErrorObject
+					         code: -32000
+					         message:
+					         ('Request Entity Too Large: a request body may hold at most {1} bytes.' format:
+						          { (ZnCurrentOptions at: #maximumEntitySize) }) ]
+		         ifFalse: [
+				         JRPCErrorObject code: -32700 message: ((ZnCharacterEncodingError handles: anException)
+						          ifTrue: [ 'Parse error: the body is not UTF-8.' ]
+						          ifFalse: [ 'Parse error: the request is not HTTP this server reads.' ]) ].
+	^ STONJSON toString: (JRPCErrorResponseObject id: nil error: error) asJRPCJSON
+]
+
+{ #category : 'request handling' }
+MCPSocketSafeZnServer >> writeResponseBad: anException on: stream timing: timing [
+	"A request that could not be read is still answered in JSON-RPC, so a client reads why the way it reads any other error: 413 for one too large to read, 400 for any other. The connection is closed after, as Zinc closes it."
+
+	| response |
+	response := ZnResponse new
+		            statusLine: ((ZnEntityTooLarge handles: anException)
+				             ifTrue: [ ZnStatusLine code: 413 ]
+				             ifFalse: [ ZnStatusLine badRequest ]);
+		            headers: ZnHeaders defaultResponseHeaders;
+		            entity: (ZnEntity json: (self unreadableRequestErrorFor: anException));
+		            yourself.
+	response setConnectionClose.
+	self writeResponseSafely: response on: stream timing: timing
+]
