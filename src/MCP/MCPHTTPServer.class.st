@@ -41,15 +41,26 @@ MCPHTTPServer >> addEventStream: anEventStream [
 { #category : 'initialization' }
 MCPHTTPServer >> answer: request with: response [
 
-	(self hasValidOriginFor: request) ifFalse: [ ^ self answerWithoutBody: response statusLine: ZnStatusLine forbidden ].
+	(self hasValidOriginFor: request) ifFalse: [
+			^ self
+				  answerRefusal: response
+				  statusLine: ZnStatusLine forbidden
+				  error: (self refusalSaying: 'Forbidden: this server answers requests from a loopback origin only.') ].
 	self configureResponse: response for: request.
 	request method = #OPTIONS ifTrue: [ ^ self answerOptionsWith: response ].
-	(self hasSupportedProtocolVersionFor: request) ifFalse: [ ^ self answerWithoutBody: response statusLine: ZnStatusLine badRequest ].
+	(self hasSupportedProtocolVersionFor: request) ifFalse: [ ^ self answerUnsupportedProtocolVersion: request with: response ].
 	request method = #GET ifTrue: [ ^ self answerGet: request with: response ].
 	request method = #POST ifTrue: [
 			(self postAcceptsSupportedMediaTypes: request) ifFalse: [
-				^ self answerWithoutBody: response statusLine: (ZnStatusLine code: 406) ].
-			(self postHasJSONContentType: request) ifFalse: [ ^ self answerWithoutBody: response statusLine: (ZnStatusLine code: 415) ].
+					^ self
+						  answerRefusal: response
+						  statusLine: (ZnStatusLine code: 406)
+						  error: (self refusalSaying: 'Not Acceptable: a POST must accept both application/json and text/event-stream.') ].
+			(self postHasJSONContentType: request) ifFalse: [
+					^ self
+						  answerRefusal: response
+						  statusLine: (ZnStatusLine code: 415)
+						  error: (self refusalSaying: 'Unsupported Media Type: a POST must send application/json.') ].
 			^ self answerPost: request with: response ].
 	^ self answerMethodNotAllowedWith: response
 ]
@@ -69,7 +80,10 @@ MCPHTTPServer >> answerGet: request with: response [
 MCPHTTPServer >> answerMethodNotAllowedWith: response [
 
 	response headers at: #Allow put: 'POST, OPTIONS'.
-	^ self answerWithoutBody: response statusLine: ZnStatusLine methodNotAllowed
+	^ self
+		  answerRefusal: response
+		  statusLine: ZnStatusLine methodNotAllowed
+		  error: (self refusalSaying: 'Method Not Allowed: send JSON-RPC requests with POST.')
 ]
 
 { #category : 'initialization' }
@@ -81,21 +95,30 @@ MCPHTTPServer >> answerOptionsWith: response [
 
 { #category : 'initialization' }
 MCPHTTPServer >> answerPost: request with: response [
+	"A body that is no JSON-RPC message, a request, a notification, a response or a batch of them, is none the server can accept, answered with 400 as Streamable HTTP asks, and a JSON-RPC error saying why: an empty body or one that is not JSON is a parse error."
 
 	| body mismatch payload |
 	body := self bodyOf: request.
 	mismatch := self headerMismatchFor: request body: body.
-	mismatch ifNotNil: [
-			response
-				statusLine: ZnStatusLine badRequest;
-				entity: (ZnEntity json: mismatch).
-			^ response ].
+	mismatch ifNotNil: [ ^ self answerRefusal: response statusLine: ZnStatusLine badRequest error: mismatch ].
 	(self isSubscriptionsListen: body) ifTrue: [ ^ self answerSubscriptionsListen: body with: response ].
-	payload := self handleJSON: request contents.
+	payload := self handleJSON: (request contents ifNil: [ '' ]).
 	(payload isString and: [ payload isEmpty ]) ifTrue: [ ^ self answerWithoutBody: response statusLine: ZnStatusLine accepted ].
 	response
-		statusLine: ZnStatusLine ok;
+		statusLine: ((body isDictionary or: [ body isArray ])
+				 ifTrue: [ ZnStatusLine ok ]
+				 ifFalse: [ ZnStatusLine badRequest ]);
 		entity: (ZnEntity json: payload).
+	^ response
+]
+
+{ #category : 'private - refusals' }
+MCPHTTPServer >> answerRefusal: response statusLine: aStatusLine error: aJSONRPCError [
+	"A refused request is still answered in JSON-RPC, so a client reads why the way it reads any other error, and the length it is told keeps it from waiting for more."
+
+	response
+		statusLine: aStatusLine;
+		entity: (ZnEntity json: (self messageProcessor convertJRPCJsonableObjectToJSON: aJSONRPCError)).
 	^ response
 ]
 
@@ -114,6 +137,15 @@ MCPHTTPServer >> answerSubscriptionsListen: body with: response [
 			 parameters: { ('notifications' -> (self acknowledgedFilterFor: filter)) } asDictionary).
 	self addEventStream: stream.
 	^ self streamResponse: response for: stream
+]
+
+{ #category : 'private - refusals' }
+MCPHTTPServer >> answerUnsupportedProtocolVersion: request with: response [
+	"Answered with the versions this server supports, so the client can retry with one of them."
+
+	| error |
+	error := MCPUnsupportedProtocolVersion new requestedVersion: (request headers at: 'MCP-Protocol-Version').
+	^ self answerRefusal: response statusLine: ZnStatusLine badRequest error: (error asJRPCResponseWithId: nil) asJRPCJSON
 ]
 
 { #category : 'initialization' }
@@ -162,6 +194,7 @@ MCPHTTPServer >> closeEventStreams [
 
 { #category : 'initialization' }
 MCPHTTPServer >> configureResponse: response for: request [
+	"A browser sends a header only when the answer to its preflight allows it, so every header a client sends is allowed, the two a modern request mirrors its method and name into among them."
 
 	| origin |
 	origin := request headers at: 'Origin' ifAbsent: [ nil ].
@@ -172,7 +205,7 @@ MCPHTTPServer >> configureResponse: response for: request [
 	response headers at: #'Access-Control-Allow-Methods' put: 'GET, POST, OPTIONS'.
 	response headers
 		at: #'Access-Control-Allow-Headers'
-		put: 'accept, content-type, last-event-id, mcp-protocol-version, mcp-session-id'
+		put: 'accept, content-type, last-event-id, mcp-method, mcp-name, mcp-protocol-version, mcp-session-id'
 ]
 
 { #category : 'private - modern headers' }
@@ -187,6 +220,13 @@ MCPHTTPServer >> decodedHeaderValue: aValue [
 	  (ZnBase64Encoder new decode: (aValue copyFrom: sentinelStart size + 1 to: aValue size - sentinelEnd size)) utf8Decoded ]
 		  on: Error
 		  do: [ :error | error return: aValue ]
+]
+
+{ #category : 'accessing' }
+MCPHTTPServer >> endpointPaths [
+	"Where the endpoint answers: at the root, and at /mcp, the path many clients put after a server's address by default, with or without a slash after it."
+
+	^ #( '/' '/mcp' '/mcp/' )
 ]
 
 { #category : 'event streams' }
@@ -245,11 +285,10 @@ MCPHTTPServer >> initialize [
 	eventStreams := OrderedCollection new.
 	messageProcessor := MCPMessageProcessor new.
 	server := MCPSocketSafeZnServer new.
-
 	server
 		bindingAddress: #[ 127 0 0 1 ];
 		port: self defaultPort;
-		delegate: (ZnDispatcherDelegate new map: '/' to: [ :request :response | self answer: request with: response ])
+		delegate: (ZnValueDelegate with: [ :request | self respondTo: request ])
 ]
 
 { #category : 'private - validation' }
@@ -333,6 +372,30 @@ MCPHTTPServer >> postHasJSONContentType: request [
 	| contentType |
 	contentType := request headers at: 'Content-Type' ifAbsent: [ ^ false ].
 	^ contentType asLowercase beginsWith: 'application/json'
+]
+
+{ #category : 'private - refusals' }
+MCPHTTPServer >> refusalSaying: aMessage [
+	"The JSON-RPC error answering a request refused before its body is read. It names no request, and its code is from the range JSON-RPC leaves to servers."
+
+	^ (JRPCErrorResponseObject id: nil error: (JRPCErrorObject code: -32000 message: aMessage)) asJRPCJSON
+]
+
+{ #category : 'initialization' }
+MCPHTTPServer >> respondTo: request [
+	"A path the endpoint is not at is not found, which is said in JSON-RPC as every refusal is."
+
+	| response |
+	response := ZnResponse new
+		            statusLine: ZnStatusLine ok;
+		            headers: ZnHeaders defaultResponseHeaders;
+		            yourself.
+	(self endpointPaths includes: request uri pathPrintString) ifFalse: [
+			^ self
+				  answerRefusal: response
+				  statusLine: ZnStatusLine notFound
+				  error: (self refusalSaying: 'Not Found: this server answers at /mcp.') ].
+	^ self answer: request with: response
 ]
 
 { #category : 'starting' }

@@ -63,13 +63,15 @@ MCPObservabilityBackend >> errorDetailsFromToolResult: aToolResult [
 
 { #category : 'private - errors' }
 MCPObservabilityBackend >> errorKindForDetails: details error: anError violations: violations [
+	"How a call failed: input_schema when its input schema refused it; json_rpc when a protocol error answered it; exception when any other exception escaped the tool, but a command error, which the tool raised to refuse the call; domain for such a refusal and for an error the tool answered with a code; tool_result for one it answered with none."
 
 	violations ifNotEmpty: [ ^ 'input_schema' ].
 	(self stringValueAtKey: #errorClass in: details) = 'MCPInvalidToolInput' ifTrue: [ ^ 'input_schema' ].
+	anError ifNotNil: [
+			anError mcpIsProtocolError ifTrue: [ ^ 'json_rpc' ].
+			^ anError mcpCommandErrorDo: [ 'domain' ] otherwise: [ 'exception' ] ].
 	(self stringValueAtKey: #errorCode in: details) ifNotEmpty: [ ^ 'domain' ].
-	anError ifNil: [ ^ 'tool_result' ].
-	anError mcpIsProtocolError ifTrue: [ ^ 'json_rpc' ].
-	^ 'exception'
+	^ 'tool_result'
 ]
 
 { #category : 'private - errors' }

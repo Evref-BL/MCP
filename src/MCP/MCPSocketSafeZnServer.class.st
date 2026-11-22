@@ -3,6 +3,8 @@ Zinc server used by MCP HTTP transport.
 
 It treats socket errors while reading a request as connection termination. This matters after image restart because serialized connection processes can resume invalid native sockets; they should close quietly instead of opening a debugger.
 
+Any other error reading a request answers it as a request that could not be read, in JSON-RPC, and an error Zinc lets through while serving a connection ends that connection, logged, so that nothing a client sends can quit a headless image.
+
 It also owns the socket it listens on, rather than letting ZnNetworkingUtils create one it drops when binding fails, so retrying on a port another process holds costs nothing.
 
 While it runs, a process of its own tells the virtual machine to read its sockets every few milliseconds. The machine reads them only when told to, which the idle process does once nothing else runs, so code computing below the calls, an evaluation or a process forked below it, would otherwise keep every call from being accepted, read or answered until it ended.
@@ -29,10 +31,21 @@ MCPSocketSafeZnServer >> executeOneRequestResponseOn: stream [
 	^ shouldStop
 ]
 
-{ #category : 'private' }
-MCPSocketSafeZnServer >> handleSocketErrorDuringListen: aSocketError [
+{ #category : 'request handling' }
+MCPSocketSafeZnServer >> executeRequestResponseLoopOn: stream [
+	"An error Zinc lets through while serving a connection ends that connection, logged. Unhandled in the worker, it would quit a headless image for what one client sent; only a server in debug mode, in an image that can open a debugger, lets it through."
 
-	lastListenError := aSocketError mcpMessageText.
+	[ super executeRequestResponseLoopOn: stream ]
+		on: Error
+		do: [ :error |
+				(self debugMode and: [ Smalltalk isInteractive ]) ifTrue: [ error pass ].
+				self logServerHandlerError: error ]
+]
+
+{ #category : 'private' }
+MCPSocketSafeZnServer >> handleErrorDuringListen: anError [
+
+	lastListenError := anError mcpMessageText.
 	self releaseServerSocketAfterSocketError
 ]
 
@@ -79,13 +92,14 @@ MCPSocketSafeZnServer >> lastListenError [
 
 { #category : 'request handling' }
 MCPSocketSafeZnServer >> listenLoop [
+	"An error while listening, a socket's or any other while accepting a connection, ends this attempt, and the supervisor loop makes another. Unhandled in the listening process, it would quit a headless image."
 
 	^ [
 		  super listenLoop.
 		  false ]
-		  on: SocketError
+		  on: Error
 		  do: [ :error |
-				  self handleSocketErrorDuringListen: error.
+				  self handleErrorDuringListen: error.
 				  true ]
 ]
 
@@ -109,6 +123,23 @@ MCPSocketSafeZnServer >> pollSockets [
 	[
 		(Delay forMilliseconds: self socketPollingMilliseconds) wait.
 		ProcessorScheduler relinquishProcessorForMicroseconds: 0 ] repeat
+]
+
+{ #category : 'request handling' }
+MCPSocketSafeZnServer >> readRequest: stream timing: timing [
+	"Zinc answers a request it cannot read only when it fails as Zinc expects. A reader that signals a plain error instead, for a Content-Length or a chunk size that is not a number, or a gzip body that is not gzip, would leave it unhandled in the worker. Any error reading a request, but the connection failing or ending, is a request that could not be read, answered as one."
+
+	| unreadable request |
+	request := [ super readRequest: stream timing: timing ]
+		           on: Error
+		           do: [ :error |
+				           ((self readRequestBadExceptionSet handles: error) or: [
+					            (self readRequestTerminationExceptionSet handles: error) or: [ NetworkError handles: error ] ]) ifTrue: [
+					           error pass ].
+				           unreadable := error.
+				           nil ].
+	unreadable ifNotNil: [ ^ ZnParseError signal: unreadable messageText ].
+	^ request
 ]
 
 { #category : 'private' }
@@ -200,4 +231,39 @@ MCPSocketSafeZnServer >> stop: unregister [
 	self releaseServerSocketAfterSocketError.
 	unregister ifTrue: [ self closeConnections ].
 	self logStopped
+]
+
+{ #category : 'private' }
+MCPSocketSafeZnServer >> unreadableRequestErrorFor: anException [
+	"The JSON-RPC error answering a request that could not be read, naming no request: one too large to read, or a body that is not UTF-8 or a request that is not HTTP, which is a parse error."
+
+	| error |
+	error := (ZnEntityTooLarge handles: anException)
+		         ifTrue: [
+				         JRPCErrorObject
+					         code: -32000
+					         message:
+					         ('Request Entity Too Large: a request body may hold at most {1} bytes.' format:
+						          { (ZnCurrentOptions at: #maximumEntitySize) }) ]
+		         ifFalse: [
+				         JRPCErrorObject code: -32700 message: ((ZnCharacterEncodingError handles: anException)
+						          ifTrue: [ 'Parse error: the body is not UTF-8.' ]
+						          ifFalse: [ 'Parse error: the request is not HTTP this server reads.' ]) ].
+	^ STONJSON toString: (JRPCErrorResponseObject id: nil error: error) asJRPCJSON
+]
+
+{ #category : 'private' }
+MCPSocketSafeZnServer >> writeResponseBad: anException on: stream timing: timing [
+	"A request that could not be read is still answered in JSON-RPC, so a client reads why the way it reads any other error: 413 for one too large to read, 400 for any other. The connection is closed after, as Zinc closes it."
+
+	| response |
+	response := ZnResponse new
+		            statusLine: ((ZnEntityTooLarge handles: anException)
+				             ifTrue: [ ZnStatusLine code: 413 ]
+				             ifFalse: [ ZnStatusLine badRequest ]);
+		            headers: ZnHeaders defaultResponseHeaders;
+		            entity: (ZnEntity json: (self unreadableRequestErrorFor: anException));
+		            yourself.
+	response setConnectionClose.
+	self writeResponseSafely: response on: stream timing: timing
 ]

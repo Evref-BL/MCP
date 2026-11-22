@@ -75,7 +75,7 @@ BaselineOfMCP >> defineDependencies: spec [
 				loads: #( 'PharoMinimal' 'UnicodeProperties' ) ];
 		baseline: 'OpenTelemetry' with: [
 			spec
-				repository: 'github://Gabriel-Darbord/opentelemetry-pharo:v1.3.0/src';
+				repository: 'github://Gabriel-Darbord/opentelemetry-pharo:v1.3.1/src';
 				loads: #( 'traces' 'metrics' 'logs' 'autoconfigure' ) ]
 ]
 
@@ -102,7 +102,7 @@ BaselineOfMCP >> definePackages: spec [
 	spec package: 'MCP-IDE' with: [ spec requires: #( 'Core' 'PCRE2' ) ].
 	spec package: 'MCP-UI' with: [ spec requires: #( 'Core' ) ].
 	spec package: 'MCP-OpenTelemetry' with: [ spec requires: #( 'Core' 'OpenTelemetry' ) ].
-	spec package: 'MCP-OpenTelemetry-Tests' with: [ spec requires: #( 'MCP-OpenTelemetry' ) ].
+	spec package: 'MCP-OpenTelemetry-Tests' with: [ spec requires: #( 'MCP-OpenTelemetry' 'IDE' 'MCP-Tests-Resources' ) ].
 	spec package: 'MCP-Tests-Resources' with: [ spec requires: #( 'IDE' ) ].
 	spec package: 'MCP-Tests-RunResources' with: [ spec requires: #( 'MCP-Tests-Resources' ) ].
 	spec package: 'MCP-Tests-Resources-Extensions' with: [ spec requires: #( 'MCP-Tests-Resources' ) ].

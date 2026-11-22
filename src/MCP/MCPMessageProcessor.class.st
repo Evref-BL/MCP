@@ -49,6 +49,20 @@ MCPMessageProcessor >> addHandlersFromPragmasIn: anObject [
 	self addHandlersFromPragmasFrom: anObject class to: MCP for: anObject
 ]
 
+{ #category : 'private - batches' }
+MCPMessageProcessor >> batchOf: aJSONArray [
+	"The requests of a batch. A batch holds requests, never another batch: a list inside it is answered as an invalid request, as JSON-RPC answers every element that is not a request."
+
+	aJSONArray ifEmpty: [ JRPCIncorrectJSON signal: 'Empty batch.' ].
+	^ JRPCBatchRequestsObject requests: (aJSONArray collect: [ :each |
+				   each isArray
+					   ifTrue: [ JRPCIncorrectJSON new asJRPCResponse ]
+					   ifFalse: [
+							   [ (JRPCMessageObject classToInstantiateForJSONObject: each forClient: false) fromJRPCJSONObject: each ]
+								   on: JRPCIncorrectJSON
+								   do: [ :error | error return: error asJRPCResponse ] ] ])
+]
+
 { #category : 'private - results' }
 MCPMessageProcessor >> cachingHints [
 	"Public for the catalogs: they describe one image and are the same for everyone asking it, with nothing in them belonging to a caller. Private for a resource's contents, which is where anything caller-specific would first appear."
@@ -83,7 +97,7 @@ MCPMessageProcessor >> errorResponseFor: anException inEraOf: aJRPCRequestObject
 	"Some conditions were renumbered between the eras, so a modern request is answered with the code its revision gives the condition."
 
 	| response |
-	response := self withoutInternalDataUnlessAsked: (anException asJRPCResponseWithId: aJRPCRequestObject id) for: anException.
+	response := self withoutInternalDataUnlessAsked: (anException mcpJRPCResponseWithId: aJRPCRequestObject id) for: anException.
 	(MCP isModernRequest: aJRPCRequestObject params) ifFalse: [ ^ response ].
 	response error code: (self modernErrorCodes at: response error code ifAbsent: [ response error code ]).
 	^ response
@@ -117,7 +131,9 @@ MCPMessageProcessor >> handleJSON: aJSONString [
 		                do: [ :exception |
 				                self debugMode
 					                ifTrue: [ exception pass ]
-					                ifFalse: [ exception return: (self withoutInternalDataUnlessAsked: exception asJRPCResponse for: exception) ] ].
+					                ifFalse: [
+					                exception return:
+						                (self withoutInternalDataUnlessAsked: (exception mcpJRPCResponseWithId: nil) for: exception) ] ].
 	^ jrpcResponse beConvertedBy: self
 ]
 
@@ -130,10 +146,11 @@ MCPMessageProcessor >> modernErrorCodes [
 
 { #category : 'parsing' }
 MCPMessageProcessor >> parseSupposedJRPCMessageObjectFromStream: aStream [
-	"Every message the image receives, parsed as JRPC parses it, with its strings converted to the image's line endings before any handler, tool or argument parser reads them."
+	"Every message the image receives, parsed as JRPC parses it, with its strings converted to the image's line endings before any handler, tool or argument parser reads them, and a batch read by batchOf:."
 
 	| jsonObject |
 	jsonObject := MCPLineEndings entering: (STONJSON fromStream: aStream).
+	(jsonObject isArray and: [ self isClient not ]) ifTrue: [ ^ self batchOf: jsonObject ].
 	^ (JRPCMessageObject classToInstantiateForJSONObject: jsonObject forClient: self isClient) fromJRPCJSONObject: jsonObject
 ]
 

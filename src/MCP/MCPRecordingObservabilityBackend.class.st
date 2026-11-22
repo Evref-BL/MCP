@@ -6,7 +6,8 @@ Class {
 	#superclass : 'MCPObservabilityBackend',
 	#instVars : [
 		'lastCallId',
-		'outputByteBudget'
+		'outputByteBudget',
+		'recordMutex'
 	],
 	#category : 'MCP-Observability',
 	#package : 'MCP',
@@ -38,6 +39,13 @@ MCPRecordingObservabilityBackend >> byteCountOfResult: aToolResult error: anErro
 	^ self byteCountOf: (self errorSummaryFor: anError)
 ]
 
+{ #category : 'private' }
+MCPRecordingObservabilityBackend >> critical: aBlock [
+	"Runs aBlock while no other process changes what this backend holds: the HTTP server answers each request in a process of its own, so calls start and end at the same time. The mutex is made here too because a backend that existed before this class was loaded has none."
+
+	^ (recordMutex ifNil: [ recordMutex := Mutex new ]) critical: aBlock
+]
+
 { #category : 'private - defaults' }
 MCPRecordingObservabilityBackend >> defaultOutputBudgetBytes [
 
@@ -53,6 +61,13 @@ MCPRecordingObservabilityBackend >> finishRecord: aRecord result: aToolResult er
 		status: (self statusForResult: aToolResult error: anError).
 	self recordErrorDetailsFor: aRecord result: aToolResult error: anError.
 	self recordOutputBudgetFor: aRecord result: aToolResult error: anError
+]
+
+{ #category : 'initialization' }
+MCPRecordingObservabilityBackend >> initialize [
+
+	super initialize.
+	recordMutex := Mutex new
 ]
 
 { #category : 'testing' }
@@ -73,9 +88,9 @@ MCPRecordingObservabilityBackend >> newRecordFor: aToolName input: inputObject d
 
 { #category : 'private' }
 MCPRecordingObservabilityBackend >> nextCallId [
-	"Calls are numbered from 1, in the order they start. The slot is filled here rather than in initialize because a backend that existed before this class was loaded keeps serving calls with it unset."
+	"Calls are numbered from 1, in the order they start, each number once however many start at the same time. The slot is filled here rather than in initialize because a backend that existed before this class was loaded keeps serving calls with it unset."
 
-	^ lastCallId := (lastCallId ifNil: [ 0 ]) + 1
+	^ self critical: [ lastCallId := (lastCallId ifNil: [ 0 ]) + 1 ]
 ]
 
 { #category : 'accessing' }

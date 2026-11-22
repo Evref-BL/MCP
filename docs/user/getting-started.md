@@ -72,6 +72,10 @@ The endpoint above is:
 http://127.0.0.1:4000
 ```
 
+It answers at `http://127.0.0.1:4000/mcp` too, with or without a slash after
+it, the path some clients add by default. Any other path is answered 404,
+with a JSON-RPC error saying where the endpoint is.
+
 Client configuration formats differ. Configure a Streamable HTTP MCP server
 using the client documentation rather than copying another client's JSON.
 Loopback addresses work only when the client connects from the local machine;

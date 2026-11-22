@@ -84,13 +84,19 @@ MCPInvalidToolInput >> asJRPCResponseWithId: anInteger [
 
 { #category : 'printing' }
 MCPInvalidToolInput >> describeViolations [
-	"Every violation in words, since a client may give the model this text and drop the structured violations. Some refusals come after the schema has passed, so the text does not claim a schema mismatch."
+	"Every violation in words, since a client may give the model this text and drop the structured violations. Properties of one object refused for the same reason share a sentence, which names what the object accepts once. Some refusals come after the schema has passed, so the text does not claim a schema mismatch."
 
+	| said |
+	said := IdentitySet new.
 	^ String streamContents: [ :stream |
 			  stream << 'Invalid arguments for ' << self toolName << '.'.
 			  self violations do: [ :each |
-					  stream space.
-					  each printSentenceOn: stream ] ]
+					  (said includes: each) ifFalse: [
+							  | alike |
+							  alike := self violations select: [ :other | other == each or: [ each refusesAPropertyBeside: other ] ].
+							  said addAll: alike.
+							  stream space.
+							  each printSentenceOn: stream with: alike ] ] ]
 ]
 
 { #category : 'initialization' }

@@ -275,6 +275,12 @@ MCPToolContractsTest >> selfSentNotImplementedCritiquesForMCPMethods [
 ]
 
 { #category : 'private' }
+MCPToolContractsTest >> signalErrorForMCPMessageProcessorTest [
+
+	Error signal: 'mcp processor error test'
+]
+
+{ #category : 'private' }
 MCPToolContractsTest >> signalHaltForMCPMessageProcessorTest [
 
 	(self class environment at: #Halt) signal: 'mcp processor halt test'
@@ -774,6 +780,24 @@ MCPToolContractsTest >> testHandleJSONReturnsInternalErrorForUnhandledHalt [
 	self assert: (response includesSubstring: '"code":-32603').
 	self assert: (response includesSubstring: 'Halt').
 	self assert: (response includesSubstring: 'mcp processor halt test')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testHandleJSONSaysWhatAnUnexpectedErrorWas [
+	"JRPC's answer for an Error says only that something went wrong. MCP's says what was raised, and withholds the rest unless the server asks for it."
+
+	| processor response error |
+	processor := MCPMessageProcessor new.
+	processor addHandler: (MCPMessageSendHandler new
+			 receiver: self;
+			 methodName: 'mcp/test-error';
+			 messageSelector: #signalErrorForMCPMessageProcessorTest;
+			 yourself).
+	response := STONJSON fromString: (processor handleJSON: '{"jsonrpc":"2.0","id":1,"method":"mcp/test-error"}').
+	error := response at: 'error'.
+	self assert: (error at: 'code') equals: -32603.
+	self assert: (error at: 'message') equals: 'mcp processor error test'.
+	self assert: (error at: 'data' ifAbsent: [ nil ]) isNil
 ]
 
 { #category : 'tests' }
