@@ -70,7 +70,7 @@ MCPOpenTelemetrySettingsTest >> testTheFileIsAppliedOnlyToAnEnvironmentWithoutSe
 ]
 
 { #category : 'tests' }
-MCPOpenTelemetrySettingsTest >> testTheFileIsWhereThePluginAndPLexusLookForIt [
+MCPOpenTelemetrySettingsTest >> testTheFileIsInTheToolsConfigurationDirectory [
 
 	| home |
 	home := FileLocator home asFileReference.
