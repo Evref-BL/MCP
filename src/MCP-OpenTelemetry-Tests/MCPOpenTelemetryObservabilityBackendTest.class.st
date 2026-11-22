@@ -72,6 +72,15 @@ MCPOpenTelemetryObservabilityBackendTest >> serverInfoAt: aVersion [
 		  yourself
 ]
 
+{ #category : 'private' }
+MCPOpenTelemetryObservabilityBackendTest >> sessionOfACallAt: aDateAndTime context: aContextDictionary [
+	"The session.id the span of a call made at aDateAndTime carries."
+
+	backend clock: [ aDateAndTime ].
+	backend recordToolCallFinish: (self startToolCallWith: aContextDictionary) result: self successToolResult error: nil.
+	^ self attributeNamed: 'session.id' in: exporter snapshots last
+]
+
 { #category : 'running' }
 MCPOpenTelemetryObservabilityBackendTest >> setUp [
 
@@ -146,6 +155,47 @@ MCPOpenTelemetryObservabilityBackendTest >> tearDown [
 	OTTracerProvider resourceDetectors: previousResourceDetectors.
 	backend := nil.
 	super tearDown
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testACallWhoseCallerNamesNoSessionHasTheServersOwn [
+	"A caller that sends no baggage, as most do, still has its calls grouped: by a session of the server's own, a random id that carries nothing of the machine."
+
+	| start first second |
+	start := DateAndTime
+		         year: 2026
+		         month: 11
+		         day: 22
+		         hour: 9
+		         minute: 0
+		         second: 0.
+	first := self sessionOfACallAt: start context: Dictionary new.
+	second := self
+		          sessionOfACallAt: start + 29 minutes
+		          context: { (#meta -> { ('traceparent' -> self remoteTraceparent) } asDictionary) } asDictionary.
+	self assert: first size equals: 32.
+	self assert: (first allSatisfy: [ :each | each isDigit or: [ 'abcdef' includes: each ] ]).
+	self assert: second equals: first
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testACallersSessionIsKeptAndLeavesTheServersOwnAlone [
+
+	| start own callers ownAgain |
+	start := DateAndTime
+		         year: 2026
+		         month: 11
+		         day: 22
+		         hour: 9
+		         minute: 0
+		         second: 0.
+	own := self sessionOfACallAt: start context: Dictionary new.
+	callers := self sessionOfACallAt: start + 20 minutes context: { (#meta -> {
+			            ('traceparent' -> self remoteTraceparent).
+			            ('baggage' -> 'session.id=3f2b8c1e-9d4a-4e7b-8c2d-1a2b3c4d5e6f') } asDictionary) } asDictionary.
+	ownAgain := self sessionOfACallAt: start + 40 minutes context: Dictionary new.
+	self assert: callers equals: '3f2b8c1e-9d4a-4e7b-8c2d-1a2b3c4d5e6f'.
+	self deny: ownAgain equals: own
 ]
 
 { #category : 'tests' }
@@ -287,15 +337,16 @@ MCPOpenTelemetryObservabilityBackendTest >> testASchemaRefusalSaysWhichKeywordsA
 ]
 
 { #category : 'tests' }
-MCPOpenTelemetryObservabilityBackendTest >> testASessionThatDoesNotReadAsAnIdIsLeftOut [
+MCPOpenTelemetryObservabilityBackendTest >> testASessionThatDoesNotReadAsAnIdIsLeftOutForTheServersOwn [
+	"What the caller's baggage names as its session leaves the image only when it reads as an id; otherwise the call has the server's own session."
 
-	backend
-		recordToolCallFinish: (self startToolCallWith: { (#meta -> {
+	| own |
+	own := self sessionOfACallAt: DateAndTime now context: Dictionary new.
+	self
+		assert: (self sessionOfACallAt: DateAndTime now context: { (#meta -> {
 					  ('traceparent' -> self remoteTraceparent).
 					  ('baggage' -> 'session.id=a%20value%20with%20spaces') } asDictionary) } asDictionary)
-		result: self successToolResult
-		error: nil.
-	self assert: (self attributeNamed: 'session.id' in: exporter onlySnapshot) isNil
+		equals: own
 ]
 
 { #category : 'tests' }
@@ -683,6 +734,41 @@ MCPOpenTelemetryObservabilityBackendTest >> testTheResourceDescribesTheServerAnd
 		assert: (attributes at: 'process.runtime.name') equals: 'pharo';
 		assert: meterProvider resource attributes equals: attributes;
 		assert: loggerProvider resource attributes equals: attributes
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testTheServersOwnSessionEndsAfterThirtyMinutesWithoutACall [
+
+	| start first second third |
+	start := DateAndTime
+		         year: 2026
+		         month: 11
+		         day: 22
+		         hour: 9
+		         minute: 0
+		         second: 0.
+	first := self sessionOfACallAt: start context: Dictionary new.
+	second := self sessionOfACallAt: start + 29 minutes context: Dictionary new.
+	third := self sessionOfACallAt: start + 59 minutes context: Dictionary new.
+	self assert: second equals: first.
+	self deny: third equals: second
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testTheServersOwnSessionEndsWhenTheClockGoesBack [
+	"An image saved and started on another machine, or whose clock was set back, starts a session of its own."
+
+	| start first second |
+	start := DateAndTime
+		         year: 2026
+		         month: 11
+		         day: 22
+		         hour: 9
+		         minute: 0
+		         second: 0.
+	first := self sessionOfACallAt: start context: Dictionary new.
+	second := self sessionOfACallAt: start - 1 minute context: Dictionary new.
+	self deny: second equals: first
 ]
 
 { #category : 'tests' }

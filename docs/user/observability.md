@@ -111,8 +111,10 @@ the OpenTelemetry conventions for MCP define (`mcp.method.name`,
 `gen_ai.tool.name`, `error.type`, ...) and MCP's own under `pharo.mcp.`. A
 request whose `params._meta` carries a W3C `traceparent` (SEP-414) makes the
 span a child of the caller's, so a client that propagates its context sees the
-image's work inside its own trace; a `session.id` entry in its W3C `baggage`
-is set on the span as `session.id`. `pharo.mcp.tool.origin` says whose tool
+image's work inside its own trace. `session.id` is the session the call
+belongs to: the `session.id` entry of its W3C `baggage` when that reads as an
+id, else the server's own, a random id that starts at the server's first such
+call and is replaced after 30 minutes without one. `pharo.mcp.tool.origin` says whose tool
 the call went to: `mcp` for one of MCP's own, `other` for one another package
 registered, `unknown` for a name the server has no tool for.
 
