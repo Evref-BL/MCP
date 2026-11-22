@@ -16,7 +16,11 @@ Class {
 		'recordsById',
 		'operationDurationHistogram',
 		'configured',
-		'serverInfo'
+		'serverInfo',
+		'clock',
+		'ownSessionId',
+		'ownSessionLastCallAt',
+		'sessionMutex'
 	],
 	#classVars : [
 		'Backends',
@@ -52,6 +56,13 @@ MCPOpenTelemetryObservabilityBackend class >> ownPackageNames [
 							                     on: Error
 							                     do: [ Set new ] ]
 				                     ifAbsent: [ Set new ] ]
+]
+
+{ #category : 'accessing' }
+MCPOpenTelemetryObservabilityBackend class >> ownSessionIdleTime [
+	"How long the server's own session lasts without a call: the next call after it starts another."
+
+	^ 30 minutes
 ]
 
 { #category : 'resource' }
@@ -187,6 +198,19 @@ MCPOpenTelemetryObservabilityBackend >> argumentNamesIn: inputObject [
 	inputObject isDictionary ifFalse: [ ^ #(  ) ].
 	names := ((inputObject keys collect: [ :each | each asString ] as: Array) select: [ :each | self isReportableName: each ]) sort.
 	^ names first: (names size min: self maxArgumentNames)
+]
+
+{ #category : 'accessing' }
+MCPOpenTelemetryObservabilityBackend >> clock [
+	"What answers the time a call is made at: the time of day, unless set."
+
+	^ clock ifNil: [ [ DateAndTime now ] ]
+]
+
+{ #category : 'accessing' }
+MCPOpenTelemetryObservabilityBackend >> clock: aBlock [
+
+	clock := aBlock
 ]
 
 { #category : 'configuring' }
@@ -553,6 +577,20 @@ MCPOpenTelemetryObservabilityBackend >> outputSizeHistogram [
 ]
 
 { #category : 'private - spans' }
+MCPOpenTelemetryObservabilityBackend >> ownSessionId [
+	"The server's own session, for a call whose caller names none: a random id, made as OpenTelemetry makes a trace id, at the first such call, and made again when ownSessionIdleTime has passed since the last one, or the clock went back. Pharo's UUIDs are not used: they hold the time they were made and an identifier derived from the machine."
+
+	^ (sessionMutex ifNil: [ sessionMutex := Mutex new ]) critical: [
+			  | now idle |
+			  now := self clock value.
+			  idle := ownSessionLastCallAt ifNotNil: [ now - ownSessionLastCallAt ].
+			  (idle isNil or: [ idle negative or: [ idle >= self class ownSessionIdleTime ] ]) ifTrue: [
+				  ownSessionId := OTIdGenerator default generateTraceIdHex ].
+			  ownSessionLastCallAt := now.
+			  ownSessionId ]
+]
+
+{ #category : 'private - spans' }
 MCPOpenTelemetryObservabilityBackend >> parentContextIn: contextDictionary [
 	"The caller's trace context, which travels in the request's _meta under the unprefixed W3C keys (SEP-414), or the current context when the request carries none. A malformed one is ignored rather than allowed to fail the call."
 
@@ -747,6 +785,13 @@ MCPOpenTelemetryObservabilityBackend >> serverInfo [
 ]
 
 { #category : 'private - spans' }
+MCPOpenTelemetryObservabilityBackend >> sessionIdFor: aContext [
+	"The session a call belongs to: the one its caller's baggage names, else the server's own."
+
+	^ (self sessionIdIn: aContext) ifNil: [ self ownSessionId ]
+]
+
+{ #category : 'private - spans' }
 MCPOpenTelemetryObservabilityBackend >> sessionIdIn: aContext [
 	"The session.id entry of the caller's W3C baggage, when it reads as an id: the session the call belongs to, as the caller counts sessions."
 
@@ -761,7 +806,7 @@ MCPOpenTelemetryObservabilityBackend >> sessionIdIn: aContext [
 
 { #category : 'private - spans' }
 MCPOpenTelemetryObservabilityBackend >> startAttributesFor: aRecord named: aToolName origin: anOrigin input: inputObject context: contextDictionary parent: aContext [
-	"The attributes known when a call starts, set before the span starts so a sampler sees them. They follow the OpenTelemetry conventions for MCP where those name the fact, and say nothing the caller passed but argument names, the options its tool's schema offers that it chose, and the session its trace context names."
+	"The attributes known when a call starts, set before the span starts so a sampler sees them. They follow the OpenTelemetry conventions for MCP where those name the fact, and say nothing the caller passed but argument names, the options its tool's schema offers that it chose, and the session its trace context names, or else the server's own."
 
 	| attributes tool |
 	tool := contextDictionary at: #tool ifAbsent: [ nil ].
@@ -773,8 +818,8 @@ MCPOpenTelemetryObservabilityBackend >> startAttributesFor: aRecord named: aTool
 		add: 'network.transport' -> 'tcp';
 		add: 'network.protocol.name' -> 'http';
 		add: 'pharo.mcp.dispatch_path' -> aRecord dispatchPath;
-		add: 'pharo.mcp.tool.origin' -> anOrigin.
-	(self sessionIdIn: aContext) ifNotNil: [ :id | attributes add: 'session.id' -> id ].
+		add: 'pharo.mcp.tool.origin' -> anOrigin;
+		add: 'session.id' -> (self sessionIdFor: aContext).
 	(self protocolVersionIn: contextDictionary) ifNotNil: [ :version | attributes add: 'mcp.protocol.version' -> version ].
 	(self argumentNamesIn: inputObject) ifNotEmpty: [ :names | attributes add: 'pharo.mcp.argument.names' -> names ].
 	(self unknownArgumentNamesIn: inputObject for: tool) ifNotEmpty: [ :names |
