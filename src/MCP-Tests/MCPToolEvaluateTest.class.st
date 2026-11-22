@@ -230,23 +230,6 @@ MCPToolEvaluateTest >> testEvaluateAnswersWhileAForkHoldsItsPriority [
 ]
 
 { #category : 'tests' }
-MCPToolEvaluateTest >> testEvaluateCancelsALoadOverUnsavedChanges [
-	"Monticello asks a person before it loads over the image's unsaved changes, and a call has none: Pharo 14 opened its dialog in a headless image, and the call waited out its time limit. The load is cancelled, which the warning answers nil for, and the warning says so rather than what loading would lose."
-
-	| data result |
-	result := self callToolNamed: 'evaluate' withArguments: {
-			          (#code -> 'MCMergeOrLoadWarning signalFor: { (MCPackage named: ''MCP-Tests-RunResources'') workingCopy }').
-			          (#timeoutSeconds -> 10) } asDictionary.
-	self deny: (result includesKey: #isError).
-	data := self dataFrom: result.
-	self assert: (data at: #resultPrintString) equals: 'nil'.
-	self
-		assert: (self warningsFrom: result) asArray
-		equals:
-		{ 'MCMergeOrLoadWarning: Cancelled a load that would lose the image''s unsaved changes to MCP-Tests-RunResources. To load over them, handle MCMergeOrLoadWarning with load.' }
-]
-
-{ #category : 'tests' }
 MCPToolEvaluateTest >> testEvaluateCatchesHaltAsRuntimeFailure [
 
 	| result text |
@@ -279,6 +262,32 @@ MCPToolEvaluateTest >> testEvaluateDeclaresAnUndeclaredNameAsAPlaygroundDoes [
 	result := self callToolNamed: 'evaluate' withArguments: { (#code -> 'total := 3 + 4. total * 2') } asDictionary.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: ((self dataFrom: result) at: #resultPrintString) equals: '14'
+]
+
+{ #category : 'tests' }
+MCPToolEvaluateTest >> testEvaluateDoesNotLoadOverUnsavedChanges [
+	"Monticello asks a person before it loads over the image's unsaved changes, and a call has none: Pharo 14 opened its dialog in a headless image, and the call waited out its time limit. The warning answers nil, which cancels only the step loading the packages it names, and says so rather than what loading would lose."
+
+	| data result |
+	result := self callToolNamed: 'evaluate' withArguments: {
+			          (#code -> 'MCMergeOrLoadWarning signalFor: { (MCPackage named: ''MCP-Tests-RunResources'') workingCopy }').
+			          (#timeoutSeconds -> 10) } asDictionary.
+	self deny: (result includesKey: #isError).
+	data := self dataFrom: result.
+	self assert: (data at: #resultPrintString) equals: 'nil'.
+	self
+		assert: (self warningsFrom: result) asArray
+		equals:
+		{ 'MCMergeOrLoadWarning: Did not load MCP-Tests-RunResources: loading it would lose the image''s unsaved changes to it. The rest of the load went on, without the packages loaded together with it. To load over the changes, handle MCMergeOrLoadWarning with load.' }.
+	result := self callToolNamed: 'evaluate' withArguments: {
+			          (#code
+			           ->
+			           'MCMergeOrLoadWarning signalFor: { (MCPackage named: ''MCP-Tests-RunResources'') workingCopy. (MCPackage named: ''MCP-Tests-Resources'') workingCopy }').
+			          (#timeoutSeconds -> 10) } asDictionary.
+	self
+		assert: (self warningsFrom: result) asArray
+		equals:
+		{ 'MCMergeOrLoadWarning: Did not load MCP-Tests-Resources, MCP-Tests-RunResources: loading them would lose the image''s unsaved changes to them. The rest of the load went on, without the packages loaded together with them. To load over the changes, handle MCMergeOrLoadWarning with load.' }
 ]
 
 { #category : 'tests' }
