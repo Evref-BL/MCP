@@ -214,6 +214,18 @@ MCPJSONSchemaViolation >> printSentenceOn: aStream [
 ]
 
 { #category : 'printing' }
+MCPJSONSchemaViolation >> printSentenceOn: aStream with: someViolations [
+	"One sentence for this violation and those refusing other properties of the same object for the same reason: the names the object accepts are said once."
+
+	| places |
+	someViolations size > 1 ifFalse: [ ^ self printSentenceOn: aStream ].
+	places := someViolations collect: [ :each | self placeAt: each path ].
+	aStream << (', ' join: places allButLast) << ' and ' << places last << ' are not accepted here'.
+	expected isEmptyOrNil ifFalse: [ aStream << '; expected one of ' << (', ' join: expected) ].
+	aStream nextPut: $.
+]
+
+{ #category : 'printing' }
 MCPJSONSchemaViolation >> printShapeOn: aStream [
 	"The keys of the object expected, with an example where there is one: a caller that sent a list or a string where an object goes seldom knows its shape."
 
@@ -221,6 +233,14 @@ MCPJSONSchemaViolation >> printShapeOn: aStream [
 	aStream << ' Give it as an object with the keys ' << (self alternatives: self keys).
 	self example ifNotNil: [ :anObject | aStream << ', for example ' << (self jsonFor: anObject) ].
 	aStream nextPut: $.
+]
+
+{ #category : 'testing' }
+MCPJSONSchemaViolation >> refusesAPropertyBeside: aViolation [
+	"Whether aViolation refuses another property of the same object for the same reason, so that one sentence can say both and name what the object accepts once."
+
+	^ keyword = 'additionalProperties' and: [
+		  aViolation keyword = keyword and: [ aViolation path allButLast = path allButLast and: [ aViolation expected = expected ] ] ]
 ]
 
 { #category : 'printing' }

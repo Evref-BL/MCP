@@ -200,6 +200,27 @@ MCPToolRequestTest >> testToolRequestClampsArgumentsAboveSchemaMaximumBeforeVali
 ]
 
 { #category : 'tests' }
+MCPToolRequestTest >> testUnexpectedArgumentsNameWhatIsAcceptedOnce [
+	"Each unexpected argument is named, and the arguments the tool accepts are said once, not once for each."
+
+	| error text first |
+	[
+		MCPToolRequest tool: MCPToolSearchPackages new arguments: {
+				(#extra -> true).
+				(#other -> 1).
+				(#offset -> 0) } asDictionary ]
+		on: MCPInvalidToolInput
+		do: [ :signalledError | error := signalledError ].
+	text := error messageText.
+	first := text indexOfSubCollection: 'expected one of'.
+	self assert: first > 0.
+	self assert: (text indexOfSubCollection: 'expected one of' startingAt: first + 1) equals: 0.
+	self assert: (text includesSubstring: ' are not accepted here; expected one of ').
+	self assert: (text includesSubstring: 'extra').
+	self assert: (text includesSubstring: 'other')
+]
+
+{ #category : 'tests' }
 MCPToolRequestTest >> testValidRequestProvidesTypedAccessors [
 
 	| request scope |
