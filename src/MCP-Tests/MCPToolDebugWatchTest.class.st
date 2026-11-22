@@ -152,6 +152,37 @@ MCPToolDebugWatchTest >> testWatchedCodeGetsTheDefaultActionOfANotificationTheBo
 	self assert: (series at: #values) equals: #( '2' )
 ]
 
+{ #category : 'tests' }
+MCPToolDebugWatchTest >> testWatchesAMethodItsOwnProbeSends [
+	"Compiling a probe's script sends yourself, and other processes send it too: the probe fired again inside its own work without end, and a process it fired in before its script was set failed, which quits a headless image."
+
+	| data result |
+	result := self watchWith: {
+			          (#method -> 'Object>>yourself').
+			          (#run -> '3 yourself') } asDictionary.
+	self deny: (self resultIndicatesError: result).
+	data := self dataFrom: result.
+	self assert: (data at: #result) equals: '3'.
+	self assert: (((self seriesFor: 'Object>>yourself' watching: 'self' in: data) at: #values) includes: '3').
+	self deny: (Object >> #yourself) hasMetaLinks
+]
+
+{ #category : 'tests' }
+MCPToolDebugWatchTest >> testWatchesMethodsOfOneStatement [
+	"A method of one statement has the interval of its body, which cannot carry a probe, and Pharo refuses one after a return: a method answering an argument or self, or sending one message, failed with Pharo's own error."
+
+	| data |
+	data := self dataFrom: (self watchWith: {
+				         (#method
+				          -> #( 'MCPDebugWatchTestTarget class>>echo:' 'MCPDebugWatchTestTarget>>itself' 'MCPDebugWatchTestTarget>>print:' )).
+				         (#run -> 'MCPDebugWatchTestTarget echo: 7. MCPDebugWatchTestTarget new itself; print: 5') } asDictionary).
+	self assert: ((self seriesFor: 'MCPDebugWatchTestTarget class>>echo:' watching: 'n' in: data) at: #values) equals: #( '7' ).
+	self
+		assert: ((self seriesFor: 'MCPDebugWatchTestTarget>>itself' watching: 'self' in: data) at: #values)
+		equals: #( 'a MCPDebugWatchTestTarget' ).
+	self assert: ((self seriesFor: 'MCPDebugWatchTestTarget>>print:' watching: 'n' in: data) at: #values) equals: #( '5' )
+]
+
 { #category : 'private' }
 MCPToolDebugWatchTest >> watchWith: someArguments [
 

@@ -35,6 +35,7 @@ MCPWatchProbe >> hitWithContext: aContext [
 
 { #category : 'installing' }
 MCPWatchProbe >> installOn: aNode [
+	"The link runs at the base level only: the probe's own work, which compiles the script and prints the value, may send the watched method again, which would fire it without end."
 
 	link := MetaLink new
 		        metaObject: self;
@@ -42,6 +43,7 @@ MCPWatchProbe >> installOn: aNode [
 		        arguments: #( #context );
 		        control: #after;
 		        options: #( #+ #optionCompileOnLinkInstallation );
+		        level: 0;
 		        yourself.
 	aNode link: link
 ]

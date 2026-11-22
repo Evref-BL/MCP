@@ -1,5 +1,5 @@
 "
-Target methods for debug_watch tests. They assign a variable more than once and take an argument, so a probe has something to record on entry and on every write.
+Target methods for debug_watch tests. Some assign a variable more than once and take an argument, so a probe has something to record on entry and on every write; others are one statement, a return or a message, which a probe on entry must find a node in.
 "
 Class {
 	#name : 'MCPDebugWatchTestTarget',
@@ -18,6 +18,12 @@ MCPDebugWatchTestTarget class >> doubleOf: n [
 ]
 
 { #category : 'fixtures' }
+MCPDebugWatchTestTarget class >> echo: n [
+
+	^ n
+]
+
+{ #category : 'fixtures' }
 MCPDebugWatchTestTarget >> failingSumTo: n [
 	"The failure is intentional: debug_watch must report it and still answer what it recorded."
 
@@ -25,6 +31,18 @@ MCPDebugWatchTestTarget >> failingSumTo: n [
 	total := 0.
 	1 to: n do: [ :i | total := total + i ].
 	^ total / 0
+]
+
+{ #category : 'fixtures' }
+MCPDebugWatchTestTarget >> itself [
+
+	^ self
+]
+
+{ #category : 'fixtures' }
+MCPDebugWatchTestTarget >> print: n [
+
+	n printString
 ]
 
 { #category : 'fixtures' }

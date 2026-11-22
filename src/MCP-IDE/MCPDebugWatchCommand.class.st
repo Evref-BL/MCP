@@ -29,11 +29,9 @@ MCPDebugWatchCommand class >> methods: methodReferences variables: variableNames
 ]
 
 { #category : 'private - probes' }
-MCPDebugWatchCommand >> assignmentIntervalsIn: anAst forVariableNamed: aName [
+MCPDebugWatchCommand >> assignmentsIn: anAst forVariableNamed: aName [
 
-	^ anAst allChildren
-		  select: [ :each | each isAssignment and: [ each variable name = aName ] ]
-		  thenCollect: [ :each | each sourceInterval ]
+	^ anAst allChildren select: [ :each | each isAssignment and: [ each variable name = aName ] ]
 ]
 
 { #category : 'private - probes' }
@@ -48,9 +46,13 @@ MCPDebugWatchCommand >> entryExpressionsIn: anAst [
 
 { #category : 'private - probes' }
 MCPDebugWatchCommand >> entryNodeIn: anAst ifPresent: aBlock [
-	"A method node cannot carry a watch, so its first statement stands for entering it."
+	"A method node cannot carry a watch, so its first statement stands for entering it, or the value that statement returns: a probe runs after its node, and Pharo refuses one after a return, after which nothing runs."
 
-	^ anAst body statements ifEmpty: [ nil ] ifNotEmpty: [ :statements | aBlock value: statements first ]
+	| first |
+	first := anAst body statements ifEmpty: [ ^ nil ] ifNotEmpty: [ :statements | statements first ].
+	^ aBlock value: (first isReturn
+			   ifTrue: [ first value ]
+			   ifFalse: [ first ])
 ]
 
 { #category : 'private - executing' }
@@ -115,15 +117,15 @@ MCPDebugWatchCommand >> locatedTargets [
 			self watchesVariables
 				ifTrue: [
 						variableNames do: [ :variableName |
-								(self assignmentIntervalsIn: method ast forVariableNamed: variableName) do: [ :interval |
+								(self assignmentsIn: method ast forVariableNamed: variableName) do: [ :assignment |
 										located add: {
 												(#method -> label).
 												(#compiledMethod -> method).
 												(#watching -> variableName).
 												(#label -> (String streamContents: [ :stream | stream << label << ' ' << variableName ])).
 												(#expression -> variableName).
-												(#interval -> interval).
-												(#isAssignment -> true) } asDictionary ] ] ]
+												(#interval -> assignment sourceInterval).
+												(#nodeClass -> assignment class) } asDictionary ] ] ]
 				ifFalse: [
 						self entryNodeIn: method ast ifPresent: [ :entryNode |
 								(self entryExpressionsIn: method ast) do: [ :name |
@@ -134,16 +136,16 @@ MCPDebugWatchCommand >> locatedTargets [
 												(#label -> (String streamContents: [ :stream | stream << label << ' ' << name ])).
 												(#expression -> name).
 												(#interval -> entryNode sourceInterval).
-												(#isAssignment -> entryNode isAssignment) } asDictionary ] ] ] ].
+												(#nodeClass -> entryNode class) } asDictionary ] ] ] ].
 	^ located
 ]
 
 { #category : 'private - probes' }
 MCPDebugWatchCommand >> nodeMatching: aTarget ifFound: aBlock [
-	"Answer what aBlock makes of the node, or nil when the method no longer has it. Installing an earlier probe regenerated this method's AST, so the node is found again now."
+	"Answer what aBlock makes of the node, or nil when the method no longer has it. Installing an earlier probe regenerated this method's AST, so the node is found again now. A sequence of one statement has that statement's interval, so the node's class tells them apart."
 
 	^ (aTarget at: #compiledMethod) ast allChildren
-		  detect: [ :each | each sourceInterval = (aTarget at: #interval) and: [ each isAssignment = (aTarget at: #isAssignment) ] ]
+		  detect: [ :each | each sourceInterval = (aTarget at: #interval) and: [ each class == (aTarget at: #nodeClass) ] ]
 		  ifFound: aBlock
 		  ifNone: [ nil ]
 ]
