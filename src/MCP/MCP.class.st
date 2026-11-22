@@ -24,6 +24,9 @@ Class {
 		'promptRegistry',
 		'toolResponseFields'
 	],
+	#classVars : [
+		'DefaultObservabilityBackendClass'
+	],
 	#category : 'MCP-Server',
 	#package : 'MCP',
 	#tag : 'Server'
@@ -109,6 +112,20 @@ MCP class >> negotiatedProtocolVersionFor: requestedVersion [
 	^ (self legacyProtocolVersions includes: requestedVersion)
 		  ifTrue: [ requestedVersion ]
 		  ifFalse: [ self latestLegacyProtocolVersion ]
+]
+
+{ #category : 'observability' }
+MCP class >> observabilityBackendClass [
+	"The kind of local backend the servers this image makes record with."
+
+	^ DefaultObservabilityBackendClass ifNil: [ MCPLocalObservabilityBackend ]
+]
+
+{ #category : 'observability' }
+MCP class >> observabilityBackendClass: aLocalBackendClass [
+	"Makes the servers this image makes from now on record with aLocalBackendClass, a kind of local backend; nil goes back to MCPLocalObservabilityBackend. Saved with the image."
+
+	DefaultObservabilityBackendClass := aLocalBackendClass
 ]
 
 { #category : 'instance creation' }
@@ -498,9 +515,18 @@ MCP >> localUrlString [
 { #category : 'observability' }
 MCP >> newLocalObservabilityBackend [
 
-	^ MCPLocalObservabilityBackend new
+	^ (self newObservabilityBackend: self class observabilityBackendClass)
+		  configureForServer: self;
+		  yourself
+]
+
+{ #category : 'observability' }
+MCP >> newObservabilityBackend: aLocalBackendClass [
+	"A new backend of aLocalBackendClass, a kind of local backend, set up as this server's local backend is: describing this server and exporting to the default directory."
+
+	^ aLocalBackendClass new
 		  resourceMetadata: self observabilityResourceMetadata;
-		  exportDirectory: MCPLocalObservabilityBackend defaultExportDirectory;
+		  exportDirectory: aLocalBackendClass defaultExportDirectory;
 		  yourself
 ]
 

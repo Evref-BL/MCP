@@ -60,15 +60,37 @@ OpenTelemetry backend for an MCP instance:
 mcp useOpenTelemetryObservability
 ```
 
+The server keeps recording locally as well: its dashboard, metrics and JSON
+exports work as they do without OpenTelemetry.
+
 The exporter is configured the standard way, through the `OTEL_*` environment
 variables the image was started with; see opentelemetry-pharo for the ones it
-reads.
+reads. An image started from a launcher's window never sees a shell's
+environment, so when the environment sets no `OTEL_*` variable, the image
+reads MCP's settings file instead: `$XDG_CONFIG_HOME/pharo-mcp/otel.env`
+(`~/.config/pharo-mcp/otel.env`, `%APPDATA%\pharo-mcp\otel.env` on Windows),
+`KEY=value` lines of which only `OTEL_*` ones count.
 
-Nothing is recorded while they do not ask for traces: no traces exporter other
+To make every server of an image record so, the ones it makes later
+included, evaluate once and save the image:
+
+```smalltalk
+MCP useOpenTelemetryObservabilityByDefault
+```
+
+Point the exporter at a collector on the same machine, OpenTelemetry's usual
+deployment: the VM resolves a host name on its only thread, so a slow DNS
+server holds the whole image while an export starts.
+
+Nothing is sent while they do not ask for traces: no traces exporter other
 than OTLP, and an OTLP endpoint (or an `OTEL_CONFIG_FILE`). The image reads
 its environment again each time it starts, and rebuilds its providers from it,
 so a saved image sends where its environment says now, or nothing once the
-variables are gone, never where they said when it was saved.
+variables are gone, never where they said when it was saved. The providers
+belong to the whole image, so they are rebuilt only when the environment asks
+for traces or a server recorded through them; otherwise other code's use of
+OpenTelemetry is left alone. Stopping a server waits at most a second for what
+it holds to be sent.
 
 Enabling it sets the image's OpenTelemetry resource, for every provider in
 the image and those made later, to what describes the server: `service.name`
@@ -79,7 +101,9 @@ and its build (`process.runtime.version`) and the VM's
 but not replace these, and `OTEL_SERVICE_NAME` is not read. The host name, the
 process and its command line, which the SDK would otherwise detect and which
 name the user and the image, are not sent. An attribute Pharo cannot tell is
-left out, and the calls are recorded anyway. A configuration file named by
+left out, and the calls are recorded anyway; but when a provider will not take
+this description, which would leave it describing the machine, nothing is
+sent. A configuration file named by
 `OTEL_CONFIG_FILE` that sets a resource is used as it is.
 
 Each tool call is a server span named `tools/call <tool>`, with the attributes
@@ -87,10 +111,25 @@ the OpenTelemetry conventions for MCP define (`mcp.method.name`,
 `gen_ai.tool.name`, `error.type`, ...) and MCP's own under `pharo.mcp.`. A
 request whose `params._meta` carries a W3C `traceparent` (SEP-414) makes the
 span a child of the caller's, so a client that propagates its context sees the
-image's work inside its own trace.
+image's work inside its own trace; a `session.id` entry in its W3C `baggage`
+is set on the span as `session.id`. `pharo.mcp.tool.origin` says whose tool
+the call went to: `mcp` for one of MCP's own, `other` for one another package
+registered, `unknown` for a name the server has no tool for.
+
+A call also reports the options it chose among those its tool's schema
+offers (`pharo.mcp.argument.options`: an optional property it gave, an
+enumerated value other than the default as `side=class`, the list form of a
+property that also takes one value as `packages[]`). A call the input schema
+refused reports the JSON Schema keywords it broke and where, as JSON pointers
+(`pharo.mcp.error.schema.keywords`, `.paths`). A result that lists entries
+reports how many matched and whether it showed them all
+(`pharo.mcp.result.count`, `.more`); a test run, how many tests ran and how it
+ended (`pharo.mcp.test.count`, `.outcome`: `passed`, `failed`, `errored`,
+`none`); a tool search or description, the tools it named
+(`pharo.mcp.tool.refs`).
 
 The spans carry no values: argument names but not arguments, sizes but not
 results, and no exception message or stack. An exception is named by its
-nearest class in Pharo's kernel or in MCP, and a name the caller chose is
-exported only when it reads as an identifier. Recording never fails a tool
+nearest class in Pharo's kernel or in one of MCP's own packages, and a name
+the caller chose is exported only when it reads as an identifier. Recording never fails a tool
 call: anything that goes wrong while recording leaves the call unrecorded.
