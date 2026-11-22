@@ -59,6 +59,24 @@ OTEL_SDK_DISABLED="false" and more
 ]
 
 { #category : 'tests' }
+MCPOpenTelemetrySettingsTest >> testAFileThatIsNotUTF8IsReadAllTheSame [
+	"A byte another encoding wrote, here an é in Latin-1 in a comment, leaves the rest of the file read."
+
+	| settings |
+	settings := self settingsWith: Dictionary new fileText: nil.
+	(directory / 'pharo-mcp') ensureCreateDirectory.
+	directory / 'pharo-mcp' / 'otel.env' binaryWriteStreamDo: [ :stream |
+			stream
+				nextPutAll: '# caf' asByteArray;
+				nextPut: 16rE9;
+				nextPutAll: ' agent' asByteArray;
+				nextPut: 10;
+				nextPutAll: 'OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4318' asByteArray;
+				nextPut: 10 ].
+	self assert: settings fileSettings equals: (Dictionary newFrom: { ('OTEL_EXPORTER_OTLP_ENDPOINT' -> 'http://127.0.0.1:4318') })
+]
+
+{ #category : 'tests' }
 MCPOpenTelemetrySettingsTest >> testOnWindowsAConfigurationHomeWithADriveIsAbsolute [
 	"As Node reads it, so MCP looks where a tool written for Node wrote the file."
 

@@ -21,7 +21,8 @@ Class {
 		'previousBackends',
 		'previousSpanProcessor',
 		'previousSpanExporter',
-		'previousDefaultBackendClass'
+		'previousDefaultBackendClass',
+		'previousProviderState'
 	],
 	#category : 'MCP-OpenTelemetry-Tests',
 	#package : 'MCP-OpenTelemetry-Tests'
@@ -88,6 +89,14 @@ MCPOpenTelemetryObservabilityBackendTest >> measurements [
 ]
 
 { #category : 'private' }
+MCPOpenTelemetryObservabilityBackendTest >> providerState [
+	"What the backend knows of the image's providers: the settings they were made from, the spans of the calls running, and the tracer providers waiting for those calls to end. A test starts with none of the image's, so that it neither keeps a provider of the image's alive nor leaves one of its own to the image."
+
+	^ #( #ProviderSettings #SpansInFlight #RetiredTracerProviders ) collect: [ :each |
+		  MCPOpenTelemetryObservabilityBackend classVariableNamed: each ]
+]
+
+{ #category : 'private' }
 MCPOpenTelemetryObservabilityBackendTest >> registry [
 	"Where the backend keeps the backends of its kind, which a test replaces with its own so that configuring a backend never touches a server the image is running."
 
@@ -131,6 +140,8 @@ MCPOpenTelemetryObservabilityBackendTest >> setUp [
 	previousSpanExporter := (OTSpanExporter classVariableNamed: #Current) value.
 	(OTSpanProcessor classVariableNamed: #Current) value: nil.
 	(OTSpanExporter classVariableNamed: #Current) value: nil.
+	previousProviderState := self providerState collect: [ :each | each value ].
+	self providerState do: [ :each | each value: nil ].
 	previousBackends := self registry value.
 	self registry value: WeakSet new.
 	previousDefaultBackendClass := self defaultBackendClass value.
@@ -198,15 +209,16 @@ MCPOpenTelemetryObservabilityBackendTest >> successToolResult [
 
 { #category : 'running' }
 MCPOpenTelemetryObservabilityBackendTest >> tearDown [
-	"What the test made is shut down, with what a reconfiguration it caused made from the environment; what the image had is put back as it was, untouched, so a server the image runs keeps recording."
+	"What the test made is shut down, with what a reconfiguration it caused made from the environment or left waiting for a call to end; what the image had is put back as it was, untouched, so a server the image runs keeps recording."
 
-	| previous |
+	| previous retired |
 	previous := {
 		            previousTracerProvider.
 		            previousMeterProvider.
 		            previousLoggerProvider.
 		            previousSpanProcessor.
 		            previousSpanExporter }.
+	retired := (MCPOpenTelemetryObservabilityBackend classVariableNamed: #RetiredTracerProviders) value ifNil: [ #(  ) ].
 	{
 		tracerProvider.
 		meterProvider.
@@ -215,7 +227,7 @@ MCPOpenTelemetryObservabilityBackendTest >> tearDown [
 		OTMeterProvider currentOrNil.
 		OTLoggerProvider currentOrNil.
 		OTSpanProcessor currentIfSet.
-		(OTSpanExporter classVariableNamed: #Current) value } do: [ :each |
+		(OTSpanExporter classVariableNamed: #Current) value } , (retired collect: [ :each | each key ]) do: [ :each |
 			(each isNil or: [ previous anySatisfy: [ :kept | kept == each ] ]) ifFalse: [
 					[ each shutdown ]
 						on: Error
@@ -226,10 +238,69 @@ MCPOpenTelemetryObservabilityBackendTest >> tearDown [
 	OTTracerProvider resourceDetectors: previousResourceDetectors.
 	(OTSpanProcessor classVariableNamed: #Current) value: previousSpanProcessor.
 	(OTSpanExporter classVariableNamed: #Current) value: previousSpanExporter.
+	self providerState with: previousProviderState do: [ :each :value | each value: value ].
 	self registry value: previousBackends.
 	self defaultBackendClass value: previousDefaultBackendClass.
 	backend := nil.
 	super tearDown
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testABackendConfiguredInAnEarlierImageSessionRecordsNoTraces [
+	"Until the image's start configures it again from the settings it now has, which a call running when the image was saved may beat."
+
+	backend configureFor: (self serverInfoAt: '9.8.7') configured: true.
+	self assert: backend isRecordingTraces.
+	backend instVarNamed: #configuredInSession put: Object new.
+	self deny: backend isRecordingTraces.
+	self assert: backend isConfiguredForTraces
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testACallEndingAfterTheSettingsStopAskingForTracesSendsNothing [
+	"Its span is dropped rather than ended, and nothing is made to record it: the settings no longer say where to send it."
+
+	| record |
+	backend configureFor: (self serverInfoAt: '9.8.7') configured: true.
+	record := self startToolCall.
+	MCPOpenTelemetryObservabilityBackend reconfigure: { backend } with: (self settingsAskingForTraces: false).
+	backend recordToolCallFinish: record result: self successToolResult error: nil.
+	self assert: exporter snapshots isEmpty.
+	self assert: OTMeterProvider currentOrNil isNil.
+	self assert: (OTTracerProvider classVariableNamed: #Current) value isNil.
+	self assert: ((MCPOpenTelemetryObservabilityBackend classVariableNamed: #RetiredTracerProviders) value ifNil: [ #(  ) ]) isEmpty
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testACallRunningWhenTheSettingsChangeIsExported [
+	"New settings make new providers, but the one that started the span of a call still running is shut down only after it ends, and exports it."
+
+	| record |
+	backend configureFor: (self serverInfoAt: '9.8.7') configured: true.
+	record := self startToolCall.
+	MCPOpenTelemetryObservabilityBackend reconfigure: { backend } with: (self settingsAskingForTraces: true).
+	self deny: OTTracerProvider current identicalTo: tracerProvider.
+	backend recordToolCallFinish: record result: self successToolResult error: nil.
+	self assert: exporter snapshots size equals: 1.
+	self assert: ((MCPOpenTelemetryObservabilityBackend classVariableNamed: #RetiredTracerProviders) value ifNil: [ #(  ) ]) isEmpty
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testACallRunningWhileAnotherServerIsConfiguredIsExported [
+	"Configuring another server with the settings the providers were made from leaves them as they are, and the call still running ends in them."
+
+	| settings record |
+	settings := self settingsAskingForTraces: true.
+	settings apply.
+	(MCPOpenTelemetryObservabilityBackend classVariableNamed: #ProviderSettings) value: settings settingsInEffect.
+	backend configureFor: (self serverInfoAt: '9.8.7') configured: true.
+	record := self startToolCall.
+	MCPOpenTelemetryObservabilityBackend new
+		configureFor: (self serverInfoAt: '9.8.7')
+		settings: (self settingsAskingForTraces: true).
+	self assert: OTTracerProvider current identicalTo: tracerProvider.
+	backend recordToolCallFinish: record result: self successToolResult error: nil.
+	self assert: exporter snapshots size equals: 1
 ]
 
 { #category : 'tests' }
@@ -404,8 +475,22 @@ MCPOpenTelemetryObservabilityBackendTest >> testAProviderThatRefusesTheDescripti
 ]
 
 { #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testASchemaPathNamesOnlyWhatTheSchemaDeclares [
+	"A path stops before the first property the schema does not declare, inside a list or an object as at the top."
+
+	| schema |
+	schema := STONJSON fromString:
+		          '{"type":"object","properties":{"scope":{"type":"object","properties":{"packages":{"type":"array","items":{"type":"object","properties":{"name":{"type":"string"}}}}}}}}'.
+	self assert: (backend declaredPartOf: #( 'scope' 'packages' 1 'name' ) in: schema) equals: #( 'scope' 'packages' 1 'name' ).
+	self assert: (backend declaredPartOf: #( 'scope' 'packages' 1 'madeUp' ) in: schema) equals: #( 'scope' 'packages' 1 ).
+	self assert: (backend declaredPartOf: #( 'scope' 'madeUp' 'deeper' ) in: schema) equals: #( 'scope' ).
+	self assert: (backend declaredPartOf: #( 'madeUp' ) in: schema) equals: #(  ).
+	self assert: (backend declaredPartOf: #( 'scope' ) in: nil) equals: #(  )
+]
+
+{ #category : 'tests' }
 MCPOpenTelemetryObservabilityBackendTest >> testASchemaRefusalSaysWhichKeywordsAndWhere [
-	"As the input schema's validator refuses a real tool's input: where a property is wrong or unknown, and where a required one is missing, rather than the object that misses it."
+	"As the input schema's validator refuses a real tool's input: where a property is wrong, where a required one is missing, rather than the object that misses it, and, for a property the schema does not declare, the object that holds it."
 
 	| snapshot |
 	MCPToolRegistry default toolNamed: 'method_compile' ifAbsent: [ self skip: 'method_compile is not registered' ].
@@ -417,7 +502,7 @@ MCPOpenTelemetryObservabilityBackendTest >> testASchemaRefusalSaysWhichKeywordsA
 	self
 		assert: (self attributeNamed: 'pharo.mcp.error.schema.keywords' in: snapshot)
 		equals: #( 'additionalProperties' 'required' 'type' ).
-	self assert: (self attributeNamed: 'pharo.mcp.error.schema.paths' in: snapshot) equals: #( '/class' '/colour' '/source' )
+	self assert: (self attributeNamed: 'pharo.mcp.error.schema.paths' in: snapshot) equals: #( '' '/class' '/source' )
 ]
 
 { #category : 'tests' }
@@ -527,6 +612,23 @@ MCPOpenTelemetryObservabilityBackendTest >> testAnAnswerThatCannotBeReadStillEnd
 ]
 
 { #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testAnArgumentNameTheCallerMadeUpIsOnlyAmongTheUnknownNames [
+	"A name the caller chose, whatever it holds, leaves the image in one attribute only, never as a path the schema refused."
+
+	| snapshot |
+	MCPToolRegistry default toolNamed: 'method_compile' ifAbsent: [ self skip: 'method_compile is not registered' ].
+	self mcp rpcToolCall: 'method_compile' withParams: {
+			('class' -> 'Object').
+			('source' -> 'mcpProbe ^ 1').
+			('ghp_secretToken123' -> 'x') } asDictionary.
+	snapshot := exporter onlySnapshot.
+	self assert: (self attributeNamed: 'pharo.mcp.error.schema.paths' in: snapshot) equals: #( '' ).
+	self assert: (self attributeNamed: 'pharo.mcp.argument.unknown_names' in: snapshot) equals: #( 'ghp_secretToken123' ).
+	snapshot attributes keysAndValuesDo: [ :key :value |
+		key = 'pharo.mcp.argument.unknown_names' ifFalse: [ self deny: (value printString includesSubstring: 'ghp_') description: key ] ]
+]
+
+{ #category : 'tests' }
 MCPOpenTelemetryObservabilityBackendTest >> testAnErrorAnswerNamingNoClassOfTheImageReportsNoException [
 
 	#( 'ToolError' 'Smalltalk' 'Not a class name' 'MCPNoSuchClassAnywhere' ) do: [ :each |
@@ -564,6 +666,16 @@ MCPOpenTelemetryObservabilityBackendTest >> testAnExceptionOfPharoOrMCPIsNamedBy
 		self class environment at: each ifPresent: [ :class | classes add: class ] ].
 	classes do: [ :each | self assert: (backend reportableClassNameOf: each) equals: each name asString ].
 	self assert: (backend reportableClassNameOf: JRPCInvalidParameters) equals: 'Error'
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testAnExceptionOfWhatPharoLoadsInAStageOfItsOwnIsNamedByItsClass [
+	"Iceberg, Tonel and Zinc come into Pharo through baselines BaselineOfPharo does not name, or names under another name, and are Pharo's all the same."
+
+	#( #IceError #IceNothingToCommit #TonelParseError #ZnHttpUnsuccessful ) do: [ :each |
+		self class environment
+			at: each
+			ifPresent: [ :class | self assert: (backend reportableClassNameOf: class) equals: each asString ] ]
 ]
 
 { #category : 'tests' }
@@ -612,16 +724,23 @@ MCPOpenTelemetryObservabilityBackendTest >> testAtMostMaxArgumentNamesAreReporte
 
 { #category : 'tests' }
 MCPOpenTelemetryObservabilityBackendTest >> testConfiguringABackendReconfiguresEveryOtherOne [
-	"The providers belong to the whole image: configuring one server's backend rebuilds them, and another backend left with instruments of the providers that were shut down would record nothing more."
+	"The providers belong to the whole image: configuring one server's backend configures every other one too, which keeps recording through the providers while the settings are those they were made from, and through new ones when they changed."
 
-	| other stale |
+	| other |
 	other := MCPOpenTelemetryObservabilityBackend new.
 	other configureFor: (self serverInfoAt: '9.8.7') settings: (self settingsAskingForTraces: true).
-	stale := other tracer.
+	self assert: other isRecordingTraces.
+	self deny: OTTracerProvider current identicalTo: tracerProvider.
+	tracerProvider := OTTracerProvider current.
 	backend configureFor: (self serverInfoAt: '9.8.7') settings: (self settingsAskingForTraces: true).
 	self assert: other isRecordingTraces.
 	self assert: other serverInfo version equals: '9.8.7'.
-	self deny: other tracer identicalTo: stale
+	self assert: OTTracerProvider current identicalTo: tracerProvider.
+	backend configureFor: (self serverInfoAt: '9.8.7') settings: ((self settingsAskingForTraces: true)
+			 environment: { ('OTEL_EXPORTER_OTLP_ENDPOINT' -> 'http://127.0.0.1:10') } asDictionary;
+			 yourself).
+	self assert: other isRecordingTraces.
+	self deny: OTTracerProvider current identicalTo: tracerProvider
 ]
 
 { #category : 'tests' }
@@ -983,6 +1102,17 @@ MCPOpenTelemetryObservabilityBackendTest >> testTheServersOwnSessionEndsWhenTheC
 ]
 
 { #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testTheServersOwnSessionEndsWithTheImageSession [
+	"A saved image started again, or several copies of it started at once, each start a session of their own, however recent the last call."
+
+	| first |
+	first := backend ownSessionId.
+	self assert: backend ownSessionId equals: first.
+	backend instVarNamed: #ownSessionImageSession put: Object new.
+	self deny: backend ownSessionId equals: first
+]
+
+{ #category : 'tests' }
 MCPOpenTelemetryObservabilityBackendTest >> testTheSessionInTheCallersBaggageIsReported [
 
 	| snapshot |
@@ -1138,6 +1268,27 @@ MCPOpenTelemetryObservabilityBackendTest >> testWhatAResultFoundIsReported [
 	self assert: (attributes at: 'pharo.mcp.test.count') equals: 3.
 	self assert: (attributes at: 'pharo.mcp.test.outcome') equals: 'failed'.
 	self assert: (attributes at: 'pharo.mcp.tool.refs') equals: #( 'class_get' )
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testWithoutAnEndpointNothingIsSentAndCallsAreStillRecorded [
+	"Settings naming no endpoint send nothing, not even to the SDK's default one: no provider is made. The server still records its calls locally."
+
+	| mcp |
+	MCPToolRegistry default toolNamed: 'class_search' ifAbsent: [ self skip: 'class_search is not registered' ].
+	OTTracerProvider current: nil.
+	OTMeterProvider current: nil.
+	OTLoggerProvider current: nil.
+	mcp := MCP new.
+	mcp useOpenTelemetryObservabilityWith: (self settingsAskingForTraces: false).
+	mcp rpcToolCall: 'class_search' withParams: { ('query' -> 'Point') } asDictionary.
+	self deny: mcp observability isRecordingTraces.
+	self assert: mcp observability recentCallRecords size equals: 1.
+	self assert: (OTTracerProvider classVariableNamed: #Current) value isNil.
+	self assert: OTMeterProvider currentOrNil isNil.
+	self assert: OTLoggerProvider currentOrNil isNil.
+	self assert: (OTSpanExporter classVariableNamed: #Current) value isNil.
+	self assert: exporter snapshots isEmpty
 ]
 
 { #category : 'private' }

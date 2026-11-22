@@ -73,7 +73,7 @@ MCPOpenTelemetrySettings >> fileSettings [
 
 	| settings contents |
 	settings := Dictionary new.
-	contents := [ (self settingsFile ifNil: [ ^ settings ]) contents ]
+	contents := [ self textOf: (self settingsFile ifNil: [ ^ settings ]) ]
 		            on: Error
 		            do: [ :error | ^ settings ].
 	contents lines do: [ :raw |
@@ -145,6 +145,24 @@ MCPOpenTelemetrySettings >> settingsFile [
 	appData := self valueAt: 'APPDATA'.
 	(windows and: [ appData isNotNil ]) ifTrue: [ ^ appData asFileReference / 'pharo-mcp' / 'otel.env' ].
 	^ home ifNotNil: [ home / '.config' / 'pharo-mcp' / 'otel.env' ]
+]
+
+{ #category : 'accessing' }
+MCPOpenTelemetrySettings >> settingsInEffect [
+	"The OTEL_* variables the environment sets, with their values: what OpenTelemetry's providers are made from."
+
+	^ (self settingNamesInEnvironment collect: [ :each | each asString -> (self valueAt: each) ]) asDictionary
+]
+
+{ #category : 'private' }
+MCPOpenTelemetrySettings >> textOf: aFile [
+	"The file's text: UTF-8, or else its bytes as Latin-1, so that a byte an editor wrote in another encoding, as in a comment, does not cost the whole file. The keys and the values that count are ASCII either way."
+
+	| bytes |
+	bytes := aFile binaryReadStreamDo: [ :stream | stream upToEnd ].
+	^ [ ZnCharacterEncoder utf8 decodeBytes: bytes ]
+		  on: Error
+		  do: [ :error | error return: bytes asString ]
 ]
 
 { #category : 'accessing' }

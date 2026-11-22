@@ -20,16 +20,31 @@ Class {
 		'clock',
 		'ownSessionId',
 		'ownSessionLastCallAt',
-		'sessionMutex'
+		'sessionMutex',
+		'ownSessionImageSession',
+		'configuredInSession'
 	],
 	#classVars : [
 		'Backends',
 		'OwnPackageNames',
-		'PharoPackageNames'
+		'PharoPackageNames',
+		'ProviderSettings',
+		'ProvidersMutex',
+		'RetiredTracerProviders',
+		'SpansInFlight'
 	],
 	#category : 'MCP-OpenTelemetry',
 	#package : 'MCP-OpenTelemetry'
 }
+
+{ #category : 'reporting' }
+MCPOpenTelemetryObservabilityBackend class >> baselineClassNameOf: aProjectSpec [
+	"The class of the baseline a project specification names: the one it says, since a project's name need not be its baseline's, or else the one its name gives by convention."
+
+	^ [ aProjectSpec className asString ]
+		  on: Error
+		  do: [ :error | error return: 'BaselineOf' , aProjectSpec name asString ]
+]
 
 { #category : 'configuring' }
 MCPOpenTelemetryObservabilityBackend class >> configureProvidersWith: aSettings [
@@ -37,6 +52,23 @@ MCPOpenTelemetryObservabilityBackend class >> configureProvidersWith: aSettings 
 
 	self resetProviders.
 	^ self wantsTraces: aSettings
+]
+
+{ #category : 'private - providers' }
+MCPOpenTelemetryObservabilityBackend class >> detachTracerProvider [
+	"Takes the image's tracer provider, with the span processor and exporter it was made from, out of OpenTelemetry's hands without shutting them down, and answers it with the spans of the calls running now; nil when there is none."
+
+	^ self providersMutex critical: [
+			  ([ (OTTracerProvider classVariableNamed: #Current) value ]
+				   on: Error
+				   do: [ :error | error return: nil ]) ifNotNil: [ :provider |
+					  [
+						  OTTracerProvider current: nil.
+						  (OTSpanProcessor classVariableNamed: #Current) value: nil.
+						  (OTSpanExporter classVariableNamed: #Current) value: nil.
+						  provider -> self spansInFlight copy ]
+						  on: Error
+						  do: [ :error | error return: nil ] ] ]
 ]
 
 { #category : 'class initialization' }
@@ -91,18 +123,24 @@ MCPOpenTelemetryObservabilityBackend class >> packageNamesOfBaselines: baselineN
 								| version |
 								version := baseline project version.
 								names addAll: (version packages collect: [ :each | each name asString ]).
-								pending addAll: (version projects collect: [ :each | 'BaselineOf' , each name asString ]) ]
+								pending addAll: (version projects collect: [ :each | self baselineClassNameOf: each ]) ]
 								on: Error
 								do: [ :error | error return: nil ] ] ] ].
 	^ names
 ]
 
 { #category : 'reporting' }
-MCPOpenTelemetryObservabilityBackend class >> pharoPackageNames [
-	"The packages Pharo is made of, as its own baselines list them: its bootstrap, and BaselineOfPharo with the projects it loads. Read once per image session. A user's package is in none of them whatever its name, so it cannot pass for Pharo's by sharing a prefix."
+MCPOpenTelemetryObservabilityBackend class >> pharoBaselineNames [
+	"The baselines Pharo is built from: those of its bootstrap, of the stages that load Monticello, Metacello and Iceberg into it, and of the document browser, which its build loads in steps of their own that BaselineOfPharo does not name, and BaselineOfPharo."
 
-	^ PharoPackageNames ifNil: [ PharoPackageNames := self packageNamesOfBaselines: #( #BaselineOfPharoBootstrap
-	                          #BaselineOfPharo ) ]
+	^ #( #BaselineOfPharoBootstrap #BaselineOfMonticello #BaselineOfMetacello #BaselineOfIceberg #BaselineOfPharo #BaselineOfNewToolsDocumentBrowser )
+]
+
+{ #category : 'reporting' }
+MCPOpenTelemetryObservabilityBackend class >> pharoPackageNames [
+	"The packages Pharo is made of, as its own baselines list them, with the projects they load. Read once per image session. A user's package is in none of them whatever its name, so it cannot pass for Pharo's by sharing a prefix."
+
+	^ PharoPackageNames ifNil: [ PharoPackageNames := self packageNamesOfBaselines: self pharoBaselineNames ]
 ]
 
 { #category : 'resource' }
@@ -118,13 +156,22 @@ MCPOpenTelemetryObservabilityBackend class >> pharoVersion [
 			  version build }
 ]
 
+{ #category : 'private - providers' }
+MCPOpenTelemetryObservabilityBackend class >> providersMutex [
+
+	^ ProvidersMutex ifNil: [ ProvidersMutex := Mutex new ]
+]
+
 { #category : 'configuring' }
 MCPOpenTelemetryObservabilityBackend class >> reconfigure: someBackends with: aSettings [
-	"Configures each of someBackends afresh from aSettings, the providers once for all of them. The providers are global and may be the user's: they are rebuilt only when the settings ask for traces or one of these backends was configured to record through them."
+	"Configures each of someBackends afresh from aSettings, the providers once for all of them. The providers are global and may be the user's: they are rebuilt only when the settings ask for traces or one of these backends was configured to record through them, and then only when the settings in effect are not those they were made from, so that configuring another server leaves the calls running recording as they started."
 
-	| wanted |
+	| wanted settings |
 	wanted := self wantsTraces: aSettings.
-	(wanted or: [ someBackends anySatisfy: [ :each | each isConfiguredForTraces ] ]) ifTrue: [ self resetProviders ].
+	settings := self settingsInEffectOf: aSettings.
+	((wanted or: [ someBackends anySatisfy: [ :each | each isConfiguredForTraces ] ]) and: [ ProviderSettings ~= settings ]) ifTrue: [
+			self resetProviders.
+			ProviderSettings := settings ].
 	someBackends do: [ :each |
 			[ each configureFor: each serverInfo configured: wanted ]
 				on: Error
@@ -146,8 +193,10 @@ MCPOpenTelemetryObservabilityBackend class >> registeredBackends [
 
 { #category : 'configuring' }
 MCPOpenTelemetryObservabilityBackend class >> resetProviders [
-	"Drops the image's OpenTelemetry providers, processors and exporters, which are global. Those an image was saved with would otherwise keep sending where an earlier session's settings said, after those settings changed or were removed; and a processor a reset shut down would be handed to the next provider."
+	"Drops the image's OpenTelemetry providers, processors and exporters, which are global. Those an image was saved with would otherwise keep sending where an earlier session's settings said, after those settings changed or were removed; and a processor a reset shut down would be handed to the next provider. The tracer provider is not shut down while a call it started a span for is running, so that the span is still exported when the call ends; it is shut down after the last such call."
 
+	| retired |
+	retired := self detachTracerProvider.
 	{
 		OTTracerProvider.
 		OTSpanProcessor.
@@ -156,7 +205,8 @@ MCPOpenTelemetryObservabilityBackend class >> resetProviders [
 		OTLoggerProvider } do: [ :each |
 			[ each reset ]
 				on: Error
-				do: [ :error | error return: nil ] ]
+				do: [ :error | error return: nil ] ].
+	retired ifNotNil: [ self retire: retired ]
 ]
 
 { #category : 'resource' }
@@ -205,14 +255,91 @@ MCPOpenTelemetryObservabilityBackend class >> resourceIsConfigured [
 		  do: [ false ]
 ]
 
+{ #category : 'private - providers' }
+MCPOpenTelemetryObservabilityBackend class >> retire: aTracerProviderWithSpans [
+	"Shuts the tracer provider down once the calls it started spans for have ended: now, when none is running."
+
+	| provider spans |
+	provider := aTracerProviderWithSpans key.
+	spans := aTracerProviderWithSpans value.
+	spans ifEmpty: [
+			^ [ provider shutdown ]
+				  on: Error
+				  do: [ :error | error return: nil ] ].
+	self providersMutex critical: [ self retiredTracerProviders add: provider -> spans ]
+]
+
+{ #category : 'private - providers' }
+MCPOpenTelemetryObservabilityBackend class >> retiredTracerProviders [
+	"Tracer providers replaced while calls they started spans for were running, each with the spans still to end before it is shut down."
+
+	^ RetiredTracerProviders ifNil: [ RetiredTracerProviders := OrderedCollection new ]
+]
+
+{ #category : 'configuring' }
+MCPOpenTelemetryObservabilityBackend class >> settingsInEffectOf: aSettings [
+	"The settings the providers would be made from now, or a value equal to no other when they cannot be read."
+
+	^ [ aSettings settingsInEffect ]
+		  on: Error
+		  do: [ :error | error return: Object new ]
+]
+
+{ #category : 'private - providers' }
+MCPOpenTelemetryObservabilityBackend class >> shutDownInTheBackground: aTracerProvider [
+
+	[
+		[ aTracerProvider shutdown ]
+			on: Error
+			do: [ :error | error return: nil ] ]
+		forkAt: Processor userBackgroundPriority
+		named: 'MCP OpenTelemetry retired tracer provider'
+]
+
+{ #category : 'private - providers' }
+MCPOpenTelemetryObservabilityBackend class >> spanEnded: aSpan [
+	"Forgets aSpan, and shuts down, in the background so the call is answered meanwhile, each retired tracer provider that no running call has a span of any more."
+
+	| drained |
+	drained := self providersMutex critical: [
+			           | done |
+			           self spansInFlight remove: aSpan ifAbsent: [ nil ].
+			           self retiredTracerProviders do: [ :each | each value remove: aSpan ifAbsent: [ nil ] ].
+			           done := self retiredTracerProviders select: [ :each | each value isEmpty ].
+			           self retiredTracerProviders removeAll: done.
+			           done ].
+	drained do: [ :each | self shutDownInTheBackground: each key ]
+]
+
+{ #category : 'private - providers' }
+MCPOpenTelemetryObservabilityBackend class >> spanStarted: aSpan [
+
+	self providersMutex critical: [ self spansInFlight add: aSpan ]
+]
+
+{ #category : 'private - providers' }
+MCPOpenTelemetryObservabilityBackend class >> spansInFlight [
+	"The spans of calls still running, which a tracer provider replaced while they run must outlive."
+
+	^ SpansInFlight ifNil: [ SpansInFlight := IdentitySet new ]
+]
+
 { #category : 'system startup' }
 MCPOpenTelemetryObservabilityBackend class >> startUp: resuming [
-	"An image starting again may run elsewhere, with other settings or none: every backend of this kind is configured afresh from them, before its server answers a call. An image without one leaves OpenTelemetry alone."
+	"An image starting again may run elsewhere, with other settings or none: every backend of this kind is configured afresh from them, before its server answers a call, and its providers are made again, whatever settings the last session made them from. The calls the last session was running are over, and the providers they kept are shut down. An image without a backend of this kind leaves OpenTelemetry alone."
 
-	| backends |
+	| backends retired |
 	resuming ifFalse: [ ^ self ].
 	OwnPackageNames := nil.
 	PharoPackageNames := nil.
+	ProviderSettings := nil.
+	retired := self providersMutex critical: [
+			           | providers |
+			           providers := self retiredTracerProviders collect: [ :each | each key ].
+			           RetiredTracerProviders := nil.
+			           SpansInFlight := nil.
+			           providers ].
+	retired do: [ :each | self shutDownInTheBackground: each ].
 	backends := self registeredBackends.
 	backends ifEmpty: [ ^ self ].
 	[ self reconfigure: backends with: MCPOpenTelemetrySettings current ]
@@ -291,7 +418,7 @@ MCPOpenTelemetryObservabilityBackend >> clock: aBlock [
 
 { #category : 'configuring' }
 MCPOpenTelemetryObservabilityBackend >> configureFor: aServerInfo configured: aBoolean [
-	"Records through OpenTelemetry from now on, through the providers as they now are, only when aBoolean, so the settings ask for traces, and the providers could be made to describe the server. Instruments made from earlier providers are dropped."
+	"Records through OpenTelemetry from now on, in this image session, through the providers as they now are, only when aBoolean, so the settings ask for traces, and the providers could be made to describe the server. Instruments made from earlier providers are dropped."
 
 	serverInfo := aServerInfo.
 	tracer := nil.
@@ -301,12 +428,13 @@ MCPOpenTelemetryObservabilityBackend >> configureFor: aServerInfo configured: aB
 	outputSizeHistogram := nil.
 	outputBudgetExceededCounter := nil.
 	operationDurationHistogram := nil.
+	configuredInSession := Smalltalk session.
 	configured := aBoolean and: [ self describeServer: aServerInfo ]
 ]
 
 { #category : 'configuring' }
 MCPOpenTelemetryObservabilityBackend >> configureFor: aServerInfo settings: aSettings [
-	"Configures this backend from aSettings, and every other backend of its kind the image holds with it: the providers are global, so rebuilding them for one would leave the others recording through providers that were shut down. They are rebuilt only when the settings ask for traces or one of these backends was configured to record through them, since they may be the user's."
+	"Configures this backend from aSettings, and every other backend of its kind the image holds with it: the providers are global, so rebuilding them for one would leave the others recording through providers that were shut down. They are rebuilt only when the settings ask for traces or one of these backends was configured to record through them, since they may be the user's, and only when the settings are not those they were made from."
 
 	serverInfo := aServerInfo.
 	self class reconfigure: ((self class registeredBackends reject: [ :each | each == self ]) copyWith: self) with: aSettings
@@ -331,6 +459,21 @@ MCPOpenTelemetryObservabilityBackend >> declaredArgumentNamesOf: aTool [
 	^ [ aTool inputSchema properties collect: [ :each | each name asString ] as: Set ]
 		  on: Error
 		  do: [ :error | error return: Set new ]
+]
+
+{ #category : 'private - reporting' }
+MCPOpenTelemetryObservabilityBackend >> declaredPartOf: aPath in: aSchema [
+	"The start of aPath that names only what aSchema declares: the properties it lists, and positions in the lists it describes. A violation about a property the schema does not declare is so placed at the object that holds it, and a name the caller chose never becomes a path."
+
+	| schema declared |
+	(self isList: aPath) ifFalse: [ ^ aPath ].
+	schema := aSchema.
+	declared := OrderedCollection new.
+	aPath do: [ :each |
+			schema := self schemaAt: each in: schema.
+			schema ifNil: [ ^ declared asArray ].
+			declared add: each ].
+	^ declared asArray
 ]
 
 { #category : 'resource' }
@@ -373,7 +516,8 @@ MCPOpenTelemetryObservabilityBackend >> endSpan: span withAttributes: attributes
 		self withoutFailingTheCall: [ aRecord status = 'error' ifTrue: [ span setStatus: OTSpan error description: '' ] ] ] ensure: [
 			(self withoutFailingTheCall: [
 					 span end: finishedAt.
-					 true ]) ifNil: [ self withoutFailingTheCall: [ span end ] ] ]
+					 true ]) ifNil: [ self withoutFailingTheCall: [ span end ] ].
+			self withoutFailingTheCall: [ self class spanEnded: span ] ]
 ]
 
 { #category : 'private - reporting' }
@@ -387,10 +531,12 @@ MCPOpenTelemetryObservabilityBackend >> errorTypeFor: anError [
 ]
 
 { #category : 'private - spans' }
-MCPOpenTelemetryObservabilityBackend >> finishAttributesFor: aRecord result: aToolResult origin: anOrigin error: anError errorType: errorType [
-	"What is known once a call is answered: sizes, what a listing found, and for a failure its kind, its code, the class of the exception it raised or its answer names, and, when the input schema refused it, the keywords and paths it refused. An exception is named by its nearest class in Pharo or MCP, and never by its message or stack. Each fact is read on its own, so one that cannot be read leaves the others."
+MCPOpenTelemetryObservabilityBackend >> finishAttributesFor: aRecord result: aToolResult started: anEntry error: anError errorType: errorType [
+	"What is known once a call is answered, with what its start kept in anEntry: its span, its tool's name, whose tool it is and the tool: sizes, what a listing found, and for a failure its kind, its code, the class of the exception it raised or its answer names, and, when the input schema refused it, the keywords and paths it refused. An exception is named by its nearest class in Pharo or MCP, and never by its message or stack. Each fact is read on its own, so one that cannot be read leaves the others."
 
-	| attributes |
+	| origin tool attributes |
+	origin := anEntry at: 3.
+	tool := anEntry at: 4 ifAbsent: [ nil ].
 	attributes := OrderedCollection new.
 	self
 		addAttributesFrom: [
@@ -399,7 +545,7 @@ MCPOpenTelemetryObservabilityBackend >> finishAttributesFor: aRecord result: aTo
 					('pharo.mcp.output.bytes' -> aRecord outputByteCount).
 					('pharo.mcp.output_budget.exceeded' -> aRecord outputBudgetExceeded) } ]
 		to: attributes.
-	self addAttributesFrom: [ self resultAttributesFor: aToolResult origin: anOrigin ] to: attributes.
+	self addAttributesFrom: [ self resultAttributesFor: aToolResult origin: origin ] to: attributes.
 	errorType ifNil: [ ^ attributes asArray ].
 	attributes add: 'error.type' -> errorType.
 	self
@@ -411,7 +557,7 @@ MCPOpenTelemetryObservabilityBackend >> finishAttributesFor: aRecord result: aTo
 					ifTrue: [ { ('pharo.mcp.error.code' -> aRecord errorCode) } ]
 					ifFalse: [ #(  ) ] ]
 		to: attributes.
-	self addAttributesFrom: [ self schemaAttributesFor: aRecord result: aToolResult ] to: attributes.
+	self addAttributesFrom: [ self schemaAttributesFor: aRecord result: aToolResult tool: tool ] to: attributes.
 	self
 		addAttributesFrom: [
 				(anError ifNil: [ self reportableClassNamed: aRecord errorClass ] ifNotNil: [ self reportableClassNameOf: anError class ])
@@ -487,9 +633,10 @@ MCPOpenTelemetryObservabilityBackend >> isList: anObject [
 
 { #category : 'testing' }
 MCPOpenTelemetryObservabilityBackend >> isRecordingTraces [
-	"Whether it records traces through the providers as they are: unless it was configured from settings that ask for none, or providers that would not describe its server. It records locally either way."
+	"Whether it records traces through the providers as they are: unless it was configured from settings that ask for none, or providers that would not describe its server, or configured in an earlier image session, whose settings this one may not have, until the image's start configures it again. It records locally either way."
 
-	^ configured ~~ false
+	configured == false ifTrue: [ ^ false ].
+	^ configuredInSession isNil or: [ configuredInSession == Smalltalk session ]
 ]
 
 { #category : 'private - reporting' }
@@ -682,14 +829,18 @@ MCPOpenTelemetryObservabilityBackend >> outputSizeHistogram [
 
 { #category : 'private - spans' }
 MCPOpenTelemetryObservabilityBackend >> ownSessionId [
-	"The server's own session, for a call whose caller names none: a random id, made as OpenTelemetry makes a trace id, at the first such call, and made again when ownSessionIdleTime has passed since the last one, or the clock went back by ownSessionClockTolerance or more, as when the image starts on another machine; a clock set back less, as a time synchronization does, keeps it. Pharo's UUIDs are not used: they hold the time they were made and an identifier derived from the machine."
+	"The server's own session, for a call whose caller names none: a random id, made as OpenTelemetry makes a trace id, at the first such call, and made again when ownSessionIdleTime has passed since the last one, when the image session changed, so that a saved image started again, or each of its copies, starts a session of its own, or when the clock went back by ownSessionClockTolerance or more; a clock set back less, as a time synchronization does, keeps it. Pharo's UUIDs are not used: they hold the time they were made and an identifier derived from the machine."
 
 	^ self sessionMutex critical: [
-			  | now idle |
+			  | now idle imageSession |
 			  now := self clock value.
+			  imageSession := Smalltalk session.
 			  idle := ownSessionLastCallAt ifNotNil: [ now - ownSessionLastCallAt ].
-			  (idle isNil or: [ idle >= self class ownSessionIdleTime or: [ idle negated >= self class ownSessionClockTolerance ] ])
-				  ifTrue: [ ownSessionId := OTIdGenerator default generateTraceIdHex ].
+			  (idle isNil or: [
+					   ownSessionImageSession ~~ imageSession or: [
+						   idle >= self class ownSessionIdleTime or: [ idle negated >= self class ownSessionClockTolerance ] ] ]) ifTrue: [
+				  ownSessionId := OTIdGenerator default generateTraceIdHex ].
+			  ownSessionImageSession := imageSession.
 			  ownSessionLastCallAt := now.
 			  ownSessionId ]
 ]
@@ -784,13 +935,16 @@ MCPOpenTelemetryObservabilityBackend >> recordSessionStart [
 
 { #category : 'recording' }
 MCPOpenTelemetryObservabilityBackend >> recordToolCallFinish: aRecord result: aToolResult error: anError [
-	"Records the end of the call locally, and ends its span when one was started. Each step is guarded on its own, and the span ends whatever fails before it."
+	"Records the end of the call locally, and ends its span when one was started. When the settings stopped asking for traces while the call ran, or the image started again, the span is dropped, never ended, so never sent, and nothing is made to record the call: it would go where settings no longer say. Each step is guarded on its own, and the span ends whatever fails before it."
 
 	| entry errorType attributes |
 	self withoutFailingTheCall: [ super recordToolCallFinish: aRecord result: aToolResult error: anError ].
 	aRecord ifNil: [ ^ nil ].
 	entry := self critical: [ recordsById removeKey: aRecord id ifAbsent: [ nil ] ].
 	entry ifNil: [ ^ aRecord ].
+	self isRecordingTraces ifFalse: [
+			self withoutFailingTheCall: [ self class spanEnded: entry first ].
+			^ aRecord ].
 	errorType := self withoutFailingTheCall: [
 			             aRecord status = 'error'
 				             ifTrue: [ self errorTypeFor: anError ]
@@ -805,7 +959,7 @@ MCPOpenTelemetryObservabilityBackend >> recordToolCallFinish: aRecord result: aT
 			               self
 				               finishAttributesFor: aRecord
 				               result: aToolResult
-				               origin: (entry at: 3)
+				               started: entry
 				               error: anError
 				               errorType: errorType ]) ifNil: [ #(  ) ].
 	self
@@ -922,8 +1076,22 @@ MCPOpenTelemetryObservabilityBackend >> resultAttributesFor: aToolResult origin:
 	^ attributes
 ]
 
+{ #category : 'private - reporting' }
+MCPOpenTelemetryObservabilityBackend >> schemaAt: aSegment in: aSchema [
+	"The schema aSchema gives the property or the list position aSegment names, or nil when it declares none."
+
+	| items |
+	aSchema isDictionary ifFalse: [ ^ nil ].
+	aSegment isInteger ifTrue: [
+			items := aSchema mcpAt: #items ifAbsent: [ nil ].
+			^ items isDictionary
+				  ifTrue: [ items ]
+				  ifFalse: [ nil ] ].
+	^ ((aSchema mcpAt: #properties ifAbsent: [ nil ]) ifNil: [ ^ nil ]) mcpAt: aSegment asString ifAbsent: [ nil ]
+]
+
 { #category : 'private - spans' }
-MCPOpenTelemetryObservabilityBackend >> schemaAttributesFor: aRecord result: aToolResult [
+MCPOpenTelemetryObservabilityBackend >> schemaAttributesFor: aRecord result: aToolResult tool: aTool [
 	"For a call its input schema refused, how many violations, which keywords and where."
 
 	| attributes |
@@ -931,7 +1099,7 @@ MCPOpenTelemetryObservabilityBackend >> schemaAttributesFor: aRecord result: aTo
 	aRecord schemaViolationCount > 0 ifFalse: [ ^ attributes ].
 	attributes add: 'pharo.mcp.error.schema.violation_count' -> aRecord schemaViolationCount.
 	(self schemaKeywordsOf: aRecord) ifNotEmpty: [ :keywords | attributes add: 'pharo.mcp.error.schema.keywords' -> keywords ].
-	(self schemaPathsIn: aToolResult) ifNotEmpty: [ :paths | attributes add: 'pharo.mcp.error.schema.paths' -> paths ].
+	(self schemaPathsIn: aToolResult tool: aTool) ifNotEmpty: [ :paths | attributes add: 'pharo.mcp.error.schema.paths' -> paths ].
 	^ attributes
 ]
 
@@ -945,13 +1113,16 @@ MCPOpenTelemetryObservabilityBackend >> schemaKeywordsOf: aRecord [
 ]
 
 { #category : 'private - reporting' }
-MCPOpenTelemetryObservabilityBackend >> schemaPathsIn: aToolResult [
-	"Where in the input the schema refused it, as JSON pointers (/scope/packages/1), sorted, at most maxSchemaViolations. A missing required property is pointed at, not the object that misses it. A path with a segment that does not read as a name or an index is left out."
+MCPOpenTelemetryObservabilityBackend >> schemaPathsIn: aToolResult tool: aTool [
+	"Where in the input the schema refused it, as JSON pointers (/scope/packages/1), sorted, at most maxSchemaViolations. A missing required property is pointed at, not the object that misses it; a property the schema does not declare is not, but the object that holds it is, the arguments themselves being the empty pointer."
 
-	| paths |
+	| schema paths |
+	schema := [ aTool inputSchema asJRPCJSON ]
+		          on: Error
+		          do: [ :error | error return: nil ].
 	paths := Set new.
 	(self violationsFromDetails: (self errorDetailsFromToolResult: aToolResult)) do: [ :each |
-		(self pointerFor: (self pathOfViolation: each)) ifNotNil: [ :pointer | paths add: pointer ] ].
+		(self pointerFor: (self declaredPartOf: (self pathOfViolation: each) in: schema)) ifNotNil: [ :pointer | paths add: pointer ] ].
 	paths := paths asArray sort.
 	^ paths first: (paths size min: self maxSchemaViolations)
 ]
@@ -1042,11 +1213,12 @@ MCPOpenTelemetryObservabilityBackend >> startAttributesFor: aRecord named: aTool
 
 { #category : 'private - spans' }
 MCPOpenTelemetryObservabilityBackend >> startSpanFor: aRecord named: aToolName input: inputObject context: contextDictionary [
-	"Starts the call's span, named as the server names its tool, as a child of the call that dispatched it when one did, else of the caller's trace context."
+	"Starts the call's span, named as the server names its tool, as a child of the call that dispatched it when one did, else of the caller's trace context. The tool is kept with the span, for what its schema declares when the call ends; and the span is known to be running, so the provider that made it outlives it."
 
-	| name origin parent span |
+	| name tool origin parent span |
 	name := self reportableToolName: aToolName in: contextDictionary.
-	origin := self originOfTool: (contextDictionary at: #tool ifAbsent: [ nil ]).
+	tool := contextDictionary at: #tool ifAbsent: [ nil ].
+	origin := self originOfTool: tool.
 	parent := self parentContextIn: contextDictionary.
 	span := (self tracer spanBuilderNamed: 'tools/call ' , name)
 		        kind: OTSpan server;
@@ -1059,11 +1231,13 @@ MCPOpenTelemetryObservabilityBackend >> startSpanFor: aRecord named: aToolName i
 				         context: contextDictionary
 				         parent: parent);
 		        startSpan.
+	self class spanStarted: span.
 	self critical: [
 			recordsById at: aRecord id put: {
 					span.
 					name.
-					origin } ]
+					origin.
+					tool } ]
 ]
 
 { #category : 'private - reporting' }
