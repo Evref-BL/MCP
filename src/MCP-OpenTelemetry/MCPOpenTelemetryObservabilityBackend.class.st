@@ -370,6 +370,14 @@ MCPOpenTelemetryObservabilityBackend >> isRecordingTraces [
 ]
 
 { #category : 'private - reporting' }
+MCPOpenTelemetryObservabilityBackend >> isReportableId: anObject [
+	"An id the caller chose leaves the image only when it reads as one, a UUID or a hexadecimal or alphanumeric token: at most 64 ASCII letters, digits, underscores and hyphens."
+
+	(anObject isString and: [ anObject size between: 1 and: 64 ]) ifFalse: [ ^ false ].
+	^ anObject allSatisfy: [ :each | each asInteger < 128 and: [ each isAlphaNumeric or: [ each = $_ or: [ each = $- ] ] ] ]
+]
+
+{ #category : 'private - reporting' }
 MCPOpenTelemetryObservabilityBackend >> isReportableName: aString [
 	"A name the caller chose leaves the image only when it reads as an identifier, so a value put where a name belongs is never exported: at most 64 ASCII letters, digits, underscores and hyphens, starting with a letter or an underscore."
 
@@ -738,13 +746,13 @@ MCPOpenTelemetryObservabilityBackend >> serverInfo [
 
 { #category : 'private - spans' }
 MCPOpenTelemetryObservabilityBackend >> sessionIdIn: aContext [
-	"The session.id entry of the caller's W3C baggage, when it reads as an identifier: the session the call belongs to, as the caller counts sessions."
+	"The session.id entry of the caller's W3C baggage, when it reads as an id: the session the call belongs to, as the caller counts sessions."
 
 	| id |
 	id := [ (OTBaggage fromContext: aContext) valueAt: 'session.id' ]
 		      on: Error
 		      do: [ :error | error return: nil ].
-	^ (id isString and: [ self isReportableName: id ])
+	^ (self isReportableId: id)
 		  ifTrue: [ id ]
 		  ifFalse: [ nil ]
 ]

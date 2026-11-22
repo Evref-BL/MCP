@@ -287,6 +287,18 @@ MCPOpenTelemetryObservabilityBackendTest >> testASchemaRefusalSaysWhichKeywordsA
 ]
 
 { #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testASessionThatDoesNotReadAsAnIdIsLeftOut [
+
+	backend
+		recordToolCallFinish: (self startToolCallWith: { (#meta -> {
+					  ('traceparent' -> self remoteTraceparent).
+					  ('baggage' -> 'session.id=a%20value%20with%20spaces') } asDictionary) } asDictionary)
+		result: self successToolResult
+		error: nil.
+	self assert: (self attributeNamed: 'session.id' in: exporter onlySnapshot) isNil
+]
+
+{ #category : 'tests' }
 MCPOpenTelemetryObservabilityBackendTest >> testAToolTheServerDoesNotHaveIsRecordedAsAToolError [
 	"tools/call answers a name the server does not have with a result reporting the error, as tool_call answers it, so the call is recorded as a tool error and not by a JSON-RPC code."
 
@@ -665,11 +677,11 @@ MCPOpenTelemetryObservabilityBackendTest >> testTheSessionInTheCallersBaggageIsR
 	backend
 		recordToolCallFinish: (self startToolCallWith: { (#meta -> {
 					  ('traceparent' -> self remoteTraceparent).
-					  ('baggage' -> 'session.id=s1a2b3c4,other=x') } asDictionary) } asDictionary)
+					  ('baggage' -> 'session.id=3f2b8c1e-9d4a-4e7b-8c2d-1a2b3c4d5e6f,other=x') } asDictionary) } asDictionary)
 		result: self successToolResult
 		error: nil.
 	snapshot := exporter onlySnapshot.
-	self assert: (self attributeNamed: 'session.id' in: snapshot) equals: 's1a2b3c4'.
+	self assert: (self attributeNamed: 'session.id' in: snapshot) equals: '3f2b8c1e-9d4a-4e7b-8c2d-1a2b3c4d5e6f'.
 	self assert: (self attributeNamed: 'other' in: snapshot) isNil
 ]
 
