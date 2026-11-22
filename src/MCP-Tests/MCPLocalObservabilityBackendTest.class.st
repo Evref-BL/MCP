@@ -40,6 +40,30 @@ MCPLocalObservabilityBackendTest >> testDefaultExportDirectoryIsImageLocal [
 ]
 
 { #category : 'tests' }
+MCPLocalObservabilityBackendTest >> testEachKindOfFailureIsRecordedAsSuch [
+	"An exception that escaped the tool is one whatever code its answer carries, unless it is a command error, the tool's own refusal; an error the tool answered is a domain error when it carries a code."
+
+	| state kindOf coded uncoded |
+	state := MCPLocalObservabilityBackend new.
+	kindOf := [ :result :error |
+		          | record |
+		          record := self start: 'method_get' input: nil on: state.
+		          state recordToolCallFinish: record result: result error: error.
+		          record errorKind ].
+	coded := MCPToolGetMethod new errorResultText: 'Failed.' details: { (#errorCode -> 'ToolExecutionError') } asDictionary.
+	uncoded := MCPToolGetMethod new errorResultText: 'Failed.' details: Dictionary new.
+	self assert: (kindOf value: coded value: ZeroDivide new) equals: 'exception'.
+	self
+		assert: (kindOf value: coded value: (MCPCommandError new
+					  errorCode: 'MethodNotFound';
+					  yourself))
+		equals: 'domain'.
+	self assert: (kindOf value: coded value: nil) equals: 'domain'.
+	self assert: (kindOf value: uncoded value: nil) equals: 'tool_result'.
+	self assert: (kindOf value: nil value: JRPCInvalidRequest new) equals: 'json_rpc'
+]
+
+{ #category : 'tests' }
 MCPLocalObservabilityBackendTest >> testEnabledByDefaultRecords [
 	"A call is recorded from its start, and logged only when it ends."
 
@@ -126,7 +150,7 @@ MCPLocalObservabilityBackendTest >> testMCPConfiguresObservabilityExportDirector
 		mcp := MCP new.
 		defaultDirectory := MCPLocalObservabilityBackend defaultExportDirectory.
 		self assert: mcp observabilityEnabled.
-		self assert: mcp observability class equals: MCPLocalObservabilityBackend.
+		self assert: (mcp observability isKindOf: MCPLocalObservabilityBackend).
 		self assert: mcp observabilityExportDirectory equals: defaultDirectory.
 		mcp observabilityExportDirectory: directory.
 		self assert: mcp observabilityExportDirectory equals: directory.
@@ -372,6 +396,20 @@ MCPLocalObservabilityBackendTest >> testSessionLifecycleWritesResourceMarkers [
 		resource := STONJSON fromString: state resourceFileReference contents.
 		self assert: (resource includesKey: 'sessionStartedAt').
 		self assert: (resource includesKey: 'sessionEndedAt') ] ensure: [ directory exists ifTrue: [ directory deleteAll ] ]
+]
+
+{ #category : 'tests' }
+MCPLocalObservabilityBackendTest >> testToolCallNamingItselfIsTheCallersMistake [
+
+	| mcp result record |
+	mcp := MCP new.
+	mcp observabilityEnabled: true.
+	result := mcp rpcToolCall: 'tool_call' withParams: { (#name -> 'tool_call') } asDictionary.
+	record := mcp observability recentCallRecords first.
+	self assert: (result at: #isError ifAbsent: [ false ]).
+	self assert: record toolName equals: 'tool_call'.
+	self assert: record errorCode equals: 'ToolCallCallsItself'.
+	self assert: record errorKind equals: 'domain'
 ]
 
 { #category : 'tests' }

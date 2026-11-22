@@ -38,6 +38,48 @@ MCPOpenTelemetrySettingsTest >> tearDown [
 ]
 
 { #category : 'tests' }
+MCPOpenTelemetrySettingsTest >> testACommentAfterAValueIsNotPartOfIt [
+	"As a dotenv file reads: a # that starts the value or follows a space or tab starts a comment, unless quotes hold it."
+
+	self
+		assert: (self settingsWith: Dictionary new fileText: 'OTEL_TRACES_EXPORTER = otlp # the default
+OTEL_EXPORTER_OTLP_HEADERS="key=a#b" # quoted
+OTEL_SERVICE_NAME=a#b
+OTEL_LOG_LEVEL=	# nothing
+OTEL_PROPAGATORS=''tracecontext # baggage''
+OTEL_SDK_DISABLED="false" and more
+') fileSettings
+		equals: (Dictionary newFrom: {
+					 ('OTEL_TRACES_EXPORTER' -> 'otlp').
+					 ('OTEL_EXPORTER_OTLP_HEADERS' -> 'key=a#b').
+					 ('OTEL_SERVICE_NAME' -> 'a#b').
+					 ('OTEL_LOG_LEVEL' -> '').
+					 ('OTEL_PROPAGATORS' -> 'tracecontext # baggage').
+					 ('OTEL_SDK_DISABLED' -> '"false" and more') })
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetrySettingsTest >> testOnWindowsAConfigurationHomeWithADriveIsAbsolute [
+	"As Node reads it, so MCP looks where a tool written for Node wrote the file."
+
+	| windows |
+	windows := (MCPOpenTelemetrySettings environment: Dictionary new)
+		           windows: true;
+		           yourself.
+	#( 'C:/Users/me/.config' 'c:\Users\me\.config' '\\server\share' '/config' ) do: [ :each |
+		self assert: (windows isAbsolutePath: each) description: each ].
+	#( 'relative' 'C:relative' 'C:' '' ) do: [ :each | self deny: (windows isAbsolutePath: each) description: each ].
+	self deny: ((MCPOpenTelemetrySettings environment: Dictionary new) isAbsolutePath: 'C:/Users/me/.config').
+	self
+		assert: ((MCPOpenTelemetrySettings environment: (Dictionary newFrom: {
+								   ('XDG_CONFIG_HOME' -> 'C:/Users/me/.config').
+								   ('APPDATA' -> '/roaming') }))
+				 windows: true;
+				 settingsFile)
+		equals: 'C:/Users/me/.config' asFileReference / 'pharo-mcp' / 'otel.env'
+]
+
+{ #category : 'tests' }
 MCPOpenTelemetrySettingsTest >> testTheFileGivesItsOTELSettingsAndNothingElse [
 
 	| settings |
@@ -55,19 +97,6 @@ not a setting
 				 ('OTEL_EXPORTER_OTLP_ENDPOINT' -> 'http://127.0.0.1:4318').
 				 ('OTEL_EXPORTER_OTLP_HEADERS' -> 'authorization=Bearer%20token').
 				 ('OTEL_RESOURCE_ATTRIBUTES' -> 'deployment.environment.name=field') })
-]
-
-{ #category : 'tests' }
-MCPOpenTelemetrySettingsTest >> testTheFileIsAppliedOnlyToAnEnvironmentWithoutSettingsOfItsOwn [
-
-	| environment |
-	environment := Dictionary new.
-	(self settingsWith: environment fileText: 'OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4318') apply.
-	self assert: (environment at: 'OTEL_EXPORTER_OTLP_ENDPOINT') equals: 'http://127.0.0.1:4318'.
-
-	environment := Dictionary newFrom: { ('OTEL_SERVICE_NAME' -> 'mine') }.
-	(self settingsWith: environment fileText: 'OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4318') apply.
-	self deny: (environment includesKey: 'OTEL_EXPORTER_OTLP_ENDPOINT')
 ]
 
 { #category : 'tests' }
@@ -89,6 +118,22 @@ MCPOpenTelemetrySettingsTest >> testTheFileIsInMCPsConfigurationDirectory [
 	self
 		assert: (MCPOpenTelemetrySettings environment: (Dictionary newFrom: { ('APPDATA' -> '/roaming') })) settingsFile
 		equals: home / '.config' / 'pharo-mcp' / 'otel.env'
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetrySettingsTest >> testTheFilesSettingsReplaceEveryOneTheEnvironmentHas [
+	"The program that starts the image may pass down its own OTEL_* variables, as an agent host monitored with OpenTelemetry does: MCP's own file says where MCP's telemetry goes."
+
+	| environment |
+	environment := Dictionary newFrom: {
+			               ('OTEL_EXPORTER_OTLP_ENDPOINT' -> 'http://collector.test:4317').
+			               ('OTEL_EXPORTER_OTLP_PROTOCOL' -> 'grpc').
+			               ('PATH' -> '/bin') }.
+	(self settingsWith: environment fileText: 'OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4318') apply.
+	self assert: environment equals: (Dictionary newFrom: {
+				 ('OTEL_EXPORTER_OTLP_ENDPOINT' -> 'http://127.0.0.1:4318').
+				 ('PATH' -> '/bin').
+				 ('XDG_CONFIG_HOME' -> directory fullName) })
 ]
 
 { #category : 'tests' }
@@ -119,4 +164,37 @@ MCPOpenTelemetrySettingsTest >> testTracesAskedForInTheFileAreAskedFor [
 	environment := Dictionary new.
 	self assert: (MCPOpenTelemetryObservabilityBackend wantsTraces:
 			 (self settingsWith: environment fileText: 'OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4318'))
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetrySettingsTest >> testWithoutAHomeThereIsNoSettingsFileAndNoError [
+	"HOME may be unset, as in a service or a container: then there is no file to read there."
+
+	| settings environment previous |
+	settings := (MCPOpenTelemetrySettings environment: Dictionary new)
+		            home: nil;
+		            yourself.
+	self assert: settings settingsFile isNil.
+	self assert: settings fileSettings isEmpty.
+	self assert: settings apply isEmpty.
+	OSPlatform current isWindows ifTrue: [ ^ self ].
+	environment := OSEnvironment current.
+	previous := environment at: 'HOME' ifAbsent: [ nil ].
+	[
+		environment removeKey: 'HOME'.
+		self shouldnt: [ MCPOpenTelemetrySettings current fileSettings ] raise: Error ] ensure: [
+		previous ifNotNil: [ environment at: 'HOME' put: previous ] ]
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetrySettingsTest >> testWithoutSettingsInAFileTheEnvironmentDecides [
+
+	#( nil '# Nothing set.
+PATH=/elsewhere' ) do: [ :text |
+			| environment |
+			environment := Dictionary newFrom: { ('OTEL_SERVICE_NAME' -> 'mine') }.
+			self assert: (self settingsWith: environment fileText: text) apply isEmpty.
+			self assert: environment equals: (Dictionary newFrom: {
+						 ('OTEL_SERVICE_NAME' -> 'mine').
+						 ('XDG_CONFIG_HOME' -> directory fullName) }) ]
 ]

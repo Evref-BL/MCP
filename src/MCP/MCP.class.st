@@ -22,7 +22,8 @@ Class {
 		'toolRegistry',
 		'resourceRegistry',
 		'promptRegistry',
-		'toolResponseFields'
+		'toolResponseFields',
+		'lastClientInfo'
 	],
 	#classVars : [
 		'DefaultObservabilityBackendClass'
@@ -90,6 +91,13 @@ MCP class >> metaIn: someParams [
 	^ meta isDictionary
 		  ifTrue: [ meta ]
 		  ifFalse: [ nil ]
+]
+
+{ #category : 'protocol' }
+MCP class >> modernClientInfoKey [
+	"Where a modern request's _meta carries the client's identity, its name and version."
+
+	^ 'io.modelcontextprotocol/clientInfo'
 ]
 
 { #category : 'protocol' }
@@ -298,15 +306,25 @@ MCP >> anotherServerListeningOnThisPortDo: aBlock [
 
 { #category : 'private - tools' }
 MCP >> answerMissingToolNamed: aName withParams: arguments [
-	"A name the server does not have is the caller's mistake, answered as tool_call answers it, with the tools it may have meant, which a JSON-RPC error would lose in a client that shows only its message. A call naming no tool at all has invalid parameters."
+
+	^ self
+		  answerMissingToolNamed: aName
+		  withParams: arguments
+		  dispatchPath: 'direct'
+		  parentRecord: nil
+]
+
+{ #category : 'private - tools' }
+MCP >> answerMissingToolNamed: aName withParams: arguments dispatchPath: dispatchPath parentRecord: aRecord [
+	"A name the server does not have is the caller's mistake, answered as tool_call answers it, with the tools it may have meant, which a JSON-RPC error would lose in a client that shows only its message, and recorded as a call to that name, within the call aRecord records when one dispatched it. A call naming no tool at all has invalid parameters."
 
 	| record |
 	(aName isString and: [ aName isNotEmpty ]) ifFalse: [ JRPCInvalidParameters signal ].
 	record := self observability
 		          recordToolCallStart: aName
 		          input: arguments
-		          dispatchPath: 'direct'
-		          context: (self observabilityContextFor: nil).
+		          dispatchPath: dispatchPath
+		          context: (self observabilityContextFor: nil parentRecord: aRecord).
 	^ [ self toolRegistry signalMissingToolNamed: aName ]
 		  on: Exception
 		  do: [ :error | self answerToolError: error tool: MCPToolCallTool new record: record ]
@@ -425,20 +443,34 @@ MCP >> discoveryInstructions [
 
 { #category : 'private - tools' }
 MCP >> dispatchToolCallWith: callTool arguments: arguments observabilityRecord: aRecord [
+	"tool_call answers what the call it makes answers, a name the server does not have included, and that call is recorded within tool_call's own. tool_call's record fails when that call did, and says only that: the dispatched call's record says why."
 
-	| request toolName response |
+	| request toolName toolArguments tool response |
 	request := callTool requestFromToolCallArguments: arguments.
 	toolName := request stringArgumentNamed: 'name'.
-	toolName = callTool name ifTrue: [ Error signal: 'tool_call cannot call itself.' ].
-	response := self
-		            executeTool:
-		            (self toolRegistry toolNamed: toolName ifAbsent: [ self toolRegistry signalMissingToolNamed: toolName ])
-		            withParams: ((request argumentNamed: 'arguments' ifAbsent: [ nil ]) ifNil: [ Dictionary new ])
-		            dispatchPath: 'via_tool_call'.
+	toolName = callTool name ifTrue: [
+			MCPCommandError
+				signalErrorCode: #ToolCallCallsItself
+				message: 'tool_call cannot call itself; call the tool it would call.'
+				details: { (#tool -> toolName) } asDictionary ].
+	toolArguments := (request argumentNamed: 'arguments' ifAbsent: [ nil ]) ifNil: [ Dictionary new ].
+	tool := self toolRegistry toolNamed: toolName ifAbsent: [ nil ].
+	response := tool
+		            ifNil: [
+				            self
+					            answerMissingToolNamed: toolName
+					            withParams: toolArguments
+					            dispatchPath: 'via_tool_call'
+					            parentRecord: aRecord ]
+		            ifNotNil: [
+				            self
+					            executeTool: tool
+					            withParams: toolArguments
+					            dispatchPath: 'via_tool_call'
+					            parentRecord: aRecord ].
 	self observability
 		recordToolCallFinish: aRecord
-		result: (callTool successResultText: 'Dispatched tool ' , toolName data: { (#tool -> toolName) } asDictionary)
-				asMCPStructureCallToolResult
+		result: (self resultOf: callTool dispatching: toolName answered: response)
 		error: nil.
 	^ response
 ]
@@ -460,8 +492,23 @@ MCP >> ensureServerIsListening [
 { #category : 'private - tools' }
 MCP >> executeTool: aTool withParams: arguments dispatchPath: dispatchPath [
 
+	^ self
+		  executeTool: aTool
+		  withParams: arguments
+		  dispatchPath: dispatchPath
+		  parentRecord: nil
+]
+
+{ #category : 'private - tools' }
+MCP >> executeTool: aTool withParams: arguments dispatchPath: dispatchPath parentRecord: aRecord [
+	"Runs the tool and answers its result, recorded within the call aRecord records when one dispatched it."
+
 	| record result |
-	record := self recordStartOf: aTool input: arguments dispatchPath: dispatchPath.
+	record := self
+		          recordStartOf: aTool
+		          input: arguments
+		          dispatchPath: dispatchPath
+		          parentRecord: aRecord.
 	^ [
 		  result := (aTool executeWithRequest: (aTool requestFromToolCallArguments: arguments)) asMCPStructureCallToolResult.
 		  self observability recordToolCallFinish: record result: result error: nil.
@@ -541,6 +588,16 @@ MCP >> notListeningDescription [
 				  stream << '. Another MCP in this image is listening on that port; MCP startOnPort: ' << self port asString << ' answers it.' ] ]
 ]
 
+{ #category : 'private - observability' }
+MCP >> noteInitializedClient: clientInfo [
+	"Keeps the name and version a client gave initialize, and nothing else it said."
+
+	lastClientInfo := clientInfo isDictionary ifTrue: [
+			                  {
+				                  (#name -> (clientInfo mcpAt: #name ifAbsent: [ nil ])).
+				                  (#version -> (clientInfo mcpAt: #version ifAbsent: [ nil ])) } asDictionary ]
+]
+
 { #category : 'private - notifications' }
 MCP >> notifyListChangedFor: aDomainName [
 	"Not guarded: a client that has gone is handled where the write happens, so anything raising here is a fault in the server rather than a condition to absorb. An earlier guard here hid exactly that for a whole round."
@@ -564,11 +621,20 @@ MCP >> observability: anObservabilityBackend [
 
 { #category : 'observability' }
 MCP >> observabilityContextFor: aTool [
-	"What a backend may want to know about a call beyond its name and arguments: the tool, for its schema, and the request's _meta, for the caller's trace context."
+	"What a backend may want to know about a call beyond its name and arguments: the tool, for its schema, the request's _meta, for the caller's trace context and identity, and the client that last initialized, for a caller whose requests do not say who it is."
+
+	^ self observabilityContextFor: aTool parentRecord: nil
+]
+
+{ #category : 'observability' }
+MCP >> observabilityContextFor: aTool parentRecord: aRecord [
+	"What a backend may want to know about a call beyond its name and arguments: the tool, for its schema, the request's _meta, for the caller's trace context and identity, the client that last initialized, for a caller whose requests do not say who it is, and the record of the call that dispatched this one, if one did."
 
 	^ {
 		  (#tool -> aTool).
-		  (#meta -> (MCPRequestMeta value ifNil: [ Dictionary new ])) } asDictionary
+		  (#meta -> (MCPRequestMeta value ifNil: [ Dictionary new ])).
+		  (#client -> lastClientInfo).
+		  (#parentRecord -> aRecord) } asDictionary
 ]
 
 { #category : 'observability' }
@@ -631,7 +697,15 @@ MCP >> observabilityTraces [
 MCP >> onInitialize: protocolVersion [
 	"A client that opens with initialize has no server/discover to call, so this answer carries the instructions too."
 
+	^ self onInitialize: protocolVersion clientInfo: nil
+]
+
+{ #category : 'rpc' }
+MCP >> onInitialize: protocolVersion clientInfo: clientInfo [
+	"A client that opens with initialize has no server/discover to call, so this answer carries the instructions too. Such a client says who it is only here, so its name and version are kept for the calls that follow, which observability may report: the last client to initialize, since this server keeps no session."
+
 	<jrpc: #initialize>
+	self noteInitializedClient: clientInfo.
 	^ MCPStructureInitialize new
 		  protocolVersion: (self class negotiatedProtocolVersionFor: protocolVersion);
 		  capabilities: self advertisedCapabilities;
@@ -704,12 +778,23 @@ MCP >> promptRegistry: aPromptRegistry [
 MCP >> recordStartOf: aTool input: arguments dispatchPath: dispatchPath [
 	"The record of a call starting, or nil for a tool that keeps out of observability."
 
+	^ self
+		  recordStartOf: aTool
+		  input: arguments
+		  dispatchPath: dispatchPath
+		  parentRecord: nil
+]
+
+{ #category : 'private - tools' }
+MCP >> recordStartOf: aTool input: arguments dispatchPath: dispatchPath parentRecord: aRecord [
+	"The record of a call starting, within the call aRecord records when one dispatched it, or nil for a tool that keeps out of observability."
+
 	aTool shouldRecordObservability ifFalse: [ ^ nil ].
 	^ self observability
 		  recordToolCallStart: aTool name
 		  input: arguments
 		  dispatchPath: dispatchPath
-		  context: (self observabilityContextFor: aTool)
+		  context: (self observabilityContextFor: aTool parentRecord: aRecord)
 ]
 
 { #category : 'observability' }
@@ -752,6 +837,20 @@ MCP >> restart [
 
 	self stop.
 	^ self start
+]
+
+{ #category : 'private - tools' }
+MCP >> resultOf: callTool dispatching: aToolName answered: aResponse [
+	"What tool_call's own record says it answered: that it dispatched the call, or that the call it dispatched failed, and nothing of why, which that call's record says."
+
+	| failed |
+	failed := aResponse isDictionary and: [ (aResponse mcpAt: #isError ifAbsent: [ false ]) == true ].
+	failed ifFalse: [
+			^ (callTool successResultText: 'Dispatched tool ' , aToolName data: { (#tool -> aToolName) } asDictionary)
+				  asMCPStructureCallToolResult ].
+	^ callTool errorResultText: ('Dispatched tool {1} failed' format: { aToolName }) details: {
+			  (#errorCode -> 'DispatchedToolFailed').
+			  (#tool -> aToolName) } asDictionary
 ]
 
 { #category : 'rpc' }
@@ -870,14 +969,22 @@ MCP >> server [
 ]
 
 { #category : 'start' }
-MCP >> serverIdentity [
-	"Who this server says it is. Self-reported and unverified, so it is for display and logging rather than for a client to act on."
+MCP >> serverDescription [
+	"Who this server says it is, without the icon a client shows, which takes rendering an image: what a record of the server's work needs."
 
 	^ MCPStructureServerInfo new
 		  name: 'MCP Pharo';
 		  title: 'The MCP server for Pharo';
 		  version: self class version;
 		  websiteUrl: 'https://github.com/Evref-BL/MCP';
+		  yourself
+]
+
+{ #category : 'start' }
+MCP >> serverIdentity [
+	"Who this server says it is. Self-reported and unverified, so it is for display and logging rather than for a client to act on."
+
+	^ self serverDescription
 		  icons: { (MCPStructureIcon pngIconNamed: #pharo) };
 		  yourself
 ]

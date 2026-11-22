@@ -1,7 +1,7 @@
 "
-MCP's telemetry settings, as an image reads them: the OTEL_* environment, or else MCP's own settings file, for an image whose environment its user does not control, such as one started from a launcher's window.
+MCP's telemetry settings, as an image reads them: MCP's own settings file, whose settings replace every OTEL_* variable the image inherited, so that whoever wrote it decides where MCP's telemetry goes whatever program started the image; or else, with no file or a file that gives none, the OTEL_* environment.
 
-Reads its environment through at:ifAbsent: and keys, and writes it through at:put:, so a test gives it a Dictionary.
+Reads its environment through at:ifAbsent: and keys, and writes it through at:put: and removeKey:, so a test gives it a Dictionary.
 "
 Class {
 	#name : 'MCPOpenTelemetrySettings',
@@ -22,7 +22,7 @@ MCPOpenTelemetrySettings class >> current [
 	^ self new
 		  environment: OSEnvironment current;
 		  windows: OSPlatform current isWindows;
-		  home: FileLocator home asFileReference;
+		  home: self homeDirectory;
 		  yourself
 ]
 
@@ -33,17 +33,30 @@ MCPOpenTelemetrySettings class >> environment: aDictionary [
 	^ self new
 		  environment: aDictionary;
 		  windows: false;
-		  home: FileLocator home asFileReference;
+		  home: self homeDirectory;
 		  yourself
+]
+
+{ #category : 'accessing' }
+MCPOpenTelemetrySettings class >> homeDirectory [
+	"The user's home directory, or nil when the process cannot tell, as when HOME is unset: then there is no settings file to read there, which is no reason to fail."
+
+	^ [ FileLocator home asFileReference ]
+		  on: Error
+		  do: [ :error | error return: nil ]
 ]
 
 { #category : 'applying' }
 MCPOpenTelemetrySettings >> apply [
-	"Puts the file's settings into the environment, where the OpenTelemetry SDK reads them, unless the environment has settings of its own. Answers what it set."
+	"Puts the file's settings into the environment, where the OpenTelemetry SDK reads them, in place of every OTEL_* variable the process inherited: whoever wrote MCP's own file chose where its telemetry goes, whatever the program that started the image passes down. With no file, or a file that gives none, the environment decides. Answers what it set."
 
 	| settings |
-	self hasOwnSettings ifTrue: [ ^ Dictionary new ].
 	settings := self fileSettings.
+	settings ifEmpty: [ ^ settings ].
+	self settingNamesInEnvironment do: [ :each |
+			[ environment removeKey: each ]
+				on: Error
+				do: [ :error | error return: nil ] ].
 	settings keysAndValuesDo: [ :key :value | environment at: key put: value ].
 	^ settings
 ]
@@ -56,40 +69,41 @@ MCPOpenTelemetrySettings >> environment: aDictionary [
 
 { #category : 'accessing' }
 MCPOpenTelemetrySettings >> fileSettings [
-	"The OTEL_* settings the file's KEY=value lines give. Blank lines and # comments are skipped, as are a leading export and quotes around a value; any other key is not the file's to set. No file gives none."
+	"The OTEL_* settings the file's KEY=value lines give, as a dotenv file writes them. Blank lines and # comments are skipped, as are a leading export, a # comment after a value, and quotes around a value; any other key is not the file's to set. No file gives none."
 
 	| settings contents |
 	settings := Dictionary new.
-	contents := [ self settingsFile contents ]
+	contents := [ (self settingsFile ifNil: [ ^ settings ]) contents ]
 		            on: Error
-		            do: [ ^ settings ].
+		            do: [ :error | ^ settings ].
 	contents lines do: [ :raw |
-			| line equals key value |
+			| line equals key |
 			line := raw trimBoth.
-			(line beginsWith: 'export ') ifTrue: [ line := (line allButFirst: 7) trimBoth ].
+			((line beginsWith: 'export') and: [ line size > 6 and: [ (line at: 7) isSeparator ] ]) ifTrue: [
+				line := (line allButFirst: 6) trimBoth ].
 			equals := line indexOf: $=.
 			(line isNotEmpty and: [ line first ~= $# and: [ equals > 1 ] ]) ifTrue: [
 					key := (line first: equals - 1) trimBoth.
-					value := (line allButFirst: equals) trimBoth.
-					(value size >= 2 and: [ ('"''' includes: value first) and: [ value last = value first ] ]) ifTrue: [
-						value := value copyFrom: 2 to: value size - 1 ].
-					(self isSettingName: key) ifTrue: [ settings at: key put: value ] ] ].
+					(self isSettingName: key) ifTrue: [ settings at: key put: (self valueIn: (line allButFirst: equals)) ] ] ].
 	^ settings
-]
-
-{ #category : 'testing' }
-MCPOpenTelemetrySettings >> hasOwnSettings [
-	"Whether the environment sets any OTEL_* variable: whoever set one there meant the environment to decide."
-
-	^ [ environment keys anySatisfy: [ :each | each asString beginsWith: 'OTEL_' ] ]
-		  on: Error
-		  do: [ false ]
 ]
 
 { #category : 'initialization' }
 MCPOpenTelemetrySettings >> home: aFileReference [
 
 	home := aFileReference
+]
+
+{ #category : 'testing' }
+MCPOpenTelemetrySettings >> isAbsolutePath: aString [
+	"Whether Node, which writes this file for the tools that do, reads aString as an absolute path on this system: one that starts at the root, and on Windows also one that starts with a separator or a drive letter, a colon and a separator, either way round (C:\ or C:/)."
+
+	aString isEmpty ifTrue: [ ^ false ].
+	windows ifFalse: [ ^ aString first = $/ ].
+	('/\' includes: aString first) ifTrue: [ ^ true ].
+	^ aString size >= 3 and: [
+		  aString first asInteger < 128 and: [
+			  aString first isLetter and: [ (aString at: 2) = $: and: [ '/\' includes: (aString at: 3) ] ] ] ]
 ]
 
 { #category : 'testing' }
@@ -113,16 +127,24 @@ MCPOpenTelemetrySettings >> isSettingName: aString [
 ]
 
 { #category : 'accessing' }
+MCPOpenTelemetrySettings >> settingNamesInEnvironment [
+	"The OTEL_* variables the environment sets."
+
+	^ [ (environment keys select: [ :each | each asString beginsWith: 'OTEL_' ]) asArray ]
+		  on: Error
+		  do: [ :error | error return: #(  ) ]
+]
+
+{ #category : 'accessing' }
 MCPOpenTelemetrySettings >> settingsFile [
-	"Where MCP's settings live: $XDG_CONFIG_HOME/pharo-mcp/otel.env, %APPDATA%\pharo-mcp\otel.env on Windows, ~/.config/pharo-mcp/otel.env otherwise."
+	"Where MCP's settings live: $XDG_CONFIG_HOME/pharo-mcp/otel.env when that is an absolute path, %APPDATA%\pharo-mcp\otel.env on Windows, ~/.config/pharo-mcp/otel.env otherwise; nil with no home to find it in."
 
 	| configHome appData |
 	configHome := self valueAt: 'XDG_CONFIG_HOME'.
-	(configHome isNotNil and: [ (Path from: configHome) isAbsolute ]) ifTrue: [
-		^ configHome asFileReference / 'pharo-mcp' / 'otel.env' ].
+	(configHome isNotNil and: [ self isAbsolutePath: configHome ]) ifTrue: [ ^ configHome asFileReference / 'pharo-mcp' / 'otel.env' ].
 	appData := self valueAt: 'APPDATA'.
 	(windows and: [ appData isNotNil ]) ifTrue: [ ^ appData asFileReference / 'pharo-mcp' / 'otel.env' ].
-	^ home / '.config' / 'pharo-mcp' / 'otel.env'
+	^ home ifNotNil: [ home / '.config' / 'pharo-mcp' / 'otel.env' ]
 ]
 
 { #category : 'accessing' }
@@ -136,6 +158,24 @@ MCPOpenTelemetrySettings >> valueAt: aName [
 	value ifNil: [ ^ nil ].
 	value := value asString trimBoth.
 	^ value ifEmpty: [ nil ]
+]
+
+{ #category : 'private' }
+MCPOpenTelemetrySettings >> valueIn: aString [
+	"The value a line gives after its =: what quotes hold, # included, when a quote closes and nothing but a comment follows; otherwise the text before a # that starts it or follows a space or tab."
+
+	| value end rest comment |
+	value := aString trimBoth.
+	(value isNotEmpty and: [ '"''' includes: value first ]) ifTrue: [
+			end := value indexOf: value first startingAt: 2.
+			end > 0 ifTrue: [
+					rest := value allButFirst: end.
+					(rest trimBoth isEmpty or: [ rest first isSeparator and: [ rest trimBoth first = $# ] ]) ifTrue: [
+						^ value copyFrom: 2 to: end - 1 ] ] ].
+	comment := (1 to: value size)
+		           detect: [ :index | (value at: index) = $# and: [ index = 1 or: [ (value at: index - 1) isSeparator ] ] ]
+		           ifNone: [ ^ value ].
+	^ (value first: comment - 1) trimBoth
 ]
 
 { #category : 'initialization' }

@@ -29,8 +29,9 @@ MCPLocalObservabilityBackend class >> defaultExportDirectory [
 { #category : 'private' }
 MCPLocalObservabilityBackend >> addRecentCall: aRecord [
 
-	self recentCalls addFirst: aRecord.
-	[ self recentCalls size > self maxRecentCalls ] whileTrue: [ self recentCalls removeLast ]
+	self critical: [
+			self recentCalls addFirst: aRecord.
+			[ self recentCalls size > self maxRecentCalls ] whileTrue: [ self recentCalls removeLast ] ]
 ]
 
 { #category : 'private - tracing' }
@@ -56,17 +57,18 @@ MCPLocalObservabilityBackend >> captureTraceSnapshotsFor: aRecord result: aToolR
 { #category : 'clearing' }
 MCPLocalObservabilityBackend >> clear [
 
-	self statsByTool removeAll.
-	self recentCalls removeAll.
-	lastCallId := 0.
-	self clearLogs.
+	self critical: [
+			self statsByTool removeAll.
+			self recentCalls removeAll.
+			lastCallId := 0.
+			self clearLogs ].
 	self recordLog: 'Observability cleared'
 ]
 
 { #category : 'logging' }
 MCPLocalObservabilityBackend >> clearLogs [
 
-	self logEntries removeAll
+	self critical: [ self logEntries removeAll ]
 ]
 
 { #category : 'accessing' }
@@ -211,8 +213,9 @@ MCPLocalObservabilityBackend >> logEntries [
 { #category : 'private - logging' }
 MCPLocalObservabilityBackend >> logEntry: aString [
 
-	self logEntries add: aString.
-	[ self logEntries size > self maxLogEntries ] whileTrue: [ self logEntries removeFirst ]
+	self critical: [
+			self logEntries add: aString.
+			[ self logEntries size > self maxLogEntries ] whileTrue: [ self logEntries removeFirst ] ]
 ]
 
 { #category : 'accessing' }
@@ -270,7 +273,7 @@ MCPLocalObservabilityBackend >> logStatusLabelForStatus: statusString [
 { #category : 'logging' }
 MCPLocalObservabilityBackend >> logs [
 
-	^ self logEntries asArray
+	^ self critical: [ self logEntries asArray ]
 ]
 
 { #category : 'accessing' }
@@ -306,7 +309,7 @@ MCPLocalObservabilityBackend >> maxTraceStringLength [
 { #category : 'accessing' }
 MCPLocalObservabilityBackend >> metrics [
 
-	^ self statsByTool values asSortedCollection: [ :left :right | left toolName <= right toolName ]
+	^ (self critical: [ self statsByTool values ]) asSortedCollection: [ :left :right | left toolName <= right toolName ]
 ]
 
 { #category : 'accessing' }
@@ -385,7 +388,7 @@ MCPLocalObservabilityBackend >> outlierFactor [
 { #category : 'accessing' }
 MCPLocalObservabilityBackend >> recentCallRecords [
 
-	^ self recentCalls asArray
+	^ self critical: [ self recentCalls asArray ]
 ]
 
 { #category : 'accessing' }
@@ -429,10 +432,11 @@ MCPLocalObservabilityBackend >> recordToolCallFinish: aRecord result: aToolResul
 		at: DateAndTime now.
 	stats := self statsForToolNamed: aRecord toolName.
 	aRecord summary: (self summaryForResult: aToolResult).
-	aRecord outlierExplanation: (self outlierExplanationForDurationMilliseconds: aRecord durationMilliseconds stats: stats).
+	aRecord outlierExplanation:
+		(self critical: [ self outlierExplanationForDurationMilliseconds: aRecord durationMilliseconds stats: stats ]).
 	self captureTraceSnapshotsFor: aRecord result: aToolResult error: anError.
 	self exportTraceRecord: aRecord.
-	stats recordCall: aRecord.
+	self critical: [ stats recordCall: aRecord ].
 	self addRecentCall: aRecord.
 	self exportMetrics.
 	self recordLog: (self logMessageForRecord: aRecord).
@@ -495,7 +499,7 @@ MCPLocalObservabilityBackend >> statsByTool [
 { #category : 'accessing' }
 MCPLocalObservabilityBackend >> statsForToolNamed: aToolName [
 
-	^ self statsByTool at: aToolName asString ifAbsentPut: [ MCPToolCallStats forToolNamed: aToolName asString ]
+	^ self critical: [ self statsByTool at: aToolName asString ifAbsentPut: [ MCPToolCallStats forToolNamed: aToolName asString ] ]
 ]
 
 { #category : 'private' }
