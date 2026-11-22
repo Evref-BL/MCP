@@ -98,7 +98,15 @@ installGuidance({ host: "codex", cwd: process.cwd() });
 ```
 
 An integration that places those files itself reads them from
-`templateDirectory()`, the package's `templates` directory.
+`templateDirectory()`, the package's `templates` directory, which holds:
+
+- `pharo.AGENTS.md`, the guide;
+- `pharo-references/<name>.md`, the references it routes to;
+- `pharo-skills/<name>/SKILL.md`, the skills.
+
+The guide routes to them as `pharo-references/<name>.md` and
+`skills/<name>/SKILL.md`; an integration that installs the skills under other
+paths rewrites those routes.
 
 ## Contributing
 

@@ -198,6 +198,11 @@ request stringArgumentNamed: 'directory' default: FileLocator imageDirectory ful
 Read the arguments in the tool, and hand an object that does the work plain
 values rather than the request.
 
+A tool that can run long takes its time limit as `timeoutSeconds`: an integer
+with a `default`, and a `maximum` when the tool stops working past a bound.
+A client reads that property of the listed schema to know how long to wait
+for the answer, so keep both in the schema rather than in the code that runs.
+
 ## Answering
 
 Two answers, both built by the tool:

@@ -646,6 +646,24 @@ MCPToolContractsTest >> testEveryPagingToolSaysHowBigAPageIs [
 					self assert: ((registry contractForTool: tool) at: #pageSize) equals: pageSize ] ]
 ]
 
+{ #category : 'as yet unclassified' }
+MCPToolContractsTest >> testEveryTimeoutSecondsDeclaresItsDefault [
+	"A caller waits for a call as long as the call may run: a tool that takes timeoutSeconds declares, as integers, how long it runs when not told and, when it stops working past a bound, that bound."
+
+	self builtInToolClasses do: [ :toolClass |
+			| properties |
+			properties := toolClass new inputSchema asJRPCJSON at: #properties ifAbsent: [ Dictionary new ].
+			properties at: #timeoutSeconds ifPresent: [ :timeout |
+					| default |
+					self assert: (timeout at: #type) equals: 'integer'.
+					default := timeout at: #default ifAbsent: [ nil ].
+					self assert: default isInteger description: toolClass name , ' declares no default timeoutSeconds'.
+					timeout at: #maximum ifPresent: [ :maximum |
+						self
+							assert: (maximum isInteger and: [ maximum >= default ])
+							description: toolClass name , ' declares a maximum below its default' ] ] ]
+]
+
 { #category : 'tests' }
 MCPToolContractsTest >> testEveryToolHasAnIconOfItsOwn [
 	"An icon two tools share marks neither of them. Another project's tools are its own to keep apart, and loading one must not fail this."
@@ -785,8 +803,8 @@ MCPToolContractsTest >> testInitializeAdvertisesSupportedPharoVersions [
 	metadata := response at: #_meta.
 	self assert: (metadata includesKey: #'io.github.evref-bl/pharo').
 	pharo := metadata at: #'io.github.evref-bl/pharo'.
+	self assert: pharo keys asSet equals: #( runtimeVersion supportedMajorVersions ) asSet.
 	self assert: (pharo at: #supportedMajorVersions) equals: #( 10 11 12 13 14 15 ).
-	self assert: (pharo at: #supportedLauncherVersions) equals: #( '100' '110' '120' '130' '140' '150' ).
 	runtimeVersion := pharo at: #runtimeVersion.
 	self assert: runtimeVersion isString.
 	self deny: runtimeVersion isEmpty
@@ -802,7 +820,6 @@ MCPToolContractsTest >> testInitializeResponseSerializesSupportedPharoVersions [
 	self assert: (response includesSubstring: '"_meta"').
 	self assert: (response includesSubstring: '"io.github.evref-bl/pharo"').
 	self assert: (response includesSubstring: '"supportedMajorVersions":[10,11,12,13,14,15]').
-	self assert: (response includesSubstring: '"supportedLauncherVersions":["100","110","120","130","140","150"]').
 	self assert: (response includesSubstring: '"runtimeVersion":"')
 ]
 

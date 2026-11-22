@@ -647,8 +647,7 @@ MCP >> pharoRuntimeMetadata [
 
 	^ {
 		  (#runtimeVersion -> SystemVersion current version).
-		  (#supportedMajorVersions -> self supportedPharoMajorVersions).
-		  (#supportedLauncherVersions -> self supportedPharoLauncherVersions) } asDictionary
+		  (#supportedMajorVersions -> self supportedPharoMajorVersions) } asDictionary
 ]
 
 { #category : 'accessing' }
@@ -877,12 +876,6 @@ MCP >> start [
 MCP >> stop [
 
 	[ server stop ] ensure: [ self observability shutdown ]
-]
-
-{ #category : 'infrastructure metadata' }
-MCP >> supportedPharoLauncherVersions [
-
-	^ #( '100' '110' '120' '130' '140' '150' )
 ]
 
 { #category : 'infrastructure metadata' }
