@@ -193,7 +193,7 @@ MCP class >> supportedProtocolVersions [
 MCP class >> version [
 	"The MCP release this code belongs to. The release pull request sets it."
 
-	^ '4.1.3'
+	^ '4.2.0'
 ]
 
 { #category : 'configuration' }
