@@ -860,7 +860,7 @@ MCP >> rpcToolsList [
 
 	<jrpc: #'tools/list'>
 	self refreshToolsList.
-	^ { (#tools -> self toolsList values asArray) } asDictionary asJRPCJSON
+	^ { (#tools -> (self toolRegistry listingsOf: self toolsList values) asArray) } asDictionary asJRPCJSON
 ]
 
 { #category : 'accessing' }

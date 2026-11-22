@@ -432,6 +432,7 @@ MCPToolMethodLookupTest >> testReturnsStructuredErrorForInvalidRegex [
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (error at: #errorClass) equals: 'RegexSyntaxError'.
+	self assert: (error at: #errorCode) equals: 'RegexSyntaxError'.
 	self assert: ((error at: #message) includesSubstring: 'terminating')
 ]
 
@@ -834,6 +835,7 @@ MCPToolMethodLookupTest >> testVariableReferenceReturnsStructuredErrorWhenVariab
 			          (self searchScope: { (#classes -> #( 'MCPToolMethodSearchVariableReferenceTarget' )) }) } asDictionary.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
+	self assert: (error at: #errorCode) equals: 'VariableNotFound'.
 	self assert:
 		((error at: #message) includesSubstring: 'No variable named missingTrackedSlot is accessible in the requested scope.')
 ]

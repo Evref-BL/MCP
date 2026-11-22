@@ -407,6 +407,27 @@ MCPToolContractsTest >> testAllToolsHavePngIconsWithDataUris [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testAnUnforeseenFailureIsCodedAsOne [
+	"A failure no check of the tool foresaw carries the same code whichever way the tool words it; the exception's class beside it says what failed. Each answer is built where a tool builds it, while the failure's stack is there to read."
+
+	| codes search |
+	search := MCPToolSearchMethods new.
+	codes := [ Error signal: 'boom' ]
+		         on: Error
+		         do: [ :failure |
+				         {
+					         ((MCPToolGetClass new errorResultFor: failure) structuredContent at: #error).
+					         ((MCPToolGetClass new errorResultFor: failure unableTo: 'get class Foo' details: { (#class -> 'Foo') })
+						          structuredContent at: #error).
+					         (MCPToolDebugSearch new debugErrorDetailsFor: failure).
+					         ((search
+						           errorResultForQueryError: failure
+						           request: (search requestFromToolCallArguments: { (#query -> 'foo') } asDictionary)) structuredContent at: #error) }
+					         collect: [ :each | each at: #errorCode ] ].
+	self assert: codes asSet asArray equals: #( 'ToolExecutionError' )
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testArgumentValueClassesUseSpecOrDeltaSuffixes [
 	"A tool reads its arguments from MCPToolRequest, the one request class. What a tool builds from them to resolve or apply is a spec or a delta, kept under Specs."
 
@@ -1339,7 +1360,8 @@ MCPToolContractsTest >> testRpcToolCallCatchesUnhandledHaltFromTool [
 	text := self textFrom: result.
 	self assert: (result at: #isError).
 	self assert: (text includesSubstring: 'Tool halting_test_tool failed (Halt)').
-	self assert: (text includesSubstring: 'mcp tool halt test')
+	self assert: (text includesSubstring: 'mcp tool halt test').
+	self assert: ((self errorFrom: result) at: #errorCode) equals: 'ToolExecutionError'
 ]
 
 { #category : 'tests - validation' }

@@ -229,6 +229,16 @@ MCPToolRemoveMethodsTest >> testAMissingClassIsSaidByTheLookup [
 ]
 
 { #category : 'tests' }
+MCPToolRemoveMethodsTest >> testASelectorListHoldingOnlyBlanksIsRefused [
+
+	self
+		assertResult: (self callToolWith: {
+					 (#class -> 'Object').
+					 (#selector -> #( '  ' )) } asDictionary)
+		refusesArgumentsSaying: 'selector names nothing to act on'
+]
+
+{ #category : 'tests' }
 MCPToolRemoveMethodsTest >> testDefaultsToRemovingInstanceSideMethodsWhenClassSideIsOmitted [
 
 	| result |

@@ -109,8 +109,9 @@ MCPToolRegistry >> contractForToolNamed: aToolName [
 MCPToolRegistry >> descriptionWeightForTool: aTool queryTerm: aTerm [
 	"Descriptions are prose, so common words like 'the' appear in most of them. A term found only here refines the ranking of a tool that already matches; it never makes one a match."
 
-	^ ((self queryTermAlternativesFor: aTerm) anySatisfy: [ :each |
-		   each size >= 3 and: [ aTool description asLowercase includesSubstring: each ] ])
+	| description |
+	description := self read: [ :tool | tool description asLowercase ] of: aTool ifUnreadable: [ '' ].
+	^ ((self queryTermAlternativesFor: aTerm) anySatisfy: [ :each | each size >= 3 and: [ description includesSubstring: each ] ])
 		  ifTrue: [ 2 ]
 		  ifFalse: [ 0 ]
 ]
@@ -121,6 +122,12 @@ MCPToolRegistry >> exposureForTool: aTool [
 	^ (self isToolAdvertised: aTool)
 		  ifTrue: [ 'static' ]
 		  ifFalse: [ 'discoverable' ]
+]
+
+{ #category : 'private - tools' }
+MCPToolRegistry >> groupNameOf: aTool [
+
+	^ self read: [ :tool | tool groupName ] of: aTool ifUnreadable: [ MCPTool otherGroupName ]
 ]
 
 { #category : 'private - tools' }
@@ -137,14 +144,16 @@ MCPToolRegistry >> heldToolNameFor: aToolOrToolClassOrName [
 MCPToolRegistry >> identityWeightForTool: aTool queryTerm: aTerm [
 	"Answer how strongly aTerm identifies aTool through its name, keywords, or title. Terms shorter than three characters only count as an exact name segment or keyword: matching them as substrings would make every tool a match."
 
-	| alternatives substringTerms toolName |
+	| alternatives keywords substringTerms title toolName |
 	alternatives := self queryTermAlternativesFor: aTerm.
 	toolName := aTool name asLowercase.
 	(alternatives anySatisfy: [ :each | (toolName findTokens: '-_') includes: each ]) ifTrue: [ ^ 10 ].
-	(alternatives anySatisfy: [ :each | aTool keywords includes: each ]) ifTrue: [ ^ 6 ].
+	keywords := self read: [ :tool | tool keywords ] of: aTool ifUnreadable: [ #(  ) ].
+	(alternatives anySatisfy: [ :each | keywords includes: each ]) ifTrue: [ ^ 6 ].
 	substringTerms := alternatives select: [ :each | each size >= 3 ].
 	(substringTerms anySatisfy: [ :each | toolName includesSubstring: each ]) ifTrue: [ ^ 5 ].
-	(substringTerms anySatisfy: [ :each | aTool title asLowercase includesSubstring: each ]) ifTrue: [ ^ 3 ].
+	title := self read: [ :tool | tool title asLowercase ] of: aTool ifUnreadable: [ '' ].
+	(substringTerms anySatisfy: [ :each | title includesSubstring: each ]) ifTrue: [ ^ 3 ].
 	^ 0
 ]
 
@@ -158,9 +167,12 @@ MCPToolRegistry >> includesToolNamed: aToolName [
 MCPToolRegistry >> isEntry: aTool before: anotherTool [
 	"Grouped, then alphabetical within a group, which is how the catalog reads to someone scanning it."
 
-	^ aTool groupName = anotherTool groupName
+	| group otherGroup |
+	group := self groupNameOf: aTool.
+	otherGroup := self groupNameOf: anotherTool.
+	^ group = otherGroup
 		  ifTrue: [ aTool name <= anotherTool name ]
-		  ifFalse: [ aTool groupName <= anotherTool groupName ]
+		  ifFalse: [ group <= otherGroup ]
 ]
 
 { #category : 'tools' }
@@ -195,6 +207,15 @@ MCPToolRegistry >> keyFor: aTool [
 ]
 
 { #category : 'tools' }
+MCPToolRegistry >> listingsOf: someTools [
+	"What tools/list says of each of someTools. A tool that cannot say what it takes is left out, so that the list still names every other tool."
+
+	^ someTools
+		  collect: [ :each | self read: [ :tool | tool asJRPCJSON ] of: each ifUnreadable: [ nil ] ]
+		  thenReject: [ :each | each isNil ]
+]
+
+{ #category : 'tools' }
 MCPToolRegistry >> queryTermAlternativesFor: aTerm [
 
 	| alternatives singular term |
@@ -212,6 +233,15 @@ MCPToolRegistry >> queryTermsFrom: queryString [
 	normalized := queryString ifNil: [ ^ #(  ) ] ifNotNil: [ :value | value asString trimBoth asLowercase ].
 	normalized isEmpty ifTrue: [ ^ #(  ) ].
 	^ normalized findTokens: ' -_'
+]
+
+{ #category : 'private - tools' }
+MCPToolRegistry >> read: aBlock of: aTool ifUnreadable: defaultBlock [
+	"What aBlock reads of aTool's metadata, or what defaultBlock answers when the tool cannot say. A tool loaded from another project may leave its title, description or schema unimplemented, or fail computing one, and the catalog still answers for every other tool, and for that one by what else it says."
+
+	^ [ aBlock value: aTool ]
+		  on: Error
+		  do: [ :error | error return: defaultBlock value ]
 ]
 
 { #category : 'entries' }
@@ -247,13 +277,17 @@ MCPToolRegistry >> scoreForTool: aTool queryTerms: queryTerms [
 
 { #category : 'tools' }
 MCPToolRegistry >> searchMetadataForTool: aTool [
-	"A search entry says whether the tool is advertised, as its contract does: a client that calls only the tools it lists has to reach the others another way. It has no schema for them either, so their entries also name their arguments, in the order the schema declares them, and the ones it requires."
+	"A search entry says whether the tool is advertised, as its contract does: a client that calls only the tools it lists has to reach the others another way. It has no schema for them either, so their entries also name their arguments, in the order the schema declares them, and the ones it requires. A tool that cannot give its description or schema is still entered, by its name."
 
 	| metadata schema |
-	metadata := aTool searchMetadata.
+	metadata := self read: [ :tool | tool searchMetadata ] of: aTool ifUnreadable: [
+			            Dictionary new
+				            at: #name put: aTool name;
+				            at: #description put: '';
+				            yourself ].
 	metadata at: #exposure put: (self exposureForTool: aTool).
 	(self isToolAdvertised: aTool) ifTrue: [ ^ metadata ].
-	schema := aTool inputSchema.
+	schema := self read: [ :tool | tool inputSchema ] of: aTool ifUnreadable: [ ^ metadata ].
 	metadata
 		at: #arguments put: ((schema properties ifNil: [ #(  ) ]) collect: [ :each | each name ] as: Array);
 		at: #requiredArguments put: (schema required ifNil: [ #(  ) ]) asArray.
@@ -297,9 +331,10 @@ MCPToolRegistry >> toolGroups [
 	| groups |
 	groups := OrderedCollection new.
 	self tools do: [ :tool |
-			| group |
-			group := groups detect: [ :each | each key = tool groupName ] ifNone: [
-					         groups add: tool groupName -> OrderedCollection new.
+			| group groupName |
+			groupName := self groupNameOf: tool.
+			group := groups detect: [ :each | each key = groupName ] ifNone: [
+					         groups add: groupName -> OrderedCollection new.
 					         groups last ].
 			group value add: tool class ].
 	^ groups collect: [ :each | each key -> each value asArray ] as: Array

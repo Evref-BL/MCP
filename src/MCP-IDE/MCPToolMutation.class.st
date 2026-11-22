@@ -222,12 +222,7 @@ MCPToolMutation >> executeWithRequest: request [
 { #category : 'private - errors' }
 MCPToolMutation >> failureErrorCodeFor: anError action: action [
 
-	| cause prefix |
-	cause := self mutationFailureCauseFor: anError.
-	prefix := self actionErrorCodePrefixFor: action.
-	cause mcpNoticeNode ifNotNil: [ ^ prefix , 'UndeclaredVariable' ].
-	(self readOnlyAssignmentNodesFrom: cause) ifNotEmpty: [ ^ prefix , 'ReadOnlyAssignment' ].
-	^ prefix , cause mcpMutationFailureErrorCodeSuffix
+	^ (self actionErrorCodePrefixFor: action) , (self failureErrorCodeSuffixFor: (self mutationFailureCauseFor: anError))
 ]
 
 { #category : 'private - errors' }
@@ -402,17 +397,6 @@ MCPToolMutation >> readOnlyAssignmentCauseMessageFor: anError [
 	nodes do: [ :each | variables addIfNotPresent: each variable variable ].
 	^ String streamContents: [ :stream |
 		  variables do: [ :variable | self printReadOnlyAssignmentOf: variable on: stream ] separatedBy: [ stream space ] ]
-]
-
-{ #category : 'private - errors' }
-MCPToolMutation >> readOnlyAssignmentNodesFrom: anError [
-	"The assignments the compiler refused because their variable is read-only: an argument, most often. Pharo names none of them, only an offset."
-
-	| ast |
-	ast := anError mcpCompilationAst ifNil: [ anError mcpMethodNode ].
-	ast ifNil: [ ^ #(  ) ].
-	^ ast assignmentNodes select: [ :each |
-		  each variable variable ifNil: [ false ] ifNotNil: [ :variable | variable isWritable not ] ]
 ]
 
 { #category : 'private - refactoring' }

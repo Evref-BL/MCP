@@ -242,6 +242,14 @@ MCPToolRemoveClassesTest >> testAForcedRemovalSaysWhichClassTheSubclassesNowInhe
 ]
 
 { #category : 'tests' }
+MCPToolRemoveClassesTest >> testANameListHoldingOnlyBlanksIsRefused [
+
+	self
+		assertResult: (self callToolWith: { (#name -> #( '  ' )) } asDictionary)
+		refusesArgumentsSaying: 'name names nothing to act on'
+]
+
+{ #category : 'tests' }
 MCPToolRemoveClassesTest >> testARefusalNamesWhatBlocksEachClass [
 	"Each class asked for gets its facts, references then subclasses, and a long list of references stops at five, in its own words rather than Pharo's check. Force is offered where it gets past the check. Nothing is removed."
 

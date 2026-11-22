@@ -9,11 +9,72 @@ Class {
 }
 
 { #category : 'private' }
+MCPToolCatalogTest >> createToolClassNamed: aClassName toolName: aToolName defining: someSources [
+	"A tool class of another project that names itself and defines only someSources, leaving the rest of its metadata to MCPTool, which asks every tool to give it. Naming itself puts it in the catalog."
+
+	| toolClass |
+	toolClass := self
+		             createClassNamed: aClassName
+		             superclassName: #MCPTool
+		             slots: #(  )
+		             classSlots: #(  ).
+	someSources do: [ :each | self ensureMethodSource: each protocol: 'metadata' on: toolClass ].
+	self
+		ensureMethodSource: ('toolName
+
+	^ {1}' format: { aToolName printString })
+		protocol: 'metadata'
+		on: toolClass class.
+	^ toolClass
+]
+
+{ #category : 'private' }
 MCPToolCatalogTest >> searchedToolNamesFor: aQuery [
 
 	| data |
 	data := self dataFrom: (self callToolNamed: 'tool_search' withArguments: { (#query -> aQuery) } asDictionary).
 	^ (data at: #tools) collect: [ :each | each at: #name ]
+]
+
+{ #category : 'tests' }
+MCPToolCatalogTest >> testAToolMissingItsMetadataLeavesTheCatalogToTheOthers [
+	"A tool loaded from another project may leave its title, description and schema unimplemented. tool_search still answers for every other tool, and finds that one by its name; tools/list still lists every other tool, and leaves out the one that cannot say what it takes."
+
+	| result server toolNames |
+	self createToolClassNamed: #MCPIncompleteProbeTool toolName: 'incomplete_probe_tool' defining: #(  ).
+	[
+		server := self mcpWithoutObservabilityExport.
+		result := server rpcToolCall: 'tool_search' withParams: { (#query -> 'class incomplete') } asDictionary.
+		self deny: (self resultIndicatesError: result).
+		toolNames := ((self dataFrom: result) at: #tools) collect: [ :each | each at: #name ].
+		self assert: (toolNames includes: 'class_get').
+		self assert: (toolNames includes: 'incomplete_probe_tool').
+		self deny: (self resultIndicatesError: (server rpcToolCall: 'tool_search' withParams: Dictionary new)).
+		server advertiseAllTools.
+		toolNames := (server rpcToolsList at: #tools) collect: [ :each | each at: #name ].
+		self assert: (toolNames includes: 'tool_search').
+		self deny: (toolNames includes: 'incomplete_probe_tool') ] ensure: [ self removeClassNamed: #MCPIncompleteProbeTool ]
+]
+
+{ #category : 'tests' }
+MCPToolCatalogTest >> testAToolMissingItsTitleIsListedWithoutOne [
+	"A title is optional in tools/list, so a tool that has none is listed without it, and tool_search finds it by its name and description."
+
+	| entry result server |
+	self createToolClassNamed: #MCPUntitledProbeTool toolName: 'untitled_probe_tool' defining: #( 'description
+
+	^ ''Counts the zebras of a probe.''' 'buildInputSchema
+
+	^ MCPStructureInputSchema properties: #(  ) required: #(  )' ).
+	[
+		server := self mcpWithoutObservabilityExport.
+		result := server rpcToolCall: 'tool_search' withParams: { (#query -> 'untitled zebras') } asDictionary.
+		self assert: ((self textFrom: result) lines includes:
+				 'untitled_probe_tool (not in the advertised list) - Counts the zebras of a probe. It takes no arguments.').
+		server advertiseAllTools.
+		entry := (server rpcToolsList at: #tools) detect: [ :each | (each at: #name) = 'untitled_probe_tool' ].
+		self assert: (entry at: #description) equals: 'Counts the zebras of a probe.'.
+		self deny: (entry includesKey: #title) ] ensure: [ self removeClassNamed: #MCPUntitledProbeTool ]
 ]
 
 { #category : 'tests' }
@@ -298,6 +359,17 @@ MCPToolCatalogTest >> testSingularSearchTermsUseGenericInflectionRules [
 	self assert: (registry singularSearchTermFor: 'classes') equals: 'class'.
 	self assert: (registry singularSearchTermFor: 'repositories') equals: 'repository'.
 	self assert: (registry singularSearchTermFor: 'histories') equals: 'history'
+]
+
+{ #category : 'tests' }
+MCPToolCatalogTest >> testToolCallReachedOutsideTheServerSaysSo [
+	"The server dispatches tool_call itself, so the tool answers only a call that did not come through the server."
+
+	| result tool |
+	tool := MCPToolCallTool new.
+	result := tool executeWithRequest: (tool requestFromToolCallArguments: { (#name -> 'class_get') } asDictionary).
+	self assert: result isError.
+	self assert: ((result structuredContent at: #error) at: #errorCode) equals: 'ServerCallContextRequired'
 ]
 
 { #category : 'tests' }

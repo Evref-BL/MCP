@@ -43,7 +43,7 @@ MCPToolRemoveClasses >> checkArguments: request [
 
 	| classNames |
 	classNames := self classNamesFrom: request.
-	classNames ifEmpty: [ Error signal: 'name must hold at least one class name.' ].
+	classNames ifEmpty: [ MCPInvalidToolInput signalEmptyArgumentNamed: 'name' forTool: self ].
 	classNames do: [ :each | MCPImageLookup wholeClassName: each for: 'class_remove' ]
 ]
 
@@ -79,7 +79,7 @@ MCPToolRemoveClasses >> description [
 
 { #category : 'executing' }
 MCPToolRemoveClasses >> executeWithRequest: request [
-	"The names are checked, then the classes removed. An error echoes the names each once, even one the check raises: the only check that raises no command error fails when there is no name at all."
+	"The names are checked, then the classes removed. An error echoes the names each once, even one the check raises."
 
 	^ self
 		  executeRequest: request

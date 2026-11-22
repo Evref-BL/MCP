@@ -9,7 +9,24 @@ Class {
 }
 
 { #category : 'tests' }
+MCPToolBatchTest >> testABatchWhoseTargetsFailForDifferentReasonsHasACodeOfItsOwn [
+	"Each target's entry keeps its own reason."
+
+	| result tool |
+	tool := MCPToolGetMethod new.
+	result := tool batchResultForResults: {
+			          (tool errorResultText: 'One failed.' code: 'MethodNotFound' details: Dictionary new).
+			          (tool errorResultText: 'Another failed.' code: 'ClassNotFound' details: Dictionary new) }.
+	self assert: result isError.
+	self assert: ((result structuredContent at: #error) at: #errorCode) equals: 'BatchFailed'.
+	self
+		assert: (((result structuredContent at: #data) at: #results) collect: [ :each | (each at: #error) at: #errorCode ])
+		equals: #( 'MethodNotFound' 'ClassNotFound' )
+]
+
+{ #category : 'tests' }
 MCPToolBatchTest >> testBatchFailsOnlyWhenEveryTargetFails [
+	"Then it says why, as any failed call does: for the reason every target failed for."
 
 	| result |
 	result := self callToolWith: {
@@ -17,7 +34,8 @@ MCPToolBatchTest >> testBatchFailsOnlyWhenEveryTargetFails [
 			          (#selector -> #( 'absentOne' 'absentTwo' )) } asDictionary.
 	self assert: (result at: #isError).
 	self assert: (self summaryFrom: result) equals: 'Got 0 of 2 methods. 2 failed.'.
-	self assert: (((self structuredContentFrom: result) at: #data) at: #results) size equals: 2
+	self assert: (((self structuredContentFrom: result) at: #data) at: #results) size equals: 2.
+	self assert: ((self errorFrom: result) at: #errorCode) equals: 'MethodNotFound'
 ]
 
 { #category : 'tests' }

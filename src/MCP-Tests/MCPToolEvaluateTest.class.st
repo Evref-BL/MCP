@@ -102,10 +102,11 @@ MCPToolEvaluateTest >> stoppedEarlyResultOf: aString bounds: aBlock [
 
 { #category : 'private' }
 MCPToolEvaluateTest >> stoppedTextOf: aResult [
-	"The text of an evaluation's answer that must be a stop at the tests' limit."
+	"The text of an evaluation's answer that must be a stop at the tests' limit, which its error code says too."
 
 	| text |
 	self assert: aResult isError.
+	self assert: ((aResult structuredContent at: #error) at: #errorCode) equals: 'EvaluationTimedOut'.
 	text := aResult content first text.
 	self assert: (text lines first: 2) equals: {
 			('Evaluation stopped after ' , self stopLimitSeconds printString , ' s, its time limit.').
@@ -201,13 +202,10 @@ MCPToolEvaluateTest >> testEvaluateAnswersWhenTheCodeEndsItsOwnProcess [
 	"The process that ends is the one the code runs in, not the one that answers."
 
 	| result |
-	result := self
-		          callToolNamed: 'evaluate'
-		          withArguments: { (#code -> 'Processor activeProcess terminate') } asDictionary.
+	result := self callToolNamed: 'evaluate' withArguments: { (#code -> 'Processor activeProcess terminate') } asDictionary.
 	self assert: (self resultIndicatesError: result).
-	self
-		assert: (self textFrom: result)
-		equals: 'Evaluation ended the process running it, so it has no value to answer.'
+	self assert: (self textFrom: result) equals: 'Evaluation ended the process running it, so it has no value to answer.'.
+	self assert: ((self errorFrom: result) at: #errorCode) equals: 'EvaluationEndedItsProcess'
 ]
 
 { #category : 'tests' }
@@ -243,6 +241,17 @@ MCPToolEvaluateTest >> testEvaluateCatchesHaltAsRuntimeFailure [
 	self assert: (text includesSubstring: 'failed during execution').
 	self assert: (text includesSubstring: 'Halt').
 	self assert: (text includesSubstring: 'mcp halt test')
+]
+
+{ #category : 'tests' }
+MCPToolEvaluateTest >> testEvaluateCodesAnAssignmentToAnArgumentAsMethodCompileDoes [
+	"A compile notice carries the code method_compile gives the same notice, so a failure is counted alike whichever tool met it."
+
+	| result |
+	result := self callToolNamed: 'evaluate' withArguments: { (#code -> '[ :each | each := 1 ] value: 2') } asDictionary.
+	self assert: (result at: #isError).
+	self compilerReportsReadOnlyAssignmentsAsSyntaxErrors ifTrue: [ ^ self ].
+	self assert: ((self errorFrom: result) at: #errorCode) equals: 'CompileReadOnlyAssignment'
 ]
 
 { #category : 'tests' }
@@ -319,7 +328,8 @@ MCPToolEvaluateTest >> testEvaluateLeavesACapitalizedNameUndeclared [
 	result := self callToolNamed: 'evaluate' withArguments: { (#code -> 'MCPNoSuchGlobalForThisTest new') } asDictionary.
 	self assert: (result at: #isError).
 	self compilerReadsUndeclaredNamesAsNil ifTrue: [ ^ self ].
-	self assert: ((self errorFrom: result) at: #sourceLine) equals: 'MCPNoSuchGlobalForThisTest new'
+	self assert: ((self errorFrom: result) at: #sourceLine) equals: 'MCPNoSuchGlobalForThisTest new'.
+	self assert: ((self errorFrom: result) at: #errorCode) equals: 'CompileUndeclaredVariable'
 ]
 
 { #category : 'tests' }
@@ -626,6 +636,7 @@ MCPToolEvaluateTest >> testEvaluateReturnsCompilationFailureInformation [
 	self assert: (text includesSubstring: self expectedSyntaxErrorNoticeClassName).
 	self assert: (text includesSubstring: 'Line 1').
 	self assert: (error at: #errorClass) equals: self expectedSyntaxErrorNoticeClassName.
+	self assert: (error at: #errorCode) equals: 'CompileSyntaxError'.
 	self assert: ((error at: #message) includesSubstring: 'expected')
 ]
 
@@ -642,6 +653,7 @@ MCPToolEvaluateTest >> testEvaluateReturnsRuntimeFailureInformation [
 	self assert: (text includesSubstring: 'boom').
 	self assert: ((text lines reject: [ :each | each beginsWith: '   ' ]) last includesSubstring: 'UndefinedObject>>DoIt').
 	self assert: (error at: #errorClass) equals: 'Error'.
+	self assert: (error at: #errorCode) equals: 'EvaluationRuntimeError'.
 	self assert: ((error at: #message) includesSubstring: 'boom').
 	self assert: (error includesKey: #signalerContext).
 	self assert: stackTrace class equals: Array.
@@ -676,6 +688,33 @@ MCPToolEvaluateTest >> testEvaluateRunsJustBelowTheCallingProcess [
 		assert: (self textFrom:
 				 (self callToolNamed: 'evaluate' withArguments: { (#code -> 'Processor activePriority') } asDictionary))
 		equals: (Processor activePriority - 1) printString
+]
+
+{ #category : 'tests' }
+MCPToolEvaluateTest >> testEvaluateSaysWhenPrintingTheValueFailed [
+	"The code ran and answered a value; what failed is printing it, in its class's own printOn:. The answer says so rather than reading as a failure of the code."
+
+	| error fixture result |
+	fixture := self
+		           createClassNamed: 'UnprintableFixture'
+		           superclassName: 'Object'
+		           slots: #(  )
+		           classSlots: #(  ).
+	result := [
+		          self
+			          ensureMethodSource: 'printOn: aStream
+	aStream nextPutAll: ''half''.
+	1 / 0'
+			          protocol: 'printing'
+			          on: fixture.
+		          self callToolNamed: 'evaluate' withArguments: { (#code -> 'UnprintableFixture new') } asDictionary ] ensure: [
+		          self removeClassNamed: 'UnprintableFixture' ].
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: ((self summaryFrom: result) beginsWith: 'Evaluation ran, but printing its value failed (ZeroDivide): ').
+	self assert: (error at: #errorClass) equals: 'ZeroDivide'.
+	self assert: (error at: #errorCode) equals: 'EvaluationPrintFailed'.
+	self assert: ((error at: #stackTrace) anySatisfy: [ :each | each beginsWith: 'UnprintableFixture>>printOn:' ])
 ]
 
 { #category : 'tests' }
@@ -927,6 +966,7 @@ MCPToolEvaluateTest >> testEvaluateStopsARecursionPastItsStackBound [
 	self assert: (lines first: 2) equals: #( 'Evaluation stopped: its stack passed 1000 frames, which an endless recursion does.'
 		   'What it changed before then stays changed.' ).
 	self assert: (lines anySatisfy: [ :each | each beginsWith: 'StopRecursionFixture>>descend:, at least ' ]).
+	self assert: ((result structuredContent at: #error) at: #errorCode) equals: 'EvaluationStackTooDeep'.
 	self assert: milliseconds < 10000
 ]
 
@@ -1023,6 +1063,7 @@ MCPToolEvaluateTest >> testEvaluateStopsCodeThatKeepsMoreMemoryThanItsBound [
 	self assert: (lines first: 2) equals: #( 'Evaluation stopped: the image''s memory grew by more than 16 MB while it ran.'
 		   'What it changed before then stays changed.' ).
 	self assert: (lines includes: 'Stopped in:').
+	self assert: ((result structuredContent at: #error) at: #errorCode) equals: 'EvaluationMemoryGrowthTooLarge'.
 	self assert: milliseconds < 10000
 ]
 
@@ -1074,6 +1115,7 @@ MCPToolEvaluateTest >> testEvaluateThatNeverStartedSaysSo [
 	self assert: ((error at: #heldBy) anySatisfy: [ :each |
 			 each beginsWith: 'a process an evaluation forked, named mcp-evaluate-holder-probe, in ' ]).
 	self assert: (error at: #timeoutSeconds) equals: self unstartedLimitSeconds.
+	self assert: (error at: #errorCode) equals: 'EvaluationNotStarted'.
 	self assert: command evaluator isTerminated
 ]
 

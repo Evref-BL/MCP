@@ -201,7 +201,7 @@ MCPToolRemoveMethods >> selectorsFromRequest: request [
 
 	| selectors |
 	selectors := request uniqueStringCollectionArgumentNamed: 'selector'.
-	selectors ifEmpty: [ Error signal: 'selector must hold at least one selector.' ].
+	selectors ifEmpty: [ MCPInvalidToolInput signalEmptyArgumentNamed: 'selector' forTool: self ].
 	^ selectors
 ]
 
