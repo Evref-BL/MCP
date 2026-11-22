@@ -101,6 +101,18 @@ is set on the span as `session.id`. `pharo.mcp.tool.origin` says whose tool
 the call went to: `mcp` for one of MCP's own, `other` for one another package
 registered, `unknown` for a name the server has no tool for.
 
+A call also reports the options it chose among those its tool's schema
+offers (`pharo.mcp.argument.options`: an optional property it gave, an
+enumerated value other than the default as `side=class`, the list form of a
+property that also takes one value as `packages[]`). A call the input schema
+refused reports the JSON Schema keywords it broke and where, as JSON pointers
+(`pharo.mcp.error.schema.keywords`, `.paths`). A result that lists entries
+reports how many matched and whether it showed them all
+(`pharo.mcp.result.count`, `.more`); a test run, how many tests ran and how it
+ended (`pharo.mcp.test.count`, `.outcome`: `passed`, `failed`, `errored`,
+`none`); a tool search or description, the tools it named
+(`pharo.mcp.tool.refs`).
+
 The spans carry no values: argument names but not arguments, sizes but not
 results, and no exception message or stack. An exception is named by its
 nearest class in Pharo's kernel or in one of MCP's own packages, and a name

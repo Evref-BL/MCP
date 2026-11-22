@@ -259,6 +259,34 @@ MCPOpenTelemetryObservabilityBackendTest >> testAProviderThatRefusesTheDescripti
 ]
 
 { #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testASchemaRefusalSaysWhichKeywordsAndWhere [
+
+	| result snapshot |
+	result := MCPStructureErrorToolResult
+		          content: { {
+				          (#type -> 'text').
+				          (#text -> 'refused') } asDictionary }
+		          structuredContent: { (#error -> {
+				           (#errorClass -> 'MCPInvalidToolInput').
+				           (#violations -> {
+					            {
+						            (#keyword -> 'type').
+						            (#path -> #( 'scope' 'packages' 1 )) } asDictionary.
+					            {
+						            (#keyword -> 'required').
+						            (#path -> #( 'class' )) } asDictionary.
+					            {
+						            (#keyword -> 'additionalProperties').
+						            (#path -> #( 'Object subclass: #Secret' )) } asDictionary }) } asDictionary) } asDictionary.
+	backend recordToolCallFinish: self startToolCall result: result error: nil.
+	snapshot := exporter onlySnapshot.
+	self
+		assert: (self attributeNamed: 'pharo.mcp.error.schema.keywords' in: snapshot)
+		equals: #( 'additionalProperties' 'required' 'type' ).
+	self assert: (self attributeNamed: 'pharo.mcp.error.schema.paths' in: snapshot) equals: #( '/class' '/scope/packages/1' )
+]
+
+{ #category : 'tests' }
 MCPOpenTelemetryObservabilityBackendTest >> testAToolTheServerDoesNotHaveIsRecordedAsAToolError [
 	"tools/call answers a name the server does not have with a result reporting the error, as tool_call answers it, so the call is recorded as a tool error and not by a JSON-RPC code."
 
@@ -556,6 +584,36 @@ MCPOpenTelemetryObservabilityBackendTest >> testTheEnvironmentAddsAttributesButC
 ]
 
 { #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testTheOptionsACallChoseAreReported [
+	"As the evaluation counts them: an optional property given, an enumerated value other than the default, and the list form of a property that also takes one value."
+
+	| schema input |
+	schema := {
+		          ('required' -> #( 'name' )).
+		          ('properties' -> {
+			           ('name' -> { ('type' -> 'string') } asDictionary).
+			           ('side' -> {
+				            ('type' -> 'string').
+				            ('enum' -> #( 'instance' 'class' )).
+				            ('default' -> 'instance') } asDictionary).
+			           ('packages' -> { ('type' -> #( 'string' 'array' )) } asDictionary).
+			           ('limit' -> { ('type' -> 'integer') } asDictionary) } asDictionary) } asDictionary.
+	input := {
+		         ('name' -> 'Object').
+		         ('side' -> 'class').
+		         ('packages' -> #( 'A' 'B' )).
+		         ('limit' -> 5).
+		         ('colour' -> 'red') } asDictionary.
+	self
+		assert: (backend
+				 options: Set new
+				 chosenIn: input
+				 schema: schema
+				 prefix: '') asArray sort
+		equals: #( 'limit' 'packages' 'packages[]' 'side=class' )
+]
+
+{ #category : 'tests' }
 MCPOpenTelemetryObservabilityBackendTest >> testThePharoVersionCarriesItsBuild [
 
 	self assert: (MCPOpenTelemetryObservabilityBackend pharoVersion matchesRegex: '\d+\.\d+\.\d+\+build\.\d+')
@@ -668,6 +726,32 @@ MCPOpenTelemetryObservabilityBackendTest >> testUsingOpenTelemetryWithoutTracesL
 	Smalltalk garbageCollect.
 	MCP new useOpenTelemetryObservabilityWith: (self settingsAskingForTraces: false).
 	self assert: OTTracerProvider current identicalTo: tracerProvider
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testWhatAResultFoundIsReported [
+	"How many entries a listing matched and whether it showed them all; for MCP's own tools, how a test run ended and which tools a search named."
+
+	| tool attributes |
+	tool := MCPToolRegistry default toolNamed: 'class_get' ifAbsent: [ self skip: 'class_get is not registered' ].
+	attributes := (backend
+		               resultAttributesFor: (MCPStructureCallToolResult content: #(  ) structuredContent: {
+					                (#pagination -> {
+						                 (#totalCount -> 42).
+						                 (#returnedCount -> 20).
+						                 (#truncated -> true) } asDictionary).
+					                (#runCount -> 3).
+					                (#failureCount -> 1).
+					                (#errorCount -> 0).
+					                (#tools -> {
+						                 { (#name -> 'class_get') } asDictionary.
+						                 { (#name -> 'not a name') } asDictionary }) } asDictionary)
+		               origin: 'mcp') asDictionary.
+	self assert: (attributes at: 'pharo.mcp.result.count') equals: 42.
+	self assert: (attributes at: 'pharo.mcp.result.more').
+	self assert: (attributes at: 'pharo.mcp.test.count') equals: 3.
+	self assert: (attributes at: 'pharo.mcp.test.outcome') equals: 'failed'.
+	self assert: (attributes at: 'pharo.mcp.tool.refs') equals: #( 'class_get' )
 ]
 
 { #category : 'private' }

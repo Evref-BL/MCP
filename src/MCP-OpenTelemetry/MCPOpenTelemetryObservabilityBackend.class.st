@@ -262,8 +262,8 @@ MCPOpenTelemetryObservabilityBackend >> errorTypeFor: anError [
 ]
 
 { #category : 'private - spans' }
-MCPOpenTelemetryObservabilityBackend >> finishAttributesFor: aRecord error: anError errorType: errorType [
-	"What is known once a call is answered: sizes, and for a failure its kind. An exception is named by its nearest class in Pharo or MCP, and never by its message or stack."
+MCPOpenTelemetryObservabilityBackend >> finishAttributesFor: aRecord result: aToolResult origin: anOrigin error: anError errorType: errorType [
+	"What is known once a call is answered: sizes, what a listing found, and for a failure its kind and, when the input schema refused it, the keywords and paths it refused. An exception is named by its nearest class in Pharo or MCP, and never by its message or stack."
 
 	| attributes |
 	attributes := OrderedCollection new.
@@ -271,13 +271,16 @@ MCPOpenTelemetryObservabilityBackend >> finishAttributesFor: aRecord error: anEr
 		add: 'pharo.mcp.input.bytes' -> aRecord inputByteCount;
 		add: 'pharo.mcp.output.bytes' -> aRecord outputByteCount;
 		add: 'pharo.mcp.output_budget.exceeded' -> aRecord outputBudgetExceeded.
+	attributes addAll: (self resultAttributesFor: aToolResult origin: anOrigin).
 	errorType ifNil: [ ^ attributes asArray ].
 	attributes add: 'error.type' -> errorType.
 	aRecord errorKind ifNotEmpty: [ :kind | attributes add: 'pharo.mcp.error.kind' -> kind ].
 	(aRecord errorCode isNotEmpty and: [ self isReportableName: aRecord errorCode ]) ifTrue: [
 		attributes add: 'pharo.mcp.error.code' -> aRecord errorCode ].
 	aRecord schemaViolationCount > 0 ifTrue: [
-		attributes add: 'pharo.mcp.error.schema.violation_count' -> aRecord schemaViolationCount ].
+			attributes add: 'pharo.mcp.error.schema.violation_count' -> aRecord schemaViolationCount.
+			(self schemaKeywordsOf: aRecord) ifNotEmpty: [ :keywords | attributes add: 'pharo.mcp.error.schema.keywords' -> keywords ].
+			(self schemaPathsIn: aToolResult) ifNotEmpty: [ :paths | attributes add: 'pharo.mcp.error.schema.paths' -> paths ] ].
 	anError ifNotNil: [ attributes add: 'pharo.mcp.exception.type' -> (self reportableClassNameOf: anError class) ].
 	^ attributes asArray
 ]
@@ -339,6 +342,12 @@ MCPOpenTelemetryObservabilityBackend >> isConfiguredForTraces [
 	^ configured == true
 ]
 
+{ #category : 'private - reporting' }
+MCPOpenTelemetryObservabilityBackend >> isList: anObject [
+
+	^ anObject isCollection and: [ anObject isString not and: [ anObject isDictionary not ] ]
+]
+
 { #category : 'testing' }
 MCPOpenTelemetryObservabilityBackend >> isRecordingTraces [
 	"Whether it records traces through the providers as they are: unless it was configured from settings that ask for none, or providers that would not describe its server. It records locally either way."
@@ -379,12 +388,35 @@ MCPOpenTelemetryObservabilityBackend >> maxArgumentNames [
 	^ 32
 ]
 
+{ #category : 'private - reporting' }
+MCPOpenTelemetryObservabilityBackend >> maxSchemaViolations [
+
+	^ 8
+]
+
+{ #category : 'private - reporting' }
+MCPOpenTelemetryObservabilityBackend >> maxToolRefs [
+
+	^ 16
+]
+
 { #category : 'accessing' }
 MCPOpenTelemetryObservabilityBackend >> meter [
 
 	meter ifNotNil: [ ^ meter ].
 	meter := OTMeterProvider current meterNamed: 'mcp-pharo'.
 	^ meter
+]
+
+{ #category : 'private - reporting' }
+MCPOpenTelemetryObservabilityBackend >> nestedSchemaOf: aProperty [
+	"The schema an object-valued property describes, or of the objects in a list."
+
+	| items |
+	(aProperty mcpAt: #properties ifAbsent: [ nil ]) ifNotNil: [ ^ aProperty ].
+	items := aProperty mcpAt: #items ifAbsent: [ nil ].
+	(items isDictionary and: [ (items mcpAt: #properties ifAbsent: [ nil ]) isNotNil ]) ifTrue: [ ^ items ].
+	^ nil
 ]
 
 { #category : 'private - instruments' }
@@ -396,6 +428,74 @@ MCPOpenTelemetryObservabilityBackend >> operationDurationHistogram [
 		                              unit: 's'
 		                              description: 'MCP request duration as observed on the receiver'.
 	^ operationDurationHistogram
+]
+
+{ #category : 'private - reporting' }
+MCPOpenTelemetryObservabilityBackend >> options: aSet chosenBy: aValue at: aPath property: aProperty required: isRequired [
+
+	| nested default enum types |
+	nested := self nestedSchemaOf: aProperty.
+	nested ifNotNil: [
+			((self isList: aValue)
+				 ifTrue: [ aValue ]
+				 ifFalse: [ { aValue } ]) do: [ :each |
+					self
+						options: aSet
+						chosenIn: each
+						schema: nested
+						prefix: aPath ].
+			^ aSet ].
+	default := aProperty mcpAt: #default ifAbsent: [ Object new ].
+	aValue = default ifTrue: [ ^ aSet ].
+	enum := aProperty mcpAt: #enum ifAbsent: [ nil ].
+	enum ifNotNil: [
+			(enum includes: aValue) ifTrue: [ aSet add: aPath , '=' , aValue asString ].
+			^ aSet ].
+	isRequired ifFalse: [ aSet add: aPath ].
+	types := aProperty mcpAt: #type ifAbsent: [ #(  ) ].
+	types isString ifTrue: [ types := { types } ].
+	((types includes: 'array') and: [ types size > 1 and: [ (self isList: aValue) and: [ aValue size > 1 ] ] ]) ifTrue: [
+		aSet add: aPath , '[]' ].
+	^ aSet
+]
+
+{ #category : 'private - reporting' }
+MCPOpenTelemetryObservabilityBackend >> options: aSet chosenIn: arguments schema: aSchema prefix: aPrefix [
+
+	| required properties |
+	(arguments isDictionary and: [ aSchema isDictionary ]) ifFalse: [ ^ aSet ].
+	required := ((aSchema mcpAt: #required ifAbsent: [ #(  ) ]) ifNil: [ #(  ) ]) collect: [ :each | each asString ] as: Set.
+	properties := (aSchema mcpAt: #properties ifAbsent: [ nil ]) ifNil: [ Dictionary new ].
+	arguments keysAndValuesDo: [ :key :value |
+			| name path property |
+			name := key asString.
+			path := aPrefix ifEmpty: [ name ] ifNotEmpty: [ aPrefix , '.' , name ].
+			property := properties mcpAt: name ifAbsent: [ nil ].
+			(property isDictionary and: [ value isNotNil ]) ifTrue: [
+					self
+						options: aSet
+						chosenBy: value
+						at: path
+						property: property
+						required: (required includes: name) ] ].
+	^ aSet
+]
+
+{ #category : 'private - reporting' }
+MCPOpenTelemetryObservabilityBackend >> optionsChosenIn: inputObject for: aTool [
+	"The options a call chose among those its tool's schema offers: an optional property it gave, an enumerated value other than the default (side=class), and the list form of a property that also takes a single value (packages[]). Sorted, at most maxArgumentNames."
+
+	| schema options |
+	aTool ifNil: [ ^ #(  ) ].
+	schema := [ aTool inputSchema asJRPCJSON ]
+		          on: Error
+		          do: [ :error | ^ #(  ) ].
+	options := (self
+		            options: Set new
+		            chosenIn: inputObject
+		            schema: schema
+		            prefix: '') asArray sort.
+	^ options first: (options size min: self maxArgumentNames)
 ]
 
 { #category : 'private - reporting' }
@@ -440,6 +540,18 @@ MCPOpenTelemetryObservabilityBackend >> parentContextIn: contextDictionary [
 	^ [ OpenTelemetry textMapPropagator extract: OpenTelemetry currentContext from: meta ]
 		  on: Error
 		  do: [ :error | OpenTelemetry currentContext ]
+]
+
+{ #category : 'private - reporting' }
+MCPOpenTelemetryObservabilityBackend >> pointerFor: aPath [
+
+	(self isList: aPath) ifFalse: [ ^ nil ].
+	(aPath allSatisfy: [ :each | (each isInteger and: [ each >= 0 ]) or: [ self isReportableName: each ] ]) ifFalse: [ ^ nil ].
+	^ String streamContents: [ :stream |
+			  aPath do: [ :each |
+					  stream
+						  nextPut: $/;
+						  nextPutAll: each asString ] ]
 ]
 
 { #category : 'private - spans' }
@@ -505,7 +617,12 @@ MCPOpenTelemetryObservabilityBackend >> recordToolCallFinish: aRecord result: aT
 				errorType: errorType.
 			self
 				endSpan: (entry at: 1)
-				withAttributes: (self finishAttributesFor: aRecord error: anError errorType: errorType)
+				withAttributes: (self
+						 finishAttributesFor: aRecord
+						 result: aToolResult
+						 origin: (entry at: 3)
+						 error: anError
+						 errorType: errorType)
 				record: aRecord
 				at: aRecord finishedAt ].
 	^ aRecord
@@ -552,6 +669,52 @@ MCPOpenTelemetryObservabilityBackend >> reportableToolName: aToolName in: contex
 		  ifFalse: [ '_OTHER' ]
 ]
 
+{ #category : 'private - reporting' }
+MCPOpenTelemetryObservabilityBackend >> resultAttributesFor: aToolResult origin: anOrigin [
+	"What a result says it found, read from the structured content MCP's tools share: how many entries a listing matched and whether it showed them all; for a test run, how many tests ran and how it ended; for a tool search or description, the tools it named."
+
+	| content attributes |
+	attributes := OrderedCollection new.
+	content := [ aToolResult structuredContent ]
+		           on: Error
+		           do: [ :error | ^ attributes ].
+	content isDictionary ifFalse: [ ^ attributes ].
+	(content mcpAt: #pagination ifAbsent: [ nil ]) ifNotNil: [ :pagination |
+			pagination isDictionary ifTrue: [
+					| total truncated |
+					total := pagination mcpAt: #totalCount ifAbsent: [ nil ].
+					truncated := pagination mcpAt: #truncated ifAbsent: [ nil ].
+					total isInteger ifTrue: [ attributes add: 'pharo.mcp.result.count' -> total ].
+					(truncated == true or: [ truncated == false ]) ifTrue: [ attributes add: 'pharo.mcp.result.more' -> truncated ] ] ].
+	anOrigin = 'mcp' ifFalse: [ ^ attributes ].
+	attributes addAll: (self testAttributesIn: content).
+	(self toolNamesIn: content) ifNotEmpty: [ :names | attributes add: 'pharo.mcp.tool.refs' -> names ].
+	^ attributes
+]
+
+{ #category : 'private - reporting' }
+MCPOpenTelemetryObservabilityBackend >> schemaKeywordsOf: aRecord [
+	"The JSON Schema keywords the input broke, sorted, at most maxSchemaViolations."
+
+	| keywords |
+	keywords := ((aRecord schemaViolationKeywords ifNil: [ #(  ) ]) select: [ :each | self isReportableName: each ]) asArray sort.
+	^ keywords first: (keywords size min: self maxSchemaViolations)
+]
+
+{ #category : 'private - reporting' }
+MCPOpenTelemetryObservabilityBackend >> schemaPathsIn: aToolResult [
+	"Where in the input the schema refused it, as JSON pointers (/scope/packages/1), sorted, at most maxSchemaViolations. A path with a segment that does not read as a name or an index is left out."
+
+	| paths |
+	paths := Set new.
+	(self violationsFromDetails: (self errorDetailsFromToolResult: aToolResult)) do: [ :each |
+			(self pointerFor: (each isDictionary
+					  ifTrue: [ each mcpAt: #path ifAbsent: [ nil ] ]
+					  ifFalse: [ nil ])) ifNotNil: [ :pointer | paths add: pointer ] ].
+	paths := paths asArray sort.
+	^ paths first: (paths size min: self maxSchemaViolations)
+]
+
 { #category : 'accessing' }
 MCPOpenTelemetryObservabilityBackend >> serverInfo [
 	"What this backend's server says it is, as it was last configured with."
@@ -574,7 +737,7 @@ MCPOpenTelemetryObservabilityBackend >> sessionIdIn: aContext [
 
 { #category : 'private - spans' }
 MCPOpenTelemetryObservabilityBackend >> startAttributesFor: aRecord named: aToolName origin: anOrigin input: inputObject context: contextDictionary parent: aContext [
-	"The attributes known when a call starts, set before the span starts so a sampler sees them. They follow the OpenTelemetry conventions for MCP where those name the fact, and say nothing the caller passed but argument names and the session its trace context names."
+	"The attributes known when a call starts, set before the span starts so a sampler sees them. They follow the OpenTelemetry conventions for MCP where those name the fact, and say nothing the caller passed but argument names, the options its tool's schema offers that it chose, and the session its trace context names."
 
 	| attributes tool |
 	tool := contextDictionary at: #tool ifAbsent: [ nil ].
@@ -592,6 +755,7 @@ MCPOpenTelemetryObservabilityBackend >> startAttributesFor: aRecord named: aTool
 	(self argumentNamesIn: inputObject) ifNotEmpty: [ :names | attributes add: 'pharo.mcp.argument.names' -> names ].
 	(self unknownArgumentNamesIn: inputObject for: tool) ifNotEmpty: [ :names |
 		attributes add: 'pharo.mcp.argument.unknown_names' -> names ].
+	(self optionsChosenIn: inputObject for: tool) ifNotEmpty: [ :options | attributes add: 'pharo.mcp.argument.options' -> options ].
 	^ attributes asArray
 ]
 
@@ -617,6 +781,45 @@ MCPOpenTelemetryObservabilityBackend >> startSpanFor: aRecord named: aToolName i
 			span.
 			name.
 			origin }
+]
+
+{ #category : 'private - reporting' }
+MCPOpenTelemetryObservabilityBackend >> testAttributesIn: aContent [
+
+	| run failures errors |
+	run := aContent mcpAt: #runCount ifAbsent: [ nil ].
+	run isInteger ifFalse: [ ^ #(  ) ].
+	failures := aContent mcpAt: #failureCount ifAbsent: [ 0 ].
+	errors := aContent mcpAt: #errorCount ifAbsent: [ 0 ].
+	^ {
+		  ('pharo.mcp.test.count' -> run).
+		  ('pharo.mcp.test.outcome' -> ((errors isInteger and: [ errors > 0 ])
+			    ifTrue: [ 'errored' ]
+			    ifFalse: [
+					    (failures isInteger and: [ failures > 0 ])
+						    ifTrue: [ 'failed' ]
+						    ifFalse: [
+								    run > 0
+									    ifTrue: [ 'passed' ]
+									    ifFalse: [ 'none' ] ] ])) }
+]
+
+{ #category : 'private - reporting' }
+MCPOpenTelemetryObservabilityBackend >> toolNamesIn: aContent [
+	"The tools a search listed or a description described, at most maxToolRefs."
+
+	| entries names |
+	entries := (aContent mcpAt: #tools ifAbsent: [ nil ]) ifNil: [ #(  ) ].
+	(self isList: entries) ifFalse: [ entries := #(  ) ].
+	(aContent mcpAt: #tool ifAbsent: [ nil ]) ifNotNil: [ :tool | entries := entries asArray copyWith: tool ].
+	names := OrderedCollection new.
+	entries do: [ :each |
+			| name |
+			name := each isDictionary
+				        ifTrue: [ each mcpAt: #name ifAbsent: [ nil ] ]
+				        ifFalse: [ nil ].
+			((self isReportableName: name) and: [ (names includes: name asString) not ]) ifTrue: [ names add: name asString ] ].
+	^ (names first: (names size min: self maxToolRefs)) asArray
 ]
 
 { #category : 'accessing' }
