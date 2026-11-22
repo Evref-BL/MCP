@@ -170,8 +170,11 @@ MCPOpenTelemetryObservabilityBackend class >> startUp: resuming [
 
 { #category : 'configuring' }
 MCPOpenTelemetryObservabilityBackend class >> wantsTraces: aSettings [
+	"Whether aSettings ask for traces, once MCP's settings file has given the environment what it does not set itself."
 
-	^ [ aSettings isConfigured ]
+	^ [
+		  aSettings apply.
+		  aSettings isConfigured ]
 		  on: Error
 		  do: [ false ]
 ]
@@ -210,6 +213,17 @@ MCPOpenTelemetryObservabilityBackend >> configureFor: aServerInfo settings: aSet
 	(wanted or: [ self class registeredBackends anySatisfy: [ :each | each ~~ self and: [ each isConfiguredForTraces ] ] ]) ifTrue: [
 		self class resetProviders ].
 	self configureFor: aServerInfo configured: wanted
+]
+
+{ #category : 'configuring' }
+MCPOpenTelemetryObservabilityBackend >> configureForServer: anMCP [
+	"Configures this backend from MCP's settings as they are now, the OTEL_* environment or MCP's settings file."
+
+	self
+		configureFor: ([ anMCP serverIdentity ]
+				 on: Error
+				 do: [ nil ])
+		settings: MCPOpenTelemetrySettings current
 ]
 
 { #category : 'resource' }

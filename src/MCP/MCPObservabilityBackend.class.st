@@ -23,6 +23,13 @@ MCPObservabilityBackend >> clear [
 	^ self
 ]
 
+{ #category : 'configuring' }
+MCPObservabilityBackend >> configureForServer: anMCP [
+	"Prepares this backend to record anMCP's calls, when it was made for anMCP by default. Nothing to prepare unless a kind of backend says so."
+
+	
+]
+
 { #category : 'testing' }
 MCPObservabilityBackend >> enabled [
 

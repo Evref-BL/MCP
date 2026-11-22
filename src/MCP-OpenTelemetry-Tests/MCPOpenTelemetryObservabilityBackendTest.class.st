@@ -360,6 +360,20 @@ MCPOpenTelemetryObservabilityBackendTest >> testAnExceptionIsNamedByItsNearestKe
 ]
 
 { #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testAnImageCanMakeEveryServerRecordThroughOpenTelemetry [
+
+	| previous mcp |
+	previous := MCP observabilityBackendClass.
+	[
+		MCP observabilityBackendClass: MCPOpenTelemetryObservabilityBackend.
+		mcp := MCP new.
+		self assert: mcp observability class equals: MCPOpenTelemetryObservabilityBackend.
+		self assert: mcp observability serverInfo isNotNil ] ensure: [
+		MCP observabilityBackendClass: (previous = MCPLocalObservabilityBackend ifFalse: [ previous ]) ].
+	self assert: MCP new observability class equals: previous
+]
+
+{ #category : 'tests' }
 MCPOpenTelemetryObservabilityBackendTest >> testArgumentNamesTheToolDoesNotDeclareAreReportedAsUnknown [
 
 	| tool snapshot |

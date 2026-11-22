@@ -65,7 +65,22 @@ exports work as they do without OpenTelemetry.
 
 The exporter is configured the standard way, through the `OTEL_*` environment
 variables the image was started with; see opentelemetry-pharo for the ones it
-reads.
+reads. An image started from a launcher's window never sees a shell's
+environment, so when the environment sets no `OTEL_*` variable, the image
+reads MCP's settings file instead: `$XDG_CONFIG_HOME/pharo-mcp/otel.env`
+(`~/.config/pharo-mcp/otel.env`, `%APPDATA%\pharo-mcp\otel.env` on Windows),
+`KEY=value` lines of which only `OTEL_*` ones count.
+
+To make every server of an image record so, the ones it makes later
+included, evaluate once and save the image:
+
+```smalltalk
+MCP useOpenTelemetryObservabilityByDefault
+```
+
+Point the exporter at a collector on the same machine, OpenTelemetry's usual
+deployment: the VM resolves a host name on its only thread, so a slow DNS
+server holds the whole image while an export starts.
 
 Nothing is sent while they do not ask for traces: no traces exporter other
 than OTLP, and an OTLP endpoint (or an `OTEL_CONFIG_FILE`). The image reads
