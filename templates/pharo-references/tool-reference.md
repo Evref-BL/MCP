@@ -134,7 +134,9 @@ each method's source before and after.
 exists: it validates its input and answers structured data. A warning raised
 while the code runs is printed after the value, so a deprecated method's answer
 arrives with the deprecation that qualifies it, and so is what the code wrote to
-the Transcript. Code that ends on the Transcript itself answers only what it
+the Transcript. A load that would lose the image's unsaved changes is cancelled
+instead of asking, and its warning says so; to load over them, handle
+`MCMergeOrLoadWarning` with `load` in the code. Code that ends on the Transcript itself answers only what it
 wrote. As in a Playground, a lowercase name the code assigns without
 declaring is a variable of that one call; a name it only reads stays undeclared.
 An evaluation stops at its `timeoutSeconds`; work that takes longer runs in a

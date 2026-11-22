@@ -230,6 +230,23 @@ MCPToolEvaluateTest >> testEvaluateAnswersWhileAForkHoldsItsPriority [
 ]
 
 { #category : 'tests' }
+MCPToolEvaluateTest >> testEvaluateCancelsALoadOverUnsavedChanges [
+	"Monticello asks a person before it loads over the image's unsaved changes, and a call has none: Pharo 14 opened its dialog in a headless image, and the call waited out its time limit. The load is cancelled, which the warning answers nil for, and the warning says so rather than what loading would lose."
+
+	| data result |
+	result := self callToolNamed: 'evaluate' withArguments: {
+			          (#code -> 'MCMergeOrLoadWarning signalFor: { (MCPackage named: ''MCP-Tests-RunResources'') workingCopy }').
+			          (#timeoutSeconds -> 10) } asDictionary.
+	self deny: (result includesKey: #isError).
+	data := self dataFrom: result.
+	self assert: (data at: #resultPrintString) equals: 'nil'.
+	self
+		assert: (self warningsFrom: result) asArray
+		equals:
+		{ 'MCMergeOrLoadWarning: Cancelled a load that would lose the image''s unsaved changes to MCP-Tests-RunResources. To load over them, handle MCMergeOrLoadWarning with load.' }
+]
+
+{ #category : 'tests' }
 MCPToolEvaluateTest >> testEvaluateCatchesHaltAsRuntimeFailure [
 
 	| result text |
