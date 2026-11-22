@@ -9,10 +9,10 @@ MCP >> useOpenTelemetryObservability [
 
 { #category : '*MCP-OpenTelemetry' }
 MCP >> useOpenTelemetryObservabilityWith: aSettings [
-	"Records this server's work through OpenTelemetry, configured by aSettings."
+	"Records this server's work locally and through OpenTelemetry, configured by aSettings."
 
 	| backend |
-	backend := MCPOpenTelemetryObservabilityBackend new.
+	backend := self newObservabilityBackend: MCPOpenTelemetryObservabilityBackend.
 	backend
 		configureFor: ([ self serverIdentity ]
 				 on: Error

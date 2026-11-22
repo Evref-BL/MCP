@@ -498,9 +498,16 @@ MCP >> localUrlString [
 { #category : 'observability' }
 MCP >> newLocalObservabilityBackend [
 
-	^ MCPLocalObservabilityBackend new
+	^ self newObservabilityBackend: MCPLocalObservabilityBackend
+]
+
+{ #category : 'observability' }
+MCP >> newObservabilityBackend: aLocalBackendClass [
+	"A new backend of aLocalBackendClass, a kind of local backend, set up as this server's local backend is: describing this server and exporting to the default directory."
+
+	^ aLocalBackendClass new
 		  resourceMetadata: self observabilityResourceMetadata;
-		  exportDirectory: MCPLocalObservabilityBackend defaultExportDirectory;
+		  exportDirectory: aLocalBackendClass defaultExportDirectory;
 		  yourself
 ]
 

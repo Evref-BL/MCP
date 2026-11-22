@@ -144,6 +144,7 @@ MCPOpenTelemetryObservabilityBackendTest >> tearDown [
 	OTMeterProvider current: previousMeterProvider.
 	OTLoggerProvider current: previousLoggerProvider.
 	OTTracerProvider resourceDetectors: previousResourceDetectors.
+	backend := nil.
 	super tearDown
 ]
 
@@ -179,6 +180,18 @@ MCPOpenTelemetryObservabilityBackendTest >> testADescriptionPharoCannotCompleteK
 ]
 
 { #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testAFlushThatHangsHoldsTheCallerAtMostTheFlushTimeout [
+
+	| processor elapsed |
+	processor := MCPOpenTelemetryHangingSpanProcessor new.
+	tracerProvider addSpanProcessor: processor.
+	[
+		elapsed := Time millisecondsToRun: [ backend forceFlush ].
+		self assert: processor wasEntered.
+		self assert: elapsed < (backend flushTimeoutMilliseconds * 3) ] ensure: [ processor open ]
+]
+
+{ #category : 'tests' }
 MCPOpenTelemetryObservabilityBackendTest >> testAMalformedTraceContextStartsARootSpan [
 
 	| snapshot |
@@ -189,6 +202,17 @@ MCPOpenTelemetryObservabilityBackendTest >> testAMalformedTraceContextStartsARoo
 		error: nil.
 	snapshot := exporter onlySnapshot.
 	self assert: snapshot parentSpanContext isNil
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testANameReadsAsAnIdentifierOnlyInASCII [
+
+	self assert: (backend isReportableName: 'method_compile').
+	self assert: (backend isReportableName: '_private-name').
+	self deny: (backend isReportableName: 'café').
+	self deny: (backend isReportableName: '9lives').
+	self deny: (backend isReportableName: '').
+	self deny: (backend isReportableName: (String new: 65 withAll: $a))
 ]
 
 { #category : 'tests' }
@@ -223,13 +247,15 @@ MCPOpenTelemetryObservabilityBackendTest >> testAProtocolErrorReportsItsJSONRPCC
 ]
 
 { #category : 'tests' }
-MCPOpenTelemetryObservabilityBackendTest >> testAProviderThatRefusesTheDescriptionLeavesTheOthersDescribed [
+MCPOpenTelemetryObservabilityBackendTest >> testAProviderThatRefusesTheDescriptionStopsTheTraces [
+	"A provider left undescribed would describe the machine through the SDK's default detectors."
 
 	tracerProvider shutdown.
-	backend describeServer: (self serverInfoAt: '9.8.7').
-	self
-		assert: (meterProvider resource attributes at: 'service.name') equals: 'pharo-mcp';
-		assert: (loggerProvider resource attributes at: 'service.name') equals: 'pharo-mcp'
+	backend configureFor: (self serverInfoAt: '9.8.7') configured: true.
+	self deny: backend isRecordingTraces.
+	backend recordToolCallFinish: self startToolCall result: self successToolResult error: nil.
+	self assert: exporter snapshots isEmpty.
+	self assert: backend totalCallCount equals: 1
 ]
 
 { #category : 'tests' }
@@ -244,6 +270,16 @@ MCPOpenTelemetryObservabilityBackendTest >> testAToolTheServerDoesNotHaveIsRecor
 	self assert: snapshot name equals: 'tools/call no_such_tool'.
 	self assert: (self attributeNamed: 'error.type' in: snapshot) equals: 'tool_error'.
 	self assert: (self attributeNamed: 'pharo.mcp.error.code' in: snapshot) equals: 'ToolNotFound'
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testATraceThatFailsToStartLeavesTheCallRecordedLocally [
+
+	| record |
+	record := self startToolCallWith: nil.
+	backend recordToolCallFinish: record result: self successToolResult error: nil.
+	self assert: exporter snapshots isEmpty.
+	self assert: backend totalCallCount equals: 1
 ]
 
 { #category : 'tests' }
@@ -316,6 +352,37 @@ MCPOpenTelemetryObservabilityBackendTest >> testArgumentNamesTheToolDoesNotDecla
 ]
 
 { #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testAtMostMaxArgumentNamesAreReported [
+
+	| input |
+	input := ((1 to: 40) collect: [ :each | 'a' , each printString -> each ]) asDictionary.
+	self assert: (backend argumentNamesIn: input) size equals: backend maxArgumentNames
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testEachCallSaysWhoseToolItWentTo [
+	"mcp for MCP's own tools, other for another package's, unknown for a name no tool has."
+
+	| tool |
+	tool := MCPToolRegistry default toolNamed: 'class_get' ifAbsent: [ self skip: 'class_get is not registered' ].
+	{
+		tool.
+		Object new.
+		nil } do: [ :each |
+			backend
+				recordToolCallFinish: (backend
+						 recordToolCallStart: 'class_get'
+						 input: Dictionary new
+						 dispatchPath: 'direct'
+						 context: { (#tool -> each) } asDictionary)
+				result: self successToolResult
+				error: nil ].
+	self
+		assert: (exporter snapshots collect: [ :each | self attributeNamed: 'pharo.mcp.tool.origin' in: each ]) asArray
+		equals: #( 'mcp' 'other' 'unknown' )
+]
+
+{ #category : 'tests' }
 MCPOpenTelemetryObservabilityBackendTest >> testFailedToolCallMarksTheSpanAsAnErrorWithoutItsMessage [
 
 	| record snapshot |
@@ -339,6 +406,17 @@ MCPOpenTelemetryObservabilityBackendTest >> testFailedToolCallRecordsItsErrorTyp
 	self
 		assert: ((self measurementNamed: 'mcp.server.operation.duration') attributes at: 'error.type' ifAbsent: [ nil ])
 		equals: 'tool_error'
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testOnlyMCPsOwnPackagesNameAnException [
+	"A user's package cannot pass for MCP's by sharing its prefix."
+
+	self assert: (backend isReportablePackageName: 'MCP').
+	self assert: (backend isReportablePackageName: 'MCP-OpenTelemetry').
+	self assert: (backend isReportablePackageName: 'Kernel-Exceptions').
+	self deny: (backend isReportablePackageName: 'MCP-SomeoneElses').
+	self deny: (backend isReportablePackageName: 'MCPAcme')
 ]
 
 { #category : 'tests' }
@@ -390,13 +468,6 @@ MCPOpenTelemetryObservabilityBackendTest >> testReconfiguringHandsNoShutDownProc
 ]
 
 { #category : 'tests' }
-MCPOpenTelemetryObservabilityBackendTest >> testRecordingThatFailsLeavesTheCallUnrecorded [
-
-	self assert: (self startToolCallWith: nil) isNil.
-	self assert: exporter snapshots isEmpty
-]
-
-{ #category : 'tests' }
 MCPOpenTelemetryObservabilityBackendTest >> testSessionLifecycleGoesThroughTheLogRecordBuilderAndFlushes [
 	"The session events build a log record and force a flush on all three
 	providers, so this fails if any of that surface moves."
@@ -407,35 +478,44 @@ MCPOpenTelemetryObservabilityBackendTest >> testSessionLifecycleGoesThroughTheLo
 ]
 
 { #category : 'tests' }
-MCPOpenTelemetryObservabilityBackendTest >> testSettingsThatAskForNoTracesRecordNothing [
+MCPOpenTelemetryObservabilityBackendTest >> testSettingsThatAskForNoTracesRecordOnlyLocally [
 
 	| mcp |
 	mcp := MCP new.
 	backend := mcp useOpenTelemetryObservabilityWith: (self settingsAskingForTraces: false).
-	self deny: mcp observabilityEnabled.
-	self assert: self startToolCall isNil.
+	self deny: backend isRecordingTraces.
 	backend recordSessionStart.
-	self assert: exporter snapshots isEmpty
+	backend recordToolCallFinish: self startToolCall result: self successToolResult error: nil.
+	self assert: exporter snapshots isEmpty.
+	self assert: backend totalCallCount equals: 1.
+	self assert: (backend recentCalls collect: [ :each | each toolName ]) asArray equals: #( #method_compile )
 ]
 
 { #category : 'tests' }
-MCPOpenTelemetryObservabilityBackendTest >> testStartingTheImageAgainConfiguresItsServersFromTheSettingsItNowHas [
+MCPOpenTelemetryObservabilityBackendTest >> testStartingTheImageAgainConfiguresItsBackendsFromTheSettingsItNowHas [
 
-	| traced untraced untracedBackend |
-	traced := MCP new.
-	traced observability: backend.
-	untraced := MCP new.
-	untracedBackend := untraced observability.
+	| other |
+	other := MCPOpenTelemetryObservabilityBackend new.
+	backend configureFor: (self serverInfoAt: '9.8.7') configured: true.
 	MCPOpenTelemetryObservabilityBackend
 		reconfigure: {
-				traced.
-				untraced }
+				backend.
+				other }
 		with: (self settingsAskingForTraces: false).
-	self assert: traced observability identicalTo: backend.
-	self assert: backend isNoop.
-	self assert: untraced observability identicalTo: untracedBackend.
-	MCPOpenTelemetryObservabilityBackend reconfigure: { traced } with: (self settingsAskingForTraces: true).
-	self deny: backend isNoop
+	self deny: backend isRecordingTraces.
+	self deny: other isRecordingTraces.
+	self deny: OTTracerProvider current identicalTo: tracerProvider.
+	MCPOpenTelemetryObservabilityBackend reconfigure: { backend } with: (self settingsAskingForTraces: true).
+	self assert: backend isRecordingTraces
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testStartingTheImageAgainWithoutTracesLeavesProvidersNoBackendMade [
+	"The providers are global and may be the user's."
+
+	backend configureFor: (self serverInfoAt: '9.8.7') configured: false.
+	MCPOpenTelemetryObservabilityBackend reconfigure: { backend } with: (self settingsAskingForTraces: false).
+	self assert: OTTracerProvider current identicalTo: tracerProvider
 ]
 
 { #category : 'tests' }
@@ -445,6 +525,22 @@ MCPOpenTelemetryObservabilityBackendTest >> testStatusDistinguishesErrorsFromRes
 	self assert: (backend statusForResult: self errorToolResult error: nil) equals: 'error'.
 	self assert: (backend statusForResult: nil error: nil) equals: 'error'.
 	self assert: (backend statusForResult: self successToolResult error: Error new) equals: 'error'
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testStoppingWithoutTracesMakesNoProviders [
+	"Asking a provider for itself makes one from the environment, with the SDK's default exporter and resource."
+
+	backend configureFor: (self serverInfoAt: '9.8.7') configured: false.
+	OTTracerProvider current: nil.
+	OTMeterProvider current: nil.
+	OTLoggerProvider current: nil.
+	backend recordSessionStart.
+	backend shutdown.
+	{
+		OTTracerProvider.
+		OTMeterProvider.
+		OTLoggerProvider } do: [ :each | self assert: (each classVariableNamed: #Current) value isNil ]
 ]
 
 { #category : 'tests' }
@@ -488,6 +584,21 @@ MCPOpenTelemetryObservabilityBackendTest >> testTheResourceDescribesTheServerAnd
 		assert: (attributes at: 'process.runtime.name') equals: 'pharo';
 		assert: meterProvider resource attributes equals: attributes;
 		assert: loggerProvider resource attributes equals: attributes
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testTheSessionInTheCallersBaggageIsReported [
+
+	| snapshot |
+	backend
+		recordToolCallFinish: (self startToolCallWith: { (#meta -> {
+					  ('traceparent' -> self remoteTraceparent).
+					  ('baggage' -> 'session.id=s1a2b3c4,other=x') } asDictionary) } asDictionary)
+		result: self successToolResult
+		error: nil.
+	snapshot := exporter onlySnapshot.
+	self assert: (self attributeNamed: 'session.id' in: snapshot) equals: 's1a2b3c4'.
+	self assert: (self attributeNamed: 'other' in: snapshot) isNil
 ]
 
 { #category : 'tests' }
@@ -547,6 +658,16 @@ MCPOpenTelemetryObservabilityBackendTest >> testUsingOpenTelemetryInstallsABacke
 	self assert: backend class equals: MCPOpenTelemetryObservabilityBackend.
 	self assert: mcp observabilityEnabled.
 	self assert: (OTTracerProvider current resource attributes at: 'service.version') equals: mcp serverIdentity version
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testUsingOpenTelemetryWithoutTracesLeavesTheProvidersAlone [
+	"The providers are global and may be the user's."
+
+	backend := nil.
+	Smalltalk garbageCollect.
+	MCP new useOpenTelemetryObservabilityWith: (self settingsAskingForTraces: false).
+	self assert: OTTracerProvider current identicalTo: tracerProvider
 ]
 
 { #category : 'private' }
