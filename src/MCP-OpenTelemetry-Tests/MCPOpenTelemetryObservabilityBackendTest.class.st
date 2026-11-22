@@ -421,6 +421,14 @@ MCPOpenTelemetryObservabilityBackendTest >> testASchemaRefusalSaysWhichKeywordsA
 ]
 
 { #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testAServerATestMakesRecordsLocallyOnly [
+	"A test makes servers to see what they do, which is not use, so what they record stays in the image whatever its servers record with."
+
+	MCP observabilityBackendClass: MCPOpenTelemetryObservabilityBackend.
+	self assert: MCP new observability class equals: MCPLocalObservabilityBackend
+]
+
+{ #category : 'tests' }
 MCPOpenTelemetryObservabilityBackendTest >> testASessionThatDoesNotReadAsAnIdIsLeftOutForTheServersOwn [
 	"What the caller's baggage names as its session leaves the image only when it reads as an id; otherwise the call has the server's own session."
 
@@ -560,16 +568,16 @@ MCPOpenTelemetryObservabilityBackendTest >> testAnExceptionOfPharoOrMCPIsNamedBy
 
 { #category : 'tests' }
 MCPOpenTelemetryObservabilityBackendTest >> testAnImageCanMakeEveryServerRecordThroughOpenTelemetry [
+	"As the image makes its own servers, outside a test."
 
-	| previous mcp |
-	previous := MCP observabilityBackendClass.
-	[
-		MCP observabilityBackendClass: MCPOpenTelemetryObservabilityBackend.
-		mcp := MCP new.
-		self assert: mcp observability class equals: MCPOpenTelemetryObservabilityBackend.
-		self assert: mcp observability serverInfo isNotNil ] ensure: [
-		MCP observabilityBackendClass: (previous = MCPLocalObservabilityBackend ifFalse: [ previous ]) ].
-	self assert: MCP new observability class equals: previous
+	| mcp |
+	MCP observabilityBackendClass: MCPOpenTelemetryObservabilityBackend.
+	DefaultExecutionEnvironment beActiveDuring: [ mcp := MCP new ].
+	self assert: mcp observability class equals: MCPOpenTelemetryObservabilityBackend.
+	self assert: mcp observability serverInfo isNotNil.
+	MCP observabilityBackendClass: nil.
+	DefaultExecutionEnvironment beActiveDuring: [ mcp := MCP new ].
+	self assert: mcp observability class equals: MCPLocalObservabilityBackend
 ]
 
 { #category : 'tests' }

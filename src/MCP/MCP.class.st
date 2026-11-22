@@ -131,7 +131,7 @@ MCP class >> observabilityBackendClass [
 
 { #category : 'observability' }
 MCP class >> observabilityBackendClass: aLocalBackendClass [
-	"Makes the servers this image makes from now on record with aLocalBackendClass, a kind of local backend; nil goes back to MCPLocalObservabilityBackend. Saved with the image."
+	"Makes the servers this image makes from now on record with aLocalBackendClass, a kind of local backend, but for those a test makes, which record locally only; nil goes back to MCPLocalObservabilityBackend. Saved with the image."
 
 	DefaultObservabilityBackendClass := aLocalBackendClass
 ]
@@ -561,8 +561,13 @@ MCP >> localUrlString [
 
 { #category : 'observability' }
 MCP >> newLocalObservabilityBackend [
+	"The backend a new server records with: the image's kind, except in a test, which makes servers to see what they do, where it is the plain local one, so that what a test does never leaves the image as if it were use."
 
-	^ (self newObservabilityBackend: self class observabilityBackendClass)
+	| backendClass |
+	backendClass := CurrentExecutionEnvironment value isTest
+		                ifTrue: [ MCPLocalObservabilityBackend ]
+		                ifFalse: [ self class observabilityBackendClass ].
+	^ (self newObservabilityBackend: backendClass)
 		  configureForServer: self;
 		  yourself
 ]

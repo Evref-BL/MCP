@@ -86,6 +86,10 @@ included, evaluate once and save the image:
 MCP useOpenTelemetryObservabilityByDefault
 ```
 
+A server made while a test runs records locally only, whatever the image's
+servers record with: a test makes servers to see what they do, which is not
+use, so running tests sends nothing.
+
 Point the exporter at a collector on the same machine, OpenTelemetry's usual
 deployment: the VM resolves a host name on its only thread, so a slow DNS
 server holds the whole image while an export starts.
