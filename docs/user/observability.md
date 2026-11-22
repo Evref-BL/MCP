@@ -62,17 +62,13 @@ mcp useOpenTelemetryObservability
 
 The exporter is configured the standard way, through the `OTEL_*` environment
 variables the image was started with; see opentelemetry-pharo for the ones it
-reads. An image started by hand rarely has them, so when the environment sets
-no `OTEL_*` variable the image reads the settings file that joining the field
-telemetry writes: `$XDG_CONFIG_HOME/pharo-agent/otel.env`
-(`~/.config/pharo-agent/otel.env`, or `%APPDATA%\pharo-agent\otel.env` on
-Windows), one `OTEL_NAME=value` per line.
+reads.
 
-Nothing is recorded while neither asks for traces: no traces exporter other
+Nothing is recorded while they do not ask for traces: no traces exporter other
 than OTLP, and an OTLP endpoint (or an `OTEL_CONFIG_FILE`). The image reads
-its settings again each time it starts, and rebuilds its providers from them,
-so a saved image sends where its settings say now, or nothing once they are
-gone, never where they said when it was saved.
+its environment again each time it starts, and rebuilds its providers from it,
+so a saved image sends where its environment says now, or nothing once the
+variables are gone, never where they said when it was saved.
 
 Enabling it sets the image's OpenTelemetry resource, for every provider in
 the image and those made later, to what describes the server: `service.name`
