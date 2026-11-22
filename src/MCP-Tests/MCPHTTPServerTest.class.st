@@ -21,6 +21,22 @@ MCPHTTPServerTest >> postRequestWithContents: contents [
 ]
 
 { #category : 'private' }
+MCPHTTPServerTest >> refusalIn: response withStatus: anInteger [
+	"Answer the JSON-RPC error response a refusal carries, after checking it is one a client can read."
+
+	| body |
+	self assert: response code equals: anInteger.
+	self assert: response contentType equals: ZnMimeType applicationJson.
+	self assert: (response headers at: #'Content-Length') equals: response contents size printString.
+	body := STONJSON fromString: response contents.
+	self assert: (body at: 'jsonrpc') equals: '2.0'.
+	self assert: (body includesKey: 'id').
+	self assert: ((body at: 'error') at: 'code') isInteger.
+	self assert: ((body at: 'error') at: 'message') isString.
+	^ body
+]
+
+{ #category : 'private' }
 MCPHTTPServerTest >> responseForMethod: method [
 
 	| request |
@@ -121,6 +137,29 @@ MCPHTTPServerTest >> testAComputingEvaluationLeavesOtherCallsAnswered [
 ]
 
 { #category : 'tests' }
+MCPHTTPServerTest >> testAGetWithoutAnEventStreamIsRefused [
+
+	| response |
+	response := self responseForMethod: #GET.
+	self refusalIn: response withStatus: 405.
+	self assert: (response headers at: #Allow) equals: 'POST, OPTIONS'
+]
+
+{ #category : 'tests' }
+MCPHTTPServerTest >> testAModernRequestMissingAHeaderIsRefused [
+	"A modern request mirrors its version and method into headers. One sent without them is refused with an error naming the request it refuses."
+
+	| request body |
+	request := self postRequestWithContents: (String streamContents: [ :stream |
+				            stream
+				            << '{"jsonrpc":"2.0","id":7,"method":"tools/list","params":{"_meta":{"io.modelcontextprotocol/protocolVersion":"'
+				            << MCP latestProtocolVersion << '"}}}' ]).
+	body := self refusalIn: (self responseForRequest: request using: MCPHTTPServer new) withStatus: 400.
+	self assert: (body at: 'id') equals: 7.
+	self assert: ((body at: 'error') at: 'code') equals: MCPHeaderMismatch errorCode
+]
+
+{ #category : 'tests' }
 MCPHTTPServerTest >> testAcceptsSupportedProtocolVersion [
 
 	| request response |
@@ -143,12 +182,11 @@ MCPHTTPServerTest >> testAllowsLoopbackOriginAndReturnsCORSHeaders [
 ]
 
 { #category : 'tests' }
-MCPHTTPServerTest >> testGetResponseIsExplicitlyEmpty [
+MCPHTTPServerTest >> testAnUnsupportedMethodIsRefused [
 
 	| response |
-	response := self responseForMethod: #GET.
-	self assert: response code equals: 405.
-	self assert: (response headers at: #'Content-Length') equals: '0'.
+	response := self responseForMethod: #DELETE.
+	self refusalIn: response withStatus: 405.
 	self assert: (response headers at: #Allow) equals: 'POST, OPTIONS'
 ]
 
@@ -227,23 +265,19 @@ MCPHTTPServerTest >> testOptionsRemainsBodylessWithoutContentLength [
 { #category : 'tests' }
 MCPHTTPServerTest >> testPostRequiresJSONContentType [
 
-	| request response |
+	| request |
 	request := self postRequestWithContents: '{}'.
 	request headers at: 'Content-Type' put: 'text/plain'.
-	response := self responseForRequest: request using: MCPHTTPServer new.
-	self assert: response code equals: 415.
-	self assert: (response headers at: #'Content-Length') equals: '0'
+	self refusalIn: (self responseForRequest: request using: MCPHTTPServer new) withStatus: 415
 ]
 
 { #category : 'tests' }
 MCPHTTPServerTest >> testPostRequiresSupportedAcceptTypes [
 
-	| request response |
+	| request |
 	request := self postRequestWithContents: '{}'.
 	request headers at: 'Accept' put: 'application/json'.
-	response := self responseForRequest: request using: MCPHTTPServer new.
-	self assert: response code equals: 406.
-	self assert: (response headers at: #'Content-Length') equals: '0'
+	self refusalIn: (self responseForRequest: request using: MCPHTTPServer new) withStatus: 406
 ]
 
 { #category : 'tests' }
@@ -253,34 +287,25 @@ MCPHTTPServerTest >> testRejectsNonLoopbackOrigin [
 	request := ZnRequest method: #GET url: ZnUrl new.
 	request headers at: 'Origin' put: 'https://attacker.example'.
 	response := self responseForRequest: request using: MCPHTTPServer new.
-	self assert: response code equals: 403.
-	self assert: (response headers at: #'Content-Length') equals: '0'.
+	self assert: ((self refusalIn: response withStatus: 403) at: 'id') isNil.
 	self deny: (response headers includesKey: #'Access-Control-Allow-Origin')
 ]
 
 { #category : 'tests' }
 MCPHTTPServerTest >> testRejectsUnsupportedProtocolVersion [
+	"The refusal lists the versions this server supports, so a client can retry with one of them."
 
-	| request response |
+	| request error |
 	request := ZnRequest method: #GET url: ZnUrl new.
 	request headers at: 'MCP-Protocol-Version' put: '1900-01-01'.
-	response := self responseForRequest: request using: MCPHTTPServer new.
-	self assert: response code equals: 400.
-	self assert: (response headers at: #'Content-Length') equals: '0'
+	error := (self refusalIn: (self responseForRequest: request using: MCPHTTPServer new) withStatus: 400) at: 'error'.
+	self assert: (error at: 'code') equals: MCPUnsupportedProtocolVersion errorCode.
+	self assert: ((error at: 'data') at: 'requested') equals: '1900-01-01'.
+	self assert: ((error at: 'data') at: 'supported') asArray equals: MCP supportedProtocolVersions asArray
 ]
 
 { #category : 'tests' }
 MCPHTTPServerTest >> testServerBindsToLoopbackByDefault [
 
 	self assert: MCPHTTPServer new bindingAddress equals: #[ 127 0 0 1 ]
-]
-
-{ #category : 'tests' }
-MCPHTTPServerTest >> testUnsupportedMethodResponseIsExplicitlyEmpty [
-
-	| response |
-	response := self responseForMethod: #DELETE.
-	self assert: response code equals: 405.
-	self assert: (response headers at: #'Content-Length') equals: '0'.
-	self assert: (response headers at: #Allow) equals: 'POST, OPTIONS'
 ]
