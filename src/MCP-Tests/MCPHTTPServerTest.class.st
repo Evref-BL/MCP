@@ -327,6 +327,28 @@ MCPHTTPServerTest >> testAllowsLoopbackOriginAndReturnsCORSHeaders [
 ]
 
 { #category : 'tests' }
+MCPHTTPServerTest >> testAnEmptyBodyIsAParseError [
+
+	self timeLimit: 30 seconds.
+	self withServerDo: [ :server |
+			#( '0' '-1' ) do: [ :each |
+					| body |
+					body := self
+						        refusalIn: (self
+								         answerTo: {
+										         'POST / HTTP/1.1'.
+										         'Host: 127.0.0.1'.
+										         'Accept: application/json, text/event-stream'.
+										         'Content-Type: application/json'.
+										         ('Content-Length: ' , each).
+										         ''.
+										         '' }
+								         on: server)
+						        withStatus: 400.
+					self assert: ((body at: 'error') at: 'code') = -32700 description: each ] ]
+]
+
+{ #category : 'tests' }
 MCPHTTPServerTest >> testAnErrorServingAConnectionEndsOnlyThatConnection [
 	"Here the answer to a request that could not be read cannot be written either. Unhandled in the worker, that error would quit a headless image."
 
@@ -351,6 +373,8 @@ MCPHTTPServerTest >> testHandlesConcurrentPostRequests [
 	completed := Semaphore new.
 	responses := Array new: 4.
 	server := MCP new server.
+	"A failure says what was raised."
+	server messageProcessor includesErrorData: true.
 	[
 		server port: 0.
 		server start.
@@ -384,6 +408,18 @@ MCPHTTPServerTest >> testHandlesConcurrentPostRequests [
 					description:
 					(String streamContents: [ :stream | stream << 'Unexpected body at index ' << index asString << ': ' << response contents ]) ] ]
 		ensure: [ server stop ]
+]
+
+{ #category : 'tests' }
+MCPHTTPServerTest >> testJSONThatIsNoMessageIsRefusedWith400 [
+	"Neither an object nor a list of them, it is no message the server can accept, like a body that is not JSON."
+
+	#( 'null' '42' '"ping"' ) do: [ :each |
+			| body |
+			body := self
+				        refusalIn: (self responseForRequest: (self postRequestWithContents: each) using: MCPHTTPServer new)
+				        withStatus: 400.
+			self assert: ((body at: 'error') at: 'code') = -32600 description: each ]
 ]
 
 { #category : 'tests' }

@@ -22,11 +22,30 @@ Class {
 		'previousSpanProcessor',
 		'previousSpanExporter',
 		'previousDefaultBackendClass',
-		'previousProviderState'
+		'previousProviderState',
+		'previousEnvironment'
 	],
 	#category : 'MCP-OpenTelemetry-Tests',
 	#package : 'MCP-OpenTelemetry-Tests'
 }
+
+{ #category : 'private' }
+MCPOpenTelemetryObservabilityBackendTest >> aProviderFromTheEnvironmentReaches: requests [
+	"Whether a tracer provider the SDK makes from the environment as it is now exports to the receiver collecting requests. The span processor and exporter the SDK keeps for the next provider are dropped before and after, so that it makes its own from the environment and leaves none behind."
+
+	| provider |
+	(OTSpanProcessor classVariableNamed: #Current) value: nil.
+	(OTSpanExporter classVariableNamed: #Current) value: nil.
+	[
+		provider := OTTracerProvider readConfiguration.
+		((provider tracerNamed: 'mcp-pharo-tests') spanBuilderNamed: 'probe') startSpan end.
+		provider shutdown ] ensure: [
+			(OTSpanProcessor classVariableNamed: #Current) value: nil.
+			(OTSpanExporter classVariableNamed: #Current) value: nil ].
+	^ (self waitUntil: [ requests isEmpty not ]) and: [
+			  [ requests isEmpty ] whileFalse: [ requests next ].
+			  true ]
+]
 
 { #category : 'private' }
 MCPOpenTelemetryObservabilityBackendTest >> attributeNamed: aName in: aSnapshot [
@@ -64,6 +83,20 @@ MCPOpenTelemetryObservabilityBackendTest >> errorToolResultWith: someDetails [
 		  structuredContent: { (#error -> someDetails asDictionary) } asDictionary
 ]
 
+{ #category : 'running' }
+MCPOpenTelemetryObservabilityBackendTest >> isolateEnvironment [
+	"Whatever a test makes from the image's environment, as the SDK makes providers when a reconfiguration drops the test's own, sends nothing: the OTEL_* variables, which may name where the image's real telemetry goes, give way to exporters that export nothing, and MCP's settings file is looked for where there is none."
+
+	| environment |
+	environment := OSEnvironment current.
+	previousEnvironment := Dictionary new.
+	(self settingNamesIn: environment) , #( 'OTEL_TRACES_EXPORTER' 'OTEL_METRICS_EXPORTER' 'OTEL_LOGS_EXPORTER' 'XDG_CONFIG_HOME' )
+		do: [ :each | previousEnvironment at: each put: (environment at: each ifAbsent: [ nil ]) ].
+	(self settingNamesIn: environment) do: [ :each | environment removeKey: each ].
+	#( 'OTEL_TRACES_EXPORTER' 'OTEL_METRICS_EXPORTER' 'OTEL_LOGS_EXPORTER' ) do: [ :each | environment at: each put: 'none' ].
+	environment at: 'XDG_CONFIG_HOME' put: (FileLocator temp / 'mcp-opentelemetry-tests-have-no-settings') fullName
+]
+
 { #category : 'private' }
 MCPOpenTelemetryObservabilityBackendTest >> mcp [
 	"A server recording through the backend under test."
@@ -89,6 +122,32 @@ MCPOpenTelemetryObservabilityBackendTest >> measurements [
 ]
 
 { #category : 'private' }
+MCPOpenTelemetryObservabilityBackendTest >> pointTheEnvironmentAt: aUrlString settingsIn: aDirectory [
+	"Points the image's environment, and an MCP settings file it would read in aDirectory, at aUrlString, everything exported there at once."
+
+	| settings environment |
+	settings := {
+		            ('OTEL_EXPORTER_OTLP_ENDPOINT' -> aUrlString).
+		            ('OTEL_EXPORTER_OTLP_PROTOCOL' -> 'http/json').
+		            ('OTEL_TRACES_EXPORTER' -> 'otlp').
+		            ('OTEL_METRICS_EXPORTER' -> 'otlp').
+		            ('OTEL_LOGS_EXPORTER' -> 'otlp').
+		            ('OTEL_BSP_SCHEDULE_DELAY' -> '100').
+		            ('OTEL_METRIC_EXPORT_INTERVAL' -> '100') }.
+	(aDirectory / 'pharo-mcp') ensureCreateDirectory.
+	aDirectory / 'pharo-mcp' / 'otel.env' writeStreamDo: [ :stream |
+			settings do: [ :each |
+					stream
+						nextPutAll: each key;
+						nextPut: $=;
+						nextPutAll: each value;
+						lf ] ].
+	environment := OSEnvironment current.
+	settings do: [ :each | environment at: each key put: each value ].
+	environment at: 'XDG_CONFIG_HOME' put: aDirectory fullName
+]
+
+{ #category : 'private' }
 MCPOpenTelemetryObservabilityBackendTest >> providerState [
 	"What the backend knows of the image's providers: the settings they were made from, the spans of the calls running, and the tracer providers waiting for those calls to end. A test starts with none of the image's, so that it neither keeps a provider of the image's alive nor leaves one of its own to the image."
 
@@ -108,6 +167,19 @@ MCPOpenTelemetryObservabilityBackendTest >> remoteTraceparent [
 	"A caller's trace context, as SEP-414 carries it in a request's _meta."
 
 	^ '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01'
+]
+
+{ #category : 'running' }
+MCPOpenTelemetryObservabilityBackendTest >> restoreEnvironment [
+	"Puts the image's environment back as the test found it, dropping whatever OTEL_* variable the test set."
+
+	| environment |
+	environment := OSEnvironment current.
+	(self settingNamesIn: environment) do: [ :each | environment removeKey: each ].
+	previousEnvironment keysAndValuesDo: [ :name :value |
+			value
+				ifNil: [ environment at: name ifPresent: [ :ignored | environment removeKey: name ] ]
+				ifNotNil: [ environment at: name put: value ] ]
 ]
 
 { #category : 'private' }
@@ -130,9 +202,10 @@ MCPOpenTelemetryObservabilityBackendTest >> sessionOfACallAt: aDateAndTime conte
 
 { #category : 'running' }
 MCPOpenTelemetryObservabilityBackendTest >> setUp [
-	"The backend under test is configured as a server configures it, from settings that ask for traces."
+	"The backend under test is configured as a server configures it, from settings that ask for traces, in an environment from which nothing made sends anything."
 
 	super setUp.
+	self isolateEnvironment.
 	previousTracerProvider := (OTTracerProvider classVariableNamed: #Current) value.
 	previousMeterProvider := OTMeterProvider currentOrNil.
 	previousLoggerProvider := OTLoggerProvider currentOrNil.
@@ -161,6 +234,12 @@ MCPOpenTelemetryObservabilityBackendTest >> setUp [
 	OTLoggerProvider current: loggerProvider.
 	backend := MCPOpenTelemetryObservabilityBackend new.
 	backend configureFor: (self serverInfoAt: '9.8.7') configured: true
+]
+
+{ #category : 'private' }
+MCPOpenTelemetryObservabilityBackendTest >> settingNamesIn: anEnvironment [
+
+	^ (anEnvironment keys select: [ :each | each asString beginsWith: 'OTEL_' ]) asArray
 ]
 
 { #category : 'private' }
@@ -244,6 +323,7 @@ MCPOpenTelemetryObservabilityBackendTest >> tearDown [
 	self registry value: previousBackends.
 	self defaultBackendClass value: previousDefaultBackendClass.
 	backend := nil.
+	self restoreEnvironment.
 	super tearDown
 ]
 
@@ -331,16 +411,17 @@ MCPOpenTelemetryObservabilityBackendTest >> testACallRunningWhileAnotherServerIs
 MCPOpenTelemetryObservabilityBackendTest >> testACallStartingWhileTheProvidersAreReplacedStartsInTheNewOnes [
 	"A call's span is started and known to be running in the critical section a reconfiguration holds, so a call starting meanwhile waits for it, and starts in the providers it made rather than in one it shuts down."
 
-	| record span |
+	| record newExporter |
 	self timeLimit: 30 seconds.
+	newExporter := MCPOpenTelemetryRecordingSpanExporter new.
 	MCPOpenTelemetryObservabilityBackend providersMutex critical: [
 			[ record := self startToolCall ] forkAt: Processor activePriority + 1.
-			MCPOpenTelemetryObservabilityBackend reconfigure: { backend } with: (self settingsAskingForTraces: true) ].
+			MCPOpenTelemetryObservabilityBackend reconfigure: { backend } with: (self settingsAskingForTraces: true).
+			OTTracerProvider current addSpanProcessor: (OTSimpleSpanProcessor new exporter: newExporter) ].
 	self assert: (self waitUntil: [ record isNotNil ]).
-	span := backend spanOfRecord: record.
-	self assert: (span instVarNamed: #tracerProvider) identicalTo: (OTTracerProvider classVariableNamed: #Current) value.
-	self deny: (span instVarNamed: #tracerProvider) identicalTo: tracerProvider.
 	backend recordToolCallFinish: record result: self successToolResult error: nil.
+	self assert: newExporter snapshots size equals: 1.
+	self assert: exporter snapshots isEmpty.
 	self assert: MCPOpenTelemetryObservabilityBackend spansInFlight isEmpty
 ]
 
@@ -463,6 +544,47 @@ MCPOpenTelemetryObservabilityBackendTest >> testAFlushThatHangsHoldsTheCallerAtM
 		elapsed := Time millisecondsToRun: [ backend forceFlush ].
 		self assert: processor wasEntered.
 		self assert: elapsed < (backend flushTimeoutMilliseconds * 3) ] ensure: [ processor open ]
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testAFullRunSendsNothingWhereTheEnvironmentSaysToSend [
+	"Someone running these tests in an image that records its use must not send a record that looks like real use. With the environment and MCP's settings file both naming a receiver, which a provider made from that environment reaches before and after, every other test of the package runs, each as a run of its own would run it, and the receiver gets nothing from them."
+
+	| requests receiver directory suite |
+	self timeLimit: 300 seconds.
+	requests := SharedQueue new.
+	receiver := MCPSocketSafeZnServer new.
+	receiver
+		port: 0;
+		bindingAddress: #[ 127 0 0 1 ];
+		delegate: (ZnValueDelegate with: [ :request |
+						 requests nextPut: request uri pathPrintString.
+						 ZnResponse ok: (ZnEntity json: '{}') ]).
+	directory := (FileLocator temp / ('mcp-opentelemetry-tests-' , UUID new asString)) asFileReference.
+	[
+		receiver start.
+		self assert: (self waitUntil: [ receiver isListening ]) description: 'The receiver does not listen.'.
+		self pointTheEnvironmentAt: 'http://127.0.0.1:' , receiver port printString settingsIn: directory.
+		self
+			assert: (self aProviderFromTheEnvironmentReaches: requests)
+			description: 'A provider made from the environment does not reach the receiver.'.
+		suite := TestSuite named: self class package name.
+		suite addTests: (self class buildSuite tests reject: [ :each | each selector = self selector ]).
+		suite addTests: MCPOpenTelemetrySettingsTest buildSuite tests.
+		DefaultExecutionEnvironment beActiveDuring: [ suite run ].
+		(Delay forSeconds: 1) wait.
+		self assert: requests isEmpty description: [
+				String streamContents: [ :stream |
+						stream nextPutAll: 'Sent to the receiver:'.
+						[ requests isEmpty ] whileFalse: [
+								stream
+									space;
+									nextPutAll: requests next ] ] ].
+		self
+			assert: (self aProviderFromTheEnvironmentReaches: requests)
+			description: 'A provider made from the environment no longer reaches the receiver.' ] ensure: [
+			receiver stop.
+			directory ensureDeleteAll ]
 ]
 
 { #category : 'tests' }

@@ -97,7 +97,7 @@ MCPMessageProcessor >> errorResponseFor: anException inEraOf: aJRPCRequestObject
 	"Some conditions were renumbered between the eras, so a modern request is answered with the code its revision gives the condition."
 
 	| response |
-	response := self withoutInternalDataUnlessAsked: (anException asJRPCResponseWithId: aJRPCRequestObject id) for: anException.
+	response := self withoutInternalDataUnlessAsked: (anException mcpJRPCResponseWithId: aJRPCRequestObject id) for: anException.
 	(MCP isModernRequest: aJRPCRequestObject params) ifFalse: [ ^ response ].
 	response error code: (self modernErrorCodes at: response error code ifAbsent: [ response error code ]).
 	^ response
@@ -131,7 +131,9 @@ MCPMessageProcessor >> handleJSON: aJSONString [
 		                do: [ :exception |
 				                self debugMode
 					                ifTrue: [ exception pass ]
-					                ifFalse: [ exception return: (self withoutInternalDataUnlessAsked: exception asJRPCResponse for: exception) ] ].
+					                ifFalse: [
+					                exception return:
+						                (self withoutInternalDataUnlessAsked: (exception mcpJRPCResponseWithId: nil) for: exception) ] ].
 	^ jrpcResponse beConvertedBy: self
 ]
 

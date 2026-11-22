@@ -95,17 +95,19 @@ MCPHTTPServer >> answerOptionsWith: response [
 
 { #category : 'initialization' }
 MCPHTTPServer >> answerPost: request with: response [
-	"A body that is not JSON is no message the server can accept, answered with 400 as Streamable HTTP asks, and a parse error saying why."
+	"A body that is no JSON-RPC message, a request, a notification, a response or a batch of them, is none the server can accept, answered with 400 as Streamable HTTP asks, and a JSON-RPC error saying why: an empty body or one that is not JSON is a parse error."
 
 	| body mismatch payload |
 	body := self bodyOf: request.
 	mismatch := self headerMismatchFor: request body: body.
 	mismatch ifNotNil: [ ^ self answerRefusal: response statusLine: ZnStatusLine badRequest error: mismatch ].
 	(self isSubscriptionsListen: body) ifTrue: [ ^ self answerSubscriptionsListen: body with: response ].
-	payload := self handleJSON: request contents.
+	payload := self handleJSON: (request contents ifNil: [ '' ]).
 	(payload isString and: [ payload isEmpty ]) ifTrue: [ ^ self answerWithoutBody: response statusLine: ZnStatusLine accepted ].
 	response
-		statusLine: (body ifNil: [ ZnStatusLine badRequest ] ifNotNil: [ ZnStatusLine ok ]);
+		statusLine: ((body isDictionary or: [ body isArray ])
+				 ifTrue: [ ZnStatusLine ok ]
+				 ifFalse: [ ZnStatusLine badRequest ]);
 		entity: (ZnEntity json: payload).
 	^ response
 ]
