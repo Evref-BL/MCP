@@ -22,6 +22,13 @@ Notification >> mcpResume [
 ]
 
 { #category : '*MCP' }
+Notification >> mcpResumedDescription [
+	"How a tool that resumed me with mcpResume reports me: my description, unless that says something other than what resuming me did."
+
+	^ self description
+]
+
+{ #category : '*MCP' }
 Notification >> mcpResumesAtToolBoundary [
 	"A notification is not a failed call, so the boundary around a tool call resumes it."
 

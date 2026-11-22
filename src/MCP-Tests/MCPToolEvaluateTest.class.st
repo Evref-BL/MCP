@@ -265,6 +265,32 @@ MCPToolEvaluateTest >> testEvaluateDeclaresAnUndeclaredNameAsAPlaygroundDoes [
 ]
 
 { #category : 'tests' }
+MCPToolEvaluateTest >> testEvaluateDoesNotLoadOverUnsavedChanges [
+	"Monticello asks a person before it loads over the image's unsaved changes, and a call has none: Pharo 14 opened its dialog in a headless image, and the call waited out its time limit. The warning answers nil, which cancels only the step loading the packages it names, and says so rather than what loading would lose."
+
+	| data result |
+	result := self callToolNamed: 'evaluate' withArguments: {
+			          (#code -> 'MCMergeOrLoadWarning signalFor: { (MCPackage named: ''MCP-Tests-RunResources'') workingCopy }').
+			          (#timeoutSeconds -> 10) } asDictionary.
+	self deny: (result includesKey: #isError).
+	data := self dataFrom: result.
+	self assert: (data at: #resultPrintString) equals: 'nil'.
+	self
+		assert: (self warningsFrom: result) asArray
+		equals:
+		{ 'MCMergeOrLoadWarning: Did not load MCP-Tests-RunResources: loading it would lose the image''s unsaved changes to it. The rest of the load went on, without the packages loaded together with it. To load over the changes, handle MCMergeOrLoadWarning with load.' }.
+	result := self callToolNamed: 'evaluate' withArguments: {
+			          (#code
+			           ->
+			           'MCMergeOrLoadWarning signalFor: { (MCPackage named: ''MCP-Tests-RunResources'') workingCopy. (MCPackage named: ''MCP-Tests-Resources'') workingCopy }').
+			          (#timeoutSeconds -> 10) } asDictionary.
+	self
+		assert: (self warningsFrom: result) asArray
+		equals:
+		{ 'MCMergeOrLoadWarning: Did not load MCP-Tests-Resources, MCP-Tests-RunResources: loading them would lose the image''s unsaved changes to them. The rest of the load went on, without the packages loaded together with them. To load over the changes, handle MCMergeOrLoadWarning with load.' }
+]
+
+{ #category : 'tests' }
 MCPToolEvaluateTest >> testEvaluateEndingOnTheTranscriptAnswersWhatItWrote [
 	"A cascade of show: answers the recorder that stood in for the Transcript. What it wrote is the answer; the recorder is nobody's business, and a value line reading Transcript would say nothing more."
 
@@ -496,6 +522,17 @@ MCPToolEvaluateTest >> testEvaluateOmitsTruncationFieldsForSmallResults [
 		        (self callToolNamed: 'evaluate' withArguments: { (#code -> '#( 1 2 3 )') } asDictionary).
 	self deny: (data includesKey: #truncated).
 	self deny: (data includesKey: #resultSize)
+]
+
+{ #category : 'tests' }
+MCPToolEvaluateTest >> testEvaluatePrintsAValueWhosePrintingSignalsANotificationTheBoundaryRefuses [
+	"Printing the value runs the caller's code too, so a notification the boundary refuses to resume gets its default action there, as it does in the code itself."
+
+	| data result |
+	result := self callToolNamed: 'evaluate' withArguments: { (#code -> 'MCPToolNotifyingPrintTarget new') } asDictionary.
+	data := self dataFrom: result.
+	self deny: (result includesKey: #isError).
+	self assert: (data at: #resultPrintString) equals: 'printed after #mcpDefaultAction'
 ]
 
 { #category : 'tests' }

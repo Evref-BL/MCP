@@ -187,6 +187,17 @@ MCPToolRunTestCoverageTest >> testNotificationsKeepTheNormalTestRunnerBehaviour 
 ]
 
 { #category : 'tests' }
+MCPToolRunTestCoverageTest >> testNotificationsTheBoundaryRefusesKeepTheNormalTestRunnerBehaviour [
+
+	| arguments data |
+	arguments := self arguments.
+	arguments at: #classes put: #( 'MCPToolRefusedNotificationTargetTest' ).
+	data := self dataFrom: (self runCoverage: arguments).
+	self assert: (data at: #passedCount) equals: 2.
+	self assertNoCoverageLinks
+]
+
+{ #category : 'tests' }
 MCPToolRunTestCoverageTest >> testPharosOwnMethodsAreLeftOutWithAWarning [
 	"Measured, the methods a coverage link runs through would stop the image, so they are left out and the answer says so. Another package's extension to IdentitySet, as Fuel has on Pharo 10, is that package's to measure."
 

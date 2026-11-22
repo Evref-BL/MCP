@@ -34,3 +34,12 @@ MCPCommand >> removePackageIfEmptyNamed: aPackageName [
 					^ true ] ].
 	^ false
 ]
+
+{ #category : 'private' }
+MCPCommand >> resumingEveryNotificationDuring: aBlock [
+	"Runs aBlock, code a tool runs for its caller, a test or an expression, whose notifications are its own: each it leaves unhandled resumes with what the image would have done had no tool called it. The boundary around a call refuses a refactoring warning so that a change the tool makes stops there unless forced, and the caller's code is no change of the tool's."
+
+	^ aBlock
+		  on: Notification
+		  do: [ :notification | notification mcpResume ]
+]

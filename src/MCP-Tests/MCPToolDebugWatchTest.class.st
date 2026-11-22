@@ -23,6 +23,39 @@ MCPToolDebugWatchTest >> seriesFor: aMethodName watching: aVariableName in: data
 ]
 
 { #category : 'tests' }
+MCPToolDebugWatchTest >> testAProcessLeftInAWatchedMethodFinishesItAfterTheWatch [
+	"A probe sits in a method any process may run. One still in the method when the watch ends runs into the probe after its removal, where Pharo's hit announcement asks the frame's source node, which the method no longer gives: the failure, in a process with no handler, quit a headless image. This process waits in an assignment the watch probes, entered once the probes are in."
+
+	| gate done probed answer data |
+	gate := Semaphore new.
+	done := Semaphore new.
+	probed := false.
+	[
+		[ (MCPDebugWatchTestTarget >> #sumOf:) hasMetaLinks or: [ gate isSignaled ] ] whileFalse: [ (Delay forMilliseconds: 1) wait ].
+		answer := [
+			          MCPDebugWatchTestTarget new sumOf: {
+					          1.
+					          [
+						          probed := thisContext sender compiledCode method hasMetaLinks.
+						          gate wait.
+						          2 ] } ]
+			          on: Error
+			          do: [ :error | error ].
+		done signal ] fork.
+	data := [
+		        self dataFrom: (self watchWith: {
+					         (#method -> 'MCPDebugWatchTestTarget>>sumOf:').
+					         (#variable -> 'total').
+					         (#run -> '(Delay forMilliseconds: 50) wait. MCPDebugWatchTestTarget new sumOf: #( 1 2 )') } asDictionary) ] ensure: [
+		        gate signal ].
+	self deny: (done waitTimeoutSeconds: 5).
+	self assert: probed.
+	self assert: answer equals: 3.
+	self assert: (data at: #result) equals: '3'.
+	self deny: (MCPDebugWatchTestTarget >> #sumOf:) hasMetaLinks
+]
+
+{ #category : 'tests' }
 MCPToolDebugWatchTest >> testEntryWatchRecordsTheArgumentsOfEveryCall [
 
 	| data series |
@@ -100,6 +133,32 @@ MCPToolDebugWatchTest >> testRecordsEveryAssignmentToAWatchedVariable [
 ]
 
 { #category : 'tests' }
+MCPToolDebugWatchTest >> testRecordsTheRunOfTheExpressionAlone [
+	"Compiling the expression and printing its value send methods a probe may sit in, the compiler's own, and what they sent took the place of the expression's values, up to the limit on what is recorded."
+
+	| data |
+	data := self dataFrom: (self watchWith: {
+				         (#method -> 'Object>>yourself').
+				         (#run -> '1 to: 200 do: [ :each | each yourself ]') } asDictionary).
+	self
+		assert: ((self seriesFor: 'Object>>yourself' watching: 'self' in: data) at: #values)
+		equals: ((1 to: 200) collect: [ :each | each printString ])
+]
+
+{ #category : 'tests' }
+MCPToolDebugWatchTest >> testReportsAnExpressionThatDoesNotCompileAndRunsNothing [
+	"The expression is compiled before any probe goes in, so one that does not compile is reported with nothing recorded."
+
+	| data |
+	data := self dataFrom: (self watchWith: {
+				         (#method -> 'Object>>yourself').
+				         (#run -> '1 +') } asDictionary).
+	self assert: ((data at: #result) includesSubstring: 'Variable or expression expected').
+	self assert: ((self seriesFor: 'Object>>yourself' watching: 'self' in: data) at: #values) isEmpty.
+	self deny: (Object >> #yourself) hasMetaLinks
+]
+
+{ #category : 'tests' }
 MCPToolDebugWatchTest >> testReportsTheFailureOfTheWatchedCodeAsItsResult [
 
 	| data series |
@@ -135,6 +194,52 @@ MCPToolDebugWatchTest >> testVariableNoMethodAssignsIsAnError [
 			          (#run -> '1') } asDictionary.
 	self assert: (self resultIndicatesError: result).
 	self assert: ((self summaryFrom: result) includesSubstring: 'None of the named variables')
+]
+
+{ #category : 'tests' }
+MCPToolDebugWatchTest >> testWatchedCodeGetsTheDefaultActionOfANotificationTheBoundaryRefuses [
+	"The watched code is the caller's, not a change of the tool's, so a notification the boundary refuses to resume gets its default action there, as it would with no tool calling."
+
+	| data result series |
+	result := self watchWith: {
+			          (#method -> 'MCPDebugWatchTestTarget>>sumTo:').
+			          (#run -> 'MCPDebugWatchTestTarget new sumTo: 2. MCPToolRefusedNotification signal') } asDictionary.
+	self deny: (self resultIndicatesError: result).
+	data := self dataFrom: result.
+	self assert: (data at: #result) equals: '#mcpDefaultAction'.
+	series := self seriesFor: 'MCPDebugWatchTestTarget>>sumTo:' watching: 'n' in: data.
+	self assert: (series at: #values) equals: #( '2' )
+]
+
+{ #category : 'tests' }
+MCPToolDebugWatchTest >> testWatchesAMethodItsOwnProbeSends [
+	"Compiling a probe's script sends yourself, compiling and printing the expression do too, and other processes send it as well: the probe fired again inside its own work without end, a process it fired in before its script was set failed, which quits a headless image, and the compiler's sends were recorded as the expression's."
+
+	| data result |
+	result := self watchWith: {
+			          (#method -> 'Object>>yourself').
+			          (#run -> '3 yourself') } asDictionary.
+	self deny: (self resultIndicatesError: result).
+	data := self dataFrom: result.
+	self assert: (data at: #result) equals: '3'.
+	self assert: ((self seriesFor: 'Object>>yourself' watching: 'self' in: data) at: #values) equals: #( '3' ).
+	self deny: (Object >> #yourself) hasMetaLinks
+]
+
+{ #category : 'tests' }
+MCPToolDebugWatchTest >> testWatchesMethodsOfOneStatement [
+	"A method of one statement has the interval of its body, which cannot carry a probe, and Pharo refuses one after a return: a method answering an argument or self, or sending one message, failed with Pharo's own error."
+
+	| data |
+	data := self dataFrom: (self watchWith: {
+				         (#method
+				          -> #( 'MCPDebugWatchTestTarget class>>echo:' 'MCPDebugWatchTestTarget>>itself' 'MCPDebugWatchTestTarget>>print:' )).
+				         (#run -> 'MCPDebugWatchTestTarget echo: 7. MCPDebugWatchTestTarget new itself; print: 5') } asDictionary).
+	self assert: ((self seriesFor: 'MCPDebugWatchTestTarget class>>echo:' watching: 'n' in: data) at: #values) equals: #( '7' ).
+	self
+		assert: ((self seriesFor: 'MCPDebugWatchTestTarget>>itself' watching: 'self' in: data) at: #values)
+		equals: #( 'a MCPDebugWatchTestTarget' ).
+	self assert: ((self seriesFor: 'MCPDebugWatchTestTarget>>print:' watching: 'n' in: data) at: #values) equals: #( '5' )
 ]
 
 { #category : 'private' }

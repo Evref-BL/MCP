@@ -23,18 +23,22 @@ MCPWatchProbe class >> installOn: aNode script: aString [
 
 { #category : 'evaluating' }
 MCPWatchProbe >> hitWithContext: aContext [
-	"Evaluated as ScriptBehavior evaluates the script of a debug point from Pharo 12 on."
+	"Evaluated as ScriptBehavior evaluates the script of a debug point from Pharo 12 on. What fails is dropped: the probe sits in a method any process may run, a server's worker among them, where a failure reaches no handler and quits a headless image, and a process still in the method when the probe is removed runs into it afterwards, in a frame the script may not compile against."
 
-	^ Smalltalk compiler
+	^ [
+	  Smalltalk compiler
 		  source: script;
 		  context: aContext;
 		  receiver: aContext receiver;
 		  bindings: { (#thisContext -> aContext) };
-		  evaluate
+		  evaluate ]
+		  on: Error
+		  do: [ :error | error return: nil ]
 ]
 
 { #category : 'installing' }
 MCPWatchProbe >> installOn: aNode [
+	"The link runs at the base level only: the probe's own work, which compiles the script and prints the value, may send the watched method again, which would fire it without end."
 
 	link := MetaLink new
 		        metaObject: self;
@@ -42,6 +46,7 @@ MCPWatchProbe >> installOn: aNode [
 		        arguments: #( #context );
 		        control: #after;
 		        options: #( #+ #optionCompileOnLinkInstallation );
+		        level: 0;
 		        yourself.
 	aNode link: link
 ]
