@@ -693,15 +693,17 @@ MCPOpenTelemetryObservabilityBackend >> reportableToolName: aToolName in: contex
 
 { #category : 'private - reporting' }
 MCPOpenTelemetryObservabilityBackend >> resultAttributesFor: aToolResult origin: anOrigin [
-	"What a result says it found, read from the structured content MCP's tools share: how many entries a listing matched and whether it showed them all; for a test run, how many tests ran and how it ended; for a tool search or description, the tools it named."
+	"What a result says it found, read from the data its structured content carries, as MCP's tools share it: how many entries a listing matched and whether it showed them all; for a test run, how many tests ran and how it ended; for a tool search or description, the tools it named."
 
-	| content attributes |
+	| content data attributes |
 	attributes := OrderedCollection new.
 	content := [ aToolResult structuredContent ]
 		           on: Error
 		           do: [ :error | ^ attributes ].
 	content isDictionary ifFalse: [ ^ attributes ].
-	(content mcpAt: #pagination ifAbsent: [ nil ]) ifNotNil: [ :pagination |
+	data := content mcpAt: #data ifAbsent: [ nil ].
+	data isDictionary ifFalse: [ ^ attributes ].
+	(data mcpAt: #pagination ifAbsent: [ nil ]) ifNotNil: [ :pagination |
 			pagination isDictionary ifTrue: [
 					| total truncated |
 					total := pagination mcpAt: #totalCount ifAbsent: [ nil ].
@@ -709,8 +711,8 @@ MCPOpenTelemetryObservabilityBackend >> resultAttributesFor: aToolResult origin:
 					total isInteger ifTrue: [ attributes add: 'pharo.mcp.result.count' -> total ].
 					(truncated == true or: [ truncated == false ]) ifTrue: [ attributes add: 'pharo.mcp.result.more' -> truncated ] ] ].
 	anOrigin = 'mcp' ifFalse: [ ^ attributes ].
-	attributes addAll: (self testAttributesIn: content).
-	(self toolNamesIn: content) ifNotEmpty: [ :names | attributes add: 'pharo.mcp.tool.refs' -> names ].
+	attributes addAll: (self testAttributesIn: data).
+	(self toolNamesIn: data) ifNotEmpty: [ :names | attributes add: 'pharo.mcp.tool.refs' -> names ].
 	^ attributes
 ]
 
