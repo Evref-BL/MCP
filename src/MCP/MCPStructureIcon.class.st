@@ -14,12 +14,20 @@ Class {
 	],
 	#classInstVars : [
 		'iconCache',
-		'toolIconCache'
+		'toolIconCache',
+		'cacheMutex'
 	],
 	#category : 'MCP-Icons',
 	#package : 'MCP',
 	#tag : 'Icons'
 }
+
+{ #category : 'cache' }
+MCPStructureIcon class >> cacheMutex [
+	"Guards rendering an icon into a cache, which concurrent requests may need at once."
+
+	^ cacheMutex ifNil: [ cacheMutex := Mutex new ]
+]
 
 { #category : 'instance creation' }
 MCPStructureIcon class >> compositeFormBaseIconNamed: aBaseIconSymbol leftBadgeIconNamed: aLeftBadgeIconSymbol rightBadgeIconNamed: aRightBadgeIconSymbol [
@@ -69,14 +77,38 @@ MCPStructureIcon class >> iconForForm: aForm [
 
 { #category : 'cache' }
 MCPStructureIcon class >> iconForSpec: anIconSpec [
+	"A rendered icon is looked up without a lock. A missing one is rendered once, under the cache's mutex, into a copy of the cache that then replaces it, so that a lookup never meets a cache being changed."
 
-	^ self iconCache at: anIconSpec cacheKey ifAbsentPut: [ anIconSpec renderUsing: self ]
+	^ self iconCache at: anIconSpec cacheKey ifAbsent: [
+			  self cacheMutex critical: [
+					  self iconCache at: anIconSpec cacheKey ifAbsent: [
+							  | icon |
+							  icon := anIconSpec renderUsing: self.
+							  iconCache := self iconCache copy
+								               at: anIconSpec cacheKey put: icon;
+								               yourself.
+							  icon ] ] ]
 ]
 
 { #category : 'cache' }
 MCPStructureIcon class >> iconsForToolClass: aToolClass [
+	"Looked up without a lock, and missing ones made once, under the cache's mutex, into a copy of the cache that then replaces it, as icons are."
 
-	^ self toolIconCache at: aToolClass ifAbsentPut: [ { (self iconForSpec: aToolClass toolIconSpec) } ]
+	^ self toolIconCache at: aToolClass ifAbsent: [
+			  self cacheMutex critical: [
+					  self toolIconCache at: aToolClass ifAbsent: [
+							  | icons |
+							  icons := { (self iconForSpec: aToolClass toolIconSpec) }.
+							  toolIconCache := self toolIconCache copy
+								                   at: aToolClass put: icons;
+								                   yourself.
+							  icons ] ] ]
+]
+
+{ #category : 'class initialization' }
+MCPStructureIcon class >> initialize [
+
+	cacheMutex := Mutex new
 ]
 
 { #category : 'instance creation' }

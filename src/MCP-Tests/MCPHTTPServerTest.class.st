@@ -22,6 +22,28 @@ MCPHTTPServerTest >> answerTo: someLines on: aServer [
 ]
 
 { #category : 'private' }
+MCPHTTPServerTest >> assertResultIn: aResponse round: aRound request: anIndex [
+	"The round and the request say which answer failed, should one fail."
+
+	self
+		assert: (aResponse isNotNil and: [ aResponse code = 200 and: [ aResponse contents includesSubstring: '"result"' ] ])
+		description: [
+				String streamContents: [ :stream |
+						stream << 'Round ' << aRound printString << ', request ' << anIndex printString << ': '
+						<< (aResponse ifNil: [ 'no answer' ] ifNotNil: [ aResponse contents first: (aResponse contents size min: 2000) ]) ] ]
+]
+
+{ #category : 'private' }
+MCPHTTPServerTest >> firstRequestNumbered: anInteger [
+	"initialize for an odd number, tools/list for an even one: requests that build the server's registries and render the image's icons when nothing has yet."
+
+	^ String streamContents: [ :stream |
+			  stream << '{"jsonrpc":"2.0","id":' << anInteger printString << (anInteger odd
+				   ifTrue: [ ',"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{}}}' ]
+				   ifFalse: [ ',"method":"tools/list"}' ]) ]
+]
+
+{ #category : 'private' }
 MCPHTTPServerTest >> post: anEntity to: aPath on: aServer [
 	"The response a client gets posting anEntity to aPath of aServer, over HTTP."
 
@@ -364,6 +386,31 @@ MCPHTTPServerTest >> testAnUnsupportedMethodIsRefused [
 	response := self responseForMethod: #DELETE.
 	self refusalIn: response withStatus: 405.
 	self assert: (response headers at: #Allow) equals: 'POST, OPTIONS'
+]
+
+{ #category : 'tests' }
+MCPHTTPServerTest >> testConcurrentFirstRequestsShareWhatIsBuiltOnce [
+	"A server not started through MCP start builds its registries at its first requests, and the image renders its icons when first asked for them, and those requests may come together. Each round makes a fresh server, clears the icon caches, and sends initialize and tools/list at once; every one is answered with a result."
+
+	self timeLimit: 180 seconds.
+	1 to: 20 do: [ :round |
+			| server answers completed |
+			MCPStructureIcon resetCaches.
+			server := (MCP new
+				           observabilityExportDirectory: nil;
+				           yourself) server.
+			server messageProcessor includesErrorData: true.
+			server port: 0.
+			completed := Semaphore new.
+			answers := Array new: 16.
+			[
+				server start.
+				1 to: answers size do: [ :index |
+						[
+							[ answers at: index put: (self post: (ZnEntity json: (self firstRequestNumbered: index)) to: '' on: server) ] ensure: [
+								completed signal ] ] fork ].
+				answers size timesRepeat: [ self deny: (completed waitTimeoutSeconds: 30) description: 'A request timed out.' ].
+				answers doWithIndex: [ :response :index | self assertResultIn: response round: round request: index ] ] ensure: [ server stop ] ]
 ]
 
 { #category : 'tests' }

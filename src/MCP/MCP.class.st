@@ -23,7 +23,8 @@ Class {
 		'resourceRegistry',
 		'promptRegistry',
 		'toolResponseFields',
-		'lastClientInfo'
+		'lastClientInfo',
+		'registryMutex'
 	],
 	#classVars : [
 		'DefaultObservabilityBackendClass'
@@ -538,6 +539,7 @@ MCP >> hasCompletableReferences [
 MCP >> initialize [
 
 	super initialize.
+	registryMutex := Mutex new.
 	server := MCPHTTPServer new.
 	server addHandlersFromPragmasIn: self.
 	observability := self newLocalObservabilityBackend
@@ -779,8 +781,11 @@ MCP >> port: aPortNumber [
 
 { #category : 'accessing' }
 MCP >> promptRegistry [
+	"Built once, at its first use, under the registries' mutex, since concurrent first requests may reach it together; read without the mutex once built."
 
-	^ promptRegistry ifNil: [ promptRegistry := self listeningRegistry: MCPPromptRegistry default notifying: 'prompts' ]
+	^ promptRegistry ifNil: [
+			  self registryMutex critical: [
+				  promptRegistry ifNil: [ promptRegistry := self listeningRegistry: MCPPromptRegistry default notifying: 'prompts' ] ] ]
 ]
 
 { #category : 'accessing' }
@@ -828,6 +833,13 @@ MCP >> refreshToolsList [
 	^ toolsList
 ]
 
+{ #category : 'private - registries' }
+MCP >> registryMutex [
+	"Guards building the registries at their first use, which concurrent first requests may share."
+
+	^ registryMutex ifNil: [ registryMutex := Mutex new ]
+]
+
 { #category : 'configuration' }
 MCP >> removeTool: aToolOrToolClassOrName [
 
@@ -837,8 +849,11 @@ MCP >> removeTool: aToolOrToolClassOrName [
 
 { #category : 'accessing' }
 MCP >> resourceRegistry [
+	"Built once, at its first use, under the registries' mutex, since concurrent first requests may reach it together; read without the mutex once built."
 
-	^ resourceRegistry ifNil: [ resourceRegistry := self listeningRegistry: MCPResourceRegistry default notifying: 'resources' ]
+	^ resourceRegistry ifNil: [
+			  self registryMutex critical: [
+				  resourceRegistry ifNil: [ resourceRegistry := self listeningRegistry: MCPResourceRegistry default notifying: 'resources' ] ] ]
 ]
 
 { #category : 'accessing' }
@@ -1040,8 +1055,11 @@ MCP >> toolNames [
 
 { #category : 'accessing' }
 MCP >> toolRegistry [
+	"Built once, at its first use, under the registries' mutex, since concurrent first requests may reach it together; read without the mutex once built."
 
-	^ toolRegistry ifNil: [ toolRegistry := self listeningRegistry: MCPToolRegistry default notifying: 'tools' ]
+	^ toolRegistry ifNil: [
+			  self registryMutex critical: [
+				  toolRegistry ifNil: [ toolRegistry := self listeningRegistry: MCPToolRegistry default notifying: 'tools' ] ] ]
 ]
 
 { #category : 'accessing' }
