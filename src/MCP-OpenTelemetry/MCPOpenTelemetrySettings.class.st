@@ -1,5 +1,5 @@
 "
-The Pharo tools' telemetry settings, as an image reads them: the OTEL_* environment, or else the settings file the pharo-agent plugin and PLexus read too, which joining the tools' field telemetry writes. An image started by hand never sees the OTEL_* an agent host or a shell would give, so the file is how it learns them.
+The Pharo tools' telemetry settings, as an image reads them: the OTEL_* environment, or else the settings file that joining the tools' field telemetry writes. An image started by hand never sees the OTEL_* an agent host or a shell would give, so the file is how it learns them.
 
 Reads its environment through at:ifAbsent: and keys, and writes it through at:put:, so a test gives it a Dictionary.
 "
@@ -113,7 +113,7 @@ MCPOpenTelemetrySettings >> isSettingName: aString [
 
 { #category : 'accessing' }
 MCPOpenTelemetrySettings >> settingsFile [
-	"Where the settings live: $XDG_CONFIG_HOME/pharo-agent/otel.env, %APPDATA%\pharo-agent\otel.env on Windows, ~/.config/pharo-agent/otel.env otherwise. The plugin and PLexus look in the same place."
+	"Where the settings live: $XDG_CONFIG_HOME/pharo-agent/otel.env, %APPDATA%\pharo-agent\otel.env on Windows, ~/.config/pharo-agent/otel.env otherwise."
 
 	| configHome appData |
 	configHome := self valueAt: 'XDG_CONFIG_HOME'.

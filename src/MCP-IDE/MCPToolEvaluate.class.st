@@ -134,7 +134,7 @@ MCPToolEvaluate >> defaultExposure [
 
 { #category : 'metadata' }
 MCPToolEvaluate >> defaultTimeoutSeconds [
-	"Half of what PLexus waits for a call, which leaves room to read where the code is, let it unwind and answer before the client gives up. Agents' evaluations take milliseconds."
+	"Half a minute, which leaves room to read where the code is, let it unwind and answer before a client that waits a minute gives up. Agents' evaluations take milliseconds."
 
 	^ 30
 ]

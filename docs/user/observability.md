@@ -63,8 +63,8 @@ mcp useOpenTelemetryObservability
 The exporter is configured the standard way, through the `OTEL_*` environment
 variables the image was started with; see opentelemetry-pharo for the ones it
 reads. An image started by hand rarely has them, so when the environment sets
-no `OTEL_*` variable the image reads the settings file the pharo-agent plugin
-and PLexus read too: `$XDG_CONFIG_HOME/pharo-agent/otel.env`
+no `OTEL_*` variable the image reads the settings file that joining the field
+telemetry writes: `$XDG_CONFIG_HOME/pharo-agent/otel.env`
 (`~/.config/pharo-agent/otel.env`, or `%APPDATA%\pharo-agent\otel.env` on
 Windows), one `OTEL_NAME=value` per line.
 
