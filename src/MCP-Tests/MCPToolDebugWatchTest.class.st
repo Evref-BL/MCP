@@ -23,6 +23,39 @@ MCPToolDebugWatchTest >> seriesFor: aMethodName watching: aVariableName in: data
 ]
 
 { #category : 'tests' }
+MCPToolDebugWatchTest >> testAProcessLeftInAWatchedMethodFinishesItAfterTheWatch [
+	"A probe sits in a method any process may run. One still in the method when the watch ends runs into the probe after its removal, where Pharo's hit announcement asks the frame's source node, which the method no longer gives: the failure, in a process with no handler, quit a headless image. This process waits in an assignment the watch probes, entered once the probes are in."
+
+	| gate done probed answer data |
+	gate := Semaphore new.
+	done := Semaphore new.
+	probed := false.
+	[
+		[ (MCPDebugWatchTestTarget >> #sumOf:) hasMetaLinks or: [ gate isSignaled ] ] whileFalse: [ (Delay forMilliseconds: 1) wait ].
+		answer := [
+			          MCPDebugWatchTestTarget new sumOf: {
+					          1.
+					          [
+						          probed := thisContext sender compiledCode method hasMetaLinks.
+						          gate wait.
+						          2 ] } ]
+			          on: Error
+			          do: [ :error | error ].
+		done signal ] fork.
+	data := [
+		        self dataFrom: (self watchWith: {
+					         (#method -> 'MCPDebugWatchTestTarget>>sumOf:').
+					         (#variable -> 'total').
+					         (#run -> '(Delay forMilliseconds: 50) wait. MCPDebugWatchTestTarget new sumOf: #( 1 2 )') } asDictionary) ] ensure: [
+		        gate signal ].
+	self deny: (done waitTimeoutSeconds: 5).
+	self assert: probed.
+	self assert: answer equals: 3.
+	self assert: (data at: #result) equals: '3'.
+	self deny: (MCPDebugWatchTestTarget >> #sumOf:) hasMetaLinks
+]
+
+{ #category : 'tests' }
 MCPToolDebugWatchTest >> testEntryWatchRecordsTheArgumentsOfEveryCall [
 
 	| data series |

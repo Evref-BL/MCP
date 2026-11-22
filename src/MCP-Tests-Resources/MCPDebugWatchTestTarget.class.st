@@ -46,6 +46,16 @@ MCPDebugWatchTestTarget >> print: n [
 ]
 
 { #category : 'fixtures' }
+MCPDebugWatchTestTarget >> sumOf: aCollection [
+	"Its assignment is in a block of its own, run by another method, as in Collection>>inject:into:. An element may be a block, which can hold the sum in the middle of an assignment."
+
+	| total |
+	total := 0.
+	aCollection do: [ :each | total := total + each value ].
+	^ total
+]
+
+{ #category : 'fixtures' }
 MCPDebugWatchTestTarget >> sumTo: n [
 
 	| total step |
