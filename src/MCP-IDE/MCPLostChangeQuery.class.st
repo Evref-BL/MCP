@@ -297,6 +297,13 @@ MCPLostChangeQuery >> supersedeMembersOf: aClassName [
 ]
 
 { #category : 'visitor' }
+MCPLostChangeQuery >> visitBehaviorCategoryChange: aChange [
+	"Before Pharo 12, a class moved to another category. Epicea's visitor trait has this selector only then, and it is defined here rather than in a package loaded only then: overriding a trait's method from another package moves it between the packages, and Pharo 10 and 11 then mark both modified, and MCP too, whose name begins MCP-IDE's."
+
+	self recordRepackaging: aChange
+]
+
+{ #category : 'visitor' }
 MCPLostChangeQuery >> visitBehaviorCommentChange: aChange [
 
 	(commentChanges
