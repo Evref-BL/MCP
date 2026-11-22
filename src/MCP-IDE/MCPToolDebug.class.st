@@ -32,7 +32,10 @@ MCPToolDebug >> buildInputSchema [
 { #category : 'private - errors' }
 MCPToolDebug >> debugErrorDetailsFor: anError [
 
-	^ anError mcpCommandErrorDo: [ :commandError | commandError structuredDetails ] otherwise: [ self errorDetailsFor: anError ]
+	^ anError mcpCommandErrorDo: [ :commandError | commandError structuredDetails ] otherwise: [
+			  (self errorDetailsFor: anError)
+				  at: #errorCode put: self unexpectedErrorCode;
+				  yourself ]
 ]
 
 { #category : 'private - errors' }

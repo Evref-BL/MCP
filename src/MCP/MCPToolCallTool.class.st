@@ -56,6 +56,7 @@ MCPToolCallTool >> executeWithRequest: request [
 	^ self executeRequest: request do: [
 			  self
 				  errorResultText: 'tool_call requires MCP server call context.'
+				  code: 'ServerCallContextRequired'
 				  details: { (#name -> (request stringArgumentNamed: 'name')) } asDictionary ]
 ]
 

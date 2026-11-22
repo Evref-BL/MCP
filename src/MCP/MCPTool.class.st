@@ -168,14 +168,16 @@ MCPTool >> arraySchemaNamed: aName itemType: anItemType description: aDescriptio
 
 { #category : 'accessing' }
 MCPTool >> asJRPCJSON [
+	"The tool as tools/list lists it. Its title, description and annotations are optional there, so a tool that cannot give one, having left it unimplemented, is listed without it."
 
 	| dictionary |
 	dictionary := Dictionary new.
-	self annotations ifNotNil: [ :toolAnnotations | dictionary at: #annotations put: toolAnnotations asJRPCJSON ].
-	self description ifNotNil: [ dictionary at: #description put: self description asJRPCJSON ].
-	self inputSchema ifNotNil: [ dictionary at: #inputSchema put: self inputSchema asJRPCJSON ].
-	self name ifNotNil: [ dictionary at: #name put: self name asJRPCJSON ].
-	self title ifNotNil: [ dictionary at: #title put: self title asJRPCJSON ].
+	(self optionalMetadata: [ self annotations ]) ifNotNil: [ :toolAnnotations |
+		dictionary at: #annotations put: toolAnnotations asJRPCJSON ].
+	(self optionalMetadata: [ self description ]) ifNotNil: [ :text | dictionary at: #description put: text asJRPCJSON ].
+	self inputSchema ifNotNil: [ :schema | dictionary at: #inputSchema put: schema asJRPCJSON ].
+	self name ifNotNil: [ :toolName | dictionary at: #name put: toolName asJRPCJSON ].
+	(self optionalMetadata: [ self title ]) ifNotNil: [ :text | dictionary at: #title put: text asJRPCJSON ].
 	^ dictionary
 ]
 
@@ -224,7 +226,24 @@ MCPTool >> batchEntryForResult: aResult [
 ]
 
 { #category : 'private - results' }
+MCPTool >> batchErrorDetailsFor: results summary: aSummary [
+	"Every target failed. When they all failed for one reason, the batch carries its code; otherwise it carries a code of its own, and each target's entry keeps its reason."
+
+	| codes |
+	codes := results
+		         collect: [ :each | (each structuredContent at: #error ifAbsent: [ Dictionary new ]) at: #errorCode ifAbsent: [ nil ] ]
+		         as: Set.
+	^ Dictionary new
+		  at: #errorCode put: ((codes size = 1 and: [ codes anyOne isNotNil ])
+				   ifTrue: [ codes anyOne ]
+				   ifFalse: [ 'BatchFailed' ]);
+		  at: #message put: aSummary;
+		  yourself
+]
+
+{ #category : 'private - results' }
 MCPTool >> batchResultForResults: results [
+	"The batch fails only when every target failed, and then says why, as any failed call does."
 
 	| failedCount summary data structuredContent resultClass |
 	failedCount := results count: [ :each | each isError ].
@@ -236,9 +255,10 @@ MCPTool >> batchResultForResults: results [
 		                     at: #summary put: summary;
 		                     at: #data put: data;
 		                     yourself.
-	resultClass := failedCount = results size
-		               ifTrue: [ MCPStructureErrorToolResult ]
-		               ifFalse: [ MCPStructureCallToolResult ].
+	resultClass := MCPStructureCallToolResult.
+	failedCount = results size ifTrue: [
+			structuredContent at: #error put: (self batchErrorDetailsFor: results summary: summary).
+			resultClass := MCPStructureErrorToolResult ].
 	^ resultClass
 		  content: { (self textContent: (self batchContentTextForResults: results summary: summary)) }
 		  structuredContent: structuredContent
@@ -507,7 +527,7 @@ MCPTool >> errorResultFor: anError [
 			  | details |
 			  details := self errorDetailsFor: toolError.
 			  toolError mcpAddToolErrorDetailsTo: details.
-			  self errorResultText: (self failureMessageFor: toolError) details: details ]
+			  self errorResultText: (self failureMessageFor: toolError) code: self unexpectedErrorCode details: details ]
 ]
 
 { #category : 'error handling' }
@@ -517,6 +537,16 @@ MCPTool >> errorResultFor: anError otherwise: aBlock [
 	^ anError
 		  mcpCommandErrorDo: [ :commandError | self errorResultText: commandError messageText details: commandError structuredDetails ]
 		  otherwise: aBlock
+]
+
+{ #category : 'error handling' }
+MCPTool >> errorResultText: aString code: anErrorCode details: aDictionary [
+	"An error result whose code says which way the call failed, so that a program can tell failures apart without reading their text."
+
+	| details |
+	details := aDictionary ifNil: [ Dictionary new ] ifNotNil: [ aDictionary copy ].
+	details at: #errorCode put: anErrorCode.
+	^ self errorResultText: aString details: details
 ]
 
 { #category : 'error handling' }
@@ -911,6 +941,15 @@ MCPTool >> offsetInputProperty [
 		  yourself
 ]
 
+{ #category : 'private - metadata' }
+MCPTool >> optionalMetadata: aBlock [
+	"What aBlock answers, or nil when it fails: a piece of metadata the protocol makes optional, which a tool from another project may leave unimplemented."
+
+	^ aBlock
+		  on: Error
+		  do: [ :error | error return: nil ]
+]
+
 { #category : 'private - results' }
 MCPTool >> orderedKeys: someKeys [
 	"Sort by the order the tool declared, then alphabetically among the keys it did not name."
@@ -1133,6 +1172,13 @@ MCPTool >> textForCount: anInteger noun: aNoun [
 MCPTool >> title [
 
 	self subclassResponsibility
+]
+
+{ #category : 'error handling' }
+MCPTool >> unexpectedErrorCode [
+	"The code of a failure no check of the tool foresaw. The exception's class, beside it, says what failed."
+
+	^ 'ToolExecutionError'
 ]
 
 { #category : 'validating' }

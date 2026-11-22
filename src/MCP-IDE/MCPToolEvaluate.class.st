@@ -39,7 +39,7 @@ MCPToolEvaluate >> additionalKeywords [
 
 { #category : 'private - results' }
 MCPToolEvaluate >> answerFor: anEvaluation [
-	"What a call answers for an evaluation: its value, or why it has none."
+	"What a call answers for an evaluation: its value, or why it has none, which its error code says in a word."
 
 	| ending |
 	ending := anEvaluation ending.
@@ -48,20 +48,32 @@ MCPToolEvaluate >> answerFor: anEvaluation [
 	ending = #stopped ifTrue: [
 			^ self
 				  errorResultText: (self stopSummaryFor: anEvaluation stopReason of: anEvaluation)
+				  code: (self stopErrorCodeFor: anEvaluation stopReason)
 				  details: (self stoppedDetailsFor: anEvaluation) ].
 	ending = #notStarted ifTrue: [
 			^ self
 				  errorResultText: (self notStartedMessageFor: anEvaluation timeLimit)
+				  code: 'EvaluationNotStarted'
 				  details: (self notStartedDetailsFor: anEvaluation holders within: anEvaluation timeLimit) ].
 	ending = #endedItsOwnProcess ifTrue: [
-		^ self errorResultText: self endedItsOwnProcessMessage details: (self addTranscriptOf: anEvaluation to: Dictionary new) ].
+			^ self
+				  errorResultText: self endedItsOwnProcessMessage
+				  code: 'EvaluationEndedItsProcess'
+				  details: (self addTranscriptOf: anEvaluation to: Dictionary new) ].
 	ending = #syntaxFailure ifTrue: [ ^ self syntaxFailureResultFor: anEvaluation ].
 	ending = #runtimeFailure ifTrue: [
 			^ self
 				  errorResultText: (self runtimeFailureMessageFor: anEvaluation failure)
+				  code: 'EvaluationRuntimeError'
+				  details: (self addTranscriptOf: anEvaluation to: anEvaluation failureDetails copy) ].
+	ending = #printFailure ifTrue: [
+			^ self
+				  errorResultText: (self printFailureMessageFor: anEvaluation failure)
+				  code: 'EvaluationPrintFailed'
 				  details: (self addTranscriptOf: anEvaluation to: anEvaluation failureDetails copy) ].
 	^ self
-		  errorResultText: (anEvaluation failure messageText ifNil: [ anEvaluation failure asString ])
+		  errorResultText: (self failureMessageFor: anEvaluation failure)
+		  code: self unexpectedErrorCode
 		  details: anEvaluation failureDetails
 ]
 
@@ -161,7 +173,9 @@ MCPToolEvaluate >> executeWithRequest: request [
 						   code: (request stringArgumentNamed: 'code')
 						   timeLimit: (request integerArgumentOrDefaultNamed: 'timeoutSeconds')
 						   previewLimit: self resultPreviewCharacterLimit) execute ]
-		  onError: [ :error | self errorResultText: error mcpMessageText details: (self errorDetailsFor: error) ]
+		  onError: [ :error |
+				  self errorResultFor: error otherwise: [ :toolError |
+					  self errorResultText: toolError mcpMessageText code: self unexpectedErrorCode details: (self errorDetailsFor: toolError) ] ]
 ]
 
 { #category : 'private - results' }
@@ -353,6 +367,18 @@ MCPToolEvaluate >> notStartedTextFor: structuredContent [
 ]
 
 { #category : 'private' }
+MCPToolEvaluate >> printFailureMessageFor: anError [
+	"The code ran; what failed is printing its value, in a printOn: of its class most often. The stack trace the failure reports starts there."
+
+	^ String streamContents: [ :stream |
+			  stream
+				  nextPutAll: 'Evaluation ran, but printing its value failed (';
+				  nextPutAll: anError class name;
+				  nextPutAll: '): ';
+				  nextPutAll: anError mcpMessageText ]
+]
+
+{ #category : 'private' }
 MCPToolEvaluate >> resultPreviewCharacterLimit [
 
 	^ 10000
@@ -421,6 +447,15 @@ MCPToolEvaluate >> stackStoppedMessageFor: frames [
 				  nextPutAll: 'Evaluation stopped: its stack passed ';
 				  print: frames;
 				  nextPutAll: ' frames, which an endless recursion does.' ]
+]
+
+{ #category : 'private - results' }
+MCPToolEvaluate >> stopErrorCodeFor: aReason [
+	"Which bound a stopped evaluation passed: its time limit, or the stack or memory bound that stops runaway code sooner."
+
+	aReason = #stackDepth ifTrue: [ ^ 'EvaluationStackTooDeep' ].
+	aReason = #memoryGrowth ifTrue: [ ^ 'EvaluationMemoryGrowthTooLarge' ].
+	^ 'EvaluationTimedOut'
 ]
 
 { #category : 'private - results' }
@@ -505,7 +540,7 @@ MCPToolEvaluate >> syntaxFailureMessageFor: aNotice line: aLineNumber [
 
 { #category : 'private - results' }
 MCPToolEvaluate >> syntaxFailureResultFor: anEvaluation [
-	"Compilation failed, so the answer says on which line of the code, and shows it."
+	"Compilation failed, so the answer says on which line of the code, and shows it. Its code is the one method_compile gives the same notice."
 
 	| code details index line |
 	code := anEvaluation code.
@@ -516,7 +551,10 @@ MCPToolEvaluate >> syntaxFailureResultFor: anEvaluation [
 	line ifNotNil: [
 			details at: #line put: line.
 			details at: #sourceLine put: (code lineCorrespondingToIndex: index) ].
-	^ self errorResultText: (self syntaxFailureMessageFor: anEvaluation failure line: line) details: details
+	^ self
+		  errorResultText: (self syntaxFailureMessageFor: anEvaluation failure line: line)
+		  code: 'Compile' , (self failureErrorCodeSuffixFor: anEvaluation failure)
+		  details: details
 ]
 
 { #category : 'metadata' }

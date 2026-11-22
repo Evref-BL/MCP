@@ -80,7 +80,7 @@ MCPToolSearch >> errorClassNameForQueryError: anError [
 
 { #category : 'private - results' }
 MCPToolSearch >> errorResultForQueryError: anError request: request [
-	"A command error says what went wrong in its own words. Any other failure is told with what was searched and where."
+	"A command error says what went wrong in its own words. Any other failure is told with what was searched and where; a pattern that does not compile is the caller's to correct, and its code says so."
 
 	^ self errorResultFor: anError otherwise: [ :queryError |
 			  | details |
@@ -88,7 +88,12 @@ MCPToolSearch >> errorResultForQueryError: anError request: request [
 				             (#errorClass -> (self errorClassNameForQueryError: queryError)).
 				             (#message -> queryError mcpMessageText) } asDictionary.
 			  queryError mcpAddToolErrorDetailsTo: details.
-			  self errorResultText: (self failureMessageForRequest: request error: queryError) details: details ]
+			  self
+				  errorResultText: (self failureMessageForRequest: request error: queryError)
+				  code: ((self isRegexSyntaxError: queryError)
+						   ifTrue: [ 'RegexSyntaxError' ]
+						   ifFalse: [ self unexpectedErrorCode ])
+				  details: details ]
 ]
 
 { #category : 'executing' }

@@ -209,17 +209,22 @@ Two answers, both built by the tool:
 
 ```smalltalk
 self successResultText: 'Three widgets.' data: { (#widgets -> names) } asDictionary.
-self errorResultText: 'No widget named ' , name , '.' details: { (#known -> names) } asDictionary
+self errorResultText: 'No widget named ' , name , '.' code: 'WidgetNotFound' details: { (#known -> names) } asDictionary
 ```
 
 The text is what a model reads; the data is the same answer in a shape a
 program can use. Give both. A text that says only "Done." costs the caller
 another round trip to find out what happened.
 
+The code says in one word which way the call failed, so that a program can
+tell failures apart without reading their text. Name the condition, as
+`WidgetNotFound` does, and give a condition the same code wherever it
+happens.
+
 You do not have to catch to report a failure. An exception that escapes
 `executeWithRequest:` is answered as an error result naming your tool, the
-error class, the message and the frames of your own code; the server leaves
-its own frames out. Build an error result yourself when you know something
+error class, the message and the frames of your own code, with the code
+`ToolExecutionError`; the server leaves its own frames out. Build an error result yourself when you know something
 the exception does not, such as what the caller should have asked for.
 
 Which of the two reaches the client is the server's choice, not the tool's.

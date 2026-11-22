@@ -114,14 +114,14 @@ MCPEvaluateCommand >> endedItsOwnProcess [
 
 { #category : 'accessing' }
 MCPEvaluateCommand >> ending [
-	"How the evaluation ended: #value, #syntaxFailure, #runtimeFailure, #failure when what failed was not the code's own, #endedItsOwnProcess, #notStarted or #stopped."
+	"How the evaluation ended: #value, #syntaxFailure, #runtimeFailure, #printFailure when the code ran and printing its value failed, #failure when what failed was not the code's own, #endedItsOwnProcess, #notStarted or #stopped."
 
 	^ ending
 ]
 
 { #category : 'executing' }
 MCPEvaluateCommand >> evaluate [
-	"The code is compiled much as a Playground page compiles it, so a name it assigns without declaring is a variable of this evaluation, and what it writes to the Transcript comes back with its value."
+	"The code is compiled much as a Playground page compiles it, so a name it assigns without declaring is a variable of this evaluation, and what it writes to the Transcript comes back with its value. Printing the value runs its class's own code, so a failure there is told apart from one of the code."
 
 	| compiler notice result warningDescriptions |
 	compiler := SmalltalkImage current compiler.
@@ -138,7 +138,9 @@ MCPEvaluateCommand >> evaluate [
 				          error mcpSyntaxNotice ifNotNil: [ :syntaxNotice | ^ self syntaxFailureFor: syntaxNotice ].
 				          ^ self runtimeFailureFor: error ].
 	notice ifNotNil: [ ^ self syntaxFailureFor: notice ].
-	self resultDataFor: result.
+	[ self resultDataFor: result ]
+		on: Error
+		do: [ :error | ^ self printFailureFor: error ].
 	warnings := warningDescriptions asArray.
 	ending := #value
 ]
@@ -196,7 +198,7 @@ MCPEvaluateCommand >> failureDetails [
 
 { #category : 'private' }
 MCPEvaluateCommand >> failureFor: anError [
-	"A failure that is not the code's own, in getting it ready to compile or in previewing its value."
+	"A failure that is neither the code's own nor its value's: in getting the code ready to compile, or in describing how it failed."
 
 	self describeFailure: anError.
 	ending := #failure
@@ -290,6 +292,16 @@ MCPEvaluateCommand >> preview [
 	"The value's print string, cut at the preview limit."
 
 	^ preview
+]
+
+{ #category : 'private' }
+MCPEvaluateCommand >> printFailureFor: anError [
+	"The code ran, and printing its value failed. Described before its stack unwinds, as a failure of the code is."
+
+	self describeFailure: anError.
+	anError mcpAddToolErrorDetailsTo: failureDetails.
+	self noteTranscript.
+	ending := #printFailure
 ]
 
 { #category : 'private' }

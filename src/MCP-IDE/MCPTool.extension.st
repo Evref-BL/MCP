@@ -78,9 +78,19 @@ MCPTool >> errorResultFor: anError unableTo: aPhrase details: someAssociations [
 			  self
 				  errorResultText: (String streamContents: [ :stream |
 						   stream << 'Unable to ' << aPhrase << ' (' << toolError class name << '): ' << toolError mcpMessageText ])
+				  code: self unexpectedErrorCode
 				  details: ({
 						   (#errorClass -> toolError class name).
 						   (#message -> toolError mcpMessageText) } , someAssociations) asDictionary ]
+]
+
+{ #category : '*MCP-IDE' }
+MCPTool >> failureErrorCodeSuffixFor: aCause [
+	"What failed, as the end of an error code that a prefix saying what was being done begins. Pharo reports an undeclared variable and an assignment to a read-only one as plain compile notices, so they are told apart here; any other failure says what it is through its class."
+
+	aCause mcpNoticeNode ifNotNil: [ ^ 'UndeclaredVariable' ].
+	(self readOnlyAssignmentNodesFrom: aCause) ifNotEmpty: [ ^ 'ReadOnlyAssignment' ].
+	^ aCause mcpMutationFailureErrorCodeSuffix
 ]
 
 { #category : '*MCP-IDE' }
@@ -133,6 +143,17 @@ MCPTool >> quoteIntervalAt: anInterval flaggedBy: aRuleClassName in: aString [
 		  in: aString
 		  ifFound: [ :send | send keywordsPositions first to: send stopWithoutParentheses ]
 		  ifNone: [ anInterval ]
+]
+
+{ #category : '*MCP-IDE' }
+MCPTool >> readOnlyAssignmentNodesFrom: anError [
+	"The assignments the compiler refused because their variable is read-only: an argument, most often. Pharo names none of them, only an offset."
+
+	| ast |
+	ast := anError mcpCompilationAst ifNil: [ anError mcpMethodNode ].
+	ast ifNil: [ ^ #(  ) ].
+	^ ast assignmentNodes select: [ :each |
+		  each variable variable ifNil: [ false ] ifNotNil: [ :variable | variable isWritable not ] ]
 ]
 
 { #category : '*MCP-IDE' }

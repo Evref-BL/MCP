@@ -408,7 +408,11 @@ MCPToolSearchMethodReferences >> variableReferenceEntriesForVariableNamed: varia
 
 	| variables |
 	variables := self variableBindingsNamed: variableName inBehaviors: scopeQuery behaviors.
-	variables ifEmpty: [ Error signal: (self noVariableMessageFor: variableName) ].
+	variables ifEmpty: [
+			MCPCommandError
+				signalErrorCode: #VariableNotFound
+				message: (self noVariableMessageFor: variableName)
+				details: { (#name -> variableName) } asDictionary ].
 	^ self methodEntriesFromMethods:
 		  (scopeQuery collectedMethods select: [ :each | MCPClassReferenceQuery method: each referencesAnyVariable: variables ])
 ]

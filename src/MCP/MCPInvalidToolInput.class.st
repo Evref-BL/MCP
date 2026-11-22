@@ -123,10 +123,12 @@ MCPInvalidToolInput >> mcpIsProtocolError [
 
 { #category : 'converting' }
 MCPInvalidToolInput >> structuredDetails [
+	"The violations say which arguments are wrong and how; the code says only that the arguments were refused, as for every tool."
 
 	| details |
 	details := Dictionary new
 		           at: #errorClass put: self class name;
+		           at: #errorCode put: 'InvalidArguments';
 		           yourself.
 	self mcpAddToolErrorDetailsTo: details.
 	^ details
