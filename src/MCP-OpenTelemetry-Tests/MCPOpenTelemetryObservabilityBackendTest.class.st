@@ -299,6 +299,21 @@ MCPOpenTelemetryObservabilityBackendTest >> testASessionThatDoesNotReadAsAnIdIsL
 ]
 
 { #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testATestRunIsReportedAsTestRunAnswersIt [
+	"The facts of a run come from the answer test_run builds, not from a result shaped for the test."
+
+	| tool attributes |
+	tool := MCPToolRegistry default toolNamed: 'test_run' ifAbsent: [ self skip: 'test_run is not registered' ].
+	attributes := (backend
+		               resultAttributesFor: (tool
+				                successResultText: 'Ran 0 tests (0 passed).'
+				                data: (MCPRunTestsResult outcomes: #(  ) timedOut: false unrunTests: #(  )) asDictionary)
+		               origin: 'mcp') asDictionary.
+	self assert: (attributes at: 'pharo.mcp.test.count') equals: 0.
+	self assert: (attributes at: 'pharo.mcp.test.outcome') equals: 'none'
+]
+
+{ #category : 'tests' }
 MCPOpenTelemetryObservabilityBackendTest >> testAToolTheServerDoesNotHaveIsRecordedAsAToolError [
 	"tools/call answers a name the server does not have with a result reporting the error, as tool_call answers it, so the call is recorded as a tool error and not by a JSON-RPC code."
 
@@ -756,12 +771,12 @@ MCPOpenTelemetryObservabilityBackendTest >> testUsingOpenTelemetryWithoutTracesL
 
 { #category : 'tests' }
 MCPOpenTelemetryObservabilityBackendTest >> testWhatAResultFoundIsReported [
-	"How many entries a listing matched and whether it showed them all; for MCP's own tools, how a test run ended and which tools a search named."
+	"How many entries a listing matched and whether it showed them all; for MCP's own tools, how a test run ended and which tools a search named. The result is built as MCP's tools build theirs, its facts in the data of its structured content."
 
 	| tool attributes |
 	tool := MCPToolRegistry default toolNamed: 'class_get' ifAbsent: [ self skip: 'class_get is not registered' ].
 	attributes := (backend
-		               resultAttributesFor: (MCPStructureCallToolResult content: #(  ) structuredContent: {
+		               resultAttributesFor: (tool successResultText: 'Found.' data: {
 					                (#pagination -> {
 						                 (#totalCount -> 42).
 						                 (#returnedCount -> 20).
