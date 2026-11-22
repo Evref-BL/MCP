@@ -130,6 +130,7 @@ MCPOpenTelemetryObservabilityBackendTest >> sessionOfACallAt: aDateAndTime conte
 
 { #category : 'running' }
 MCPOpenTelemetryObservabilityBackendTest >> setUp [
+	"The backend under test is configured as a server configures it, from settings that ask for traces."
 
 	super setUp.
 	previousTracerProvider := (OTTracerProvider classVariableNamed: #Current) value.
@@ -158,7 +159,8 @@ MCPOpenTelemetryObservabilityBackendTest >> setUp [
 	OTTracerProvider current: tracerProvider.
 	OTMeterProvider current: meterProvider.
 	OTLoggerProvider current: loggerProvider.
-	backend := MCPOpenTelemetryObservabilityBackend new
+	backend := MCPOpenTelemetryObservabilityBackend new.
+	backend configureFor: (self serverInfoAt: '9.8.7') configured: true
 ]
 
 { #category : 'private' }
@@ -257,6 +259,28 @@ MCPOpenTelemetryObservabilityBackendTest >> testABackendConfiguredInAnEarlierIma
 ]
 
 { #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testABackendNobodyConfiguredRecordsNoTraces [
+	"It would make providers from the environment, which may name no endpoint, so that the SDK's default one would be used. It records locally all the same."
+
+	| unconfigured |
+	OTTracerProvider current: nil.
+	OTMeterProvider current: nil.
+	unconfigured := MCPOpenTelemetryObservabilityBackend new.
+	self deny: unconfigured isRecordingTraces.
+	unconfigured
+		recordToolCallFinish: (unconfigured
+				 recordToolCallStart: #method_compile
+				 input: Dictionary new
+				 dispatchPath: 'tools/call'
+				 context: Dictionary new)
+		result: self successToolResult
+		error: nil.
+	self assert: (OTTracerProvider classVariableNamed: #Current) value isNil.
+	self assert: OTMeterProvider currentOrNil isNil.
+	self assert: unconfigured totalCallCount equals: 1
+]
+
+{ #category : 'tests' }
 MCPOpenTelemetryObservabilityBackendTest >> testACallEndingAfterTheSettingsStopAskingForTracesSendsNothing [
 	"Its span is dropped rather than ended, and nothing is made to record it: the settings no longer say where to send it."
 
@@ -301,6 +325,40 @@ MCPOpenTelemetryObservabilityBackendTest >> testACallRunningWhileAnotherServerIs
 	self assert: OTTracerProvider current identicalTo: tracerProvider.
 	backend recordToolCallFinish: record result: self successToolResult error: nil.
 	self assert: exporter snapshots size equals: 1
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testACallStartingWhileTheProvidersAreReplacedStartsInTheNewOnes [
+	"A call's span is started and known to be running in the critical section a reconfiguration holds, so a call starting meanwhile waits for it, and starts in the providers it made rather than in one it shuts down."
+
+	| record span |
+	self timeLimit: 30 seconds.
+	MCPOpenTelemetryObservabilityBackend providersMutex critical: [
+			[ record := self startToolCall ] forkAt: Processor activePriority + 1.
+			MCPOpenTelemetryObservabilityBackend reconfigure: { backend } with: (self settingsAskingForTraces: true) ].
+	self assert: (self waitUntil: [ record isNotNil ]).
+	span := backend spanOfRecord: record.
+	self assert: (span instVarNamed: #tracerProvider) identicalTo: (OTTracerProvider classVariableNamed: #Current) value.
+	self deny: (span instVarNamed: #tracerProvider) identicalTo: tracerProvider.
+	backend recordToolCallFinish: record result: self successToolResult error: nil.
+	self assert: MCPOpenTelemetryObservabilityBackend spansInFlight isEmpty
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testACallTerminatedBeforeItAnswersEndsItsSpan [
+	"A call whose process is terminated before it answers, by a server stopping or a debugger abandoned, still ends its span, as failed, so that a provider replaced while it ran is not kept waiting for it."
+
+	| server call |
+	self timeLimit: 30 seconds.
+	MCPEvaluateTestProbe reset.
+	server := self mcp.
+	[
+		call := [ server rpcToolCall: 'evaluate' withParams: { ('code' -> 'MCPEvaluateTestProbe holdUntilReleased') } asDictionary ]
+			        fork.
+		self assert: (self waitUntil: [ MCPEvaluateTestProbe holder isNotNil ]).
+		call terminate.
+		self assert: (self waitUntil: [ MCPOpenTelemetryObservabilityBackend spansInFlight isEmpty ]).
+		self assert: exporter onlySnapshot status equals: OTSpan error ] ensure: [ MCPEvaluateTestProbe release ]
 ]
 
 { #category : 'tests' }
@@ -366,8 +424,9 @@ MCPOpenTelemetryObservabilityBackendTest >> testACallersSessionIsKeptAndLeavesTh
 { #category : 'tests' }
 MCPOpenTelemetryObservabilityBackendTest >> testAConfigurationFileThatSaysWhatTheTelemetryDescribesIsLeftToSayIt [
 
-	| file |
+	| file resource |
 	file := (FileLocator temp / 'mcp-telemetry-configuration.yaml') asFileReference.
+	resource := tracerProvider resource.
 	[
 		file writeStreamDo: [ :stream |
 				stream nextPutAll: 'file_format: "1.0"
@@ -377,9 +436,9 @@ resource:
       value: from-file
 ' ].
 		self withEnvironmentVariable: 'OTEL_CONFIG_FILE' setTo: file fullName do: [
-				backend describeServer: (self serverInfoAt: '9.8.7').
+				backend describeServer: (self serverInfoAt: '1.2.3').
 				self
-					deny: (tracerProvider resource attributes includesKey: 'service.version');
+					assert: tracerProvider resource identicalTo: resource;
 					assert: (OTTracerProvider configuredResource attributes at: 'service.name') equals: 'from-file' ] ] ensure: [
 			file ensureDelete.
 			OTConfigurationSource reset ]
@@ -874,6 +933,25 @@ MCPOpenTelemetryObservabilityBackendTest >> testReconfiguringHandsNoShutDownProc
 ]
 
 { #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testReplacingTheProvidersWaitsForNoneOfThemToShutDown [
+	"A collector that does not answer holds up neither the reconfiguration nor the calls meanwhile: the providers replaced are shut down in the background. The one a running call's span came from is retired in the critical section that tells the call is running, so it is shut down once that call ends, whenever it ends."
+
+	| reader record elapsed |
+	self timeLimit: 30 seconds.
+	reader := MCPOpenTelemetryHangingMetricReader new.
+	meterProvider addMetricReader: reader.
+	record := self startToolCall.
+	[
+		elapsed := Time millisecondsToRun: [
+			           MCPOpenTelemetryObservabilityBackend reconfigure: { backend } with: (self settingsAskingForTraces: true) ].
+		self assert: elapsed < 5000.
+		backend recordToolCallFinish: record result: self successToolResult error: nil.
+		self assert: exporter snapshots size equals: 1.
+		self assert: ((MCPOpenTelemetryObservabilityBackend classVariableNamed: #RetiredTracerProviders) value ifNil: [ #(  ) ]) isEmpty.
+		self assert: (self waitUntil: [ reader wasEntered and: [ tracerProvider isShutdown ] ]) ] ensure: [ reader open ]
+]
+
+{ #category : 'tests' }
 MCPOpenTelemetryObservabilityBackendTest >> testSessionLifecycleGoesThroughTheLogRecordBuilderAndFlushes [
 	"The session events build a log record and force a flush on all three
 	providers, so this fails if any of that surface moves."
@@ -1289,6 +1367,18 @@ MCPOpenTelemetryObservabilityBackendTest >> testWithoutAnEndpointNothingIsSentAn
 	self assert: OTLoggerProvider currentOrNil isNil.
 	self assert: (OTSpanExporter classVariableNamed: #Current) value isNil.
 	self assert: exporter snapshots isEmpty
+]
+
+{ #category : 'private' }
+MCPOpenTelemetryObservabilityBackendTest >> waitUntil: aBlock [
+	"Whether aBlock answers true within ten seconds, giving the processes below this one the processor meanwhile."
+
+	| deadline |
+	deadline := Time millisecondClockValue + 10000.
+	[ aBlock value ] whileFalse: [
+			Time millisecondClockValue > deadline ifTrue: [ ^ false ].
+			(Delay forMilliseconds: 10) wait ].
+	^ true
 ]
 
 { #category : 'private' }

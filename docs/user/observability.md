@@ -102,8 +102,9 @@ an OTLP endpoint (`OTEL_EXPORTER_OTLP_ENDPOINT` or
 `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`) or a configuration file
 (`OTEL_CONFIG_FILE`). Without such a setting, with no file and an environment
 that names none, no provider is made and nothing is sent, not even to the
-SDK's default endpoint; the server still records its calls locally. The
-image reads the file and its environment again each time it starts, and
+SDK's default endpoint; the server still records its calls locally. A
+backend nobody configured, made by hand rather than through
+`useOpenTelemetryObservability`, records locally only. The image reads the file and its environment again each time it starts, and
 rebuilds its providers from them, so a saved image sends where they say now,
 or nothing once they are gone, never where they said when it was saved. While
 it runs, the file's settings stay in its environment.
@@ -114,11 +115,15 @@ code's use of OpenTelemetry is left alone, and only when the settings are not
 those they were made from, so that making or configuring another server leaves
 them as they are. Configuring one server's recording configures every
 server's that records through OpenTelemetry, so that none is left with
-providers that were shut down. When new settings rebuild them, a call already
-running ends in the provider that started its span, which is shut down once
-the last such call has ended; a call running when the settings stop asking for
-traces, or when the image starts again, sends nothing. Stopping a server waits
-at most a second for what it holds to be sent.
+providers that were shut down. The providers replaced are shut down in the
+background, so a collector that does not answer holds up neither the
+reconfiguration nor the calls meanwhile. A call starting its span while they
+are replaced waits for the replacement, and starts in the new ones. A call
+already running ends in the provider that started its span, which is shut
+down once the last such call has ended, and a call terminated before it
+answers ends its span too, as failed. A call running when the settings stop
+asking for traces, or when the image starts again, sends nothing. Stopping a
+server waits at most a second for what it holds to be sent.
 
 Enabling it sets the image's OpenTelemetry resource, for every provider in
 the image and those made later, to what describes the server: `service.name`

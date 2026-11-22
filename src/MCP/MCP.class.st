@@ -348,9 +348,10 @@ MCP >> callToolCall: callTool withParams: arguments [
 
 	| record |
 	record := self recordStartOf: callTool input: arguments dispatchPath: 'direct'.
-	^ [ self dispatchToolCallWith: callTool arguments: arguments observabilityRecord: record ]
-		  on: Exception
-		  do: [ :error | self answerToolError: error tool: callTool record: record ]
+	^ [
+		  [ self dispatchToolCallWith: callTool arguments: arguments observabilityRecord: record ]
+			  on: Exception
+			  do: [ :error | self answerToolError: error tool: callTool record: record ] ] ensure: [ self endRecordOfACallCutShort: record ]
 ]
 
 { #category : 'configuration' }
@@ -475,6 +476,14 @@ MCP >> dispatchToolCallWith: callTool arguments: arguments observabilityRecord: 
 	^ response
 ]
 
+{ #category : 'private - tools' }
+MCP >> endRecordOfACallCutShort: aRecord [
+	"A call whose process was terminated before it answered still ends its record, as failed, so that nothing the record keeps open, such as its span, outlives the call. A call that answered, or failed with a protocol error, ended its record already."
+
+	(aRecord isNil or: [ aRecord isRunning not ]) ifTrue: [ ^ self ].
+	self observability recordToolCallFinish: aRecord result: nil error: nil
+]
+
 { #category : 'private - start' }
 MCP >> ensureServerIsListening [
 	"The listener binds in a process above its caller's priority, so a bind that fails has usually failed by now. A port another MCP in this image listens on stays held however long this one waits for it, so that failure is signalled as soon as it is seen: at once, or after the first wait when the bind had not failed yet."
@@ -510,11 +519,12 @@ MCP >> executeTool: aTool withParams: arguments dispatchPath: dispatchPath paren
 		          dispatchPath: dispatchPath
 		          parentRecord: aRecord.
 	^ [
-		  result := (aTool executeWithRequest: (aTool requestFromToolCallArguments: arguments)) asMCPStructureCallToolResult.
-		  self observability recordToolCallFinish: record result: result error: nil.
-		  result asJRPCJSONForResponseFields: self toolResponseFields ]
-		  on: Exception
-		  do: [ :error | self answerToolError: error tool: aTool record: record ]
+		  [
+			  result := (aTool executeWithRequest: (aTool requestFromToolCallArguments: arguments)) asMCPStructureCallToolResult.
+			  self observability recordToolCallFinish: record result: result error: nil.
+			  result asJRPCJSONForResponseFields: self toolResponseFields ]
+			  on: Exception
+			  do: [ :error | self answerToolError: error tool: aTool record: record ] ] ensure: [ self endRecordOfACallCutShort: record ]
 ]
 
 { #category : 'private - completion' }

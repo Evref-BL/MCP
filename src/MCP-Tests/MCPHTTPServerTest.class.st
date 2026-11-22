@@ -9,6 +9,19 @@ Class {
 }
 
 { #category : 'private' }
+MCPHTTPServerTest >> answerTo: someLines on: aServer [
+	"The response aServer gives a request sent as it is, someLines joined by CRLF, as no client library would send it."
+
+	| stream |
+	stream := ZnNetworkingUtils socketStreamToUrl: aServer localUrl.
+	^ [
+		  stream
+			  nextPutAll: (String crlf join: someLines) asByteArray;
+			  flush.
+		  ZnResponse readFrom: stream ] ensure: [ stream close ]
+]
+
+{ #category : 'private' }
 MCPHTTPServerTest >> post: anEntity to: aPath on: aServer [
 	"The response a client gets posting anEntity to aPath of aServer, over HTTP."
 
@@ -16,7 +29,7 @@ MCPHTTPServerTest >> post: anEntity to: aPath on: aServer [
 	client := ZnClient new.
 	^ [
 		  client
-			  url: aServer localUrl / aPath;
+			  url: (aServer localUrl withRelativeReference: aPath);
 			  headerAt: 'Accept' put: 'application/json, text/event-stream';
 			  entity: anEntity;
 			  post.
@@ -117,6 +130,15 @@ MCPHTTPServerTest >> testABatchInsideABatchIsAnInvalidRequest [
 	self assert: (answers first at: 'id') isNil.
 	self assert: (answers second at: 'id') equals: 2.
 	self assert: (answers second includesKey: 'result')
+]
+
+{ #category : 'tests' }
+MCPHTTPServerTest >> testABodyThatIsNotJSONIsAParseErrorWith400 [
+	"A body that is not JSON is no message the server can accept, which Streamable HTTP answers with 400."
+
+	| body |
+	body := self refusalIn: (self responseForRequest: (self postRequestWithContents: '{') using: MCPHTTPServer new) withStatus: 400.
+	self assert: ((body at: 'error') at: 'code') equals: -32700
 ]
 
 { #category : 'tests' }
@@ -225,15 +247,28 @@ MCPHTTPServerTest >> testAModernRequestMissingAHeaderIsRefused [
 ]
 
 { #category : 'tests' }
-MCPHTTPServerTest >> testAPostToMcpReachesTheEndpoint [
-	"/mcp is the path many clients put after the server's address by default."
+MCPHTTPServerTest >> testAPathTheEndpointIsNotAtIsNotFound [
 
 	self timeLimit: 30 seconds.
 	self withServerDo: [ :server |
-			| response |
-			response := self post: (ZnEntity json: '{"jsonrpc":"2.0","id":1,"method":"ping"}') to: 'mcp' on: server.
-			self assert: response code equals: 200.
-			self assert: ((STONJSON fromString: response contents) includesKey: 'result') ]
+			| body |
+			body := self
+				        refusalIn: (self post: (ZnEntity json: '{"jsonrpc":"2.0","id":1,"method":"ping"}') to: 'mcp/tools' on: server)
+				        withStatus: 404.
+			self assert: ((body at: 'error') at: 'message') equals: 'Not Found: this server answers at /mcp.' ]
+]
+
+{ #category : 'tests' }
+MCPHTTPServerTest >> testAPostToMcpReachesTheEndpoint [
+	"/mcp is the path many clients put after the server's address by default, some with a slash after it."
+
+	self timeLimit: 30 seconds.
+	self withServerDo: [ :server |
+			#( 'mcp' 'mcp/' ) do: [ :each |
+					| response |
+					response := self post: (ZnEntity json: '{"jsonrpc":"2.0","id":1,"method":"ping"}') to: each on: server.
+					self assert: response code equals: 200.
+					self assert: ((STONJSON fromString: response contents) includesKey: 'result') ] ]
 ]
 
 { #category : 'tests' }
@@ -246,6 +281,27 @@ MCPHTTPServerTest >> testAPreflightAllowsTheHeadersAModernRequestSends [
 	response := self responseForRequest: request using: MCPHTTPServer new.
 	allowed := ((response headers at: #'Access-Control-Allow-Headers') substrings: ', ') collect: [ :each | each asLowercase ].
 	#( 'mcp-protocol-version' 'mcp-method' 'mcp-name' ) do: [ :each | self assert: (allowed includes: each) description: each ]
+]
+
+{ #category : 'tests' }
+MCPHTTPServerTest >> testARequestZincCannotReadIsAParseError [
+	"Zinc's readers fail on these with a plain error, which went unhandled in the worker and quit a headless image. Each is answered as a request that could not be read, and the server goes on answering."
+
+	| ping |
+	self timeLimit: 30 seconds.
+	ping := '{"jsonrpc":"2.0","id":1,"method":"ping"}'.
+	self withServerDo: [ :server |
+			{
+				#( 'POST / HTTP/1.1' 'Host: 127.0.0.1' 'Content-Type: application/json' 'Content-Length: abc' '' '{}' ).
+				#( 'POST / HTTP/1.1' 'Host: 127.0.0.1' 'Content-Type: application/json' 'Content-Length: ' '' '{}' ).
+				#( 'POST / HTTP/1.1' 'Host: 127.0.0.1' 'Content-Type: application/json' 'Transfer-Encoding: chunked'
+				   '' 'zz' '{}' '0' '' '' ).
+				#( 'POST / HTTP/1.1' 'Host: 127.0.0.1' 'Content-Type: application/json' 'Content-Encoding: gzip' 'Content-Length: 2'
+				   '' '{}' ) } do: [ :each |
+					| body |
+					body := self refusalIn: (self answerTo: each on: server) withStatus: 400.
+					self assert: ((body at: 'error') at: 'code') = -32700 description: (each at: 4) ].
+			self assert: (self post: (ZnEntity json: ping) to: '' on: server) code equals: 200 ]
 ]
 
 { #category : 'tests' }
@@ -268,6 +324,15 @@ MCPHTTPServerTest >> testAllowsLoopbackOriginAndReturnsCORSHeaders [
 	self assert: response code equals: 405.
 	self assert: (response headers at: #'Access-Control-Allow-Origin') equals: 'http://localhost:3000'.
 	self assert: (response headers at: #Vary) equals: 'Origin'
+]
+
+{ #category : 'tests' }
+MCPHTTPServerTest >> testAnErrorServingAConnectionEndsOnlyThatConnection [
+	"Here the answer to a request that could not be read cannot be written either. Unhandled in the worker, that error would quit a headless image."
+
+	| request |
+	request := String crlf join: #( 'POST / HTTP/1.1' 'Host: 127.0.0.1' 'Content-Length: abc' '' '' ).
+	self shouldnt: [ MCPSocketSafeZnServer new executeRequestResponseLoopOn: (ReadStream on: request asByteArray) ] raise: Error
 ]
 
 { #category : 'tests' }
@@ -319,17 +384,6 @@ MCPHTTPServerTest >> testHandlesConcurrentPostRequests [
 					description:
 					(String streamContents: [ :stream | stream << 'Unexpected body at index ' << index asString << ': ' << response contents ]) ] ]
 		ensure: [ server stop ]
-]
-
-{ #category : 'tests' }
-MCPHTTPServerTest >> testMalformedJSONReturnsJSONRPCError [
-
-	| request response |
-	request := self postRequestWithContents: '{'.
-	response := self responseForRequest: request using: MCPHTTPServer new.
-	self assert: response code equals: 200.
-	self assert: response contentType equals: ZnMimeType applicationJson.
-	self assert: (response contents includesSubstring: '"error"')
 ]
 
 { #category : 'tests' }

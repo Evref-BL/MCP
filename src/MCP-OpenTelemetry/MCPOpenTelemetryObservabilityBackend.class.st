@@ -55,20 +55,46 @@ MCPOpenTelemetryObservabilityBackend class >> configureProvidersWith: aSettings 
 ]
 
 { #category : 'private - providers' }
-MCPOpenTelemetryObservabilityBackend class >> detachTracerProvider [
-	"Takes the image's tracer provider, with the span processor and exporter it was made from, out of OpenTelemetry's hands without shutting them down, and answers it with the spans of the calls running now; nil when there is none."
+MCPOpenTelemetryObservabilityBackend class >> detach: aProviderClass into: dropped [
+
+	[
+		aProviderClass currentOrNil ifNotNil: [ :provider |
+				aProviderClass current: nil.
+				dropped add: provider ] ]
+		on: Error
+		do: [ :error | error return: nil ]
+]
+
+{ #category : 'private - providers' }
+MCPOpenTelemetryObservabilityBackend class >> detachProviders [
+	"Takes the image's tracer, meter and logger providers, with the span processor and exporter the tracer provider was made from, out of OpenTelemetry's hands without shutting any down, and answers those to shut down now. A provider that cannot be taken out is left for the reset to shut down where it is."
 
 	^ self providersMutex critical: [
-			  ([ (OTTracerProvider classVariableNamed: #Current) value ]
-				   on: Error
-				   do: [ :error | error return: nil ]) ifNotNil: [ :provider |
-					  [
-						  OTTracerProvider current: nil.
-						  (OTSpanProcessor classVariableNamed: #Current) value: nil.
-						  (OTSpanExporter classVariableNamed: #Current) value: nil.
-						  provider -> self spansInFlight copy ]
-						  on: Error
-						  do: [ :error | error return: nil ] ] ]
+			  | dropped |
+			  dropped := OrderedCollection new.
+			  self detachTracerProviderInto: dropped.
+			  {
+				  OTMeterProvider.
+				  OTLoggerProvider } do: [ :each | self detach: each into: dropped ].
+			  dropped ]
+]
+
+{ #category : 'private - providers' }
+MCPOpenTelemetryObservabilityBackend class >> detachTracerProviderInto: dropped [
+	"Takes the tracer provider out, with the span processor and exporter it was made from, into dropped when no call is running that it may have started a span for. Otherwise it is retired, in the critical section that tells which calls are running, and shut down after the last of them ends."
+
+	([ (OTTracerProvider classVariableNamed: #Current) value ]
+		 on: Error
+		 do: [ :error | error return: nil ]) ifNotNil: [ :provider |
+			[
+				OTTracerProvider current: nil.
+				self spansInFlight
+					ifEmpty: [ dropped add: provider ]
+					ifNotEmpty: [ :spans | self retiredTracerProviders add: provider -> spans copy ].
+				(OTSpanProcessor classVariableNamed: #Current) value: nil.
+				(OTSpanExporter classVariableNamed: #Current) value: nil ]
+				on: Error
+				do: [ :error | error return: nil ] ]
 ]
 
 { #category : 'class initialization' }
@@ -164,18 +190,20 @@ MCPOpenTelemetryObservabilityBackend class >> providersMutex [
 
 { #category : 'configuring' }
 MCPOpenTelemetryObservabilityBackend class >> reconfigure: someBackends with: aSettings [
-	"Configures each of someBackends afresh from aSettings, the providers once for all of them. The providers are global and may be the user's: they are rebuilt only when the settings ask for traces or one of these backends was configured to record through them, and then only when the settings in effect are not those they were made from, so that configuring another server leaves the calls running recording as they started."
+	"Configures each of someBackends afresh from aSettings, the providers once for all of them. The providers are global and may be the user's: they are rebuilt only when the settings ask for traces or one of these backends was configured to record through them, and then only when the settings in effect are not those they were made from, so that configuring another server leaves the calls running recording as they started. A call starting its span meanwhile waits for all of it, so that it starts in the providers before or after, never in those being replaced."
 
-	| wanted settings |
-	wanted := self wantsTraces: aSettings.
-	settings := self settingsInEffectOf: aSettings.
-	((wanted or: [ someBackends anySatisfy: [ :each | each isConfiguredForTraces ] ]) and: [ ProviderSettings ~= settings ]) ifTrue: [
-			self resetProviders.
-			ProviderSettings := settings ].
-	someBackends do: [ :each |
-			[ each configureFor: each serverInfo configured: wanted ]
-				on: Error
-				do: [ :error | error return: nil ] ]
+	self providersMutex critical: [
+			| wanted settings |
+			wanted := self wantsTraces: aSettings.
+			settings := self settingsInEffectOf: aSettings.
+			((wanted or: [ someBackends anySatisfy: [ :each | each isConfiguredForTraces ] ]) and: [ ProviderSettings ~= settings ])
+				ifTrue: [
+						self resetProviders.
+						ProviderSettings := settings ].
+			someBackends do: [ :each |
+					[ each configureFor: each serverInfo configured: wanted ]
+						on: Error
+						do: [ :error | error return: nil ] ] ]
 ]
 
 { #category : 'registry' }
@@ -193,20 +221,23 @@ MCPOpenTelemetryObservabilityBackend class >> registeredBackends [
 
 { #category : 'configuring' }
 MCPOpenTelemetryObservabilityBackend class >> resetProviders [
-	"Drops the image's OpenTelemetry providers, processors and exporters, which are global. Those an image was saved with would otherwise keep sending where an earlier session's settings said, after those settings changed or were removed; and a processor a reset shut down would be handed to the next provider. The tracer provider is not shut down while a call it started a span for is running, so that the span is still exported when the call ends; it is shut down after the last such call."
+	"Drops the image's OpenTelemetry providers, processors and exporters, which are global. Those an image was saved with would otherwise keep sending where an earlier session's settings said, after those settings changed or were removed; and a processor a reset shut down would be handed to the next provider. They are shut down in the background, so that a collector that does not answer holds up neither the reconfiguration nor the calls starting meanwhile; the tracer provider only after the last call it may have started a span for has ended, so that the span is still exported."
 
-	| retired |
-	retired := self detachTracerProvider.
-	{
-		OTTracerProvider.
-		OTSpanProcessor.
-		OTSpanExporter.
-		OTMeterProvider.
-		OTLoggerProvider } do: [ :each |
-			[ each reset ]
-				on: Error
-				do: [ :error | error return: nil ] ].
-	retired ifNotNil: [ self retire: retired ]
+	| dropped |
+	dropped := self providersMutex critical: [
+			           | detached |
+			           detached := self detachProviders.
+			           {
+				           OTTracerProvider.
+				           OTSpanProcessor.
+				           OTSpanExporter.
+				           OTMeterProvider.
+				           OTLoggerProvider } do: [ :each |
+					           [ each reset ]
+						           on: Error
+						           do: [ :error | error return: nil ] ].
+			           detached ].
+	dropped do: [ :each | self shutDownInTheBackground: each ]
 ]
 
 { #category : 'resource' }
@@ -256,20 +287,6 @@ MCPOpenTelemetryObservabilityBackend class >> resourceIsConfigured [
 ]
 
 { #category : 'private - providers' }
-MCPOpenTelemetryObservabilityBackend class >> retire: aTracerProviderWithSpans [
-	"Shuts the tracer provider down once the calls it started spans for have ended: now, when none is running."
-
-	| provider spans |
-	provider := aTracerProviderWithSpans key.
-	spans := aTracerProviderWithSpans value.
-	spans ifEmpty: [
-			^ [ provider shutdown ]
-				  on: Error
-				  do: [ :error | error return: nil ] ].
-	self providersMutex critical: [ self retiredTracerProviders add: provider -> spans ]
-]
-
-{ #category : 'private - providers' }
 MCPOpenTelemetryObservabilityBackend class >> retiredTracerProviders [
 	"Tracer providers replaced while calls they started spans for were running, each with the spans still to end before it is shut down."
 
@@ -286,14 +303,12 @@ MCPOpenTelemetryObservabilityBackend class >> settingsInEffectOf: aSettings [
 ]
 
 { #category : 'private - providers' }
-MCPOpenTelemetryObservabilityBackend class >> shutDownInTheBackground: aTracerProvider [
+MCPOpenTelemetryObservabilityBackend class >> shutDownInTheBackground: aProvider [
 
 	[
-		[ aTracerProvider shutdown ]
+		[ aProvider shutdown ]
 			on: Error
-			do: [ :error | error return: nil ] ]
-		forkAt: Processor userBackgroundPriority
-		named: 'MCP OpenTelemetry retired tracer provider'
+			do: [ :error | error return: nil ] ] forkAt: Processor userBackgroundPriority named: 'MCP OpenTelemetry provider shutdown'
 ]
 
 { #category : 'private - providers' }
@@ -633,10 +648,9 @@ MCPOpenTelemetryObservabilityBackend >> isList: anObject [
 
 { #category : 'testing' }
 MCPOpenTelemetryObservabilityBackend >> isRecordingTraces [
-	"Whether it records traces through the providers as they are: unless it was configured from settings that ask for none, or providers that would not describe its server, or configured in an earlier image session, whose settings this one may not have, until the image's start configures it again. It records locally either way."
+	"Whether it records traces through the providers as they are: only once configured, in this image session, from settings that ask for traces and with providers that describe its server. A backend nobody configured, or configured in an earlier image session, whose settings this one may not have, until the image's start configures it again, records none. It records locally either way."
 
-	configured == false ifTrue: [ ^ false ].
-	^ configuredInSession isNil or: [ configuredInSession == Smalltalk session ]
+	^ self isConfiguredForTraces and: [ configuredInSession == Smalltalk session ]
 ]
 
 { #category : 'private - reporting' }
@@ -667,10 +681,10 @@ MCPOpenTelemetryObservabilityBackend >> isReportablePackageName: aName [
 
 { #category : 'accessing' }
 MCPOpenTelemetryObservabilityBackend >> logger [
+	"Made under the providers' critical section, so never from a provider a reconfiguration is replacing."
 
 	logger ifNotNil: [ ^ logger ].
-	logger := OTLoggerProvider current loggerNamed: 'mcp-pharo'.
-	^ logger
+	^ self class providersMutex critical: [ logger ifNil: [ logger := OTLoggerProvider current loggerNamed: 'mcp-pharo' ] ]
 ]
 
 { #category : 'private - reporting' }
@@ -699,10 +713,10 @@ MCPOpenTelemetryObservabilityBackend >> maxToolRefs [
 
 { #category : 'accessing' }
 MCPOpenTelemetryObservabilityBackend >> meter [
+	"Made under the providers' critical section, so never from a provider a reconfiguration is replacing."
 
 	meter ifNotNil: [ ^ meter ].
-	meter := OTMeterProvider current meterNamed: 'mcp-pharo'.
-	^ meter
+	^ self class providersMutex critical: [ meter ifNil: [ meter := OTMeterProvider current meterNamed: 'mcp-pharo' ] ]
 ]
 
 { #category : 'private - reporting' }
@@ -1213,25 +1227,29 @@ MCPOpenTelemetryObservabilityBackend >> startAttributesFor: aRecord named: aTool
 
 { #category : 'private - spans' }
 MCPOpenTelemetryObservabilityBackend >> startSpanFor: aRecord named: aToolName input: inputObject context: contextDictionary [
-	"Starts the call's span, named as the server names its tool, as a child of the call that dispatched it when one did, else of the caller's trace context. The tool is kept with the span, for what its schema declares when the call ends; and the span is known to be running, so the provider that made it outlives it."
+	"Starts the call's span, named as the server names its tool, as a child of the call that dispatched it when one did, else of the caller's trace context. The tool is kept with the span, for what its schema declares when the call ends. The span is started and known to be running in one critical section, which a reconfiguration takes too, so that the provider it is started in is not shut down before it ends."
 
-	| name tool origin parent span |
+	| name tool origin parent attributes span |
 	name := self reportableToolName: aToolName in: contextDictionary.
 	tool := contextDictionary at: #tool ifAbsent: [ nil ].
 	origin := self originOfTool: tool.
 	parent := self parentContextIn: contextDictionary.
-	span := (self tracer spanBuilderNamed: 'tools/call ' , name)
-		        kind: OTSpan server;
-		        inContext: parent;
-		        attributes: (self
-				         startAttributesFor: aRecord
-				         named: name
-				         origin: origin
-				         input: inputObject
-				         context: contextDictionary
-				         parent: parent);
-		        startSpan.
-	self class spanStarted: span.
+	attributes := self
+		              startAttributesFor: aRecord
+		              named: name
+		              origin: origin
+		              input: inputObject
+		              context: contextDictionary
+		              parent: parent.
+	span := self class providersMutex critical: [
+			        | started |
+			        started := (self tracer spanBuilderNamed: 'tools/call ' , name)
+				                   kind: OTSpan server;
+				                   inContext: parent;
+				                   attributes: attributes;
+				                   startSpan.
+			        self class spanStarted: started.
+			        started ].
 	self critical: [
 			recordsById at: aRecord id put: {
 					span.
@@ -1281,10 +1299,10 @@ MCPOpenTelemetryObservabilityBackend >> toolNamesIn: aContent [
 
 { #category : 'accessing' }
 MCPOpenTelemetryObservabilityBackend >> tracer [
+	"Made under the providers' critical section, so never from a provider a reconfiguration is replacing."
 
 	tracer ifNotNil: [ ^ tracer ].
-	tracer := OTTracerProvider current tracerNamed: 'mcp-pharo'.
-	^ tracer
+	^ self class providersMutex critical: [ tracer ifNil: [ tracer := OTTracerProvider current tracerNamed: 'mcp-pharo' ] ]
 ]
 
 { #category : 'private - reporting' }

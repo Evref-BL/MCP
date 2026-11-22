@@ -95,6 +95,7 @@ MCPHTTPServer >> answerOptionsWith: response [
 
 { #category : 'initialization' }
 MCPHTTPServer >> answerPost: request with: response [
+	"A body that is not JSON is no message the server can accept, answered with 400 as Streamable HTTP asks, and a parse error saying why."
 
 	| body mismatch payload |
 	body := self bodyOf: request.
@@ -104,7 +105,7 @@ MCPHTTPServer >> answerPost: request with: response [
 	payload := self handleJSON: request contents.
 	(payload isString and: [ payload isEmpty ]) ifTrue: [ ^ self answerWithoutBody: response statusLine: ZnStatusLine accepted ].
 	response
-		statusLine: ZnStatusLine ok;
+		statusLine: (body ifNil: [ ZnStatusLine badRequest ] ifNotNil: [ ZnStatusLine ok ]);
 		entity: (ZnEntity json: payload).
 	^ response
 ]
@@ -219,6 +220,13 @@ MCPHTTPServer >> decodedHeaderValue: aValue [
 		  do: [ :error | error return: aValue ]
 ]
 
+{ #category : 'accessing' }
+MCPHTTPServer >> endpointPaths [
+	"Where the endpoint answers: at the root, and at /mcp, the path many clients put after a server's address by default, with or without a slash after it."
+
+	^ #( '/' '/mcp' '/mcp/' )
+]
+
 { #category : 'event streams' }
 MCPHTTPServer >> eventStreams [
 
@@ -270,21 +278,15 @@ MCPHTTPServer >> headerNamed: aName in: request [
 
 { #category : 'initialization' }
 MCPHTTPServer >> initialize [
-	"The endpoint answers at / and at /mcp, the path many clients put there by default."
 
-	| endpoint |
 	super initialize.
 	eventStreams := OrderedCollection new.
 	messageProcessor := MCPMessageProcessor new.
 	server := MCPSocketSafeZnServer new.
-	endpoint := [ :request :response | self answer: request with: response ].
 	server
 		bindingAddress: #[ 127 0 0 1 ];
 		port: self defaultPort;
-		delegate: (ZnDispatcherDelegate new
-				 map: '/' to: endpoint;
-				 map: '/mcp' to: endpoint;
-				 yourself)
+		delegate: (ZnValueDelegate with: [ :request | self respondTo: request ])
 ]
 
 { #category : 'private - validation' }
@@ -375,6 +377,23 @@ MCPHTTPServer >> refusalSaying: aMessage [
 	"The JSON-RPC error answering a request refused before its body is read. It names no request, and its code is from the range JSON-RPC leaves to servers."
 
 	^ (JRPCErrorResponseObject id: nil error: (JRPCErrorObject code: -32000 message: aMessage)) asJRPCJSON
+]
+
+{ #category : 'initialization' }
+MCPHTTPServer >> respondTo: request [
+	"A path the endpoint is not at is not found, which is said in JSON-RPC as every refusal is."
+
+	| response |
+	response := ZnResponse new
+		            statusLine: ZnStatusLine ok;
+		            headers: ZnHeaders defaultResponseHeaders;
+		            yourself.
+	(self endpointPaths includes: request uri pathPrintString) ifFalse: [
+			^ self
+				  answerRefusal: response
+				  statusLine: ZnStatusLine notFound
+				  error: (self refusalSaying: 'Not Found: this server answers at /mcp.') ].
+	^ self answer: request with: response
 ]
 
 { #category : 'starting' }
