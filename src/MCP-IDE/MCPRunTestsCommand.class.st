@@ -241,7 +241,7 @@ MCPRunTestsCommand >> runSelectionsUntil: deadline [
 
 { #category : 'private - timeout' }
 MCPRunTestsCommand >> runTestCase: aTestCase into: aResult deadline: deadline [
-	"The test's outcome. When the deadline falls while it runs, an outcome that says it was interrupted and where it was, its result discarded since it never finished; when the deadline has already passed, one that says it never started. The flag is set before the timeout unwinds the test, so a time limit SUnit enforces during the unwinding cannot undo it."
+	"The test's outcome. When the deadline falls while it runs, an outcome that says it was interrupted and where it was, its result discarded since it never finished; when the deadline has already passed, one that says it never started. The flag is set before the timeout unwinds the test, so a time limit SUnit enforces during the unwinding cannot undo it. The test's notifications are resumed outside the deadline, whose TimedOut is one, and so reaches its handler first."
 
 	| interrupted location remaining timed |
 	remaining := self millisecondsRemainingUntil: deadline.
@@ -253,9 +253,10 @@ MCPRunTestsCommand >> runTestCase: aTestCase into: aResult deadline: deadline [
 			         do: [ :timeout |
 					         timeout tag == timed ifTrue: [ location := self locationOf: timeout signalerContext in: aTestCase ].
 					         timeout pass ] ].
-	timed valueWithinMilliseconds: remaining onTimeout: [
-			interrupted := true.
-			self shortenTimeLimitOf: aTestCase ].
+	self resumingEveryNotificationDuring: [
+			timed valueWithinMilliseconds: remaining onTimeout: [
+					interrupted := true.
+					self shortenTimeLimitOf: aTestCase ] ].
 	^ interrupted
 		  ifTrue: [ MCPTestOutcome interrupted: aTestCase location: location ]
 		  ifFalse: [ MCPTestOutcome testCase: aTestCase result: aResult ]

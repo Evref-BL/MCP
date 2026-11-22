@@ -137,6 +137,21 @@ MCPToolDebugWatchTest >> testVariableNoMethodAssignsIsAnError [
 	self assert: ((self summaryFrom: result) includesSubstring: 'None of the named variables')
 ]
 
+{ #category : 'tests' }
+MCPToolDebugWatchTest >> testWatchedCodeGetsTheDefaultActionOfANotificationTheBoundaryRefuses [
+	"The watched code is the caller's, not a change of the tool's, so a notification the boundary refuses to resume gets its default action there, as it would with no tool calling."
+
+	| data result series |
+	result := self watchWith: {
+			          (#method -> 'MCPDebugWatchTestTarget>>sumTo:').
+			          (#run -> 'MCPDebugWatchTestTarget new sumTo: 2. MCPToolRefusedNotification signal') } asDictionary.
+	self deny: (self resultIndicatesError: result).
+	data := self dataFrom: result.
+	self assert: (data at: #result) equals: '#mcpDefaultAction'.
+	series := self seriesFor: 'MCPDebugWatchTestTarget>>sumTo:' watching: 'n' in: data.
+	self assert: (series at: #values) equals: #( '2' )
+]
+
 { #category : 'private' }
 MCPToolDebugWatchTest >> watchWith: someArguments [
 

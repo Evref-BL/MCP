@@ -902,6 +902,30 @@ MCPToolRunTestsTest >> testRunTestMethodReturnsStructuredIssues [
 ]
 
 { #category : 'tests' }
+MCPToolRunTestsTest >> testRunTestsAnswersForATestThatLeavesARefactoringWarningUnhandled [
+	"One of Pharo's own tests of extracting a setUp signals RBRefactoringWarning and leaves it unhandled. test_run answers for it what SUnit alone does instead of ending the run. Its class came with Pharo 12."
+
+	| cases data result testClass |
+	testClass := self class environment
+		             at: #RBExtractSetUpMethodParametrizedTest
+		             ifAbsent: [ ^ self skip: 'This Pharo has no RBExtractSetUpMethodParametrizedTest.' ].
+	cases := (MCPRunTestsCommand new testCasesFromSuite: testClass suite) select: [ :each |
+		         each selector = #testExtractSetUpAndConvertTempsToInstVars ].
+	cases ifEmpty: [
+		^ self skip: 'This Pharo has no RBExtractSetUpMethodParametrizedTest>>#testExtractSetUpAndConvertTempsToInstVars.' ].
+	result := self
+		          callToolNamed: 'test_run'
+		          withArguments:
+		          { (#methods -> #( 'RBExtractSetUpMethodParametrizedTest>>#testExtractSetUpAndConvertTempsToInstVars' )) } asDictionary.
+	self deny: (self resultIndicatesError: result).
+	data := self dataFrom: result.
+	self assert: (data at: #runCount) equals: cases size.
+	self assert: (data at: #passedCount) equals: (TestSuite new
+			 addTests: cases;
+			 run) passedCount
+]
+
+{ #category : 'tests' }
 MCPToolRunTestsTest >> testRunTestsDeduplicatesConcreteCasesAcrossSelections [
 
 	| data failureReference fixtureClassName result |
@@ -969,6 +993,20 @@ MCPToolRunTestsTest >> testRunTestsKeepsPackagesAsPackageSelections [
 	testCases := command testCasesFor: selections first.
 	self assert: testCases isNotEmpty.
 	self assert: (testCases noneSatisfy: [ :each | each class isAbstract ])
+]
+
+{ #category : 'tests' }
+MCPToolRunTestsTest >> testRunTestsLetsNotificationsTheBoundaryRefusesUseTheirDefaultAction [
+	"The boundary around a call refuses a refactoring warning so that a change stops there unless forced. A test's notifications are the code under test's, not a change of the tool's: each it leaves unhandled gets its default action, as under SUnit alone, and a test that expects one still sees it."
+
+	| data result |
+	result := self
+		          callToolNamed: 'test_run'
+		          withArguments: { (#classes -> #( 'MCPToolRefusedNotificationTargetTest' )) } asDictionary.
+	self deny: (self resultIndicatesError: result).
+	data := self dataFrom: result.
+	self assert: (data at: #runCount) equals: 2.
+	self assert: (data at: #passedCount) equals: 2
 ]
 
 { #category : 'tests' }

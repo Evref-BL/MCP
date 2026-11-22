@@ -55,9 +55,9 @@ MCPDebugWatchCommand >> entryNodeIn: anAst ifPresent: aBlock [
 
 { #category : 'private - executing' }
 MCPDebugWatchCommand >> evaluateExpression [
-	"The watched code is the point of the call, so its own failure is reported rather than raised."
+	"The watched code is the point of the call, so its own failure is reported rather than raised. It is the caller's code, so its notifications are its own."
 
-	^ [ (Smalltalk compiler evaluate: expression) printString ]
+	^ [ self resumingEveryNotificationDuring: [ (Smalltalk compiler evaluate: expression) printString ] ]
 		  on: Error
 		  do: [ :error |
 				  String streamContents: [ :stream |

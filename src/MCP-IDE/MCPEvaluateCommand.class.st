@@ -85,7 +85,7 @@ MCPEvaluateCommand >> answeredTheTranscript [
 
 { #category : 'private' }
 MCPEvaluateCommand >> callBoundary [
-	"How a call resumes a notification and describes a failure, which MCPTool keeps for every tool. The code runs in a process of its own, so they are re-established there with a tool of no kind in particular: a failure is described while its stack is still there to read, which is only in that process, before it unwinds."
+	"How a call describes a failure and cuts its frames, which MCPTool keeps for every tool. The code runs in a process of its own, so that is done there with a tool of no kind in particular: a failure is described while its stack is still there to read, which is only in that process, before it unwinds."
 
 	^ MCPTool new
 ]
@@ -147,9 +147,9 @@ MCPEvaluateCommand >> evaluate [
 
 { #category : 'private' }
 MCPEvaluateCommand >> evaluateWithinCallBoundary [
-	"The boundary MCPTool>>executeRequest:do:onError: keeps around a call, in the process the code runs in, so that no exception goes unhandled there, opens a debugger and leaves the call waiting for its limit."
+	"The boundary MCPTool>>executeRequest:do:onError: keeps around a call, in the process the code runs in, so that no exception goes unhandled there, opens a debugger and leaves the call waiting for its limit. Everything that runs there is the caller's code, the value's printing included, so its notifications are its own rather than refused as a tool's change would be."
 
-	[ self callBoundary resumingNotificationsDuring: [ self evaluate ] ]
+	[ self resumingEveryNotificationDuring: [ self evaluate ] ]
 		on: Exception
 		do: [ :error | self failureFor: error ]
 ]

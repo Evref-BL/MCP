@@ -499,6 +499,17 @@ MCPToolEvaluateTest >> testEvaluateOmitsTruncationFieldsForSmallResults [
 ]
 
 { #category : 'tests' }
+MCPToolEvaluateTest >> testEvaluatePrintsAValueWhosePrintingSignalsANotificationTheBoundaryRefuses [
+	"Printing the value runs the caller's code too, so a notification the boundary refuses to resume gets its default action there, as it does in the code itself."
+
+	| data result |
+	result := self callToolNamed: 'evaluate' withArguments: { (#code -> 'MCPToolNotifyingPrintTarget new') } asDictionary.
+	data := self dataFrom: result.
+	self deny: (result includesKey: #isError).
+	self assert: (data at: #resultPrintString) equals: 'printed after #mcpDefaultAction'
+]
+
+{ #category : 'tests' }
 MCPToolEvaluateTest >> testEvaluatePutsTheTranscriptBackAfterAFailure [
 
 	| previous result |
