@@ -191,6 +191,7 @@ MCPHTTPServer >> closeEventStreams [
 
 { #category : 'initialization' }
 MCPHTTPServer >> configureResponse: response for: request [
+	"A browser sends a header only when the answer to its preflight allows it, so every header a client sends is allowed, the two a modern request mirrors its method and name into among them."
 
 	| origin |
 	origin := request headers at: 'Origin' ifAbsent: [ nil ].
@@ -201,7 +202,7 @@ MCPHTTPServer >> configureResponse: response for: request [
 	response headers at: #'Access-Control-Allow-Methods' put: 'GET, POST, OPTIONS'.
 	response headers
 		at: #'Access-Control-Allow-Headers'
-		put: 'accept, content-type, last-event-id, mcp-protocol-version, mcp-session-id'
+		put: 'accept, content-type, last-event-id, mcp-method, mcp-name, mcp-protocol-version, mcp-session-id'
 ]
 
 { #category : 'private - modern headers' }

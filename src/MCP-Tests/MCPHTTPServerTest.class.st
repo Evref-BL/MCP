@@ -160,6 +160,18 @@ MCPHTTPServerTest >> testAModernRequestMissingAHeaderIsRefused [
 ]
 
 { #category : 'tests' }
+MCPHTTPServerTest >> testAPreflightAllowsTheHeadersAModernRequestSends [
+	"A browser leaves out of the request any header its preflight was not told it may send, and a modern request without these is refused."
+
+	| request response allowed |
+	request := ZnRequest method: #OPTIONS url: ZnUrl new.
+	request headers at: 'Origin' put: 'http://localhost:3000'.
+	response := self responseForRequest: request using: MCPHTTPServer new.
+	allowed := ((response headers at: #'Access-Control-Allow-Headers') substrings: ', ') collect: [ :each | each asLowercase ].
+	#( 'mcp-protocol-version' 'mcp-method' 'mcp-name' ) do: [ :each | self assert: (allowed includes: each) description: each ]
+]
+
+{ #category : 'tests' }
 MCPHTTPServerTest >> testAcceptsSupportedProtocolVersion [
 
 	| request response |
