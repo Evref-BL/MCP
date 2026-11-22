@@ -1,5 +1,5 @@
 "
-Implements debug_watch's work: it installs non-halting probes on the given methods, evaluates an expression with them in place, and removes them again before it answers. Nothing survives the call: the probes are taken out in an ensure block, and with them the link installer Pharo made for them once no link is left.
+Implements debug_watch's work: it compiles an expression, installs non-halting probes on the given methods, runs the expression with them in place, and removes them again before it prints what the expression answered, so the probes record its run alone. Nothing survives the call: the probes are taken out in an ensure block, and with them the link installer Pharo made for them once no link is left.
 
 Installing a probe recompiles its method and regenerates the AST, so every target is located as a source interval on the pristine AST first, and each node is found again in a freshly fetched AST immediately before its own probe goes in. A source interval alone is ambiguous, since a statement and the sequence containing it can share one, so a target is matched on its node kind as well.
 
@@ -34,6 +34,29 @@ MCPDebugWatchCommand >> assignmentsIn: anAst forVariableNamed: aName [
 	^ anAst allChildren select: [ :each | each isAssignment and: [ each variable name = aName ] ]
 ]
 
+{ #category : 'private - executing' }
+MCPDebugWatchCommand >> callersCode: aBlock ifFailed: failBlock [
+	"The watched code is the point of the call, so its own failure, compiling, running or printing it, is reported rather than raised: failBlock gets its description. It is the caller's code, so its notifications are its own."
+
+	^ [ self resumingEveryNotificationDuring: aBlock ]
+		  on: Error
+		  do: [ :error |
+				  failBlock value: (String streamContents: [ :stream |
+							   stream << error class name.
+							   ([ error messageText ]
+								    on: Error
+								    do: [ :ignored | '' ]) asString ifNotEmpty: [ :text | stream << ': ' << text ] ]) ]
+]
+
+{ #category : 'private - executing' }
+MCPDebugWatchCommand >> compiledExpression [
+	"The expression compiled as evaluate: compiles it, to be run apart: compiling sends methods a probe may sit in, the compiler's own, and the probes record only the run."
+
+	^ self doItCompiler
+		  source: expression;
+		  compile
+]
+
 { #category : 'private - probes' }
 MCPDebugWatchCommand >> entryExpressionsIn: anAst [
 	"What a method was given is the question a probe on its entry answers; a method given nothing
@@ -55,38 +78,33 @@ MCPDebugWatchCommand >> entryNodeIn: anAst ifPresent: aBlock [
 			   ifFalse: [ first ])
 ]
 
-{ #category : 'private - executing' }
-MCPDebugWatchCommand >> evaluateExpression [
-	"The watched code is the point of the call, so its own failure is reported rather than raised. It is the caller's code, so its notifications are its own."
-
-	^ [ self resumingEveryNotificationDuring: [ (Smalltalk compiler evaluate: expression) printString ] ]
-		  on: Error
-		  do: [ :error |
-				  String streamContents: [ :stream |
-						  stream << error class name.
-						  ([ error messageText ]
-							   on: Error
-							   do: [ :ignored | '' ]) asString ifNotEmpty: [ :text | stream << ': ' << text ] ] ]
-]
-
 { #category : 'executing' }
 MCPDebugWatchCommand >> execute [
-	"Answer myself, holding what was probed and what the probes recorded. They are removed however the expression ends."
+	"Answer myself, holding what was probed, what the probes recorded and what the expression answered. The expression is compiled before the probes go in and printed once they are out, so they record its run alone, and they are removed however it ends."
 
-	| installed |
+	| doIt installed answer |
 	targets := self locatedTargets.
 	targets ifEmpty: [ ^ self signalNoTargets ].
+	recordedHits := OrderedCollection new.
+	doIt := self callersCode: [ self compiledExpression ] ifFailed: [ :failure |
+			        resultText := failure.
+			        ^ self ].
 	installed := OrderedCollection new.
 	recordedHits := [
 		                targets doWithIndex: [ :target :index |
 			                (self probeForTarget: target index: index) ifNotNil: [ :probe | installed add: probe ] ].
-		                MCPDebugWatchRecorder recordingLimited: self hitLimit during: [ resultText := self evaluateExpression ] ]
-		                ensure: [
-				                installed do: [ :each |
-						                [ each remove ]
-							                on: Error
-							                do: [ :ignored | nil ] ].
-				                self releaseLinkInstaller ]
+		                MCPDebugWatchRecorder
+			                recordingLimited: self hitLimit
+			                during: [
+			                self
+				                callersCode: [ answer := nil withArgs: #(  ) executeMethod: doIt ]
+				                ifFailed: [ :failure | resultText := failure ] ] ] ensure: [
+			                installed do: [ :each |
+					                [ each remove ]
+						                on: Error
+						                do: [ :ignored | nil ] ].
+			                self releaseLinkInstaller ].
+	resultText ifNil: [ resultText := self callersCode: [ answer printString ] ifFailed: [ :failure | failure ] ]
 ]
 
 { #category : 'defaults' }

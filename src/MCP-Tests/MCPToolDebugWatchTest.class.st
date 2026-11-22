@@ -133,6 +133,32 @@ MCPToolDebugWatchTest >> testRecordsEveryAssignmentToAWatchedVariable [
 ]
 
 { #category : 'tests' }
+MCPToolDebugWatchTest >> testRecordsTheRunOfTheExpressionAlone [
+	"Compiling the expression and printing its value send methods a probe may sit in, the compiler's own, and what they sent took the place of the expression's values, up to the limit on what is recorded."
+
+	| data |
+	data := self dataFrom: (self watchWith: {
+				         (#method -> 'Object>>yourself').
+				         (#run -> '1 to: 200 do: [ :each | each yourself ]') } asDictionary).
+	self
+		assert: ((self seriesFor: 'Object>>yourself' watching: 'self' in: data) at: #values)
+		equals: ((1 to: 200) collect: [ :each | each printString ])
+]
+
+{ #category : 'tests' }
+MCPToolDebugWatchTest >> testReportsAnExpressionThatDoesNotCompileAndRunsNothing [
+	"The expression is compiled before any probe goes in, so one that does not compile is reported with nothing recorded."
+
+	| data |
+	data := self dataFrom: (self watchWith: {
+				         (#method -> 'Object>>yourself').
+				         (#run -> '1 +') } asDictionary).
+	self assert: ((data at: #result) includesSubstring: 'Variable or expression expected').
+	self assert: ((self seriesFor: 'Object>>yourself' watching: 'self' in: data) at: #values) isEmpty.
+	self deny: (Object >> #yourself) hasMetaLinks
+]
+
+{ #category : 'tests' }
 MCPToolDebugWatchTest >> testReportsTheFailureOfTheWatchedCodeAsItsResult [
 
 	| data series |
@@ -187,7 +213,7 @@ MCPToolDebugWatchTest >> testWatchedCodeGetsTheDefaultActionOfANotificationTheBo
 
 { #category : 'tests' }
 MCPToolDebugWatchTest >> testWatchesAMethodItsOwnProbeSends [
-	"Compiling a probe's script sends yourself, and other processes send it too: the probe fired again inside its own work without end, and a process it fired in before its script was set failed, which quits a headless image."
+	"Compiling a probe's script sends yourself, compiling and printing the expression do too, and other processes send it as well: the probe fired again inside its own work without end, a process it fired in before its script was set failed, which quits a headless image, and the compiler's sends were recorded as the expression's."
 
 	| data result |
 	result := self watchWith: {
@@ -196,7 +222,7 @@ MCPToolDebugWatchTest >> testWatchesAMethodItsOwnProbeSends [
 	self deny: (self resultIndicatesError: result).
 	data := self dataFrom: result.
 	self assert: (data at: #result) equals: '3'.
-	self assert: (((self seriesFor: 'Object>>yourself' watching: 'self' in: data) at: #values) includes: '3').
+	self assert: ((self seriesFor: 'Object>>yourself' watching: 'self' in: data) at: #values) equals: #( '3' ).
 	self deny: (Object >> #yourself) hasMetaLinks
 ]
 
