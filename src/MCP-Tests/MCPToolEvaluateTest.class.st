@@ -245,12 +245,13 @@ MCPToolEvaluateTest >> testEvaluateCatchesHaltAsRuntimeFailure [
 
 { #category : 'tests' }
 MCPToolEvaluateTest >> testEvaluateCodesAnAssignmentToAnArgumentAsMethodCompileDoes [
-	"A compile notice carries the code method_compile gives the same notice, so a failure is counted alike whichever tool met it."
+	"A compile notice carries the code method_compile gives the same notice, so a failure is counted alike whichever tool met it. Before Pharo 13 the notice an evaluation gets holds no tree to find the read-only variable in, and Pharo 10 only warns of the assignment."
 
 	| result |
+	(self class environment includesKey: #OCNotice) ifFalse: [
+		^ self skip: 'Before Pharo 13, an evaluation''s notice holds no tree to find a read-only variable in.' ].
 	result := self callToolNamed: 'evaluate' withArguments: { (#code -> '[ :each | each := 1 ] value: 2') } asDictionary.
 	self assert: (result at: #isError).
-	self compilerReportsReadOnlyAssignmentsAsSyntaxErrors ifTrue: [ ^ self ].
 	self assert: ((self errorFrom: result) at: #errorCode) equals: 'CompileReadOnlyAssignment'
 ]
 
