@@ -422,9 +422,11 @@ MCPLocalObservabilityBackend >> recordSessionStart [
 
 { #category : 'recording' }
 MCPLocalObservabilityBackend >> recordToolCallFinish: aRecord result: aToolResult error: anError [
+	"A call that started before the image last started, which a save carried into this start, is not recorded: not counted, logged or traced, since the time it took is the time the image was not running, and the session that started it is the one it belongs to."
 
 	| stats |
 	aRecord ifNil: [ ^ self ].
+	aRecord startedInAnEarlierImageSession ifTrue: [ ^ aRecord ].
 	self
 		finishRecord: aRecord
 		result: aToolResult

@@ -361,6 +361,27 @@ MCPOpenTelemetryObservabilityBackendTest >> testABackendNobodyConfiguredRecordsN
 ]
 
 { #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testACallASaveCarriedIntoALaterStartRecordsNothing [
+	"Saving the image saves the calls running, and each start of the saved image ends them again, after configuring the backend afresh from settings that may be the same. Such a call records nothing: no span, no metric point, no log line, no count, since the time it took is the time the image was not running. The call is simulated as started in another image session; the start's configuration as this one's."
+
+	| record |
+	record := self startToolCall.
+	record imageSession: Object new.
+	backend configureFor: (self serverInfoAt: '9.8.7') configured: true.
+	self assert: backend isRecordingTraces.
+	backend recordToolCallFinish: record result: self successToolResult error: nil.
+	self assert: exporter snapshots isEmpty.
+	self assert: self measurements isEmpty.
+	self assert: backend totalCallCount equals: 0.
+	self assert: backend recentCallRecords isEmpty.
+	self assert: backend logs isEmpty.
+	self assert: MCPOpenTelemetryObservabilityBackend spansInFlight isEmpty.
+	backend recordToolCallFinish: self startToolCall result: self successToolResult error: nil.
+	self assert: exporter snapshots size equals: 1.
+	self assert: backend totalCallCount equals: 1
+]
+
+{ #category : 'tests' }
 MCPOpenTelemetryObservabilityBackendTest >> testACallEndingAfterTheSettingsStopAskingForTracesSendsNothing [
 	"Its span is dropped rather than ended, and nothing is made to record it: the settings no longer say where to send it."
 

@@ -122,8 +122,12 @@ are replaced waits for the replacement, and starts in the new ones. A call
 already running ends in the provider that started its span, which is shut
 down once the last such call has ended, and a call terminated before it
 answers ends its span too, as failed. A call running when the settings stop
-asking for traces, or when the image starts again, sends nothing. Stopping a
-server waits at most a second for what it holds to be sent.
+asking for traces sends nothing. A call running when the image is saved is
+recorded by the session that saved it, once it ends there; each start of the
+saved image goes on with it too, and records nothing when it ends, locally
+included, since the time it took would be the time the image was not running.
+A call that saves the image and quits it never ends, so nothing records it.
+Stopping a server waits at most a second for what it holds to be sent.
 
 Enabling it sets the image's OpenTelemetry resource, for every provider in
 the image and those made later, to what describes the server: `service.name`
