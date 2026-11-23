@@ -95,6 +95,29 @@ MCPServerLifecycleTest >> testARunningServerTellsTheMachineToReadItsSockets [
 ]
 
 { #category : 'tests' }
+MCPServerLifecycleTest >> testAServerTakesItsUsersChoiceOfToolsWhenItStarts [
+	"Whatever started the image, as PLexus does with MCP new, port: 0 and start."
+
+	| directory server |
+	directory := FileLocator temp asFileReference / ('mcp-tool-choice-' , UUID new asString).
+	(directory / 'pharo-mcp') ensureCreateDirectory.
+	directory / 'pharo-mcp' / 'tools.json' writeStreamDo: [ :stream |
+		stream nextPutAll: '{ "advertise": ["repository_search"], "unadvertise": ["tool_search"] }' ].
+	server := nil.
+	[
+		server := MCP new.
+		server userSettings: (MCPUserSettings withEnvironment: (Dictionary newFrom: { ('XDG_CONFIG_HOME' -> directory fullName) })).
+		server port: 0.
+		self assert: (server advertisedToolNames includes: 'tool_search').
+		server start.
+		self assert: (server advertisedToolNames includes: 'repository_search').
+		self deny: (server advertisedToolNames includes: 'tool_search').
+		self assert: ((server rpcToolsList at: #tools) anySatisfy: [ :each | (each at: #name) = 'repository_search' ]) ] ensure: [
+			self stopAndForget: server.
+			directory ensureDeleteAll ]
+]
+
+{ #category : 'tests' }
 MCPServerLifecycleTest >> testAStartedServerIsListedEvenWhenNothingHoldsIt [
 	"A started server is held by its own process and socket, which is what turns a port held by a forgotten server into something visible."
 

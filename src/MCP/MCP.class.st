@@ -10,6 +10,7 @@ Two words govern the tool surface. A *registered* tool is in the catalog, callab
 - `mcp onlyTools: { A. B }` replaces the catalog with exactly those;
 - `mcp advertiseTools: { A. 'class_search' }` chooses what tools/list shows, registering anything not yet in the catalog;
 - `mcp advertiseAllTools` and `mcp advertiseToolDefaults` are the other two advertising states;
+- the defaults are each tool's own default exposure, as the user's tools.json moves them, which `start` reads (MCPToolChoice);
 - a tool class is in the catalog because its package was loaded, wherever it was defined; `MyToolClass class >> shouldAutoRegister` answering `false` keeps one out.
 "
 Class {
@@ -24,7 +25,8 @@ Class {
 		'promptRegistry',
 		'toolResponseFields',
 		'lastClientInfo',
-		'registryMutex'
+		'registryMutex',
+		'userSettings'
 	],
 	#classVars : [
 		'DefaultObservabilityBackendClass'
@@ -236,6 +238,13 @@ MCP >> addTools: toolsOrToolClasses [
 	added := self toolRegistry addTools: toolsOrToolClasses.
 	self refreshToolsList.
 	^ added
+]
+
+{ #category : 'configuration' }
+MCP >> adoptUsersToolChoice [
+	"Take the user's choice of advertised tools from their tools.json. It moves tools across the defaults only, so tools this server's code chose stay as they are."
+
+	self toolRegistry toolChoice: (MCPToolChoice of: self userSettings)
 ]
 
 { #category : 'configuration' }
@@ -1028,6 +1037,7 @@ MCP >> serverInfrastructureMetadata [
 { #category : 'start' }
 MCP >> start [
 
+	self adoptUsersToolChoice.
 	self refreshToolsList.
 	server addHandlersFromPragmasIn: self.
 	server start.
@@ -1122,6 +1132,19 @@ MCP >> useContentOnlyToolResponses [
 MCP >> useStructuredContentOnlyToolResponses [
 
 	self toolResponseFields: #structuredContent
+]
+
+{ #category : 'configuration' }
+MCP >> userSettings [
+	"The files the user keeps for every MCP server they run."
+
+	^ userSettings ifNil: [ userSettings := MCPUserSettings current ]
+]
+
+{ #category : 'configuration' }
+MCP >> userSettings: someUserSettings [
+
+	userSettings := someUserSettings
 ]
 
 { #category : 'configuration' }
