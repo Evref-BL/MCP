@@ -238,7 +238,10 @@ a failed call, `error.type`:
   answer was larger than the output budget.
 
 The log events `mcp.session.start` and `mcp.session.end` say when a server
-started and stopped recording.
+started and stopped recording. A server running when the image is saved goes
+on in each start of the saved image until it is stopped there. Its session
+started before that start, so its end is recorded neither by
+`mcp.session.end` nor locally, as for a call running when the image is saved.
 
 ## What is never sent
 

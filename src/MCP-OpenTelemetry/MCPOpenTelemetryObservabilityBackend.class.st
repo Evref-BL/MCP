@@ -933,8 +933,9 @@ MCPOpenTelemetryObservabilityBackend >> recordMetricsFor: aRecord named: aToolNa
 
 { #category : 'recording' }
 MCPOpenTelemetryObservabilityBackend >> recordSessionEnd [
+	"Emits the session's end, unless the session started before the image last started: a save carried it into this start, and it ends silently, as a call does."
 
-	self isRecordingTraces ifTrue: [
+	(self isRecordingTraces and: [ self sessionStartedInAnEarlierImageSession not ]) ifTrue: [
 		self withoutFailingTheCall: [ self emitEventNamed: 'mcp.session.end' body: 'MCP session ended' ] ].
 	super recordSessionEnd
 ]

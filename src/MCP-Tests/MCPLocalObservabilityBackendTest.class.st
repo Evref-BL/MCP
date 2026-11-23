@@ -32,6 +32,18 @@ MCPLocalObservabilityBackendTest >> statsOfThreeCallsLasting: milliseconds [
 ]
 
 { #category : 'tests' }
+MCPLocalObservabilityBackendTest >> testABackendMadeBeforeSessionsRecordedTheirImageSessionTakesThisOne [
+	"Loading this code over a running server marks its session as started in the image session of the load, so that a start of the image saved with it ends it silently."
+
+	| state |
+	state := MCPLocalObservabilityBackend new.
+	self assert: state sessionImageSession isNil.
+	MCPLocalObservabilityBackend initialize.
+	self assert: state sessionImageSession identicalTo: Smalltalk session.
+	self deny: state sessionStartedInAnEarlierImageSession
+]
+
+{ #category : 'tests' }
 MCPLocalObservabilityBackendTest >> testACallStartedInAnEarlierImageSessionIsNotRecorded [
 	"A save carries the calls running into every start of the saved image, which ends them there: none is counted, logged or traced, since the time it took is the time the image was not running. The call is simulated as started in another image session."
 
@@ -62,6 +74,23 @@ MCPLocalObservabilityBackendTest >> testARecordWithoutItsImageSessionIsRecorded 
 	self deny: record startedInAnEarlierImageSession.
 	state recordToolCallFinish: record result: nil error: ZeroDivide new.
 	self assert: state totalCallCount equals: 1
+]
+
+{ #category : 'tests' }
+MCPLocalObservabilityBackendTest >> testASessionStartedInAnEarlierImageSessionEndsUnrecorded [
+
+	| directory resource state |
+	directory := FileLocator temp asFileReference / ('mcp-observability-' , UUID new asString).
+	[
+		directory exists ifTrue: [ directory deleteAll ].
+		state := MCPLocalObservabilityBackend new.
+		state exportDirectory: directory.
+		state recordSessionStart.
+		state sessionImageSession: Object new.
+		state recordSessionEnd.
+		resource := STONJSON fromString: state resourceFileReference contents.
+		self assert: (resource includesKey: 'sessionStartedAt').
+		self deny: (resource includesKey: 'sessionEndedAt') ] ensure: [ directory exists ifTrue: [ directory deleteAll ] ]
 ]
 
 { #category : 'tests' }

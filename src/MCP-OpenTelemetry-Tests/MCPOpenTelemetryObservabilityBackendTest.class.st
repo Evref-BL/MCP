@@ -716,6 +716,26 @@ MCPOpenTelemetryObservabilityBackendTest >> testAServerATestMakesRecordsLocallyO
 ]
 
 { #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testASessionASaveCarriedIntoALaterStartEndsSilently [
+	"Saving the image saves the server running, and a start of the saved image may stop it, after configuring the backend afresh. Its session ends without an event, as a call does, since the session that started it is the one it belongs to. The session is simulated as started in another image session."
+
+	| logExporter |
+	logExporter := MCPOpenTelemetryRecordingLogRecordExporter new.
+	loggerProvider addLogRecordProcessor: (OTSimpleLogRecordProcessor new
+			 exporter: logExporter;
+			 yourself).
+	backend recordSessionStart.
+	backend sessionImageSession: Object new.
+	backend configureFor: (self serverInfoAt: '9.8.7') configured: true.
+	self assert: backend isRecordingTraces.
+	backend recordSessionEnd.
+	self assert: logExporter eventNames equals: #( 'mcp.session.start' ).
+	backend recordSessionStart.
+	backend recordSessionEnd.
+	self assert: logExporter eventNames equals: #( 'mcp.session.start' 'mcp.session.start' 'mcp.session.end' )
+]
+
+{ #category : 'tests' }
 MCPOpenTelemetryObservabilityBackendTest >> testASessionThatDoesNotReadAsAnIdIsLeftOutForTheServersOwn [
 	"What the caller's baggage names as its session leaves the image only when it reads as an id; otherwise the call has the server's own session."
 
