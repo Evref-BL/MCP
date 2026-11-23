@@ -107,6 +107,9 @@ method_get
 ```
 
 The specialized tools are found with `tool_search`.
+Which tools `tools/list` shows can be changed for every image you run, in
+`~/.config/pharo-mcp/tools.json`: see
+[Shaping the server's surface](building-on-mcp.md#shaping-the-servers-surface).
 
 Before mutation, inspect the target and use a copied or disposable image.
 Prefer dedicated tools such as `class_create`, `method_compile`, refactoring

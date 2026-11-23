@@ -1,7 +1,7 @@
 "
 Instance-scoped catalog of MCP tools.
 
-Two words, consistently. A *registered* tool is in the catalog and reachable through tool_search, tool_get and tool_call. An *advertised* tool is also in tools/list. advertisedToolNames carries that choice in three states: nil leaves it to each tool's own default exposure, #all advertises everything, and a set of names advertises exactly those.
+Two words, consistently. A *registered* tool is in the catalog and reachable through tool_search, tool_get and tool_call. An *advertised* tool is also in tools/list. advertisedToolNames carries that choice in three states: nil leaves it to the defaults, #all advertises everything, and a set of names advertises exactly those. The defaults are each tool's own default exposure, as the user's toolChoice moves them.
 
 Holding, discovery and rediscovery come from MCPRegistry. What lives here is the advertising split, which the other registries have no equivalent of, and the ranking tool_search uses.
 "
@@ -9,7 +9,8 @@ Class {
 	#name : 'MCPToolRegistry',
 	#superclass : 'MCPRegistry',
 	#instVars : [
-		'advertisedToolNames'
+		'advertisedToolNames',
+		'toolChoice'
 	],
 	#category : 'MCP-Registries',
 	#package : 'MCP',
@@ -189,7 +190,7 @@ MCPToolRegistry >> isTool: aTool rankedBefore: anotherTool [
 { #category : 'advertising' }
 MCPToolRegistry >> isToolAdvertised: aTool [
 
-	advertisedToolNames ifNil: [ ^ aTool defaultExposure = 'static' ].
+	advertisedToolNames ifNil: [ ^ self toolChoice advertisesToolNamed: aTool name byDefault: aTool defaultExposure = 'static' ].
 	advertisedToolNames = #all ifTrue: [ ^ true ].
 	^ advertisedToolNames includes: aTool name
 ]
@@ -323,6 +324,20 @@ MCPToolRegistry >> singularSearchTermFor: aTerm [
 	(term endsWith: 'ses') ifTrue: [ ^ term allButLast: 2 ].
 	((term endsWith: 's') and: [ (term endsWith: 'ss') not ]) ifTrue: [ ^ term allButLast ].
 	^ term
+]
+
+{ #category : 'advertising' }
+MCPToolRegistry >> toolChoice [
+	"The user's choice of advertised tools, which moves tools across their default exposure while advertising is left to the defaults."
+
+	^ toolChoice ifNil: [ MCPToolChoice none ]
+]
+
+{ #category : 'advertising' }
+MCPToolRegistry >> toolChoice: aToolChoice [
+
+	toolChoice := aToolChoice.
+	self noteChanged
 ]
 
 { #category : 'tools' }

@@ -434,6 +434,26 @@ A tool from outside MCP is registered and discoverable, not advertised, so it
 costs nothing in the client's context until something looks for it. Answer
 `'static'` from `defaultExposure` to be in `tools/list` from the start.
 
+A user moves tools across those defaults for every server they run, whatever
+started its image, in `tools.json` in MCP's folder of their configuration:
+`$XDG_CONFIG_HOME/pharo-mcp/tools.json` when `XDG_CONFIG_HOME` is an absolute
+path, else `%APPDATA%\pharo-mcp\tools.json` on Windows and
+`~/.config/pharo-mcp/tools.json` elsewhere, the folder of
+[`otel.env`](observability.md).
+
+```json
+{
+  "advertise": ["test_coverage_run"],
+  "unadvertise": ["critique_run"]
+}
+```
+
+A server reads it when it starts, and it changes the defaults only: a server
+configured as below keeps the tools its code chose. A name no tool in the
+image has changes nothing, since the tool may come from a project the image
+does not load, and a name in both lists keeps its default. A file that cannot
+be read, or holds no list of names, changes nothing and stops no server.
+
 Against that default, a server is configured directly:
 
 ```smalltalk
