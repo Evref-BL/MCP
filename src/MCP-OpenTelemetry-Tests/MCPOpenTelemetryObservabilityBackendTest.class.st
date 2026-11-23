@@ -966,6 +966,29 @@ MCPOpenTelemetryObservabilityBackendTest >> testConfiguringABackendReconfiguresE
 ]
 
 { #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testEachCallSaysWhetherItsToolWasAdvertised [
+	"Whether the server that answered lists the tool in tools/list, or the agent had to find it: an agent calls the tools it sees first more often, so their counts are read with this. A name no tool has says nothing."
+
+	| mcp |
+	mcp := self mcp.
+	mcp unadvertiseTool: 'class_search'.
+	{
+		('class_get' -> { ('name' -> 'Point') }).
+		('class_search' -> { ('query' -> 'Point') }).
+		('no_such_tool' -> {  }) } doWithIndex: [ :call :index |
+			mcp server messageProcessor handleJSON: (STONJSON toString: {
+						 ('jsonrpc' -> '2.0').
+						 ('id' -> index).
+						 ('method' -> 'tools/call').
+						 ('params' -> {
+							  ('name' -> call key).
+							  ('arguments' -> call value asDictionary) } asDictionary) } asDictionary) ].
+	self
+		assert: (exporter snapshots collect: [ :each | self attributeNamed: 'pharo.mcp.tool.advertised' in: each ] as: Array)
+		equals: { true. false. nil }
+]
+
+{ #category : 'tests' }
 MCPOpenTelemetryObservabilityBackendTest >> testEachCallSaysWhoseToolItWentTo [
 	"mcp for MCP's own tools, other for another package's, unknown for a name no tool has."
 

@@ -168,6 +168,9 @@ A span has these attributes from its start:
   the server has no tool for.
 - `pharo.mcp.dispatch_path`: `direct`, or `via_tool_call` for a call
   `tool_call` made.
+- `pharo.mcp.tool.advertised`, whether the server lists the tool in
+  `tools/list` ([advertised](building-on-mcp.md#shaping-the-servers-surface))
+  or the agent had to find it; absent for a name the server has no tool for.
 - `session.id`, the session the call belongs to: the `session.id` entry of
   its W3C `baggage` when that reads as an id, else the server's own, a random
   id that starts at the server's first such call and is replaced after 30

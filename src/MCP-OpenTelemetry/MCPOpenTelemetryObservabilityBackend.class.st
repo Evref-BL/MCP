@@ -1186,7 +1186,7 @@ MCPOpenTelemetryObservabilityBackend >> spanOfRecord: aRecord [
 
 { #category : 'private - spans' }
 MCPOpenTelemetryObservabilityBackend >> startAttributesFor: aRecord named: aToolName origin: anOrigin input: inputObject context: contextDictionary parent: aContext [
-	"The attributes known when a call starts, set before the span starts so a sampler sees them. They follow the OpenTelemetry conventions for MCP where those name the fact, and say nothing the caller passed but argument names, those its tool declares apart from the others, the options its tool's schema offers that it chose, the session its trace context names, or else the server's own, and the client it says it is. Each fact is read on its own, so one that cannot be read leaves the others."
+	"The attributes known when a call starts, set before the span starts so a sampler sees them. They follow the OpenTelemetry conventions for MCP where those name the fact, and say nothing the caller passed but argument names, those its tool declares apart from the others, the options its tool's schema offers that it chose, the session its trace context names, or else the server's own, the client it says it is, and whether the server lists its tool in tools/list. Each fact is read on its own, so one that cannot be read leaves the others."
 
 	| attributes tool |
 	tool := contextDictionary at: #tool ifAbsent: [ nil ].
@@ -1199,6 +1199,13 @@ MCPOpenTelemetryObservabilityBackend >> startAttributesFor: aRecord named: aTool
 		add: 'network.protocol.name' -> 'http';
 		add: 'pharo.mcp.tool.origin' -> anOrigin.
 	self addAttributesFrom: [ { ('pharo.mcp.dispatch_path' -> aRecord dispatchPath) } ] to: attributes.
+	self
+		addAttributesFrom: [
+			contextDictionary
+				at: #advertised
+				ifPresent: [ :advertised | { ('pharo.mcp.tool.advertised' -> advertised) } ]
+				ifAbsent: [ #(  ) ] ]
+		to: attributes.
 	self addAttributesFrom: [ { ('session.id' -> (self sessionIdFor: aContext)) } ] to: attributes.
 	self
 		addAttributesFrom: [
