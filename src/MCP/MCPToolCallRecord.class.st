@@ -1,5 +1,5 @@
 "
-Observability DTO for one MCP tool call. Active records have no finishedAt duration yet. Completed records store status, timing, compact output-budget metadata, optional error class, optional outlier explanation, and bounded redacted input/output snapshots only when the call is trace-worthy. The raw input object is held transiently while the call is active and cleared when recording finishes.
+Observability DTO for one MCP tool call. Active records have no finishedAt duration yet. Completed records store status, timing, compact output-budget metadata, optional error class, optional outlier explanation, and bounded redacted input/output snapshots only when the call is trace-worthy. The raw input object is held transiently while the call is active and cleared when recording finishes. A record knows the image session its call started in: saving the image saves the calls running, and every start of the saved image finishes them again.
 "
 Class {
 	#name : 'MCPToolCallRecord',
@@ -28,7 +28,8 @@ Class {
 		'outputBudgetExceeded',
 		'outputBudgetExplanation',
 		'dispatchPath',
-		'inputByteCount'
+		'inputByteCount',
+		'imageSession'
 	],
 	#category : 'MCP-Observability',
 	#package : 'MCP',
@@ -223,6 +224,19 @@ MCPToolCallRecord >> id: anInteger [
 ]
 
 { #category : 'accessing' }
+MCPToolCallRecord >> imageSession [
+	"The image session the call started in, or nil when the record was made without one."
+
+	^ imageSession
+]
+
+{ #category : 'accessing' }
+MCPToolCallRecord >> imageSession: aSession [
+
+	imageSession := aSession
+]
+
+{ #category : 'accessing' }
 MCPToolCallRecord >> inputByteCount [
 
 	^ inputByteCount ifNil: [ 0 ]
@@ -376,6 +390,13 @@ MCPToolCallRecord >> startedAt [
 MCPToolCallRecord >> startedAt: aTimestamp [
 
 	startedAt := aTimestamp
+]
+
+{ #category : 'testing' }
+MCPToolCallRecord >> startedInAnEarlierImageSession [
+	"Whether the call started before the image last started: the image was saved while it ran, and this start of the saved image goes on with it. A record made without its image session started in this one, as far as anyone can tell."
+
+	^ imageSession isNotNil and: [ imageSession ~~ Smalltalk session ]
 ]
 
 { #category : 'accessing' }

@@ -32,6 +32,68 @@ MCPLocalObservabilityBackendTest >> statsOfThreeCallsLasting: milliseconds [
 ]
 
 { #category : 'tests' }
+MCPLocalObservabilityBackendTest >> testABackendMadeBeforeSessionsRecordedTheirImageSessionTakesThisOne [
+	"Loading this code over a running server marks its session as started in the image session of the load, so that a start of the image saved with it ends it silently."
+
+	| state |
+	state := MCPLocalObservabilityBackend new.
+	self assert: state sessionImageSession isNil.
+	MCPLocalObservabilityBackend initialize.
+	self assert: state sessionImageSession identicalTo: Smalltalk session.
+	self deny: state sessionStartedInAnEarlierImageSession
+]
+
+{ #category : 'tests' }
+MCPLocalObservabilityBackendTest >> testACallStartedInAnEarlierImageSessionIsNotRecorded [
+	"A save carries the calls running into every start of the saved image, which ends them there: none is counted, logged or traced, since the time it took is the time the image was not running. The call is simulated as started in another image session."
+
+	| state record |
+	state := MCPLocalObservabilityBackend new.
+	record := self start: 'method_search' input: nil on: state.
+	self assert: record imageSession identicalTo: Smalltalk session.
+	self deny: record startedInAnEarlierImageSession.
+	record imageSession: Object new.
+	self assert: record startedInAnEarlierImageSession.
+	state recordToolCallFinish: record result: nil error: ZeroDivide new.
+	self assert: state totalCallCount equals: 0.
+	self assert: state recentCallRecords isEmpty.
+	self assert: state traceRecords isEmpty.
+	self assert: state logs isEmpty
+]
+
+{ #category : 'tests' }
+MCPLocalObservabilityBackendTest >> testARecordWithoutItsImageSessionIsRecorded [
+	"A record made before records knew their image session, as the call that loads this code over an older MCP has, started in this session as far as anyone can tell."
+
+	| state record |
+	state := MCPLocalObservabilityBackend new.
+	record := (MCPToolCallRecord id: 1 toolName: 'evaluate' startedAt: DateAndTime now)
+		          dispatchPath: 'direct';
+		          yourself.
+	self assert: record imageSession isNil.
+	self deny: record startedInAnEarlierImageSession.
+	state recordToolCallFinish: record result: nil error: ZeroDivide new.
+	self assert: state totalCallCount equals: 1
+]
+
+{ #category : 'tests' }
+MCPLocalObservabilityBackendTest >> testASessionStartedInAnEarlierImageSessionEndsUnrecorded [
+
+	| directory resource state |
+	directory := FileLocator temp asFileReference / ('mcp-observability-' , UUID new asString).
+	[
+		directory exists ifTrue: [ directory deleteAll ].
+		state := MCPLocalObservabilityBackend new.
+		state exportDirectory: directory.
+		state recordSessionStart.
+		state sessionImageSession: Object new.
+		state recordSessionEnd.
+		resource := STONJSON fromString: state resourceFileReference contents.
+		self assert: (resource includesKey: 'sessionStartedAt').
+		self deny: (resource includesKey: 'sessionEndedAt') ] ensure: [ directory exists ifTrue: [ directory deleteAll ] ]
+]
+
+{ #category : 'tests' }
 MCPLocalObservabilityBackendTest >> testDefaultExportDirectoryIsImageLocal [
 
 	self

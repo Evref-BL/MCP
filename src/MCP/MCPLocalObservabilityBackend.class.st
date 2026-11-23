@@ -13,7 +13,8 @@ Class {
 		'resourceMetadata',
 		'lastMetricsExportAt',
 		'metricsExportPending',
-		'metricsExportIntervalMilliseconds'
+		'metricsExportIntervalMilliseconds',
+		'sessionImageSession'
 	],
 	#category : 'MCP-Observability',
 	#package : 'MCP',
@@ -24,6 +25,13 @@ Class {
 MCPLocalObservabilityBackend class >> defaultExportDirectory [
 
 	^ Smalltalk imageFile asFileReference parent / 'pharo-local' / 'mcp' / 'observability'
+]
+
+{ #category : 'class initialization' }
+MCPLocalObservabilityBackend class >> initialize [
+	"The backends made before their sessions recorded the image session they started in take this one, which is the one their running servers started in or a later one: a save carries them into later starts, which end them silently."
+
+	self allSubInstancesDo: [ :each | each sessionImageSession ifNil: [ each sessionImageSession: Smalltalk session ] ]
 ]
 
 { #category : 'private' }
@@ -406,15 +414,19 @@ MCPLocalObservabilityBackend >> recordLog: aString [
 
 { #category : 'recording' }
 MCPLocalObservabilityBackend >> recordSessionEnd [
+	"A session that started before the image last started, which a save carried into this start, ends without its end being recorded, as a call does: the session that started it is the one it belongs to, and the time it lasted would count the time the image was not running."
 
-	self resourceMetadata at: #sessionEndedAt put: DateAndTime now asString.
-	self exportEnabled ifTrue: [ self writeResourceMetadata ].
+	self sessionStartedInAnEarlierImageSession ifFalse: [
+			self resourceMetadata at: #sessionEndedAt put: DateAndTime now asString.
+			self exportEnabled ifTrue: [ self writeResourceMetadata ] ].
 	self forceFlush
 ]
 
 { #category : 'recording' }
 MCPLocalObservabilityBackend >> recordSessionStart [
+	"A session starts now, in this image session."
 
+	sessionImageSession := Smalltalk session.
 	self resourceMetadata at: #sessionStartedAt put: DateAndTime now asString.
 	self resourceMetadata removeKey: #sessionEndedAt ifAbsent: [ nil ].
 	self exportEnabled ifTrue: [ self writeResourceMetadata ]
@@ -422,9 +434,11 @@ MCPLocalObservabilityBackend >> recordSessionStart [
 
 { #category : 'recording' }
 MCPLocalObservabilityBackend >> recordToolCallFinish: aRecord result: aToolResult error: anError [
+	"A call that started before the image last started, which a save carried into this start, is not recorded: not counted, logged or traced, since the time it took is the time the image was not running, and the session that started it is the one it belongs to."
 
 	| stats |
 	aRecord ifNil: [ ^ self ].
+	aRecord startedInAnEarlierImageSession ifTrue: [ ^ aRecord ].
 	self
 		finishRecord: aRecord
 		result: aToolResult
@@ -470,6 +484,26 @@ MCPLocalObservabilityBackend >> resourceMetadata: aDictionary [
 	aDictionary ifNotNil: [ aDictionary keysAndValuesDo: [ :key :value | metadata at: key put: value ] ].
 	resourceMetadata := metadata.
 	exportInstanceDirectory := nil
+]
+
+{ #category : 'accessing' }
+MCPLocalObservabilityBackend >> sessionImageSession [
+	"The image session the server's session started in, or nil before it starts."
+
+	^ sessionImageSession
+]
+
+{ #category : 'accessing' }
+MCPLocalObservabilityBackend >> sessionImageSession: aSession [
+
+	sessionImageSession := aSession
+]
+
+{ #category : 'testing' }
+MCPLocalObservabilityBackend >> sessionStartedInAnEarlierImageSession [
+	"Whether the server's session started before the image last started: the image was saved while the server ran, and this start of the saved image goes on with it until the server stops. A session with no recorded start counts as started in this image session."
+
+	^ sessionImageSession isNotNil and: [ sessionImageSession ~~ Smalltalk session ]
 ]
 
 { #category : 'private - tracing' }

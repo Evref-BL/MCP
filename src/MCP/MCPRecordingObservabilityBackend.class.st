@@ -78,11 +78,13 @@ MCPRecordingObservabilityBackend >> isNoop [
 
 { #category : 'private - records' }
 MCPRecordingObservabilityBackend >> newRecordFor: aToolName input: inputObject dispatchPath: dispatchPath [
+	"A record of a call starting now, in this image session."
 
 	^ (MCPToolCallRecord id: self nextCallId toolName: aToolName asString startedAt: DateAndTime now)
 		  inputObject: inputObject;
 		  inputByteCount: (self byteCountOf: inputObject);
 		  dispatchPath: dispatchPath asString;
+		  imageSession: Smalltalk session;
 		  yourself
 ]
 

@@ -341,7 +341,7 @@ MCPOpenTelemetryObservabilityBackend class >> spansInFlight [
 
 { #category : 'system startup' }
 MCPOpenTelemetryObservabilityBackend class >> startUp: resuming [
-	"An image starting again may run elsewhere, with other settings or none: every backend of this kind is configured afresh from them, before its server answers a call, and its providers are made again, whatever settings the last session made them from. The calls the last session was running are over, and the providers they kept are shut down. An image without a backend of this kind leaves OpenTelemetry alone."
+	"An image starting again may run elsewhere, with other settings or none: every backend of this kind is configured afresh from them, before its server answers a call, and its providers are made again, whatever settings the last session made them from. The calls the last session was running when it saved the image go on in this one, and record nothing when they end; the providers kept for them are shut down. An image without a backend of this kind leaves OpenTelemetry alone."
 
 	| backends retired |
 	resuming ifFalse: [ ^ self ].
@@ -933,8 +933,9 @@ MCPOpenTelemetryObservabilityBackend >> recordMetricsFor: aRecord named: aToolNa
 
 { #category : 'recording' }
 MCPOpenTelemetryObservabilityBackend >> recordSessionEnd [
+	"Emits the session's end, unless the session started before the image last started: a save carried it into this start, and it ends silently, as a call does."
 
-	self isRecordingTraces ifTrue: [
+	(self isRecordingTraces and: [ self sessionStartedInAnEarlierImageSession not ]) ifTrue: [
 		self withoutFailingTheCall: [ self emitEventNamed: 'mcp.session.end' body: 'MCP session ended' ] ].
 	super recordSessionEnd
 ]
@@ -949,14 +950,14 @@ MCPOpenTelemetryObservabilityBackend >> recordSessionStart [
 
 { #category : 'recording' }
 MCPOpenTelemetryObservabilityBackend >> recordToolCallFinish: aRecord result: aToolResult error: anError [
-	"Records the end of the call locally, and ends its span when one was started. When the settings stopped asking for traces while the call ran, or the image started again, the span is dropped, never ended, so never sent, and nothing is made to record the call: it would go where settings no longer say. Each step is guarded on its own, and the span ends whatever fails before it."
+	"Records the end of the call locally, and ends its span when one was started. When the settings stopped asking for traces while the call ran, the span is dropped, never ended, so never sent, and nothing is made to record the call: it would go where settings no longer say. So it is when the call started before the image last started, which a save carried into this start, whatever the settings now: the session that started it is the one it belongs to, and the time it took is the time the image was not running. Each step is guarded on its own, and the span ends whatever fails before it."
 
 	| entry errorType attributes |
 	self withoutFailingTheCall: [ super recordToolCallFinish: aRecord result: aToolResult error: anError ].
 	aRecord ifNil: [ ^ nil ].
 	entry := self critical: [ recordsById removeKey: aRecord id ifAbsent: [ nil ] ].
 	entry ifNil: [ ^ aRecord ].
-	self isRecordingTraces ifFalse: [
+	(aRecord startedInAnEarlierImageSession or: [ self isRecordingTraces not ]) ifTrue: [
 			self withoutFailingTheCall: [ self class spanEnded: entry first ].
 			^ aRecord ].
 	errorType := self withoutFailingTheCall: [
