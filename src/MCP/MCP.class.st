@@ -645,13 +645,16 @@ MCP >> observabilityContextFor: aTool [
 
 { #category : 'observability' }
 MCP >> observabilityContextFor: aTool parentRecord: aRecord [
-	"What a backend may want to know about a call beyond its name and arguments: the tool, for its schema, the request's _meta, for the caller's trace context and identity, the client that last initialized, for a caller whose requests do not say who it is, and the record of the call that dispatched this one, if one did."
+	"What a backend may want to know about a call beyond its name and arguments: the tool, for its schema, whether tools/list shows it, the request's _meta, for the caller's trace context and identity, the client that last initialized, for a caller whose requests do not say who it is, and the record of the call that dispatched this one, if one did."
 
-	^ {
-		  (#tool -> aTool).
-		  (#meta -> (MCPRequestMeta value ifNil: [ Dictionary new ])).
-		  (#client -> lastClientInfo).
-		  (#parentRecord -> aRecord) } asDictionary
+	| context |
+	context := {
+		           (#tool -> aTool).
+		           (#meta -> (MCPRequestMeta value ifNil: [ Dictionary new ])).
+		           (#client -> lastClientInfo).
+		           (#parentRecord -> aRecord) } asDictionary.
+	aTool ifNotNil: [ context at: #advertised put: (self toolRegistry isToolAdvertised: aTool) ].
+	^ context
 ]
 
 { #category : 'observability' }
