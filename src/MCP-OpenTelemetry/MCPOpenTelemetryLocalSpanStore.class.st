@@ -21,6 +21,19 @@ MCPOpenTelemetryLocalSpanStore >> addAll: spanSnapshots [
 			[ snapshots size > maxSpans ] whileTrue: [ snapshots removeFirst ] ]
 ]
 
+{ #category : 'adding' }
+MCPOpenTelemetryLocalSpanStore >> addAllNew: someSpans [
+	"Adds those whose span id the store does not hold yet, so that loading a file twice, or one of spans the image still holds, adds nothing twice. Answers how many were added."
+
+	| known new |
+	^ mutex critical: [
+			  known := (snapshots collect: [ :each | each spanId ]) asSet.
+			  new := someSpans reject: [ :each | known includes: each spanId ].
+			  snapshots addAll: new.
+			  [ snapshots size > maxSpans ] whileTrue: [ snapshots removeFirst ].
+			  new size ]
+]
+
 { #category : 'removing' }
 MCPOpenTelemetryLocalSpanStore >> clear [
 

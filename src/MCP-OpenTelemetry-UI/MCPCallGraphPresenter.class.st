@@ -20,7 +20,9 @@ Class {
 		'isSyncingSelection',
 		'autoRefreshCheckBox',
 		'autoRefreshProcess',
-		'lastSignature'
+		'lastSignature',
+		'exportButton',
+		'importButton'
 	],
 	#category : 'MCP-OpenTelemetry-UI',
 	#package : 'MCP-OpenTelemetry-UI'
@@ -85,6 +87,8 @@ MCPCallGraphPresenter >> connectPresenters [
 	objectTypeDropList whenSelectedItemChangedDo: [ :type | self refreshView ].
 	refreshButton action: [ self refreshView ].
 	clearButton action: [ self clearSpans ].
+	exportButton action: [ self exportSpans ].
+	importButton action: [ self importSpans ].
 	activitiesTable whenSelectionChangedDo: [ :selection | self activitySelectedInTable ].
 	edgesTable whenSelectionChangedDo: [ :selection | self edgeSelectedInTable ]
 ]
@@ -100,6 +104,8 @@ MCPCallGraphPresenter >> controlsLayout [
 		  add: objectTypeDropList expand: false;
 		  add: refreshButton expand: false;
 		  add: clearButton expand: false;
+		  add: exportButton expand: false;
+		  add: importButton expand: false;
 		  yourself
 ]
 
@@ -120,6 +126,13 @@ MCPCallGraphPresenter >> defaultLayout [
 		  add: statusLabel expand: false;
 		  add: self sectionsLayout;
 		  yourself
+]
+
+{ #category : 'updating' }
+MCPCallGraphPresenter >> defaultObjectType [
+	"The object type the graph follows until another is picked."
+
+	^ 'session'
 ]
 
 { #category : 'updating' }
@@ -158,6 +171,68 @@ MCPCallGraphPresenter >> edgeSelectedInTable [
 			drawing ifNotNil: [ :each | each selectEdge: edgesTable selectedItem ] ]
 ]
 
+{ #category : 'actions' }
+MCPCallGraphPresenter >> exportSpans [
+	"Saves the kept spans in the file and the format the user picks: the spans as they are, or the OCEL 2.0 log."
+
+	| spans dialog |
+	spans := MCPOpenTelemetryObservabilityBackend localSpanStore snapshots.
+	spans ifEmpty: [ ^ self inform: 'No spans kept: nothing to export.' ].
+	dialog := StSaveFilePresenter new.
+	dialog
+		title: 'Export spans';
+		defaultFolder: FileLocator documents;
+		nameText: 'mcp-spans-' , Date today yyyymmdd , '.json';
+		okAction: [ :file | self exportSpans: spans to: file asking: dialog ].
+	self offerFormatsIn: dialog.
+	dialog openModal
+]
+
+{ #category : 'actions' }
+MCPCallGraphPresenter >> exportSpans: someSpans to: aFile asking: aFileDialog [
+
+	| ocel2 target |
+	ocel2 := self isOcel2FormatChosenIn: aFileDialog for: aFile.
+	target := aFile withExtension: (ocel2
+			           ifTrue: [ 'jsonocel' ]
+			           ifFalse: [ 'json' ]).
+	[
+		ocel2
+			ifTrue: [ MCPOcelSpanArchive writeOcel2: someSpans to: target ]
+			ifFalse: [ MCPOcelSpanArchive write: someSpans to: target ].
+		self inform: someSpans size printString , ' spans saved in ' , target basename , (ocel2
+				 ifTrue: [ ' (OCEL 2.0)' ]
+				 ifFalse: [ '' ]) ]
+		on: Error
+		do: [ :error | self inform: 'Export failed: ' , error messageText ]
+]
+
+{ #category : 'actions' }
+MCPCallGraphPresenter >> importSpans [
+	"Adds the spans of a file saved by Export, or an OCEL 2.0 file, to those kept: the content says which, those already kept are left out, and the view shows them."
+
+	| dialog |
+	dialog := StOpenFilePresenter new.
+	dialog
+		title: 'Import spans';
+		defaultFolder: FileLocator documents;
+		okAction: [ :file | self importSpansFrom: file ].
+	self offerFormatsIn: dialog.
+	dialog openModal
+]
+
+{ #category : 'actions' }
+MCPCallGraphPresenter >> importSpansFrom: aFileReference [
+
+	| spans added |
+	spans := [ MCPOcelSpanArchive readSpansFrom: aFileReference ]
+		         on: Error
+		         do: [ :error | ^ self inform: 'Import failed: ' , error messageText ].
+	added := MCPOpenTelemetryObservabilityBackend localSpanStore addAllNew: spans.
+	self refreshView.
+	self inform: added printString , ' of ' , spans size printString , ' spans added from ' , aFileReference basename
+]
+
 { #category : 'initialization' }
 MCPCallGraphPresenter >> initializePresenters [
 
@@ -166,6 +241,8 @@ MCPCallGraphPresenter >> initializePresenters [
 	objectTypeDropList := self newDropList.
 	refreshButton := self newButton.
 	clearButton := self newButton.
+	exportButton := self newButton.
+	importButton := self newButton.
 	statusLabel := self newLabel.
 	graphPresenter := self newRoassal.
 	activitiesLabel := self newLabel.
@@ -177,13 +254,22 @@ MCPCallGraphPresenter >> initializePresenters [
 	autoRefreshCheckBox label: 'Auto-refresh'.
 	objectTypeDropList
 		items: MCPOcelLog new objectTypes;
-		display: [ :type | 'Object: ' , type ].
+		display: [ :type | 'Object: ' , type ];
+		selectItem: self defaultObjectType.
 	refreshButton
 		label: 'Refresh';
 		icon: (self iconNamed: #refreshCircling).
 	clearButton
 		label: 'Clear';
 		icon: (self iconNamed: #trash).
+	exportButton
+		label: 'Export';
+		icon: (self iconNamed: #smallSave);
+		help: 'Save the kept spans in a JSON file'.
+	importButton
+		label: 'Import';
+		icon: (self iconNamed: #smallLoadProject);
+		help: 'Add the spans of a JSON file saved by Export'.
 	self initializeTables
 ]
 
@@ -230,6 +316,17 @@ MCPCallGraphPresenter >> isAutoRefreshProcessRunning [
 ]
 
 { #category : 'actions' }
+MCPCallGraphPresenter >> isOcel2FormatChosenIn: aFileDialog for: aFile [
+	"The format picked in the drop list; when it is none of ours, the extension of the file says."
+
+	| chosen |
+	chosen := aFileDialog fileNavigationSystem filtersDropList selectedItem name.
+	(chosen beginsWith: self ocel2FormatName) ifTrue: [ ^ true ].
+	(chosen beginsWith: self spansFormatName) ifTrue: [ ^ false ].
+	^ aFile extension = 'jsonocel'
+]
+
+{ #category : 'actions' }
 MCPCallGraphPresenter >> localSpansChangedTo: enabled [
 	"The spans are made by the image's OpenTelemetry providers, which are global, so this turns them on for every server of the image; this one is switched to the OpenTelemetry backend, which makes them, when it records through another."
 
@@ -248,6 +345,22 @@ MCPCallGraphPresenter >> modelChanged [
 	self refreshView
 ]
 
+{ #category : 'actions' }
+MCPCallGraphPresenter >> ocel2FormatName [
+
+	^ 'OCEL 2.0'
+]
+
+{ #category : 'actions' }
+MCPCallGraphPresenter >> offerFormatsIn: aFileDialog [
+	"The formats come first in the drop list of the dialog, the spans one selected."
+
+	| navigation |
+	navigation := aFileDialog fileNavigationSystem.
+	navigation filtersCustomization: self spansFileFilters.
+	navigation filtersDropList selectIndex: 1
+]
+
 { #category : 'updating' }
 MCPCallGraphPresenter >> refreshView [
 	"Brings the whole view up to date, whatever changed."
@@ -263,7 +376,7 @@ MCPCallGraphPresenter >> refreshViewForcing: aBoolean [
 	mcp := self model ifNil: [ ^ self ].
 	enabled := MCPOpenTelemetryObservabilityBackend isLocalSpansEnabled.
 	snapshots := MCPOpenTelemetryObservabilityBackend localSpanStore snapshots.
-	type := objectTypeDropList selectedItem ifNil: [ 'tool' ].
+	type := objectTypeDropList selectedItem ifNil: [ self defaultObjectType ].
 	signature := {
 		             snapshots size.
 		             (snapshots ifNotEmpty: [ snapshots last spanId ]).
@@ -345,6 +458,21 @@ MCPCallGraphPresenter >> sectionsLayout [
 MCPCallGraphPresenter >> shouldAutoRefresh [
 
 	^ self isAutoRefreshEnabled and: [ self isDisplayed ]
+]
+
+{ #category : 'actions' }
+MCPCallGraphPresenter >> spansFileFilters [
+	"What the file dialogs of export and import offer first: the JSON file of spans of this image, then OCEL 2.0."
+
+	^ {
+		  (StCustomExtensionsFilter extensions: #( 'json' ) basename: self spansFormatName).
+		  (StCustomExtensionsFilter extensions: #( 'jsonocel' 'json' ) basename: self ocel2FormatName) }
+]
+
+{ #category : 'actions' }
+MCPCallGraphPresenter >> spansFormatName [
+
+	^ 'Spans'
 ]
 
 { #category : 'auto-refresh' }
