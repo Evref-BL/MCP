@@ -3,6 +3,6 @@ Extension { #name : 'MCP' }
 { #category : '*MCP-OpenTelemetry-UI' }
 MCP >> inspectionCallGraph: aBuilder [
 
-	<inspectorPresentationOrder: 2 title: 'Call graph'>
+	<inspectorPresentationOrder: 2 title: 'OCEL'>
 	^ MCPCallGraphPresenter on: self
 ]

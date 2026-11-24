@@ -23,7 +23,8 @@ Class {
 		'previousSpanExporter',
 		'previousDefaultBackendClass',
 		'previousProviderState',
-		'previousEnvironment'
+		'previousEnvironment',
+		'previousLocalSpans'
 	],
 	#category : 'MCP-OpenTelemetry-Tests',
 	#package : 'MCP-OpenTelemetry-Tests'
@@ -202,10 +203,12 @@ MCPOpenTelemetryObservabilityBackendTest >> sessionOfACallAt: aDateAndTime conte
 
 { #category : 'running' }
 MCPOpenTelemetryObservabilityBackendTest >> setUp [
-	"The backend under test is configured as a server configures it, from settings that ask for traces, in an environment from which nothing made sends anything."
+	"The backend under test is configured as a server configures it, from settings that ask for traces, in an environment from which nothing made sends anything. The image may keep its spans for itself, which it does not while a test runs, so that settings asking for no traces mean none."
 
 	super setUp.
 	self isolateEnvironment.
+	previousLocalSpans := MCPOpenTelemetryObservabilityBackend isLocalSpansEnabled.
+	(MCPOpenTelemetryObservabilityBackend classVariableNamed: #LocalSpansEnabled) value: false.
 	previousTracerProvider := (OTTracerProvider classVariableNamed: #Current) value.
 	previousMeterProvider := OTMeterProvider currentOrNil.
 	previousLoggerProvider := OTLoggerProvider currentOrNil.
@@ -322,6 +325,7 @@ MCPOpenTelemetryObservabilityBackendTest >> tearDown [
 	self providerState with: previousProviderState do: [ :each :value | each value: value ].
 	self registry value: previousBackends.
 	self defaultBackendClass value: previousDefaultBackendClass.
+	(MCPOpenTelemetryObservabilityBackend classVariableNamed: #LocalSpansEnabled) value: previousLocalSpans.
 	backend := nil.
 	self restoreEnvironment.
 	super tearDown

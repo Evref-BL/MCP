@@ -15,11 +15,32 @@ Class {
 		'edgesLabel',
 		'edgesTable',
 		'flowGraph',
-		'graphPresenter'
+		'graphPresenter',
+		'drawing',
+		'isSyncingSelection'
 	],
 	#category : 'MCP-OpenTelemetry-UI',
 	#package : 'MCP-OpenTelemetry-UI'
 }
+
+{ #category : 'actions' }
+MCPCallGraphPresenter >> activityClickedInGraph: anActivity [
+	"A click on a box selects the tool in its table, and none of the arrows'; clicking the selected one again selects nothing."
+
+	self syncingSelectionDo: [
+			edgesTable unselectAll.
+			anActivity ifNil: [ activitiesTable unselectAll ] ifNotNil: [ activitiesTable selectItem: anActivity ] ]
+]
+
+{ #category : 'actions' }
+MCPCallGraphPresenter >> activitySelectedInTable [
+	"Selecting a tool in its table lights its box in the graph, and drops the selection of an arrow."
+
+	isSyncingSelection == true ifTrue: [ ^ self ].
+	self syncingSelectionDo: [
+			activitiesTable selectedItem ifNotNil: [ edgesTable unselectAll ].
+			drawing ifNotNil: [ :each | each selectActivity: activitiesTable selectedItem ] ]
+]
 
 { #category : 'actions' }
 MCPCallGraphPresenter >> clearSpans [
@@ -34,7 +55,9 @@ MCPCallGraphPresenter >> connectPresenters [
 	localSpansCheckBox whenChangedDo: [ :enabled | self localSpansChangedTo: enabled ].
 	objectTypeDropList whenSelectedItemChangedDo: [ :type | self refreshView ].
 	refreshButton action: [ self refreshView ].
-	clearButton action: [ self clearSpans ]
+	clearButton action: [ self clearSpans ].
+	activitiesTable whenSelectionChangedDo: [ :selection | self activitySelectedInTable ].
+	edgesTable whenSelectionChangedDo: [ :selection | self edgeSelectedInTable ]
 ]
 
 { #category : 'layout' }
@@ -71,13 +94,38 @@ MCPCallGraphPresenter >> defaultLayout [
 
 { #category : 'updating' }
 MCPCallGraphPresenter >> drawGraph [
-	"Draws the graph of the last refresh. Setting the script redraws, so a new block each time; the canvas gets its controller, for zoom and drag, once."
+	"Draws the graph of the last refresh. Setting the script redraws, so a new block each time; the canvas gets its controller, for zoom and drag, once. The boxes the user dragged keep their places."
 
-	| graph |
+	| graph positions |
 	graph := flowGraph.
+	positions := drawing ifNotNil: [ :previous | previous nodePositions ].
 	graphPresenter script: [ :canvas |
-			MCPCallGraphDrawing drawFlowGraph: graph on: canvas.
+			drawing := MCPCallGraphDrawing new
+				           flowGraph: graph;
+				           initialPositions: positions;
+				           onActivityClicked: [ :activity | self activityClickedInGraph: activity ];
+				           onEdgeClicked: [ :edge | self edgeClickedInGraph: edge ];
+				           drawOn: canvas;
+				           yourself.
 			canvas controllerInteraction ifNil: [ canvas @ RSCanvasController ] ]
+]
+
+{ #category : 'actions' }
+MCPCallGraphPresenter >> edgeClickedInGraph: anEdge [
+
+	self syncingSelectionDo: [
+			activitiesTable unselectAll.
+			anEdge ifNil: [ edgesTable unselectAll ] ifNotNil: [ edgesTable selectItem: anEdge ] ]
+]
+
+{ #category : 'actions' }
+MCPCallGraphPresenter >> edgeSelectedInTable [
+	"Selecting an edge in its table lights its arrow in the graph, and drops the selection of a tool."
+
+	isSyncingSelection == true ifTrue: [ ^ self ].
+	self syncingSelectionDo: [
+			edgesTable selectedItem ifNotNil: [ activitiesTable unselectAll ].
+			drawing ifNotNil: [ :each | each selectEdge: edgesTable selectedItem ] ]
 ]
 
 { #category : 'initialization' }
@@ -136,10 +184,10 @@ MCPCallGraphPresenter >> localSpansChangedTo: enabled [
 
 	| mcp |
 	mcp := self model ifNil: [ ^ self ].
-	MCPOpenTelemetryObservabilityBackend isLocalSpansEnabled = enabled ifTrue: [ ^ self ].
 	(enabled and: [ (mcp observability isKindOf: MCPOpenTelemetryObservabilityBackend) not ]) ifTrue: [
 		mcp useOpenTelemetryObservability ].
-	MCPOpenTelemetryObservabilityBackend useLocalSpans: enabled.
+	MCPOpenTelemetryObservabilityBackend isLocalSpansEnabled = enabled ifFalse: [
+		MCPOpenTelemetryObservabilityBackend useLocalSpans: enabled ].
 	self refreshView
 ]
 
@@ -220,4 +268,14 @@ MCPCallGraphPresenter >> statusFor: mcp enabled: enabled events: eventCount [
 							  nextPutAll: ' calls'.
 						  (mcp observability isKindOf: MCPOpenTelemetryObservabilityBackend) ifFalse: [
 							  stream nextPutAll: ' - this server does not record through OpenTelemetry' ] ] ]
+]
+
+{ #category : 'actions' }
+MCPCallGraphPresenter >> syncingSelectionDo: aBlock [
+	"Selecting in one place selects in the other, which must not select back."
+
+	| wasSyncing |
+	wasSyncing := isSyncingSelection == true.
+	isSyncingSelection := true.
+	aBlock ensure: [ isSyncingSelection := wasSyncing ]
 ]
