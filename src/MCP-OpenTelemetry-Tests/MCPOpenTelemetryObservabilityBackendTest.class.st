@@ -1148,6 +1148,17 @@ MCPOpenTelemetryObservabilityBackendTest >> testSessionLifecycleGoesThroughTheLo
 ]
 
 { #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testSettingsThatAskForNoTracesMakeNoSpansWhenTheImageDoesNotKeepThem [
+
+	| mcp |
+	MCPOpenTelemetryObservabilityBackend localSpanStore clear.
+	mcp := MCP new.
+	backend := mcp useOpenTelemetryObservabilityWith: (self settingsAskingForTraces: false).
+	backend recordToolCallFinish: self startToolCall result: self successToolResult error: nil.
+	self assert: MCPOpenTelemetryObservabilityBackend localSpanStore size equals: 0
+]
+
+{ #category : 'tests' }
 MCPOpenTelemetryObservabilityBackendTest >> testSettingsThatAskForNoTracesRecordOnlyLocally [
 
 	| mcp |
@@ -1159,6 +1170,27 @@ MCPOpenTelemetryObservabilityBackendTest >> testSettingsThatAskForNoTracesRecord
 	self assert: exporter snapshots isEmpty.
 	self assert: backend totalCallCount equals: 1.
 	self assert: (backend recentCalls collect: [ :each | each toolName ]) asArray equals: #( #method_compile )
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testSettingsThatAskForNoTracesStillMakeSpansWhenTheImageKeepsThem [
+
+	| mcp store flag |
+	store := MCPOpenTelemetryObservabilityBackend localSpanStore.
+	store clear.
+	flag := MCPOpenTelemetryObservabilityBackend classVariableNamed: #LocalSpansEnabled.
+	[
+		flag value: true.
+		mcp := MCP new.
+		backend := mcp useOpenTelemetryObservabilityWith: (self settingsAskingForTraces: false).
+		self assert: backend isRecordingTraces.
+		self assert: (OTMeterProvider current instVarNamed: 'metricReaders') isEmpty.
+		self assert: OTLoggerProvider current logRecordProcessors isEmpty.
+		backend recordToolCallFinish: self startToolCall result: self successToolResult error: nil.
+		self assert: store size equals: 1.
+		self assert: store snapshots first name equals: 'tools/call method_compile' ] ensure: [
+			flag value: false.
+			store clear ]
 ]
 
 { #category : 'tests' }
@@ -1265,6 +1297,22 @@ MCPOpenTelemetryObservabilityBackendTest >> testTheExceptionAnErrorAnswerNamesIs
 	self assert: (self attributeNamed: 'pharo.mcp.exception.type' in: snapshot) equals: 'ZeroDivide'.
 	self assert: (self attributeNamed: 'pharo.mcp.error.code' in: snapshot) equals: 'EvaluationRuntimeError'.
 	self assert: (self attributeNamed: 'pharo.mcp.error.kind' in: snapshot) equals: 'domain'
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testTheLocalSpanStoreKeepsTheMostRecentSpansAndItsExporterStopsOnceShutDown [
+
+	| store localExporter |
+	store := MCPOpenTelemetryLocalSpanStore new
+		         maxSpans: 3;
+		         yourself.
+	localExporter := MCPOpenTelemetryLocalSpanExporter on: store.
+	self assert: (localExporter export: #( 1 2 )).
+	self assert: (localExporter export: #( 3 4 )).
+	self assert: store snapshots equals: #( 2 3 4 ).
+	localExporter shutdown.
+	self deny: (localExporter export: #( 5 )).
+	self assert: store snapshots equals: #( 2 3 4 )
 ]
 
 { #category : 'tests' }

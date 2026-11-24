@@ -26,6 +26,8 @@ Class {
 	],
 	#classVars : [
 		'Backends',
+		'LocalSpanStore',
+		'LocalSpansEnabled',
 		'OwnPackageNames',
 		'PharoPackageNames',
 		'ProviderSettings',
@@ -36,6 +38,25 @@ Class {
 	#category : 'MCP-OpenTelemetry',
 	#package : 'MCP-OpenTelemetry'
 }
+
+{ #category : 'configuring' }
+MCPOpenTelemetryObservabilityBackend class >> attachLocalSpansExporting: exporting [
+	"Feeds localSpanStore from the providers just made, when the image keeps its spans. Beside the exporters the settings chose when they ask for traces; else the providers are the image's own: a tracer provider that only feeds the store, and meter and logger providers with nothing to send to, so that the defaults the SDK would make, which export to a collector, never exist."
+
+	| processor |
+	self isLocalSpansEnabled ifFalse: [ ^ self ].
+	processor := OTSimpleSpanProcessor new
+		             exporter: (MCPOpenTelemetryLocalSpanExporter on: self localSpanStore);
+		             yourself.
+	exporting
+		ifTrue: [ OTTracerProvider current addSpanProcessor: processor ]
+		ifFalse: [
+				OTTracerProvider current: (OTTracerProvider new
+						 spanProcessor: processor;
+						 yourself).
+				OTMeterProvider current: OTMeterProvider new.
+				OTLoggerProvider current: OTLoggerProvider new ]
+]
 
 { #category : 'reporting' }
 MCPOpenTelemetryObservabilityBackend class >> baselineClassNameOf: aProjectSpec [
@@ -101,6 +122,20 @@ MCPOpenTelemetryObservabilityBackend class >> detachTracerProviderInto: dropped 
 MCPOpenTelemetryObservabilityBackend class >> initialize [
 
 	SessionManager default registerToolClassNamed: self name
+]
+
+{ #category : 'local spans' }
+MCPOpenTelemetryObservabilityBackend class >> isLocalSpansEnabled [
+	"Whether the image keeps its spans in memory, in localSpanStore, whatever the settings say about exporting them. Off until someone turns it on, and it stays as the image was saved."
+
+	^ LocalSpansEnabled == true
+]
+
+{ #category : 'local spans' }
+MCPOpenTelemetryObservabilityBackend class >> localSpanStore [
+	"Where the image keeps its spans for itself, whether or not they are exported."
+
+	^ LocalSpanStore ifNil: [ LocalSpanStore := MCPOpenTelemetryLocalSpanStore new ]
 ]
 
 { #category : 'reporting' }
@@ -190,15 +225,17 @@ MCPOpenTelemetryObservabilityBackend class >> providersMutex [
 
 { #category : 'configuring' }
 MCPOpenTelemetryObservabilityBackend class >> reconfigure: someBackends with: aSettings [
-	"Configures each of someBackends afresh from aSettings, the providers once for all of them. The providers are global and may be the user's: they are rebuilt only when the settings ask for traces or one of these backends was configured to record through them, and then only when the settings in effect are not those they were made from, so that configuring another server leaves the calls running recording as they started. A call starting its span meanwhile waits for all of it, so that it starts in the providers before or after, never in those being replaced."
+	"Configures each of someBackends afresh from aSettings, the providers once for all of them. The providers are global and may be the user's: they are rebuilt only when the settings ask for traces, or the image keeps its spans, or one of these backends was configured to record through them, and then only when the settings in effect are not those they were made from, so that configuring another server leaves the calls running recording as they started. A call starting its span meanwhile waits for all of it, so that it starts in the providers before or after, never in those being replaced."
 
 	self providersMutex critical: [
-			| wanted settings |
-			wanted := self wantsTraces: aSettings.
+			| exporting wanted settings |
+			exporting := self settingsAskForTraces: aSettings.
+			wanted := exporting or: [ self isLocalSpansEnabled ].
 			settings := self settingsInEffectOf: aSettings.
 			((wanted or: [ someBackends anySatisfy: [ :each | each isConfiguredForTraces ] ]) and: [ ProviderSettings ~= settings ])
 				ifTrue: [
 						self resetProviders.
+						self attachLocalSpansExporting: exporting.
 						ProviderSettings := settings ].
 			someBackends do: [ :each |
 					[ each configureFor: each serverInfo configured: wanted ]
@@ -294,6 +331,17 @@ MCPOpenTelemetryObservabilityBackend class >> retiredTracerProviders [
 ]
 
 { #category : 'configuring' }
+MCPOpenTelemetryObservabilityBackend class >> settingsAskForTraces: aSettings [
+	"Whether aSettings ask for traces to be exported, once MCP's settings file, when it gives any, has replaced the environment's."
+
+	^ [
+		  aSettings apply.
+		  aSettings isConfigured ]
+		  on: Error
+		  do: [ false ]
+]
+
+{ #category : 'configuring' }
 MCPOpenTelemetryObservabilityBackend class >> settingsInEffectOf: aSettings [
 	"The settings the providers would be made from now, or a value equal to no other when they cannot be read."
 
@@ -341,13 +389,14 @@ MCPOpenTelemetryObservabilityBackend class >> spansInFlight [
 
 { #category : 'system startup' }
 MCPOpenTelemetryObservabilityBackend class >> startUp: resuming [
-	"An image starting again may run elsewhere, with other settings or none: every backend of this kind is configured afresh from them, before its server answers a call, and its providers are made again, whatever settings the last session made them from. The calls the last session was running when it saved the image go on in this one, and record nothing when they end; the providers kept for them are shut down. An image without a backend of this kind leaves OpenTelemetry alone."
+	"An image starting again may run elsewhere, with other settings or none: every backend of this kind is configured afresh from them, before its server answers a call, and its providers are made again, whatever settings the last session made them from. The calls the last session was running when it saved the image go on in this one, and record nothing when they end; the providers kept for them are shut down. The spans the last session kept for the image belong to it and are dropped. An image without a backend of this kind leaves OpenTelemetry alone."
 
 	| backends retired |
 	resuming ifFalse: [ ^ self ].
 	OwnPackageNames := nil.
 	PharoPackageNames := nil.
 	ProviderSettings := nil.
+	LocalSpanStore ifNotNil: [ :store | store clear ].
 	retired := self providersMutex critical: [
 			           | providers |
 			           providers := self retiredTracerProviders collect: [ :each | each key ].
@@ -362,15 +411,20 @@ MCPOpenTelemetryObservabilityBackend class >> startUp: resuming [
 		do: [ :error | error return: nil ]
 ]
 
+{ #category : 'local spans' }
+MCPOpenTelemetryObservabilityBackend class >> useLocalSpans: aBoolean [
+	"Turns the keeping of spans in memory on or off, and makes the providers again, for every backend of this kind the image holds. With settings that ask for no traces nothing is exported: the spans are made for the image alone."
+
+	LocalSpansEnabled := aBoolean == true.
+	self providersMutex critical: [ ProviderSettings := nil ].
+	self reconfigure: self registeredBackends asArray with: MCPOpenTelemetrySettings current
+]
+
 { #category : 'configuring' }
 MCPOpenTelemetryObservabilityBackend class >> wantsTraces: aSettings [
-	"Whether aSettings ask for traces, once MCP's settings file, when it gives any, has replaced the environment's."
+	"Whether spans are to be made: aSettings ask for traces, or the image keeps its spans for itself."
 
-	^ [
-		  aSettings apply.
-		  aSettings isConfigured ]
-		  on: Error
-		  do: [ false ]
+	^ (self settingsAskForTraces: aSettings) or: [ self isLocalSpansEnabled ]
 ]
 
 { #category : 'private - recording' }
