@@ -111,9 +111,10 @@ MCPMessageProcessor >> handleJRPCRequestObject: aJRPCRequestObject [
 		  self validateProtocolVersionFor: aJRPCRequestObject.
 		  handler := self handlerFor: aJRPCRequestObject.
 		  handler checkParametersForRequest: aJRPCRequestObject.
-		  result := MCPRequestMeta
-			            value: (MCP metaIn: aJRPCRequestObject params)
-			            during: [ handler executeWithArguments: aJRPCRequestObject params ].
+		  result := MCPRequestId value: aJRPCRequestObject id during: [
+			            MCPRequestMeta
+				            value: (MCP metaIn: aJRPCRequestObject params)
+				            during: [ handler executeWithArguments: aJRPCRequestObject params ] ].
 		  JRPCSuccessResponseObject id: aJRPCRequestObject id result: (self resultFor: result inEraOf: aJRPCRequestObject) ]
 		  on: Exception
 		  do: [ :exception |

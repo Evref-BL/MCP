@@ -32,6 +32,14 @@ MCPOpenTelemetrySettings >> apply [
 	^ settings
 ]
 
+{ #category : 'testing' }
+MCPOpenTelemetrySettings >> capturesContent [
+	"Whether the settings ask for a tool call's arguments and result on its span, as OTEL_INSTRUMENTATION_GENAI_CAPTURE_CONTENT does for the OpenTelemetry conventions for GenAI: SPAN_ONLY or SPAN_AND_EVENT, in any case. Its default, NO_CONTENT, EVENT_ONLY and any other value do not."
+
+	^ #( 'SPAN_ONLY' 'SPAN_AND_EVENT' ) includes:
+		  ((self valueAt: 'OTEL_INSTRUMENTATION_GENAI_CAPTURE_CONTENT') ifNil: [ '' ]) asUppercase
+]
+
 { #category : 'accessing' }
 MCPOpenTelemetrySettings >> fileSettings [
 	"The OTEL_* settings the file's KEY=value lines give, as a dotenv file writes them. Blank lines and # comments are skipped, as are a leading export, a # comment after a value, and quotes around a value; any other key is not the file's to set. No file gives none."

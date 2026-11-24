@@ -22,7 +22,8 @@ Class {
 		'ownSessionLastCallAt',
 		'sessionMutex',
 		'ownSessionImageSession',
-		'configuredInSession'
+		'configuredInSession',
+		'capturesContent'
 	],
 	#classVars : [
 		'Backends',
@@ -190,17 +191,21 @@ MCPOpenTelemetryObservabilityBackend class >> providersMutex [
 
 { #category : 'configuring' }
 MCPOpenTelemetryObservabilityBackend class >> reconfigure: someBackends with: aSettings [
-	"Configures each of someBackends afresh from aSettings, the providers once for all of them. The providers are global and may be the user's: they are rebuilt only when the settings ask for traces or one of these backends was configured to record through them, and then only when the settings in effect are not those they were made from, so that configuring another server leaves the calls running recording as they started. A call starting its span meanwhile waits for all of it, so that it starts in the providers before or after, never in those being replaced."
+	"Configures each of someBackends afresh from aSettings, the providers once for all of them, and whether they record a call's arguments and result. The providers are global and may be the user's: they are rebuilt only when the settings ask for traces or one of these backends was configured to record through them, and then only when the settings in effect are not those they were made from, so that configuring another server leaves the calls running recording as they started. A call starting its span meanwhile waits for all of it, so that it starts in the providers before or after, never in those being replaced."
 
 	self providersMutex critical: [
-			| wanted settings |
+			| wanted content settings |
 			wanted := self wantsTraces: aSettings.
+			content := [ aSettings capturesContent ]
+				           on: Error
+				           do: [ :error | error return: false ].
 			settings := self settingsInEffectOf: aSettings.
 			((wanted or: [ someBackends anySatisfy: [ :each | each isConfiguredForTraces ] ]) and: [ ProviderSettings ~= settings ])
 				ifTrue: [
 						self resetProviders.
 						ProviderSettings := settings ].
 			someBackends do: [ :each |
+					each capturesContent: content.
 					[ each configureFor: each serverInfo configured: wanted ]
 						on: Error
 						do: [ :error | error return: nil ] ] ]
@@ -381,6 +386,14 @@ MCPOpenTelemetryObservabilityBackend >> addAttributesFrom: aBlock to: attributes
 ]
 
 { #category : 'private - reporting' }
+MCPOpenTelemetryObservabilityBackend >> argumentAttributesFor: inputObject [
+	"The call's arguments as gen_ai.tool.call.arguments, written as JSON, only when the settings ask for content."
+
+	(self capturesContent and: [ inputObject isNotNil ]) ifFalse: [ ^ #(  ) ].
+	^ { ('gen_ai.tool.call.arguments' -> (self jsonStringFor: inputObject)) }
+]
+
+{ #category : 'private - reporting' }
 MCPOpenTelemetryObservabilityBackend >> argumentNamesIn: inputObject for: aTool [
 	"The names of the arguments a call was given that its tool declares, sorted, at most maxArgumentNames. A name the caller made up is only among the unknown ones, so that what an agent writes in a name it invents reaches a single attribute."
 
@@ -388,6 +401,19 @@ MCPOpenTelemetryObservabilityBackend >> argumentNamesIn: inputObject for: aTool 
 	declared := self declaredArgumentNamesOf: aTool.
 	names := (self reportableArgumentNamesIn: inputObject) select: [ :each | declared includes: each ].
 	^ names first: (names size min: self maxArgumentNames)
+]
+
+{ #category : 'accessing' }
+MCPOpenTelemetryObservabilityBackend >> capturesContent [
+	"Whether a call's span carries its arguments and result, as the settings it was last configured from ask."
+
+	^ capturesContent == true
+]
+
+{ #category : 'accessing' }
+MCPOpenTelemetryObservabilityBackend >> capturesContent: aBoolean [
+
+	capturesContent := aBoolean
 ]
 
 { #category : 'private - reporting' }
@@ -520,15 +546,15 @@ MCPOpenTelemetryObservabilityBackend >> emitEventNamed: eventName body: bodyStri
 ]
 
 { #category : 'private - spans' }
-MCPOpenTelemetryObservabilityBackend >> endSpan: span withAttributes: attributes record: aRecord at: finishedAt [
-	"Instrumentation leaves a successful span's status unset. A failed one is marked without a description, because the conventions would put the error message there and a message is a value. The span ends whatever fails before: one never ended is never exported, as if the image had never received the call."
+MCPOpenTelemetryObservabilityBackend >> endSpan: span withAttributes: attributes description: aString record: aRecord at: finishedAt [
+	"Instrumentation leaves a successful span's status unset. A failed one is marked with aString as its description, which the conventions make the JSON-RPC error's message. The span ends whatever fails before: one never ended is never exported, as if the image had never received the call."
 
 	span ifNil: [ ^ nil ].
 	[
 		attributes do: [ :each | self withoutFailingTheCall: [ span attributeAt: each key put: each value ] ].
 		self withoutFailingTheCall: [
 			aRecord outputBudgetExceeded ifTrue: [ span addEventNamed: 'pharo.mcp.output_budget_exceeded' attributes: #(  ) ] ].
-		self withoutFailingTheCall: [ aRecord status = 'error' ifTrue: [ span setStatus: OTSpan error description: '' ] ] ] ensure: [
+		self withoutFailingTheCall: [ aRecord status = 'error' ifTrue: [ span setStatus: OTSpan error description: aString ] ] ] ensure: [
 			(self withoutFailingTheCall: [
 					 span end: finishedAt.
 					 true ]) ifNil: [ self withoutFailingTheCall: [ span end ] ].
@@ -547,7 +573,7 @@ MCPOpenTelemetryObservabilityBackend >> errorTypeFor: anError [
 
 { #category : 'private - spans' }
 MCPOpenTelemetryObservabilityBackend >> finishAttributesFor: aRecord result: aToolResult started: anEntry error: anError errorType: errorType [
-	"What is known once a call is answered, with what its start kept in anEntry: its span, its tool's name, whose tool it is and the tool: sizes, what a listing found, and for a failure its kind, its code, the class of the exception it raised or its answer names, and, when the input schema refused it, the keywords and paths it refused. An exception is named by its nearest class in Pharo or MCP, and never by its message or stack. Each fact is read on its own, so one that cannot be read leaves the others."
+	"What is known once a call is answered, with what its start kept in anEntry: its span, its tool's name, whose tool it is and the tool: sizes, what a listing found, the answer itself when the settings ask for content and it is no error, and for a failure its kind, its code, the class of the exception it raised or its answer names, and, when the input schema refused it, the keywords and paths it refused. An exception is named by its nearest class in Pharo or MCP, and never by its message or stack. Each fact is read on its own, so one that cannot be read leaves the others."
 
 	| origin tool attributes |
 	origin := anEntry at: 3.
@@ -561,7 +587,9 @@ MCPOpenTelemetryObservabilityBackend >> finishAttributesFor: aRecord result: aTo
 					('pharo.mcp.output_budget.exceeded' -> aRecord outputBudgetExceeded) } ]
 		to: attributes.
 	self addAttributesFrom: [ self resultAttributesFor: aToolResult origin: origin ] to: attributes.
-	errorType ifNil: [ ^ attributes asArray ].
+	errorType ifNil: [
+			self addAttributesFrom: [ self resultContentAttributesFor: aToolResult ] to: attributes.
+			^ attributes asArray ].
 	attributes add: 'error.type' -> errorType.
 	self
 		addAttributesFrom: [ aRecord errorKind ifEmpty: [ #(  ) ] ifNotEmpty: [ :kind | { ('pharo.mcp.error.kind' -> kind) } ] ]
@@ -980,6 +1008,7 @@ MCPOpenTelemetryObservabilityBackend >> recordToolCallFinish: aRecord result: aT
 	self
 		endSpan: entry first
 		withAttributes: attributes
+		description: ((self withoutFailingTheCall: [ self statusDescriptionFor: anError ]) ifNil: [ '' ])
 		record: aRecord
 		at: aRecord finishedAt.
 	^ aRecord
@@ -1067,6 +1096,17 @@ MCPOpenTelemetryObservabilityBackend >> reportableToolName: aToolName in: contex
 ]
 
 { #category : 'private - reporting' }
+MCPOpenTelemetryObservabilityBackend >> requestIdIn: contextDictionary [
+	"The id of the JSON-RPC request the call answers, as a string: nil for a request without one, and for a call another dispatched, which answers no request of its own."
+
+	contextDictionary at: #parentRecord ifPresent: [ :record | record ifNotNil: [ ^ nil ] ].
+	contextDictionary at: #requestId ifPresent: [ :id |
+			id isString ifTrue: [ ^ id ].
+			id ifNotNil: [ ^ id printString ] ].
+	^ nil
+]
+
+{ #category : 'private - reporting' }
 MCPOpenTelemetryObservabilityBackend >> resultAttributesFor: aToolResult origin: anOrigin [
 	"What a result says it found, read from the data its structured content carries, as MCP's tools share it: how many entries a listing matched and whether it showed them all; for a test run, how many tests ran and how it ended; for a tool search or description, the tools it named."
 
@@ -1089,6 +1129,14 @@ MCPOpenTelemetryObservabilityBackend >> resultAttributesFor: aToolResult origin:
 	attributes addAll: (self testAttributesIn: data).
 	(self toolNamesIn: data) ifNotEmpty: [ :names | attributes add: 'pharo.mcp.tool.refs' -> names ].
 	^ attributes
+]
+
+{ #category : 'private - reporting' }
+MCPOpenTelemetryObservabilityBackend >> resultContentAttributesFor: aToolResult [
+	"The call's answer as gen_ai.tool.call.result: its structured content, or else its content, written as JSON, only when the settings ask for content."
+
+	(self capturesContent and: [ aToolResult isNotNil ]) ifFalse: [ ^ #(  ) ].
+	^ { ('gen_ai.tool.call.result' -> (self jsonStringFor: (aToolResult structuredContent ifNil: [ aToolResult content ]) asJRPCJSON)) }
 ]
 
 { #category : 'private - reporting' }
@@ -1186,7 +1234,7 @@ MCPOpenTelemetryObservabilityBackend >> spanOfRecord: aRecord [
 
 { #category : 'private - spans' }
 MCPOpenTelemetryObservabilityBackend >> startAttributesFor: aRecord named: aToolName origin: anOrigin input: inputObject context: contextDictionary parent: aContext [
-	"The attributes known when a call starts, set before the span starts so a sampler sees them. They follow the OpenTelemetry conventions for MCP where those name the fact, and say nothing the caller passed but argument names, those its tool declares apart from the others, the options its tool's schema offers that it chose, the session its trace context names, or else the server's own, the client it says it is, and whether the server lists its tool in tools/list. Each fact is read on its own, so one that cannot be read leaves the others."
+	"The attributes known when a call starts, set before the span starts so a sampler sees them. They follow the OpenTelemetry conventions for MCP where those name the fact, and say nothing the caller passed but the request's id, argument names, those its tool declares apart from the others, the options its tool's schema offers that it chose, the session its trace context names, or else the server's own, the client it says it is, whether the server lists its tool in tools/list, and the arguments themselves when the settings ask for content. Each fact is read on its own, so one that cannot be read leaves the others."
 
 	| attributes tool |
 	tool := contextDictionary at: #tool ifAbsent: [ nil ].
@@ -1198,6 +1246,10 @@ MCPOpenTelemetryObservabilityBackend >> startAttributesFor: aRecord named: aTool
 		add: 'network.transport' -> 'tcp';
 		add: 'network.protocol.name' -> 'http';
 		add: 'pharo.mcp.tool.origin' -> anOrigin.
+	self
+		addAttributesFrom: [
+		(self requestIdIn: contextDictionary) ifNil: [ #(  ) ] ifNotNil: [ :id | { ('jsonrpc.request.id' -> id) } ] ]
+		to: attributes.
 	self addAttributesFrom: [ { ('pharo.mcp.dispatch_path' -> aRecord dispatchPath) } ] to: attributes.
 	self
 		addAttributesFrom: [
@@ -1230,6 +1282,7 @@ MCPOpenTelemetryObservabilityBackend >> startAttributesFor: aRecord named: aTool
 					ifEmpty: [ #(  ) ]
 					ifNotEmpty: [ :options | { ('pharo.mcp.argument.options' -> options) } ] ]
 		to: attributes.
+	self addAttributesFrom: [ self argumentAttributesFor: inputObject ] to: attributes.
 	^ attributes asArray
 ]
 
@@ -1264,6 +1317,16 @@ MCPOpenTelemetryObservabilityBackend >> startSpanFor: aRecord named: aToolName i
 					name.
 					origin.
 					tool } ]
+]
+
+{ #category : 'private - reporting' }
+MCPOpenTelemetryObservabilityBackend >> statusDescriptionFor: anError [
+	"A failed call's status description: the message of the JSON-RPC error it was answered with, as the conventions for MCP ask, or none for a call answered with a result that reports an error, which is no JSON-RPC error."
+
+	(anError isNotNil and: [ anError mcpIsProtocolError ]) ifFalse: [ ^ '' ].
+	^ [ (anError mcpJRPCResponseWithId: nil) error message ifNil: [ '' ] ]
+		  on: Error
+		  do: [ :error | error return: '' ]
 ]
 
 { #category : 'private - reporting' }

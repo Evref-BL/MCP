@@ -655,6 +655,19 @@ MCPOpenTelemetryObservabilityBackendTest >> testANameTheCallerChoseIsExportedOnl
 ]
 
 { #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testAProtocolErrorDescribesTheSpanWithTheMessageItIsAnsweredWith [
+	"The message of the JSON-RPC error the client gets, not the exception's own text."
+
+	| error snapshot |
+	error := JRPCInvalidParameters new messageText: 'secret'.
+	backend recordToolCallFinish: self startToolCall result: nil error: error.
+	snapshot := exporter onlySnapshot.
+	self assert: snapshot status equals: OTSpan error.
+	self assert: snapshot statusDescription equals: (error mcpJRPCResponseWithId: nil) error message.
+	self deny: (snapshot statusDescription includesSubstring: 'secret')
+]
+
+{ #category : 'tests' }
 MCPOpenTelemetryObservabilityBackendTest >> testAProtocolErrorReportsItsJSONRPCCode [
 	"A tool that raises a JSON-RPC error of its own is answered with it, so the call is recorded by its code."
 
@@ -674,6 +687,25 @@ MCPOpenTelemetryObservabilityBackendTest >> testAProviderThatRefusesTheDescripti
 	backend recordToolCallFinish: self startToolCall result: self successToolResult error: nil.
 	self assert: exporter snapshots isEmpty.
 	self assert: backend totalCallCount equals: 1
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testARequestsSpanCarriesItsIdAndACallItDispatchesDoesNot [
+	"The id is the request's, which a call tool_call makes does not answer."
+
+	| mcp |
+	mcp := self mcp.
+	mcp server messageProcessor handleJSON: (STONJSON toString: {
+				 ('jsonrpc' -> '2.0').
+				 ('id' -> 7).
+				 ('method' -> 'tools/call').
+				 ('params' -> {
+					  ('name' -> 'tool_call').
+					  ('arguments' -> {
+						   ('name' -> 'class_search').
+						   ('arguments' -> { ('query' -> 'Point') } asDictionary) } asDictionary) } asDictionary) } asDictionary).
+	self assert: (self attributeNamed: 'jsonrpc.request.id' in: (self spanNamed: 'tools/call tool_call')) equals: '7'.
+	self assert: (self attributeNamed: 'jsonrpc.request.id' in: (self spanNamed: 'tools/call class_search')) isNil
 ]
 
 { #category : 'tests' }
@@ -963,6 +995,55 @@ MCPOpenTelemetryObservabilityBackendTest >> testConfiguringABackendReconfiguresE
 			 yourself).
 	self assert: other isRecordingTraces.
 	self deny: OTTracerProvider current identicalTo: tracerProvider
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testConfiguringTakesFromTheSettingsWhetherToRecordContent [
+
+	| asking |
+	asking := (MCPOpenTelemetrySettings environment:
+			           (Dictionary newFrom: { ('OTEL_INSTRUMENTATION_GENAI_CAPTURE_CONTENT' -> 'SPAN_ONLY') }))
+		          home: nil;
+		          yourself.
+	MCPOpenTelemetryObservabilityBackend reconfigure: { backend } with: asking.
+	self assert: backend capturesContent.
+	MCPOpenTelemetryObservabilityBackend reconfigure: { backend } with: (self settingsAskingForTraces: false).
+	self deny: backend capturesContent
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testContentAskedForCarriesTheArgumentsAndTheAnswerOfACallThatSucceeded [
+	"The answer is its structured content when it has some, else its content, and none for an answer that reports an error."
+
+	| structured spans |
+	backend capturesContent: true.
+	structured := MCPStructureCallToolResult content: #(  ) structuredContent: { ('found' -> 2) } asDictionary.
+	{
+		self successToolResult.
+		structured.
+		self errorToolResult } do: [ :each | backend recordToolCallFinish: self startToolCall result: each error: nil ].
+	spans := exporter snapshots.
+	spans do: [ :each |
+			self
+				assert: (STONJSON fromString: (self attributeNamed: 'gen_ai.tool.call.arguments' in: each))
+				equals: { ('class' -> 'Object') } asDictionary ].
+	self assert: (STONJSON fromString: (self attributeNamed: 'gen_ai.tool.call.result' in: spans first)) equals: { {
+			('type' -> 'text').
+			('text' -> 'ok') } asDictionary }.
+	self
+		assert: (STONJSON fromString: (self attributeNamed: 'gen_ai.tool.call.result' in: spans second))
+		equals: { ('found' -> 2) } asDictionary.
+	self assert: (self attributeNamed: 'gen_ai.tool.call.result' in: spans last) isNil
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testContentIsLeftOutUnlessTheSettingsAskForIt [
+
+	| snapshot |
+	backend recordToolCallFinish: self startToolCall result: self successToolResult error: nil.
+	snapshot := exporter onlySnapshot.
+	self assert: (self attributeNamed: 'gen_ai.tool.call.arguments' in: snapshot) isNil.
+	self assert: (self attributeNamed: 'gen_ai.tool.call.result' in: snapshot) isNil
 ]
 
 { #category : 'tests' }
@@ -1301,6 +1382,19 @@ MCPOpenTelemetryObservabilityBackendTest >> testTheOptionsACallChoseAreReported 
 MCPOpenTelemetryObservabilityBackendTest >> testThePharoVersionCarriesItsBuild [
 
 	self assert: (MCPOpenTelemetryObservabilityBackend pharoVersion matchesRegex: '\d+\.\d+\.\d+\+build\.\d+')
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testTheRequestIdIsAStringAndOnlyAnIdIsSent [
+
+	#( 7 'abc' nil ) do: [ :each |
+			backend
+				recordToolCallFinish: (self startToolCallWith: { (#requestId -> each) } asDictionary)
+				result: self successToolResult
+				error: nil ].
+	self
+		assert: (exporter snapshots collect: [ :each | self attributeNamed: 'jsonrpc.request.id' in: each ] as: Array)
+		equals: #( '7' 'abc' nil )
 ]
 
 { #category : 'tests' }

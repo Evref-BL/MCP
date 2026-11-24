@@ -146,7 +146,9 @@ sent. A configuration file named by
 ## Spans
 
 Each tool call is a server span named `tools/call <tool>`. A failed call's
-span has the error status, without a description. A request whose
+span has the error status, with the message of the JSON-RPC error the client
+was answered with as its description, or none when the tool answered with a
+result that reports an error. A request whose
 `params._meta` carries a W3C `traceparent` (SEP-414) makes the span a child of
 the caller's, so a client that propagates its context sees the image's work
 inside its own trace; the span keeps the caller's W3C `tracestate` with the
@@ -159,6 +161,8 @@ A span has these attributes from its start:
 - `mcp.method.name` `tools/call`, `gen_ai.operation.name` `execute_tool`,
   `network.transport` `tcp` and `network.protocol.name` `http`, as the
   OpenTelemetry conventions for MCP define them.
+- `jsonrpc.request.id`, the id of the request the call answers, as a string;
+  a call `tool_call` makes answers no request of its own and has none.
 - `gen_ai.tool.name`, the tool's name; a name the server has no tool for is
   sent only when it reads as an identifier, else as `_OTHER`.
 - `mcp.protocol.version`, for a request that declares its version in its
@@ -227,6 +231,15 @@ A failed call also has:
   schema does not declare is not, but the object that holds it is, the
   arguments themselves being the empty pointer.
 
+The arguments and the answer are recorded only when
+`OTEL_INSTRUMENTATION_GENAI_CAPTURE_CONTENT`, read like the other settings,
+is `SPAN_ONLY` or `SPAN_AND_EVENT`, in any case, as the OpenTelemetry
+conventions for generative AI define it. The span then has
+`gen_ai.tool.call.arguments`, the arguments as JSON, and for a call that
+succeeded `gen_ai.tool.call.result`, its structured content, or else its
+content, as JSON. Its default, `NO_CONTENT`, and any other value leave them
+out.
+
 ## Metrics and logs
 
 Each call is also counted in these metrics, with `mcp.method.name`,
@@ -246,10 +259,12 @@ on in each start of the saved image until it is stopped there. Its session
 started before that start, so its end is recorded neither by
 `mcp.session.end` nor locally, as for a call running when the image is saved.
 
-## What is never sent
+## What is sent
 
-The attributes carry no values: argument names but not arguments, sizes but
-not results, and no exception message or stack. An exception is named by its
+Unless the arguments and the answer are asked for, the attributes carry no
+values: argument names but not arguments, sizes but not results. No
+exception's message or stack is sent; a failed call's description is the
+JSON-RPC error's message, the one the client gets. An exception is named by its
 nearest class in Pharo's own packages, those Pharo's baselines list, or in
 MCP's, and a name the caller chose for an argument or a tool is sent only
 when it reads as an identifier. Recording never fails

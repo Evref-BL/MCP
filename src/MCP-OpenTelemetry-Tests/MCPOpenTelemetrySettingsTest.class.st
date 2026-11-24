@@ -77,6 +77,23 @@ MCPOpenTelemetrySettingsTest >> testAFileThatIsNotUTF8IsReadAllTheSame [
 ]
 
 { #category : 'tests' }
+MCPOpenTelemetrySettingsTest >> testContentIsAskedForOnTheSpanAsTheGenAIConventionsSay [
+
+	| captures |
+	captures := [ :value |
+		            (MCPOpenTelemetrySettings environment:
+			             (Dictionary newFrom:
+				              (value ifNil: [ #(  ) ] ifNotNil: [ { ('OTEL_INSTRUMENTATION_GENAI_CAPTURE_CONTENT' -> value) } ])))
+			            capturesContent ].
+	self deny: (captures value: nil).
+	self assert: (captures value: 'SPAN_ONLY').
+	self assert: (captures value: ' span_and_event ').
+	self deny: (captures value: 'EVENT_ONLY').
+	self deny: (captures value: 'NO_CONTENT').
+	self deny: (captures value: 'true')
+]
+
+{ #category : 'tests' }
 MCPOpenTelemetrySettingsTest >> testOnWindowsAConfigurationHomeWithADriveIsAbsolute [
 	"As Node reads it, so MCP looks where a tool written for Node wrote the file."
 
