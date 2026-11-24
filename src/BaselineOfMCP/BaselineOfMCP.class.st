@@ -87,11 +87,12 @@ BaselineOfMCP >> defineGroups: spec [
 		group: 'IDE' with: #( 'MCP-IDE' );
 		group: 'UI' with: #( 'MCP-UI' );
 		group: 'Telemetry' with: #( 'MCP-OpenTelemetry' );
+		group: 'Telemetry UI' with: #( 'MCP-OpenTelemetry-UI' );
 		group: 'Tests' with: #( 'MCP-Tests' );
 		group: 'UI Tests' with: #( 'MCP-UI-Tests' );
 		group: 'Telemetry Tests' with: #( 'MCP-OpenTelemetry-Tests' );
 		group: 'default' with: #( 'Core' 'IDE' 'UI' );
-		group: 'all' with: #( 'default' 'Telemetry' 'Tests' 'UI Tests' 'Telemetry Tests' )
+		group: 'all' with: #( 'default' 'Telemetry' 'Telemetry UI' 'Tests' 'UI Tests' 'Telemetry Tests' )
 ]
 
 { #category : 'baselines' }
@@ -102,6 +103,7 @@ BaselineOfMCP >> definePackages: spec [
 	spec package: 'MCP-IDE' with: [ spec requires: #( 'Core' 'PCRE2' ) ].
 	spec package: 'MCP-UI' with: [ spec requires: #( 'Core' ) ].
 	spec package: 'MCP-OpenTelemetry' with: [ spec requires: #( 'Core' 'OpenTelemetry' ) ].
+	spec package: 'MCP-OpenTelemetry-UI' with: [ spec requires: #( 'UI' 'Telemetry' ) ].
 	spec package: 'MCP-OpenTelemetry-Tests' with: [ spec requires: #( 'MCP-OpenTelemetry' 'IDE' 'MCP-Tests-Resources' ) ].
 	spec package: 'MCP-Tests-Resources' with: [ spec requires: #( 'IDE' ) ].
 	spec package: 'MCP-Tests-RunResources' with: [ spec requires: #( 'MCP-Tests-Resources' ) ].
