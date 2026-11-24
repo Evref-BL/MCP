@@ -184,8 +184,43 @@ MCPCallGraphDrawing >> drawEdges [
 			edge := flowGraph edgeFrom: line model key to: line model value.
 			lines at: line model put: line.
 			line
-				width: 1 + (edge count log: 2);
+				width: (self widthOfCount: edge count);
 				popupText: [ :each | self describeEdge: edge ] ]
+]
+
+{ #category : 'drawing' }
+MCPCallGraphDrawing >> drawLegend [
+	"A fixed key at the top right of the canvas: how thick an arrow is for how many cases."
+
+	| legend |
+	legend := RSLegend new.
+	legend container: canvas.
+	legend title: 'Directly follows'.
+	{
+		1.
+		10.
+		25.
+		self maxCountForWidth } do: [ :count |
+			legend
+				text: (count = self maxCountForWidth
+						 ifTrue: [ count printString , '+ cases' ]
+						 ifFalse: [
+								 count printString , (count = 1
+									  ifTrue: [ ' case' ]
+									  ifFalse: [ ' cases' ]) ])
+				withShape: (RSBox new
+						 width: 28;
+						 height: (self widthOfCount: count);
+						 color: Color gray;
+						 yourself) ].
+	legend legendDo: [ :shape |
+			shape
+				withBorder;
+				padding: 8 ].
+	legend location
+		right;
+		top.
+	legend build
 ]
 
 { #category : 'drawing' }
@@ -198,6 +233,7 @@ MCPCallGraphDrawing >> drawOn: aCanvas [
 	self drawEdges.
 	self layOutNodes.
 	self addInteractions.
+	self drawLegend.
 	self applyStyles
 ]
 
@@ -279,6 +315,13 @@ MCPCallGraphDrawing >> litColor [
 ]
 
 { #category : 'drawing' }
+MCPCallGraphDrawing >> maxCountForWidth [
+	"From this many cases on, an arrow is as thick as it gets."
+
+	^ 50
+]
+
+{ #category : 'drawing' }
 MCPCallGraphDrawing >> nodeFor: anActivity [
 	"A box with the icon of the tool, as in the dashboard, then its name."
 
@@ -353,4 +396,11 @@ MCPCallGraphDrawing >> selectEdge: anEdge [
 				ifTrue: [ selectedActivity := anEdge source ]
 				ifFalse: [ selectedEdge := anEdge source -> anEdge target ] ].
 	self applyStyles
+]
+
+{ #category : 'drawing' }
+MCPCallGraphDrawing >> widthOfCount: aCount [
+	"From 1 pixel for a single case, growing in step with the count, to 9 pixels at the maximum and above."
+
+	^ 1 + (8 * ((aCount min: self maxCountForWidth) - 1) / (self maxCountForWidth - 1))
 ]
