@@ -22,7 +22,8 @@ Class {
 		'autoRefreshProcess',
 		'lastSignature',
 		'exportButton',
-		'importButton'
+		'importButton',
+		'layoutDropList'
 	],
 	#category : 'MCP-OpenTelemetry-UI',
 	#package : 'MCP-OpenTelemetry-UI'
@@ -85,6 +86,7 @@ MCPCallGraphPresenter >> connectPresenters [
 	localSpansCheckBox whenChangedDo: [ :enabled | self localSpansChangedTo: enabled ].
 	autoRefreshCheckBox whenChangedDo: [ :enabled | self autoRefreshChangedTo: enabled ].
 	objectTypeDropList whenSelectedItemChangedDo: [ :type | self refreshView ].
+	layoutDropList whenSelectedItemChangedDo: [ :name | self layoutChangedTo: name ].
 	refreshButton action: [ self refreshView ].
 	clearButton action: [ self clearSpans ].
 	exportButton action: [ self exportSpans ].
@@ -102,6 +104,7 @@ MCPCallGraphPresenter >> controlsLayout [
 		  add: localSpansCheckBox expand: false;
 		  add: autoRefreshCheckBox expand: false;
 		  add: objectTypeDropList expand: false;
+		  add: layoutDropList expand: false;
 		  add: refreshButton expand: false;
 		  add: clearButton expand: false;
 		  add: exportButton expand: false;
@@ -137,20 +140,23 @@ MCPCallGraphPresenter >> defaultObjectType [
 
 { #category : 'updating' }
 MCPCallGraphPresenter >> drawGraph [
-	"Draws the graph of the last refresh. Setting the script redraws, so a new block each time; the canvas gets its controller, for zoom and drag, once. The boxes the user dragged keep their places."
+	"Draws the graph of the last refresh. Setting the script redraws, so a new block each time; the canvas gets its controller, for zoom and drag, once. The boxes the user dragged keep their places, and so does the zoom; but a first drawing, or a new layout, is zoomed to fit."
 
-	| graph positions |
+	| graph positions layoutPicked |
 	graph := flowGraph.
+	layoutPicked := layoutDropList selectedItem.
 	positions := drawing ifNotNil: [ :previous | previous nodePositions ].
 	graphPresenter script: [ :canvas |
 			drawing := MCPCallGraphDrawing new
 				           flowGraph: graph;
+				           layoutName: layoutPicked;
 				           initialPositions: positions;
 				           onActivityClicked: [ :activity | self activityClickedInGraph: activity ];
 				           onEdgeClicked: [ :edge | self edgeClickedInGraph: edge ];
 				           drawOn: canvas;
 				           yourself.
-			canvas controllerInteraction ifNil: [ canvas @ RSCanvasController ] ]
+			canvas controllerInteraction ifNil: [ canvas @ RSCanvasController ].
+			positions ifNil: [ drawing zoomToFitNodes ] ]
 ]
 
 { #category : 'actions' }
@@ -239,6 +245,7 @@ MCPCallGraphPresenter >> initializePresenters [
 	localSpansCheckBox := self newCheckBox.
 	autoRefreshCheckBox := self newCheckBox.
 	objectTypeDropList := self newDropList.
+	layoutDropList := self newDropList.
 	refreshButton := self newButton.
 	clearButton := self newButton.
 	exportButton := self newButton.
@@ -256,6 +263,10 @@ MCPCallGraphPresenter >> initializePresenters [
 		items: MCPOcelLog new objectTypes;
 		display: [ :type | 'Object: ' , type ];
 		selectItem: self defaultObjectType.
+	layoutDropList
+		items: MCPCallGraphDrawing layoutNames;
+		display: [ :name | 'Layout: ' , name ];
+		selectItem: MCPCallGraphDrawing defaultLayoutName.
 	refreshButton
 		label: 'Refresh';
 		icon: (self iconNamed: #refreshCircling).
@@ -324,6 +335,14 @@ MCPCallGraphPresenter >> isOcel2FormatChosenIn: aFileDialog for: aFile [
 	(chosen beginsWith: self ocel2FormatName) ifTrue: [ ^ true ].
 	(chosen beginsWith: self spansFormatName) ifTrue: [ ^ false ].
 	^ aFile extension = 'jsonocel'
+]
+
+{ #category : 'actions' }
+MCPCallGraphPresenter >> layoutChangedTo: aName [
+	"A new layout puts the boxes where it says: the places the user had dragged them to are forgotten."
+
+	drawing := nil.
+	self refreshView
 ]
 
 { #category : 'actions' }

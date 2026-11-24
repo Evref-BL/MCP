@@ -15,11 +15,18 @@ Class {
 		'selectedEdge',
 		'initialPositions',
 		'onActivityClicked',
-		'onEdgeClicked'
+		'onEdgeClicked',
+		'layoutName'
 	],
 	#category : 'MCP-OpenTelemetry-UI',
 	#package : 'MCP-OpenTelemetry-UI'
 }
+
+{ #category : 'layout' }
+MCPCallGraphDrawing class >> defaultLayoutName [
+
+	^ self layoutNames first
+]
 
 { #category : 'drawing' }
 MCPCallGraphDrawing class >> drawFlowGraph: aFlowGraph on: aCanvas [
@@ -29,6 +36,13 @@ MCPCallGraphDrawing class >> drawFlowGraph: aFlowGraph on: aCanvas [
 		  flowGraph: aFlowGraph;
 		  drawOn: aCanvas;
 		  yourself
+]
+
+{ #category : 'layout' }
+MCPCallGraphDrawing class >> layoutNames [
+	"The layouts a graph can be drawn with, the default first."
+
+	^ #( 'Force' 'Layers' 'Circle' 'Grid' )
 ]
 
 { #category : 'interaction' }
@@ -109,6 +123,16 @@ MCPCallGraphDrawing >> borderOf: anActivity lit: lit focused: focused [
 							   ifTrue: [ 2 ]
 							   ifFalse: [ 1 ] ]);
 		  yourself
+]
+
+{ #category : 'layout' }
+MCPCallGraphDrawing >> centerNodes [
+	"Moves all the boxes together so that their middle is the origin."
+
+	| sum |
+	nodes ifEmpty: [ ^ self ].
+	sum := nodes inject: 0 @ 0 into: [ :total :node | total + node position ].
+	nodes do: [ :node | node position: node position - (sum / nodes size) ]
 ]
 
 { #category : 'interaction' }
@@ -295,17 +319,74 @@ MCPCallGraphDrawing >> labelOf: anActivity [
 ]
 
 { #category : 'layout' }
-MCPCallGraphDrawing >> layOutNodes [
-	"A column per layer, from the left, its boxes one under the other in the order of their first call, centered on the middle; but a box the user had dragged somewhere stays there."
+MCPCallGraphDrawing >> layOutByForce [
+	"The arrows pull the boxes they join together, the boxes push each other apart, and everything is drawn to the middle: a tool followed by many is near them, one on its own is not far off. The same graph always gives the same drawing."
+
+	| spread |
+	nodes size < 2 ifTrue: [ ^ nodes do: [ :node | node position: 0 @ 0 ] ].
+	spread := (nodes inject: 0 into: [ :widest :node | widest max: node width ]) + 60.
+	RSForceBasedLayout new
+		length: spread;
+		charge: spread negated * 3;
+		gravity: 0.1;
+		on: nodes.
+	self separateOverlappingNodes.
+	self centerNodes
+]
+
+{ #category : 'layout' }
+MCPCallGraphDrawing >> layOutInCircle [
+	"The boxes on a circle, in the order of their first call."
+
+	nodes size < 2 ifTrue: [ ^ nodes do: [ :node | node position: 0 @ 0 ] ].
+	RSCircleLayout new
+		initialRadius: (nodes size * 70 max: 150);
+		on: nodes.
+	self centerNodes
+]
+
+{ #category : 'layout' }
+MCPCallGraphDrawing >> layOutInGrid [
+	"Rows of boxes, in the order of their first call."
+
+	nodes size < 2 ifTrue: [ ^ nodes do: [ :node | node position: 0 @ 0 ] ].
+	RSGridLayout new
+		gapSize: 40;
+		on: nodes.
+	self centerNodes
+]
+
+{ #category : 'layout' }
+MCPCallGraphDrawing >> layOutInLayers [
+	"A column per layer, from the left, its boxes one under the other in the order of their first call, centered on the middle."
 
 	| layers columnWidth rowHeight |
 	layers := flowGraph layers.
 	columnWidth := (nodes inject: 0 into: [ :widest :node | widest max: node width ]) + 90.
 	rowHeight := 60.
 	(nodes groupedBy: [ :node | layers at: node model ]) keysAndValuesDo: [ :layer :column |
-		column withIndexDo: [ :node :index | node position: layer * columnWidth @ (index - 1 - (column size - 1 / 2) * rowHeight) ] ].
+		column withIndexDo: [ :node :index | node position: layer * columnWidth @ (index - 1 - (column size - 1 / 2) * rowHeight) ] ]
+]
+
+{ #category : 'layout' }
+MCPCallGraphDrawing >> layOutNodes [
+	"The boxes put as the layout picked says; but a box the user had dragged somewhere stays there."
+
+	| name |
+	name := layoutName ifNil: [ self class defaultLayoutName ].
+	name = 'Layers' ifTrue: [ self layOutInLayers ].
+	name = 'Force' ifTrue: [ self layOutByForce ].
+	name = 'Circle' ifTrue: [ self layOutInCircle ].
+	name = 'Grid' ifTrue: [ self layOutInGrid ].
 	initialPositions ifNotNil: [
 		nodes do: [ :node | initialPositions at: node model ifPresent: [ :position | node position: position ] ] ]
+]
+
+{ #category : 'accessing' }
+MCPCallGraphDrawing >> layoutName: aName [
+	"One of the layoutNames of the class."
+
+	layoutName := aName
 ]
 
 { #category : 'styling' }
@@ -398,9 +479,52 @@ MCPCallGraphDrawing >> selectEdge: anEdge [
 	self applyStyles
 ]
 
+{ #category : 'layout' }
+MCPCallGraphDrawing >> separateOverlappingNodes [
+	"Boxes that touch, or come within a few pixels of each other, are pushed apart along the axis where they overlap least, until none does or the passes are spent."
+
+	| margin |
+	margin := 10.
+	50 timesRepeat: [
+			| moved |
+			moved := false.
+			nodes doWithIndex: [ :a :i |
+					(nodes allButFirst: i) do: [ :b |
+							| ra rb overlapX overlapY |
+							ra := a encompassingRectangle.
+							rb := b encompassingRectangle.
+							overlapX := (ra right min: rb right) - (ra left max: rb left) + margin.
+							overlapY := (ra bottom min: rb bottom) - (ra top max: rb top) + margin.
+							(overlapX > 0 and: [ overlapY > 0 ]) ifTrue: [
+									| push |
+									moved := true.
+									push := overlapX < overlapY
+										        ifTrue: [
+												        overlapX / 2 * (a position x <= b position x
+													         ifTrue: [ -1 ]
+													         ifFalse: [ 1 ]) @ 0 ]
+										        ifFalse: [
+												        0 @ (overlapY / 2 * (a position y <= b position y
+													          ifTrue: [ -1 ]
+													          ifFalse: [ 1 ])) ].
+									a position: a position + push.
+									b position: b position - push ] ] ].
+			moved ifFalse: [ ^ self ] ]
+]
+
 { #category : 'drawing' }
 MCPCallGraphDrawing >> widthOfCount: aCount [
 	"From 1 pixel for a single case, growing in step with the count, to 9 pixels at the maximum and above."
 
 	^ 1 + (8 * ((aCount min: self maxCountForWidth) - 1) / (self maxCountForWidth - 1))
+]
+
+{ #category : 'layout' }
+MCPCallGraphDrawing >> zoomToFitNodes [
+	"The camera on the boxes, the legend being a corner of the view and not a part of the graph."
+
+	| bounds |
+	nodes ifEmpty: [ ^ self ].
+	bounds := Rectangle merging: (nodes collect: [ :node | node encompassingRectangle ]).
+	canvas camera zoomToFit: canvas extent rectangle: (bounds expandBy: 40)
 ]
