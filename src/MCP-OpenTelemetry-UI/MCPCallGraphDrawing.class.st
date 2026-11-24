@@ -207,6 +207,19 @@ MCPCallGraphDrawing >> flowGraph: aFlowGraph [
 	flowGraph := aFlowGraph
 ]
 
+{ #category : 'drawing' }
+MCPCallGraphDrawing >> iconFormFor: anActivity [
+	"The icon the dashboard shows for the tool of this name."
+
+	^ ((MCPToolIconSpec forToolName: anActivity) formUsing: MCPStructureIcon) scaledIntoFormOfSize: self iconSize
+]
+
+{ #category : 'drawing' }
+MCPCallGraphDrawing >> iconSize [
+
+	^ 16
+]
+
 { #category : 'accessing' }
 MCPCallGraphDrawing >> initialPositions: aDictionary [
 	"Where the boxes of these tools were, as tool -> point, which a box is put back to."
@@ -267,20 +280,30 @@ MCPCallGraphDrawing >> litColor [
 
 { #category : 'drawing' }
 MCPCallGraphDrawing >> nodeFor: anActivity [
+	"A box with the icon of the tool, as in the dashboard, then its name."
 
-	| label box |
+	| label box icon gap padding width |
+	gap := 6.
+	padding := 10.
 	label := RSLabel new
 		         text: (self labelOf: anActivity);
 		         yourself.
+	icon := RSBitmap new
+		        form: (self iconFormFor: anActivity);
+		        yourself.
+	width := padding + self iconSize + gap + label textWidth + padding.
 	box := RSBox new
-		       extent: label textWidth + 20 @ 28;
+		       extent: width @ 28;
 		       color: Color white;
 		       cornerRadius: 6;
 		       yourself.
+	icon translateTo: padding - (width / 2) + (self iconSize / 2) @ 0.
+	label translateTo: padding + self iconSize + gap - (width / 2) + (label textWidth / 2) @ 0.
 	^ RSComposite new
 		  model: anActivity;
 		  shapes: {
 				  box.
+				  icon.
 				  label };
 		  popupText: [ :activity | self describe: activity ];
 		  yourself
