@@ -17,7 +17,10 @@ Class {
 		'flowGraph',
 		'graphPresenter',
 		'drawing',
-		'isSyncingSelection'
+		'isSyncingSelection',
+		'autoRefreshCheckBox',
+		'autoRefreshProcess',
+		'lastSignature'
 	],
 	#category : 'MCP-OpenTelemetry-UI',
 	#package : 'MCP-OpenTelemetry-UI'
@@ -42,6 +45,31 @@ MCPCallGraphPresenter >> activitySelectedInTable [
 			drawing ifNotNil: [ :each | each selectActivity: activitiesTable selectedItem ] ]
 ]
 
+{ #category : 'auto-refresh' }
+MCPCallGraphPresenter >> autoRefreshChangedTo: enabled [
+
+	enabled
+		ifTrue: [
+				self refreshViewForcing: false.
+				self startAutoRefresh ]
+		ifFalse: [ self stopAutoRefreshProcess ]
+]
+
+{ #category : 'auto-refresh' }
+MCPCallGraphPresenter >> autoRefreshIntervalSeconds [
+
+	^ 2
+]
+
+{ #category : 'auto-refresh' }
+MCPCallGraphPresenter >> autoRefreshLoop [
+
+	[
+		[ self shouldAutoRefresh ] whileTrue: [
+				(Delay forSeconds: self autoRefreshIntervalSeconds) wait.
+				self shouldAutoRefresh ifTrue: [ self defer: [ self refreshViewForcing: false ] ] ] ] ensure: [ autoRefreshProcess := nil ]
+]
+
 { #category : 'actions' }
 MCPCallGraphPresenter >> clearSpans [
 
@@ -53,6 +81,7 @@ MCPCallGraphPresenter >> clearSpans [
 MCPCallGraphPresenter >> connectPresenters [
 
 	localSpansCheckBox whenChangedDo: [ :enabled | self localSpansChangedTo: enabled ].
+	autoRefreshCheckBox whenChangedDo: [ :enabled | self autoRefreshChangedTo: enabled ].
 	objectTypeDropList whenSelectedItemChangedDo: [ :type | self refreshView ].
 	refreshButton action: [ self refreshView ].
 	clearButton action: [ self clearSpans ].
@@ -67,6 +96,7 @@ MCPCallGraphPresenter >> controlsLayout [
 		  spacing: 8;
 		  vAlignCenter;
 		  add: localSpansCheckBox expand: false;
+		  add: autoRefreshCheckBox expand: false;
 		  add: objectTypeDropList expand: false;
 		  add: refreshButton expand: false;
 		  add: clearButton expand: false;
@@ -132,6 +162,7 @@ MCPCallGraphPresenter >> edgeSelectedInTable [
 MCPCallGraphPresenter >> initializePresenters [
 
 	localSpansCheckBox := self newCheckBox.
+	autoRefreshCheckBox := self newCheckBox.
 	objectTypeDropList := self newDropList.
 	refreshButton := self newButton.
 	clearButton := self newButton.
@@ -143,6 +174,7 @@ MCPCallGraphPresenter >> initializePresenters [
 	edgesTable := self newTable.
 
 	localSpansCheckBox label: 'Keep spans (no export)'.
+	autoRefreshCheckBox label: 'Auto-refresh'.
 	objectTypeDropList
 		items: MCPOcelLog new objectTypes;
 		display: [ :type | 'Object: ' , type ].
@@ -178,6 +210,25 @@ MCPCallGraphPresenter >> initializeTables [
 		beResizable
 ]
 
+{ #category : 'initialization' }
+MCPCallGraphPresenter >> initializeWindow: aWindowPresenter [
+
+	super initializeWindow: aWindowPresenter.
+	aWindowPresenter whenClosedDo: [ self stopAutoRefresh ]
+]
+
+{ #category : 'auto-refresh' }
+MCPCallGraphPresenter >> isAutoRefreshEnabled [
+
+	^ autoRefreshCheckBox state
+]
+
+{ #category : 'auto-refresh' }
+MCPCallGraphPresenter >> isAutoRefreshProcessRunning [
+
+	^ autoRefreshProcess notNil and: [ autoRefreshProcess isTerminated not ]
+]
+
 { #category : 'actions' }
 MCPCallGraphPresenter >> localSpansChangedTo: enabled [
 	"The spans are made by the image's OpenTelemetry providers, which are global, so this turns them on for every server of the image; this one is switched to the OpenTelemetry backend, which makes them, when it records through another."
@@ -199,20 +250,57 @@ MCPCallGraphPresenter >> modelChanged [
 
 { #category : 'updating' }
 MCPCallGraphPresenter >> refreshView [
+	"Brings the whole view up to date, whatever changed."
 
-	| mcp enabled log type |
+	self refreshViewForcing: true
+]
+
+{ #category : 'updating' }
+MCPCallGraphPresenter >> refreshViewForcing: aBoolean [
+	"Rebuilds the view from the span store. Unforced, as the auto-refresh does, it does nothing when the spans, the object type and the switch are those of the last build, so the selection and the hover are not lost every few seconds for nothing."
+
+	| mcp enabled snapshots type signature log selectedActivity selectedEdge |
 	mcp := self model ifNil: [ ^ self ].
 	enabled := MCPOpenTelemetryObservabilityBackend isLocalSpansEnabled.
-	localSpansCheckBox state: enabled.
-	log := MCPOcelLog fromSpanSnapshots: MCPOpenTelemetryObservabilityBackend localSpanStore snapshots.
+	snapshots := MCPOpenTelemetryObservabilityBackend localSpanStore snapshots.
 	type := objectTypeDropList selectedItem ifNil: [ 'tool' ].
+	signature := {
+		             snapshots size.
+		             (snapshots ifNotEmpty: [ snapshots last spanId ]).
+		             type.
+		             enabled }.
+	(aBoolean not and: [ signature = lastSignature ]) ifTrue: [ ^ self ].
+	lastSignature := signature.
+	selectedActivity := activitiesTable selectedItem.
+	selectedEdge := edgesTable selectedItem.
+	localSpansCheckBox state: enabled.
+	log := MCPOcelLog fromSpanSnapshots: snapshots.
 	flowGraph := log flowGraphOfType: type.
 	statusLabel label: (self statusFor: mcp enabled: enabled events: log events size).
 	activitiesLabel label: (self sectionLabelFor: 'Tools' count: flowGraph activities size type: type).
-	activitiesTable items: flowGraph activities.
 	edgesLabel label: (self sectionLabelFor: 'Directly follows' count: flowGraph edges size type: type).
-	edgesTable items: flowGraph edges asArray.
-	self drawGraph
+	self syncingSelectionDo: [
+			activitiesTable items: flowGraph activities.
+			edgesTable items: flowGraph edges asArray ].
+	self drawGraph.
+	self restoreSelectionOfActivity: selectedActivity edge: selectedEdge
+]
+
+{ #category : 'updating' }
+MCPCallGraphPresenter >> restoreSelectionOfActivity: anActivity edge: anEdge [
+	"A rebuild makes new objects: what was selected is found again by name, and shown in the tables and in the new drawing."
+
+	| edge |
+	self syncingSelectionDo: [
+			(anActivity notNil and: [ flowGraph activities includes: anActivity ])
+				ifTrue: [
+						activitiesTable selectItem: anActivity.
+						drawing ifNotNil: [ :each | each selectActivity: anActivity ] ]
+				ifFalse: [
+						edge := anEdge ifNotNil: [ flowGraph edgeFrom: anEdge source to: anEdge target ].
+						edge ifNotNil: [
+								edgesTable selectItem: edge.
+								drawing ifNotNil: [ :each | each selectEdge: edge ] ] ] ]
 ]
 
 { #category : 'updating' }
@@ -253,6 +341,19 @@ MCPCallGraphPresenter >> sectionsLayout [
 		  yourself
 ]
 
+{ #category : 'auto-refresh' }
+MCPCallGraphPresenter >> shouldAutoRefresh [
+
+	^ self isAutoRefreshEnabled and: [ self isDisplayed ]
+]
+
+{ #category : 'auto-refresh' }
+MCPCallGraphPresenter >> startAutoRefresh [
+
+	self isAutoRefreshProcessRunning ifTrue: [ ^ self ].
+	autoRefreshProcess := [ self autoRefreshLoop ] forkAt: Processor userBackgroundPriority named: 'MCP OCEL auto-refresh'
+]
+
 { #category : 'updating' }
 MCPCallGraphPresenter >> statusFor: mcp enabled: enabled events: eventCount [
 
@@ -268,6 +369,20 @@ MCPCallGraphPresenter >> statusFor: mcp enabled: enabled events: eventCount [
 							  nextPutAll: ' calls'.
 						  (mcp observability isKindOf: MCPOpenTelemetryObservabilityBackend) ifFalse: [
 							  stream nextPutAll: ' - this server does not record through OpenTelemetry' ] ] ]
+]
+
+{ #category : 'auto-refresh' }
+MCPCallGraphPresenter >> stopAutoRefresh [
+	"The window is closing: nothing is left to refresh."
+
+	self stopAutoRefreshProcess
+]
+
+{ #category : 'auto-refresh' }
+MCPCallGraphPresenter >> stopAutoRefreshProcess [
+
+	autoRefreshProcess ifNotNil: [ :process | process terminate ].
+	autoRefreshProcess := nil
 ]
 
 { #category : 'actions' }
