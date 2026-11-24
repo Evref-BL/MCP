@@ -128,6 +128,38 @@ MCPOcelLogTest >> testActivitiesCarryHowManyCallsFailedAndHowLongTheyTook [
 ]
 
 { #category : 'tests' }
+MCPOcelLogTest >> testActivitiesComeInTheOrderOfTheirFirstCall [
+
+	self
+		assert: (self dispatchingLog flowGraphOfType: 'tool') activitiesByFirstCall
+		equals: #( 'package_search' 'tool_call' 'class_search' )
+]
+
+{ #category : 'tests' }
+MCPOcelLogTest >> testAnActivityNoChainReachesStartsAtTheFirstLayer [
+
+	| log layers |
+	log := MCPOcelLog fromSpanSnapshots: {
+			       (self
+				        span: 'a'
+				        id: '1'
+				        parent: nil
+				        at: 0
+				        for: 1).
+			       (MCPOcelTestSpan
+				        tool: 'z'
+				        id: '2'
+				        parent: nil
+				        startMillisecond: 5
+				        durationMilliseconds: 1
+				        session: 's2'
+				        failed: false) }.
+	layers := (log flowGraphOfType: 'session') layers.
+	self assert: (layers at: 'a') equals: 0.
+	self assert: (layers at: 'z') equals: 0
+]
+
+{ #category : 'tests' }
 MCPOcelLogTest >> testAnObjectTypeNoCallInvolvesHasAnEmptyGraph [
 
 	| graph |
@@ -140,6 +172,41 @@ MCPOcelLogTest >> testAnObjectTypeNoCallInvolvesHasAnEmptyGraph [
 MCPOcelLogTest >> testEventsFollowTheStartOfTheirCallWhateverTheOrderOfTheSpans [
 
 	self assert: (self dispatchingLog events collect: #id) asArray equals: #( 'a' 'b' 'c' 'd' 'e' )
+]
+
+{ #category : 'tests' }
+MCPOcelLogTest >> testLayersGoTheWayTheCallsDidAndIgnoreCycles [
+
+	| log layers |
+	log := MCPOcelLog fromSpanSnapshots: {
+			       (self
+				        span: 'a'
+				        id: '1'
+				        parent: nil
+				        at: 0
+				        for: 1).
+			       (self
+				        span: 'b'
+				        id: '2'
+				        parent: nil
+				        at: 10
+				        for: 1).
+			       (self
+				        span: 'c'
+				        id: '3'
+				        parent: nil
+				        at: 20
+				        for: 1).
+			       (self
+				        span: 'b'
+				        id: '4'
+				        parent: nil
+				        at: 30
+				        for: 1) }.
+	layers := (log flowGraphOfType: 'session') layers.
+	self assert: (layers at: 'a') equals: 0.
+	self assert: (layers at: 'b') equals: 1.
+	self assert: (layers at: 'c') equals: 2
 ]
 
 { #category : 'tests' }

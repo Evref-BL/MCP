@@ -9,7 +9,8 @@ Class {
 		'edges',
 		'activityCounts',
 		'activityErrorCounts',
-		'activityTotalDurations'
+		'activityTotalDurations',
+		'activityFirstStarts'
 	],
 	#category : 'MCP-OpenTelemetry',
 	#package : 'MCP-OpenTelemetry'
@@ -30,6 +31,15 @@ MCPOcelFlowGraph >> activities [
 	^ activityCounts keys sorted
 ]
 
+{ #category : 'accessing' }
+MCPOcelFlowGraph >> activitiesByFirstCall [
+	"The tools called, the one called first first. The log is in the order of the calls' start, which an activity inherits from its first call."
+
+	^ activityFirstStarts keys sorted: [ :a :b |
+			  (activityFirstStarts at: a) < (activityFirstStarts at: b) or: [
+				  (activityFirstStarts at: a) = (activityFirstStarts at: b) and: [ a <= b ] ] ]
+]
+
 { #category : 'building' }
 MCPOcelFlowGraph >> buildType: anObjectType from: anOcelLog [
 	"Flattens the log on the type: each object of it has the calls that involve it in the order of their start, and each two that follow one another make a case of the edge between their activities."
@@ -39,13 +49,16 @@ MCPOcelFlowGraph >> buildType: anObjectType from: anOcelLog [
 	activityCounts := Dictionary new.
 	activityErrorCounts := Dictionary new.
 	activityTotalDurations := Dictionary new.
-	(anOcelLog events select: [ :event | event involvesObjectType: anObjectType ]) do: [ :event |
-			activityCounts at: event activity put: (activityCounts at: event activity ifAbsent: [ 0 ]) + 1.
-			activityTotalDurations
-				at: event activity
-				put: (activityTotalDurations at: event activity ifAbsent: [ 0 ]) + event durationMilliseconds.
-			event isError ifTrue: [
-				activityErrorCounts at: event activity put: (activityErrorCounts at: event activity ifAbsent: [ 0 ]) + 1 ] ].
+	activityFirstStarts := Dictionary new.
+	anOcelLog events do: [ :event |
+			(event involvesObjectType: anObjectType) ifTrue: [
+					activityCounts at: event activity put: (activityCounts at: event activity ifAbsent: [ 0 ]) + 1.
+					activityTotalDurations
+						at: event activity
+						put: (activityTotalDurations at: event activity ifAbsent: [ 0 ]) + event durationMilliseconds.
+					activityFirstStarts at: event activity ifAbsentPut: [ event startedAt ].
+					event isError ifTrue: [
+						activityErrorCounts at: event activity put: (activityErrorCounts at: event activity ifAbsent: [ 0 ]) + 1 ] ] ].
 	(anOcelLog objectIdsOfType: anObjectType) do: [ :objectId |
 			| sequence |
 			sequence := anOcelLog eventsOfObject: objectId type: anObjectType.
@@ -78,6 +91,25 @@ MCPOcelFlowGraph >> edges [
 MCPOcelFlowGraph >> errorCountOf: anActivity [
 
 	^ activityErrorCounts at: anActivity ifAbsent: [ 0 ]
+]
+
+{ #category : 'layout' }
+MCPOcelFlowGraph >> layers [
+	"The layer each activity is drawn in, from the left: the longest chain of edges that reaches it from an activity called before it, going from the activity called first. An edge that returns to an activity of the chain being followed, a cycle, is not followed, so that the layers go the way the calls did. An activity the first ones do not reach starts a chain of its own, at layer 0."
+
+	| layers onChain follow |
+	layers := Dictionary new.
+	onChain := Set new.
+	follow := nil.
+	follow := [ :activity :layer |
+		          ((onChain includes: activity) not and: [ (layers at: activity ifAbsent: [ -1 ]) < layer ]) ifTrue: [
+				          layers at: activity put: layer.
+				          onChain add: activity.
+				          (edges values select: [ :edge | edge source = activity and: [ edge isSelfLoop not ] ]) do: [ :edge |
+					          follow value: edge target value: layer + 1 ].
+				          onChain remove: activity ] ].
+	self activitiesByFirstCall do: [ :activity | layers at: activity ifAbsent: [ follow value: activity value: 0 ] ].
+	^ layers
 ]
 
 { #category : 'accessing' }
