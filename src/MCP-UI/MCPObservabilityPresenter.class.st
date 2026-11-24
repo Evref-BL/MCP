@@ -17,7 +17,11 @@ Class {
 		'tracesTable',
 		'logsLabel',
 		'logsTable',
-		'autoRefreshProcess'
+		'autoRefreshProcess',
+		'toolFilter',
+		'selectedTrace',
+		'selectedLog',
+		'isUpdatingTables'
 	],
 	#category : 'MCP-UI',
 	#package : 'MCP-UI'
@@ -70,6 +74,9 @@ MCPObservabilityPresenter >> connectPresenters [
 
 	observabilityCheckBox whenChangedDo: [ :enabled | self observabilityChangedTo: enabled ].
 	autoRefreshCheckBox whenChangedDo: [ :enabled | self autoRefreshChangedTo: enabled ].
+	metricsTable whenSelectionChangedDo: [ :selection | self metricsSelectionChanged ].
+	tracesTable whenSelectionChangedDo: [ :selection | self tracesSelectionChanged ].
+	logsTable whenSelectionChangedDo: [ :selection | self logsSelectionChanged ].
 	refreshButton action: [ self refreshView ].
 	clearButton action: [ self clearObservability ]
 ]
@@ -177,9 +184,68 @@ MCPObservabilityPresenter >> isAutoRefreshProcessRunning [
 ]
 
 { #category : 'private' }
+MCPObservabilityPresenter >> logCallOf: aLogLine [
+	"The tool name and call id a log line states, as tool -> id, or nil for a line that states none. The backend logs a call as '<status> tool <name> #<id> in ...', and keeps its lines as plain strings."
+
+	| start nameStart nameEnd idEnd |
+	start := aLogLine indexOfSubCollection: ' tool ' startingAt: 1.
+	start = 0 ifTrue: [ ^ nil ].
+	nameStart := start + 6.
+	nameEnd := aLogLine indexOfSubCollection: ' #' startingAt: nameStart.
+	nameEnd = 0 ifTrue: [ ^ nil ].
+	idEnd := aLogLine indexOf: Character space startingAt: nameEnd + 2.
+	idEnd = 0 ifTrue: [ idEnd := aLogLine size + 1 ].
+	^ (aLogLine copyFrom: nameStart to: nameEnd - 1) -> (aLogLine copyFrom: nameEnd + 2 to: idEnd - 1)
+]
+
+{ #category : 'private' }
+MCPObservabilityPresenter >> logLine: aLogLine isForRecord: aRecord [
+
+	^ (self logCallOf: aLogLine)
+		  ifNil: [ false ]
+		  ifNotNil: [ :call | call key = aRecord toolName and: [ call value = aRecord id printString ] ]
+]
+
+{ #category : 'private' }
+MCPObservabilityPresenter >> logsAmong: logs [
+	"Only the lines of the selected trace's call, or else of the tool selected in the metrics table."
+
+	selectedTrace ifNotNil: [ :trace | ^ logs select: [ :line | self logLine: line isForRecord: trace ] ].
+	toolFilter ifNotNil: [ :toolName | ^ logs select: [ :line | (self toolNameOfLog: line) = toolName ] ].
+	^ logs
+]
+
+{ #category : 'private' }
 MCPObservabilityPresenter >> logsForDisplayFrom: logEntries [
 
 	^ logEntries reversed
+]
+
+{ #category : 'actions' }
+MCPObservabilityPresenter >> logsSelectionChanged [
+
+	isUpdatingTables == true ifTrue: [ ^ self ].
+	selectedLog := logsTable selectedItem.
+	self selectionChanged
+]
+
+{ #category : 'private' }
+MCPObservabilityPresenter >> metricsAmong: metrics [
+	"Only the tool of the selected trace, or else of the selected log line."
+
+	| toolName |
+	toolName := selectedTrace
+		            ifNotNil: [ :trace | trace toolName ]
+		            ifNil: [ selectedLog ifNotNil: [ :line | self toolNameOfLog: line ] ].
+	^ toolName ifNil: [ metrics ] ifNotNil: [ metrics select: [ :stats | stats toolName = toolName ] ]
+]
+
+{ #category : 'actions' }
+MCPObservabilityPresenter >> metricsSelectionChanged [
+
+	isUpdatingTables == true ifTrue: [ ^ self ].
+	toolFilter := metricsTable selectedItem ifNotNil: [ :stats | stats toolName ].
+	self selectionChanged
 ]
 
 { #category : 'initialization' }
@@ -201,19 +267,10 @@ MCPObservabilityPresenter >> observabilityChangedTo: enabled [
 { #category : 'updating' }
 MCPObservabilityPresenter >> refreshView [
 
-	| mcp metrics traces logs |
+	| mcp |
 	mcp := self model ifNil: [ ^ self ].
-	metrics := mcp observabilityMetrics.
-	traces := mcp observabilityTraces.
-	logs := mcp observabilityLogs.
-
 	observabilityCheckBox state: mcp observabilityEnabled.
-	metricsLabel label: (self sectionLabelFor: 'Metrics' count: metrics size).
-	metricsTable items: metrics.
-	tracesLabel label: (self sectionLabelFor: 'Traces' count: traces size).
-	tracesTable items: traces.
-	logsLabel label: (self sectionLabelFor: 'Logs' count: logs size).
-	logsTable items: (self logsForDisplayFrom: logs)
+	self updateTablesFrom: mcp forcing: true
 ]
 
 { #category : 'updating' }
@@ -225,6 +282,26 @@ MCPObservabilityPresenter >> sectionLabelFor: aTitle count: aCount [
 				  nextPutAll: ' (';
 				  print: aCount;
 				  nextPut: $) ]
+]
+
+{ #category : 'updating' }
+MCPObservabilityPresenter >> sectionLabelFor: aTitle count: shownCount of: totalCount because: aReason [
+	"'Title (n)', or 'Title (n of m) - reason' when a selection in another table filters it."
+
+	^ String streamContents: [ :stream |
+			  stream
+				  nextPutAll: aTitle;
+				  nextPutAll: ' (';
+				  print: shownCount.
+			  aReason ifNotNil: [
+					  stream
+						  nextPutAll: ' of ';
+						  print: totalCount ].
+			  stream nextPut: $).
+			  aReason ifNotNil: [
+					  stream
+						  nextPutAll: ' - ';
+						  nextPutAll: aReason ] ]
 ]
 
 { #category : 'layout' }
@@ -252,10 +329,97 @@ MCPObservabilityPresenter >> sectionsLayout [
 		  yourself
 ]
 
+{ #category : 'actions' }
+MCPObservabilityPresenter >> selectionChanged [
+	"Selecting a row filters the other two tables to what relates to it; clearing the selection shows them all."
+
+	self model ifNotNil: [ :mcp | self updateTablesFrom: mcp forcing: false ]
+]
+
+{ #category : 'updating' }
+MCPObservabilityPresenter >> settleSelectionsAmong: metrics traces: traces logs: logs [
+	"A selection is kept across refreshes by tool name, record or line, and forgotten once its table no longer shows it, because the data is gone (after Clear, say) or because another selection filters it out. Forgetting one can show another, so this goes on until nothing more is dropped."
+
+	| changed |
+	[
+		changed := false.
+		(toolFilter isNotNil and: [ (self metricsAmong: metrics) noneSatisfy: [ :stats | stats toolName = toolFilter ] ]) ifTrue: [
+				toolFilter := nil.
+				changed := true ].
+		(selectedTrace isNotNil and: [ ((self tracesAmong: traces) includes: selectedTrace) not ]) ifTrue: [
+				selectedTrace := nil.
+				changed := true ].
+		(selectedLog isNotNil and: [ ((self logsAmong: logs) includes: selectedLog) not ]) ifTrue: [
+				selectedLog := nil.
+				changed := true ].
+		changed ] whileTrue
+]
+
 { #category : 'auto-refresh' }
 MCPObservabilityPresenter >> shouldAutoRefresh [
 
 	^ self isAutoRefreshEnabled and: [ self isDisplayed ]
+]
+
+{ #category : 'updating' }
+MCPObservabilityPresenter >> showLogs: shown of: totalCount forcing: forced [
+	"The selected line is put back after the items are replaced."
+
+	| reason |
+	reason := selectedTrace
+		          ifNotNil: [ :trace |
+				          String streamContents: [ :stream |
+						          stream
+							          nextPutAll: 'call #';
+							          print: trace id;
+							          nextPutAll: ' of ';
+							          nextPutAll: trace toolName ] ]
+		          ifNil: [ toolFilter ifNotNil: [ :toolName | 'tool ' , toolName ] ].
+	logsLabel label: (self
+			 sectionLabelFor: 'Logs'
+			 count: shown size
+			 of: totalCount
+			 because: reason).
+	(forced or: [ logsTable items ~= shown asOrderedCollection ]) ifFalse: [ ^ self ].
+	logsTable items: shown.
+	selectedLog ifNotNil: [ :line | logsTable selectItem: line ]
+]
+
+{ #category : 'updating' }
+MCPObservabilityPresenter >> showMetrics: shown of: totalCount forcing: forced [
+	"The selected tool is put back by name after the items are replaced."
+
+	| reason |
+	reason := selectedTrace
+		          ifNotNil: [ :trace | 'trace of ' , trace toolName ]
+		          ifNil: [ selectedLog ifNotNil: [ :line | 'log of ' , (self toolNameOfLog: line) ] ].
+	metricsLabel label: (self
+			 sectionLabelFor: 'Metrics'
+			 count: shown size
+			 of: totalCount
+			 because: reason).
+	(forced or: [ metricsTable items ~= shown asOrderedCollection ]) ifFalse: [ ^ self ].
+	metricsTable items: shown.
+	toolFilter ifNotNil: [ :toolName |
+		shown detect: [ :stats | stats toolName = toolName ] ifFound: [ :stats | metricsTable selectItem: stats ] ]
+]
+
+{ #category : 'updating' }
+MCPObservabilityPresenter >> showTraces: shown of: totalCount forcing: forced [
+	"The selected trace is put back after the items are replaced."
+
+	| reason |
+	reason := toolFilter
+		          ifNotNil: [ :toolName | 'tool ' , toolName ]
+		          ifNil: [ selectedLog ifNotNil: [ :line | 'log of ' , (self toolNameOfLog: line) ] ].
+	tracesLabel label: (self
+			 sectionLabelFor: 'Traces'
+			 count: shown size
+			 of: totalCount
+			 because: reason).
+	(forced or: [ tracesTable items ~= shown asOrderedCollection ]) ifFalse: [ ^ self ].
+	tracesTable items: shown.
+	selectedTrace ifNotNil: [ :trace | tracesTable selectItem: trace ]
 ]
 
 { #category : 'auto-refresh' }
@@ -290,6 +454,21 @@ MCPObservabilityPresenter >> title [
 ]
 
 { #category : 'private' }
+MCPObservabilityPresenter >> toolNameOfLog: aLogLine [
+
+	^ (self logCallOf: aLogLine) ifNotNil: [ :call | call key ]
+]
+
+{ #category : 'private' }
+MCPObservabilityPresenter >> tracesAmong: traces [
+	"Only the tool selected in the metrics table, or else the tool of the selected log line."
+
+	| toolName |
+	toolName := toolFilter ifNil: [ selectedLog ifNotNil: [ :line | self toolNameOfLog: line ] ].
+	^ toolName ifNil: [ traces ] ifNotNil: [ traces select: [ :record | record toolName = toolName ] ]
+]
+
+{ #category : 'private' }
 MCPObservabilityPresenter >> tracesContextMenu [
 
 	^ self newMenu
@@ -301,4 +480,28 @@ MCPObservabilityPresenter >> tracesContextMenu [
 								  enabled: [ tracesTable selectedItem isNotNil ];
 								  action: [ self inspectSelectedTraceRecord ] ] ];
 		  yourself
+]
+
+{ #category : 'actions' }
+MCPObservabilityPresenter >> tracesSelectionChanged [
+
+	isUpdatingTables == true ifTrue: [ ^ self ].
+	selectedTrace := tracesTable selectedItem.
+	self selectionChanged
+]
+
+{ #category : 'updating' }
+MCPObservabilityPresenter >> updateTablesFrom: mcp forcing: forced [
+	"What is selected in one table filters the other two, and never its own. A table is rebuilt only when what it shows changed, unless forced, so that a click does not reset the table it was made in; the data of a refresh moves even when the same objects are shown."
+
+	| metrics traces logs |
+	metrics := mcp observabilityMetrics.
+	traces := mcp observabilityTraces.
+	logs := self logsForDisplayFrom: mcp observabilityLogs.
+	self settleSelectionsAmong: metrics traces: traces logs: logs.
+	isUpdatingTables := true.
+	[
+		self showMetrics: (self metricsAmong: metrics) of: metrics size forcing: forced.
+		self showTraces: (self tracesAmong: traces) of: traces size forcing: forced.
+		self showLogs: (self logsAmong: logs) of: logs size forcing: forced ] ensure: [ isUpdatingTables := false ]
 ]
