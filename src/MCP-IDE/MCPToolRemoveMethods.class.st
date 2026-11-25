@@ -37,6 +37,12 @@ MCPToolRemoveMethods >> buildInputSchema [
 		  required: #( 'class' 'selector' )
 ]
 
+{ #category : 'testing' }
+MCPToolRemoveMethods >> changesCode [
+
+	^ true
+]
+
 { #category : 'executing' }
 MCPToolRemoveMethods >> checkArguments: request [
 	"A side that says the other one than the class name is refused, as is a selector list that names none."

@@ -37,6 +37,12 @@ MCPToolRewriteMethods >> changeDataFor: changes includeSources: aBoolean [
 	^ changes collect: [ :each | (MCPMethodRewriteChangeInfo fromChange: each includeSources: aBoolean) asDictionary ] as: Array
 ]
 
+{ #category : 'testing' }
+MCPToolRewriteMethods >> changesCode [
+
+	^ true
+]
+
 { #category : 'private - results' }
 MCPToolRewriteMethods >> dataForChanges: changeData applied: apply scopeQuery: aScopeQuery skippedTraitMethods: skippedTraitMethods [
 	"Whether the changes were applied, how many there are and how many were applied, the scope as read, each change, and the trait methods left out when there are any."

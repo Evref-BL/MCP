@@ -29,6 +29,7 @@ Class {
 		'userSettings'
 	],
 	#classVars : [
+		'CodeChanges',
 		'DefaultObservabilityBackendClass'
 	],
 	#category : 'MCP-Server',
@@ -53,6 +54,20 @@ MCP class >> catalogCacheMilliseconds [
 	"How long a catalog answer stays good. The catalogs only move when code is loaded or removed, and list_changed invalidates a client's copy the moment they do, so a minute costs a non-listening client at most a minute of staleness and saves everyone else the refetches."
 
 	^ 60000
+]
+
+{ #category : 'accessing' }
+MCP class >> codeChanges [
+	"Held by each call to a tool that changes code, whichever server received it, so that two never run at once: Pharo's code model, from method dictionaries to packages and protocols, is not safe to change from two processes at once, and a server runs each call in its own."
+
+	^ CodeChanges ifNil: [ CodeChanges := Mutex new ]
+]
+
+{ #category : 'class initialization' }
+MCP class >> initialize [
+	"The lock exists before any call needs it, so two first calls cannot each make one."
+
+	self codeChanges
 ]
 
 { #category : 'protocol' }
@@ -509,6 +524,14 @@ MCP >> ensureServerIsListening [
 ]
 
 { #category : 'private - tools' }
+MCP >> execute: aTool with: aRequest [
+	"A tool that changes code waits for any other call doing so: see MCP class>>codeChanges."
+
+	aTool changesCode ifFalse: [ ^ aTool executeWithRequest: aRequest ].
+	^ self class codeChanges critical: [ aTool executeWithRequest: aRequest ]
+]
+
+{ #category : 'private - tools' }
 MCP >> executeTool: aTool withParams: arguments dispatchPath: dispatchPath [
 
 	^ self
@@ -530,7 +553,7 @@ MCP >> executeTool: aTool withParams: arguments dispatchPath: dispatchPath paren
 		          parentRecord: aRecord.
 	^ [
 		  [
-			  result := (aTool executeWithRequest: (aTool requestFromToolCallArguments: arguments)) asMCPStructureCallToolResult.
+			  result := (self execute: aTool with: (aTool requestFromToolCallArguments: arguments)) asMCPStructureCallToolResult.
 			  self observability recordToolCallFinish: record result: result error: nil.
 			  result asJRPCJSONForResponseFields: self toolResponseFields ]
 			  on: Exception

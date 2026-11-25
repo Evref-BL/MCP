@@ -20,6 +20,22 @@ MCPConcurrentMutationTest >> anyOverlapBetween: startTimes and: endTimes [
 ]
 
 { #category : 'private' }
+MCPConcurrentMutationTest >> assertCall: anIndex succeeded: aResponse [
+	"A tool error is a result too, with isError set: an answer that holds a result proves the call ran, not that it did what it was asked."
+
+	| body |
+	self
+		assert: (aResponse isKindOf: ZnResponse)
+		description:
+		(String streamContents: [ :stream | stream << 'Call ' << anIndex asString << ' failed: ' << aResponse printString ]).
+	self assert: aResponse code equals: 200.
+	body := STONJSON fromString: aResponse contents.
+	self
+		assert: ((body includesKey: 'result') and: [ ((body at: 'result') at: 'isError' ifAbsent: [ false ]) ~= true ])
+		description: (String streamContents: [ :stream | stream << 'Call ' << anIndex asString << ' answered ' << aResponse contents ])
+]
+
+{ #category : 'private' }
 MCPConcurrentMutationTest >> compilePayloadFor: anIndex [
 
 	^ String streamContents: [ :stream |
@@ -47,6 +63,26 @@ MCPConcurrentMutationTest >> generatedClassNameFor: anIndex [
 MCPConcurrentMutationTest >> generatedPackageName [
 
 	^ 'MCPConcurrentMutationGenerated'
+]
+
+{ #category : 'private' }
+MCPConcurrentMutationTest >> mostAtOnceOfThreeCallsTo: aTool on: anMCP [
+	"Three calls at once, each in its own process as the server runs them, and how many of them ran together."
+
+	| done |
+	done := Semaphore new.
+	3 timesRepeat: [ [ [ anMCP rpcToolCall: aTool class toolName withParams: Dictionary new ] ensure: [ done signal ] ] fork ].
+	3 timesRepeat: [ self deny: (done waitTimeoutSeconds: 10) description: 'A call never answered.' ].
+	^ aTool mostAtOnce
+]
+
+{ #category : 'private' }
+MCPConcurrentMutationTest >> overlapRecordingToolOn: anMCP changingCode: aBoolean [
+
+	anMCP addTool: MCPOverlapRecordingTestTool.
+	^ (anMCP toolRegistry toolNamed: MCPOverlapRecordingTestTool toolName ifAbsent: [ nil ])
+		  changes: aBoolean;
+		  yourself
 ]
 
 { #category : 'private' }
@@ -89,6 +125,26 @@ MCPConcurrentMutationTest >> tearDown [
 ]
 
 { #category : 'tests' }
+MCPConcurrentMutationTest >> testCallsThatChangeCodeRunOneAtATime [
+	"Pharo's code model is not safe to change from two processes at once, and a server runs each call in its own, so it lets in one call that changes code at a time."
+
+	| mcp |
+	mcp := self mcpWithoutObservabilityExport.
+
+	self assert: (self mostAtOnceOfThreeCallsTo: (self overlapRecordingToolOn: mcp changingCode: true) on: mcp) equals: 1
+]
+
+{ #category : 'tests' }
+MCPConcurrentMutationTest >> testCallsThatChangeNoCodeRunTogether [
+	"What makes the test above mean something: the same calls, changing no code, overlap."
+
+	| mcp |
+	mcp := self mcpWithoutObservabilityExport.
+
+	self assert: (self mostAtOnceOfThreeCallsTo: (self overlapRecordingToolOn: mcp changingCode: false) on: mcp) > 1
+]
+
+{ #category : 'tests' }
 MCPConcurrentMutationTest >> testConcurrentClassCreationsAllLand [
 	"The heavier mutation: the class builder rather than a method dictionary. Six classes into one package at once."
 
@@ -106,14 +162,7 @@ MCPConcurrentMutationTest >> testConcurrentClassCreationsAllLand [
 							completed signal ] fork ].
 				count timesRepeat: [ self deny: (completed waitTimeoutSeconds: 30) description: 'A concurrent class creation never answered.' ] ].
 
-		responses doWithIndex: [ :response :index |
-				self
-					assert: (response isKindOf: ZnResponse)
-					description:
-					(String streamContents: [ :stream | stream << 'Call ' << index asString << ' failed: ' << response printString ]).
-				self
-					assert: (response contents includesSubstring: '"result"')
-					description: (String streamContents: [ :stream | stream << 'Call ' << index asString << ' answered ' << response contents ]) ].
+		responses doWithIndex: [ :response :index | self assertCall: index succeeded: response ].
 		1 to: count do: [ :index |
 				self
 					assert: (self classNamed: (self generatedClassNameFor: index)) isNotNil
@@ -146,20 +195,12 @@ MCPConcurrentMutationTest >> testConcurrentCompilesAllLand [
 	self
 		assert: (self anyOverlapBetween: startedAt and: finishedAt)
 		description: 'The calls did not overlap, so this proves nothing about concurrency.'.
-	responses doWithIndex: [ :response :index |
-			self
-				assert: (response isKindOf: ZnResponse)
-				description: (String streamContents: [ :stream | stream << 'Call ' << index asString << ' failed: ' << response printString ]).
-			self assert: response code equals: 200.
-			self
-				assert: (response contents includesSubstring: '"result"')
-				description: (String streamContents: [ :stream | stream << 'Call ' << index asString << ' answered ' << response contents ]) ].
+	responses doWithIndex: [ :response :index | self assertCall: index succeeded: response ].
 
 	target := self classNamed: self scratchClassName.
 	1 to: count do: [ :index |
-			self
-				assert: (target includesSelector: ('answer' , index asString) asSymbol)
-				description: (String streamContents: [ :stream | stream << 'answer' << index asString << ' was not compiled' ]) ]
+			self assert: (target includesSelector: ('answer' , index asString) asSymbol) description: (String streamContents: [ :stream |
+					 stream << 'answer' << index asString << ' was not compiled, though its call answered ' << (responses at: index) contents ]) ]
 ]
 
 { #category : 'private' }

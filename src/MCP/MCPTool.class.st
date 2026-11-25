@@ -337,6 +337,13 @@ MCPTool >> buildInputSchema [
 	self subclassResponsibility
 ]
 
+{ #category : 'testing' }
+MCPTool >> changesCode [
+	"Whether the tool changes classes, methods or packages. The server runs such calls one at a time in the image. Running code, as evaluate and test_run do, is not changing it: such a call may last, and may call back into the server."
+
+	^ false
+]
+
 { #category : 'private - results' }
 MCPTool >> contentTextForStructuredContent: structuredContent [
 	"Answer the text block a caller reads: what happened, then the payload as lines. A tool overrides the rendering of its own data when its shape reads better another way."

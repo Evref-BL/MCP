@@ -81,6 +81,12 @@ MCPToolMutation >> buildInputSchema [
 	^ MCPStructureInputSchema properties: self inputProperties required: self requiredInputProperties
 ]
 
+{ #category : 'testing' }
+MCPToolMutation >> changesCode [
+
+	^ true
+]
+
 { #category : 'private - execution' }
 MCPToolMutation >> checkArguments: request [
 	"Refuse, before anything changes, what the arguments ask that the schema cannot refuse."
