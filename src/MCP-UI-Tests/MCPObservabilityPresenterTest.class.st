@@ -43,7 +43,7 @@ MCPObservabilityPresenterTest >> testALogLineThatIsNotAToolCallFiltersNothing [
 	presenter refreshView.
 	logs := self tableNamed: #logsTable of: presenter.
 
-	logs selectItem: (logs items detect: [ :line | line beginsWith: 'Trace export failed' ]).
+	logs selectItem: (logs items detect: [ :entry | entry message beginsWith: 'Trace export failed' ]).
 
 	self assert: (self tableNamed: #metricsTable of: presenter) items size equals: 2.
 	self assert: (self tableNamed: #tracesTable of: presenter) items size equals: 2.
@@ -153,7 +153,7 @@ MCPObservabilityPresenterTest >> testSelectingALogLineFiltersTheMetricsAndTraces
 	presenter := self presenterAfterFailedCallsTo: #( 'a' 'a' 'b' ).
 	logs := self tableNamed: #logsTable of: presenter.
 
-	logs selectItem: (logs items detect: [ :line | line includesSubstring: ' tool b #' ]).
+	logs selectItem: (logs items detect: [ :entry | entry toolName = 'b' ]).
 
 	self assert: (self tableNamed: #metricsTable of: presenter) items size equals: 1.
 	self assert: (self tableNamed: #tracesTable of: presenter) items size equals: 1.

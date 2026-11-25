@@ -109,6 +109,13 @@ MCPObservabilityPresenter >> defaultLayout [
 ]
 
 { #category : 'initialization' }
+MCPObservabilityPresenter >> initialize [
+
+	isUpdatingTables := false.
+	super initialize
+]
+
+{ #category : 'initialization' }
 MCPObservabilityPresenter >> initializePresenters [
 
 	observabilityCheckBox := self newCheckBox.
@@ -159,7 +166,7 @@ MCPObservabilityPresenter >> initializeTables [
 		contextMenu: [ self tracesContextMenu ];
 		beResizable.
 	logsTable
-		addColumn: (SpStringTableColumn title: 'Log' evaluated: [ :line | line ]);
+		addColumn: (SpStringTableColumn title: 'Log' evaluated: #message);
 		beResizable
 ]
 
@@ -191,34 +198,11 @@ MCPObservabilityPresenter >> isAutoRefreshProcessRunning [
 ]
 
 { #category : 'private' }
-MCPObservabilityPresenter >> logCallOf: aLogLine [
-	"The tool name and call id a log line states, as tool -> id, or nil for a line that states none. The backend logs a call as '<status> tool <name> #<id> in ...', and keeps its lines as plain strings."
-
-	| start nameStart nameEnd idEnd |
-	start := aLogLine indexOfSubCollection: ' tool ' startingAt: 1.
-	start = 0 ifTrue: [ ^ nil ].
-	nameStart := start + 6.
-	nameEnd := aLogLine indexOfSubCollection: ' #' startingAt: nameStart.
-	nameEnd = 0 ifTrue: [ ^ nil ].
-	idEnd := aLogLine indexOf: Character space startingAt: nameEnd + 2.
-	idEnd = 0 ifTrue: [ idEnd := aLogLine size + 1 ].
-	^ (aLogLine copyFrom: nameStart to: nameEnd - 1) -> (aLogLine copyFrom: nameEnd + 2 to: idEnd - 1)
-]
-
-{ #category : 'private' }
-MCPObservabilityPresenter >> logLine: aLogLine isForRecord: aRecord [
-
-	^ (MCPLocalObservabilityBackend toolCallOfLogLine: aLogLine)
-		  ifNil: [ false ]
-		  ifNotNil: [ :call | call key = aRecord toolName and: [ call value = aRecord id printString ] ]
-]
-
-{ #category : 'private' }
 MCPObservabilityPresenter >> logsAmong: logs [
 	"Only the lines of the selected trace's call, or else of the tool selected in the metrics table."
 
-	selectedTrace ifNotNil: [ :trace | ^ logs select: [ :line | self logLine: line isForRecord: trace ] ].
-	toolFilter ifNotNil: [ :toolName | ^ logs select: [ :line | (self toolNameOfLog: line) = toolName ] ].
+	selectedTrace ifNotNil: [ :trace | ^ logs select: [ :entry | entry call == trace ] ].
+	toolFilter ifNotNil: [ :toolName | ^ logs select: [ :entry | entry toolName = toolName ] ].
 	^ logs
 ]
 
@@ -231,7 +215,7 @@ MCPObservabilityPresenter >> logsForDisplayFrom: logEntries [
 { #category : 'actions' }
 MCPObservabilityPresenter >> logsSelectionChanged [
 
-	isUpdatingTables == true ifTrue: [ ^ self ].
+	isUpdatingTables ifTrue: [ ^ self ].
 	selectedLog := logsTable selectedItem.
 	self selectionChanged
 ]
@@ -241,16 +225,14 @@ MCPObservabilityPresenter >> metricsAmong: metrics [
 	"Only the tool of the selected trace, or else of the selected log line."
 
 	| toolName |
-	toolName := selectedTrace
-		            ifNotNil: [ :trace | trace toolName ]
-		            ifNil: [ selectedLog ifNotNil: [ :line | self toolNameOfLog: line ] ].
+	toolName := selectedTrace ifNotNil: [ :trace | trace toolName ] ifNil: [ selectedLog ifNotNil: [ :entry | entry toolName ] ].
 	^ toolName ifNil: [ metrics ] ifNotNil: [ metrics select: [ :stats | stats toolName = toolName ] ]
 ]
 
 { #category : 'actions' }
 MCPObservabilityPresenter >> metricsSelectionChanged [
 
-	isUpdatingTables == true ifTrue: [ ^ self ].
+	isUpdatingTables ifTrue: [ ^ self ].
 	toolFilter := metricsTable selectedItem ifNotNil: [ :stats | stats toolName ].
 	self selectionChanged
 ]
@@ -275,12 +257,7 @@ MCPObservabilityPresenter >> observabilityChangedTo: enabled [
 MCPObservabilityPresenter >> reasonFromSelectedLog [
 	"What a selected log line says about the other tables, or nil when none is selected or the line is not about a tool call, in which case it filters nothing."
 
-	^ selectedLog ifNotNil: [ :line |
-			  (self toolNameOfLog: line) ifNotNil: [ :toolName |
-					  String streamContents: [ :stream |
-							  stream
-								  nextPutAll: 'log of ';
-								  nextPutAll: toolName ] ] ]
+	^ selectedLog ifNotNil: [ :entry | entry toolName ifNotNil: [ :toolName | 'log of ' , toolName ] ]
 ]
 
 { #category : 'updating' }
@@ -290,17 +267,6 @@ MCPObservabilityPresenter >> refreshView [
 	mcp := self model ifNil: [ ^ self ].
 	observabilityCheckBox state: mcp observabilityEnabled.
 	self updateTablesFrom: mcp forcing: true
-]
-
-{ #category : 'updating' }
-MCPObservabilityPresenter >> sectionLabelFor: aTitle count: aCount [
-
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: aTitle;
-				  nextPutAll: ' (';
-				  print: aCount;
-				  nextPut: $) ]
 ]
 
 { #category : 'updating' }
@@ -350,7 +316,7 @@ MCPObservabilityPresenter >> sectionsLayout [
 
 { #category : 'actions' }
 MCPObservabilityPresenter >> selectionChanged [
-	"Selecting a row filters the other two tables to what relates to it; clearing the selection shows them all."
+	"Selecting a row filters the other two tables to what relates to it; Show all drops every selection."
 
 	self model ifNotNil: [ :mcp | self updateTablesFrom: mcp forcing: false ]
 ]
@@ -382,7 +348,7 @@ MCPObservabilityPresenter >> shouldAutoRefresh [
 
 { #category : 'actions' }
 MCPObservabilityPresenter >> showAll [
-	"Spec gives a table no way to drop its selection, and Refresh keeps the filters, so this is how the user gets every row back."
+	"Spec lets no one deselect a row of a table, and Refresh keeps the filters, so this is how the user gets every row back."
 
 	toolFilter := nil.
 	selectedTrace := nil.
@@ -491,18 +457,11 @@ MCPObservabilityPresenter >> title [
 ]
 
 { #category : 'private' }
-MCPObservabilityPresenter >> toolNameOfLog: aLogLine [
-	"Nil for a line that is not about a tool call, such as 'Observability cleared'."
-
-	^ (MCPLocalObservabilityBackend toolCallOfLogLine: aLogLine) ifNotNil: [ :call | call key ]
-]
-
-{ #category : 'private' }
 MCPObservabilityPresenter >> tracesAmong: traces [
 	"Only the tool selected in the metrics table, or else the tool of the selected log line."
 
 	| toolName |
-	toolName := toolFilter ifNil: [ selectedLog ifNotNil: [ :line | self toolNameOfLog: line ] ].
+	toolName := toolFilter ifNil: [ selectedLog ifNotNil: [ :entry | entry toolName ] ].
 	^ toolName ifNil: [ traces ] ifNotNil: [ traces select: [ :record | record toolName = toolName ] ]
 ]
 
@@ -523,7 +482,7 @@ MCPObservabilityPresenter >> tracesContextMenu [
 { #category : 'actions' }
 MCPObservabilityPresenter >> tracesSelectionChanged [
 
-	isUpdatingTables == true ifTrue: [ ^ self ].
+	isUpdatingTables ifTrue: [ ^ self ].
 	selectedTrace := tracesTable selectedItem.
 	self selectionChanged
 ]

@@ -62,6 +62,22 @@ MCPLocalObservabilityBackendTest >> testACallStartedInAnEarlierImageSessionIsNot
 ]
 
 { #category : 'tests' }
+MCPLocalObservabilityBackendTest >> testALogLineKnowsTheCallItIsAbout [
+	"The inspector relates a log line to its call's metrics and trace through the record the line keeps, not by reading its message."
+
+	| state record |
+	state := MCPLocalObservabilityBackend new.
+	record := self start: 'class_get' input: nil on: state.
+	state recordToolCallFinish: record result: nil error: Error new.
+	state recordLog: 'Trace export failed: IOError'.
+
+	self assert: state logs first call identicalTo: record.
+	self assert: state logs first toolName equals: 'class_get'.
+	self assert: state logs last call isNil.
+	self assert: state logs last toolName isNil
+]
+
+{ #category : 'tests' }
 MCPLocalObservabilityBackendTest >> testARecordWithoutItsImageSessionIsRecorded [
 	"A record made before records knew their image session, as the call that loads this code over an older MCP has, started in this session as far as anyone can tell."
 
@@ -344,8 +360,8 @@ MCPLocalObservabilityBackendTest >> testRecordsErrorCall [
 	self assert: recentCall errorClass equals: 'Error'.
 	self assert: (recentCall outputSnapshot at: #errorClass) equals: 'Error'.
 	self assert: recentCall inputObject isNil.
-	self assert: (state logs anySatisfy: [ :each | each includesSubstring: 'Error tool method_compile #' ]).
-	self deny: (state logs anySatisfy: [ :each | each includesSubstring: 'error tool method_compile #' ])
+	self assert: (state logs anySatisfy: [ :each | each message includesSubstring: 'Error tool method_compile #' ]).
+	self deny: (state logs anySatisfy: [ :each | each message includesSubstring: 'error tool method_compile #' ])
 ]
 
 { #category : 'tests' }
@@ -436,9 +452,9 @@ MCPLocalObservabilityBackendTest >> testRecordsSuccessfulCallMetricsAndLogs [
 	self assert: stats successCount equals: 1.
 	self assert: stats errorCount equals: 0.
 	self assert: state recentCallRecords size equals: 1.
-	self assert: (state logs count: [ :each | each includesSubstring: 'tool method_search #' ]) equals: 1.
-	self assert: (state logs anySatisfy: [ :each | each includesSubstring: 'OK tool method_search #' ]).
-	self deny: (state logs anySatisfy: [ :each | each includesSubstring: 'ok tool method_search #' ])
+	self assert: (state logs count: [ :each | each message includesSubstring: 'tool method_search #' ]) equals: 1.
+	self assert: (state logs anySatisfy: [ :each | each message includesSubstring: 'OK tool method_search #' ]).
+	self deny: (state logs anySatisfy: [ :each | each message includesSubstring: 'ok tool method_search #' ])
 ]
 
 { #category : 'tests' }
@@ -472,20 +488,6 @@ MCPLocalObservabilityBackendTest >> testToolCallNamingItselfIsTheCallersMistake 
 	self assert: record toolName equals: 'tool_call'.
 	self assert: record errorCode equals: 'ToolCallCallsItself'.
 	self assert: record errorKind equals: 'domain'
-]
-
-{ #category : 'tests' }
-MCPLocalObservabilityBackendTest >> testToolCallOfLogLineReadsBackWhatTheBackendLogged [
-	"The inspector filters by the tool and call id it reads from the text of a log line, so the text and the reader have to agree."
-
-	| state record |
-	state := MCPLocalObservabilityBackend new.
-	record := self start: 'class get' input: nil on: state.
-	state recordToolCallFinish: record result: nil error: Error new.
-
-	self assert: (MCPLocalObservabilityBackend toolCallOfLogLine: state logs last) equals: 'class get' -> record id printString.
-	self assert: (MCPLocalObservabilityBackend toolCallOfLogLine: 'Observability cleared') isNil.
-	self assert: (MCPLocalObservabilityBackend toolCallOfLogLine: 'Trace export failed: IOError') isNil
 ]
 
 { #category : 'tests' }
