@@ -153,7 +153,12 @@ sent. A configuration file named by
 Each tool call is a server span named `tools/call <tool>`. A failed call's
 span has the error status, with the message of the JSON-RPC error the client
 was answered with as its description, or none when the tool answered with a
-result that reports an error. A request whose
+result that reports an error. As the conventions for MCP ask of a server, a
+call refused with a code that says the caller sent a request the server could
+not serve (`-32700`, `-32600`, `-32601`, `-32602`, an unknown tool among
+them, and `-32002`) is no error of the server's: its status stays unset, and
+it has no `error.type`, while the client's span of the same call counts it.
+A request whose
 `params._meta` carries a W3C `traceparent` (SEP-414) makes the span a child of
 the caller's, so a client that propagates its context sees the image's work
 inside its own trace; the span keeps the caller's W3C `tracestate` with the
@@ -213,10 +218,13 @@ And these from its end:
   many tests ran and how it ended, `passed`, `failed`, `errored` or `none`.
 - `pharo.mcp.tool.refs`, for a tool search or description: the tools it named.
 
-A failed call also has:
+A call that did not succeed also has:
 
 - `error.type`, as the conventions for MCP spell it: the JSON-RPC code of a
-  protocol error, else `tool_error`.
+  protocol error, else `tool_error`; none for a code that says the caller
+  sent a request the server could not serve.
+- `rpc.status_code`, the code of the JSON-RPC error the call was answered
+  with, whatever it is.
 - `pharo.mcp.error.kind`, how it failed: `input_schema` when its input schema
   refused it, `json_rpc` when a protocol error answered it, `exception` when
   any other exception escaped the tool, `domain` when the tool refused it
@@ -249,7 +257,8 @@ out.
 
 Each call is also counted in these metrics, with `mcp.method.name`,
 `gen_ai.operation.name`, `gen_ai.tool.name`, `pharo.mcp.tool.origin` and, for
-a failed call, `error.type`:
+a call that did not succeed, `error.type` and `rpc.status_code` as its span
+has them:
 
 - `mcp.server.operation.duration`, a histogram of the call's duration in
   seconds.

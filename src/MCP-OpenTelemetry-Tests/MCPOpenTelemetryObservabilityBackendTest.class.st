@@ -382,6 +382,17 @@ MCPOpenTelemetryObservabilityBackendTest >> testACallASaveCarriedIntoALaterStart
 ]
 
 { #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testACallAnsweredWithAResultHasNoJSONRPCCode [
+	"A result that reports an error is no JSON-RPC error: tool_error, and no rpc.status_code."
+
+	| snapshot |
+	backend recordToolCallFinish: self startToolCall result: self errorToolResult error: nil.
+	snapshot := exporter onlySnapshot.
+	self assert: (self attributeNamed: 'error.type' in: snapshot) equals: 'tool_error'.
+	self assert: (self attributeNamed: 'rpc.status_code' in: snapshot) isNil
+]
+
+{ #category : 'tests' }
 MCPOpenTelemetryObservabilityBackendTest >> testACallEndingAfterTheSettingsStopAskingForTracesSendsNothing [
 	"Its span is dropped rather than ended, and nothing is made to record it: the settings no longer say where to send it."
 
@@ -659,7 +670,7 @@ MCPOpenTelemetryObservabilityBackendTest >> testAProtocolErrorDescribesTheSpanWi
 	"The message of the JSON-RPC error the client gets, not the exception's own text."
 
 	| error snapshot |
-	error := JRPCInvalidParameters new messageText: 'secret'.
+	error := MCPUnsupportedProtocolVersion new messageText: 'secret'.
 	backend recordToolCallFinish: self startToolCall result: nil error: error.
 	snapshot := exporter onlySnapshot.
 	self assert: snapshot status equals: OTSpan error.
@@ -669,12 +680,16 @@ MCPOpenTelemetryObservabilityBackendTest >> testAProtocolErrorDescribesTheSpanWi
 
 { #category : 'tests' }
 MCPOpenTelemetryObservabilityBackendTest >> testAProtocolErrorReportsItsJSONRPCCode [
-	"A tool that raises a JSON-RPC error of its own is answered with it, so the call is recorded by its code."
+	"A tool that raises a JSON-RPC error of its own is answered with it, so the call is recorded by its code: as rpc.status_code, and as error.type when the code is the server's error."
 
 	| snapshot |
-	backend recordToolCallFinish: self startToolCall result: nil error: JRPCInvalidParameters new.
+	backend recordToolCallFinish: self startToolCall result: nil error: MCPUnsupportedProtocolVersion new.
 	snapshot := exporter onlySnapshot.
-	self assert: (self attributeNamed: 'error.type' in: snapshot) equals: '-32602'
+	self assert: (self attributeNamed: 'rpc.status_code' in: snapshot) equals: '-32022'.
+	self assert: (self attributeNamed: 'error.type' in: snapshot) equals: '-32022'.
+	self
+		assert: ((self measurementNamed: 'mcp.server.operation.duration') attributes at: 'rpc.status_code' ifAbsent: [ nil ])
+		equals: '-32022'
 ]
 
 { #category : 'tests' }
@@ -687,6 +702,22 @@ MCPOpenTelemetryObservabilityBackendTest >> testAProviderThatRefusesTheDescripti
 	backend recordToolCallFinish: self startToolCall result: self successToolResult error: nil.
 	self assert: exporter snapshots isEmpty.
 	self assert: backend totalCallCount equals: 1
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testARequestTheServerCouldNotServeIsNoErrorOfItsSpan [
+	"The conventions for MCP count a code that says the caller sent a request the server could not serve as no error of the server's: its span records the code, and how the call was refused, but no error.type, and its status stays unset. A client's span counts it as an error."
+
+	| snapshot duration |
+	backend recordToolCallFinish: self startToolCall result: nil error: (JRPCInvalidParameters new messageText: 'secret').
+	snapshot := exporter onlySnapshot.
+	self deny: snapshot status equals: OTSpan error.
+	self assert: (self attributeNamed: 'error.type' in: snapshot) isNil.
+	self assert: (self attributeNamed: 'rpc.status_code' in: snapshot) equals: '-32602'.
+	self assert: (self attributeNamed: 'pharo.mcp.error.kind' in: snapshot) equals: 'json_rpc'.
+	duration := (self measurementNamed: 'mcp.server.operation.duration') attributes.
+	self assert: (duration at: 'error.type' ifAbsent: [ nil ]) isNil.
+	self assert: (duration at: 'rpc.status_code' ifAbsent: [ nil ]) equals: '-32602'
 ]
 
 { #category : 'tests' }
