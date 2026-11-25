@@ -13,6 +13,12 @@ on:
 permissions:
   contents: read
 
+# One release run at a time: two commits landing on main in quick succession
+# would otherwise both find no tag for the version and both try to create it.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   release:
     if: >-
