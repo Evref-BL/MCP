@@ -17,6 +17,13 @@ MCPOpenTelemetrySettings class >> environment: aDictionary [
 	^ self withEnvironment: aDictionary
 ]
 
+{ #category : 'accessing' }
+MCPOpenTelemetrySettings class >> signalNames [
+	"The signals OpenTelemetry exports, each configured by its own variables."
+
+	^ #( #traces #metrics #logs )
+]
+
 { #category : 'applying' }
 MCPOpenTelemetrySettings >> apply [
 	"Puts the file's settings into the environment, where the OpenTelemetry SDK reads them, in place of every OTEL_* variable the process inherited: whoever wrote MCP's own file chose where its telemetry goes, whatever the program that started the image passes down. With no file, or a file that gives none, the environment decides. Answers what it set."
@@ -62,16 +69,18 @@ MCPOpenTelemetrySettings >> fileSettings [
 ]
 
 { #category : 'testing' }
-MCPOpenTelemetrySettings >> isConfigured [
-	"Whether the settings ask for traces to be exported: the SDK is not disabled, and either a configuration file is named or the traces exporter is OTLP, the default, with an endpoint."
+MCPOpenTelemetrySettings >> isConfiguredFor: aSignal [
+	"Whether the settings ask for aSignal, one of signalNames, to be exported: the SDK is not disabled, and either a configuration file is named, which then says where each signal goes, or the signal's exporter is OTLP, the default, with an endpoint, its own or the one the signals share. A signal without one goes nowhere, not even to the SDK's default endpoint."
 
-	| exporters |
+	| name exporters |
 	((self valueAt: 'OTEL_SDK_DISABLED') ifNil: [ '' ]) asLowercase = 'true' ifTrue: [ ^ false ].
 	(self valueAt: 'OTEL_CONFIG_FILE') ifNotNil: [ ^ true ].
-	exporters := (((self valueAt: 'OTEL_TRACES_EXPORTER') ifNil: [ '' ]) substrings: ',') collect: [ :each |
+	name := aSignal asString asUppercase.
+	exporters := (((self valueAt: ('OTEL_{1}_EXPORTER' format: { name })) ifNil: [ '' ]) substrings: ',') collect: [ :each |
 		             each trimBoth asLowercase ].
 	(exporters isNotEmpty and: [ (exporters includes: 'otlp') not ]) ifTrue: [ ^ false ].
-	^ (self valueAt: 'OTEL_EXPORTER_OTLP_TRACES_ENDPOINT') isNotNil or: [ (self valueAt: 'OTEL_EXPORTER_OTLP_ENDPOINT') isNotNil ]
+	^ (self valueAt: ('OTEL_EXPORTER_OTLP_{1}_ENDPOINT' format: { name })) isNotNil or: [
+		  (self valueAt: 'OTEL_EXPORTER_OTLP_ENDPOINT') isNotNil ]
 ]
 
 { #category : 'testing' }
@@ -102,6 +111,13 @@ MCPOpenTelemetrySettings >> settingsInEffect [
 	"The OTEL_* variables the environment sets, with their values: what OpenTelemetry's providers are made from."
 
 	^ (self settingNamesInEnvironment collect: [ :each | each asString -> (self valueAt: each) ]) asDictionary
+]
+
+{ #category : 'accessing' }
+MCPOpenTelemetrySettings >> signals [
+	"The signals the settings ask to be exported, each as its own variables say."
+
+	^ self class signalNames select: [ :each | self isConfiguredFor: each ]
 ]
 
 { #category : 'private' }

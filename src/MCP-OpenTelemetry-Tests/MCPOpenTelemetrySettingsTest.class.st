@@ -94,6 +94,33 @@ MCPOpenTelemetrySettingsTest >> testContentIsAskedForOnTheSpanAsTheGenAIConventi
 ]
 
 { #category : 'tests' }
+MCPOpenTelemetrySettingsTest >> testEachSignalIsAskedForByItsExporterAndAnEndpoint [
+	"A signal goes where its own endpoint, or the one the signals share, says, when its exporter is OTLP, the default; a configuration file says where each goes. A signal with no endpoint goes nowhere."
+
+	| signals |
+	signals := [ :pairs | (MCPOpenTelemetrySettings environment: (Dictionary newFrom: pairs)) signals asArray ].
+	self assert: (signals value: #(  )) equals: #(  ).
+	self assert: (signals value: { ('OTEL_EXPORTER_OTLP_ENDPOINT' -> 'https://c.test') }) equals: #( #traces #metrics #logs ).
+	self assert: (signals value: { ('OTEL_EXPORTER_OTLP_TRACES_ENDPOINT' -> 'https://c.test/v1/traces') }) equals: #( #traces ).
+	self assert: (signals value: { ('OTEL_EXPORTER_OTLP_METRICS_ENDPOINT' -> 'https://c.test/v1/metrics') }) equals: #( #metrics ).
+	self assert: (signals value: { ('OTEL_EXPORTER_OTLP_LOGS_ENDPOINT' -> 'https://c.test/v1/logs') }) equals: #( #logs ).
+	self assert: (signals value: { ('OTEL_CONFIG_FILE' -> '/etc/otel.yaml') }) equals: #( #traces #metrics #logs ).
+	self
+		assert: (signals value: {
+					 ('OTEL_EXPORTER_OTLP_ENDPOINT' -> 'https://c.test').
+					 ('OTEL_TRACES_EXPORTER' -> 'console, otlp').
+					 ('OTEL_METRICS_EXPORTER' -> 'none').
+					 ('OTEL_LOGS_EXPORTER' -> 'console') })
+		equals: #( #traces ).
+	self
+		assert: (signals value: {
+					 ('OTEL_EXPORTER_OTLP_ENDPOINT' -> 'https://c.test').
+					 ('OTEL_SDK_DISABLED' -> 'TRUE') })
+		equals: #(  ).
+	self assert: (signals value: { ('OTEL_EXPORTER_OTLP_ENDPOINT' -> '  ') }) equals: #(  )
+]
+
+{ #category : 'tests' }
 MCPOpenTelemetrySettingsTest >> testOnWindowsAConfigurationHomeWithADriveIsAbsolute [
 	"As Node reads it, so MCP looks where a tool written for Node wrote the file."
 
@@ -112,6 +139,17 @@ MCPOpenTelemetrySettingsTest >> testOnWindowsAConfigurationHomeWithADriveIsAbsol
 				 windows: true;
 				 settingsFile)
 		equals: 'C:/Users/me/.config' asFileReference / 'pharo-mcp' / 'otel.env'
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetrySettingsTest >> testSignalsAskedForInTheFileAreAskedFor [
+
+	| environment |
+	environment := Dictionary new.
+	self
+		assert: (MCPOpenTelemetryObservabilityBackend signalsAskedForBy:
+				 (self settingsWith: environment fileText: 'OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://127.0.0.1:4318/v1/metrics'))
+		equals: #( #metrics )
 ]
 
 { #category : 'tests' }
@@ -169,36 +207,6 @@ MCPOpenTelemetrySettingsTest >> testTheFilesSettingsReplaceEveryOneTheEnvironmen
 				 ('OTEL_EXPORTER_OTLP_ENDPOINT' -> 'http://127.0.0.1:4318').
 				 ('PATH' -> '/bin').
 				 ('XDG_CONFIG_HOME' -> directory fullName) })
-]
-
-{ #category : 'tests' }
-MCPOpenTelemetrySettingsTest >> testTracesAreAskedForByAnEndpointOrAConfigurationFile [
-
-	| configured |
-	configured := [ :pairs | (MCPOpenTelemetrySettings environment: (Dictionary newFrom: pairs)) isConfigured ].
-	self deny: (configured value: #(  )).
-	self assert: (configured value: { ('OTEL_EXPORTER_OTLP_ENDPOINT' -> 'https://c.test') }).
-	self assert: (configured value: { ('OTEL_EXPORTER_OTLP_TRACES_ENDPOINT' -> 'https://c.test/v1/traces') }).
-	self assert: (configured value: { ('OTEL_CONFIG_FILE' -> '/etc/otel.yaml') }).
-	self assert: (configured value: {
-				 ('OTEL_EXPORTER_OTLP_ENDPOINT' -> 'https://c.test').
-				 ('OTEL_TRACES_EXPORTER' -> 'console, otlp') }).
-	self deny: (configured value: {
-				 ('OTEL_EXPORTER_OTLP_ENDPOINT' -> 'https://c.test').
-				 ('OTEL_TRACES_EXPORTER' -> 'none') }).
-	self deny: (configured value: {
-				 ('OTEL_EXPORTER_OTLP_ENDPOINT' -> 'https://c.test').
-				 ('OTEL_SDK_DISABLED' -> 'TRUE') }).
-	self deny: (configured value: { ('OTEL_EXPORTER_OTLP_ENDPOINT' -> '  ') })
-]
-
-{ #category : 'tests' }
-MCPOpenTelemetrySettingsTest >> testTracesAskedForInTheFileAreAskedFor [
-
-	| environment |
-	environment := Dictionary new.
-	self assert: (MCPOpenTelemetryObservabilityBackend wantsTraces:
-			 (self settingsWith: environment fileText: 'OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4318'))
 ]
 
 { #category : 'tests' }
