@@ -34,6 +34,21 @@ MCPLocalObservabilityBackend class >> initialize [
 	self allSubInstancesDo: [ :each | each sessionImageSession ifNil: [ each sessionImageSession: Smalltalk session ] ]
 ]
 
+{ #category : 'logging' }
+MCPLocalObservabilityBackend class >> toolCallOfLogLine: aLogLine [
+	"The tool name and call id a log line states, as tool -> id with the id as text, or nil for a line that states none (a cleared log, a failed export). Reads back what logMessageForRecord: writes, '<status> tool <name> #<id> in ...': the lines are plain strings, so this and that method are the one pair that must change together."
+
+	| start nameStart nameEnd idEnd |
+	start := aLogLine indexOfSubCollection: ' tool ' startingAt: 1.
+	start = 0 ifTrue: [ ^ nil ].
+	nameStart := start + 6.
+	nameEnd := aLogLine indexOfSubCollection: ' #' startingAt: nameStart.
+	nameEnd = 0 ifTrue: [ ^ nil ].
+	idEnd := aLogLine indexOf: Character space startingAt: nameEnd + 2.
+	idEnd = 0 ifTrue: [ idEnd := aLogLine size + 1 ].
+	^ (aLogLine copyFrom: nameStart to: nameEnd - 1) -> (aLogLine copyFrom: nameEnd + 2 to: idEnd - 1)
+]
+
 { #category : 'private' }
 MCPLocalObservabilityBackend >> addRecentCall: aRecord [
 

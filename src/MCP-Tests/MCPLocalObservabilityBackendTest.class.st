@@ -475,6 +475,20 @@ MCPLocalObservabilityBackendTest >> testToolCallNamingItselfIsTheCallersMistake 
 ]
 
 { #category : 'tests' }
+MCPLocalObservabilityBackendTest >> testToolCallOfLogLineReadsBackWhatTheBackendLogged [
+	"The inspector filters by the tool and call id it reads from the text of a log line, so the text and the reader have to agree."
+
+	| state record |
+	state := MCPLocalObservabilityBackend new.
+	record := self start: 'class get' input: nil on: state.
+	state recordToolCallFinish: record result: nil error: Error new.
+
+	self assert: (MCPLocalObservabilityBackend toolCallOfLogLine: state logs last) equals: 'class get' -> record id printString.
+	self assert: (MCPLocalObservabilityBackend toolCallOfLogLine: 'Observability cleared') isNil.
+	self assert: (MCPLocalObservabilityBackend toolCallOfLogLine: 'Trace export failed: IOError') isNil
+]
+
+{ #category : 'tests' }
 MCPLocalObservabilityBackendTest >> testTraceExportSkipsNonTraceRecords [
 
 	| directory record result state |

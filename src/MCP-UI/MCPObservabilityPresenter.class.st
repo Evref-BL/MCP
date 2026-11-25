@@ -21,7 +21,8 @@ Class {
 		'toolFilter',
 		'selectedTrace',
 		'selectedLog',
-		'isUpdatingTables'
+		'isUpdatingTables',
+		'showAllButton'
 	],
 	#category : 'MCP-UI',
 	#package : 'MCP-UI'
@@ -78,7 +79,8 @@ MCPObservabilityPresenter >> connectPresenters [
 	tracesTable whenSelectionChangedDo: [ :selection | self tracesSelectionChanged ].
 	logsTable whenSelectionChangedDo: [ :selection | self logsSelectionChanged ].
 	refreshButton action: [ self refreshView ].
-	clearButton action: [ self clearObservability ]
+	clearButton action: [ self clearObservability ].
+	showAllButton action: [ self showAll ]
 ]
 
 { #category : 'layout' }
@@ -91,6 +93,7 @@ MCPObservabilityPresenter >> controlsLayout [
 		  add: refreshButton expand: false;
 		  add: autoRefreshCheckBox expand: false;
 		  add: clearButton expand: false;
+		  add: showAllButton expand: false;
 		  yourself
 ]
 
@@ -112,6 +115,7 @@ MCPObservabilityPresenter >> initializePresenters [
 	autoRefreshCheckBox := self newCheckBox.
 	refreshButton := self newButton.
 	clearButton := self newButton.
+	showAllButton := self newButton.
 	metricsLabel := self newLabel.
 	metricsTable := self newTable.
 	tracesLabel := self newLabel.
@@ -127,6 +131,9 @@ MCPObservabilityPresenter >> initializePresenters [
 	clearButton
 		label: 'Clear';
 		icon: (self iconNamed: #trash).
+	showAllButton
+		label: 'Show all';
+		help: 'Drop the selections that filter the tables'.
 	self initializeTables
 ]
 
@@ -201,7 +208,7 @@ MCPObservabilityPresenter >> logCallOf: aLogLine [
 { #category : 'private' }
 MCPObservabilityPresenter >> logLine: aLogLine isForRecord: aRecord [
 
-	^ (self logCallOf: aLogLine)
+	^ (MCPLocalObservabilityBackend toolCallOfLogLine: aLogLine)
 		  ifNil: [ false ]
 		  ifNotNil: [ :call | call key = aRecord toolName and: [ call value = aRecord id printString ] ]
 ]
@@ -262,6 +269,18 @@ MCPObservabilityPresenter >> observabilityChangedTo: enabled [
 	mcp observabilityEnabled = enabled ifTrue: [ ^ self ].
 	mcp observabilityEnabled: enabled.
 	self refreshView
+]
+
+{ #category : 'private' }
+MCPObservabilityPresenter >> reasonFromSelectedLog [
+	"What a selected log line says about the other tables, or nil when none is selected or the line is not about a tool call, in which case it filters nothing."
+
+	^ selectedLog ifNotNil: [ :line |
+			  (self toolNameOfLog: line) ifNotNil: [ :toolName |
+					  String streamContents: [ :stream |
+							  stream
+								  nextPutAll: 'log of ';
+								  nextPutAll: toolName ] ] ]
 ]
 
 { #category : 'updating' }
@@ -361,6 +380,16 @@ MCPObservabilityPresenter >> shouldAutoRefresh [
 	^ self isAutoRefreshEnabled and: [ self isDisplayed ]
 ]
 
+{ #category : 'actions' }
+MCPObservabilityPresenter >> showAll [
+	"Spec gives a table no way to drop its selection, and Refresh keeps the filters, so this is how the user gets every row back."
+
+	toolFilter := nil.
+	selectedTrace := nil.
+	selectedLog := nil.
+	self model ifNotNil: [ :mcp | self updateTablesFrom: mcp forcing: true ]
+]
+
 { #category : 'updating' }
 MCPObservabilityPresenter >> showLogs: shown of: totalCount forcing: forced [
 	"The selected line is put back after the items are replaced."
@@ -380,7 +409,7 @@ MCPObservabilityPresenter >> showLogs: shown of: totalCount forcing: forced [
 			 count: shown size
 			 of: totalCount
 			 because: reason).
-	(forced or: [ logsTable items ~= shown asOrderedCollection ]) ifFalse: [ ^ self ].
+	(forced or: [ logsTable items asArray ~= shown asArray ]) ifFalse: [ ^ self ].
 	logsTable items: shown.
 	selectedLog ifNotNil: [ :line | logsTable selectItem: line ]
 ]
@@ -391,14 +420,18 @@ MCPObservabilityPresenter >> showMetrics: shown of: totalCount forcing: forced [
 
 	| reason |
 	reason := selectedTrace
-		          ifNotNil: [ :trace | 'trace of ' , trace toolName ]
-		          ifNil: [ selectedLog ifNotNil: [ :line | 'log of ' , (self toolNameOfLog: line) ] ].
+		          ifNotNil: [ :trace |
+				          String streamContents: [ :stream |
+						          stream
+							          nextPutAll: 'trace of ';
+							          nextPutAll: trace toolName ] ]
+		          ifNil: [ self reasonFromSelectedLog ].
 	metricsLabel label: (self
 			 sectionLabelFor: 'Metrics'
 			 count: shown size
 			 of: totalCount
 			 because: reason).
-	(forced or: [ metricsTable items ~= shown asOrderedCollection ]) ifFalse: [ ^ self ].
+	(forced or: [ metricsTable items asArray ~= shown asArray ]) ifFalse: [ ^ self ].
 	metricsTable items: shown.
 	toolFilter ifNotNil: [ :toolName |
 		shown detect: [ :stats | stats toolName = toolName ] ifFound: [ :stats | metricsTable selectItem: stats ] ]
@@ -410,14 +443,18 @@ MCPObservabilityPresenter >> showTraces: shown of: totalCount forcing: forced [
 
 	| reason |
 	reason := toolFilter
-		          ifNotNil: [ :toolName | 'tool ' , toolName ]
-		          ifNil: [ selectedLog ifNotNil: [ :line | 'log of ' , (self toolNameOfLog: line) ] ].
+		          ifNotNil: [ :toolName |
+				          String streamContents: [ :stream |
+						          stream
+							          nextPutAll: 'tool ';
+							          nextPutAll: toolName ] ]
+		          ifNil: [ self reasonFromSelectedLog ].
 	tracesLabel label: (self
 			 sectionLabelFor: 'Traces'
 			 count: shown size
 			 of: totalCount
 			 because: reason).
-	(forced or: [ tracesTable items ~= shown asOrderedCollection ]) ifFalse: [ ^ self ].
+	(forced or: [ tracesTable items asArray ~= shown asArray ]) ifFalse: [ ^ self ].
 	tracesTable items: shown.
 	selectedTrace ifNotNil: [ :trace | tracesTable selectItem: trace ]
 ]
@@ -455,8 +492,9 @@ MCPObservabilityPresenter >> title [
 
 { #category : 'private' }
 MCPObservabilityPresenter >> toolNameOfLog: aLogLine [
+	"Nil for a line that is not about a tool call, such as 'Observability cleared'."
 
-	^ (self logCallOf: aLogLine) ifNotNil: [ :call | call key ]
+	^ (MCPLocalObservabilityBackend toolCallOfLogLine: aLogLine) ifNotNil: [ :call | call key ]
 ]
 
 { #category : 'private' }
