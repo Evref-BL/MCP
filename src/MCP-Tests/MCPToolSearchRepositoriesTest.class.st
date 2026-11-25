@@ -153,6 +153,25 @@ MCPToolSearchRepositoriesTest >> testListsRepositoryPackageMetadata [
 ]
 
 { #category : 'tests' }
+MCPToolSearchRepositoriesTest >> testListsRepositoryWhoseCheckoutIsGoneAsMissing [
+	"A registered repository whose checkout was never cloned or was deleted has no head to read. Iceberg says so with NotFound, and libgit, from Pharo 15 on, with an error of its own; neither stops the search."
+
+	| data entry goneLocation gone result |
+	goneLocation := FileLocator imageDirectory / 'MCPGoneCheckout'.
+	gone := IceLibgitRepository new
+		        name: 'MCP Gone Checkout';
+		        location: goneLocation;
+		        yourself.
+	self withRepositories: { gone } do: [
+		result := self callToolWith: Dictionary new.
+		data := self dataFrom: result.
+		self deny: (result at: #isError ifAbsent: [ false ]).
+		entry := self entryNamed: 'MCP Gone Checkout' in: (data at: #repositories).
+		self assert: (entry at: #isMissing) equals: true.
+		self assert: (entry at: #location) equals: goneLocation pathString ]
+]
+
+{ #category : 'tests' }
 MCPToolSearchRepositoriesTest >> testListsStaleRepositoryAsMissingAndContinues [
 
 	| data entry missingLocation present result stale |

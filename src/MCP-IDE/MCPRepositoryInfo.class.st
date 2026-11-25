@@ -109,6 +109,16 @@ MCPRepositoryInfo >> headDescription [
 	^ headDescription
 ]
 
+{ #category : 'private' }
+MCPRepositoryInfo >> headOf: aRepository read: aBlock ifAbsent: absentValue [
+	"What aBlock reads from the repository's head, or absentValue when there is no head to read: no location, or none of the checkout left there. Iceberg says the latter with NotFound, and from Pharo 15 on, libgit with LGitRepositoryNotFound."
+
+	aRepository location ifNil: [ ^ absentValue ].
+	^ aBlock
+		  on: NotFound , LGitRepositoryNotFound
+		  do: [ :ignored | absentValue ]
+]
+
 { #category : 'initialization' }
 MCPRepositoryInfo >> initializeFromRepository: aRepository [
 	"The remotes and the upstream come from one reading of the repository's git files."
@@ -208,49 +218,37 @@ MCPRepositoryInfo >> remotes [
 { #category : 'private' }
 MCPRepositoryInfo >> repositoryBranchNameFor: aRepository [
 
-	aRepository location ifNil: [ ^ '' ].
-	^ [
-		  aRepository head isDetached
-			  ifTrue: [ '' ]
-			  ifFalse: [ (aRepository branchName ifNil: [ '' ]) asString ] ]
-		  on: NotFound
-		  do: [ :ignored | '' ]
+	^ self
+		  headOf: aRepository
+		  read: [
+			  aRepository head isDetached
+				  ifTrue: [ '' ]
+				  ifFalse: [ (aRepository branchName ifNil: [ '' ]) asString ] ]
+		  ifAbsent: ''
 ]
 
 { #category : 'private' }
 MCPRepositoryInfo >> repositoryHeadClassNameFor: aRepository [
 
-	aRepository location ifNil: [ ^ '' ].
-	^ [ aRepository head class name asString ]
-		  on: NotFound
-		  do: [ :ignored | '' ]
+	^ self headOf: aRepository read: [ aRepository head class name asString ] ifAbsent: ''
 ]
 
 { #category : 'private' }
 MCPRepositoryInfo >> repositoryHeadCommitIdFor: aRepository [
 
-	aRepository location ifNil: [ ^ '' ].
-	^ [ MCPIcebergCommitInfo idStringFrom: aRepository headCommit ]
-		  on: NotFound
-		  do: [ :ignored | '' ]
+	^ self headOf: aRepository read: [ MCPIcebergCommitInfo idStringFrom: aRepository headCommit ] ifAbsent: ''
 ]
 
 { #category : 'private' }
 MCPRepositoryInfo >> repositoryHeadDescriptionFor: aRepository [
 
-	aRepository location ifNil: [ ^ '' ].
-	^ [ (aRepository headDescription ifNil: [ '' ]) asString ]
-		  on: NotFound
-		  do: [ :ignored | '' ]
+	^ self headOf: aRepository read: [ (aRepository headDescription ifNil: [ '' ]) asString ] ifAbsent: ''
 ]
 
 { #category : 'private' }
 MCPRepositoryInfo >> repositoryIsDetachedHeadFor: aRepository [
 
-	aRepository location ifNil: [ ^ false ].
-	^ [ aRepository head isDetached ifNil: [ false ] ]
-		  on: NotFound
-		  do: [ :ignored | false ]
+	^ self headOf: aRepository read: [ aRepository head isDetached ifNil: [ false ] ] ifAbsent: false
 ]
 
 { #category : 'private' }
