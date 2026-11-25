@@ -70,6 +70,12 @@ MCPToolRestoreMethod >> buildInputSchema [
 		  required: #( 'class' 'selector' )
 ]
 
+{ #category : 'testing' }
+MCPToolRestoreMethod >> changesCode [
+
+	^ true
+]
+
 { #category : 'private - errors' }
 MCPToolRestoreMethod >> checkVersionNamesOneMethodIn: request [
 

@@ -37,6 +37,12 @@ MCPToolRemoveClasses >> buildInputSchema [
 		  required: #( 'name' )
 ]
 
+{ #category : 'testing' }
+MCPToolRemoveClasses >> changesCode [
+
+	^ true
+]
+
 { #category : 'private - arguments' }
 MCPToolRemoveClasses >> checkArguments: request [
 	"At least one name, and none of a class side. One class side among the names refuses the whole call, before anything is looked up: read as its class, it would delete the class."

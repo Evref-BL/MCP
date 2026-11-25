@@ -43,6 +43,12 @@ MCPToolRestoreLostChanges >> buildInputSchema [
 		  required: #(  )
 ]
 
+{ #category : 'testing' }
+MCPToolRestoreLostChanges >> changesCode [
+
+	^ true
+]
+
 { #category : 'private - execution' }
 MCPToolRestoreLostChanges >> changesNamed: someElementNames among: someLostChanges of: aLostChangeQuery into: data [
 	"The lost changes to the elements named. A name no lost change has is not restored, unless the image already holds its change, which the answer says apart."

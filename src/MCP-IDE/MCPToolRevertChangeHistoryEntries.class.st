@@ -27,3 +27,9 @@ MCPToolRevertChangeHistoryEntries >> changeHistoryToolSpec [
 		  (#pastTense -> 'Reverted').
 		  (#unchangedReason -> 'already reverted in the image') } asDictionary
 ]
+
+{ #category : 'testing' }
+MCPToolRevertChangeHistoryEntries >> changesCode [
+
+	^ true
+]

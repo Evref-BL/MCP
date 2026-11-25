@@ -131,6 +131,11 @@ MyProjectToolListWidgets >> executeWithRequest: request
   `MCPStructureToolAnnotations readOnly` promises it changes nothing;
   `mayModify` says otherwise. A host may require a confirmation for the
   second.
+- **`changesCode`** answers true for a tool that changes classes, methods or
+  packages. The server then runs its calls one at a time in the image, since
+  Pharo's code model is not safe to change from two processes at once. A tool
+  that runs code, as `evaluate` does, answers false: its call may last, and
+  may call back into the server.
 - **`buildInputSchema`** is the contract the server validates an incoming
   call against before your code runs. `additionalProperties` defaults to
   false, so a caller that misspells an argument is told so instead of having
