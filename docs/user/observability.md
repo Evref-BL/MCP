@@ -101,21 +101,25 @@ Point the exporter at a collector on the same machine, OpenTelemetry's usual
 deployment: the VM resolves a host name on its only thread, so a slow DNS
 server holds the whole image while an export starts.
 
-Nothing is sent while the settings do not ask for traces: the SDK disabled,
-a traces exporter other than OTLP, or no setting naming where to send them,
-an OTLP endpoint (`OTEL_EXPORTER_OTLP_ENDPOINT` or
-`OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`) or a configuration file
-(`OTEL_CONFIG_FILE`). Without such a setting, with no file and an environment
-that names none, no provider is made and nothing is sent, not even to the
-SDK's default endpoint; the server still records its calls locally. A
-backend nobody configured, made by hand rather than through
-`useOpenTelemetryObservability`, records locally only. The image reads the file and its environment again each time it starts, and
+Each signal, traces, metrics and logs, is sent only when the settings ask for
+it: the SDK not disabled, and either a configuration file
+(`OTEL_CONFIG_FILE`), which then says where each signal goes, or the signal's
+exporter (`OTEL_TRACES_EXPORTER`, `OTEL_METRICS_EXPORTER`,
+`OTEL_LOGS_EXPORTER`) OTLP, the default, with an endpoint: its own
+(`OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`, `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT`,
+`OTEL_EXPORTER_OTLP_LOGS_ENDPOINT`) or the one they share
+(`OTEL_EXPORTER_OTLP_ENDPOINT`). A signal without such a setting gets no
+provider and is not sent, not even to the SDK's default endpoint; with no file
+and an environment that names no endpoint, nothing is sent, and the server
+still records its calls locally. A backend nobody configured, made by hand
+rather than through `useOpenTelemetryObservability`, records locally only.
+The image reads the file and its environment again each time it starts, and
 rebuilds its providers from them, so a saved image sends where they say now,
 or nothing once they are gone, never where they said when it was saved. While
 it runs, the file's settings stay in its environment.
 
 The providers belong to the whole image. They are rebuilt only when the
-settings ask for traces or a server recorded through them, otherwise other
+settings ask for a signal or a server recorded through them, otherwise other
 code's use of OpenTelemetry is left alone, and only when the settings are not
 those they were made from, so that making or configuring another server leaves
 them as they are. Configuring one server's recording configures every
@@ -127,26 +131,33 @@ are replaced waits for the replacement, and starts in the new ones. A call
 already running ends in the provider that started its span, which is shut
 down once the last such call has ended, and a call terminated before it
 answers ends its span too, as failed. A call running when the settings stop
-asking for traces sends nothing. A call running when the image is saved is
-recorded by the session that saved it, once it ends there; each start of the
-saved image goes on with it too, and records nothing when it ends, locally
-included, since the time it took would be the time the image was not running.
-A call that saves the image and quits it never ends, so nothing records it.
-Stopping a server waits at most a second for what it holds to be sent.
+asking for a signal sends nothing of it. A call running when the image is
+saved is recorded by the session that saved it, once it ends there; each start
+of the saved image goes on with it too, and records nothing when it ends,
+locally included, since the time it took would be the time the image was not
+running. A call that saves the image and quits it never ends, so nothing
+records it. Stopping a server waits at most a second for what it holds to be
+sent.
 
-Enabling it sets the image's OpenTelemetry resource, for every provider in
-the image and those made later, to what describes the server: `service.name`
-`pharo-mcp`, `service.version` (the version the server reports), the SDK's
-`telemetry.sdk.*`, `os.type`, and `process.runtime.name` with the Pharo version
-and its build (`process.runtime.version`) and the VM's
-(`process.runtime.description`). `OTEL_RESOURCE_ATTRIBUTES` can add attributes
-but not replace these, and `OTEL_SERVICE_NAME` is not read. The host name, the
-process and its command line, which the SDK would otherwise detect and which
-name the user and the image, are not sent. An attribute Pharo cannot tell is
-left out, and the calls are recorded anyway; but when a provider will not take
-this description, which would leave it describing the machine, nothing is
-sent. A configuration file named by
-`OTEL_CONFIG_FILE` that sets a resource is used as it is.
+Enabling it sets the image's OpenTelemetry resource, for the providers of the
+signals the settings ask for and every provider made later, to what describes
+the server: `service.name` `pharo-mcp`, `service.version` (the version the
+server reports), the SDK's `telemetry.sdk.*`, `os.type`, and
+`process.runtime.name` with the Pharo version and its build
+(`process.runtime.version`) and the VM's (`process.runtime.description`).
+`OTEL_RESOURCE_ATTRIBUTES` can add attributes but not replace these:
+`service.name` stays `pharo-mcp` even when it or `OTEL_SERVICE_NAME` sets
+one, since, as OpenTelemetry's SDK specification has it, the resource a
+program provides wins over the environment's. The host name, the process and
+its command line, which the SDK would otherwise detect and which name the user
+and the image, are not sent. An attribute Pharo cannot tell is left out, and
+the calls are recorded anyway; but when a provider will not take this
+description, which would leave it describing the machine, nothing is sent. A
+configuration file named by `OTEL_CONFIG_FILE` that sets a resource is used
+as it is.
+
+The spans, metrics and logs come from the instrumentation scope `mcp-pharo`,
+whose version is the MCP release the image runs.
 
 ## Spans
 
@@ -169,14 +180,17 @@ the server has a tool by that name.
 A span has these attributes from its start:
 
 - `mcp.method.name` `tools/call`, `gen_ai.operation.name` `execute_tool`,
-  `network.transport` `tcp` and `network.protocol.name` `http`, as the
-  OpenTelemetry conventions for MCP define them.
+  `network.transport` `tcp`, `network.protocol.name` `http` and
+  `network.protocol.version` `1.1`, as the OpenTelemetry conventions for MCP
+  define them.
 - `jsonrpc.request.id`, the id of the request the call answers, as a string;
   a call `tool_call` makes answers no request of its own and has none.
 - `gen_ai.tool.name`, the tool's name; a name the server has no tool for is
   sent only when it reads as an identifier, else as `_OTHER`.
-- `mcp.protocol.version`, for a request that declares its version in its
-  `_meta`, as the 2026-07-28 revision does.
+- `mcp.protocol.version`, the protocol version the request declares: in its
+  `_meta`, as the 2026-07-28 revision does, else in its
+  `MCP-Protocol-Version` header, which a client sends on every request after
+  `initialize` from the 2025-06-18 revision on.
 - `pharo.mcp.tool.origin`, whose tool the call went to: `mcp` for one of
   MCP's own, `other` for one another package registered, `unknown` for a name
   the server has no tool for.
@@ -221,8 +235,12 @@ And these from its end:
 A call that did not succeed also has:
 
 - `error.type`, as the conventions for MCP spell it: the JSON-RPC code of a
-  protocol error, else `tool_error`; none for a code that says the caller
-  sent a request the server could not serve.
+  protocol error, none for a code that says the caller sent a request the
+  server could not serve; `tool_error` for an answer that reports an error;
+  and `_OTHER`, the conventions' fallback, for a protocol error whose code
+  cannot be read and for a call whose process was terminated before it
+  answered. Nothing in the server terminates one: a cancellation is not acted
+  on, and a timeout or a closed connection leaves the call running.
 - `rpc.status_code`, the code of the JSON-RPC error the call was answered
   with, whatever it is.
 - `pharo.mcp.error.kind`, how it failed: `input_schema` when its input schema
@@ -248,30 +266,36 @@ The arguments and the answer are recorded only when
 `OTEL_INSTRUMENTATION_GENAI_CAPTURE_CONTENT`, read like the other settings,
 is `SPAN_ONLY` or `SPAN_AND_EVENT`, in any case, as the OpenTelemetry
 conventions for generative AI define it. The span then has
-`gen_ai.tool.call.arguments`, the arguments as JSON, and for a call that
-succeeded `gen_ai.tool.call.result`, its structured content, or else its
-content, as JSON. Its default, `NO_CONTENT`, and any other value leave them
-out.
+`gen_ai.tool.call.arguments`, the arguments, and for a call that succeeded
+`gen_ai.tool.call.result`, its structured content, or else its content. Each
+is the object it is, as the conventions ask, which OTLP carries as a map or a
+list rather than as JSON text; one OpenTelemetry cannot carry, such as an
+integer beyond 64 bits, is left out. Its default, `NO_CONTENT`, and any other
+value leave them out.
 
 ## Metrics and logs
 
-Each call is also counted in these metrics, with `mcp.method.name`,
-`gen_ai.operation.name`, `gen_ai.tool.name`, `pharo.mcp.tool.origin` and, for
-a call that did not succeed, `error.type` and `rpc.status_code` as its span
-has them:
+Each request is also counted in these metrics, with `mcp.method.name`,
+`gen_ai.operation.name`, `gen_ai.tool.name`, `network.transport`,
+`network.protocol.name`, `network.protocol.version`, `mcp.protocol.version`
+and `pharo.mcp.tool.origin` and, for a call that did not succeed, `error.type`
+and `rpc.status_code`, as its span has them. The call `tool_call` makes
+answers no request of its own, so only the `tool_call` request is counted,
+once:
 
 - `mcp.server.operation.duration`, a histogram of the call's duration in
-  seconds.
+  seconds, with the bucket boundaries the conventions for MCP give it.
 - `pharo.mcp.tool.input.size` and `pharo.mcp.tool.output.size`, histograms of
   the size of the arguments and of the answer in bytes.
 - `pharo.mcp.tool.output_budget.exceeded`, a counter of the calls whose
   answer was larger than the output budget.
 
-The log events `mcp.session.start` and `mcp.session.end` say when a server
-started and stopped recording. A server running when the image is saved goes
-on in each start of the saved image until it is stopped there. Its session
-started before that start, so its end is recorded neither by
-`mcp.session.end` nor locally, as for a call running when the image is saved.
+The log events `pharo.mcp.server.start` and `pharo.mcp.server.stop` say when
+a server started and stopped recording. A server running when the image is
+saved goes on in each start of the saved image until it is stopped there. It
+started before that start, so its stop is recorded neither by
+`pharo.mcp.server.stop` nor locally, as for a call running when the image is
+saved.
 
 ## What is sent
 

@@ -335,7 +335,8 @@ MCPOpenTelemetryObservabilityBackendTest >> testABackendConfiguredInAnEarlierIma
 	self assert: backend isRecordingTraces.
 	backend instVarNamed: #configuredInSession put: Object new.
 	self deny: backend isRecordingTraces.
-	self assert: backend isConfiguredForTraces
+	self assert: backend recordedSignals isEmpty.
+	self assert: backend isConfiguredToRecord
 ]
 
 { #category : 'tests' }
@@ -459,7 +460,7 @@ MCPOpenTelemetryObservabilityBackendTest >> testACallStartingWhileTheProvidersAr
 
 { #category : 'tests' }
 MCPOpenTelemetryObservabilityBackendTest >> testACallTerminatedBeforeItAnswersEndsItsSpan [
-	"A call whose process is terminated before it answers, by a server stopping or a debugger abandoned, still ends its span, as failed, so that a provider replaced while it ran is not kept waiting for it."
+	"A call whose process is terminated before it answers, which nothing in the server does but a person or code in the image may, still ends its span, as failed, so that a provider replaced while it ran is not kept waiting for it. Neither a cancellation, a timeout nor a closed connection ended it, so its error.type is _OTHER, the conventions' fallback, not tool_error, which they keep for an answer that reports an error."
 
 	| server call |
 	self timeLimit: 30 seconds.
@@ -471,7 +472,11 @@ MCPOpenTelemetryObservabilityBackendTest >> testACallTerminatedBeforeItAnswersEn
 		self assert: (self waitUntil: [ MCPEvaluateTestProbe holder isNotNil ]).
 		call terminate.
 		self assert: (self waitUntil: [ MCPOpenTelemetryObservabilityBackend spansInFlight isEmpty ]).
-		self assert: exporter onlySnapshot status equals: OTSpan error ] ensure: [ MCPEvaluateTestProbe release ]
+		self assert: exporter onlySnapshot status equals: OTSpan error.
+		self assert: (self attributeNamed: 'error.type' in: exporter onlySnapshot) equals: '_OTHER'.
+		self
+			assert: ((self measurementNamed: 'mcp.server.operation.duration') attributes at: 'error.type' ifAbsent: [ nil ])
+			equals: '_OTHER' ] ensure: [ MCPEvaluateTestProbe release ]
 ]
 
 { #category : 'tests' }
@@ -491,6 +496,19 @@ MCPOpenTelemetryObservabilityBackendTest >> testACallThroughToolCallIsAChildOfIt
 	self assert: (self attributeNamed: 'pharo.mcp.dispatch_path' in: inner) equals: 'via_tool_call'.
 	self assert: (self attributeNamed: 'session.id' in: inner) equals: (self attributeNamed: 'session.id' in: outer).
 	self assert: outer status equals: OTSpan unset
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testACallToolCallMakesIsMeasuredOnlyAsItsRequest [
+	"A request is measured once: the call tool_call makes answers no request of its own, so only tool_call's is measured, while each has its span."
+
+	MCPToolRegistry default toolNamed: 'class_search' ifAbsent: [ self skip: 'class_search is not registered' ].
+	self mcp rpcToolCall: 'tool_call' withParams: {
+			('name' -> 'class_search').
+			('arguments' -> { ('query' -> 'Point') } asDictionary) } asDictionary.
+	self assert: exporter snapshots size equals: 2.
+	self assert: (self measurements count: [ :each | each instrument name = 'mcp.server.operation.duration' ]) equals: 1.
+	self assert: (self measurements allSatisfy: [ :each | (each attributes at: 'gen_ai.tool.name') = 'tool_call' ])
 ]
 
 { #category : 'tests' }
@@ -535,6 +553,27 @@ MCPOpenTelemetryObservabilityBackendTest >> testACallersSessionIsKeptAndLeavesTh
 ]
 
 { #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testACallsMeasurementsCarryItsTransportAndProtocolVersion [
+	"As the conventions for MCP ask of the server's duration, as of its span: the transport, Streamable HTTP over HTTP/1.1 and TCP, and the protocol version the request declares."
+
+	| measurement span |
+	backend
+		recordToolCallFinish:
+		(self startToolCallWith: { (#meta -> { (MCP modernProtocolVersionKey -> '2026-07-28') } asDictionary) } asDictionary)
+		result: self successToolResult
+		error: nil.
+	measurement := self measurementNamed: 'mcp.server.operation.duration'.
+	span := exporter onlySnapshot.
+	{
+		('network.transport' -> 'tcp').
+		('network.protocol.name' -> 'http').
+		('network.protocol.version' -> '1.1').
+		('mcp.protocol.version' -> '2026-07-28') } do: [ :each |
+			self assert: (measurement attributes at: each key ifAbsent: [ nil ]) equals: each value.
+			self assert: (self attributeNamed: each key in: span) equals: each value ]
+]
+
+{ #category : 'tests' }
 MCPOpenTelemetryObservabilityBackendTest >> testAConfigurationFileThatSaysWhatTheTelemetryDescribesIsLeftToSayIt [
 
 	| file resource |
@@ -549,7 +588,7 @@ resource:
       value: from-file
 ' ].
 		self withEnvironmentVariable: 'OTEL_CONFIG_FILE' setTo: file fullName do: [
-				backend describeServer: (self serverInfoAt: '1.2.3').
+				backend describeServer: (self serverInfoAt: '1.2.3') for: MCPOpenTelemetrySettings signalNames.
 				self
 					assert: tracerProvider resource identicalTo: resource;
 					assert: (OTTracerProvider configuredResource attributes at: 'service.name') equals: 'from-file' ] ] ensure: [
@@ -560,7 +599,7 @@ resource:
 { #category : 'tests' }
 MCPOpenTelemetryObservabilityBackendTest >> testADescriptionPharoCannotCompleteKeepsWhatItCanAndStillRecords [
 
-	backend describeServer: Object new.
+	backend describeServer: Object new for: MCPOpenTelemetrySettings signalNames.
 	self deny: (tracerProvider resource attributes includesKey: 'service.version').
 	backend recordToolCallFinish: self startToolCall result: self successToolResult error: nil.
 	self assert: exporter onlySnapshot name equals: 'tools/call method_compile'
@@ -617,6 +656,30 @@ MCPOpenTelemetryObservabilityBackendTest >> testAFullRunSendsNothingWhereTheEnvi
 			description: 'A provider made from the environment no longer reaches the receiver.' ] ensure: [
 			receiver stop.
 			directory ensureDeleteAll ]
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testALegacyClientsProtocolVersionIsReadFromItsHeader [
+	"A client of a revision before 2026-07-28 declares its version not in a request's _meta but, from 2025-06-18 on, in its MCP-Protocol-Version header."
+
+	| request |
+	MCPToolRegistry default toolNamed: 'class_search' ifAbsent: [ self skip: 'class_search is not registered' ].
+	request := ZnRequest method: #POST url: ZnUrl new.
+	request entity: (ZnEntity json: (STONJSON toString: {
+					  ('jsonrpc' -> '2.0').
+					  ('id' -> 1).
+					  ('method' -> 'tools/call').
+					  ('params' -> {
+						   ('name' -> 'class_search').
+						   ('arguments' -> { ('query' -> 'Point') } asDictionary) } asDictionary) } asDictionary)).
+	request headers
+		at: 'Accept' put: 'application/json, text/event-stream';
+		at: 'MCP-Protocol-Version' put: '2025-06-18'.
+	self assert: (self mcp server answer: request with: ZnResponse new) code equals: 200.
+	self assert: (self attributeNamed: 'mcp.protocol.version' in: exporter onlySnapshot) equals: '2025-06-18'.
+	self
+		assert: ((self measurementNamed: 'mcp.server.operation.duration') attributes at: 'mcp.protocol.version' ifAbsent: [ nil ])
+		equals: '2025-06-18'
 ]
 
 { #category : 'tests' }
@@ -792,10 +855,10 @@ MCPOpenTelemetryObservabilityBackendTest >> testASessionASaveCarriedIntoALaterSt
 	backend configureFor: (self serverInfoAt: '9.8.7') configured: true.
 	self assert: backend isRecordingTraces.
 	backend recordSessionEnd.
-	self assert: logExporter eventNames equals: #( 'mcp.session.start' ).
+	self assert: logExporter eventNames equals: #( 'pharo.mcp.server.start' ).
 	backend recordSessionStart.
 	backend recordSessionEnd.
-	self assert: logExporter eventNames equals: #( 'mcp.session.start' 'mcp.session.start' 'mcp.session.end' )
+	self assert: logExporter eventNames equals: #( 'pharo.mcp.server.start' 'pharo.mcp.server.start' 'pharo.mcp.server.stop' )
 ]
 
 { #category : 'tests' }
@@ -809,6 +872,25 @@ MCPOpenTelemetryObservabilityBackendTest >> testASessionThatDoesNotReadAsAnIdIsL
 					  ('traceparent' -> self remoteTraceparent).
 					  ('baggage' -> 'session.id=a%20value%20with%20spaces') } asDictionary) } asDictionary)
 		equals: own
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testASignalTheSettingsDoNotAskForGetsNoProvider [
+	"Settings naming an endpoint for traces alone send no metrics and no logs, not even to the SDK's default endpoint: their providers are not made."
+
+	| settings |
+	settings := (MCPOpenTelemetrySettings environment:
+			             (Dictionary newFrom: { ('OTEL_EXPORTER_OTLP_TRACES_ENDPOINT' -> 'http://127.0.0.1:9/v1/traces') }))
+		            home: nil;
+		            yourself.
+	MCPOpenTelemetryObservabilityBackend reconfigure: { backend } with: settings.
+	self assert: backend recordedSignals asArray equals: #( #traces ).
+	backend recordSessionStart.
+	backend recordToolCallFinish: self startToolCall result: self successToolResult error: nil.
+	backend forceFlush.
+	backend recordSessionEnd.
+	self assert: OTMeterProvider currentOrNil isNil.
+	self assert: OTLoggerProvider currentOrNil isNil
 ]
 
 { #category : 'tests' }
@@ -1044,7 +1126,7 @@ MCPOpenTelemetryObservabilityBackendTest >> testConfiguringTakesFromTheSettingsW
 
 { #category : 'tests' }
 MCPOpenTelemetryObservabilityBackendTest >> testContentAskedForCarriesTheArgumentsAndTheAnswerOfACallThatSucceeded [
-	"The answer is its structured content when it has some, else its content, and none for an answer that reports an error."
+	"Each is the object it is, as the conventions ask, not its JSON text. The answer is its structured content when it has some, else its content, and none for an answer that reports an error."
 
 	| structured spans |
 	backend capturesContent: true.
@@ -1056,15 +1138,36 @@ MCPOpenTelemetryObservabilityBackendTest >> testContentAskedForCarriesTheArgumen
 	spans := exporter snapshots.
 	spans do: [ :each |
 			self
-				assert: (STONJSON fromString: (self attributeNamed: 'gen_ai.tool.call.arguments' in: each))
+				assert: (self attributeNamed: 'gen_ai.tool.call.arguments' in: each) asDictionary
 				equals: { ('class' -> 'Object') } asDictionary ].
-	self assert: (STONJSON fromString: (self attributeNamed: 'gen_ai.tool.call.result' in: spans first)) equals: { {
-			('type' -> 'text').
-			('text' -> 'ok') } asDictionary }.
 	self
-		assert: (STONJSON fromString: (self attributeNamed: 'gen_ai.tool.call.result' in: spans second))
+		assert: ((self attributeNamed: 'gen_ai.tool.call.result' in: spans first) collect: [ :each | each asDictionary ])
+		equals: { {
+				('type' -> 'text').
+				('text' -> 'ok') } asDictionary }.
+	self
+		assert: (self attributeNamed: 'gen_ai.tool.call.result' in: spans second) asDictionary
 		equals: { ('found' -> 2) } asDictionary.
 	self assert: (self attributeNamed: 'gen_ai.tool.call.result' in: spans last) isNil
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testContentIsExportedAsAnObject [
+	"OTLP carries the arguments and the answer as an AnyValue map, which the conventions ask for, rather than as a string holding JSON."
+
+	| attributes |
+	backend capturesContent: true.
+	backend
+		recordToolCallFinish: self startToolCall
+		result: (MCPStructureCallToolResult content: #(  ) structuredContent: { ('found' -> 2) } asDictionary)
+		error: nil.
+	attributes := ((((OTOtlpJsonTraceEncoder new encodeSpans: exporter snapshots) at: 'resourceSpans') first at: 'scopeSpans') first
+		               at: 'spans') first at: 'attributes'.
+	#( 'gen_ai.tool.call.arguments' 'gen_ai.tool.call.result' ) do: [ :name |
+			attributes
+				detect: [ :each | (each at: 'key') = name ]
+				ifFound: [ :each | self assert: ((each at: 'value') includesKey: 'kvlistValue') ]
+				ifNone: [ self fail: name , ' is not exported' ] ]
 ]
 
 { #category : 'tests' }
@@ -1183,6 +1286,32 @@ MCPOpenTelemetryObservabilityBackendTest >> testOnlyMCPsOwnPackagesNameAnExcepti
 ]
 
 { #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testOnlyTheSignalsTheSettingsAskForAreRecorded [
+	"Each signal follows its own settings: a call is measured without a span when only metrics are asked for, has a span without measurements when only traces are, and a server's start is logged only when logs are."
+
+	| logExporter |
+	logExporter := MCPOpenTelemetryRecordingLogRecordExporter new.
+	loggerProvider addLogRecordProcessor: (OTSimpleLogRecordProcessor new
+			 exporter: logExporter;
+			 yourself).
+	backend configureFor: (self serverInfoAt: '9.8.7') signals: #( #metrics ).
+	backend recordSessionStart.
+	backend recordToolCallFinish: self startToolCall result: self successToolResult error: nil.
+	self assert: exporter snapshots isEmpty.
+	self deny: (self measurementNamed: 'mcp.server.operation.duration') isNil.
+	measurements := nil.
+	backend configureFor: (self serverInfoAt: '9.8.7') signals: #( #traces ).
+	backend recordSessionStart.
+	backend recordToolCallFinish: self startToolCall result: self successToolResult error: nil.
+	self assert: exporter snapshots size equals: 1.
+	self assert: (self measurementNamed: 'mcp.server.operation.duration') isNil.
+	self assert: logExporter eventNames isEmpty.
+	backend configureFor: (self serverInfoAt: '9.8.7') signals: #( #logs ).
+	backend recordSessionStart.
+	self assert: logExporter eventNames equals: #( 'pharo.mcp.server.start' )
+]
+
+{ #category : 'tests' }
 MCPOpenTelemetryObservabilityBackendTest >> testOutputBeyondTheBudgetIsFlaggedOnTheSpanAndTheRecord [
 
 	| record snapshot |
@@ -1212,7 +1341,7 @@ MCPOpenTelemetryObservabilityBackendTest >> testOutputBudgetExplanationNamesTheB
 MCPOpenTelemetryObservabilityBackendTest >> testProvidersMadeLaterDescribeTheServerToo [
 
 	| attributes |
-	backend describeServer: (self serverInfoAt: '9.8.7').
+	backend describeServer: (self serverInfoAt: '9.8.7') for: #( #traces ).
 	attributes := OTTracerProvider configuredResource attributes.
 	self
 		assert: (attributes at: 'service.version') equals: '9.8.7';
@@ -1352,11 +1481,13 @@ MCPOpenTelemetryObservabilityBackendTest >> testTheClientIsTheOneItsRequestNames
 
 { #category : 'tests' }
 MCPOpenTelemetryObservabilityBackendTest >> testTheEnvironmentAddsAttributesButCannotRenameTheServer [
+	"The resource the program provides wins over the environment's, as the SDK specification has it."
 
 	| attributes |
 	self withEnvironmentVariable: 'OTEL_RESOURCE_ATTRIBUTES' setTo: 'deployment.environment.name=test,service.name=renamed' do: [
-			backend describeServer: (self serverInfoAt: '9.8.7').
-			attributes := tracerProvider resource attributes ].
+			self withEnvironmentVariable: 'OTEL_SERVICE_NAME' setTo: 'renamed-too' do: [
+					backend describeServer: (self serverInfoAt: '9.8.7') for: MCPOpenTelemetrySettings signalNames.
+					attributes := tracerProvider resource attributes ] ].
 	self
 		assert: (attributes at: 'deployment.environment.name') equals: 'test';
 		assert: (attributes at: 'service.name') equals: 'pharo-mcp'
@@ -1377,6 +1508,17 @@ MCPOpenTelemetryObservabilityBackendTest >> testTheExceptionAnErrorAnswerNamesIs
 	self assert: (self attributeNamed: 'pharo.mcp.exception.type' in: snapshot) equals: 'ZeroDivide'.
 	self assert: (self attributeNamed: 'pharo.mcp.error.code' in: snapshot) equals: 'EvaluationRuntimeError'.
 	self assert: (self attributeNamed: 'pharo.mcp.error.kind' in: snapshot) equals: 'domain'
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testTheInstrumentsMeasureAsTheConventionsSay [
+	"mcp.server.operation.duration in seconds, with the bucket boundaries the conventions for MCP give it, and the calls over the output budget counted in calls, as UCUM writes a count of things."
+
+	self assert: backend operationDurationHistogram unit equals: 's'.
+	self
+		assert: backend operationDurationHistogram explicitBucketBoundaries
+		equals: (#( 0.01 0.02 0.05 0.1 0.2 0.5 1 2 5 10 30 60 120 300 ) collect: [ :each | each asFloat ]).
+	self assert: backend outputBudgetExceededCounter unit equals: '{call}'
 ]
 
 { #category : 'tests' }
@@ -1437,7 +1579,10 @@ MCPOpenTelemetryObservabilityBackendTest >> testTheResourceDescribesTheServerAnd
 		tracerProvider.
 		meterProvider.
 		loggerProvider } do: [ :each | each resource: defaults ].
-	self withEnvironmentVariable: 'OTEL_RESOURCE_ATTRIBUTES' setTo: nil do: [ backend describeServer: (self serverInfoAt: '9.8.7') ].
+	self
+		withEnvironmentVariable: 'OTEL_RESOURCE_ATTRIBUTES'
+		setTo: nil
+		do: [ backend describeServer: (self serverInfoAt: '9.8.7') for: MCPOpenTelemetrySettings signalNames ].
 	backend recordToolCallFinish: self startToolCall result: self successToolResult error: nil.
 	attributes := exporter onlySnapshot resource attributes.
 	expected := Set withAll:
@@ -1451,6 +1596,16 @@ MCPOpenTelemetryObservabilityBackendTest >> testTheResourceDescribesTheServerAnd
 		assert: (attributes at: 'process.runtime.name') equals: 'pharo';
 		assert: meterProvider resource attributes equals: attributes;
 		assert: loggerProvider resource attributes equals: attributes
+]
+
+{ #category : 'tests' }
+MCPOpenTelemetryObservabilityBackendTest >> testTheScopeIsMCPsWithItsVersion [
+
+	| scope |
+	backend recordToolCallFinish: self startToolCall result: self successToolResult error: nil.
+	scope := exporter onlySnapshot instrumentationScope.
+	self assert: scope name equals: 'mcp-pharo'.
+	self assert: scope version equals: MCP version
 ]
 
 { #category : 'tests' }

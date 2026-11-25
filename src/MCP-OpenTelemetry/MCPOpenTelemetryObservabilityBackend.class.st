@@ -1,5 +1,5 @@
 "
-Records an MCP server's calls as its local backend does, and through OpenTelemetry when its settings ask for traces: MCP's settings file, or else the OTEL_* environment.
+Records an MCP server's calls as its local backend does, and through OpenTelemetry the signals its settings ask for, each by its own variables: MCP's settings file, or else the OTEL_* environment.
 
 This class lives in the optional MCP-OpenTelemetry package so MCP core can remain free of OpenTelemetry dependencies.
 "
@@ -15,7 +15,6 @@ Class {
 		'outputBudgetExceededCounter',
 		'recordsById',
 		'operationDurationHistogram',
-		'configured',
 		'serverInfo',
 		'clock',
 		'ownSessionId',
@@ -23,7 +22,8 @@ Class {
 		'sessionMutex',
 		'ownSessionImageSession',
 		'configuredInSession',
-		'capturesContent'
+		'capturesContent',
+		'signals'
 	],
 	#classVars : [
 		'Backends',
@@ -49,10 +49,10 @@ MCPOpenTelemetryObservabilityBackend class >> baselineClassNameOf: aProjectSpec 
 
 { #category : 'configuring' }
 MCPOpenTelemetryObservabilityBackend class >> configureProvidersWith: aSettings [
-	"Rebuilds the image's OpenTelemetry from the settings as they are now, and answers whether they ask for traces."
+	"Rebuilds the image's OpenTelemetry from the settings as they are now, and answers the signals they ask for."
 
 	self resetProviders.
-	^ self wantsTraces: aSettings
+	^ self signalsAskedForBy: aSettings
 ]
 
 { #category : 'private - providers' }
@@ -184,6 +184,16 @@ MCPOpenTelemetryObservabilityBackend class >> pharoVersion [
 ]
 
 { #category : 'private - providers' }
+MCPOpenTelemetryObservabilityBackend class >> providerClassFor: aSignal [
+	"The class whose current provider aSignal, one of MCPOpenTelemetrySettings signalNames, is recorded through."
+
+	^ {
+		  (#traces -> OTTracerProvider).
+		  (#metrics -> OTMeterProvider).
+		  (#logs -> OTLoggerProvider) } asDictionary at: aSignal
+]
+
+{ #category : 'private - providers' }
 MCPOpenTelemetryObservabilityBackend class >> providersMutex [
 
 	^ ProvidersMutex ifNil: [ ProvidersMutex := Mutex new ]
@@ -191,22 +201,22 @@ MCPOpenTelemetryObservabilityBackend class >> providersMutex [
 
 { #category : 'configuring' }
 MCPOpenTelemetryObservabilityBackend class >> reconfigure: someBackends with: aSettings [
-	"Configures each of someBackends afresh from aSettings, the providers once for all of them, and whether they record a call's arguments and result. The providers are global and may be the user's: they are rebuilt only when the settings ask for traces or one of these backends was configured to record through them, and then only when the settings in effect are not those they were made from, so that configuring another server leaves the calls running recording as they started. A call starting its span meanwhile waits for all of it, so that it starts in the providers before or after, never in those being replaced."
+	"Configures each of someBackends afresh from aSettings, the providers once for all of them, which signals they record and whether they record a call's arguments and result. The providers are global and may be the user's: they are rebuilt only when the settings ask for a signal or one of these backends was configured to record through them, and then only when the settings in effect are not those they were made from, so that configuring another server leaves the calls running recording as they started. A call starting its span meanwhile waits for all of it, so that it starts in the providers before or after, never in those being replaced."
 
 	self providersMutex critical: [
-			| wanted content settings |
-			wanted := self wantsTraces: aSettings.
+			| signals content settings |
+			signals := self signalsAskedForBy: aSettings.
 			content := [ aSettings capturesContent ]
 				           on: Error
 				           do: [ :error | error return: false ].
 			settings := self settingsInEffectOf: aSettings.
-			((wanted or: [ someBackends anySatisfy: [ :each | each isConfiguredForTraces ] ]) and: [ ProviderSettings ~= settings ])
-				ifTrue: [
-						self resetProviders.
-						ProviderSettings := settings ].
+			((signals isNotEmpty or: [ someBackends anySatisfy: [ :each | each isConfiguredToRecord ] ]) and: [
+				 ProviderSettings ~= settings ]) ifTrue: [
+					self resetProviders.
+					ProviderSettings := settings ].
 			someBackends do: [ :each |
 					each capturesContent: content.
-					[ each configureFor: each serverInfo configured: wanted ]
+					[ each configureFor: each serverInfo signals: signals ]
 						on: Error
 						do: [ :error | error return: nil ] ] ]
 ]
@@ -298,6 +308,20 @@ MCPOpenTelemetryObservabilityBackend class >> retiredTracerProviders [
 	^ RetiredTracerProviders ifNil: [ RetiredTracerProviders := OrderedCollection new ]
 ]
 
+{ #category : 'accessing' }
+MCPOpenTelemetryObservabilityBackend class >> scopeName [
+	"The instrumentation scope a server's spans, metrics and logs come from."
+
+	^ 'mcp-pharo'
+]
+
+{ #category : 'accessing' }
+MCPOpenTelemetryObservabilityBackend class >> scopeVersion [
+	"The scope's version: the MCP release this code belongs to."
+
+	^ MCP version
+]
+
 { #category : 'configuring' }
 MCPOpenTelemetryObservabilityBackend class >> settingsInEffectOf: aSettings [
 	"The settings the providers would be made from now, or a value equal to no other when they cannot be read."
@@ -314,6 +338,17 @@ MCPOpenTelemetryObservabilityBackend class >> shutDownInTheBackground: aProvider
 		[ aProvider shutdown ]
 			on: Error
 			do: [ :error | error return: nil ] ] forkAt: Processor userBackgroundPriority named: 'MCP OpenTelemetry provider shutdown'
+]
+
+{ #category : 'configuring' }
+MCPOpenTelemetryObservabilityBackend class >> signalsAskedForBy: aSettings [
+	"The signals aSettings ask to be exported, once MCP's settings file, when it gives any, has replaced the environment's; none when they cannot be read."
+
+	^ [
+		  aSettings apply.
+		  aSettings signals asArray ]
+		  on: Error
+		  do: [ :error | error return: #(  ) ]
 ]
 
 { #category : 'private - providers' }
@@ -367,17 +402,6 @@ MCPOpenTelemetryObservabilityBackend class >> startUp: resuming [
 		do: [ :error | error return: nil ]
 ]
 
-{ #category : 'configuring' }
-MCPOpenTelemetryObservabilityBackend class >> wantsTraces: aSettings [
-	"Whether aSettings ask for traces, once MCP's settings file, when it gives any, has replaced the environment's."
-
-	^ [
-		  aSettings apply.
-		  aSettings isConfigured ]
-		  on: Error
-		  do: [ false ]
-]
-
 { #category : 'private - recording' }
 MCPOpenTelemetryObservabilityBackend >> addAttributesFrom: aBlock to: attributes [
 	"Adds the attributes aBlock answers, unless it fails: a fact that cannot be read leaves the others, and the span, as they are."
@@ -386,11 +410,18 @@ MCPOpenTelemetryObservabilityBackend >> addAttributesFrom: aBlock to: attributes
 ]
 
 { #category : 'private - reporting' }
+MCPOpenTelemetryObservabilityBackend >> anyValueFor: aJSONValue [
+	"aJSONValue as the OpenTelemetry conventions for GenAI ask a call's arguments and result to be recorded: as an AnyValue, the object it is, rather than its JSON text. It is the value its JSON reads as, as a client reads it, so that its keys are strings and its text has the client's line endings. A value OpenTelemetry cannot carry, such as an integer beyond 64 bits, fails, and the attribute is left out."
+
+	^ OTAttributeNormalizer normalizeAttributeValue: (STONJSON fromString: (self jsonStringFor: aJSONValue))
+]
+
+{ #category : 'private - reporting' }
 MCPOpenTelemetryObservabilityBackend >> argumentAttributesFor: inputObject [
-	"The call's arguments as gen_ai.tool.call.arguments, written as JSON, only when the settings ask for content."
+	"The call's arguments as gen_ai.tool.call.arguments, the object they are, only when the settings ask for content."
 
 	(self capturesContent and: [ inputObject isNotNil ]) ifFalse: [ ^ #(  ) ].
-	^ { ('gen_ai.tool.call.arguments' -> (self jsonStringFor: inputObject)) }
+	^ { ('gen_ai.tool.call.arguments' -> (self anyValueFor: inputObject)) }
 ]
 
 { #category : 'private - reporting' }
@@ -401,6 +432,33 @@ MCPOpenTelemetryObservabilityBackend >> argumentNamesIn: inputObject for: aTool 
 	declared := self declaredArgumentNamesOf: aTool.
 	names := (self reportableArgumentNamesIn: inputObject) select: [ :each | declared includes: each ].
 	^ names first: (names size min: self maxArgumentNames)
+]
+
+{ #category : 'private - spans' }
+MCPOpenTelemetryObservabilityBackend >> beginCall: aRecord named: aToolName input: inputObject context: contextDictionary [
+	"Keeps what the call's end needs: its span, when the settings ask for traces; the name the server gives its tool; whose tool it is; the tool, for what its schema declares; and what its measurements carry, unless a call dispatched it: it then answers no request of its own, and the request that did is measured already. A span that fails to start leaves the rest kept."
+
+	| name tool origin operation measured span |
+	name := self reportableToolName: aToolName in: contextDictionary.
+	tool := contextDictionary at: #tool ifAbsent: [ nil ].
+	origin := self originOfTool: tool.
+	operation := self operationAttributesNamed: name origin: origin context: contextDictionary.
+	measured := (contextDictionary at: #parentRecord ifAbsent: [ nil ]) isNil.
+	(self isRecording: #traces) ifTrue: [
+			span := self withoutFailingTheCall: [
+					        self
+						        startSpanNamed: name
+						        for: aRecord
+						        operation: operation
+						        input: inputObject
+						        context: contextDictionary ] ].
+	self critical: [
+			recordsById at: aRecord id put: {
+					span.
+					name.
+					origin.
+					tool.
+					(measured ifTrue: [ operation ]) } ]
 ]
 
 { #category : 'accessing' }
@@ -459,7 +517,24 @@ MCPOpenTelemetryObservabilityBackend >> clock: aBlock [
 
 { #category : 'configuring' }
 MCPOpenTelemetryObservabilityBackend >> configureFor: aServerInfo configured: aBoolean [
-	"Records through OpenTelemetry from now on, in this image session, through the providers as they now are, only when aBoolean, so the settings ask for traces, and the providers could be made to describe the server. Instruments made from earlier providers are dropped."
+	"Configures it as settings that ask for every signal, or for none, would."
+
+	self configureFor: aServerInfo signals: (aBoolean
+			 ifTrue: [ MCPOpenTelemetrySettings signalNames ]
+			 ifFalse: [ #(  ) ])
+]
+
+{ #category : 'configuring' }
+MCPOpenTelemetryObservabilityBackend >> configureFor: aServerInfo settings: aSettings [
+	"Configures this backend from aSettings, and every other backend of its kind the image holds with it: the providers are global, so rebuilding them for one would leave the others recording through providers that were shut down. They are rebuilt only when the settings ask for a signal or one of these backends was configured to record through them, since they may be the user's, and only when the settings are not those they were made from."
+
+	serverInfo := aServerInfo.
+	self class reconfigure: ((self class registeredBackends reject: [ :each | each == self ]) copyWith: self) with: aSettings
+]
+
+{ #category : 'configuring' }
+MCPOpenTelemetryObservabilityBackend >> configureFor: aServerInfo signals: someSignals [
+	"Records through OpenTelemetry from now on, in this image session, through the providers as they now are, the signals of someSignals, those the settings ask for, once the providers of those signals could be made to describe the server; else none. Instruments made from earlier providers are dropped."
 
 	serverInfo := aServerInfo.
 	tracer := nil.
@@ -470,15 +545,9 @@ MCPOpenTelemetryObservabilityBackend >> configureFor: aServerInfo configured: aB
 	outputBudgetExceededCounter := nil.
 	operationDurationHistogram := nil.
 	configuredInSession := Smalltalk session.
-	configured := aBoolean and: [ self describeServer: aServerInfo ]
-]
-
-{ #category : 'configuring' }
-MCPOpenTelemetryObservabilityBackend >> configureFor: aServerInfo settings: aSettings [
-	"Configures this backend from aSettings, and every other backend of its kind the image holds with it: the providers are global, so rebuilding them for one would leave the others recording through providers that were shut down. They are rebuilt only when the settings ask for traces or one of these backends was configured to record through them, since they may be the user's, and only when the settings are not those they were made from."
-
-	serverInfo := aServerInfo.
-	self class reconfigure: ((self class registeredBackends reject: [ :each | each == self ]) copyWith: self) with: aSettings
+	signals := (someSignals isNotEmpty and: [ self describeServer: aServerInfo for: someSignals ])
+		           ifTrue: [ someSignals asArray ]
+		           ifFalse: [ #(  ) ]
 ]
 
 { #category : 'configuring' }
@@ -518,8 +587,8 @@ MCPOpenTelemetryObservabilityBackend >> declaredPartOf: aPath in: aSchema [
 ]
 
 { #category : 'resource' }
-MCPOpenTelemetryObservabilityBackend >> describeServer: aServerInfo [
-	"Makes the image's OpenTelemetry providers describe this server and nothing that identifies the machine, its user or the image, now and whenever they are made again, unless a configuration file says what they describe. Answers whether they do. A provider the SDK would not let describe the server would describe the machine through its default detectors instead, so then nothing is recorded."
+MCPOpenTelemetryObservabilityBackend >> describeServer: aServerInfo for: someSignals [
+	"Makes the image's OpenTelemetry providers of someSignals, and every provider made from now on, describe this server and nothing that identifies the machine, its user or the image, unless a configuration file says what they describe. Answers whether they do. A provider the SDK would not let describe the server would describe the machine through its default detectors instead, so then nothing is recorded. The provider of a signal not asked for is not made, so that it sends nothing."
 
 	| detectors resource |
 	self class resourceIsConfigured ifTrue: [ ^ true ].
@@ -527,10 +596,7 @@ MCPOpenTelemetryObservabilityBackend >> describeServer: aServerInfo [
 		  detectors := self class resourceDetectorsFor: aServerInfo.
 		  resource := OTTracerProvider resourceFromDetectors: detectors.
 		  OTTracerProvider resourceDetectors: detectors.
-		  {
-			  OTTracerProvider.
-			  OTMeterProvider.
-			  OTLoggerProvider } do: [ :each | each current resource: resource ].
+		  someSignals do: [ :each | (self class providerClassFor: each) current resource: resource ].
 		  true ]
 		  on: Error
 		  do: [ false ]
@@ -562,11 +628,14 @@ MCPOpenTelemetryObservabilityBackend >> endSpan: span withAttributes: attributes
 ]
 
 { #category : 'private - reporting' }
-MCPOpenTelemetryObservabilityBackend >> errorTypeFor: anError [
-	"error.type as the conventions for MCP spell it: tool_error for a call answered with a result that reports an error, and the JSON-RPC code of a protocol error, unless that code says the caller sent a request the server could not serve, which is no error of the server's: then nil."
+MCPOpenTelemetryObservabilityBackend >> errorTypeFor: anError result: aToolResult [
+	"error.type as the conventions for MCP spell it for a call that failed: the JSON-RPC code of a protocol error, unless that code says the caller sent a request the server could not serve, which is no error of the server's: then nil; tool_error for a call answered with a result that reports an error; and _OTHER, the conventions' fallback, for a call answered with neither, whose process was terminated before it answered. Nothing in the server terminates a call's process: a cancellation is not acted on, and a timeout or a closed connection leaves the call running, so none of their values names what ended it."
 
 	| code |
-	(anError isNotNil and: [ anError mcpIsProtocolError ]) ifFalse: [ ^ 'tool_error' ].
+	(anError isNotNil and: [ anError mcpIsProtocolError ]) ifFalse: [
+			^ (anError isNil and: [ aToolResult isNil ])
+				  ifTrue: [ '_OTHER' ]
+				  ifFalse: [ 'tool_error' ] ].
 	code := (self rpcStatusCodeFor: anError) ifNil: [ ^ '_OTHER' ].
 	^ (self isServerErrorCode: code)
 		  ifTrue: [ code ]
@@ -616,18 +685,15 @@ MCPOpenTelemetryObservabilityBackend >> finishAttributesFor: aRecord result: aTo
 ]
 
 { #category : 'private - flushing' }
-MCPOpenTelemetryObservabilityBackend >> flushProvidersWithin: milliseconds [
-	"The flush goes on in the background past the wait. An error there is dropped: in a headless image an unhandled one would quit it."
+MCPOpenTelemetryObservabilityBackend >> flushProvidersOf: someSignals within: milliseconds [
+	"The flush goes on in the background past the wait. An error there is dropped: in a headless image an unhandled one would quit it. The provider of a signal not recorded is not made, so that it sends nothing."
 
 	| done |
 	done := Semaphore new.
 	[
 		[
-			{
-				OTTracerProvider.
-				OTMeterProvider.
-				OTLoggerProvider } do: [ :each |
-					[ each current forceFlush ]
+			someSignals do: [ :each |
+					[ (self class providerClassFor: each) current forceFlush ]
 						on: Error
 						do: [ :error | error return: nil ] ] ] ensure: [ done signal ] ]
 		forkAt: Processor userBackgroundPriority
@@ -643,10 +709,10 @@ MCPOpenTelemetryObservabilityBackend >> flushTimeoutMilliseconds [
 
 { #category : 'actions' }
 MCPOpenTelemetryObservabilityBackend >> forceFlush [
-	"Writes the local metrics, and gives OpenTelemetry's providers at most flushTimeoutMilliseconds to send what they hold, so that stopping a server never waits on an unreachable collector."
+	"Writes the local metrics, and gives the providers of the signals it records at most flushTimeoutMilliseconds to send what they hold, so that stopping a server never waits on an unreachable collector."
 
 	super forceFlush.
-	self isRecordingTraces ifTrue: [ self flushProvidersWithin: self flushTimeoutMilliseconds ]
+	self recordedSignals ifNotEmpty: [ :recorded | self flushProvidersOf: recorded within: self flushTimeoutMilliseconds ]
 ]
 
 { #category : 'initialization' }
@@ -667,10 +733,10 @@ MCPOpenTelemetryObservabilityBackend >> inputSizeHistogram [
 ]
 
 { #category : 'testing' }
-MCPOpenTelemetryObservabilityBackend >> isConfiguredForTraces [
-	"Whether settings that ask for traces configured it, so that the providers are its doing."
+MCPOpenTelemetryObservabilityBackend >> isConfiguredToRecord [
+	"Whether settings that ask for a signal configured it, so that the providers are its doing."
 
-	^ configured == true
+	^ self signals isNotEmpty
 ]
 
 { #category : 'private - reporting' }
@@ -680,10 +746,16 @@ MCPOpenTelemetryObservabilityBackend >> isList: anObject [
 ]
 
 { #category : 'testing' }
-MCPOpenTelemetryObservabilityBackend >> isRecordingTraces [
-	"Whether it records traces through the providers as they are: only once configured, in this image session, from settings that ask for traces and with providers that describe its server. A backend nobody configured, or configured in an earlier image session, whose settings this one may not have, until the image's start configures it again, records none. It records locally either way."
+MCPOpenTelemetryObservabilityBackend >> isRecording: aSignal [
+	"Whether it records aSignal, one of MCPOpenTelemetrySettings signalNames, through the providers as they are."
 
-	^ self isConfiguredForTraces and: [ configuredInSession == Smalltalk session ]
+	^ self recordedSignals includes: aSignal
+]
+
+{ #category : 'testing' }
+MCPOpenTelemetryObservabilityBackend >> isRecordingTraces [
+
+	^ self isRecording: #traces
 ]
 
 { #category : 'private - reporting' }
@@ -724,7 +796,13 @@ MCPOpenTelemetryObservabilityBackend >> logger [
 	"Made under the providers' critical section, so never from a provider a reconfiguration is replacing."
 
 	logger ifNotNil: [ ^ logger ].
-	^ self class providersMutex critical: [ logger ifNil: [ logger := OTLoggerProvider current loggerNamed: 'mcp-pharo' ] ]
+	^ self class providersMutex critical: [
+			  logger ifNil: [
+					  logger := OTLoggerProvider current
+						            loggerNamed: self class scopeName
+						            version: self class scopeVersion
+						            schemaUrl: ''
+						            attributes: #(  ) ] ]
 ]
 
 { #category : 'private - reporting' }
@@ -756,7 +834,13 @@ MCPOpenTelemetryObservabilityBackend >> meter [
 	"Made under the providers' critical section, so never from a provider a reconfiguration is replacing."
 
 	meter ifNotNil: [ ^ meter ].
-	^ self class providersMutex critical: [ meter ifNil: [ meter := OTMeterProvider current meterNamed: 'mcp-pharo' ] ]
+	^ self class providersMutex critical: [
+			  meter ifNil: [
+					  meter := OTMeterProvider current
+						           meterNamed: self class scopeName
+						           version: self class scopeVersion
+						           schemaUrl: ''
+						           attributes: #(  ) ] ]
 ]
 
 { #category : 'private - reporting' }
@@ -770,14 +854,44 @@ MCPOpenTelemetryObservabilityBackend >> nestedSchemaOf: aProperty [
 	^ nil
 ]
 
+{ #category : 'private - spans' }
+MCPOpenTelemetryObservabilityBackend >> operationAttributesNamed: aToolName origin: anOrigin context: contextDictionary [
+	"What a call's span and its measurements both carry: the operation and its tool, as the OpenTelemetry conventions for MCP name them; the transport, Streamable HTTP, which this server speaks as HTTP/1.1 over TCP; the protocol version the request declares, when it declares one; and whose tool it is."
+
+	| attributes |
+	attributes := OrderedCollection new.
+	attributes
+		add: 'mcp.method.name' -> 'tools/call';
+		add: 'gen_ai.tool.name' -> aToolName;
+		add: 'gen_ai.operation.name' -> 'execute_tool';
+		add: 'network.transport' -> 'tcp';
+		add: 'network.protocol.name' -> 'http';
+		add: 'network.protocol.version' -> '1.1';
+		add: 'pharo.mcp.tool.origin' -> anOrigin.
+	self
+		addAttributesFrom: [
+		(self protocolVersionIn: contextDictionary) ifNil: [ #(  ) ] ifNotNil: [ :version | { ('mcp.protocol.version' -> version) } ] ]
+		to: attributes.
+	^ attributes asArray
+]
+
+{ #category : 'private - instruments' }
+MCPOpenTelemetryObservabilityBackend >> operationDurationBucketBoundaries [
+	"The bucket boundaries, in seconds, the OpenTelemetry conventions for MCP give mcp.server.operation.duration."
+
+	^ #( 0.01 0.02 0.05 0.1 0.2 0.5 1 2 5 10 30 60 120 300 )
+]
+
 { #category : 'private - instruments' }
 MCPOpenTelemetryObservabilityBackend >> operationDurationHistogram [
+	"In seconds, with the bucket boundaries the conventions for MCP give it."
 
 	operationDurationHistogram ifNotNil: [ ^ operationDurationHistogram ].
 	operationDurationHistogram := self meter
 		                              histogramNamed: 'mcp.server.operation.duration'
 		                              unit: 's'
-		                              description: 'MCP request duration as observed on the receiver'.
+		                              description: 'MCP request duration as observed on the receiver'
+		                              advice: { ('ExplicitBucketBoundaries' -> self operationDurationBucketBoundaries) } asDictionary.
 	^ operationDurationHistogram
 ]
 
@@ -865,7 +979,7 @@ MCPOpenTelemetryObservabilityBackend >> outputBudgetExceededCounter [
 	outputBudgetExceededCounter ifNotNil: [ ^ outputBudgetExceededCounter ].
 	outputBudgetExceededCounter := self meter
 		                               counterNamed: 'pharo.mcp.tool.output_budget.exceeded'
-		                               unit: '1'
+		                               unit: '{call}'
 		                               description: 'MCP tool calls exceeding output budget'.
 	^ outputBudgetExceededCounter
 ]
@@ -945,25 +1059,20 @@ MCPOpenTelemetryObservabilityBackend >> pointerFor: aPath [
 
 { #category : 'private - spans' }
 MCPOpenTelemetryObservabilityBackend >> protocolVersionIn: contextDictionary [
-	"The protocol version a modern request declares in its _meta; a legacy one declares it only at initialize, which this call does not see."
+	"The protocol version the request declares: in its _meta, as a modern request does, else in its MCP-Protocol-Version header, which a client sends on every request after initialize from the 2025-06-18 revision on. A client of an earlier revision declares it only at initialize, which this call does not see. A request declaring a version the server does not support is refused, so either names one of the server's."
 
 	| meta |
-	meta := contextDictionary at: #meta ifAbsent: [ ^ nil ].
-	meta isDictionary ifFalse: [ ^ nil ].
-	^ meta at: MCP modernProtocolVersionKey ifAbsent: [ nil ]
+	meta := contextDictionary at: #meta ifAbsent: [ nil ].
+	meta isDictionary ifTrue: [ meta at: MCP modernProtocolVersionKey ifPresent: [ :version | ^ version ] ].
+	^ contextDictionary at: #protocolVersion ifAbsent: [ nil ]
 ]
 
 { #category : 'private - metrics' }
-MCPOpenTelemetryObservabilityBackend >> recordMetricsFor: aRecord named: aToolName origin: anOrigin errorType: errorType rpcStatusCode: aCode [
-	"The call's duration and sizes, with the attributes the conventions for MCP give the server's duration: error.type for the server's error, and the code of the JSON-RPC error it was answered with."
+MCPOpenTelemetryObservabilityBackend >> recordMetricsFor: aRecord attributes: someAttributes errorType: errorType rpcStatusCode: aCode [
+	"The call's duration and sizes, with the attributes its span carries too and those the conventions for MCP give the server's duration: error.type for the server's error, and the code of the JSON-RPC error it was answered with."
 
 	| attributes |
-	attributes := OrderedCollection new.
-	attributes
-		add: 'mcp.method.name' -> 'tools/call';
-		add: 'gen_ai.tool.name' -> aToolName;
-		add: 'gen_ai.operation.name' -> 'execute_tool';
-		add: 'pharo.mcp.tool.origin' -> anOrigin.
+	attributes := OrderedCollection withAll: someAttributes.
 	errorType ifNotNil: [ attributes add: 'error.type' -> errorType ].
 	aCode ifNotNil: [ attributes add: 'rpc.status_code' -> aCode ].
 	attributes := attributes asArray.
@@ -975,45 +1084,51 @@ MCPOpenTelemetryObservabilityBackend >> recordMetricsFor: aRecord named: aToolNa
 
 { #category : 'recording' }
 MCPOpenTelemetryObservabilityBackend >> recordSessionEnd [
-	"Emits the session's end, unless the session started before the image last started: a save carried it into this start, and it ends silently, as a call does."
+	"Emits pharo.mcp.server.stop when the settings ask for logs, unless the server started before the image last started: a save carried it into this start, and it stops silently, as a call ends."
 
-	(self isRecordingTraces and: [ self sessionStartedInAnEarlierImageSession not ]) ifTrue: [
-		self withoutFailingTheCall: [ self emitEventNamed: 'mcp.session.end' body: 'MCP session ended' ] ].
+	((self isRecording: #logs) and: [ self sessionStartedInAnEarlierImageSession not ]) ifTrue: [
+		self withoutFailingTheCall: [ self emitEventNamed: 'pharo.mcp.server.stop' body: 'MCP server stopped' ] ].
 	super recordSessionEnd
 ]
 
 { #category : 'recording' }
 MCPOpenTelemetryObservabilityBackend >> recordSessionStart [
+	"Emits pharo.mcp.server.start when the settings ask for logs: the server started, not an MCP session, which the server does not keep."
 
 	super recordSessionStart.
-	self isRecordingTraces ifTrue: [
-		self withoutFailingTheCall: [ self emitEventNamed: 'mcp.session.start' body: 'MCP session started' ] ]
+	(self isRecording: #logs) ifTrue: [
+		self withoutFailingTheCall: [ self emitEventNamed: 'pharo.mcp.server.start' body: 'MCP server started' ] ]
 ]
 
 { #category : 'recording' }
 MCPOpenTelemetryObservabilityBackend >> recordToolCallFinish: aRecord result: aToolResult error: anError [
-	"Records the end of the call locally, and ends its span when one was started. When the settings stopped asking for traces while the call ran, the span is dropped, never ended, so never sent, and nothing is made to record the call: it would go where settings no longer say. So it is when the call started before the image last started, which a save carried into this start, whatever the settings now: the session that started it is the one it belongs to, and the time it took is the time the image was not running. A call refused with a code that says the caller sent a request the server could not serve did not succeed, and is no error of the server's: it has no error.type and its span's status stays unset. Each step is guarded on its own, and the span ends whatever fails before it."
+	"Records the end of the call locally, and through OpenTelemetry what the settings ask for: its measurements, unless a call dispatched it, and the end of its span, when one was started. What the settings stopped asking for while the call ran is not recorded: no instrument is made to measure the call, and its span is dropped, never ended, so never sent, since either would go where the settings no longer say. Neither is recorded for a call that started before the image last started, which a save carried into this start, whatever the settings now: the session that started it is the one it belongs to, and the time it took is the time the image was not running. A call refused with a code that says the caller sent a request the server could not serve did not succeed, and is no error of the server's: it has no error.type and its span's status stays unset. Each step is guarded on its own, and the span ends whatever fails before it."
 
-	| entry errorType rpcStatusCode attributes |
+	| entry span errorType rpcStatusCode attributes |
 	self withoutFailingTheCall: [ super recordToolCallFinish: aRecord result: aToolResult error: anError ].
 	aRecord ifNil: [ ^ nil ].
 	entry := self critical: [ recordsById removeKey: aRecord id ifAbsent: [ nil ] ].
 	entry ifNil: [ ^ aRecord ].
-	(aRecord startedInAnEarlierImageSession or: [ self isRecordingTraces not ]) ifTrue: [
-			self withoutFailingTheCall: [ self class spanEnded: entry first ].
+	span := entry first.
+	aRecord startedInAnEarlierImageSession ifTrue: [
+			span ifNotNil: [ self withoutFailingTheCall: [ self class spanEnded: span ] ].
 			^ aRecord ].
 	errorType := self withoutFailingTheCall: [
 			             aRecord status = 'error'
-				             ifTrue: [ self errorTypeFor: anError ]
+				             ifTrue: [ self errorTypeFor: anError result: aToolResult ]
 				             ifFalse: [ nil ] ].
 	rpcStatusCode := self withoutFailingTheCall: [ self rpcStatusCodeFor: anError ].
-	self withoutFailingTheCall: [
-			self
-				recordMetricsFor: aRecord
-				named: (entry at: 2)
-				origin: (entry at: 3)
-				errorType: errorType
-				rpcStatusCode: rpcStatusCode ].
+	((self isRecording: #metrics) and: [ (entry at: 5 ifAbsent: [ nil ]) isNotNil ]) ifTrue: [
+			self withoutFailingTheCall: [
+					self
+						recordMetricsFor: aRecord
+						attributes: (entry at: 5)
+						errorType: errorType
+						rpcStatusCode: rpcStatusCode ] ].
+	span ifNil: [ ^ aRecord ].
+	self isRecordingTraces ifFalse: [
+			self withoutFailingTheCall: [ self class spanEnded: span ].
+			^ aRecord ].
 	attributes := (self withoutFailingTheCall: [
 			               self
 				               finishAttributesFor: aRecord
@@ -1022,7 +1137,7 @@ MCPOpenTelemetryObservabilityBackend >> recordToolCallFinish: aRecord result: aT
 				               error: anError
 				               errorType: errorType ]) ifNil: [ #(  ) ].
 	self
-		endSpan: entry first
+		endSpan: span
 		withAttributes: attributes
 		failedWith: (errorType ifNotNil: [ (self withoutFailingTheCall: [ self statusDescriptionFor: anError ]) ifNil: [ '' ] ])
 		record: aRecord
@@ -1032,7 +1147,7 @@ MCPOpenTelemetryObservabilityBackend >> recordToolCallFinish: aRecord result: aT
 
 { #category : 'recording' }
 MCPOpenTelemetryObservabilityBackend >> recordToolCallStart: aToolName input: inputObject dispatchPath: dispatchPath context: contextDictionary [
-	"Records the call locally, and starts its span when the settings ask for traces."
+	"Records the call locally, and begins recording it through OpenTelemetry when the settings ask for traces or metrics."
 
 	| record |
 	record := super
@@ -1040,14 +1155,22 @@ MCPOpenTelemetryObservabilityBackend >> recordToolCallStart: aToolName input: in
 		          input: inputObject
 		          dispatchPath: dispatchPath
 		          context: contextDictionary.
-	(record isNil or: [ self isRecordingTraces not ]) ifTrue: [ ^ record ].
+	(record isNil or: [ (self isRecording: #traces) not and: [ (self isRecording: #metrics) not ] ]) ifTrue: [ ^ record ].
 	self withoutFailingTheCall: [
 			self
-				startSpanFor: record
+				beginCall: record
 				named: aToolName
 				input: inputObject
 				context: contextDictionary ].
 	^ record
+]
+
+{ #category : 'accessing' }
+MCPOpenTelemetryObservabilityBackend >> recordedSignals [
+	"The signals it records through the providers as they are: those it was configured for, in this image session. A backend nobody configured, or configured in an earlier image session, whose settings this one may not have, until the image's start configures it again, records none. It records locally either way."
+
+	configuredInSession == Smalltalk session ifFalse: [ ^ #(  ) ].
+	^ self signals
 ]
 
 { #category : 'private - reporting' }
@@ -1149,10 +1272,10 @@ MCPOpenTelemetryObservabilityBackend >> resultAttributesFor: aToolResult origin:
 
 { #category : 'private - reporting' }
 MCPOpenTelemetryObservabilityBackend >> resultContentAttributesFor: aToolResult [
-	"The call's answer as gen_ai.tool.call.result: its structured content, or else its content, written as JSON, only when the settings ask for content."
+	"The call's answer as gen_ai.tool.call.result: the object its structured content is, or else its content, only when the settings ask for content."
 
 	(self capturesContent and: [ aToolResult isNotNil ]) ifFalse: [ ^ #(  ) ].
-	^ { ('gen_ai.tool.call.result' -> (self jsonStringFor: (aToolResult structuredContent ifNil: [ aToolResult content ]) asJRPCJSON)) }
+	^ { ('gen_ai.tool.call.result' -> (self anyValueFor: (aToolResult structuredContent ifNil: [ aToolResult content ]) asJRPCJSON)) }
 ]
 
 { #category : 'private - reporting' }
@@ -1250,6 +1373,13 @@ MCPOpenTelemetryObservabilityBackend >> sessionMutex [
 	^ sessionMutex ifNil: [ sessionMutex := Mutex new ]
 ]
 
+{ #category : 'accessing' }
+MCPOpenTelemetryObservabilityBackend >> signals [
+	"The signals it records through OpenTelemetry, as the settings it was last configured from ask: none until it is configured, and none when the providers of those signals could not be made to describe its server."
+
+	^ signals ifNil: [ #(  ) ]
+]
+
 { #category : 'private - spans' }
 MCPOpenTelemetryObservabilityBackend >> spanOfRecord: aRecord [
 	"The span of a call still running, or nil."
@@ -1259,19 +1389,12 @@ MCPOpenTelemetryObservabilityBackend >> spanOfRecord: aRecord [
 ]
 
 { #category : 'private - spans' }
-MCPOpenTelemetryObservabilityBackend >> startAttributesFor: aRecord named: aToolName origin: anOrigin input: inputObject context: contextDictionary parent: aContext [
-	"The attributes known when a call starts, set before the span starts so a sampler sees them. They follow the OpenTelemetry conventions for MCP where those name the fact, and say nothing the caller passed but the request's id, argument names, those its tool declares apart from the others, the options its tool's schema offers that it chose, the session its trace context names, or else the server's own, the client it says it is, whether the server lists its tool in tools/list, and the arguments themselves when the settings ask for content. Each fact is read on its own, so one that cannot be read leaves the others."
+MCPOpenTelemetryObservabilityBackend >> startAttributesFor: aRecord input: inputObject context: contextDictionary parent: aContext [
+	"The attributes a call's span has from its start beside those its measurements carry too, set before the span starts so a sampler sees them. They follow the OpenTelemetry conventions for MCP where those name the fact, and say nothing the caller passed but the request's id, argument names, those its tool declares apart from the others, the options its tool's schema offers that it chose, the session its trace context names, or else the server's own, the client it says it is, whether the server lists its tool in tools/list, and the arguments themselves when the settings ask for content. Each fact is read on its own, so one that cannot be read leaves the others."
 
 	| attributes tool |
 	tool := contextDictionary at: #tool ifAbsent: [ nil ].
 	attributes := OrderedCollection new.
-	attributes
-		add: 'mcp.method.name' -> 'tools/call';
-		add: 'gen_ai.tool.name' -> aToolName;
-		add: 'gen_ai.operation.name' -> 'execute_tool';
-		add: 'network.transport' -> 'tcp';
-		add: 'network.protocol.name' -> 'http';
-		add: 'pharo.mcp.tool.origin' -> anOrigin.
 	self
 		addAttributesFrom: [
 		(self requestIdIn: contextDictionary) ifNil: [ #(  ) ] ifNotNil: [ :id | { ('jsonrpc.request.id' -> id) } ] ]
@@ -1285,10 +1408,6 @@ MCPOpenTelemetryObservabilityBackend >> startAttributesFor: aRecord named: aTool
 				ifAbsent: [ #(  ) ] ]
 		to: attributes.
 	self addAttributesFrom: [ { ('session.id' -> (self sessionIdFor: aContext)) } ] to: attributes.
-	self
-		addAttributesFrom: [
-		(self protocolVersionIn: contextDictionary) ifNil: [ #(  ) ] ifNotNil: [ :version | { ('mcp.protocol.version' -> version) } ] ]
-		to: attributes.
 	self addAttributesFrom: [ self clientAttributesIn: contextDictionary ] to: attributes.
 	self
 		addAttributesFrom: [
@@ -1313,36 +1432,25 @@ MCPOpenTelemetryObservabilityBackend >> startAttributesFor: aRecord named: aTool
 ]
 
 { #category : 'private - spans' }
-MCPOpenTelemetryObservabilityBackend >> startSpanFor: aRecord named: aToolName input: inputObject context: contextDictionary [
-	"Starts the call's span, named as the server names its tool, as a child of the call that dispatched it when one did, else of the caller's trace context. The tool is kept with the span, for what its schema declares when the call ends. The span is started and known to be running in one critical section, which a reconfiguration takes too, so that the provider it is started in is not shut down before it ends."
+MCPOpenTelemetryObservabilityBackend >> startSpanNamed: aName for: aRecord operation: operationAttributes input: inputObject context: contextDictionary [
+	"Starts the call's span, named as the server names its tool, as a child of the call that dispatched it when one did, else of the caller's trace context. The span is started and known to be running in one critical section, which a reconfiguration takes too, so that the provider it is started in is not shut down before it ends."
 
-	| name tool origin parent attributes span |
-	name := self reportableToolName: aToolName in: contextDictionary.
-	tool := contextDictionary at: #tool ifAbsent: [ nil ].
-	origin := self originOfTool: tool.
+	| parent attributes |
 	parent := self parentContextIn: contextDictionary.
-	attributes := self
-		              startAttributesFor: aRecord
-		              named: name
-		              origin: origin
-		              input: inputObject
-		              context: contextDictionary
-		              parent: parent.
-	span := self class providersMutex critical: [
-			        | started |
-			        started := (self tracer spanBuilderNamed: 'tools/call ' , name)
-				                   kind: OTSpan server;
-				                   inContext: parent;
-				                   attributes: attributes;
-				                   startSpan.
-			        self class spanStarted: started.
-			        started ].
-	self critical: [
-			recordsById at: aRecord id put: {
-					span.
-					name.
-					origin.
-					tool } ]
+	attributes := operationAttributes , (self
+		               startAttributesFor: aRecord
+		               input: inputObject
+		               context: contextDictionary
+		               parent: parent).
+	^ self class providersMutex critical: [
+			  | started |
+			  started := (self tracer spanBuilderNamed: 'tools/call ' , aName)
+				             kind: OTSpan server;
+				             inContext: parent;
+				             attributes: attributes;
+				             startSpan.
+			  self class spanStarted: started.
+			  started ]
 ]
 
 { #category : 'private - reporting' }
@@ -1399,7 +1507,13 @@ MCPOpenTelemetryObservabilityBackend >> tracer [
 	"Made under the providers' critical section, so never from a provider a reconfiguration is replacing."
 
 	tracer ifNotNil: [ ^ tracer ].
-	^ self class providersMutex critical: [ tracer ifNil: [ tracer := OTTracerProvider current tracerNamed: 'mcp-pharo' ] ]
+	^ self class providersMutex critical: [
+			  tracer ifNil: [
+					  tracer := OTTracerProvider current
+						            tracerNamed: self class scopeName
+						            version: self class scopeVersion
+						            schemaUrl: ''
+						            attributes: #(  ) ] ]
 ]
 
 { #category : 'private - reporting' }
