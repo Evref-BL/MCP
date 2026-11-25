@@ -546,15 +546,15 @@ MCPOpenTelemetryObservabilityBackend >> emitEventNamed: eventName body: bodyStri
 ]
 
 { #category : 'private - spans' }
-MCPOpenTelemetryObservabilityBackend >> endSpan: span withAttributes: attributes description: aString record: aRecord at: finishedAt [
-	"Instrumentation leaves a successful span's status unset. A failed one is marked with aString as its description, which the conventions make the JSON-RPC error's message. The span ends whatever fails before: one never ended is never exported, as if the image had never received the call."
+MCPOpenTelemetryObservabilityBackend >> endSpan: span withAttributes: attributes failedWith: aStringOrNil record: aRecord at: finishedAt [
+	"Instrumentation leaves the status unset for a call that succeeded, and for one refused with a code that says the caller sent a request the server could not serve: aStringOrNil is nil for both. Any other failure is marked with aStringOrNil as its description, which the conventions make the JSON-RPC error's message. The span ends whatever fails before: one never ended is never exported, as if the image had never received the call."
 
 	span ifNil: [ ^ nil ].
 	[
 		attributes do: [ :each | self withoutFailingTheCall: [ span attributeAt: each key put: each value ] ].
 		self withoutFailingTheCall: [
 			aRecord outputBudgetExceeded ifTrue: [ span addEventNamed: 'pharo.mcp.output_budget_exceeded' attributes: #(  ) ] ].
-		self withoutFailingTheCall: [ aRecord status = 'error' ifTrue: [ span setStatus: OTSpan error description: aString ] ] ] ensure: [
+		self withoutFailingTheCall: [ aStringOrNil ifNotNil: [ span setStatus: OTSpan error description: aStringOrNil ] ] ] ensure: [
 			(self withoutFailingTheCall: [
 					 span end: finishedAt.
 					 true ]) ifNil: [ self withoutFailingTheCall: [ span end ] ].
@@ -563,17 +563,19 @@ MCPOpenTelemetryObservabilityBackend >> endSpan: span withAttributes: attributes
 
 { #category : 'private - reporting' }
 MCPOpenTelemetryObservabilityBackend >> errorTypeFor: anError [
-	"error.type as the conventions for MCP spell it: the JSON-RPC code of a protocol error, and tool_error for a call answered with a result that reports one."
+	"error.type as the conventions for MCP spell it: tool_error for a call answered with a result that reports an error, and the JSON-RPC code of a protocol error, unless that code says the caller sent a request the server could not serve, which is no error of the server's: then nil."
 
+	| code |
 	(anError isNotNil and: [ anError mcpIsProtocolError ]) ifFalse: [ ^ 'tool_error' ].
-	^ [ (anError asJRPCResponseWithId: nil) error code printString ]
-		  on: Error
-		  do: [ :error | '_OTHER' ]
+	code := (self rpcStatusCodeFor: anError) ifNil: [ ^ '_OTHER' ].
+	^ (self isServerErrorCode: code)
+		  ifTrue: [ code ]
+		  ifFalse: [ nil ]
 ]
 
 { #category : 'private - spans' }
 MCPOpenTelemetryObservabilityBackend >> finishAttributesFor: aRecord result: aToolResult started: anEntry error: anError errorType: errorType [
-	"What is known once a call is answered, with what its start kept in anEntry: its span, its tool's name, whose tool it is and the tool: sizes, what a listing found, the answer itself when the settings ask for content and it is no error, and for a failure its kind, its code, the class of the exception it raised or its answer names, and, when the input schema refused it, the keywords and paths it refused. An exception is named by its nearest class in Pharo or MCP, and never by its message or stack. Each fact is read on its own, so one that cannot be read leaves the others."
+	"What is known once a call is answered, with what its start kept in anEntry: its span, its tool's name, whose tool it is and the tool: sizes, what a listing found, the answer itself when the settings ask for content and it is no error, and for a call that did not succeed its error.type when it is the server's error, the code of the JSON-RPC error it was answered with, its kind, its code, the class of the exception it raised or its answer names, and, when the input schema refused it, the keywords and paths it refused. An exception is named by its nearest class in Pharo or MCP, and never by its message or stack. Each fact is read on its own, so one that cannot be read leaves the others."
 
 	| origin tool attributes |
 	origin := anEntry at: 3.
@@ -587,10 +589,13 @@ MCPOpenTelemetryObservabilityBackend >> finishAttributesFor: aRecord result: aTo
 					('pharo.mcp.output_budget.exceeded' -> aRecord outputBudgetExceeded) } ]
 		to: attributes.
 	self addAttributesFrom: [ self resultAttributesFor: aToolResult origin: origin ] to: attributes.
-	errorType ifNil: [
+	aRecord status = 'error' ifFalse: [
 			self addAttributesFrom: [ self resultContentAttributesFor: aToolResult ] to: attributes.
 			^ attributes asArray ].
-	attributes add: 'error.type' -> errorType.
+	errorType ifNotNil: [ attributes add: 'error.type' -> errorType ].
+	self
+		addAttributesFrom: [ (self rpcStatusCodeFor: anError) ifNil: [ #(  ) ] ifNotNil: [ :code | { ('rpc.status_code' -> code) } ] ]
+		to: attributes.
 	self
 		addAttributesFrom: [ aRecord errorKind ifEmpty: [ #(  ) ] ifNotEmpty: [ :kind | { ('pharo.mcp.error.kind' -> kind) } ] ]
 		to: attributes.
@@ -705,6 +710,13 @@ MCPOpenTelemetryObservabilityBackend >> isReportablePackageName: aName [
 	"Pharo's own packages, which its baselines list, and MCP's: a user's package cannot be taken for one of them by sharing a prefix."
 
 	^ (self class pharoPackageNames includes: aName asString) or: [ self class ownPackageNames includes: aName asString ]
+]
+
+{ #category : 'private - reporting' }
+MCPOpenTelemetryObservabilityBackend >> isServerErrorCode: aString [
+	"Whether a server's span counts a JSON-RPC error code as its own error. The conventions for MCP count every code but those saying that the caller sent a request the server could not serve: a parse error, an invalid request, an unknown method, invalid params, an unknown tool among them, and a resource not found. A client's span counts them all."
+
+	^ (#( '-32700' '-32600' '-32601' '-32602' '-32002' ) includes: aString) not
 ]
 
 { #category : 'accessing' }
@@ -942,7 +954,8 @@ MCPOpenTelemetryObservabilityBackend >> protocolVersionIn: contextDictionary [
 ]
 
 { #category : 'private - metrics' }
-MCPOpenTelemetryObservabilityBackend >> recordMetricsFor: aRecord named: aToolName origin: anOrigin errorType: errorType [
+MCPOpenTelemetryObservabilityBackend >> recordMetricsFor: aRecord named: aToolName origin: anOrigin errorType: errorType rpcStatusCode: aCode [
+	"The call's duration and sizes, with the attributes the conventions for MCP give the server's duration: error.type for the server's error, and the code of the JSON-RPC error it was answered with."
 
 	| attributes |
 	attributes := OrderedCollection new.
@@ -952,6 +965,7 @@ MCPOpenTelemetryObservabilityBackend >> recordMetricsFor: aRecord named: aToolNa
 		add: 'gen_ai.operation.name' -> 'execute_tool';
 		add: 'pharo.mcp.tool.origin' -> anOrigin.
 	errorType ifNotNil: [ attributes add: 'error.type' -> errorType ].
+	aCode ifNotNil: [ attributes add: 'rpc.status_code' -> aCode ].
 	attributes := attributes asArray.
 	self operationDurationHistogram record: aRecord durationMilliseconds / 1000.0 attributes: attributes.
 	self inputSizeHistogram record: aRecord inputByteCount attributes: attributes.
@@ -978,9 +992,9 @@ MCPOpenTelemetryObservabilityBackend >> recordSessionStart [
 
 { #category : 'recording' }
 MCPOpenTelemetryObservabilityBackend >> recordToolCallFinish: aRecord result: aToolResult error: anError [
-	"Records the end of the call locally, and ends its span when one was started. When the settings stopped asking for traces while the call ran, the span is dropped, never ended, so never sent, and nothing is made to record the call: it would go where settings no longer say. So it is when the call started before the image last started, which a save carried into this start, whatever the settings now: the session that started it is the one it belongs to, and the time it took is the time the image was not running. Each step is guarded on its own, and the span ends whatever fails before it."
+	"Records the end of the call locally, and ends its span when one was started. When the settings stopped asking for traces while the call ran, the span is dropped, never ended, so never sent, and nothing is made to record the call: it would go where settings no longer say. So it is when the call started before the image last started, which a save carried into this start, whatever the settings now: the session that started it is the one it belongs to, and the time it took is the time the image was not running. A call refused with a code that says the caller sent a request the server could not serve did not succeed, and is no error of the server's: it has no error.type and its span's status stays unset. Each step is guarded on its own, and the span ends whatever fails before it."
 
-	| entry errorType attributes |
+	| entry errorType rpcStatusCode attributes |
 	self withoutFailingTheCall: [ super recordToolCallFinish: aRecord result: aToolResult error: anError ].
 	aRecord ifNil: [ ^ nil ].
 	entry := self critical: [ recordsById removeKey: aRecord id ifAbsent: [ nil ] ].
@@ -992,12 +1006,14 @@ MCPOpenTelemetryObservabilityBackend >> recordToolCallFinish: aRecord result: aT
 			             aRecord status = 'error'
 				             ifTrue: [ self errorTypeFor: anError ]
 				             ifFalse: [ nil ] ].
+	rpcStatusCode := self withoutFailingTheCall: [ self rpcStatusCodeFor: anError ].
 	self withoutFailingTheCall: [
 			self
 				recordMetricsFor: aRecord
 				named: (entry at: 2)
 				origin: (entry at: 3)
-				errorType: errorType ].
+				errorType: errorType
+				rpcStatusCode: rpcStatusCode ].
 	attributes := (self withoutFailingTheCall: [
 			               self
 				               finishAttributesFor: aRecord
@@ -1008,7 +1024,7 @@ MCPOpenTelemetryObservabilityBackend >> recordToolCallFinish: aRecord result: aT
 	self
 		endSpan: entry first
 		withAttributes: attributes
-		description: ((self withoutFailingTheCall: [ self statusDescriptionFor: anError ]) ifNil: [ '' ])
+		failedWith: (errorType ifNotNil: [ (self withoutFailingTheCall: [ self statusDescriptionFor: anError ]) ifNil: [ '' ] ])
 		record: aRecord
 		at: aRecord finishedAt.
 	^ aRecord
@@ -1137,6 +1153,16 @@ MCPOpenTelemetryObservabilityBackend >> resultContentAttributesFor: aToolResult 
 
 	(self capturesContent and: [ aToolResult isNotNil ]) ifFalse: [ ^ #(  ) ].
 	^ { ('gen_ai.tool.call.result' -> (self jsonStringFor: (aToolResult structuredContent ifNil: [ aToolResult content ]) asJRPCJSON)) }
+]
+
+{ #category : 'private - reporting' }
+MCPOpenTelemetryObservabilityBackend >> rpcStatusCodeFor: anError [
+	"rpc.status_code as the conventions for MCP spell it: the code of the JSON-RPC error the call was answered with, or nil for a call answered with a result."
+
+	(anError isNotNil and: [ anError mcpIsProtocolError ]) ifFalse: [ ^ nil ].
+	^ [ (anError asJRPCResponseWithId: nil) error code printString ]
+		  on: Error
+		  do: [ :error | error return: nil ]
 ]
 
 { #category : 'private - reporting' }
