@@ -219,10 +219,10 @@ MCPLocalObservabilityBackend >> logEntries [
 ]
 
 { #category : 'private - logging' }
-MCPLocalObservabilityBackend >> logEntry: aString [
+MCPLocalObservabilityBackend >> logEntry: anEntry [
 
 	self critical: [
-			self logEntries add: aString.
+			self logEntries add: anEntry.
 			[ self logEntries size > self maxLogEntries ] whileTrue: [ self logEntries removeFirst ] ]
 ]
 
@@ -280,6 +280,7 @@ MCPLocalObservabilityBackend >> logStatusLabelForStatus: statusString [
 
 { #category : 'logging' }
 MCPLocalObservabilityBackend >> logs [
+	"The recent lines, oldest first, as MCPLogEntry: each knows the call it is about, if any."
 
 	^ self critical: [ self logEntries asArray ]
 ]
@@ -408,7 +409,14 @@ MCPLocalObservabilityBackend >> recentCalls [
 { #category : 'logging' }
 MCPLocalObservabilityBackend >> recordLog: aString [
 
-	self logEntry: aString.
+	self recordLog: aString call: nil
+]
+
+{ #category : 'logging' }
+MCPLocalObservabilityBackend >> recordLog: aString call: aRecord [
+	"A line about a tool call keeps its record, which relates it to the call's metrics and trace."
+
+	self logEntry: (MCPLogEntry message: aString call: aRecord).
 	self exportLogMessage: aString timestamp: DateAndTime now
 ]
 
@@ -453,7 +461,7 @@ MCPLocalObservabilityBackend >> recordToolCallFinish: aRecord result: aToolResul
 	self critical: [ stats recordCall: aRecord ].
 	self addRecentCall: aRecord.
 	self exportMetrics.
-	self recordLog: (self logMessageForRecord: aRecord).
+	self recordLog: (self logMessageForRecord: aRecord) call: aRecord.
 	^ aRecord
 ]
 

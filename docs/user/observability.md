@@ -40,6 +40,11 @@ The observability tab shows what the server recorded about itself:
 - recent logs
 - auto-refresh while the tab is displayed
 
+Selecting a row filters the other two tables to what relates to it: a tool to
+its traces and log lines, a trace to its tool's metrics and its call's log
+line, a log line to its tool's metrics and traces. Each title says what
+filters its table, and `Show all` drops the filters.
+
 MCP starts with the built-in JSON observability backend enabled. Disable it for
 a specific server when its local metrics, traces, and logs are not wanted:
 

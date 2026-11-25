@@ -8,6 +8,66 @@ Class {
 	#package : 'MCP-UI-Tests'
 }
 
+{ #category : 'private' }
+MCPObservabilityPresenterTest >> presenterAfterFailedCallsTo: toolNames [
+	"A presenter on a server that recorded one failed call per name, which is what puts a call in the traces as well as the metrics and the logs."
+
+	| mcp backend |
+	mcp := self mcpWithoutObservabilityExport.
+	backend := mcp observability.
+	toolNames do: [ :toolName |
+			backend
+				recordToolCallFinish: (backend
+						 recordToolCallStart: toolName
+						 input: nil
+						 dispatchPath: 'direct'
+						 context: Dictionary new)
+				result: nil
+				error: Error new ].
+	^ MCPObservabilityPresenter on: mcp
+]
+
+{ #category : 'private' }
+MCPObservabilityPresenterTest >> tableNamed: aName of: aPresenter [
+
+	^ aPresenter instVarNamed: aName
+]
+
+{ #category : 'tests' }
+MCPObservabilityPresenterTest >> testALogLineThatIsNotAToolCallFiltersNothing [
+	"Selecting 'Observability cleared' or 'Trace export failed' raised, since the line names no tool for the title to say."
+
+	| presenter logs |
+	presenter := self presenterAfterFailedCallsTo: #( 'a' 'b' ).
+	presenter model observability recordLog: 'Trace export failed: IOError'.
+	presenter refreshView.
+	logs := self tableNamed: #logsTable of: presenter.
+
+	logs selectItem: (logs items detect: [ :entry | entry message beginsWith: 'Trace export failed' ]).
+
+	self assert: (self tableNamed: #metricsTable of: presenter) items size equals: 2.
+	self assert: (self tableNamed: #tracesTable of: presenter) items size equals: 2.
+	self assert: (presenter instVarNamed: #metricsLabel) label equals: 'Metrics (2)'.
+	self assert: (presenter instVarNamed: #tracesLabel) label equals: 'Traces (2)'
+]
+
+{ #category : 'tests' }
+MCPObservabilityPresenterTest >> testASelectionSurvivesARefreshAndIsForgottenOnceItsDataIsGone [
+
+	| presenter metrics |
+	presenter := self presenterAfterFailedCallsTo: #( 'a' 'b' ).
+	metrics := self tableNamed: #metricsTable of: presenter.
+	metrics selectItem: (metrics items detect: [ :stats | stats toolName = 'b' ]).
+
+	presenter refreshView.
+	self assert: metrics selectedItem toolName equals: 'b'.
+	self assert: (self tableNamed: #tracesTable of: presenter) items size equals: 1.
+
+	presenter clearObservability.
+	self assert: (self tableNamed: #tracesTable of: presenter) items isEmpty.
+	self assert: (presenter instVarNamed: #tracesLabel) label equals: 'Traces (0)'
+]
+
 { #category : 'tests' }
 MCPObservabilityPresenterTest >> testAutoRefreshIsDisabledByDefault [
 
@@ -30,16 +90,17 @@ MCPObservabilityPresenterTest >> testControlRowDoesNotConstrainWidgetWidth [
 ]
 
 { #category : 'tests' }
-MCPObservabilityPresenterTest >> testControlsStartWithEnableRefreshAutoRefreshAndClear [
+MCPObservabilityPresenterTest >> testControlsStartWithEnableRefreshAutoRefreshClearAndShowAll [
 
 	| layout |
 	layout := MCPObservabilityPresenter new controlsLayout.
 
-	self assert: layout children size equals: 4.
+	self assert: layout children size equals: 5.
 	self assert: layout children first label equals: 'Enable observability'.
 	self assert: layout children second label equals: 'Refresh'.
 	self assert: layout children third label equals: 'Auto-refresh'.
-	self assert: layout children fourth label equals: 'Clear'
+	self assert: layout children fourth label equals: 'Clear'.
+	self assert: layout children fifth label equals: 'Show all'
 ]
 
 { #category : 'tests' }
@@ -83,6 +144,71 @@ MCPObservabilityPresenterTest >> testObservabilityToggleUpdatesModelImmediately 
 	self deny: mcp observabilityEnabled.
 	presenter observabilityChangedTo: true.
 	self assert: mcp observabilityEnabled
+]
+
+{ #category : 'tests' }
+MCPObservabilityPresenterTest >> testSelectingALogLineFiltersTheMetricsAndTracesToItsTool [
+
+	| presenter logs |
+	presenter := self presenterAfterFailedCallsTo: #( 'a' 'a' 'b' ).
+	logs := self tableNamed: #logsTable of: presenter.
+
+	logs selectItem: (logs items detect: [ :entry | entry toolName = 'b' ]).
+
+	self assert: (self tableNamed: #metricsTable of: presenter) items size equals: 1.
+	self assert: (self tableNamed: #tracesTable of: presenter) items size equals: 1.
+	self assert: (self tableNamed: #logsTable of: presenter) items size equals: 3.
+	self assert: (presenter instVarNamed: #tracesLabel) label equals: 'Traces (1 of 3) - log of b'
+]
+
+{ #category : 'tests' }
+MCPObservabilityPresenterTest >> testSelectingAMetricFiltersTheTracesAndLogsToItsTool [
+
+	| presenter metrics |
+	presenter := self presenterAfterFailedCallsTo: #( 'a' 'a' 'b' ).
+	metrics := self tableNamed: #metricsTable of: presenter.
+
+	metrics selectItem: (metrics items detect: [ :stats | stats toolName = 'a' ]).
+
+	self assert: (self tableNamed: #tracesTable of: presenter) items size equals: 2.
+	self assert: ((self tableNamed: #tracesTable of: presenter) items allSatisfy: [ :record | record toolName = 'a' ]).
+	self assert: (self tableNamed: #logsTable of: presenter) items size equals: 2.
+	self assert: (self tableNamed: #metricsTable of: presenter) items size equals: 2.
+	self assert: (presenter instVarNamed: #tracesLabel) label equals: 'Traces (2 of 3) - tool a'.
+	self assert: (presenter instVarNamed: #logsLabel) label equals: 'Logs (2 of 3) - tool a'
+]
+
+{ #category : 'tests' }
+MCPObservabilityPresenterTest >> testSelectingATraceFiltersTheMetricsToItsToolAndTheLogsToItsCall [
+
+	| presenter traces trace |
+	presenter := self presenterAfterFailedCallsTo: #( 'a' 'a' 'b' ).
+	traces := self tableNamed: #tracesTable of: presenter.
+	trace := traces items detect: [ :record | record toolName = 'a' ].
+
+	traces selectItem: trace.
+
+	self assert: (self tableNamed: #metricsTable of: presenter) items size equals: 1.
+	self assert: (self tableNamed: #metricsTable of: presenter) items first toolName equals: 'a'.
+	self assert: (self tableNamed: #logsTable of: presenter) items size equals: 1.
+	self assert: (self tableNamed: #tracesTable of: presenter) items size equals: 3.
+	self assert: (presenter instVarNamed: #metricsLabel) label equals: 'Metrics (1 of 2) - trace of a'
+]
+
+{ #category : 'tests' }
+MCPObservabilityPresenterTest >> testShowAllDropsEveryFilter [
+
+	| presenter metrics |
+	presenter := self presenterAfterFailedCallsTo: #( 'a' 'a' 'b' ).
+	metrics := self tableNamed: #metricsTable of: presenter.
+	metrics selectItem: (metrics items detect: [ :stats | stats toolName = 'a' ]).
+
+	presenter showAll.
+
+	self assert: (self tableNamed: #tracesTable of: presenter) items size equals: 3.
+	self assert: (self tableNamed: #logsTable of: presenter) items size equals: 3.
+	self assert: metrics selectedItem isNil.
+	self assert: (presenter instVarNamed: #tracesLabel) label equals: 'Traces (3)'
 ]
 
 { #category : 'tests' }

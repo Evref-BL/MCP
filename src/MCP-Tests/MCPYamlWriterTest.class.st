@@ -7,6 +7,7 @@ Class {
 	#category : 'MCP-Tests',
 	#package : 'MCP-Tests'
 }
+
 { #category : 'tests' }
 MCPYamlWriterTest >> testListsSayHowManyTheyHold [
 	"A comma-joined line cannot tell a list of two from one string containing a comma, nor a list of one from a scalar."
@@ -64,4 +65,3 @@ MCPYamlWriterTest >> yamlFor: anObject [
 
 	^ MCPYamlWriter yamlFor: anObject indent: ''
 ]
-
