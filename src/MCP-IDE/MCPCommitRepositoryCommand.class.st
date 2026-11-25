@@ -80,6 +80,10 @@ MCPCommitRepositoryCommand >> currentBranchNameIn: aRepository [
 { #category : 'executing' }
 MCPCommitRepositoryCommand >> execute [
 
+	self
+		refuseReferenceBehindHeadOf: repository
+		because:
+		'Commit would write the image''s packages over HEAD''s files, undoing what HEAD changed since the commit the image refers to; Iceberg refuses such a commit too.'.
 	(self repositoryHasChangesToCommit: repository) ifFalse: [ self signalNothingToCommitIn: repository ].
 	self writePackages.
 	self commitChanges.

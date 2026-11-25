@@ -68,26 +68,28 @@ MCPRepositorySpecTest >> testAMissingRepositoryNamesTheRegisteredOnes [
 
 { #category : 'tests' }
 MCPRepositorySpecTest >> testAdoptHeadNamesThePackagesItUnmarks [
-	"Adopting clears the marks, so the answer names those the info before held and the repository no longer does."
+	"Adopting clears the marks where the image holds what HEAD holds, so the answer names those the info before held and the repository no longer does, and those still marked, whose changes HEAD lacks."
 
 	| afterInfo beforeInfo data repository tool unmarked |
 	tool := MCPToolAdoptRepositoryHead new.
 	repository := MCPTestIceRepository named: 'MCP Adopt Head Repository' location: FileSystem memory / 'adopt-head'.
-	repository modifiedPackageNames: #( 'MCP' ).
+	repository modifiedPackageNames: #( 'MCP' 'MCP-Tests' ).
 	beforeInfo := MCPRepositoryInfo fromRepository: repository.
-	repository modifiedPackageNames: #(  ).
+	repository modifiedPackageNames: #( 'MCP-Tests' ).
 	afterInfo := MCPRepositoryInfo fromRepository: repository.
 	unmarked := tool packageNamesMarkedIn: beforeInfo andNotIn: afterInfo.
-	data := tool dataForUnmarkedPackageNames: unmarked.
-	self assert: data keys asSet equals: #( unmarkedPackages ) asSet.
+	data := tool dataForUnmarkedPackageNames: unmarked modifiedPackageNames: afterInfo modifiedPackageNames.
+	self assert: data keys asSet equals: #( unmarkedPackages modifiedPackages ) asSet.
 	self assert: (data at: #unmarkedPackages) equals: #( 'MCP' ).
+	self assert: (data at: #modifiedPackages) equals: #( 'MCP-Tests' ).
 	self
 		assert: (tool
 				 summaryForAdopting: (MCPIcebergCommitInfo idStringFrom: (MCPTestRepositoryCommit id: 'after'))
 				 in: afterInfo
 				 moved: true
 				 unmarking: unmarked)
-		equals: 'Repository MCP Adopt Head Repository now refers to HEAD after on branch main, and no longer marks MCP as modified.'.
+		equals:
+		'Repository MCP Adopt Head Repository now refers to HEAD after on branch main, and no longer marks MCP as modified. It marks MCP-Tests as modified: the image differs from HEAD there.'.
 	self deny: afterInfo isDetachedHead
 ]
 

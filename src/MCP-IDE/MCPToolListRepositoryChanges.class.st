@@ -50,15 +50,16 @@ MCPToolListRepositoryChanges >> failureSummaryPrefixFor: request [
 
 { #category : 'private - execution' }
 MCPToolListRepositoryChanges >> mutateWith: request [
-	"Compare each package Iceberg marks modified with the checkout's files and read the checkout's git status."
+	"Compare the packages that may differ with the checkout's files and read the checkout's git status. When git moved HEAD outside the image, say so: the image then refers to a commit the files no longer hold."
 
-	| imageModifiedPackageNames modifiedPaths repository |
+	| imageModifiedPackageNames lagWarnings modifiedPaths repository |
 	^ self
 		  executeOperationFor: request
 		  work: [
 				  | steps |
 				  repository := self repositoryFor: request.
 				  steps := MCPRepositoryWorkingCopyCommand new.
+				  lagWarnings := steps referenceLagWarningsFor: repository.
 				  imageModifiedPackageNames := steps imageDifferingPackageNamesFor: repository.
 				  modifiedPaths := steps modifiedPathsFromGitStatusIn: repository ]
 		  successResult: [ :warnings |
@@ -66,7 +67,7 @@ MCPToolListRepositoryChanges >> mutateWith: request [
 					  successResultText:
 					  (self summaryForChangesOf: repository imageModifiedPackages: imageModifiedPackageNames modifiedPaths: modifiedPaths)
 					  data: (self dataForImageModifiedPackages: imageModifiedPackageNames modifiedPaths: modifiedPaths)
-					  warnings: warnings ]
+					  warnings: warnings , lagWarnings ]
 ]
 
 { #category : 'private - results' }

@@ -21,11 +21,14 @@ calling anything unsaved or at risk.
 - `git log` in the checkout says what was committed. Iceberg commits are
   ordinary git commits, so it answers even when the image does not.
 - `repository_search` with `isModified` names the repositories and packages
-  Iceberg marks as changed since they were last written. A mark says where to
-  look, not that something differs: an edit that was undone, or a test that
-  compiled and removed a method, leaves one too.
+  Iceberg marks as changed since the commit the image refers to; its commits
+  and diffs read only those. Exporting leaves the marks as they are;
+  committing, adopting HEAD and reloading recompute them against HEAD. A mark
+  says where to look, not that something differs: an edit that was undone, or
+  a test that compiled and removed a method, leaves one too.
 - `repository_change_list` compares a repository's marked packages with its
-  files and names those that really differ, and the files git sees changed.
+  files, every package once git moved HEAD outside the image, and names those
+  that really differ, and the files git sees changed.
   Anything not committed is in one of them.
 - To know whether one change is committed, compare `method_get` with the
   class's file at `HEAD` (`git show HEAD:<path>`).
@@ -45,6 +48,10 @@ commits or exports, so the checkout stays clean while the image holds changes.
    else left uncommitted. It stages and commits nothing.
 4. Read what it wrote with `git diff`. Export writes what the image holds,
    which includes anything loaded into it that you did not put there.
+5. Commit with `repository_commit`, or with git and then
+   `repository_head_adopt`, which makes the new commit the one the image
+   refers to. Until it does, `repository_commit` and
+   `repository_change_discard` refuse, and the change list and export warn.
 
 ## Into The Image
 

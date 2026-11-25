@@ -41,6 +41,18 @@ MCPToolRepositoryOperationTest >> commitCheckoutNamed: aRepositoryName at: aLoca
 	self removeRegisteredRepositoriesNamed: aRepositoryName
 ]
 
+{ #category : 'private' }
+MCPToolRepositoryOperationTest >> commitProbeOutsideTheImageTo: aClassFile [
+	"Add a method to the class's file and commit it with git, as a commit made outside the image would."
+
+	self
+		write: (String streamContents: [ :stream |
+					 stream << aClassFile contents << String lf << '{ #category : ''probing'' }' << String lf
+					 << (aClassFile basename copyUpTo: $.) << ' >> probe [' << String lf << String tab << '^ 1' << String lf << ']' << String lf ])
+		to: aClassFile.
+	self commitAllIn: aClassFile parent parent parent message: 'Add probe outside the image'
+]
+
 { #category : 'private - calling' }
 MCPToolRepositoryOperationTest >> commitRepositoryNamed: aRepositoryName message: aMessage [
 
@@ -270,6 +282,7 @@ MCPToolRepositoryOperationTest >> testACreatedRepositoryReattachesWithItsPackage
 
 { #category : 'tests' }
 MCPToolRepositoryOperationTest >> testAdoptHeadAdoptsRepositoryHeadAndReportsBeforeAfterModifiedPackages [
+	"Adopting recomputes the marks against HEAD: a package whose image holds what HEAD holds loses its mark, one whose image differs keeps it."
 
 	| data repository result |
 	repository := self newTestRepositoryNamed: 'MCP Adopt Head Test Repository'.
@@ -277,20 +290,22 @@ MCPToolRepositoryOperationTest >> testAdoptHeadAdoptsRepositoryHeadAndReportsBef
 	repository headDescription: 'main'.
 	repository modifiedPackageNames: #( 'MCP' 'MCP-Tests' ).
 	repository workingCopy referenceCommit: (MCPTestRepositoryCommit id: 'head-1').
+	repository workingCopy packageNamesDifferingFromReference: #( 'MCP-Tests' ).
 	self withRegisteredRepository: repository do: [
 			result := self callToolNamed: 'repository_head_adopt' withArguments: {
 					          (#repository -> repository name).
 					          (#branch -> 'main') } asDictionary.
 			data := self dataFrom: result.
 			self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
-			self assert: repository modifiedPackages isEmpty.
+			self assert: (repository modifiedPackages collect: [ :each | each name ] as: Array) equals: #( 'MCP-Tests' ).
 			self assert: repository workingCopy referenceCommit id equals: 'head-2'.
 			self
 				assert: (self summaryFrom: result)
 				equals:
-				'Repository MCP Adopt Head Test Repository now refers to HEAD head-2 on branch main, and no longer marks MCP, MCP-Tests as modified.'.
-			self assert: data keys asSet equals: #( unmarkedPackages ) asSet.
-			self assert: (data at: #unmarkedPackages) equals: #( 'MCP' 'MCP-Tests' ) ]
+				'Repository MCP Adopt Head Test Repository now refers to HEAD head-2 on branch main, and no longer marks MCP as modified. It marks MCP-Tests as modified: the image differs from HEAD there.'.
+			self assert: data keys asSet equals: #( unmarkedPackages modifiedPackages ) asSet.
+			self assert: (data at: #unmarkedPackages) equals: #( 'MCP' ).
+			self assert: (data at: #modifiedPackages) equals: #( 'MCP-Tests' ) ]
 ]
 
 { #category : 'tests' }
@@ -314,6 +329,59 @@ MCPToolRepositoryOperationTest >> testAdoptHeadClearsModifiedPackagesWhenReferen
 				equals:
 				'Repository MCP Adopt Clean Test Repository already referred to HEAD head-1 on branch main, and no longer marks MCP as modified.'.
 			self assert: (data at: #unmarkedPackages) equals: #( 'MCP' ) ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testAdoptHeadClearsTheMarkWhereTheImageHoldsWhatHeadHolds [
+	"Git commits the exported files outside the image; adopting that HEAD clears the mark, since the image holds what HEAD holds."
+
+	| className location packageName repository repositoryName result |
+	repositoryName := 'MCP Adopt Head Clears Test'.
+	packageName := 'MCPToolRepositoryOperationAdoptClearsPackage'.
+	className := 'MCPToolRepositoryOperationAdoptClearsClass'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestAdoptClears'.
+	self withExportPackageNamed: packageName className: className do: [
+			self withCleanRepositoryNamed: repositoryName location: location do: [
+					self
+						createRepositoryNamed: repositoryName
+						location: location
+						subdirectory: 'src'
+						packages: { packageName }.
+					self exportRepositoryNamed: repositoryName.
+					self commitAllIn: location message: 'Write the package'.
+					repository := IceRepository repositories detect: [ :each | each name asString = repositoryName ].
+					self assert: (repository modifiedPackages collect: [ :each | each name ] as: Array) equals: { packageName }.
+					result := self callToolNamed: 'repository_head_adopt' withArguments: { (#repository -> repositoryName) } asDictionary.
+					self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
+					self assert: repository modifiedPackages isEmpty.
+					self assert: ((self dataFrom: result) at: #unmarkedPackages) equals: { packageName } ] ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testAdoptHeadKeepsTheMarkOfAChangeHeadLacks [
+	"A change the image holds and HEAD lacks stays marked after adopting, so Iceberg's commit and diff still see it."
+
+	| className location packageName repository repositoryName result |
+	repositoryName := 'MCP Adopt Head Keeps Test'.
+	packageName := 'MCPToolRepositoryOperationAdoptKeepsPackage'.
+	className := 'MCPToolRepositoryOperationAdoptKeepsClass'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestAdoptKeeps'.
+	self withExportPackageNamed: packageName className: className do: [
+			self withCleanRepositoryNamed: repositoryName location: location do: [
+					self
+						createRepositoryNamed: repositoryName
+						location: location
+						subdirectory: 'src'
+						packages: { packageName }.
+					self exportRepositoryNamed: repositoryName.
+					self commitAllIn: location message: 'Write the package'.
+					(self classNamed: className) compile: 'probe ^ 1' classified: 'probing'.
+					repository := IceRepository repositories detect: [ :each | each name asString = repositoryName ].
+					result := self callToolNamed: 'repository_head_adopt' withArguments: { (#repository -> repositoryName) } asDictionary.
+					self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
+					self assert: (repository modifiedPackages collect: [ :each | each name ] as: Array) equals: { packageName }.
+					self assert: ((self dataFrom: result) at: #modifiedPackages) equals: { packageName }.
+					self assert: (repository workingCopy diffToReferenceCommit includesPackageNamed: packageName) ] ]
 ]
 
 { #category : 'tests' }
@@ -746,6 +814,32 @@ MCPToolRepositoryOperationTest >> testCommitOfARepositoryWithoutPackages [
 			self assert: (data at: #otherFiles) asArray equals: #( 'a.txt' ).
 			self deny: (data includesKey: #packages).
 			self assert: (self git: 'log -1 --format=%s' in: location) equals: 'Add a file written by hand' ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testCommitRefusesWhenGitMovedHeadOutsideTheImage [
+	"Committing writes the image's packages over HEAD's files; after a commit made outside the image, that would undo it, so commit refuses, as Iceberg does, and writes nothing."
+
+	| className location packageName repositoryName result |
+	repositoryName := 'MCP Commit Behind Head Test'.
+	packageName := 'MCPToolRepositoryOperationCommitBehindPackage'.
+	className := 'MCPToolRepositoryOperationCommitBehindClass'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestCommitBehind'.
+	self withExportPackageNamed: packageName className: className do: [
+			self withCleanRepositoryNamed: repositoryName location: location do: [
+					self
+						createRepositoryNamed: repositoryName
+						location: location
+						subdirectory: 'src'
+						packages: { packageName }.
+					self commitRepositoryNamed: repositoryName message: 'Write the package'.
+					self commitProbeOutsideTheImageTo: location / 'src' / packageName / (className , '.class.st').
+					(self classNamed: className) compile: 'other ^ 2' classified: 'probing'.
+					result := self commitRepositoryNamed: repositoryName message: 'Undo the probe'.
+					self assert: (self resultIndicatesError: result).
+					self assert: ((self errorFrom: result) at: #errorCode) equals: 'RepositoryReferenceBehindHead'.
+					self assert: (self git: 'status --porcelain' in: location) isEmpty.
+					self assert: ((location / 'src' / packageName / (className , '.class.st')) contents includesSubstring: 'probe') ] ]
 ]
 
 { #category : 'tests' }
@@ -1261,8 +1355,33 @@ MCPToolRepositoryOperationTest >> testDiffCanReportImageModifiedPackagesWithoutW
 ]
 
 { #category : 'tests' }
+MCPToolRepositoryOperationTest >> testDiffComparesEveryPackageWhenGitMovedHeadOutsideTheImage [
+	"A commit made outside the image leaves it referring to the commit before, against which nothing is marked; the change list still finds the package whose files differ, and says the image is behind HEAD."
+
+	| data location packageName repositoryName result |
+	repositoryName := 'MCP Diff Behind Head Test'.
+	packageName := 'MCPToolRepositoryOperationDiffBehindPackage'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestDiffBehind'.
+	self withExportPackageNamed: packageName className: 'MCPToolRepositoryOperationDiffBehindClass' do: [
+			self withCleanRepositoryNamed: repositoryName location: location do: [
+					self
+						createRepositoryNamed: repositoryName
+						location: location
+						subdirectory: 'src'
+						packages: { packageName }.
+					self commitRepositoryNamed: repositoryName message: 'Write the package'.
+					self commitProbeOutsideTheImageTo: location / 'src' / packageName / 'MCPToolRepositoryOperationDiffBehindClass.class.st'.
+					result := self callToolNamed: 'repository_change_list' withArguments: { (#repository -> repositoryName) } asDictionary.
+					data := self dataFrom: result.
+					self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
+					self assert: (data at: #imageModifiedPackages) equals: { packageName }.
+					self assert: (self warningsFrom: result) size equals: 1.
+					self assert: ((self warningsFrom: result) first includesSubstring: 'git moved the checkout outside the image') ] ]
+]
+
+{ #category : 'tests' }
 MCPToolRepositoryOperationTest >> testDiffLeavesOutAPackageMarkedOverNothing [
-	"Iceberg marks a package on any change and clears the mark only when it writes the package, so a method compiled and removed again leaves a mark over nothing. The change list answers what differs from the files, not the mark."
+	"Iceberg marks a package on any change, so a method compiled and removed again leaves a mark over nothing until the marks are next computed against a commit. The change list answers what differs from the files, not the mark."
 
 	| class className data location packageName repository repositoryName result |
 	repositoryName := 'MCP Repository Command Diff Mark Test'.
@@ -1474,6 +1593,31 @@ MCPToolRepositoryOperationTest >> testDiscardReadsItsRequest [
 ]
 
 { #category : 'tests' }
+MCPToolRepositoryOperationTest >> testDiscardRefusesWhenGitMovedHeadOutsideTheImage [
+	"Iceberg reverts the image to the commit it refers to; after a commit made outside the image, that would undo the commit in the image, so discard refuses and changes nothing."
+
+	| className location packageName repositoryName result |
+	repositoryName := 'MCP Discard Behind Head Test'.
+	packageName := 'MCPToolRepositoryOperationDiscardBehindPackage'.
+	className := 'MCPToolRepositoryOperationDiscardBehindClass'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestDiscardBehind'.
+	self withExportPackageNamed: packageName className: className do: [
+			self withCleanRepositoryNamed: repositoryName location: location do: [
+					self
+						createRepositoryNamed: repositoryName
+						location: location
+						subdirectory: 'src'
+						packages: { packageName }.
+					self commitRepositoryNamed: repositoryName message: 'Write the package'.
+					self commitProbeOutsideTheImageTo: location / 'src' / packageName / (className , '.class.st').
+					(self classNamed: className) compile: 'other ^ 2' classified: 'probing'.
+					result := self callToolNamed: 'repository_change_discard' withArguments: { (#repository -> repositoryName) } asDictionary.
+					self assert: (self resultIndicatesError: result).
+					self assert: ((self errorFrom: result) at: #errorCode) equals: 'RepositoryReferenceBehindHead'.
+					self assert: ((self classNamed: className) includesSelector: #other) ] ]
+]
+
+{ #category : 'tests' }
 MCPToolRepositoryOperationTest >> testExportAndReloadUseTheFormatTheCheckoutDeclares [
 
 	| className data location packageDirectory packageName repository repositoryName result |
@@ -1600,6 +1744,31 @@ MCPToolRepositoryOperationTest >> testExportKeepsAnOrderOnlyRewriteOutOfWritten 
 						assert: (self summaryFrom: result)
 						equals: ('Exported repository {1}: nothing to write, its files already hold what the image has.' format: { repositoryName }).
 					self assert: file binaryReadStream upToEnd equals: committed utf8Encoded ] ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testExportKeepsTheMarkOfAChangeHeadLacks [
+	"Export writes files and moves neither the image nor the commit it refers to, so what the image holds and HEAD lacks stays marked."
+
+	| className location packageName repository repositoryName |
+	repositoryName := 'MCP Export Keeps Mark Test'.
+	packageName := 'MCPToolRepositoryOperationExportKeepsPackage'.
+	className := 'MCPToolRepositoryOperationExportKeepsClass'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestExportKeeps'.
+	self withExportPackageNamed: packageName className: className do: [
+			self withCleanRepositoryNamed: repositoryName location: location do: [
+					self
+						createRepositoryNamed: repositoryName
+						location: location
+						subdirectory: 'src'
+						packages: { packageName }.
+					self commitRepositoryNamed: repositoryName message: 'Write the package'.
+					repository := IceRepository repositories detect: [ :each | each name asString = repositoryName ].
+					self assert: repository modifiedPackages isEmpty.
+					(self classNamed: className) compile: 'probe ^ 1' classified: 'probing'.
+					self exportRepositoryNamed: repositoryName.
+					self assert: (repository modifiedPackages collect: [ :each | each name ] as: Array) equals: { packageName }.
+					self assert: (repository workingCopy diffToReferenceCommit includesPackageNamed: packageName) ] ]
 ]
 
 { #category : 'tests' }
@@ -1833,6 +2002,30 @@ MCPToolRepositoryOperationTest >> testExportWarnsOfARegisteredPackageNotInTheIma
 ]
 
 { #category : 'tests' }
+MCPToolRepositoryOperationTest >> testExportWarnsWhenGitMovedHeadOutsideTheImage [
+	"Export writes what the image holds; after a commit made outside the image, that undoes the commit in the files, which the answer says, beside the files it names."
+
+	| className location packageName repositoryName result |
+	repositoryName := 'MCP Export Behind Head Test'.
+	packageName := 'MCPToolRepositoryOperationExportBehindPackage'.
+	className := 'MCPToolRepositoryOperationExportBehindClass'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestExportBehind'.
+	self withExportPackageNamed: packageName className: className do: [
+			self withCleanRepositoryNamed: repositoryName location: location do: [
+					self
+						createRepositoryNamed: repositoryName
+						location: location
+						subdirectory: 'src'
+						packages: { packageName }.
+					self commitRepositoryNamed: repositoryName message: 'Write the package'.
+					self commitProbeOutsideTheImageTo: location / 'src' / packageName / (className , '.class.st').
+					result := self exportRepositoryNamed: repositoryName.
+					self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
+					self assert:
+						((self warningsFrom: result) anySatisfy: [ :each | each includesSubstring: 'git moved the checkout outside the image' ]) ] ]
+]
+
+{ #category : 'tests' }
 MCPToolRepositoryOperationTest >> testGitCommandFailureSignalsStructuredCommandError [
 
 	| error |
@@ -1999,6 +2192,32 @@ MCPToolRepositoryOperationTest >> testReloadAnswersBranchAndPackages [
 								 (self git: 'symbolic-ref --short HEAD' in: location) }).
 					self assert: (self dataFrom: result) keys asArray equals: #( packages ).
 					self assert: ((self dataFrom: result) at: #packages) asArray equals: { packageName } ] ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testReloadMarksAPackageWhoseFilesHeadLacks [
+	"Reloading files git has not committed leaves the image equal to the files and different from HEAD, which Iceberg marks."
+
+	| className location packageName repository repositoryName result |
+	repositoryName := 'MCP Reload Marks Test'.
+	packageName := 'MCPToolRepositoryOperationReloadMarksPackage'.
+	className := 'MCPToolRepositoryOperationReloadMarksClass'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestReloadMarks'.
+	self withExportPackageNamed: packageName className: className do: [
+			self withCleanRepositoryNamed: repositoryName location: location do: [
+					self
+						createRepositoryNamed: repositoryName
+						location: location
+						subdirectory: 'src'
+						packages: { packageName }.
+					self commitRepositoryNamed: repositoryName message: 'Write the package'.
+					(self classNamed: className) compile: 'probe ^ 1' classified: 'probing'.
+					self exportRepositoryNamed: repositoryName.
+					result := self callToolNamed: 'repository_reload' withArguments: { (#repository -> repositoryName) } asDictionary.
+					self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
+					repository := IceRepository repositories detect: [ :each | each name asString = repositoryName ].
+					self assert: ((self classNamed: className) includesSelector: #probe).
+					self assert: (repository modifiedPackages collect: [ :each | each name ] as: Array) equals: { packageName } ] ]
 ]
 
 { #category : 'tests' }

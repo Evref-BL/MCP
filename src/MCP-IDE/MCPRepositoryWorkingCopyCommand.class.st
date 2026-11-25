@@ -136,11 +136,13 @@ MCPRepositoryWorkingCopyCommand >> gitStatusLinesFor: aRepository [
 
 { #category : 'diff' }
 MCPRepositoryWorkingCopyCommand >> imageDifferingPackageNamesFor: aRepository [
-	"The packages Iceberg marks modified whose contents in the image differ from the checkout's files. Iceberg marks a package on any change and clears the mark only when it writes the package, so an edit undone, or a test that compiles a method and removes it, leaves a mark over nothing. When the files cannot be read at all, the marks are all there is to answer with."
+	"The packages whose contents in the image differ from the checkout's files. Iceberg marks what differs from the commit the image refers to, a mark staying over an edit undone, so the marked packages are the ones to compare; all of them are when git moved HEAD away from that commit, since the files then hold another. When the files cannot be read at all, the marks are all there is to answer with."
 
-	| modifiedPackages writerClass |
-	modifiedPackages := aRepository modifiedPackages.
-	modifiedPackages ifEmpty: [ ^ #(  ) ].
+	| candidates writerClass |
+	candidates := (self referenceCommitLagsHeadIn: aRepository)
+		              ifTrue: [ aRepository workingCopy loadedPackages ]
+		              ifFalse: [ aRepository modifiedPackages ].
+	candidates ifEmpty: [ ^ #(  ) ].
 	^ self withoutLeavingFiletreeMarkerIn: (self repositorySourceDirectoryFor: aRepository) do: [
 			  | sourceRepository |
 			  sourceRepository := [
@@ -148,7 +150,7 @@ MCPRepositoryWorkingCopyCommand >> imageDifferingPackageNamesFor: aRepository [
 				                      self sourceRepositoryFor: aRepository writer: writerClass ]
 				                      on: Error
 				                      do: [ ^ self imageModifiedPackageNamesFor: aRepository ].
-			  self sortedStringsFrom: (modifiedPackages
+			  self sortedStringsFrom: (candidates
 					   select: [ :each | self package: each differsIn: sourceRepository writer: writerClass ]
 					   thenCollect: [ :each | each name ]) ]
 ]
