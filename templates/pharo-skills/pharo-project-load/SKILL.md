@@ -8,8 +8,9 @@ description: Load or smoke-test a Pharo project from Tonel, Metacello, or Iceber
 ## Context
 
 Before loading, read the project README, baseline, `.smalltalk.ston`, and any
-repository-specific agent guidance. Prefer dedicated Pharo MCP load tools when
-a live image is available.
+repository-specific agent guidance. In a live image, load with Metacello
+through `evaluate`, as below; `repository_attach` registers a checkout without
+loading it.
 
 ## Workflow
 
@@ -35,8 +36,8 @@ For local Tonel, use an absolute `tonel:///.../src` URL.
 
 ## A Load Longer Than The Call
 
-`evaluate` stops its code at its time limit, 30 s unless the call passes
-`timeoutSeconds`, and a limit longer than the client waits loses the answer.
+`evaluate` stops its code at its time limit, `timeoutSeconds`, whose default
+its schema gives, and a limit longer than the client waits loses the answer.
 What a stopped load loaded stays loaded: an answer that begins `Evaluation
 stopped` leaves the image half loaded, so load again before relying on it. A
 load that may take longer runs forked, and writes how it ended to a file:

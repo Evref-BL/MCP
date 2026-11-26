@@ -1,12 +1,15 @@
 ---
 name: pharo-mcp-recovery
-description: Recover an unreachable or crashed standalone Pharo MCP image while preserving logs, image files, changes, repository state, and Epicea history. Use for local MCP restart, replacement-image creation, and image-side change recovery.
+description: Recover a Pharo MCP image that takes no calls or crashed, or the changes a stop without saving lost, while preserving logs, image files, changes, repository state, and Epicea history. Use for an unreachable image, a replacement image, and image-side change recovery.
 ---
 
 # Pharo MCP Recovery
 
-Use project-managed lifecycle tools when they exist. This workflow is for a
-standalone image without a safer environment-specific recovery surface.
+When a tool manages the image's lifecycle, recover through it: its list says
+why an image takes no calls, its stop ends the VM, its start brings the image
+back as it was last saved, and its create makes a replacement with MCP loaded.
+An image you did not start is the user's to recover. Steps 2 to 4 are for an
+image launched by hand; steps 1, 5 and 6 hold for every image.
 
 ## Workflow
 
