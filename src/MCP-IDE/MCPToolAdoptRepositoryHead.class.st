@@ -47,9 +47,11 @@ MCPToolAdoptRepositoryHead >> checkHeadCommit: headCommit of: aRepository for: r
 ]
 
 { #category : 'private - results' }
-MCPToolAdoptRepositoryHead >> dataForUnmarkedPackageNames: packageNames [
+MCPToolAdoptRepositoryHead >> dataForUnmarkedPackageNames: unmarkedNames modifiedPackageNames: modifiedNames [
 
-	^ self dataKeepingNonEmpty: { (#unmarkedPackages -> packageNames) }
+	^ self dataKeepingNonEmpty: {
+			  (#unmarkedPackages -> unmarkedNames).
+			  (#modifiedPackages -> modifiedNames) }
 ]
 
 { #category : 'private - errors' }
@@ -61,12 +63,12 @@ MCPToolAdoptRepositoryHead >> failureSummaryPrefixFor: request [
 { #category : 'private - results' }
 MCPToolAdoptRepositoryHead >> keysStatedInSummary [
 
-	^ #( unmarkedPackages )
+	^ #( unmarkedPackages modifiedPackages )
 ]
 
 { #category : 'private - execution' }
 MCPToolAdoptRepositoryHead >> mutateWith: request [
-	"Make the HEAD commit the working copy's reference, which also clears every loaded package's mark."
+	"Make the HEAD commit the working copy's reference, and mark the loaded packages whose image differs from it: a mark clears where the image holds what HEAD holds, and stays on the changes HEAD lacks."
 
 	| afterInfo beforeInfo didAdopt headCommit |
 	^ self
@@ -91,13 +93,13 @@ MCPToolAdoptRepositoryHead >> mutateWith: request [
 							   in: afterInfo
 							   moved: didAdopt
 							   unmarking: unmarked)
-					  data: (self dataForUnmarkedPackageNames: unmarked)
+					  data: (self dataForUnmarkedPackageNames: unmarked modifiedPackageNames: afterInfo modifiedPackageNames)
 					  warnings: warnings ]
 ]
 
 { #category : 'private - results' }
 MCPToolAdoptRepositoryHead >> packageNamesMarkedIn: beforeInfo andNotIn: afterInfo [
-	"Adopting clears every loaded package's mark, so these are the packages it no longer marks modified."
+	"The packages adopting no longer marks modified: those whose image holds what HEAD holds."
 
 	| stillMarked |
 	stillMarked := afterInfo modifiedPackageNames.
@@ -116,7 +118,9 @@ MCPToolAdoptRepositoryHead >> summaryForAdopting: aCommitId in: anInfo moved: di
 				  ifFalse: [ stream << 'HEAD ' << (self shortCommitId: aCommitId) << ' on branch ' << anInfo branchName ].
 			  packageNames
 				  ifEmpty: [ stream << '.' ]
-				  ifNotEmpty: [ :names | stream << ', and no longer marks ' << (', ' join: names) << ' as modified.' ] ]
+				  ifNotEmpty: [ :names | stream << ', and no longer marks ' << (', ' join: names) << ' as modified.' ].
+			  anInfo modifiedPackageNames ifNotEmpty: [ :names |
+				  stream << ' It marks ' << (', ' join: names) << ' as modified: the image differs from HEAD there.' ] ]
 ]
 
 { #category : 'private - specs' }

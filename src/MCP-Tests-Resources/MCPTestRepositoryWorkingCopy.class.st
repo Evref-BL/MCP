@@ -8,7 +8,8 @@ Class {
 		'repository',
 		'packageNames',
 		'modifiedPackages',
-		'referenceCommit'
+		'referenceCommit',
+		'packageNamesDifferingFromReference'
 	],
 	#category : 'MCP-Tests-Resources',
 	#package : 'MCP-Tests-Resources'
@@ -38,6 +39,13 @@ MCPTestRepositoryWorkingCopy >> discardChanges [
 
 	(modifiedPackages ifNil: [ #(  ) ]) do: [ :each | each beDirty: false ].
 	self repository recordAction: 'discard'
+]
+
+{ #category : 'actions' }
+MCPTestRepositoryWorkingCopy >> forceCalculateDirtyPackages [
+	"Mark the loaded packages whose image differs from the reference commit, as Iceberg does: here, those the test named."
+
+	self loadedPackages do: [ :each | each beDirty: (self packageNamesDifferingFromReference includes: each name) ]
 ]
 
 { #category : 'testing' }
@@ -74,6 +82,19 @@ MCPTestRepositoryWorkingCopy >> packageNames [
 MCPTestRepositoryWorkingCopy >> packageNames: aCollection [
 
 	packageNames := aCollection ifNil: [ #(  ) ]
+]
+
+{ #category : 'accessing' }
+MCPTestRepositoryWorkingCopy >> packageNamesDifferingFromReference [
+
+	^ packageNamesDifferingFromReference ifNil: [ #(  ) ]
+]
+
+{ #category : 'accessing' }
+MCPTestRepositoryWorkingCopy >> packageNamesDifferingFromReference: aCollection [
+	"The packages whose image differs from the reference commit, whichever commit that is."
+
+	packageNamesDifferingFromReference := aCollection
 ]
 
 { #category : 'accessing' }

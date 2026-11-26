@@ -28,19 +28,12 @@ MCPRepositoryCommand >> addPackageNamed: aPackageName to: aRepository [
 
 { #category : 'iceberg state' }
 MCPRepositoryCommand >> adoptHeadCommit: headCommit for: aRepository [
-
-	self adoptHeadCommit: headCommit for: aRepository markLoadedPackagesClean: true
-]
-
-{ #category : 'private - iceberg state' }
-MCPRepositoryCommand >> adoptHeadCommit: headCommit for: aRepository markLoadedPackagesClean: shouldMarkClean [
+	"Make headCommit the working copy's reference, and mark the loaded packages whose image differs from it, as Iceberg does: Iceberg commits and diffs only what it marks, so a mark clears only where the image holds what the commit holds."
 
 	| workingCopy |
 	workingCopy := aRepository workingCopy.
 	(self commit: workingCopy referenceCommit equals: headCommit) ifFalse: [ workingCopy referenceCommit: headCommit ].
-	shouldMarkClean
-		ifTrue: [ self markLoadedPackagesCleanIn: workingCopy ]
-		ifFalse: [ self markLoadedPackagesDirtyIn: workingCopy ]
+	workingCopy forceCalculateDirtyPackages
 ]
 
 { #category : 'testing' }
@@ -168,18 +161,6 @@ MCPRepositoryCommand >> loadVersionsReplacingImageChanges: versions [
 	versions do: [ :version | version workingCopy loaded: version ]
 ]
 
-{ #category : 'iceberg state' }
-MCPRepositoryCommand >> markLoadedPackagesCleanIn: aWorkingCopy [
-
-	aWorkingCopy loadedPackages do: [ :package | package beDirty: false ]
-]
-
-{ #category : 'private - iceberg state' }
-MCPRepositoryCommand >> markLoadedPackagesDirtyIn: aWorkingCopy [
-
-	aWorkingCopy loadedPackages do: [ :package | package beDirty: true ]
-]
-
 { #category : 'private - git' }
 MCPRepositoryCommand >> normalizedSystemStatusFrom: anInteger [
 
@@ -191,6 +172,53 @@ MCPRepositoryCommand >> normalizedSystemStatusFrom: anInteger [
 MCPRepositoryCommand >> referenceCommitFor: aRepository [
 
 	^ aRepository workingCopy referenceCommit
+]
+
+{ #category : 'iceberg state' }
+MCPRepositoryCommand >> referenceCommitLagsHeadIn: aRepository [
+	"Whether git moved HEAD outside the image since the image last took a commit: Iceberg's marks and its discard then compare the image with a commit HEAD no longer is."
+
+	| headCommit |
+	headCommit := aRepository headCommit.
+	(headCommit isNil or: [ MCPIcebergCommitInfo isNoCommit: headCommit ]) ifTrue: [ ^ false ].
+	^ (self commit: (self referenceCommitFor: aRepository) equals: headCommit) not
+]
+
+{ #category : 'iceberg state' }
+MCPRepositoryCommand >> referenceLagOf: aRepository [
+	"Says that the image refers to a commit HEAD no longer is, and what makes them one again, depending on which holds the other's changes."
+
+	| headId referenceId |
+	referenceId := MCPIcebergCommitInfo idStringFrom: (self referenceCommitFor: aRepository).
+	headId := MCPIcebergCommitInfo idStringFrom: aRepository headCommit.
+	^ String streamContents: [ :stream |
+			  stream << 'The image refers to commit ' << (referenceId first: (7 min: referenceId size)) << ' of repository '
+			  << aRepository name << ', but HEAD is ' << (headId first: (7 min: headId size))
+			  <<
+			  ': git moved the checkout outside the image. When the image already holds what HEAD holds, as after committing its export with git, repository_head_adopt makes HEAD the commit it refers to; when HEAD brought changes the image lacks, as after a pull, repository_reload loads them.' ]
+]
+
+{ #category : 'iceberg state' }
+MCPRepositoryCommand >> referenceLagWarningsFor: aRepository [
+	"A warning that the image refers to a commit HEAD no longer is, or none."
+
+	^ (self referenceCommitLagsHeadIn: aRepository)
+		  ifTrue: [ { (self referenceLagOf: aRepository) } ]
+		  ifFalse: [ #(  ) ]
+]
+
+{ #category : 'iceberg state' }
+MCPRepositoryCommand >> refuseReferenceBehindHeadOf: aRepository because: aReason [
+	"Refuse what would act on the commit the image refers to as if it were HEAD, when git moved HEAD away from it."
+
+	(self referenceCommitLagsHeadIn: aRepository) ifFalse: [ ^ self ].
+	MCPCommandError
+		signalErrorCode: #RepositoryReferenceBehindHead
+		message: (String streamContents: [ :stream | stream << aReason << ' ' << (self referenceLagOf: aRepository) ])
+		details: {
+				(#repository -> aRepository name).
+				(#referenceCommit -> (MCPIcebergCommitInfo idStringFrom: (self referenceCommitFor: aRepository))).
+				(#headCommit -> (MCPIcebergCommitInfo idStringFrom: aRepository headCommit)) } asDictionary
 ]
 
 { #category : 'packages' }

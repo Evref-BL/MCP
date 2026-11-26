@@ -23,7 +23,7 @@ MCPToolDiscardRepositoryChanges >> failureSummaryPrefixFor: request [
 
 { #category : 'private - execution' }
 MCPToolDiscardRepositoryChanges >> mutateWith: request [
-	"Discard what git sees changed and what Iceberg marks modified, then check that nothing is left."
+	"Discard what git sees changed and what Iceberg marks modified, then check that nothing is left. Iceberg reverts the image to the commit it refers to, so the call refuses when git moved HEAD away from that commit."
 
 	| discardedPackageNames discardedPaths repository |
 	^ self
@@ -32,6 +32,7 @@ MCPToolDiscardRepositoryChanges >> mutateWith: request [
 				  | steps |
 				  repository := self repositoryFor: request.
 				  steps := MCPRepositoryWorkingCopyCommand new.
+				  steps refuseReferenceBehindHeadOf: repository because: 'Discard reverts the image to the commit it refers to, which is not HEAD.'.
 				  discardedPaths := steps modifiedPathsFromGitStatusIn: repository.
 				  discardedPackageNames := steps changedPackageNamesForRepository: repository modifiedPaths: discardedPaths.
 				  (discardedPackageNames isNotEmpty or: [ discardedPaths isNotEmpty ]) ifTrue: [ repository discardChanges ].

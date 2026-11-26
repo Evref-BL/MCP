@@ -69,9 +69,9 @@ MCPToolExportRepository >> keysStatedInSummary [
 
 { #category : 'private - execution' }
 MCPToolExportRepository >> mutateWith: request [
-	"Write the packages the image holds and .project to the checkout, put back the files the writer only reordered, and name what was written, staging and committing nothing."
+	"Write the packages the image holds and .project to the checkout, put back the files the writer only reordered, and name what was written, staging and committing nothing. Iceberg's marks stay as they are: they compare the image with the commit it refers to, and export changes neither. When git moved HEAD away from that commit, say so: what export wrote may undo in the files what HEAD changed."
 
-	| files repository unloadedPackageNames |
+	| files lagWarnings repository unloadedPackageNames |
 	^ self
 		  executeOperationFor: request
 		  work: [
@@ -79,6 +79,7 @@ MCPToolExportRepository >> mutateWith: request [
 				  repository := self repositoryFor: request.
 				  steps := MCPRepositoryWorkingCopyCommand new.
 				  self refuseExportWithNothingToWriteFor: repository.
+				  lagWarnings := steps referenceLagWarningsFor: repository.
 				  directoriesBefore := steps existingLoadedPackageDirectoryPathsFor: repository.
 				  before := steps snapshotFilesFor: repository.
 				  steps exportLoadedPackagesFrom: repository.
@@ -88,8 +89,7 @@ MCPToolExportRepository >> mutateWith: request [
 					           filesExportChangedIn: repository
 					           since: before
 					           directories: directoriesBefore
-					           with: steps.
-				  steps markLoadedPackagesCleanIn: repository workingCopy ]
+					           with: steps ]
 		  successResult: [ :warnings |
 				  self
 					  successResultText: (self summaryForExportOf: repository files: files)
@@ -98,7 +98,7 @@ MCPToolExportRepository >> mutateWith: request [
 							   writtenPaths: (files at: #written)
 							   deletedPaths: (files at: #deleted)
 							   alsoUncommittedPaths: (files at: #alsoUncommitted))
-					  warnings: warnings , (self warningsForUnloadedPackages: unloadedPackageNames of: repository) ]
+					  warnings: warnings , lagWarnings , (self warningsForUnloadedPackages: unloadedPackageNames of: repository) ]
 ]
 
 { #category : 'private - export' }
