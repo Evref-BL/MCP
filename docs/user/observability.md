@@ -307,4 +307,7 @@ nearest class in Pharo's own packages, those Pharo's baselines list, or in
 MCP's, and a name the caller chose for an argument or a tool is sent only
 when it reads as an identifier. Recording never fails
 a tool call: anything that goes wrong while recording leaves out what could
-not be read, and a span that started still ends.
+not be read, and a span that started still ends. A call whose recording
+itself fails records nothing, and nothing says so: changing MCP's own code
+in the image that serves the calls can stop its recording that way, for as
+long as that code runs.
