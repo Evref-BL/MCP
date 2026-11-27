@@ -120,7 +120,7 @@ MCPRenameSlotCommand >> rewriteOfSelector: aSelector inBehavior: aBehavior [
 	parseTree ifNil: [ ^ nil ].
 	rewriter := self variableReferenceRewriterForSelector: aSelector inBehavior: aBehavior.
 	(rewriter executeTree: parseTree) ifFalse: [ ^ nil ].
-	source := (rewriter tree formattedCodeIn: aBehavior) withInternalLineEndings.
+	source := (aBehavior formatter format: rewriter tree) withInternalLineEndings.
 	^ [ aBehavior compile: source classified: (aBehavior >> aSelector) protocol ]
 ]
 

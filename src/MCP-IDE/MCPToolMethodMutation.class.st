@@ -423,7 +423,7 @@ MCPToolMethodMutation >> reformattedMethodForBehavior: aBehavior selector: aSele
 
 	| compiledMethod formattedSource |
 	compiledMethod := aBehavior >> aSelector.
-	formattedSource := compiledMethod ast formattedCodeIn: aBehavior.
+	formattedSource := aBehavior formatter format: compiledMethod ast.
 	formattedSource = compiledMethod sourceCode ifFalse: [ aBehavior compile: formattedSource classified: compiledMethod protocol ].
 	^ aBehavior >> aSelector
 ]

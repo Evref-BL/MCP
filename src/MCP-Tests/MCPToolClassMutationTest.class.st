@@ -2246,7 +2246,7 @@ MCPToolClassMutationTest >> testUpdateRenameSlotReformatsWithTheFormatterOfTheCl
 		method := target >> #slotProbe.
 		self deny: (result at: #isError ifAbsent: [ false ]).
 		self assert: (method sourceCode includesSubstring: 'renamedSlot').
-		self assert: method sourceCode equals: (method ast formattedCodeIn: target).
+		self assert: method sourceCode equals: (target formatter format: method ast).
 		self deny: method sourceCode equals: method ast formattedCode ] ensure: [
 			self removeClassNamed: 'MCPToolClassMutationTestRenameSlotFormatterTarget'.
 			self removeGeneratedPackageManifest ]
