@@ -42,7 +42,6 @@ jobs:
           owner: Evref-BL
           repositories: |
             PLexus
-            pharo-image-fs
 
       - name: Notify released consumers
         env:
@@ -52,6 +51,6 @@ jobs:
           version="${RELEASE_TAG#v}"
           [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
           payload="$(jq -nc --arg version "$version" '{event_type: "component-release", client_payload: {component: "mcp", version: $version}}')"
-          for consumer in PLexus pharo-image-fs; do
+          for consumer in PLexus; do
             printf '%s' "$payload" | gh api --method POST "repos/Evref-BL/${consumer}/dispatches" --input -
           done
