@@ -12,6 +12,8 @@ jobs:
   publish:
     if: startsWith(github.event.release.tag_name, 'v')
     runs-on: ubuntu-latest
+    # The environment publishes from release tags only.
+    environment: npm-publish
     steps:
       - uses: actions/checkout@v6
         with:
