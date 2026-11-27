@@ -2705,7 +2705,7 @@ MCPToolMethodMutationTest >> testFormatAloneFormatsTheMethodAsItIs [
 			assert: (self summaryFrom: (self callToolNamed: 'method_update' withArguments: (arguments value: { (#format -> true) })))
 			equals: ('Formatted {1}.' format: { reference }).
 		method := MCPToolMethodMutationTestTarget >> #formatProbe:.
-		self assert: method sourceCode equals: (method ast formattedCodeIn: MCPToolMethodMutationTestTarget).
+		self assert: method sourceCode equals: (MCPToolMethodMutationTestTarget formatter format: method ast).
 		self
 			assert: (self summaryFrom: (self callToolNamed: 'method_update' withArguments: (arguments value: { (#format -> true) })))
 			equals: ('{1} is already formatted.' format: { reference }).
@@ -2971,7 +2971,7 @@ MCPToolMethodMutationTest >> testReformatsWithTheFormatterOfTheMethodPackage [
 				           protocol: 'tests').
 		method := target >> #boundedAnswer.
 		self deny: (result at: #isError ifAbsent: [ false ]).
-		self assert: method sourceCode equals: (method ast formattedCodeIn: target).
+		self assert: method sourceCode equals: (target formatter format: method ast).
 		self deny: method sourceCode equals: method ast formattedCode ] ensure: [
 			self removeClassNamed: 'MCPToolMethodMutationTestFormatterTarget'.
 			self removeGeneratedPackageManifest ]

@@ -118,7 +118,7 @@ MCPTestCase >> ensureMethodSource: aMethodSource protocol: aProtocol on: aBehavi
 
 	| source tree |
 	tree := RBParser parseMethod: aMethodSource.
-	source := tree formattedCodeIn: aBehavior.
+	source := aBehavior formatter format: tree.
 	aBehavior compiledMethodAt: tree selector ifPresent: [ :method |
 			(method isFromTrait not and: [ method sourceCode = source and: [ method protocolName asString = aProtocol asString ] ])
 				ifTrue: [ ^ self ] ].
