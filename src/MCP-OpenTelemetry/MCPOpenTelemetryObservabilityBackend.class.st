@@ -879,7 +879,7 @@ MCPOpenTelemetryObservabilityBackend >> operationAttributesNamed: aToolName orig
 MCPOpenTelemetryObservabilityBackend >> operationDurationBucketBoundaries [
 	"The bucket boundaries, in seconds, the OpenTelemetry conventions for MCP give mcp.server.operation.duration."
 
-	^ #( 0.01 0.02 0.05 0.1 0.2 0.5 1 2 5 10 30 60 120 300 )
+	^ #( 0.01 0.025 0.05 0.1 0.25 0.5 1 2.5 5 10 30 60 120 300 )
 ]
 
 { #category : 'private - instruments' }

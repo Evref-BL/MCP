@@ -1517,7 +1517,7 @@ MCPOpenTelemetryObservabilityBackendTest >> testTheInstrumentsMeasureAsTheConven
 	self assert: backend operationDurationHistogram unit equals: 's'.
 	self
 		assert: backend operationDurationHistogram explicitBucketBoundaries
-		equals: (#( 0.01 0.02 0.05 0.1 0.2 0.5 1 2 5 10 30 60 120 300 ) collect: [ :each | each asFloat ]).
+		equals: (#( 0.01 0.025 0.05 0.1 0.25 0.5 1 2.5 5 10 30 60 120 300 ) collect: [ :each | each asFloat ]).
 	self assert: backend outputBudgetExceededCounter unit equals: '{call}'
 ]
 
