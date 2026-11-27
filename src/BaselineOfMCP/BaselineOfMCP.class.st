@@ -75,7 +75,7 @@ BaselineOfMCP >> defineDependencies: spec [
 				loads: #( 'PharoMinimal' 'UnicodeProperties' ) ];
 		baseline: 'OpenTelemetry' with: [
 			spec
-				repository: 'github://Gabriel-Darbord/opentelemetry-pharo:v1.3.2/src';
+				repository: 'github://Gabriel-Darbord/opentelemetry-pharo:v1.4.0/src';
 				loads: #( 'traces' 'metrics' 'logs' 'autoconfigure' ) ]
 ]
 
