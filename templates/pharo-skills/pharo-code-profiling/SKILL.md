@@ -172,7 +172,7 @@ mean: the minimum is the run least disturbed by GC and scheduling.
 ## Stop Before
 
 - Profiling forks a process and leaves state behind. Run it inside an approved
-  image boundary and never save the image.
+  image boundary, and let its forks end before the image is saved.
 - Only one `MessageTally` can run at a time; a second answers "it seems a tally
   is already running". Let a forked profile finish before starting another.
 - Do not trust a report whose tree does not contain the workload's own methods:
