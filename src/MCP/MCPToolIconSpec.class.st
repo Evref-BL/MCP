@@ -36,6 +36,7 @@ MCPToolIconSpec class >> actionIconMap [
 			  ('update' -> #edit).
 			  ('export' -> #saveToUrl).
 			  ('commit' -> #save).
+			  ('save' -> #save).
 			  ('fetch' -> #smallUpdate).
 			  ('reload' -> #autoReload).
 			  ('pull' -> #down).

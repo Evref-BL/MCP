@@ -534,4 +534,4 @@ underneath it, so an equality test on it breaks whenever either half changes.
   Answer `false` from `shouldAutoRegister`.
 - **`onlyTools:` drops the catalog tools.** See above.
 - **Nothing is saved.** Tools change the running image and never write it to
-  disk. `Smalltalk saveSession` is the caller's business, not the tool's.
+  disk. Saving is the caller's business, through `save`, not the tool's.
