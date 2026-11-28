@@ -13,6 +13,7 @@ MCPJSONSchemaValidatorTest >> baseRepresentativeArgumentsByToolClass [
 
 	^ {
 		  (MCPToolEvaluate -> { (#code -> '1 + 1') } asDictionary).
+		  (MCPToolSave -> Dictionary new).
 		  (MCPToolRunTests -> { (#classes -> { 'MCPToolContractsTest' }) } asDictionary).
 		  (MCPToolRunTestCoverage -> {
 			   (#classes -> #( 'MCPToolCoverageTargetTest' )).

@@ -113,11 +113,11 @@ this one's, and the caller asks.
 
 ## Mutation And Saving
 
-No tool of the image saves it. Mutating tools change the running image only,
-so closing it discards every change since its last save, and a mistake costs
-the session rather than the image file. Evaluate `Smalltalk saveSession` when a
-change should survive, or leave it to whatever manages the image's lifecycle,
-which may save it as it stops it.
+Mutating tools change the running image only, so closing it discards every
+change since its last save, and a mistake costs the session rather than the
+image file. `save` writes the image to its file and keeps it running, when a
+change should survive; whatever manages the image's lifecycle may also save it
+as it stops it.
 
 The change history keeps what a stop or a mistake would cost.
 `method_version_list` lists one method's earlier versions and `method_restore`

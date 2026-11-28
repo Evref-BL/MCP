@@ -14,7 +14,8 @@ than letting source stand in for it.
   about another.
 - An image takes one writer: it has no branches, so two agents in it share
   every edit.
-- The image's tools never save it; a tool that stops it may.
+- Changes live in the running image until `save`, or a tool that stops it,
+  saves it.
 - The user may commit through Iceberg unseen: ask the image and the checkout
   before calling any work uncommitted.
 
